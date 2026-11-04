@@ -1,0 +1,19 @@
+{
+    "id": "RARC.5.2.4_ttl_survives_until_its_deadline",
+    "category": "logical",
+    "scenario": "RARC.5.2.4 — the twin of RARC.5.2.4_ttl_expires_at_its_deadline, one nanosecond short. Blip lives 5 s; the clock advances by 4_999_999_999 ns, so its deadline is still after the engine clock and it must survive the pump: no `fact_retract`. Without this twin the expiry vector would also pass a sweep that retracts early, which is the other half of the boundary. Path: the TTL sweep at clock advance, as in the twin.",
+    "rules_ds": "schema Blip scope ttl 5_s:\n    id: Int\n\nrule seen:\n    Blip b\n->\n    log info \"blip {b.id}\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Blip", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4999999999 },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": [
+            "fact_retract"
+        ]
+    }
+}

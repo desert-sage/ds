@@ -1,0 +1,23 @@
+{
+    "id": "LNUL.8.6_nulls_zero_absorbs_zero",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] `nulls: zero`: a sample that carries `null` absorbs 0 at the null's own instant. `count, mean all_time` over a `Float?` slot with `nulls: zero` takes 1.0, null, 5.0 then 6.0, one per pump, each read pre-sample ([LSER.8.6.1]); the guard `s.count >= 3` logs once, over [1.0, 0.0, 5.0]: `mean 2.0`. Drives both runtimes' ZERO arm: libds `ds_series_absorb_one` substitutes the slot's typed zero (`slot_is_int` decides Int or Float) and the Mercury `lnul_8_6_sample` reads the slot's kind for `lnul_8_6_zero`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev, nulls: zero):\n    count, mean all_time\n\nrule r:\n    Reading s where s.count >= 3\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 2.0"]
+    }
+}

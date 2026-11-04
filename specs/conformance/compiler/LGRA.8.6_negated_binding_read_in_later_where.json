@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.8.6_negated_binding_read_in_later_where",
+    "category": "compiler",
+    "scenario": "[LGRA.8.6]: a negated pattern's binding is in scope in its own `where` alone, and \"the compiler must refuse a reference to it in a later pattern's `where`\" with `DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE`. `no Alarm a where a.id == s.id` is followed by `Zone z where z.id == a.id`: the later pattern joins on a fact that, when the rule fires, does not exist. PATH PINNED: `dsc.validate.lgra_8_6_negated_binding_scope`, its pattern arm over every `where` but the negated pattern's own; the refusal is at the `a` in the later `where`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n\nschema Alarm scope logical:\n    id: String key\n\nschema Zone scope logical:\n    id: String key\n\nrule r:\n    Sensor s\n    no Alarm a where a.id == s.id\n    Zone z where z.id == a.id\n->\n    log info \"{s.id} {z.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE"
+    }
+}

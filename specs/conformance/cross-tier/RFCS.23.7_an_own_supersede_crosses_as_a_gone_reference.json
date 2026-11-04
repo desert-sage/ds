@@ -1,0 +1,29 @@
+{
+    "id": "RFCS.23.7_an_own_supersede_crosses_as_a_gone_reference",
+    "clauses": ["RFCS.23.7"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7]: a reference is resolved once, before anything is asserted, and one of the delivery's own asserts can remove a fact it resolved to. That refuses nothing and stops nothing. The sender declares `T` with a `corr` slot and no service, so two `T` of one `corr` live together there, and `up` publishes an `R` referring to both. The receiver declares the same shapes, and a service whose `response` is `T` ([LCRS.4.3.2]), so an arriving `T` supersedes the live `T` with its `corr` ([LCRS.6.2.4]). The record's first copy is asserted, the second supersedes it, and `R` is asserted referring to the first, which has gone. So the receiver holds 2 facts: the second `T` and `R`. A refusal in the plan reads 0, and a delivery stopped at `R` reads 1. The sender holds its two `T` and `Go`: a `publish` asserts nothing there ([LTIE.4.3]). The schema hash leaves services out ([RFCS.23.3]). PATH PINNED: libds's `fx_deliver` (rfcs/codec.c, `fx_hold_target`), through pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.assert_plan`, through test_behave.m's `receive_on_tier`, where `host_assert_in_step` judges no liveness.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema T scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema R scope logical:\n    k: Int key\n    a: T mutable\n    b: T mutable\n\nschema Go scope logical:\n    k: Int key\n\nrule up:\n    Go g\n    T x where x.v == 1\n    T y where y.v == 2\n->\n    publish R k: g.k a: x b: y\n"
+            },
+            "receiver": {
+                "rules_ds": "schema T scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema R scope logical:\n    k: Int key\n    a: T mutable\n    b: T mutable\n\nservice svc.t:\n    kwarg n: Int\n    response T\n"
+            }
+        },
+        "steps": [
+            { "engine": "sender", "op": "assert", "schema": "T", "slots": { "corr": "c", "v": 1 } },
+            { "engine": "sender", "op": "assert", "schema": "T", "slots": { "corr": "c", "v": 2 } },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "receiver", "op": "forward_external", "from": "sender" }
+        ],
+        "engine_fact_counts_after": {
+            "sender": 3,
+            "receiver": 2
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{
+  "id": "NLFC.3.3",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.3",
+  "seq": 120,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.3.3] Constraints:\n\n- **Pump is the only writer.** Do not call `ds_engine_*` functions\n  concurrently on the same engine from multiple threads. libds does not lock;\n  the integrator serialises externally. Concurrent pump + assert on one engine\n  is undefined behaviour.\n- **Multiple engines in different threads is fine** — each is independent.\n- **Do not block inside callbacks.** Callbacks fire on the pump thread; a\n  blocking callback blocks the pump. Push discovered work onto a queue the\n  runtime services later.\n- **Do not call back into the engine that called you.** A callback holds a\n  live handle and runs on the pump's stack, so re-entry is easy to write by\n  accident; every `ds_engine_*` call on **that** engine returns\n  `DS_ERR_STATE` ([RARC.13.16]). This covers reads as well as writes — a read\n  mid-pump is a torn snapshot. The same holds inside the callback an\n  enumerating read invokes once per item, such as `ds_engine_for_each_fact`'s\n  visitor ([RARC.13.17]). Calling into a **different** engine is the intended\n  cross-tier pattern and is fine.\n\n",
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "nlfc_3_3__InputAssert",
+        "tag": "spec",
+        "note": "The integrator's assert, between pumps by its guard: the exclusion this clause makes the integrator's duty, assumed, as [RARC.13.16] says its model assumes it. pump_single_writer.tla is where the exclusion is checked."
+      },
+      {
+        "path": "formal/tla/pump_single_writer.tla",
+        "name": "nlfc_3_3__ExternAssert",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_single_writer.tla",
+        "name": "nlfc_3_3__ExternBegin",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_single_writer.tla",
+        "name": "nlfc_3_3__ExternEnd",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_single_writer.tla",
+        "name": "nlfc_3_3__externing",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_single_writer.tla",
+        "name": "nlfc_3_3__single_writer",
+        "tag": "derives"
+      }
+    ]
+  },
+  "refs": [
+    "RARC.13.16",
+    "RARC.13.17"
+  ]
+}

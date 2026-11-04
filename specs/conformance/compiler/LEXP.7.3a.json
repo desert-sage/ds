@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.7.3a",
+    "category": "compiler",
+    "scenario": "Chained `**` over runtime Int operands compiles and types `Float`. Per [LEXP.7.3a], `t.b ** t.c` has a sign-unknown exponent, so it types `Float`, and the outer `t.a ** (Float)` has a non-integer exponent, which the correctly rounded `pow` answers ([LEXP.3.9.2]); the chain is EXACT and admitted. `t.a ** t.b ** 2` keeps an integer chain (LGRA.9.5.json).",
+    "rules_ds": "schema Trig scope logical:\n    a: Int key\n    b: Int mutable\n    c: Int mutable\n\nrule r:\n    Trig t where (t.a ** t.b ** t.c) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LTIM.2.6.2_const_utc_zone_multipattern_compiles",
+    "category": "compiler",
+    "scenario": "[LTIM.2.6.2]: the compiler counts `t.local(tz)` as a zone read unless `tz` folds to `\"UTC\"`: a literal, or a `const` whose folded value it is ([LGRA.4.1]). `HOME` is such a `const`, so `e.fired.local(HOME)` resolves no zone ([LTIM.10.8]), the `where` is not time-dependent ([LTIM.2.4.1]), and the two-pattern rule compiles. `compile_ok`. PATH: `dsc.validate.ltim_2_6_2_clock_where`'s `time_read`, whose zone arm is `dsc.typecheck.ltim_2_4_1_zone_read`, which folds the zone with `dsc.dstest.ltsl_4_1_string_constant`. A zone arm that exempts only a literal `\"UTC\"` refuses this rule with DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. The twin of LTIM.2.6.2_zone_read_multipattern_rejects.",
+    "rules_ds": "use default\n\nconst HOME = \"UTC\"\n\nschema Arm scope logical:\n    k: Int key\n\nschema Event scope logical:\n    k: Int key\n    fired: Time mutable\n\nrule office_hours:\n    Arm a\n    Event e where e.k == a.k and e.fired.local(HOME).hour > 8\n->\n    log info \"in hours\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.1.5_record_event_retired",
+    "category": "compiler",
+    "scenario": "`record_event` is not an action (LGRA.10.1.5): the word is reserved, and the compiler must reject an action line that begins with it with DS_VALIDATE_RECORD_EVENT_RETIRED, with a message saying that the action is retired and naming no replacement. Pin: `record_event Foo a: (t.v * 2)` on a rule's RHS. Path: the parser still takes the line, and `dsc.validate`'s `lgra_10_1_5_record_event` refuses it, so the code is this one and not a parse error's.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Foo scope ttl 1_h:\n    a: Int\n\nrule r:\n    Trig t\n->\n    record_event Foo a: (t.v * 2)\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RECORD_EVENT_RETIRED"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "RLOW.6.1.5_after_body_is_typed",
+    "clauses": ["RLOW.6.1.5", "LTIM.4.2.3", "LGRA.2.9.6.10", "LTAC.3.5"],
+    "category": "logical",
+    "scenario": "An `after` body lowers with its rule's types, as the rule's own body does. Rule `plan` arms a 1 s timer for a Visit on 2024-02-29 (day 19782); its follow-up logs `due {v.due}`, a bare Date interpolation ([LGRA.2.9.6.10]), and emits a Shifted with `next: v.due + 1_d` ([RLOW.6.1.5]'s FN_DATE_ADD_DURATION) and `text: (v.due - 7_d)::String` (FN_DATE_SUB_DURATION, then a cast that dispatches on its operand's static type). Rule `show` logs the Shifted. Messages: `due 2024-02-29`, `1 2024-03-01 2024-02-22`. The breaks: a follow-up lowered with no typing environment leaves the cast unlowered, so the rule is skipped and nothing is logged; were the cast removed, `v.due + 1_d` would be Int `+` on a day count and nanoseconds, a Date about 86 trillion days later, and `{v.due}` would render the day count `19782`. PATH PINNED: `dsc.rete`'s `after` follow-up context (`ltac_3_1_afters`), whose `cx_env` carries the rule's `type_env`, read by `rlow_6_1_5_date_arith`, `cast_fn` and `lgra_2_9_6_10_temporal_text`.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nschema Shifted scope ttl 1_h:\n    id: Int\n    next: Date\n    text: String\n\nrule plan:\n    Visit v\n->\n    after 1_s:\n        log info \"due {v.due}\"\n        emit Shifted id: v.id next: v.due + 1_d text: (v.due - 7_d)::String\n\nrule show:\n    Shifted s\n->\n    log info \"{s.id} {s.next} {s.text}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 19782 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["due 2024-02-29", "1 2024-03-01 2024-02-22"]
+    }
+}

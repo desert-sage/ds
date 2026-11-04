@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.4",
+    "category": "compiler",
+    "scenario": "`t.dwell` is a compile-time alias for the time since the fact entered working memory on logical-schema bindings (LSER.10.4, LEXP.9.5.1), independent of series infrastructure: no series declaration is required. Pin: a rule with `where s.dwell > 60_s` on a logical schema with no series compiles. Drives dsc.typecheck lser_10_4_dwell_read, which types dwell as a `Duration`.",
+    "rules_ds": "schema Sensor scope logical:\n    state: Float key\n    ts: Time\n\nrule stale:\n    Sensor s where s.dwell > 60_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

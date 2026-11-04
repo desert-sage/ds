@@ -1,0 +1,106 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# Every function libds.h declares, and its home in @ds-lang/ds
+# (bindings/JS_BINDING.md §3.1). One row per function, tab-separated: the C
+# name, the JavaScript that reaches it (or why nothing does), and its state.
+# The js gate lists the header's functions with the compiler and
+# fails on a function with no row, a row for a function the header does not
+# declare, or a state that is not one of these:
+#
+#   done  reached from the public API, as the second column says
+#   gap   it should be, and is not yet
+#   none  deliberately not, for the reason the second column gives
+#
+# The second column names the API as it is today. JS_BINDING.md §3's decided
+# changes rename much of it; each change updates its rows.
+c_function	js	state
+ds_engine_get_run_id	e.runId, given as new Engine({ runId })	done
+ds_engine_get_tier_id	e.tierId, given as new Engine({ tierId })	done
+ds_engine_new	new Engine({ runId, tierId })	done
+ds_engine_free	e.close(), and `using`	done
+ds_engine_clone	e.clone()	done
+ds_engine_clock_mode	e.clock.mode	done
+ds_engine_clock_set_mode	e.clock.mode = mode	done
+ds_engine_clock_now	e.clock.now	done
+ds_engine_clock_set	e.clock.set(ns)	done
+ds_engine_clock_advance	e.clock.advance(ns)	done
+ds_engine_wall_clock_set	e.clock.setWall(utcNs)	done
+ds_engine_schema_count	e.schemas, a ReadonlyMap: its size, and building it	done
+ds_engine_schema_find	assert, facts({ schema }) and decodeFactBody find their schema with it; e.schemas.get(name) reads the map built from schema_at	done
+ds_engine_schema_at	e.schemas, built from each schema in turn	done
+ds_schema_get_name	a schema record's name; a fact record's schema	done
+ds_schema_get_lifecycle	a schema record's lifecycle	done
+ds_schema_get_ttl_ns	a schema record's ttlNs	done
+ds_schema_get_slot_count	a schema record's slots	done
+ds_schema_get_slot	a schema record's slots[i] gives name, type, identity and nullable; sampled, retained, tolerance, docstring and hydrationEligible are not read back	gap
+ds_schema_get_source	nothing: a schema's source file, line and column are not exposed	gap
+ds_schema_get_proto_source	nothing: a schema's generated .proto text is not exposed	gap
+ds_engine_rule_meta_count	e.rules, a ReadonlyMap: its size, and building it	done
+ds_engine_rule_meta_at	e.rules, built from each rule in turn	done
+ds_engine_rule_meta_find	none: e.rules.get(name) reads the map built from rule_meta_at, so nothing calls it	none
+ds_engine_service_count	nothing yet: the services (JS_BINDING.md §3.5.1) have no view (NDBG.2.4)	gap
+ds_engine_service_at	nothing yet: the services (JS_BINDING.md §3.5.1) have no view (NDBG.2.4)	gap
+ds_engine_service_find	nothing yet: the services (JS_BINDING.md §3.5.1) have no view (NDBG.2.4)	gap
+ds_engine_get_justifiers	e.justifiers(fact)	done
+ds_engine_rete_network	e.reteNetwork({ ruleFilter, includeOccupancy })	done
+ds_engine_rete_match_trace	e.reteMatchTrace(fact)	done
+ds_engine_refracted_activations	e.refractedActivations(ruleFilter)	done
+ds_engine_ds_source_count	nothing: the program's own source files are not exposed	gap
+ds_engine_ds_source_at	nothing: the program's own source files are not exposed	gap
+ds_engine_line_span_count	e.lineSpans, a frozen array: its length, and building it	done
+ds_engine_line_span_at	e.lineSpans, built from each span in turn	done
+ds_engine_line_span_find	e.lineSpan(nodeId), a LineSpan; a node with none throws DS_ERR_NOT_FOUND	done
+ds_engine_load_dsc	e.loadDsc(bytes), and fromSource	done
+ds_build_capabilities	nothing: the capabilities this build has code for are not exposed	gap
+ds_engine_set_admission	nothing: an engine admits every capability setting, and no policy can be given	gap
+ds_engine_set_cache_cap	e.cache.setCap({ keys, bytes })	done
+ds_engine_fact_count	e.factCount	done
+ds_engine_fact_find	nothing: e.factById(id) walks working memory with ds_engine_for_each_fact; this is its direct lookup	gap
+ds_engine_mem	e.memory()	done
+ds_engine_assert	e.assert(schema, slots)	done
+ds_engine_assert_external	e.assertExternal(bytes or a fact argument)	done
+ds_fact_get_id	fact.id	done
+ds_fact_get_schema	fact.read().schema, and facts()'s records	done
+ds_fact_get_asserted_ns	nothing: when a fact entered working memory is not exposed	gap
+ds_fact_get_ttl_deadline_ns	nothing: a fact's TTL deadline is not exposed	gap
+ds_fact_get_slot_count	fact.read().slots	done
+ds_fact_get_slot	fact.read().slots: a fact-ref slot as a Fact, or null once its target has left	done
+ds_fact_get_slot_ref_id	nothing: a fact-ref slot whose target has left reads null, and the target's id is not given	gap
+ds_engine_for_each_fact	e.facts({ schema }), e.factById(id), e.retract(id)	done
+ds_json_parse	Json slots and a cache seed's value go in as JSON text, which the glue parses with this	done
+ds_json_free	none: the glue frees the trees it parsed; JavaScript never holds one	none
+ds_json_clone	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to copy	none
+ds_json_serialize	Json slots, event fields and call arguments come out as canonical text, serialised with this	done
+ds_free	none: the glue releases what libds hands over (Json text, justifier arrays); nothing reaches JavaScript to free	none
+ds_json_get_path	none: Json crosses as canonical text (JS_BINDING.md §2.1); a caller reads it with its own JSON reader	none
+ds_json_get_kind	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_get_bool	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_get_int	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_get_float	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_get_string	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_array_len	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_array_at	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_object_len	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_object_get	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_object_at	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to inspect	none
+ds_json_new_null	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_bool	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_int	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_float	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_string	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_array	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_new_object	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_array_append	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_json_object_set	none: Json crosses as canonical text (JS_BINDING.md §2.1); there is no tree to build	none
+ds_engine_halted	e.halted	done
+ds_engine_set_stream_callback	e.addEventListener(kind, fn), kind one of STREAM_EVENT_KINDS: each stream event is an EngineEvent of its kind, delivered to JavaScript once a stream listener is added; the glue keeps its own registration as the fact-handle fence	done
+ds_engine_set_metric_callback	e.addEventListener("metric", fn), or e.onmetric	done
+ds_engine_set_log_callback	e.addEventListener("log", fn), or e.onlog	done
+ds_engine_set_call_callback	e.setCallCallback(fn)	done
+ds_engine_cache_callbacks	e.cache.writeThrough = { set, delete }: a throw fails the pump, as its DsError's cause	done
+ds_engine_cache_seed	e.cache.seed(key, json, { ttlNs })	done
+ds_engine_get_platform_signature	e.platformSignature	done
+ds_engine_get_session_header	e.sessionHeader	done
+ds_engine_retract	e.retract(fact), a Fact or an id	done
+ds_engine_pump	e.pump()	done

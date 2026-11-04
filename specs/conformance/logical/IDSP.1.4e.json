@@ -1,0 +1,27 @@
+{
+    "id": "IDSP.1.4e",
+    "category": "logical",
+    "scenario": "An asserted fact that doesn't match any rule's LHS must NOT produce rule_fire_* events. Sanity check that the engine doesn't spuriously fire rules on non-matching facts. Pins IDSP.1.4 \u2014 non-matching assert produces no rule_fire events.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Other scope logical:\n    x: Int key\n\nrule r:\n    Other\n->\n    log info \"x\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "forbidden_kinds": [
+            "rule_fire_begin",
+            "rule_fire_end",
+            "action_log"
+        ]
+    }
+}

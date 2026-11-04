@@ -1,0 +1,29 @@
+{
+  "id": "LERR.9.12",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.9",
+  "seq": 10000020,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LERR.9.12] **A fault's slot context is its offending operand's.** The\n`schema` and `slot` of a `ComputationError` or `TypeError` fault fact\n([LERR.9.2], [LERR.9.3]), the same fields and the fact id on its recorded atom\n(`proto/engine_error.proto#ComputationError`, `proto/type_error.proto#TypeError`)\nand its integrator callback, and a\n`TypeError`'s `actual`, describe one operand of the node that raised the fault:\nits **offending operand**. The engine **must** choose it, without evaluating\nanything a second time, as:\n\n1. the first operand whose value is known and `null`;\n2. else, at a division or remainder, the divisor;\n3. else the first operand.\n\nAn operand's value is **known** when it needs no evaluation: it is a literal or\na slot read.\n\nThe engine **must** fill the schema, the slot and the fact id when the offending\noperand is a slot read, and **must** leave them unset otherwise: absent on the\natom and the callback, and the empty string on the fault fact, whose slots are\nnot nullable. In `100 / (x - x)` and `x // 0` no fact or slot supplied the\nvalue, so there is none to name. The engine **must** fill `actual` when the\noffending operand's value is known, and leave it unset otherwise.\n\n---\n\n",
+  "refs": [
+    "LERR.9.2",
+    "LERR.9.3"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/engine_error.proto",
+        "name": "ComputationError",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/type_error.proto",
+        "name": "TypeError",
+        "tag": "spec"
+      }
+    ]
+  }
+}

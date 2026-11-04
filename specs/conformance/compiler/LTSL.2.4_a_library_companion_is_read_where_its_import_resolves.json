@@ -1,0 +1,16 @@
+{
+    "id": "LTSL.2.4_a_library_companion_is_read_where_its_import_resolves",
+    "category": "compiler",
+    "scenario": "[LTSL.2.4]: the compiler reads each compiled module's companion wherever the module's import resolves, so a library's companion beside it under `-L` is part of the compile. Library `alpha`'s companion declares a schema, which [LTSL.2.1] refuses in a companion with DS_VALIDATE_TEST_COMPANION_DECL. The same text beside alpha under another stem is not read (`LTSL.2.4_a_refused_dstest_that_is_no_modules_companion_is_not_read`). The compile is from files ([RCTS.1.2.35]). PATH PINNED: dsc.cli `add_library`'s `ltsl_2_4_read_companion`, and dsc.driver `ltsl_2_1_companion_decl` on a library's companion.",
+    "rules_ds": "use default\n\nimport alpha\n\nschema Tick scope logical:\n    id: Int key\n",
+    "libraries": {
+        "alpha": "schema Ping scope logical:\n    id: Int key\n"
+    },
+    "files": {
+        "lib/alpha.dstest": "schema Extra scope logical:\n    id: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_COMPANION_DECL"
+    }
+}

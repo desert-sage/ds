@@ -1,0 +1,19 @@
+{
+  "id": "LGRA.9.8.10",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.9.8",
+  "seq": 1269,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.9.8.10] **Clock functions.** `now() → Time` returns the wall-clock\ninstant ([LTIM.2.1.1]) and `monotonic_ns() → Duration` the monotonic clock's\nreading ([LTIM.2.2.1]). Unlike the read functions ([LGRA.9.8.2]), each may\nappear in any expression position — a `where` clause, an action argument,\nanywhere in a `let` RHS — except an interpolation body, which takes a path and\nnot a call ([LGRA.2.9.6.9]). In a `where` clause either makes the condition\ntime-dependent ([LTIM.2.4.1]). A `let` whose entire RHS is a clock read binds\nthe value once per activation; multiple references to the let name reuse that\nsingle value rather than re-reading the clock. (See the let purity tiers\nbelow.)\n\n**That reuse is an optimisation, not a second semantics.**\n[LTIM.2.1.3] already fixes one clock value for the whole\nactivation — activations are atomic with respect to the\nclock — so two separate `let`s each binding `now()` take\nthe **same** value, and re-reading would be permitted to\nchange nothing. This clause says when the engine *may*\nskip the read; [LTIM.2.1.3] says what the read must\nreturn.\n",
+  "refs": [
+    "LGRA.2.9.6.9",
+    "LGRA.9.8.2",
+    "LTIM.2.1.1",
+    "LTIM.2.1.3",
+    "LTIM.2.2.1",
+    "LTIM.2.4.1"
+  ]
+}

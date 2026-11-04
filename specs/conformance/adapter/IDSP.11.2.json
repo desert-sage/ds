@@ -1,0 +1,14 @@
+{
+    "id": "IDSP.11.2",
+    "category": "adapter",
+    "scenario": "`cache_delete` event payload carries the key per IDSP.11.2 — `DS_EV_ACTION_CACHE_DELETE` payload is `{ key }`. Integrator's delete cb receives the key string. Pinned via adapter_cache_deletes harness kind.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    cache_delete key: \"k\"\n",
+    "expect": {
+        "kind": "adapter_cache_deletes",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_keys": [ "k" ]
+    }
+}

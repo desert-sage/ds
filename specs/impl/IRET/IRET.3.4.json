@@ -1,0 +1,14 @@
+{
+  "id": "IRET.3.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.3",
+  "seq": 339,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.3.4] **Slot equality with tolerance.** At\nfact-assert time, the working memory dedup path compares\nthe incoming fact against any existing fact with the same\nschema and identity-key slot value. For each slot:\n\n- Slots without tolerance: `memcmp` on the 8-byte\n  union content (safe for int/float/bool/interned-ptr).\n  String slots compare pointer (interned equality).\n- Slots with tolerance `T > 0`: only legal on `Int` and\n  `Float`; the values are equal when `abs(new - old) <= T`, a\n  change of exactly `T` included ([RLOW.3.7.4]).\n- `Json` slots: structural deep equality.\n\nIf all slots compare equal under their per-slot rule,\nthe incoming assertion is suppressed (no-op).\n\n---\n\n",
+  "refs": [
+    "RLOW.3.7.4"
+  ]
+}

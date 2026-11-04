@@ -1,0 +1,19 @@
+{
+  "id": "LHYD.9.4.1",
+  "prefix": "LHYD",
+  "doc": "HYDRATION.md",
+  "parent": "LHYD.9.4",
+  "seq": 466,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[LHYD.9.4.1] An adapter that supports hydration publishes a `service`\ndeclaration per `hydrate_*` endpoint, naming the schemas it can serve and the\ncaps it enforces, in a `hydration:` block that sits in the `service_decl` of\n[LGRA.23.1] immediately before its `response_decl`. The compiler reads these\ndeclarations, which is what makes [LHYD.9.4.2]'s validation enforceable at\ncompile time.\n\n```\nhydration_decl  ::= 'hydration' ':' NEWLINE\n                    INDENT hydration_field+ DEDENT\nhydration_field ::= 'hydrates' ':' NAME (',' NAME)* ','? NEWLINE\n                 |  'max_window' ':' UNIT_LIT NEWLINE\n                 |  'max_limit' ':' INT_LIT NEWLINE\n                 |  'filter_fields' ':' NEWLINE\n                    INDENT filter_field+ DEDENT\nfilter_field    ::= NAME ':' filter_op (',' filter_op)* ','? NEWLINE\nfilter_op       ::= '==' | '!=' | '<' | '<=' | '>' | '>=' | 'in'\n```\n\nEach `hydration_field` kind appears at most once in one `hydration_decl`; the\ncompiler must reject a repeated one\n(`DS_VALIDATE_SERVICE_DUPLICATE_HYDRATION_FIELD`).\n\n| Field | Meaning |\n|---|---|\n| `hydrates:` | the schema names this endpoint can serve |\n| `max_window:` | the largest `window:` it accepts |\n| `max_limit:` | the largest `limit:` it accepts |\n| `filter_fields:` | each slot a `filter:` expression may name, with the comparison operators it may use on that slot |\n\n",
+  "deferred": true,
+  "refs": [
+    "LGRA.23.1",
+    "LHYD.9.4.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_SERVICE_DUPLICATE_HYDRATION_FIELD"
+  ]
+}

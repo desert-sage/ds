@@ -1,0 +1,27 @@
+{
+    "id": "IDSP.1.4",
+    "category": "logical",
+    "scenario": "A rule firing emits the expected events, in order: fact_assert (the trigger) \u2192 rule_fire_begin \u2192 action_log \u2192 rule_fire_end. Pins the dispatcher's stream-ordering contract per IDSP.1.4 (action events emitted after primary effect succeeds).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hello\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

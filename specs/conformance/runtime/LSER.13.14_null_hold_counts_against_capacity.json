@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.14_null_hold_counts_against_capacity",
+    "category": "runtime",
+    "scenario": "[LSER.13.14] x [LNUL.8.6]: a null that `nulls: hold` absorbs as the held value is a sample, so it counts against `N` and is refused like one. `integral sliding 1_h` over a `Float?` slot with `capacity: 2` and `nulls: hold`; three asserts of one identity before any pump: 1.0, then null, then null. `n` changes each time, so every assert is a supersede and none is a no-op reassertion. At the third, the identity already has two samples admitted this pump and not yet absorbed -- the 1.0, and the null that will hold it -- and the arriving null would hold it too, so the assert is a bounds refusal naming CAP_SERIES_CAPACITY (DS_ERR_CONTRACT_BREACH, -710) and the fact is not asserted. PATH PINNED: the pre-assert capacity check in both runtimes deciding each pending reading and the arriving one by the declaration's null policy in absorb order (libds `ds_engine_series_capacity_check` through `capacity_reading_absorbs`; Mercury `ds.exec.lser_13_14_over_capacity` through `ds.series.lser_13_14_absorbs`). `fault_at: 2` makes the refusal the third assert's.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    power: Float? mutable\n    n: Int mutable\n\nseries Reading.power (by: dev, capacity: 2, nulls: hold):\n    integral sliding 1_h\n\nrule r:\n    Reading s where s.integral > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_at": 2,
+        "asserts": [
+            { "schema": "Reading", "slots": { "dev": "k", "power": 1.0, "n": 1 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 2 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 3 } }
+        ]
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.5.1",
+  "category": "logical",
+  "scenario": "Geometric distance functions per LEXP.5.3 — `distance.euclidean` 2D (3-4-5 right triangle), `distance.manhattan` 2D, `distance.chebyshev` 2D, `distance.hypotenuse` 2D. All use integer-valued inputs with exact results.",
+  "rules_ds": "import distance\n\nschema T scope logical:\n    v: Int key\n\nrule r_euclidean:\n    T where distance.euclidean(0.0, 0.0, 3.0, 4.0) == 5.0\n->\n    log critical \"euclidean\"\n\nrule r_manhattan:\n    T where distance.manhattan(0.0, 0.0, 3.0, 4.0) == 7.0\n->\n    log critical \"manhattan\"\n\nrule r_chebyshev:\n    T where distance.chebyshev(0.0, 0.0, 3.0, 4.0) == 4.0\n->\n    log critical \"chebyshev\"\n\nrule r_hypot:\n    T where distance.hypotenuse(3.0, 4.0) == 5.0\n->\n    log critical \"hypot\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_euclidean", "r_manhattan", "r_chebyshev", "r_hypot"]
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.11",
+    "category": "compiler",
+    "scenario": "No serialisation across restarts per LSER.10.11 — series state cold-starts, and a series lives in working memory only: nothing in this edition carries its state across a restart (LSER.8.3.4). Runtime-only spec point: the engine deliberately doesn't snapshot/restore series state. Compile pins that a series declares with no persistence option to give; cold-start behavior is exercised in the runtimes' end-to-end tests.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "RFCS.19.5_a_tainted_interpolation_writes_json_tainted_before_interp",
+    "category": "compiler",
+    "scenario": "[RFCS.19.5]'s ascending order holds inside an `Expr` whose `json_tainted` (19) is set beside a oneof member numbered above it. An interpolation with a segment that reads a `Json` projection is tainted as a whole node ([IRET.9.6]), so the `log` action's message is an `Expr` holding `interp` (20) and `json_tainted` (19), and the writer must put 19 first. The program logs `r.payload.depth` from a `Json` slot. `atoms` requires the artefact to hold the `TerminalNode` that carries the action. The harness ([RCTS.1.2.19], `dsc_field_order`) walks the `.dsc` from its `Dsc` message by `proto/`'s field types, after showing the walk refuses the same artefact with two fields of one atom body swapped. Path: the compiler's encoder, `dsc.encode`'s `rdsc_4a_9_1_expr`, through `ds.wire`'s writer; the defect it meets is the provenance flag appended after the member it marks.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    payload: Json mutable\n\nrule depth:\n    Reading r\n->\n    log info \"depth {r.payload.depth}\"\n",
+    "expect": {
+        "kind": "dsc_field_order",
+        "atoms": ["DscHeader", "Slot", "SchemaLogical", "TerminalNode"]
+    }
+}

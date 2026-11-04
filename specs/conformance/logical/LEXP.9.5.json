@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.9.5",
+    "clauses": ["LEXP.9.5.1", "LEXP.9.5.3"],
+    "category": "logical",
+    "scenario": "`t.dwell` is the time since the fact entered working memory per LEXP.9.5.1 — expands at compile time. A rule gated on `s.dwell > 5_s` fires only after the monotonic clock has advanced 5_s past the fact's entry stamp; `ts` equals the entry time here, so this does not distinguish the two (LEXP.9.5b does). Pin: set clock to 0, assert Sensor(ts=0); advance 4_s — no fire (dwell=4_s < 5_s); advance 2_s more — fires (dwell=6_s > 5_s).",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    ts: Time\n\nrule stale_check:\n    Sensor s where s.dwell > 5_s\n->\n    log info \"stale\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1", "ts": 0 } },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["stale_check"]
+    }
+}

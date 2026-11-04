@@ -1,0 +1,18 @@
+{
+  "id": "LFST.9.3.1",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.9.3",
+  "seq": 568,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.9.3.1] If replay produces a `CallIssued` event that differs from\nthe recorded `CallIssued` at the same `seq`, replay fails immediately.\n\n**What is compared** is the atom KIND and the atom BODY — the whole body,\nnot a chosen subset of it, and every field byte for byte but a `timetag`, which\nis compared as an identity. `[LFST.9.3.6]` is the normative home of the field\nlist and of that pairing, and the list includes `clock_ns` and `seq`.\n\n**The compare has no exclusion list, and must never acquire one.** Every\nfield of a compared body participates: a `timetag` that breaks the pairing is the\nDivergence. A terminal fault is no exclusion either, because nothing follows it\n([LFST.9.2.1]). A field a replay cannot reproduce is\n**not** a reason to narrow the comparison — it is evidence that the replay is\nnot re-deriving under the recorded conditions, and the conditions must be\nbrought into line instead.\n\nSo every field of a compared body but a `timetag`, whose value is the engine's\nown ([RFCS.11.2]), must be a function of the recorded program, the recorded inputs, and the **session identity the replay adopts**.\nA field that is a function of the replaying *process* — a fresh id minted at\nengine creation, a wall clock, an address — is a defect in what the replay\nadopts, wherever it is found.\n\n**This clause binds replay** ([LFST.9.6]), the operation that re-derives.\nInspection ([RFCS.1.2]) re-derives nothing and compares nothing, so no\nsentence here reaches it.\n\n**And it does NOT bind a comparison between two ENGINES.** A differential\nharness that runs two implementations over the same inputs and diffs their\noutput is not replay: neither side is re-deriving a recording under the\nconditions that recording was made in, which is the situation every sentence\nabove is about.\n\nThe test is the remedy this clause prescribes. It forbids narrowing the\ncompare because *the conditions must be brought into line instead* — adopt the\nrecorded session identity, and the divergence disappears at its source. That\nremedy exists for a replay, which has one engine and one recording. It does\nnot exist for a differential, where the divergence can be that the two\nimplementations emit different event **sets** and so number `seq` differently\nwhile every recorded event matches. Nothing can be brought into line there,\nbecause nothing is out of line — the quantity being compared is not the same\nquantity.\n\n⚠ **A differential must not borrow this clause's authority, and that is the\nreal hazard.** A tool that tolerates divergences and reports itself as replay\nverification reads as a conformance result. Its tolerances are findings about\nthe two implementations, and they belong in its own output where a reader can\nsee them — not inherited from a clause that forbids exactly what the tool\ndoes.\n\nReplay fails immediately with:\n\n",
+  "refs": [
+    "LFST.9.2.1",
+    "LFST.9.3.6",
+    "LFST.9.6",
+    "RFCS.1.2",
+    "RFCS.11.2"
+  ]
+}

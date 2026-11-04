@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.6_typed_let_bad_annotation",
+    "category": "compiler",
+    "scenario": "LUNI.8.6 / LUNI.7.5 — typed-let annotation must be either the `Float` builtin or a canonical unit symbol in scope. An alias like `degC` (of celsius) rejects with DS_VALIDATE_LET_BAD_ANNOTATION pointing at the canonical name. Same gate as schema slot types (LUNI.7.5).",
+    "rules_ds": "unit celsius: temperature = x + 273.15 alias degC\n\nschema Reading scope logical:\n    raw: Float key\n\nrule bad:\n    Reading r\n->\n    let t: degC = r.raw\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_BAD_ANNOTATION"
+    }
+}

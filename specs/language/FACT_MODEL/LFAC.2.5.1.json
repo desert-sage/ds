@@ -1,0 +1,321 @@
+{
+  "id": "LFAC.2.5.1",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.2.5",
+  "seq": 281,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LFAC.2.5.1] **Engine-side (primary):** the engine\n  de-duplicates no-op reassertions as the correctness\n  contract. For `String`, `Bool`, `TYPE_NAME`, and default\n  `Int` / `Float` slots the comparison is exact equality; for a `Float` that\n  is IEEE 754 `==`, so a reassertion that turns `0.0` into `-0.0` is a no-op\n  ([LFAC.1.7.1]).\n  For `Json` slots the comparison is deep structural\n  equality: two values are equal iff they are the same kind and\n\n  - two objects have the same set of keys and, under each key, equal\n    values; member order carries no meaning;\n  - two arrays have the same length and equal elements, position by\n    position;\n  - two strings have the same bytes, two booleans the same value, and two\n    nulls are equal;\n  - two integers have the same value, and two floats compare by IEEE 754\n    `==`, so `0.0` equals `-0.0`.\n\n  An integer and a float are different kinds, so `1` and `1.0` are not\n  equal: a leaf keeps the kind it was written with ([LEXP.7.12.1]).\n\n  For a slot with a declared `tolerance` ([LGRA.5.9]; on a unit-typed slot,\n  in its base unit, [LUNI.7.4]), values within\n  the tolerance are treated as equal. **The bound is INCLUSIVE**:\n  the values are equal iff they are exactly equal or `|delta| <= tolerance`,\n  so a change of exactly `tolerance` IS suppressed. Two equal infinities are therefore equal under any tolerance,\n  though their `delta` is NaN. This matters in ordinary use rather than at a float\n  edge — `tolerance` is declared on `Int` slots too, where a delta\n  landing exactly on the bound is commonplace.\n\n  When a reassertion is suppressed, `dwell` does not reset, no series sample is\n  generated, and derived `logical` facts do not flicker.\n\n  The comparison is over the author's slots. `ts` is not compared\n  ([LFAC.9.1]): a reassertion that differs from the live fact only in `ts` is\n  a no-op, and the live fact keeps its `ts`.\n",
+  "refs": [
+    "LEXP.7.12.1",
+    "LFAC.1.7.1",
+    "LFAC.9.1",
+    "LGRA.5.9",
+    "LUNI.7.4"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_2_5_1__dedup_reflexive_symmetric",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_2_5_1__ts_is_not_compared",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Two reassertions of one value onto one fact decide alike whatever ts each supplies and at whatever sample: the no-op test is a function of the compared value. Bounded: six of each sig; fails if a no-op is made to require the supplied ts equal the live one."
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_9_2__noop_keeps_ts",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A suppressed reassertion leaves the live fact's ts, whatever it supplied: a reassertion that differs only in ts changes nothing. Bounded: six of each sig."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_1__live_val",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether some live fact of the kind carries the value."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_1__live_val_append_mono",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact keeps every live value live."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_1__live_val_append_self",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact makes its value live."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_1__live_val_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Liveness of a value of another kind is untouched by a change confined to one kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_1__same_val_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Exact equality is reflexive."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lfac_2_5_1__live_val_frame_pred",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Whether a value is live for a kind outside the change is unchanged."
+      },
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_8_6__after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A suppressed no-op reassertion does nothing to the stamps: '`dwell` does not reset'."
+      },
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_8_6__suppressed_keeps_stamps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'`dwell` does not reset' when a reassertion is suppressed: every stamp is as it was, for every lifecycle, working memory, value and sample."
+      },
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_8_6__three_asserts",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The suppressed reassertion at 5, executed: the stamp is still 3."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__a_member_more_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'The same set of keys' and 'the same length', executed: an object with a member more differs in either direction, and so does an array of another length or with its elements in another order."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__an_integer_is_not_a_float",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An integer and a float are different kinds, executed: 1 is not 1.0 and 0 is not 0.0, at the root and under a key."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__json_eq",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `Json` comparison, the clause's four bullets: two objects the same set of keys with equal values under each, member order carrying no meaning; two arrays the same length with equal elements position by position; two strings the same text (one token), two Bools the same value, two nulls equal; two integers the same value and two floats IEEE `==`, so 0.0 equals -0.0; an integer and a float never equal. The zeros are executed in Main.idr, the rest here."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__json_eq_list",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two arrays' elements, position by position, over equal lengths."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__member_covers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether some member of the first object has the second's key and a value equal to its value."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__member_in",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether a member of the first object has, in the second, a member with its key and an equal value."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__member_order_carries_no_meaning",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two objects with the same members in different orders are equal, executed."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__members_covered",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every member of the second object has, in the first, a member with its key and an equal value -- the first object's values on the left of every equality, as in `lfac_2_5_1__members_in`, so the recursion is structural."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__members_in",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every member of the first object has, in the second, a member with its key and an equal value."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__assert_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A reassertion equal in every slot is suppressed (`Nothing`, nothing to propagate) for the two `logical` lifecycles and never for explicit. Equality is exact; the per-slot `tolerance` rules and the suppression counter are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lfac_2_5_1__same_val",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Exact equality of slot values."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lfac_2_5_1__val",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact's slot values, the pair the comparison is over."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_1__assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The no-op reassertion: an identical value is suppressed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_1__assert_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A suppressed reassertion leaves the view as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A suppressed reassertion leaves every chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A suppressed reassertion changes nothing, shapes included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_rows_emitted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A suppressed reassertion changes nothing, the row property included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_inputs_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An entity re-asserted with its live payload and a relation re-asserted: the clause's suppressed no-ops, among the inputs. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's suppression executed: the entity's unchanged reassertion and the relation's second assertion leave working memory, the alpha memories and A's activations as they were. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__assert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A suppressed reassertion changes nothing, so every activation stays unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_1__entity_noop_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's de-duplication on an entity with one payload: one firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_1__relation_noop_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's de-duplication on a relation: one fact, one activation, one firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_1__assert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A suppressed reassertion leaves the order as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A suppressed reassertion asserts no fact: the set is kept, and refuses nothing new."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/lfac.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "lfac_2_5_1__noop",
+        "tag": "spec"
+      }
+    ]
+  }
+}

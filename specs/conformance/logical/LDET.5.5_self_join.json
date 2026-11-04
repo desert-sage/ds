@@ -1,0 +1,15 @@
+{
+    "id": "LDET.5.5_self_join",
+    "category": "logical",
+    "scenario": "[LDET.5.5]: matches that complete together are ordered by their facts, when one assertion completes them along two network paths. A self-join, `A x` then `A y`: asserting a2 after a1 enters a2 as `x` and as `y`, completing (a2, a1) and (a1, a2) in one event. The key orders them pattern by pattern, so (a1, a2) takes the lower timetag and fires first. PATH PINNED: Mercury's `ds.match.enter_alpha` right-activates the root join before the second (`betas_of`, artefact order), so (a2, a1) reaches the completing join first and only `flush_completions`' sort puts (a1, a2) ahead of it; stamping in arrival order fires `a2 a1` first. The memory-order fixtures (`LDET.5.5d`, `LDET.5.5_indexed_*`, `LDET.5.9_dense_order_history`) cannot pin Mercury's sort, because its memories stay in insertion order. For libds this fixture pins the same hold-and-sort only if its alpha successor order also reaches the root join first, which it does not establish. The `where` excludes the diagonal so no match is completed twice.",
+    "rules_ds": "schema A scope logical:\n    name: String key\n\nrule r:\n    A x\n    A y where y.name != x.name\n->\n    log critical \"{x.name} {y.name}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "A", "slots": {"name": "a1"}},
+            {"op": "assert", "schema": "A", "slots": {"name": "a2"}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a1 a2", "a2 a1"]
+    }
+}

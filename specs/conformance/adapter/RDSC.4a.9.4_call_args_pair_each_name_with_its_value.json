@@ -1,0 +1,32 @@
+{
+    "id": "RDSC.4a.9.4_call_args_pair_each_name_with_its_value",
+    "category": "adapter",
+    "scenario": "RDSC.4a.9.4 / RLOW.7.3.1: a call whose kwargs are written in reverse order -- `zeta, mid, alpha` -- reaches the integrator's cb with each name paired with its own value. The compiler emits FN_CALL(service, corr, \"alpha\", t.v, \"mid\", 1.5, \"zeta\", \"z\"), its name/value pairs sorted by name (`dsc.rete`'s `rlow_7_3_1_call`), and the runtime reads each argument's name from its own pair. Path: libds's interpreted call bridge, `bridge_call` in engine_rete_adapters.c, through pyds's call callback; the Mercury runtime's `ds.exec` call arguments are compared against it by the runtime differential's `22_call_payload` on `46_call_order`, the same shape. The three values are three kinds, Int from a slot read, Float and String literals, so a runtime that took the names in one order and the values in another hands over an argument of the wrong kind and the body differs. It pins the PAIRING, not the order of the dict -- `body` is compared as a mapping; the artefact's order is RLOW.7.3.1_kwarg_order_does_not_reach_the_artefact's.",
+    "rules_ds": "service svc.put:\n    kwarg zeta: String\n    kwarg alpha: Int\n    kwarg mid: Float\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule put:\n    Trig t\n->\n    call svc.put zeta: \"z\" mid: 1.5 alpha: t.v nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 7
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.put",
+                "correlation": "$put_c0_g0",
+                "body": {
+                    "alpha": 7,
+                    "mid": 1.5,
+                    "zeta": "z"
+                }
+            }
+        ]
+    }
+}

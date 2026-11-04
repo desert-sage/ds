@@ -1,0 +1,20 @@
+{
+    "id": "LTSL.2.4_a_dstest_that_is_no_modules_companion_is_not_read",
+    "category": "compiler",
+    "scenario": "[LTSL.2.4]: the compiler reads each compiled module's companion and no other `.dstest`. Beside the program, `main.dstest` is its companion and holds one test; `stray.dstest`, whose stem names no module, holds another. Beside library `alpha`, under `-L`, `zeta.dstest` holds a third, and no `zeta.ds` is there. Each test is one the compile would carry if it read the file, so the artefact holding the companion's test alone is the stray files not read. The compile is from files ([RCTS.1.2.35]): a harness handing the compiler its companions itself could not show this. PATH PINNED: dsc.cli `ltsl_2_4_read_companion`, which opens only the `.dstest` with a compiled `.ds`'s stem.",
+    "rules_ds": "use default\n\nimport alpha\n\nschema Tick scope logical:\n    id: Int key\n\nschema Tock scope logical:\n    id: Int key\n\nrule tock:\n    Tick p\n->\n    emit Tock logical id: p.id\n",
+    "libraries": {
+        "alpha": "schema Ping scope logical:\n    id: Int key\n\nschema Pong scope logical:\n    id: Int key\n\nrule answer:\n    Ping p\n->\n    emit Pong logical id: p.id\n"
+    },
+    "files": {
+        "main.dstest": "test \"the companion\":\n    inputs:\n        at 0_s:\n            Tick id: 1\n    produces:\n        activated tock\n",
+        "stray.dstest": "test \"a stray beside the program\":\n    inputs:\n        at 0_s:\n            Tick id: 2\n    produces:\n        activated tock\n",
+        "lib/zeta.dstest": "test \"a stray beside a library\":\n    inputs:\n        at 0_s:\n            Tick id: 3\n    produces:\n        activated tock\n"
+    },
+    "expect": {
+        "kind": "dsc_test_cases",
+        "test_cases": [
+            {"test_id": 1, "name": "the companion", "module": ""}
+        ]
+    }
+}

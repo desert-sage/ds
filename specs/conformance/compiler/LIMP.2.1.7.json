@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.2.1.7",
+    "category": "compiler",
+    "scenario": "[LIMP.2.1.7] / [LGRA.22.5] — `import … as` aliasing, both forms. `import ha as h` binds the library qualifier `h`; the call names `ha`'s service bare, `svc.foo`, since a service is not reached through a library (LGRA.10.1.6), and `from hb import Sensor as BSensor` binds the selective name under the alias `BSensor` (used here as a pattern). Aliasing lets an author bring names into scope under a chosen local name; it is the tool that resolves a same-name collision, since a name's role is fixed by its position and comparison is case-sensitive. Both aliased names resolve and the program compiles.",
+    "rules_ds": "import ha as h\nfrom hb import Sensor as BSensor\n\nschema Trig scope logical:\n    v: Int key\n\nrule use_bsensor:\n    BSensor\n->\n    log info \"b\"\n\nrule trigger:\n    Trig\n->\n    call svc.foo cooldown: 30_s as \"corr1\"\n",
+    "libraries": {
+        "ha": "service svc.foo:\n    kwarg dummy: Int\n    no response\n",
+        "hb": "schema Sensor scope logical:\n    id: String key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

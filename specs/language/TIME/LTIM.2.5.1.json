@@ -1,0 +1,1914 @@
+{
+  "id": "LTIM.2.5.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.5",
+  "seq": 199,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.5.1] A rule gated on a time-dependent condition **must fire once per\nfalse → true edge** of the condition for a given matched fact wrapper, on the\npump at which the edge occurs, and **must not re-fire** on subsequent pumps\nwhile the condition remains true. This edge-once behaviour is a consequence of\nrefraction ([LDET.5.3]) with [LDET.5.8]: a clock tick is not a change to the\nLHS, so a fired activation stays refracted across pumps for as long as its\nmatch persists.\n\nA pump that ends at a firing limit leaves the activation unfired; it fires on a\nlater pump if its match persists until then.\n\n**A condition that closes ends the match, and a reopening is a new edge.** When\nthe condition goes true → false, the match ends and its activation with it, as a\n`within` window's does ([LTIM.2.7.2]); no memory of the firing outlives the\nactivation. When the condition goes false → true again for the same wrapper, the\nnew match fires. A gate that stays true once true fires once per wrapper; a\nwindow that shuts and reopens, or a `now()` gate the wall clock crosses back and\nforth ([LTIM.2.8.3]), fires once per opening.\n\n",
+  "refs": [
+    "LDET.5.3",
+    "LDET.5.8",
+    "LTIM.2.7.2",
+    "LTIM.2.8.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_7_1__within_falls",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `within` window on a fixed stamp changes at most once, true to false: it shuts and does not reopen for that entry, so 'a window that shuts and reopens' is a window on a new entry, a new wrapper."
+      },
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_8_6__dwell_gate_rises",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WHICH GATES CAN REOPEN: a `dwell >= d` gate on a fixed stamp changes at most once, false to true, so it 'stays true once true' and the clause's once per edge is once per wrapper for it. Only a gate that reads the wall clock can reopen, which is [LTIM.2.8.3]'s last sentence."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__at_most_once_is_an_instance",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A rising gate's one edge, on the timer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__edges_after_due",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rising gate makes no edge once true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__edges_are_first_due",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The one edge of the timer's gate, located."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__fires_on_the_first_due_tick",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per edge, and the timer's gate has its edge at the first due tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__timer_counts_are_edges",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per false-to-true edge, for the timer's gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_3__due_rising",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rising gate: true once true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__late_fires_once_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A gate that stays true once true fires once per wrapper: `rule late` fires in the third of four pumps and never again, `[0, 0, 1, 0]`, on the composed engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_4_2__unfired_are_born_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What the pump after a tick fires is exactly the matches the tick made: one firing per edge, on this engine's timed chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__closing_ends_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A condition that closes ends the match': under the view, the re-timed chain holds no activation whose match the new test refuses, fired or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__edge_once_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EDGE-ONCE ACROSS TWO SUCCESSIVE TICKS of this engine, for any gate: no match is made by both the tick to `c1` and the tick to `c2`, because the chain re-timed at `c1` carries the test at `c1` and the next tick re-times from it -- a match the second tick makes was refused at `c1`, which the first tick admitted. No hypothesis on the gate: Tick's `ltim_2_5_1__edge_once` needs `Ltim_2_5_1__rising` to carry a verdict from one tick's end to the next's start, and here the two are one clock. The clause's claim over a history -- a rising gate fires once per wrapper, the pump counts are the gate's rising edges -- is `ltim_2_5_1__rising_fires_at_most_once` (Rete/NetworkTwoClocks.idr) and `ltim_2_5_1__counts_are_edges` (Rete/NetworkEdges.idr)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__expired_fact_cannot_reopen",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A wrapper that expired while the gate was shut is not there to reopen on: `[1, 0, 0, 0]`, computed. Once per edge is once per wrapper, and the wrapper is gone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A reopening is a new edge': an activation whose match the tick made is unfired, whatever fired before the gate shut."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__second_edge_refires_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A window that shuts and reopens fires once per opening': `[1, 0, 1, 0]` over ticks 1 to 4 on the composed engine, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_2367",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The window `{2, 3, 6, 7}`, the shape formal/tla/refraction_readings.tla and the conformance fixture `LTIM.2.5.1_window_reopens.json` share. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_2367_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "ONE WINDOW, THREE MODELS: over ticks 1 to 7 the rule fires in the second pump and the sixth, `[0, 1, 0, 0, 0, 1, 0]`, one firing per opening -- the same answer formal/tla/refraction_readings.tla (`tick_edge_twice`, `1@2 1@6`), formal/tla/edge_once_firing.tla's `probe.refires` and the conformance fixture `LTIM.2.5.1_window_reopens.json` give."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_2367_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "That window as a time-dependent join test. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_2367_start",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule under that window loaded with one `Ping`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_program",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The window rule's program. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_start",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The window rule loaded with one `Ping`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "Ltim_2_5_1__action_free",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ACTION-FREE: every rule's action list is empty -- rules that only log, as [LDET.5.8]'s example does. The frame of B0 and B1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "Ltim_2_5_1__edges",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RISING EDGES of a gate over a history of ticks from a starting clock, one per tick: the clause's 'false to true edge', counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__action_free_mark",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking keeps a program action-free."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__action_free_tick",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "So the tick keeps a program action-free."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__born_edge",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a tick makes of one fact and the nil token: one match if the gate was false and is true, none otherwise. All four cases."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__counts_are_edges",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "B2. THE COUNTS ARE THE EDGES: for one fact and one rule under ANY gate on the clock, with no actions and no deadline, the firings of ANY sequence of ticks from ANY starting clock are the gate's rising edges over that history, one count per pump. Once per false-to-true edge, for every gate and every history: a gate that stays true once true fires once, a window that shuts and reopens fires once per opening. Part A's `[1, 0, 1, 0]` is its instance."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__edge_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE TICK'S EDGE: 1 where the gate is false at the clock before the tick and true at the clock after it, else 0."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__edge_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An edge count is below any fuel of two or more."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A gate on the clock alone, as a timed test: `now() > t`, a window, any predicate of the clock. A fixture family."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__held_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one rule's activations when quiescent: the `Ping` match, fired, if the gate is true; nothing if it is false. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE FACT, ONE RULE, ANY GATE: the clocked network holding one `Ping`, one alpha admitting it, one chain whose single positive node carries the gate at the clock, no actions, no dependency row, no deadline; quiescent at the clock. A fixture family."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_after",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What the tick and the run leave of the one rule's activations, from quiescence at the old gate value: quiescence at the new one. A gate that stays true keeps the fired match; one that closes ends it; one that opens makes a new match, which the run fires. All four cases."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_born",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The matches the tick makes of the one rule are its edge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_pump",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE PUMP OF THE ONE RULE: from the quiescent state at a clock, the pump at a tick fires the edge and leaves the quiescent state at the new clock. B1 at the one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_quiescent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The one rule is quiescent at either value of the gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_tick",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The one rule after the tick and the run: the one rule at the new clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__pump_fires_the_born",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "B1. THE PUMP FIRES THE BORN, on the composed engine: from a quiescent action-free state with an empty dependency table and nothing expiring at the new clock, the pump at a tick fires exactly as many times as the tick made matches over every timed chain, halts `Quiescent`, and leaves the state the tick made with every activation marked. Each born activation fires once and none twice. Inhabited by `ltim_2_5_1__one_rule_pump`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__run_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "B0. THE RUN IS ONE MARK PER UNFIRED ACTIVATION: under an action-free program, with fuel above the number of unfired activations, the run halts `Quiescent`, fires exactly that many times, and leaves every activation of every chain marked -- working memory, the alphas, the nodes, the tuples, the dependency table, the deadlines and the clock as they were. The frame is syntactic: a step under it is the marking of one activation and nothing else; a program with actions is outside it (Rete/NetworkFrame.idr has the general frame)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__second_edge_refires_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "PART A'S `[1, 0, 1, 0]` IS AN INSTANCE OF B2: Rete/NetworkClocked.idr's executed witness is the edge theorem at the window gate, from clock 0, over the ticks 1, 2, 3, 4."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__window_edges",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The window's rising edges over ticks to 1, 2, 3, 4 are `[1, 0, 1, 0]`, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__window_start_is_one_rule",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The window of Rete/NetworkClocked.idr, loaded and holding its `Ping` at clock 0, is the one-rule state under the window gate. A TRANSCRIPTION: two definitions coincide, `Refl`; it fails if either is changed and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "Ltim_2_5_1__frame_inv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FRAME INVARIANT: the view, and the shapes kept against the loaded network. Every working-memory operation and every firing keeps it. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME. From the loaded network, after any inputs applied with no pump between them, a pump that reaches quiescence fires a framed chain exactly as many times as it has matches when the pump begins: its activations are its distinct matches ([IRET.7.7], [IRET.11.1], in the view), each fires once and none twice ([IRET.11.3], [LDET.5.3], in the run), whatever the other rules emit and withdraw meanwhile. Rete/NetworkOnce.idr's theorem with the action-free frame replaced by this one; the plain network, so no cascade and no sweep. Every hypothesis is discharged by computation at `ltim_2_5_1__two_rules_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__a_is_framed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A IS FRAMED: computed over the loaded program."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__b_is_not_framed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "B IS NOT: A writes kind 1, which B reads. Computed; the frame refuses what it should."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "HOW OFTEN AN ORDINAL FIRED in a trace. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__count_hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The count steps on the counted ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__count_miss",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And stands on any other."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__count_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One more when the ordinal is the one counted; by pattern matching, so a proof reduces it by rewriting the test alone. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__emit_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A's RHS: emit a kind-1 fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__emit_two_withdraw",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "B's RHS: emit a kind-2 fact and withdraw its own kind-1 fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__framed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FRAMED: no rule of the program -- the chain's own included -- writes into the chain. A Bool over the loaded alphas and chains, so that a witness checks it by computation; syntactic, since an emit names its schema. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__framed_rule",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Under the frame, no kind a rule of the program writes is one the chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__kind_or",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind, or none, in front of a list. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__kind_or_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A kind in front of a list, or not: a member of the list is a member."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__reads",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE KINDS A CHAIN READS: the schema of each node's alpha, positive and NOT nodes alike; the dangling node's schema is 0, of which it admits nothing. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__reads_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Alphas of one shape read alike."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__run_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RUN UNDER THE FRAME, on the traced plain run: over any fuel, from any state with the invariant, a framed chain's tuples never change, its firings in the trace are exactly its activations that went from unfired to fired, and if the run halts `Quiescent` every one of them fired. Whatever the other rules do, however the run halts: fuel is not assumed to suffice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__step_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING UNDER THE FRAME: the invariant is kept, and the framed chain is as it was unless it is the rule that fired, when exactly the activation selected, unfired before, is marked and nothing else of the chain moves. The firing rule's RHS, emits and withdraws alike, leaves the framed chain because none of its writes is a kind the chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_inputs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE INPUTS: two kind-0 facts, with no pump between them. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE PROGRAM: three schemas; rule A reads kind 0 and emits kind 1; rule B reads kind 1, emits kind 2 and withdraws its own fact. A is framed, nothing writes kind 0; B is not, A writes what B reads. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_fires_twice",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the number is two: A had two matches when the pump began and fired twice. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE FIXTURE: every hypothesis discharged by computation -- the frame, the chain as the inputs left it, the run, the halt -- and the count of A's firings is the number of its matches. Executed; what makes the theorem not vacuous."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE: A fires for its first match, emitting a kind-1 fact that gives B a match; A fires for its second; then B fires twice, each time emitting and withdrawing its own fact. `[0, 0, 1, 1]`, quiescent. A fired twice for its two matches while B's RHS wrote between. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A chain's rule's writes, against the alphas. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_emit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emit's kind is among the rule's writes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_into",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A RULE WRITES INTO A CHAIN when some kind it writes is one the chain's nodes read. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE KINDS A RULE WRITES, from its positive kinds and its actions: an emit's kind; a withdraw's, the positive kind at the withdrawn position. The frame's vocabulary, under the clause it serves; the clause says nothing of frames."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_withdraw",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A withdraw's kind, the positive kind at its position, is among the rule's writes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_7__do_action_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ACTION of a rule that does not write into the chain leaves the chain and keeps the invariant: an emit asserts its kind, a withdraw retracts a fact of the rule's positive kind at that position, and neither kind is one the chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_7__do_actions_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RHS of a rule that does not write into the chain leaves the chain, action by action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__emitted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A KIND SOME RULE OF THE PROGRAM EMITS: a chain of the program with an emit of that kind among its actions. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__rows_emitted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "EVERY ROW TARGETS AN EMITTED KIND: a live fact carrying a row's target id is of a kind some rule of the program emits. With unique ids, that is the fact a cascade retracts for the row. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__rows_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "EVERY ROW'S TARGET IS LIVE: what the cascade's fixpoint leaves, and what a mint relies on so that a fresh id is no row's target. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__tms_inv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FRAME INVARIANT WITH TRUTH MAINTENANCE, within an action: the plain frame invariant, unique fact ids, every row targeting an emitted kind. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__tms_inv_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "BETWEEN ACTIONS: the invariant, and every row's target live. The state every operation starts from and the cascade returns to. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE AND THE CLOCK. From the loaded clocked network, after any inputs -- data events and ticks that sweep -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins, whatever the other rules emit and withdraw and whatever their endings cascade: a cascade's targets are emitted kinds, which a framed chain does not read. Rete/NetworkFrame.idr's theorem on the engine Rete/NetworkClocked.idr runs; a prepare that re-times is outside it and is Rete/NetworkFrameRetime.idr's. Every hypothesis is discharged by computation at `ltim_2_5_1__one_fact_is_an_instance_ttl`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Any number of phases skips a framed chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE CASCADE SKIPS A FRAMED CHAIN. A CASCADE'S TARGETS ARE EMITTED KINDS: a row is recorded by a logical emit and targets the fact that emit left live, so what a cascade retracts is of a kind some rule of the program emits, which under the frame no framed chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_step_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE PHASE SKIPS A FRAMED CHAIN: what it retracts are targets of rows, so facts of emitted kinds, which the chain does not read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "RETRACTING IDS SKIPS A CHAIN that reads none of their kinds: every fact retracted is looked up by its id and is of a kind the chain does not read, so dispatch leaves the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__a_is_framed_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A IS FRAMED in the loaded program, B first or not. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__admits_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ALPHA TEST OF THE FIXTURES: admit every fact. Named so that a literal state names it rather than spelling a lambda. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__alphas_three",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ALPHAS: three schemas, kinds 0, 1 and 2, admitting every fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__emits_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emit's kind is among the rule's emits."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__emits_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE KINDS A RULE EMITS: an emit's kind; a withdraw emits nothing. What a cascade can target. The frame's vocabulary with truth maintenance, under the clause it serves; the clause says nothing of frames or of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__emits_writes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emitted kind is a written kind: Rete/NetworkFrame.idr's `writes_of` contains `emits_of`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__emitted_not_read",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "UNDER THE FRAME, NO EMITTED KIND IS ONE THE CHAIN READS: an emitted kind is written, and the frame forbids every rule of the program to write a kind the chain reads. The sentence that makes a cascade skip a framed chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_chain_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CHAIN AS THE ENTITY INPUTS LEFT IT: A holds the replacement's match, unfired; the replaced wrapper's ended with it. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_fires_once_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the number is one: the replacement's match, fired once. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_inputs_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ENTITY INPUTS: the entity asserted, replaced with a new payload, re-asserted unchanged; a relation asserted and asserted again. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE ENTITY FIXTURE: A's firings are its matches, 1, the replacement's; the replaced wrapper's is gone and the no-ops made none. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE NETWORK AS THE ENTITY INPUTS LEFT IT, as a literal: the replace retracted the first wrapper and minted the new one against the memory the old was still in, id 1, A's activation the new wrapper's and unfired; the two no-ops changed nothing; the relation took the freed id 0. Computed once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE ENTITY STATE: A fires for the replacement's match, B fires and cascades, `[1, 0]`, quiescent; the entity and the input relation, which no row targets, are left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__fuel_out_count_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE COUNT EQUATION AT `FuelOut`, read at its instance: A's unfired activations after, 1, plus its firings in the trace, 1, are its unfired activations before, 2; the all-fired conjunct is not claimed. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__life_entity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE LIFECYCLES OF THE ENTITY FIXTURE: kind 0, the kind A reads, an entity; kind 2 a relation; kind 1 explicit. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__no_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TTL OF THE FIXTURES: none, for every kind. Named so that every statement of the two-fact run spells it the same way and the checker compares statements syntactically rather than by evaluating the run. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_fires_once_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the number is one: A had one match when the run began and fired once, through B's cascade. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE FIXTURE: the frame and the chain as the input left it discharged by computation, the run and the halt by the trace, and the count of A's firings is the number of its matches, through B's cascade. Executed; what makes the theorem not vacuous."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE NETWORK AS THE INPUT LEFT IT: the loaded clocked network at clock 0, the input prepared, no run after it. A holds one match, unfired; B holds none. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CHAIN AS THE INPUT LEFT IT: A, at ordinal 1, holds the one match, unfired, after the prepare's sweep, assert and cascade. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE, AND THE CASCADE: A fires for its match and emits a kind-1 fact; B, now matched and at the lower ordinal, fires next, emitting its kind-2 fact and withdrawing the kind-1 fact it matched, which ends its activation, and the cascade that follows retracts the kind-2 fact it had just recorded. `[1, 0]`, quiescent, and only the kind-0 fact remains: no kind-2 fact survives its justifier. Executed, with fuel 3."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_input_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE INPUT OF THE ONE-FACT FIXTURE: one kind-0 fact, whose run evaluates as one `Refl`. The two-fact run, with B's cascade between A's two firings, does not evaluate as one `Refl` within the lane's wall clock (dev-mcp jobs ds-00275 and ds-00277, past 1,800 s where the proofs alone take 644 s); it is `ltim_2_5_1__two_facts_run_ttl`, firing by firing from literal states, as Lcyc/TmsWitnesses.idr has. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A FRESH FACT IS NO ROW'S TARGET: with every row's target live, a fact whose id is not live, appended to any part of the memory, keeps the row property. Where fact-id reuse is ruled out: a stale row could name a reused id, and the cascade's fixpoint leaves no stale row."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_record",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A RECORDED ROW targets a live fact of an emitted kind; with unique ids that fact is the only one carrying the id."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Fewer facts and fewer rows keep the row property."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rules_b_first",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RULES, Rete/NetworkFrame.idr's two with B loaded first: B reads kind 1, emits kind 2 and withdraws its own kind-1 fact; A reads kind 0 and emits kind 1. B at the lower ordinal is selected as soon as A's firing gives it a match, so B's firing and the cascade its withdrawal starts fall inside A's run. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__run_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RUN UNDER THE FRAME on the clocked network: over any fuel, from any state between actions with the invariant, a framed chain's tuples never change, its firings in the trace are exactly its activations that went from unfired to fired, and if the run halts `Quiescent` every one of them fired. Whatever the other rules do and whatever their endings cascade, however the run halts: fuel is not assumed to suffice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__step_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING UNDER THE FRAME on the clocked network: the invariant is kept, and the framed chain is as it was unless it is the rule that fired, when exactly the activation selected, unfired before, is marked. The cascade of every action is inside: it retracts targets of rows, of emitted kinds, which the chain does not read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_chain_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CHAIN AS THE TICKED INPUTS LEFT IT: A holds the one match the sweep left, unfired. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_fires_once_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the number is one: of A's two matches before the second tick the sweep ended one, and A fired once for the other. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_inputs_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TICKED INPUTS: a kind-0 fact at clock 0 (deadline 2), a tick to 1 that expires nothing, a second kind-0 fact at clock 1 (deadline 3), a tick to 2 that expires the first. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE TICKED FIXTURE: A's firings are its matches after the sweep, 1; the expired fact's match is not among them. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE NETWORK AS THE TICKED INPUTS LEFT IT, as a literal: the first fact swept at the second tick, its deadline at the clock, gone from working memory, its alpha memory and A's activations; the second live with its deadline ahead; the swept fact's row kept in the deadline table until its id is minted again; the clock at 2. Computed once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE TICKED STATE: A fires for the surviving match, B fires and cascades, `[1, 0]`, quiescent, the kind-0 fact alone left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ttl_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TTL OF THE TICKED FIXTURE: two for kind 0, none for the rest. Named so that every statement spells it the same way. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_fires_twice_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the number is two: A had two matches when the run began and fired twice, with B's firing and cascade between them. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_fuel_out_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE RUN THAT RUNS OUT OF FUEL: the two-fact fixture with fuel 1 -- A fires for its first match and the fuel is spent, `FuelOut`, trace `[1]`, B's match made and unfired, A's second match unfired. One firing as a `Refl` from the literal, then the run with no fuel, chained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE TWO-FACT FIXTURE: the frame and the chain as the inputs left it by computation, the run and the halt by the chain of firings, and the count of A's firings is the number of its matches, through B's two cascades, one of them between A's firings. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CHAIN AS THE TWO INPUTS LEFT IT: A, at ordinal 1, holds its two matches, unfired, in assertion order. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE NETWORK AS THE TWO INPUTS LEFT IT, as a literal: the loaded clocked network at clock 0, both inputs prepared, no run after them; A holds two matches, unfired, in assertion order, B none, no rows, no deadlines. Computed once; the other claims reach the prepared network through this equation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_run_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TWO-FACT RUN, FIRING BY FIRING: A fires for its first match; B, matched and at the lower ordinal, fires next, records the row for its kind-2 fact, withdraws the kind-1 fact it matched and the cascade retracts the kind-2 fact; A fires for its second match, minting the withdrawn id again; B fires and cascades again. `[1, 0, 1, 0]`, quiescent, only the two kind-0 facts left. Each firing a `Refl` from a literal state, chained by `iret_11_4__run_ttl_net_traced_cons` as Lcyc/TmsWitnesses.idr does; the four-firing run as one `Refl` is beyond the type-level evaluator within the lane's wall clock. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_inputs_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TWO INPUTS: two kind-0 facts, prepared with no run between them. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_rules_entity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ENTITY PROGRAM: the two rules, B first, with kind 0 an entity. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_rules_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE PROGRAM: kind 2 is a relation, so B's emit records a row and B's withdrawal ends the activation that recorded it; kinds 0 and 1 are explicit. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_action_tms_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ACTION WITH TRUTH MAINTENANCE under the frame, from a state between actions: the core action leaves the framed chain and keeps the frame invariant (Rete/NetworkFrame.idr), unique ids and the row property; the record targets an emitted kind of the firing rule; the cascade leaves the framed chain and ends between actions again."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_actions_ttl_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RHS on the clocked network leaves a framed chain and keeps the invariant, action by action; the deadline table rides beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per match through the tick that re-evaluates the condition: a match the tick makes true fires once, a match it makes false does not fire, under the frame."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The frame invariant under the clause, kept through the tick that decides the clause's edges."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__a_is_framed_gated",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The framed chain of the opening fixture, its re-timed node read for its alpha alone. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__a_is_framed_shutting",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The framed chain of the shutting fixture. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__b_shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which rule carries the condition that closes: B's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__emit_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A logical emit with no withdraw, so the match that recorded the row outlives the firing. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ended_fired_cascade",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "What ending a fired match does to what it recorded: its row goes and its logical fact is retracted. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ended_fired_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A condition that closes ends the match, executed on a FIRED match: no activation remains. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fact_then_tick",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact, then the tick that re-evaluates the condition over it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network with the fact asserted while B's condition is open. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_row",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "B's row, recorded by its firing under the open condition. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run in which B fires under the open condition and records its row. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_then_tick",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tick on which B's condition closes, after its match fired. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A and B fire once each; B's match is live and fired after the run. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gate_open_match",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Before the condition closes it is true and the match is live, unfired. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gate_shut_no_match",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Before the edge the condition is false and there is no match. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_clock",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clock the edge is read at, 1, after the tick. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "One edge, one firing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the opening fixture: one firing for the one match the edge made. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network after the edge: the condition true, the match live and unfired. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The false-to-true edge, executed: the tick re-evaluates the condition true and the match is a new, unfired activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The match the edge made fires once, with B's cascade inside the run. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gates",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which rule carries the time-dependent condition the tick re-evaluates: A's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__opens_at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent condition that becomes true at clock 1: the false-to-true edge of the clause. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_b_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two rules with the condition that closes on B, the rule that records a row. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two rules with A's condition the opening gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two rules with A's condition the shutting gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_fires_none",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A condition closed, nothing fired. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the shutting fixture: no firing for no match. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network after the condition closed: the match ended. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A condition that closes ends the match, executed: the tick re-evaluates it false and no activation remains, fired or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The ended match does not fire. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shuts_at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent condition that becomes false at clock 1: the condition that closes. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which rule carries the condition that closes: A's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The framed chain after the swept tick: no match. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_fires_none",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Swept, then no edge, no firing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the swept fixture: no firing for no match, the fact gone before the edge. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network after a tick that swept the fact and re-evaluated the condition: no match. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The sweep before the re-evaluation, executed: the condition opens on nothing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Nothing to fire after the swept tick. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ttl_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TTL that expires the fact at the tick the condition would open on. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_b_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The program with B's emit logical under the closing condition. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The program with the opening gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The program with the shutting gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Resets each pump' is consistent with the model in the tick-free fragment: a reset at the pump's input is one of [IRET.11.3.2]'s clearings, and clearings refuse nothing. The per-fact one-shot the clause needs for time-gated rules is item 4's, with [LDET.5.8]."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_sampled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per match through samples taken at every input: a match a sample makes true fires once, under the frame."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact arriving at the sample the condition becomes true at. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The false-to-true edge at a data input's sample, executed: the match is a new, unfired activation. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "One edge, one firing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the fixture: one firing for the one match. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network after that arrival: the condition true, the match live and unfired. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The match the edge made fires once, with B's cascade inside the run. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__fact_then_tick_is_steps",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The opening fixture of Rete/NetworkFrameRetime.idr reached as two sampled steps. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_1__is_framed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A sequence chain under the general frame. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_1__pairs_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Once per match, for a sequence's matches. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "Ltim_2_5_1__rising",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A gate that stays true once true: `now() > t`, the shape of every example in the clauses."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__late_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S OBSERVABLE, on the network: assert one Ping, pump twice with the gate shut, advance the clock past it, pump twice more -- `late` fires exactly once, in the third pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_4_2__unfired_are_born",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After a quiescent pump a tick leaves unfired only the matches it made: what the next run fires is exactly what the tick made true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__closing_ends",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CONDITION THAT CLOSES ENDS THE MATCH: after a tick, under the view, no activation is left whose match the new test refuses, fired or not. The match ends and its activation with it, as a `within` window's does; no memory of the firing outlives the activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__edge_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EDGE-ONCE for a gate that stays true once true: two ticks, the second starting no earlier than the first ends, never both make the same match, so with `ltim_2_4_2__unfired_are_born` a match fires in at most one pump, on the tick its condition goes false to true. 'Must not re-fire on subsequent ticks while the condition remains true', on the engine with time-dependent tests and no tables. A gate that closes and reopens is a new edge, as the clause requires: `ltim_2_5_1__closing_ends`, `ltim_2_5_1__reopening_is_unfired`, and the executed `ltim_2_5_1__second_edge_refires`. On the engine with the tables, Rete/NetworkTwoClocks.idr's `ltim_2_5_1__rising_fires_at_most_once` is the count over any history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A REOPENING IS A NEW EDGE: an activation of a match the tick made is unfired, whatever was fired before the gate shut. Under the view no old activation can carry that match, since the old test refused it; so it is one the tick made, and the tick makes its activations unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__second_edge_refires",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE SECOND EDGE FIRES AGAIN, as the clause requires: one `Ping`, one wrapper, never retracted; the window `(now() > 0 and now() < 2) or now() > 2` opens at 1, shuts at 2, reopens at 3. The rule fires in the first pump and in the third, `[1, 0, 1, 0]`: once per opening. Computed; what the clause says."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`(now() > 0 and now() < 2) or now() > 2`: open at 1, shut at 2, open again from 3 -- the clause's window that shuts and reopens. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__window_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The window as a time-dependent join test. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__window_loaded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule under the window loaded at clock 0: one alpha for Ping, one positive node carrying the window, an RHS that only logs. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lcdb_3_2_3__on_delay_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Fire once per false to true edge ... and must not re-fire on subsequent ticks while the condition remains true': a `dwell` gate stays true once true, and the pump at 6 fires nothing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lcdb_3_2_3__retracted_before_t_fires_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "No edge for a wrapper that left working memory before the condition held. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_1__dwell_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `dwell` WINDOW that shuts and reopens: `(dwell >= 2 and dwell < 4) or dwell >= 6`, logical/LTIM.2.5.1_window_reopens's gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_1__dwell_window_reopens",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A `dwell` WINDOW THAT SHUTS AND REOPENS FIRES ONCE PER OPENING: ticks 1 to 6 each followed by a pump; the window opens at 2, shuts at 4, reopens at 6 -- logical/LTIM.2.5.1_window_reopens's shape. 'A window that shuts and reopens fires once per opening.' Executed: `[[], [(0, True)], [], [], [], [(0, True)]]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_7_2__within_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Once per opening for a `within` window, which opens at entry and shuts once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__at_most_once_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A rising gate's edges over any history sum to at most one: once per edge, and one edge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__fires_on_the_first_due_tick_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per rising edge, and the edge is at the first sample that reaches `fire_at`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__timer_counts_are_edges_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The firings over a history are the gate's rising edges, one count per pump: once per false-to-true edge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltim_2_5_1__edge_at_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An edge is decided by the gate's two readings, so two gates that read alike at every clock make one edge. By congruence."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltim_2_5_1__edge_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "AN EDGE from two readings of a gate: 1 when it was shut and is open, 0 otherwise -- Rete/NetworkEdges.idr's `edge_at` at the two readings, named so that an equality of readings lifts to an equality of edges by congruence. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltim_2_5_1__edges_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Over a history: the edges of two gates that read alike at every clock are one list. By induction; what lets Rete/NetworkAfter.idr's results, stated on the `fire_at` gate, be read on the `dwell` gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_5_1__rising_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'A gate that stays true once true', as a predicate of the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_fires_once_executed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A gate that stays true once true fires once per wrapper', executed under `dwell >= 2`: `[0, 1, 0, 0]`, total 1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate_rising",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WHICH GATES CAN REOPEN: `dwell >= d` is rising, so 'a gate that stays true once true fires once per wrapper' is what it does; only a gate that reads the wall clock can reopen."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__edge_at_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tick from an open gate is no edge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_edges_at_most_one",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C3a. A RISING GATE'S EDGES OVER ANY TICK HISTORY SUM TO AT MOST ONE: it rises once or not at all, because the composed engine's clock never goes back. 'A gate that stays true once true fires once per wrapper', as a count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_edges_none",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Once a rising gate has opened, no later tick is an edge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_fires_at_most_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C3a ON THE ENGINE, with part B: the one-fact program under a rising gate fires AT MOST ONCE over any tick history from any starting clock. Once per false-to-true edge, and a rising gate has at most one. The hypothesis is inhabited by `lexp_9_5_1__dwell_gate_rising` and executed by `lexp_9_5_1__dwell_fires_once_executed`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__total",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The number of false-to-true edges over a history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A `now()` gate the wall clock crosses back and forth fires once per opening': `[1, 0, 1, 0]`, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ldet_5_8__late_fires_once_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Fire once per false to true edge ... and must not re-fire on subsequent ticks while the condition remains true', for a `now()` gate. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__clock_where_retracts_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A condition that closes ends its match': the match ends at the pump at 3, with no change to its fact. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__alphas_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two alphas, the Sensor's kind 0 and an unrelated Other's kind 1. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__expired_fact_cannot_reopen_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN EXPIRED FACT CANNOT REOPEN: the same window and advances with the Ping under a TTL of 2; open at 1 and fired; the tick to 2 sweeps the Ping, whose deadline is at the clock, before the pump; the window opens at 3 on nothing -- logical/LTIM.2.5.1_expired_fact_cannot_reopen's shape. 'Once per false-to-true edge of a live match', and the fact is not live. Executed: `[[(0, True)], [], [], []]`, and working memory empty."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__explicit_life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An explicit lifecycle for every kind: the expired-fact fixture's Ping has no key. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__now_edge_once_multipump_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "EDGE-ONCE OVER FURTHER TICKS: after the gate opens at 6 and fires, the advances to 7 and 8 with the gate still true fire nothing -- logical/LTIM.2.5_now_edge_once_multipump's shape. 'Must not re-fire on subsequent ticks while the condition remains true.' Executed: `[[], [(0, True)], [], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__now_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WINDOW on the wall clock: `(now() > 0 and now() < 2) or now() > 2`, the witnesses' window of [LTIM.2.5.1] in their units. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__ttl_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A default TTL of 2 on every kind. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__unrelated_change_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN UNRELATED CHANGE BETWEEN TICKS CLEARS NO REFRACTION: the gate opens at 6 and fires; a fact the rule never matches is asserted and pumped; the clock advances to 7 with the gate open; nothing fires again -- logical/LTIM.2.5.1.unrelated_change_between_ticks's shape, on the flag reading. Executed: `[[], [(0, True)], [], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__window_second_edge_refires_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A WINDOW THAT SHUTS AND REOPENS FIRES ONCE PER OPENING: the Ping asserted at (0, 0); advances to 1, 2, 3 and 4, each followed by a pump; open at 1, shut at 2 (the match ends), open again at 3 (a new match), still open at 4 -- logical/LTIM.2.5.1_window_second_edge_refires's shape. Executed: `[[(0, True)], [], [(0, True)], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_2__now_edge_once_rearm_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Once per edge of a live match: the first wrapper's one edge, then the second's. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A gate that can shut and reopen as the wall clock moves. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A condition that closes ends its match, and reopening it is a new edge': once per opening, under a wall that goes 1, 2, 1, 2. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_row_dead",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A condition that closes ends the match, executed on the fixture's row: no fired activation of it after the tick to 1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Rete/NetworkFrameRetime.idr's shutting-gate fixture, at the point between the sweep and the re-time. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_wm",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The fixture's working memory before the gate shuts, as a literal. Computed."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__Fire",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__READING",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__act",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__edges",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__fired_where_it_rose",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__fires",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__latched",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__once_per_edge",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_5_1__reevaluated",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ltim_2_5_1__newpump",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "A pump boundary. Under this clause edge-once is a consequence of refraction with [LDET.5.8], and a pump boundary clears no identity ([IRET.11.3]). The model keeps the event because the refused reading `pump`, which resets refraction each pump, is decided on it."
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ltim_2_5_1__pumpNo",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The pump number. Under this clause it scopes no refraction; it is the scope of the refused reading `pump`, and it stamps each firing in the observable."
+      }
+    ]
+  }
+}

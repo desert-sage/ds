@@ -1,0 +1,23 @@
+{
+  "id": "LLOG.3",
+  "clauses": ["LLOG.3.11.1", "LLOG.3.11.3"],
+  "category": "logical",
+  "scenario": "The tick problem's resolution (LLOG.3.11.1): the engine's tick re-evaluates time-bound patterns, so a logical fact justified by `Sensor s within 3_s` is withdrawn once the window passes, although the Sensor fact itself never changes. Occupied is emitted while the Sensor is fresh; the clock moves 4 s and a pump retracts Occupied (accurate to a tick, LLOG.3.11.3). The only fact a `fact_retract` here can be is Occupied: the Sensor is never retracted.",
+  "rules_ds": "schema Sensor scope logical:\n    state: String key\n    ts: Time\n\nschema Occupied scope logical:\n    dummy: Int key\n\nrule recent_sensor:\n    Sensor s within 3_s where s.state == \"on\"\n->\n    emit Occupied logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "set",     "now_ns": 0 },
+      { "op": "assert",  "schema": "Sensor", "slots": { "state": "on", "ts": 0 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 4000000000 },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "fact_assert",
+      "action_emit",
+      "fact_retract"
+    ]
+  }
+}

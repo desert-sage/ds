@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.4.runtime",
+    "category": "logical",
+    "scenario": "Integer division and modulo at runtime per LEXP.7.4. A rule gated on `x.v % 2 == 0` fires only for even numbers.",
+    "rules_ds": "schema Num scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule even:\n    Num n where n.v % 2 == 0\n->\n    log info \"even\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Num", "slots": { "entity_id": "n1", "v": 4 } },
+            { "op": "assert", "schema": "Num", "slots": { "entity_id": "n2", "v": 7 } },
+            { "op": "assert", "schema": "Num", "slots": { "entity_id": "n3", "v": 12 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["even", "even"]
+    }
+}

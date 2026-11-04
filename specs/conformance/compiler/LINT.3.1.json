@@ -1,0 +1,10 @@
+{
+    "id": "LINT.3.1",
+    "clauses": ["LINT.3.1.1", "LINT.3.1.3"],
+    "category": "compiler",
+    "scenario": "`e.fired_at in (now() - 1_h .. now())`, a `Time` point in a constructed `Interval<Time>`, is `Bool` (LINT.3.1.1) with matching element types (LINT.3.1.3), so it compiles as a `where`. PINS ONLY THAT IT COMPILES: the half-open bounds are logical/LINT.3.1's, and no lowering is observed.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule recent:\n    Event e where e.fired_at in (now() - 1_h .. now())\n->\n    log info \"recent\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

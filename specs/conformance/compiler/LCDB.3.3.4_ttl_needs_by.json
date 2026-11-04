@@ -1,0 +1,10 @@
+{
+    "id": "LCDB.3.3.4_ttl_needs_by",
+    "category": "compiler",
+    "scenario": "LCDB.3.3.4 — a rule carrying `cooldown` and binding a ttl fact must declare its activation key, and omitting `by:` is DS_VALIDATE_RATE_KEY_REQUIRED. Drives the validator's activation-key resolver at the rule header, not the pattern checks: the rule is otherwise well formed and compiles once `by:` is added (LCDB.3.3.4_ttl_by_ok).",
+    "rules_ds": "schema Hot scope ttl 5_min:\n    entity_id: String\n    celsius: Float\n    ts: Time\n\nrule alert cooldown 5_min:\n    Hot h\n->\n    log critical \"overheating: {h.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RATE_KEY_REQUIRED"
+    }
+}

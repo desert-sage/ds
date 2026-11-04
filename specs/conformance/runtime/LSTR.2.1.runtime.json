@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.2.1.runtime",
+    "category": "runtime",
+    "scenario": "`len(s)` returns the codepoint count per LSTR.2.1. A rule gated on `len(m.text) >= 3` fires for strings of 3+ codepoints; emits Hit. Two inputs: len=5 fires, len=2 doesn't.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule long_enough:\n    Msg m where len(m.text) >= 3\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Msg", "slots": { "entity_id": "m1", "text": "hello" } },
+            { "schema": "Msg", "slots": { "entity_id": "m2", "text": "hi" } }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

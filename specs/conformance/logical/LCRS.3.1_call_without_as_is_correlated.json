@@ -1,0 +1,18 @@
+{
+    "id": "LCRS.3.1_call_without_as_is_correlated",
+    "category": "logical",
+    "scenario": "[LCRS.3.1]: every call carries a correlation, and a call with no `as` gets the one the compiler generates per activation ([LCCO.3.4]), whether or not it has continuations. Rule `r` calls `svc.read` with no `as` and no continuations. The host answers that call twice, both replies carrying the call's own correlation (`corr_from_call: 0`, since the fixture cannot spell a generated value): reply v 1, then reply v 2. The second answer supersedes the first ([LCRS.6.2.4]), so `probe` logs [\"live 2\"]. PATH PINNED: the compiler's generated correlation on a plain call (`dsc.rete`'s `lcrs_3_1_generated_calls` and `with_generated_as`), issued by each runtime, and the arrival supersede on that correlation. The breaks: a call with no correlation issues `null`, so `corr_from_call: 0` finds no correlated call; an arrival supersede that skipped the generated value leaves both replies live and `probe` logs twice.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nschema Probe scope explicit:\n    k: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id nocooldown\n\nrule probe:\n    Probe\n    Reply x\n->\n    log info \"live {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "v": 2 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["live 2"]
+    }
+}

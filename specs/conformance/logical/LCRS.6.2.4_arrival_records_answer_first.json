@@ -1,0 +1,15 @@
+{
+    "id": "LCRS.6.2.4_arrival_records_answer_first",
+    "category": "logical",
+    "scenario": "[LCRS.6.2.4] with [RFCS.6.7] (input-first): an arriving answer supersedes the live answer with its correlation, and the stream records the arriving answer first. A reply of `svc.read`'s response schema with corr `c1` is live; a second reply with corr `c1` is asserted. Working memory loses the first before the second enters, but the stream shows the second's `fact_assert` and THEN the first's `fact_retract` (cause SUPERSEDED). Exactly, strict: the clock sample's tick (the first input samples it, [LTIM.2.8.5]); the first reply's fact_assert; the second reply's fact_assert; the first reply's fact_retract; the pump. No rule fires, so nothing else is recorded. PATH PINNED: the host-assert supersede inside the recorder's defer bracket -- libds `engine_assert_body` (wm.c), which runs `ds_dispatch_supersede_arrival` between `ds_recorder_defer_enter` and `ds_recorder_defer_leave` so the nested retract's record is buffered behind the answer's own; Mercury `ds.exec.lcrs_6_2_4_arrival_victims` from `ds.engine.host_assert_unstamped` ([STYL.5.10.8]). The lockstep scenario 94_answer_supersede holds the two runtimes to each other on the same path. NOT PINNED HERE: the withdrawal's cause, which the stream callback's kinds do not carry; that the second reply is the one left live, which LCRS.6.2.4_refire_pending_last_reply_wins pins.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["tick", "fact_assert", "fact_assert", "fact_retract", "pump"]
+    }
+}

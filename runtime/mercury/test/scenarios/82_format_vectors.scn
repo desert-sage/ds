@@ -1,0 +1,20 @@
+# The interpolation renderer: `40_format_vectors.ds` logs one line per spec,
+# and the log text is compared, pinning [LGRA.2.9.6.10] and [LGRA.2.9.6.4]
+# across the runtimes. No recording carries a log atom, so only `mercury
+# diff` sees this. Each fact reaches a different rule:
+#
+#   1  the plain case: positive, short text, the epoch
+#   2  negatives -- a negative `x` and `b` print the magnitude with `-`; `-0.0`
+#      keeps its sign; a multi-byte String cut by precision and padded by code
+#      points; one nanosecond before the epoch floors
+#   3  the extremes -- min_int64 has no positive twin; a Float in scientific
+#      form; the empty String; a fraction under `%f`
+#   4  `f` rounds: 0.129 at two places is 0.13
+assert V id=1 i=42 f=3.14159 s="kitchen" bl=true t=0
+pump
+assert V id=2 i=-7 f=-0.0 s="héllo" bl=false t=-1
+pump
+assert V id=3 i=-9223372036854775808 f=1e-05 s="" bl=true t=1234567890
+pump
+assert V id=4 i=255 f=0.129 s="abcdefghij" bl=false t=86399999999999
+pump

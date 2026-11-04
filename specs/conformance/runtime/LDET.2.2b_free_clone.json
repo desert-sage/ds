@@ -1,0 +1,32 @@
+{
+    "id": "LDET.2.2b_free_clone",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1]: the other half of `freeing one leaves the other fully functional`. LDET.2.2b frees the source and drives the clone; this frees the CLONE and drives the source, so a clone that shared memory with its source in either direction fails one of the two. Same program, steps and comparison as LDET.2.2b: `fresh` emits a `logical` Fresh from `Ping p within 3_s`, behind a head-inserted `$ClockTick`, so the window reads the join candidate's entry stamp ([LTIM.2.8.6]). Pin: set 0; assert Ping a; pump; advance 1 s; pump; CLONE; then on both: assert Ping b; pump; advance 2.5 s, pump (Fresh a retracts); advance 1 s, pump (Fresh b retracts); FREE the clone; on the source: assert Ping c; pump (Fresh c). PATHS: libds `ds_engine_clone` and `ds_engine_free` through pyds `Engine.clone()` / `close()` (runner.py `_run_clone_determinism`); the Mercury runtime in test_behave.m's `run_clone_determinism`, where there is nothing to free and the vector holds it to its counts.",
+    "rules_ds": "schema Ping scope logical:\n    k: String key\n\nschema Fresh scope logical:\n    k: String key\n\nrule fresh:\n    Ping p within 3_s\n->\n    emit Fresh logical k: p.k\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "after_clone": [
+            { "op": "assert", "schema": "Ping", "slots": { "k": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2500000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "free": "clone",
+        "after_free": [
+            { "op": "assert", "schema": "Ping", "slots": { "k": "c" } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "min_rule_fires": 1,
+        "min_rule_fires_after_free": 1
+    }
+}

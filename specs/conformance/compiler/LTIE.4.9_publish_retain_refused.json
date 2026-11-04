@@ -1,0 +1,11 @@
+{
+    "id": "LTIE.4.9_publish_retain_refused",
+    "clauses": ["LTIE.4.9"],
+    "category": "compiler",
+    "scenario": "[LTIE.4.9]: the compiler must refuse a `retain:` kwarg on a `publish` with DS_VALIDATE_PUBLISH_MODIFIER: nothing in the publishing tier would carry the lifetime ([LTIE.4.3]), and the receiving schema gives the fact its own ([LTIE.9.4]). The program enables `dynamic_ttl`, so the `retain:` is no capability refusal, and rule `r` writes `publish Out k: t.k retain: 5_s` into a `ttl` schema, where an `emit` takes the override ([LDTL.4.1]). PATH PINNED: `dsc.validate`'s `ltie_4_9_publish_modifier`, from `lgra_10_3_2_action`, on the kwarg.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\n\nschema Out scope ttl 1_h:\n    k: Int\n\nrule r:\n    Trig t\n->\n    publish Out k: t.k retain: 5_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_PUBLISH_MODIFIER"
+    }
+}

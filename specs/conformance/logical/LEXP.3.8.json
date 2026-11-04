@@ -1,0 +1,15 @@
+{
+  "id": "LEXP.3.8",
+  "clauses": ["LEXP.3.8.1"],
+  "category": "logical",
+  "scenario": "Binary scalar min(a,b) / max(a,b) per LEXP.3.8 — pairwise min/max over two numeric operands, distinct from the series aggregations min(s,w)/max(s,w) (the overload resolves by arg type). The winning operand's Int/Float kind is preserved; the clamp idiom max(min(x,hi),lo) composes.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule r_max:\n    T t where max(t.v, 3) == 5\n->\n    log critical \"max\"\n\nrule r_min:\n    T t where min(t.v, 3) == 3\n->\n    log critical \"min\"\n\nrule r_clamp:\n    T t where max(min(t.v, 10), 1) == 5\n->\n    log critical \"clamp\"\n\nrule r_float:\n    T t where max(t.v, 7.5) == 7.5\n->\n    log critical \"float\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_max", "r_min", "r_clamp", "r_float"]
+  }
+}

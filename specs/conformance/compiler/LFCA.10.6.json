@@ -1,0 +1,10 @@
+{
+    "id": "LFCA.10.6",
+    "clauses": ["LDIA.9.2"],
+    "category": "compiler",
+    "scenario": "`default` enables every live capability per [LDIA.9.2] (LFCA.10.6, the id, is a tombstone); the deferred ones are false everywhere. Pinned via `use default` + every-action-class smoke: emit + log + cache all compile cleanly. Companion to LDET.5b which pins the trivial use-default path.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nschema Marker scope ttl 1_min:\n    x: Int\n\nrule r:\n    Trig\n->\n    log info \"x\"\n    emit Sig logical v: 1\n    cache key: \"k\" value: 1\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

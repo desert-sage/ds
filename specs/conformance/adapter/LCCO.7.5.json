@@ -1,0 +1,20 @@
+{
+    "id": "LCCO.7.5",
+    "category": "adapter",
+    "scenario": "No implicit timeout is injected per LCCO.7.5. A call with no `timeout` clause fires exactly one call — no additional synthetic timeout continuations are created on the adapter side.",
+    "rules_ds": "service svc.read:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 30_s\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.read",
+                "correlation": "$r_c0_g0",
+                "body": { "entity_id": "t1" }
+            }
+        ]
+    }
+}

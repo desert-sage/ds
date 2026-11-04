@@ -1,0 +1,24 @@
+{
+  "id": "RAOT.9.5",
+  "prefix": "RAOT",
+  "doc": "CODE_AOT.md",
+  "parent": "RAOT.9",
+  "seq": 365,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RAOT.9.5] **No byte of a `CompiledCode` atom is mapped, populated or made executable\nuntil the artefact has verified.** `dsc_sha256` ([RDSC.3.6]) and the\ndialect/realtime bindings ([RBND.5]) MUST both have passed before the loader\nperforms any step of [RAOT.3.4] — before the `mmap`, not merely before the\n`mprotect`.\n\nThis is the one ordering in the corpus whose violation is a security\nconsequence rather than a behavioural one. Loading a `CompiledCode` atom maps bytes out of\nthe artefact as executable memory, so a `.dsc` is an arbitrary-code-execution\nsurface and not merely a data file. [RDSC.9.1] and [RDSC.9.3] describe a single\nforward pass dispatching each atom to its handler as it is read, and [RAOT.9.1]\nsays the loader processes `CompiledCode` atoms in stream order — so a conforming reading\nof those clauses alone maps and `mprotect`s attacker-controlled bytes *during*\nthe pass and verifies the digest when the stream ends, by which point the pages\nare executable in the process's address space whether or not anything calls\nthem.\n\n[RDSC.9.8]'s \"on any load error, the engine's state must be unchanged\" does not\ncover it: a page already mapped is not engine state, and unmapping it afterwards\nis not the same property.\n\nVerification is whole-artefact and `CompiledCode` atoms are per-node, so this ordering\nconstrains the LOADER's structure and not the stream's: the digest cannot be\nchecked until the last byte is read, therefore no `CompiledCode` atom may be acted on\nduring the reading pass. A loader that stages `CompiledCode` bodies and applies them after\nverification satisfies it; one that acts on them in stream order does not,\nwhatever order the atoms appear in.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "RAOT.3.4",
+    "RAOT.9.1",
+    "RBND.5",
+    "RDSC.3.6",
+    "RDSC.9.1",
+    "RDSC.9.3",
+    "RDSC.9.8"
+  ],
+  "atoms": [
+    "CompiledCode"
+  ]
+}

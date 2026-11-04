@@ -1,0 +1,15 @@
+{
+    "id": "LERR.9.3_type_error_fault_fact",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "A TypeError that reaches a surface is asserted as a `TypeError` fault fact a rule can match (LERR.9.1, LERR.9.3). The program is LERR.1.3.1.a_json_leaf_of_the_wrong_type_is_a_type_error's -- `p.body.name` is a String and `>` wants a number, so the tainted arm of the funnel raises a TypeError, not an EngineError -- plus a handler. The trap is in a join test on the pattern's beta, so the fact's `rule` is `$beta_<id>` (LERR.9.11), matched by regex, with the `$` escaped, since the id is compiler-assigned. Drives the TypeError arm of the fault-fact queue and the drain at the end of the host assert's propagation (LERR.9.7). Pin: assert Payload(body={name: \"alice\"}); pump. Messages are ['type error at a beta']; `r` never fires.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where p.body.name > 5\n->\n    log info \"fired\"\n\nrule handler:\n    TypeError e where e.rule ~ /^\\$beta_[0-9]+$/\n->\n    log critical \"type error at a beta\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error at a beta"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.6.7_a_halted_run_replays",
+    "clauses": ["NCBK.2.9", "LERR.1.4.7"],
+    "category": "runtime",
+    "scenario": "[RFCS.6.7], its halt paragraph: an input during which the engine raises an EngineError returns DS_ERR_ENGINE_HALTED ([NCBK.2.9]), and a replayer treats that as the run's outcome, not a failure: it goes on, and compares the EngineError it re-derives with the recorded one when that atom arrives. So the replay of a halted run reaches the end of its recording. No compiler writes a program that halts the engine, so the artefact is edited ([RCTS.1.2.21]): `tamper: {drop_call_operand: bad}` leaves `bad`'s `log` with two of its three operands ([RDSC.4a.9.3]), and both the engine that records and the one that replays load the edited artefact. One `Trig` is asserted and the pump fires `bad`, whose `log` raises ARTEFACT_LIED and halts the engine; its `emit After` never runs ([LERR.1.4.7]). That pump is the last step and returns -10, the run's outcome ([RCTS.1.2.28]). The recording ends with the EngineError. Each runtime then replays its own recording into a fresh engine: the replay must re-derive `bad`'s firing and the EngineError, compare both, reach the end, and leave the replaying engine halted by the same fault. Working memory is not compared: it is undefined and unreadable on a halted engine. Break: a replayer that stopped at the halting pump never compares the recorded EngineError, and leaves the engine halted by nothing it checked; one that ran the rest of the firing re-derives an `After` the recording does not hold. PATH PINNED: libds's `ds_rfcs_replay` (rfcs/codec.c), whose `replay_halted_by` takes the reproduced halt as an outcome, through pyds `Engine.record` / `Engine.replay` and `Engine.halted` in runner.py `_replay_through_libds_rfcs`; the Mercury runtime's `ds.rfcs` writer and `ds.replay`, through test_behave.m `replay_determinism_result` and the engine's halt latch.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema After scope logical:\n    k: Int key\n\nrule bad:\n    Trig t\n->\n    log info \"fired\"\n    emit After logical k: t.k\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "tamper": { "drop_call_operand": "bad" },
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "min_rule_fires": 1
+    }
+}

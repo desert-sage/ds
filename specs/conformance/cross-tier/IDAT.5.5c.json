@@ -1,0 +1,57 @@
+{
+    "id": "IDAT.5.5c",
+    "category": "cross-tier",
+    "scenario": "Two engines with the same schema but distinct ttl values \u2014 fact in fast engine retracts at its ttl while the slow engine's identical assert survives. Pins per-engine schema-registry ttl independence. Pins IDAT.5.5 \u2014 per-engine schema registry ttl independence.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "fast": {
+                "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n"
+            },
+            "slow": {
+                "rules_ds": "schema Pulse scope ttl 1_h:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "fast",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "slow",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "fast",
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "engine": "fast",
+                "op": "pump"
+            },
+            {
+                "engine": "slow",
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "engine": "slow",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "fast": 0,
+            "slow": 1
+        }
+    }
+}

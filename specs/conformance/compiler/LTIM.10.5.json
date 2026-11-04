@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.10.5",
+    "clauses": ["LTIM.1.1.2"],
+    "category": "compiler",
+    "scenario": "Comparing two `Time` slots across patterns compiles: comparison operates on the instant (LTIM.1.1.2), with no timezone involved. PINS ONLY THAT IT COMPILES. Named for LTIM.10.5 (timezone-resolution failure), which no step here reaches; nothing resolves a timezone.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nschema Event2 scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule compare_times:\n    Event e\n    Event2 e2 where e.fired_at < e2.fired_at\n->\n    log info \"e fired before e2\"\n",
+    "expect": { "kind": "compile_ok" }
+}

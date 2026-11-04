@@ -1,0 +1,16 @@
+{
+    "id": "LSTR.4.2_len_of_bytes_is_its_byte_count",
+    "category": "logical",
+    "scenario": "[LSTR.4.2]: `len(b)` on a `Bytes` value returns the byte count, as `Int` (LEXP.17.2's `len` row agrees). Two facts: `payload` = 00 ff 10, then the empty value. The zero byte and the 0xff byte separate a byte count from a strlen (which stops at 00) and from a code-point count (0xff is no UTF-8). A runtime that raises an untainted mismatch on a Bytes operand classifies it as ARTEFACT_LIED, and the first pump halts the engine. PATH PINNED: the compiler lowers `len` of a Bytes slot to FN_STR_LENGTH (`dsc.rete.m`); libds's `builtin_str_length` and Mercury's `ds.eval` FN_STR_LENGTH arm, each answering a Bytes operand with its length.",
+    "rules_ds": "schema P scope logical:\n    id: Int key\n    payload: Bytes mutable\n\nrule r:\n    P p\n->\n    let n = len(p.payload)\n    log info \"n={n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": 1, "payload": { "$bytes": "00ff10" } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "P", "slots": { "id": 2, "payload": { "$bytes": "" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["n=3", "n=0"]
+    }
+}

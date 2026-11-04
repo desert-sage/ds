@@ -1,0 +1,9 @@
+{
+    "id": "LADP.8.5.4_matching_kinds_compile",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.4], admitting side: a value whose leaf kind is the kwarg's declared builtin type compiles. One call passes an `Int` slot to an `Int` kwarg, a `Float` slot to a `Float` kwarg, a `String` slot to a `String` kwarg and a `Bool` slot to a `Bool` kwarg. A check keyed on anything coarser than the leaf kind, or one that refused a computed value, fails here. PATH PINNED: the compiler's `call`-kwarg value check in `dsc.validate`, on its admitting side; the three LADP.8.5.4_*_refused vectors are its refusing side.",
+    "rules_ds": "service svc.method:\n    kwarg i: Int\n    kwarg f: Float\n    kwarg s: String\n    kwarg b: Bool\n    no response\n\nschema Trig scope logical:\n    v: Int key\n    ratio: Float mutable\n    label: String mutable\n    enabled: Bool mutable\n\nrule r:\n    Trig t\n->\n    call svc.method i: t.v f: t.ratio s: t.label b: t.enabled nocooldown\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

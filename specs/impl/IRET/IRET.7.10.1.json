@@ -1,0 +1,27 @@
+{
+  "id": "IRET.7.10.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7.10",
+  "seq": 672,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.10.1] A `then ... within` sequence compiles to a\nlinear left-associative chain of join nodes plus test CEs\n(RLOW.5.6). A two-step sequence `A then B within T`\nproduces:\n\n```\nalpha(A) → beta_join_1 → alpha(B) → beta_join_2(test: ts_B - ts_A < T) → terminal\n```\n\nEach additional `then C within T2` appends one more join\nnode; the `within` constraint becomes a test CE on the\nimmediately preceding event pair (RLOW.5.6.3). The chain\nis linear, not a DAG.\n\n",
+  "refs": [
+    "RLOW.5.6",
+    "RLOW.5.6.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Rlow_4_2_1__chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One linear chain of beta nodes per rule, in LHS order; `then` chains are the same shape."
+      }
+    ]
+  }
+}

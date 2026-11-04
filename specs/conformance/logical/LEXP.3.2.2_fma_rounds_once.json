@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.3.2.2_fma_rounds_once",
+    "clauses": ["LEXP.3.2.2", "LDET.3.6.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.2.2]: `math.fma(x, y, z)` is x*y + z computed exactly and rounded once; a rounded product then a rounded sum gives a different answer at each of the three calls here, and each pair of rules shows both. Every operand is a `Float` slot, so nothing folds. Each expected value is a power of two or a sum of two, checked by multiplying by a power of two, which is exact, so no decimal literal stands for a result. `x` 0.1, `y` 10.0, `z` -1.0: the exact product of the double 0.1 and 10 is 1 + 2^-54, so `fma` is 2^-54 (`fused_cancel`: times 2^54 is 1.0) where the rounded product is 1.0 and the sum 0.0 (`unfused_cancel`). `a` is 1 + 2^-27 (1.0000000074505806), whose exact square is 1 + 2^-26 + 2^-54: `math.fma(a, a, -(a*a))` is the 2^-54 the rounded square dropped (`fused_square`). `e53` is 2^-53: the exact `a*a + e53` is 1 + 2^-26 + 3*2^-54, three quarters of an ulp above 1 + 2^-26, so `fma` rounds up to 1 + 2^-26 + 2^-52 (`fused_tie`: minus 1, times 2^52, is 2^26 + 1), while the rounded square plus `e53` is exactly half an ulp and ties to the even 1 + 2^-26 (`unfused_tie`: 2^26). The values were derived by hand from the binary expansions, not read from a runtime. A builtin computing `x*y + z` with two roundings fails all three `fused_` rules. PATH PINNED: FN_FMA in libds (`builtins.c`, `ds_libm_fma`, libds's own [IARC.7.14]) and Mercury (`ds.eval`, through `ds.core_math.fma`, the same compiled function). On hosts whose C library's `fma` also rounds once this guards the value, not the backend; the backend is runtime/tests/libds/source/test_iarc_7_14_private_fma.py's.",
+    "rules_ds": "import math\n\nschema T scope logical:\n    id: String key\n    x: Float mutable\n    y: Float mutable\n    z: Float mutable\n    a: Float mutable\n    e53: Float mutable\n\nrule fused_cancel:\n    T t where math.fma(t.x, t.y, t.z) * 18014398509481984.0 == 1.0\n->\n    log info \"fused_cancel\"\n\nrule unfused_cancel:\n    T t where t.x * t.y + t.z == 0.0\n->\n    log info \"unfused_cancel\"\n\nrule fused_square:\n    T t where math.fma(t.a, t.a, -(t.a * t.a)) * 18014398509481984.0 == 1.0\n->\n    log info \"fused_square\"\n\nrule fused_tie:\n    T t where (math.fma(t.a, t.a, t.e53) - 1.0) * 4503599627370496.0 == 67108865.0\n->\n    log info \"fused_tie\"\n\nrule unfused_tie:\n    T t where (t.a * t.a + t.e53 - 1.0) * 4503599627370496.0 == 67108864.0\n->\n    log info \"unfused_tie\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "t", "x": 0.1, "y": 10.0, "z": -1.0, "a": 1.0000000074505806, "e53": 1.1102230246251565e-16 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fused_cancel", "unfused_cancel", "fused_square", "fused_tie", "unfused_tie"]
+    }
+}

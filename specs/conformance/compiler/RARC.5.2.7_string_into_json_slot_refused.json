@@ -1,0 +1,11 @@
+{
+    "id": "RARC.5.2.7_string_into_json_slot_refused",
+    "clauses": ["RARC.5.2.6"],
+    "category": "compiler",
+    "scenario": "[RARC.5.2.7]: the compiler must refuse a value its slot does not admit wherever the declared types prove the mismatch, and [RARC.5.2.6] admits no implicit conversion. `emit Sample payload: \"abc\"` writes a `String` into the `Json` slot `payload`: refused with DS_VALIDATE_TYPE_MISMATCH. A compiler that compares only `Int`, `Float`, `String`, `Bool` and `Bytes` admits it, and each runtime then raises a TypeError at every firing. The control that a `Json` value into a `Json` slot compiles is compiler/RARC.5.2.7_json_slot_into_json_slot_compiles. PATH PINNED: `dsc.validate.lexp_7_3b_kwarg_type` through `rarc_5_2_7_provable_mismatch`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Sample scope ttl 1_h:\n    payload: Json\n\nrule r:\n    Trig\n->\n    emit Sample payload: \"abc\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LEXP.3.7.3_sign_extend",
+    "clauses": ["LEXP.3.7.3", "LEXP.3.7.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.7.3]: `x.sign_extend(w)` reads the low `w` bits as a two's-complement number: u - 2^w when u >= 2^(w-1), else u, where u = p mod 2^w. Rule `extended` fires where `t.x.sign_extend(t.w)` equals the fact's `want`; every operand is an `Int` slot. `all_ones`: 0xFFF (4095) at 12 bits is -1. `max`: 0x7FF (2047) at 12 bits is 2047, its sign bit clear. `min`: 0x800 (2048) at 12 bits is -2048, its sign bit alone set. `full`: -123456789 at 64 bits is itself, `x.sign_extend(64)` being `x`. A builtin that tested bit `w` instead of bit `w - 1` would get `max` and `min` wrong, and one that shifted by 64 would get `full` wrong. PATH PINNED: FN_SIGN_EXTEND in libds (`builtins.c`, `int_ops.h` `ds_i64_sign_extend`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    w: Int mutable\n    want: Int mutable\n\nrule extended:\n    T t where t.x.sign_extend(t.w) == t.want\n->\n    log info \"extended {t.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "all_ones", "x": 4095, "w": 12, "want": -1 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "max", "x": 2047, "w": 12, "want": 2047 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "min", "x": 2048, "w": 12, "want": -2048 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "full", "x": -123456789, "w": 64, "want": -123456789 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["extended all_ones", "extended max", "extended min", "extended full"]
+    }
+}

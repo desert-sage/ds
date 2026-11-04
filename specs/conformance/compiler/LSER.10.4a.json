@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.4a",
+    "category": "compiler",
+    "scenario": "`t.dwell` on a logical schema that declares no `ts` slot compiles: dwell is `monotonic_ns()` minus the fact's entry stamp (LEXP.9.5.1, LTIM.2.8.6, RLOW.8.3.5) and reads no slot. Drives the compiler's dwell typing (dsc.typecheck lser_10_4_dwell_read) and its lowering (dsc.rete lexp_9_5_2_dwell); it pins that no `ts` is demanded, and nothing at run time.",
+    "rules_ds": "schema Sensor scope logical:\n    state: Float key\n\nrule stale:\n    Sensor s where s.dwell > 60_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

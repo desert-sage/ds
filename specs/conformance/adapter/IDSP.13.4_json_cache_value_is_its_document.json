@@ -1,0 +1,17 @@
+{
+    "id": "IDSP.13.4_json_cache_value_is_its_document",
+    "clauses": ["LGRA.5.8.7a"],
+    "category": "adapter",
+    "scenario": "IDSP.13.4's `Json` row: a cached `Json` value is the JSON text LGRA.5.8.7a gives the document. The rule caches a `Json` slot read holding an object with a nested array, asserted with its keys out of order (`b` before `a`), and the integrator's set callback receives exactly `{\"a\":1,\"b\":[true,null,\"x\"]}`: members by key bytes, no whitespace. The text is compared BYTE FOR BYTE, since LGRA.5.8.7a fixes the serialization. Path: FN_JSON_VALUE (dsc.rete), then libds's rete/adapters.c `adapter_ds_json_value` through `jt_value`'s Json arm, `ds_json_serialize`. Pins this row only.",
+    "rules_ds": "schema Trig scope logical:\n    id: String key\n    v: Json mutable\n\nrule keep:\n    Trig t\n->\n    cache key: \"doc\" value: t.v\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": "a", "v": { "b": [true, null, "x"], "a": 1 } } },
+            { "op": "pump" }
+        ],
+        "expected_sets": [
+            { "key": "doc", "value_json": "{\"a\":1,\"b\":[true,null,\"x\"]}" }
+        ]
+    }
+}

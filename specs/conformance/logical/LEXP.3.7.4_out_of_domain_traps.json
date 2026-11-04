@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.7.4_out_of_domain_traps",
+    "clauses": ["LEXP.3.7.4", "LEXP.3.7.3", "LERR.1.4.1"],
+    "category": "logical",
+    "dead_rules_expected": ["bits_negative_lo", "bits_past_bit_63", "bits_zero_width", "sign_extend_65", "swap_bytes_24"],
+    "scenario": "[LEXP.3.7.4]: a `bits`, `sign_extend` or `swap_bytes` call whose run-time arguments lie outside [LEXP.3.7.3]'s domain raises a ComputationError of kind DOMAIN and abandons the activation, as a negative shift count does. One fact carries every argument as an `Int` slot, so the compiler sees no constant and refuses nothing ([LEXP.3.7.4]'s second paragraph). Five rules each make one call outside the domain in their `where`: `bits_negative_lo`, `x.bits(-1, 8)` (lo < 0); `bits_past_bit_63`, `x.bits(60, 5)` (lo + w > 64); `bits_zero_width`, `x.bits(0, 0)` (w < 1); `sign_extend_65` (w > 64); `swap_bytes_24` (w not 16, 32 or 64). None of the five fires. Each fault is raised while matching, at its rule's own join node, so its fault fact names the node (`$beta_<id>`, [LERR.9.11]) and not the rule; rule `on_fault` logs every ComputationError's kind ([LERR.9.1]), five DOMAIN lines in all, and any other kind would show. A builtin that masked or clamped an argument would fire its rule and log one DOMAIN line fewer. PATH PINNED: the domain checks of FN_BITS, FN_SIGN_EXTEND and FN_SWAP_BYTES in libds (`builtins.c`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    neg: Int mutable\n    w0: Int mutable\n    five: Int mutable\n    eight: Int mutable\n    sixty: Int mutable\n    w24: Int mutable\n    w65: Int mutable\n\nrule bits_negative_lo:\n    T t where t.x.bits(t.neg, t.eight) == 0\n->\n    log info \"bits_negative_lo\"\n\nrule bits_past_bit_63:\n    T t where t.x.bits(t.sixty, t.five) == 0\n->\n    log info \"bits_past_bit_63\"\n\nrule bits_zero_width:\n    T t where t.x.bits(t.w0, t.w0) == 0\n->\n    log info \"bits_zero_width\"\n\nrule sign_extend_65:\n    T t where t.x.sign_extend(t.w65) == 0\n->\n    log info \"sign_extend_65\"\n\nrule swap_bytes_24:\n    T t where t.x.swap_bytes(t.w24) == 0\n->\n    log info \"swap_bytes_24\"\n\nrule on_fault:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "t", "x": 0, "neg": -1, "w0": 0, "five": 5, "eight": 8, "sixty": 60, "w24": 24, "w65": 65 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN", "DOMAIN", "DOMAIN", "DOMAIN", "DOMAIN"]
+    }
+}

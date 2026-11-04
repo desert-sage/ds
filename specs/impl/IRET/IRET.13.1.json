@@ -1,0 +1,23 @@
+{
+  "id": "IRET.13.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.13",
+  "seq": 1038,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.13.1] Dispatch is an O(1) index into `ds_builtin_dispatch[]` by the CALL\nnode's `op` (`ds_lookup_fn(op)`). The table is **global and shared** across\nengines (builtins are fixed), zero-initialised in `.bss` (every op starts\nunregistered), and populated **once, idempotently** at engine init by the module\nregister functions. An op that is zero, out of range, or has no registered\nhandler is refused at load with `DS_ERR_FN_NOT_FOUND` ([RDSC.4a.9.3]), so\nevaluation never meets one in a loaded artefact; `eval_call` raises an artefact\nfault (`DS_FAULT_ARTEFACT`) for one it meets in a network built by hand. Cross-file registration is\nfirst-registrant-wins (a duplicate op re-registers identically; where two\nmodules could register the same op — e.g. `FN_REGEX_MATCH` — the one that inits\nfirst owns it).\n\n",
+  "refs": [
+    "RDSC.4a.9.3"
+  ],
+  "errors": [
+    "DS_ERR_FN_NOT_FOUND"
+  ],
+  "symbols": [
+    "DS_FAULT_ARTEFACT",
+    "FN_REGEX_MATCH",
+    "ds_lookup_fn",
+    "eval_call"
+  ]
+}

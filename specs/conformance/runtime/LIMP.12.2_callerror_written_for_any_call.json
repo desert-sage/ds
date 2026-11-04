@@ -1,0 +1,14 @@
+{
+    "id": "LIMP.12.2_callerror_written_for_any_call",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LIMP.12.2]: `CallError` is written into the artefact whenever the program contains a `call` action, whether or not a rule matches it, because an adapter may assert one for any call ([LCRS.4.2.2], [LCRS.17.1]). The program calls the `no response` service `svc.ping`, has no continuation, and no rule names `CallError`. The host asserts a `CallError` (corr, code, message, ts) as an adapter would, and it is accepted: one fact is live. Rule `r` is there only so the program contains a `call`; no `Job` is asserted, so it never fires ([RCTS.1.2.17]). PATH PINNED: `dsc.driver`'s `limp_12_2_call_uses`, which writes the built-in `CallError` for any `call`; libds's `ds_engine_assert` (through pyds, runner.py) and the Mercury runtime's `host_assert` (test_behave.m) look the schema up in the loaded artefact. Break: a compiler that writes `CallError` only when a pattern or a continuation names it leaves it out, and both runtimes refuse the assert with DS_ERR_SCHEMA_UNKNOWN.",
+    "rules_ds": "service svc.ping:\n    kwarg n: Int\n    no response\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.ping n: j.id nocooldown\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no route", "ts": 0 } }
+        ],
+        "fact_count_after": 1
+    }
+}

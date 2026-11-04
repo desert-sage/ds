@@ -1,0 +1,16 @@
+{
+  "id": "NSTG.5.1",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.5",
+  "seq": 412,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NSTG.5.1] The samples plane forwards each absorbed series\nsample to an integrator-supplied callback per [LSER.8.3].\nTwo callbacks compose:\n\n- **C6 — sample emission.** Fires once per absorbed sample\n  during fact assertion, after the firing decision lands\n  per [LSER.8.6].\n- **C7 — series declaration.** Fires at DSC load time\n  once per persisted series (i.e., series with `persist:`\n  declared), giving the integrator the manifest needed to\n  provision backend storage before any sample arrives.\n\nBoth callbacks are independent. An integrator may register\nneither (NULL = silent drop matching drop-oldest framing),\none, or both. C7 is for backends that need pre-arrival\nsetup — relational TSDB hypertables, retention policies,\ncolumn-type validation. Without it, the integrator's C6 cb\nlearns about `(schema, slot)` pairs lazily as samples\narrive (which works for client libraries that auto-create\nmetrics on first observation: Prometheus, InfluxDB).\n\n",
+  "deferred": true,
+  "refs": [
+    "LSER.8.3",
+    "LSER.8.6"
+  ]
+}

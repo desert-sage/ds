@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.10.7_literal_kwarg_admits_literals",
+    "category": "compiler",
+    "scenario": "[LGRA.10.7]: a `literal` kwarg is given a literal ([LGRA.9.7.1]) and the call compiles. `svc.set` declares four `literal` kwargs, and rule `go` gives each a literal of its kind: a string with no interpolation site, a negated integer (admitted because a kwarg's `default` admits `'-'? literal`, [LGRA.23.1]), a float and a boolean. Its other kwarg, `note`, is not `literal` and takes a slot ([LGRA.10.6]'s freedom). PATH PINNED: in dsc.validate's `lgra_10_7_literal`, the `ex_string`, `ex_float` and `ex_bool` arms, and the negation arm over an `ex_int` operand (the parser gives `-5` as `ex_unary(uo_neg, ...)`); and `lgra_10_7_literal_kwarg` leaving a kwarg not declared `literal` alone. NOT PINNED: a bare `ex_int` and both `ex_unit` arms; no kwarg here is given one.",
+    "rules_ds": "service svc.set:\n    kwarg zone: String literal required\n    kwarg offset: Int literal required\n    kwarg gain: Float literal required\n    kwarg enabled: Bool literal required\n    kwarg note: String\n    no response\n\nschema Trig scope logical:\n    v: String key\n\nrule go:\n    Trig t\n->\n    call svc.set zone: \"hall\" offset: -5 gain: 2.5 enabled: true note: t.v nocooldown\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

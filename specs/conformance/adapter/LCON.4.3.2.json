@@ -1,0 +1,16 @@
+{
+    "id": "LCON.4.3.2",
+    "category": "adapter",
+    "scenario": "LCON.4.3.2 — no real-adapter traffic on un-mocked services: with no mock declared for svc.read, the call fires but no CallResponse is delivered, so the `on response` continuation never runs (no log). The negative companion to LCON.4.3.1, confirming it is the mock (not the engine) that synthesises the response — the engine never fabricates a CallResponse (LCRS.7.3).",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg entity_id: String\n    response SvcReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 1_min as \"corr1\"\n        on response.ok == true:\n            log info \"got response\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [],
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "dev1" } },
+            { "op": "pump" }
+        ],
+        "expected_logs": [],
+        "expected_call_count": 1
+    }
+}

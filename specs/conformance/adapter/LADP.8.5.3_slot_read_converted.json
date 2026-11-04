@@ -1,0 +1,33 @@
+{
+    "id": "LADP.8.5.3_slot_read_converted",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3], [RLOW.7.3.9]: a quantity on a unit-typed kwarg that is not known at compile time -- here a read of a unit-typed slot -- reaches the service in the kwarg's unit, converted when the call is evaluated. `Reading.t` is a `fahrenheit` slot, so it holds kelvin; the fact asserts 293.15 K (68 F). `hvac.set` declares `t: celsius` and `h: half_celsius` (`x / 2 + 273.15`), and rule `go` passes `r.t` to both. The integrator receives t=20.0, (293.15 - 273.15), and h=40.0, (293.15 - 273.15) / 0.5. Both are exact in binary64: 293.15 and 273.15 lie in one binade and differ by 20, a multiple of its spacing, so the subtraction is exact, and dividing by 0.5 is exact. PATH PINNED: `written_in_unit` in dsc.rete finds the argument a `temperature` quantity by its type (`argument_quantity_of`), `dsc.quantity.rlow_7_3_9_conversion` gives the kwarg's `cv_affine(Offset, Slope)`, and `kwarg_pairs` wraps the lowered slot read in `rlow_7_3_9_converted`'s `(base - Offset) / Slope`, the `/ Slope` left out where it is 1. Both runtimes evaluate the arithmetic nodes the compiler emits. The break is sending the slot's base value, 293.15, on both kwargs.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\nunit half_celsius: temperature = x / 2 + 273.15\nunit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg t: celsius required\n    kwarg h: half_celsius required\n    no response\n\nschema Reading scope logical:\n    sensor: String key\n    t: fahrenheit mutable\n\nrule go:\n    Reading r\n->\n    call hvac.set t: r.t h: r.t nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "sensor": "hall",
+                    "t": 293.15
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "h": 40.0,
+                    "t": 20.0
+                }
+            }
+        ]
+    }
+}

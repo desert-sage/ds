@@ -1,0 +1,18 @@
+# lowered from LSCO.2.1.json (event_sequence) by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against emitx.expected
+# (scripts/formal/check_idris.py). The first smoke input with an `emitx` record:
+# `emit Result entity_id: t.entity_id` copies the bound Trig's key slot, so the
+# Idris model evaluates the copy over the fired fact and CODES the tuple ("t1", token
+# 0, the block 3 after the sentinel): the Result's payload is the Trig's key.
+# The emit is not `logical`, so the Result outlives the retracted Trig.
+schema 0 relation Trig
+schema 1 explicit Result
+alpha 0 0
+alpha 1 1
+rule 0 make_result
+pattern 0 0 0
+emitx 0 1 0 1 slot 0 key 0
+step assert trig 0 1000000000000000000003 1
+step pump
+step retract trig
+step pump

@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The program harness.py loads: a few rules, each reaching one feature an
+# integrator handles. Its names mean nothing; the mechanics are the point.
+
+use default
+
+schema Reading scope logical:
+    sensor: String key
+    level: Int mutable
+    detail: Json mutable
+
+schema High scope logical:
+    sensor: String key
+
+schema Trace scope ttl 1_h:
+    target: Reading
+
+schema Answer scope ttl 1_min:
+    corr: String
+
+schema Ratio scope logical:
+    id: String key
+    n: Int mutable
+    d: Int mutable
+
+schema Quotient scope logical:
+    id: String key
+    q: Int mutable
+
+schema Stamp scope logical:
+    id: String key
+    seen: Time mutable
+    day: Date mutable
+
+# Read by no rule: the integrator asserts one. A schema reaches the engine
+# from its artefact alone ([NFCT.1.1]).
+schema Note scope logical:
+    id: String key
+    text: String mutable
+
+service probe.ask:
+    "answered by the integrator, with an Answer"
+    kwarg reading: Reading
+    response Answer
+
+series Reading.level (by: sensor):
+    count all_time
+
+# A logical emit, a fact reference, a cache write, a call and a log.
+rule high:
+    Reading r where r.level > 50
+->
+    emit High logical sensor: r.sensor
+    emit Trace target: r
+    cache key: "last" value: r.level ttl: 5_min
+    call probe.ask reading: r nocooldown as "ask"
+    log info "high {r.sensor}"
+
+# The integrator's answer to the call, and a cache delete.
+rule answered:
+    Answer a
+->
+    cache_delete key: "last"
+    log info "answered {a.corr}"
+
+# A series read.
+rule counted:
+    Reading r where count(r.level) >= 1
+->
+    log info "counted {r.sensor}"
+
+# A fault: integer division by a slot that holds zero.
+rule divide:
+    Ratio x
+->
+    emit Quotient logical id: x.id q: (x.n // x.d)
+
+# A time-zone read, which the integrator's resolver answers.
+rule same_day:
+    Stamp s where s.seen.date("Harness/Zone") == s.day
+->
+    log info "same day in Harness/Zone"

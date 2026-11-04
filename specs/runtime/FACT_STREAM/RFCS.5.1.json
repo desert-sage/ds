@@ -1,0 +1,22 @@
+{
+  "id": "RFCS.5.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.5",
+  "seq": 332,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.5.1] The encoder must announce every schema the engine has\nregistered immediately after the `StreamHeader` atom, before any event\natom: for each, one `SchemaDef` atom followed by one `Slot` atom for each\nslot defined on that schema, in declaration order. Schemas are announced\nin registration order, and loading an artefact registers its schemas in the\norder its `SchemaDef` atoms appear. The compiler's own schemas, those with synthetic names\n([LLEX.10.6.1]), are not announced: no fact in a stream can name one.\n\nAn engine registers no schema once it has emitted its first stream event\n([NFCT.1.1]). The encoder must therefore write the `StreamHeader` and the\nannouncements only once that holds: when it encodes its first event, or as\nsoon as it begins if the engine has already emitted one. The set is then\ncomplete when the header is written, and no schema is announced later.\n\n**Declaration order is normative, not cosmetic.** A payload's fields\nare numbered by slot position, so the order of these atoms is what lets\na reader reconstruct the payload's field numbers and decode slot values\nwithout the artefact ([LFST.8.10]). Emitting the same slots in another\norder would describe a different message.\n\nA `Slot` atom in a trace carries the kind the artefact declared, the temporal\nkinds included ([RDSC.5.5.8]), so a reader can tell a timestamp from a count\nand render each as its type. The encoder must fill every other field of\n`proto/slot.proto#Slot` the engine holds for the slot as it would stand in the\nartefact: `schema_ref`, `sampled`, `retained`, `tolerance`, `identity_role`,\n`nullable` and `capacity`. So a trace's announcement says which slots are keys\nand which may be null.\n\n",
+  "refs": [
+    "LFST.8.10",
+    "LLEX.10.6.1",
+    "NFCT.1.1",
+    "RDSC.5.5.8"
+  ],
+  "atoms": [
+    "FactAssert",
+    "SchemaDef",
+    "Slot"
+  ]
+}

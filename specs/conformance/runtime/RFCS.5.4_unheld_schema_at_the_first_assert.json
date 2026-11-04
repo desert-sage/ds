@@ -1,0 +1,16 @@
+{
+    "id": "RFCS.5.4_unheld_schema_at_the_first_assert",
+    "category": "runtime",
+    "scenario": "[RFCS.5.4] a replay stops with DS_ERR_SCHEMA_UNKNOWN (-101) at a FactAssert naming a schema the program does not hold, when that FactAssert is the recording's first input. The harness ([RCTS.1.2.18]) records one Parcel assert and a pump with each runtime's own recorder, then renames `Parcel` to `Parcex` throughout the recording (`rename_schema`), so the recording announces and asserts `Parcex`, which the loaded program does not declare. The unaltered recording must replay, so the refusal is the rename's. Paths: libds's replayer `ds_rfcs_replay` (pyds `Engine.replay`), whose FactAssert arm finds no `Parcex` in the engine (`rfcs/codec.c`); the Mercury runtime's `ds.replay`, whose host-assert arm ends the replay with `unknown_schema`. The harness observes only the code, not the atom the replay stopped at. Its companion `RFCS.5.4_unheld_schema_partway_through` meets the same atom after a pump.",
+    "rules_ds": "use default\n\nschema Parcel scope logical:\n    id: String key\n    w: Int mutable\n\nrule weigh:\n    Parcel\n->\n    log info \"w\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Parcel", "slots": { "id": "a", "w": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "rename_schema", "from": "Parcel", "to": "Parcex" },
+        "code": "-101"
+    }
+}

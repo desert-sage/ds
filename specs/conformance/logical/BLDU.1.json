@@ -1,0 +1,162 @@
+{
+  "id": "BLDU.1",
+  "category": "logical",
+  "scenario": "Build-unit scheduler dispatches steps in dependency order. A linear graph a→b→c (each step Consumes the prior step's Output); the harness scripts cache.key→ActionKey and exec.run→StepOutput, and produce emits each output Product to unblock the next step. run logs each step's id at dispatch — the observed sequence must be a,b,c. Pins the gate/join/dispatch chain on the Product/Step/Output/Consumes model.",
+  "rules_ds": "schema Product scope logical:\n    name: String key\n    pathname: String mutable\n    digest: String mutable\nschema Step scope logical:\n    id: String key\n    argv: String mutable\nschema Output scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\nschema Consumes scope logical:\n    step: String key\n    product: String key\nschema Blocked scope logical:\n    step: String key\nschema Ready scope logical:\n    step: String key\nschema ActionKey scope logical:\n    step: String key\n    action_key: String mutable\nschema Dispatched scope logical:\n    step: String key\nschema StepOutput scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\n    digest: String mutable\nservice cache.key:\n    kwarg step: String\n    no response\nservice exec.run:\n    kwarg step: String\n    kwarg argv: String\n    no response\nrule block_input:\n    Consumes c\n    no Product p where p.name == c.product\n->\n    emit Blocked logical step: c.step\nrule ready:\n    Step s\n    no Blocked b where b.step == s.id\n->\n    emit Ready logical step: s.id\nrule fetch_key:\n    Ready r\n    no ActionKey k where k.step == r.step\n->\n    call cache.key step: r.step nocooldown\nrule run:\n    ActionKey k\n    no Dispatched d where d.step == k.step\n    Step s where s.id == k.step\n->\n    call exec.run step: s.id argv: s.argv nocooldown\n    log critical \"{s.id}\"\nrule produce:\n    ActionKey k\n    StepOutput so where so.step == k.step\n->\n    emit Product logical name: so.name pathname: so.pathname digest: so.digest\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "a.c",
+          "pathname": "src/a.c",
+          "digest": "Hac"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Step",
+        "slots": {
+          "id": "a",
+          "argv": "cc a"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "a.o",
+          "step": "a",
+          "pathname": "b/a.o"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "a",
+          "product": "a.c"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Step",
+        "slots": {
+          "id": "b",
+          "argv": "cc b"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "b.o",
+          "step": "b",
+          "pathname": "b/b.o"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "b",
+          "product": "a.o"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Step",
+        "slots": {
+          "id": "c",
+          "argv": "cc c"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "c.o",
+          "step": "c",
+          "pathname": "b/c.o"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "c",
+          "product": "b.o"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "a",
+          "action_key": "ka"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "StepOutput",
+        "slots": {
+          "name": "a.o",
+          "step": "a",
+          "pathname": "b/a.o",
+          "digest": "Hao"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "b",
+          "action_key": "kb"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "StepOutput",
+        "slots": {
+          "name": "b.o",
+          "step": "b",
+          "pathname": "b/b.o",
+          "digest": "Hbo"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "c",
+          "action_key": "kc"
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "a",
+      "b",
+      "c"
+    ]
+  }
+}

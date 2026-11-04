@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.11.2",
+    "category": "compiler",
+    "scenario": "Unsatisfiable continuation predicates per LCCO.11.2 — conjunctive constraints whose satisfiable region is provably empty are a compile error (dead code). PATH PINNED: `dsc.validate.lcco_11_2_unsatisfiable`, its numeric-bound arm. `response.x < 60 and response.x > 100` groups both bounds under one path key, giving lower=100 and upper=60, and lower > upper is the empty range. `x` IS a declared slot of the response schema, deliberately, so the vector fails for unsatisfiability alone and not incidentally as an unknown field. NOT pinned by this vector, and it is the other half of the clause: enum-set contradictions. DS v1 has no enum type, so that half of LCCO.11.2 cannot be written in the language it constrains and no vector can pin it.",
+    "rules_ds": "schema TimeOfDay scope ttl 1_min:\n    state: String\n\nschema WeatherResponse scope ttl 1_h:\n    corr: String\n    x: Float\n\nservice weather.get_forecasts:\n    kwarg entity_id: String literal required\n    response WeatherResponse\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.x < 60 and response.x > 100:\n            log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_PREDICATE_UNSATISFIABLE"
+    }
+}

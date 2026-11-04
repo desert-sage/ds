@@ -1,0 +1,10 @@
+{
+    "id": "LTAC.2.2_non_time_unit_refused",
+    "category": "compiler",
+    "scenario": "[LTAC.2.2] with [LLEX.12.8]: an `after` duration is a `UNIT_LIT` on the `time` axis, and a literal of another dimension is DS_VALIDATE_BAD_UNIT_DIMENSION. `after 5_kg:` parses, since `5_kg` is one `UNIT_LIT`, and `kg` is a mass unit of `units.core` ([LUNI.4.1.2]), so no import is needed. Expected DS_VALIDATE_BAD_UNIT_DIMENSION. PATH PINNED: the dimension arm of `dsc.validate.ltac_7_1_after_duration` (`luni_10_2_time_unit` fails for `kg`).",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule later:\n    Motion m where m.state == true\n->\n    log info \"armed\"\n    after 5_kg:\n        log info \"fired\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_UNIT_DIMENSION"
+    }
+}

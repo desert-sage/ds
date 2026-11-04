@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.12.3",
+    "clauses": ["LTIM.4.3.1"],
+    "category": "compiler",
+    "scenario": "[LTIM.4.3.1] (LTIM.12.3, the id, is a tombstone): calendar arithmetic is the members `add_months` and `add_years` ([LGRA.9.6.2]), on a `Time` and on a `Date`, and they compile in a `where` as any pure builtin does. One rule shifts a `Time` by a month and compares it with `now()`; one shifts a `Date` by a year and compares it with another `Date`. Drives the compiler's FN_ADD_MONTHS / FN_ADD_YEARS typing (a `Time` in, a `Time` out; a `Date` in, a `Date` out) in `member_result` and lowering in `luni_13_5_method_call` (the Time receiver through `FN_UTC`, the Date untagged). What they compute is logical/LTIM.4.3.2_add_months_clamps's to pin.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n    due: Date mutable\n    renew: Date mutable\n\nrule month_old:\n    Event e where e.fired_at.add_months(1) < now()\n->\n    log info \"older than a month\"\n\nrule renew_after_year:\n    Event e where e.due.add_years(1) > e.renew\n->\n    log info \"renewal is inside the year\"\n",
+    "expect": { "kind": "compile_ok" }
+}

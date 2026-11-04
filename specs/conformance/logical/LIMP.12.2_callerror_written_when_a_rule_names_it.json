@@ -1,0 +1,14 @@
+{
+    "id": "LIMP.12.2_callerror_written_when_a_rule_names_it",
+    "category": "logical",
+    "scenario": "[LIMP.12.2]'s second trigger: a built-in schema is written into the artefact when the program names it, even where its row's condition does not hold. The program has no `call` action, so `CallError`'s row ('when the program contains a `call` action') does not hold, but rule `seen` matches `CallError`, which names it. The clause's own case: such a rule is inert in a deployment, since no adapter answers a call the program never makes, and the schema is written anyway, because an artefact whose `AlphaNode` names a schema it lacks is refused at load ([RDSC.8.7]). The host asserts a `CallError` (corr, code, message, ts) and pumps; `seen` fires and logs its code, so the messages are exactly ['seen transport.timeout']. Break: a compiler that writes `CallError` only for a `call` emits an `AlphaNode` naming a schema the artefact does not declare, which both runtimes refuse at load with DS_ERR_DSC_DANGLING, so nothing is logged. Its sibling `runtime/LIMP.12.2_callerror_written_for_any_call` pins the first trigger. PATH PINNED: `dsc.driver`'s `limp_12_2_call_uses` and the compiler's built-in declaration (`dsc.builtins`); libds's loader (`dsc/rete_loader.c`) and the Mercury runtime's `ds.dsc` take the schema from the artefact.",
+    "rules_ds": "rule seen:\n    CallError e\n->\n    log info \"seen {e.code}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no route", "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen transport.timeout"]
+    }
+}

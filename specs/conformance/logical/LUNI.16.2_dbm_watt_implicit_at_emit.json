@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.16.2_dbm_watt_implicit_at_emit",
+    "clauses": ["LUNI.4.5.1"],
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `dBm_watt` pair, shipped `implicit` in `units.audio`, applied at an `emit` slot argument ([LUNI.4.5.1]'s boundary 3): a `dBm` slot holding 30 emitted into a `watt` slot is `dBm_to_watt(30)` = 10.0 ** (30.0 / 10.0) / 1000.0 = 1000.0 / 1000.0 = 1.0, exact under correct rounding, so `one_watt` fires on `== 1_watt`. Without the implicit application the emit is a dimension error and nothing compiles; applied the wrong way round, the slot holds 44.77 and `one_watt` does not fire. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]), through the compiler's implicit-formula bridge at an emit kwarg, then both runtimes' evaluation of the inlined formula (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "from units.audio import dBm\nfrom units.si import watt\n\nschema Level scope logical:\n    id: String key\n    p: dBm mutable\n\nschema Power scope logical:\n    id: String key\n    w: watt mutable\n\nrule convert:\n    Level l\n->\n    emit Power logical id: l.id w: l.p\n\nrule one_watt:\n    Power q where q.w == 1_watt\n->\n    log info \"one watt\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Level", "slots": { "id": "tx", "p": 30.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["one watt"]
+    }
+}

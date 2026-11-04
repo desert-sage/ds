@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.10_seed_float_below_double_refused",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.10]: JSON text holding the float literal -1e400, whose value lies below the most negative finite Float and so would round to -infinity, is malformed, and a host parse of it returns `DS_ERR_PARSE` (-100) and changes nothing. The negative edge of LGRA.5.8.10_seed_float_above_double_refused, at the same site (the cache seed, [NSTG.9.1]), given as `text` ([RCTS.1.2.25]): a parser that tests only for +infinity, or reads the magnitude before the sign, admits it. `message_contains` is libds's text for this refusal, and `no_fault_events` pins that a host refusal reaches no stream event. PATH PINNED: on libds, `json.c` `parse_number`'s float arm under pyds's `cache_seed`; on the Mercury runtime, `ds.json_text.parse`'s `jr_float_outside_double` under `ds.engine.seed_cache_text`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-100",
+        "message_contains": "JSON float literal outside the double range",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text": "-1e400" }
+        ]
+    }
+}

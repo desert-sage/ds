@@ -1,0 +1,32 @@
+{
+  "id": "RFCS.23.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.23",
+  "seq": 952,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.23.2] **One typed-value encoding for facts and calls.** Every value is\nan `Arg` (`proto/fact_external.proto#Arg`): a name, a `Kind`, and the one\nvalue member that kind names (none for `KIND_NULL`). `Kind`\n(`proto/fact_external.proto#Kind`) is one number space with two subtypes:\n\n- a **slot value** admits the common kinds and `KIND_FACT_REF`;\n- a **call argument** admits the common kinds and `KIND_ENCODED_FACT`.\n\nA number belonging to one subtype is reserved in the other ([STYL.2.8.7]). So a\n`FactExternal`'s fields never carry `KIND_ENCODED_FACT`, and a call's arguments\n([RFCS.15.2]) never carry `KIND_FACT_REF`. A call argument never carries `KIND_NULL` in this edition: a call whose argument has no value is not made ([LNUL.11.1]). A `Json` value is the JSON text\n[LGRA.5.8.7a] gives it.\n\nA `Kind` is how a value is represented, not the type it was declared with. A\n`Time`, `Date` or `Duration` value is `KIND_INT`, carrying the integer\n[RDSC.5.5.8] gives it. A program that receives one reads it as its own slot's\ndeclared type, which [RFCS.23.3] makes the writer's.\n\nThe engine's own slot-kind and argument-kind enumerations, and every other\nconsumer's, are generated from `Kind` and reconciled against it ([STYL.5.9.7]).\n\n",
+  "refs": [
+    "LGRA.5.8.7a",
+    "LNUL.11.1",
+    "RDSC.5.5.8",
+    "RFCS.15.2",
+    "RFCS.23.3"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/fact_external.proto",
+        "name": "Arg",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/fact_external.proto",
+        "name": "Kind",
+        "tag": "spec"
+      }
+    ]
+  }
+}

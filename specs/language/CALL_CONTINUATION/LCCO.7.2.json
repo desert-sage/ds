@@ -1,0 +1,25 @@
+{
+  "id": "LCCO.7.2",
+  "prefix": "LCCO",
+  "doc": "CALL_CONTINUATION.md",
+  "parent": "LCCO.7",
+  "seq": 289,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCCO.7.2] The compiler must lower each `timeout` clause to one synthetic\ntimer fact and one sibling rule, as [LTAC.3] lowers an `after` clause.\n\nThe outer rule's RHS asserts the timer fact after its immediate actions, with\n`fire_at: monotonic_ns() + <duration>` ([LTIM.2.8.2]), `corr` the call's\ncorrelation, and a snapshot of each outer binding the clause's body references.\nThe timer's schema is named `$Timer_<outer>_timeout_<N>`, with `<N>` as\n[LCCO.4.1] counts it. It has [LTAC.3.2]'s two slots, then one slot per value the\nbody references, named as [LCCO.5.5] names a capture slot and holding the value\nthe call's capture fact holds for it ([LCCO.5.4]).\n\nThe sibling rule's LHS is that timer fact, the clock tick ([IRET.19.5]), and two\nnegated patterns constrained to `corr` equal to the timer's: one over the called\nservice's response schema ([LCRS.4.3.2]) and one over `CallError`. It joins no\ncapture fact: the body reads each outer binding from the timer's slot for it.\nIts guard is `monotonic_ns() >= fire_at`. Its RHS is the clause's action list,\nfollowed by the retraction of the timer and, on a call with one `timeout` clause,\nof the call's capture fact on the timer's `corr` where the call has one\n([LCCO.5.2], [LSCP.2.4.1]). Both response and error count as \"the call\ncompleted\"; either suppresses the timeout.\n\nA timer has no TTL ([LTAC.4.4]), so the sibling fires at the first pump at or\nafter `fire_at`, however late that pump comes and whatever the capture fact's\nlifetime ([LCCO.5.3]).\n\n",
+  "refs": [
+    "IRET.19.5",
+    "LCCO.4.1",
+    "LCCO.5.2",
+    "LCCO.5.3",
+    "LCCO.5.4",
+    "LCCO.5.5",
+    "LCRS.4.3.2",
+    "LSCP.2.4.1",
+    "LTAC.3",
+    "LTAC.3.2",
+    "LTAC.4.4",
+    "LTIM.2.8.2"
+  ]
+}

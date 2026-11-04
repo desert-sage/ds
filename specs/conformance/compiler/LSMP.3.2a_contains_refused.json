@@ -1,0 +1,10 @@
+{
+    "id": "LSMP.3.2a_contains_refused",
+    "category": "compiler",
+    "scenario": "[LSMP.3.2a]: the compiler rejects every aggregation [LSMP.3.2] lists under `sample` with DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH; each is a ✗ with no footnote in [LSER.18.1]. A uniform sample can omit the one sample that holds the value, so membership over the bag is not the stream's. Pin: `contains sample 200` on a String slot is refused with that code, not with the DS_VALIDATE_SERIES_NO_EXACT_BACKING that `contains all_time` would get. PATH PINNED: `dsc.series.undefined_combination(\"contains\", \"sample\")`; `no_exact_backing` has no `sample` arm, so only that predicate can refuse it.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    contains sample 200\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH"
+    }
+}

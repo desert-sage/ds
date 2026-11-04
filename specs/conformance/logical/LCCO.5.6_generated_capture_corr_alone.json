@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.5.6_generated_capture_corr_alone",
+    "category": "logical",
+    "scenario": "[LCCO.5.6] / [LCCO.5.2]: a call with continuations and NO `as` has a generated correlation, one per activation ([LCCO.3.4]), so it gets the capture fact even when its continuation body reads no parent binding, with the `corr` slot alone -- that fact is the only way the `on` sibling learns a correlation that differs per firing. Two `Req` facts fire the rule twice, so two calls of the one call site are in flight. Only the FIRST is answered: a `GetReply` whose `corr` is the correlation that call carried (`corr_from_call: 0`, since the fixture cannot spell a generated value). Expected: `got` once -- the sibling joined to the first activation's capture fact on `corr`. Each wrong lowering gives a different count: a compiler that omits the fact for this shape leaves the sibling nothing to join on, and nothing logs; a correlation constant per call site lets the one reply join both capture facts, and `got` logs twice. The body logs a literal, so no binding is captured and the fact carries `corr` alone; `LCCO.3.4_generated_correlation_is_per_activation` is the same shape with a capture. PATH PINNED: `dsc.rete`'s `needs_capture_fact` for a generated correlation with an empty capture list, through `capture_emit` and the sibling's capture join, executed by each runtime.",
+    "rules_ds": "schema GetReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.get:\n    kwarg k: Int\n    response GetReply\n\nschema Req scope logical:\n    id: String key\n\nrule r:\n    Req\n->\n    call svc.get k: 1 nocooldown\n        on response.ok == true:\n            log info \"got\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Req", "slots": { "id": "a" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "GetReply", "corr_from_call": 0, "slots": { "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "got"
+        ]
+    }
+}

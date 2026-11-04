@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.11.2_literal_exceeded",
+    "category": "compiler",
+    "scenario": "[LSTR.11.2]: the compiler must refuse a string literal written to a slot whose `capacity` the literal exceeds, with `DS_VALIDATE_CAPACITY_LITERAL_EXCEEDED`. The slot has `capacity 8` and the `emit` writes a nine-codepoint literal. PATH PINNED: `dsc.validate.check_kwarg` through `dsc.dstest.lstr_11_2_literal_capacity`, on a constant literal with no interpolation site -- a literal with a site is not a constant and is the runtime's ([LSTR.11.3]). A compiler that counted nothing at compile time accepts this and the vector goes red.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 8 mutable\n\nrule r:\n    Trig t\n->\n    emit Out logical k: t.k s: \"abcdefghi\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPACITY_LITERAL_EXCEEDED"
+    }
+}

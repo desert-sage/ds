@@ -1,0 +1,11 @@
+{
+    "id": "LTIE.4.9_publish_logical_refused",
+    "clauses": ["LTIE.4.9"],
+    "category": "compiler",
+    "scenario": "[LTIE.4.9]: the compiler must refuse the `logical` keyword on a `publish` with DS_VALIDATE_PUBLISH_MODIFIER: a `publish` asserts nothing in its own tier ([LTIE.4.3]), and the receiving schema gives the fact its lifetime ([LTIE.9.4]). Rule `r` writes `publish Report logical val: t.v` into a `scope logical` schema, where an `emit` would need the keyword. A compiler that read `publish` as `emit` compiles it. PATH PINNED: `dsc.validate`'s `ltie_4_9_publish_modifier`, from `lgra_10_3_2_action`, on the flag.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Report scope logical:\n    val: Int key\n\nrule r:\n    Trig t\n->\n    publish Report logical val: t.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_PUBLISH_MODIFIER"
+    }
+}

@@ -1,0 +1,97 @@
+{
+  "id": "RFCS.10.5",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.10",
+  "seq": 562,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.10.5] A replaying reader ([LFST.9.6]) MUST apply each `ClockAdvance` by\nadvancing the replay engine's monotonic clock to `clock_ns` and setting its\nwall clock to `wall_ns` before processing the next atom. When `has_wall` is\nfalse the recorded wall clock had no value: the reader leaves the replay\nengine's wall clock without one and ignores `wall_ns`, so a `now()` the\nrecording faulted ([LTIM.2.8.3]) faults again in the replay.\n\n---\n\n",
+  "refs": [
+    "LFST.9.6",
+    "LTIM.2.8.3"
+  ],
+  "atoms": [
+    "ClockAdvance",
+    "FactAssert",
+    "RuleFireAnnotation"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_5__replay_run_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Applying each `ClockAdvance` before the next atom is what makes the replay engine end where the recording engine ended, from any starting clocks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "rfcs_10_5__replay_drives_the_engine",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The reader's rule at the composed pump: a tick history replays to the recording's final state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "rfcs_10_5__replay_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE REPLAYING READER: each `ClockAdvance` sets both clocks before the next atom is processed, as the clause requires; generic in what an input does."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__replay_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Applying each `ClockAdvance` to both clocks before the next atom, as the clause requires, is what makes the replay hold the recording's samples from any starting clocks."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "rfcs_10_5__clock_atom_goes_first",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLOCK ATOM GOES FIRST. Written input-first, every sample is on the trace and the replay still holds the wrong one: each input is consumed under the clocks of the step before it. What a conforming recorder must do, by the one that does not."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "rfcs_10_5__record_input_first",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A recorder that writes a step's input BEFORE the step's `ClockAdvance`: the shape [LTIM.2.8.5] forbids ('must record a sample before it records the input or the pump boundary the sample was taken for'). The clause binds the replayer to apply a `ClockAdvance` before the atom after it, which is why the order matters. The refused shape."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "rfcs_10_5__replay",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE REPLAY: the samples a replay engine holds, one per input it consumes. It has the atoms and its own clocks and nothing else; a `ClockAdvance` sets both clocks before the next atom, as the clause requires, and an input is consumed under the clocks as they then stand."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "rfcs_10_5__ORDER",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "rfcs_10_5__applied",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "rfcs_10_5__restored",
+        "tag": "spec"
+      }
+    ]
+  }
+}

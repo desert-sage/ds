@@ -1,0 +1,21 @@
+{
+    "id": "LNUL.5.1d",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "WF-3b ([LNUL.4.1] / [LNUL.5.1]) — `s.state + 1 > 5` does NOT fire on a null reading. Arithmetic propagates null exactly as comparison does, so the predicate is null and null does not fire ([LNUL.4.3]). fact_count 1 (Sensor only, no Marker). PATH PINNED: the arithmetic evaluation path in the RETE alpha test, not the compile-time null walk — LNUL.5.1c is the compile-time half and only shows the program is accepted.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state + 1 > 5.0\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": null
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

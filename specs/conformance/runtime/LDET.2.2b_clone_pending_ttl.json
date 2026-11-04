@@ -1,0 +1,30 @@
+{
+    "id": "LDET.2.2b_clone_pending_ttl",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1], [RARC.5.2.4]: a clone carries a TTL deadline that is scheduled and not yet due. Pulse lives 2_s; `seen` logs every Pulse. Pin: set 0; assert Pulse 1; pump (seen fires); advance 1 s; pump; CLONE, with Pulse 1 due at 2 s; then on both: advance 1.5 s; pump (+2.5 s: Pulse 1 expires, a fact_retract on each stream); assert Pulse 2; pump (seen fires); FREE the source; on the clone: assert Pulse 3; pump (seen fires). The post-clone streams are compared event for event (runner.py `_run_clone_determinism`), so a clone that dropped the source's deadline keeps Pulse 1 and its stream lacks the retraction the source's carries. PATHS: libds `ds_engine_clone` through pyds `Engine.clone()`; the Mercury runtime in test_behave.m's `run_clone_determinism`, where a clone is the engine value used twice and the vector holds it to its counts.",
+    "rules_ds": "schema Pulse scope ttl 2_s:\n    v: Int\n\nrule seen:\n    Pulse p\n->\n    log info \"pulse {p.v}\"\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "after_clone": [
+            { "op": "advance", "delta_ns": 1500000000 },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "free": "source",
+        "after_free": [
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 3 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 1,
+        "min_rule_fires_after_free": 1
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "RCLI.3.1",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.3",
+  "seq": 31,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.3.1] **Four exit codes, and they are a contract.**\n\n| Code | Meaning |\n|---|---|\n| `0` | success |\n| `1` | compile error — the program was refused, and one or more diagnostics rendered to stderr |\n| `2` | usage error — the invocation did not parse against `compiler/dsc_cli.ebnf` and used none of this compiler's own options or subcommands ([RCLI.1.3]), named an option this edition does not admit ([RCLI.2.1]) or this compiler does not implement, named a path that could not be read or written, or found no bundled library ([RCLI.1.11]) |\n| `3` | internal compiler error — the compiler failed while carrying out an invocation it had accepted: a fault in the compiler, or its memory exhausted |\n\nThe distinction between `1` and `2` is what a build script branches on: a\ncompile error means the program is wrong, a usage error means the command was.\nCollapsing them would make a mistyped flag indistinguishable from a rejected\nprogram.\n\nA `3` is the compiler's fault, never the program's or the command's. A compiler that finds it cannot finish what an invocation\nasks **must** exit `3`, write the reason to stderr, and write none of the\nartefact it could not finish: no byte of it to standard output, and no file at\nthe path `-o` names. [RCLI.1.4] states which artefacts `compile-project` keeps\nwhen it stops. It renders no diagnostic, since it reaches no verdict on the\nprogram.\n\nA compiler must refuse an option it does not implement, with `2`, rather than\naccept and ignore it: an ignored option hands back an artefact the author\nbelieves carries something it does not.\n\n",
+  "refs": [
+    "RCLI.1.11",
+    "RCLI.1.3",
+    "RCLI.1.4",
+    "RCLI.2.1"
+  ]
+}

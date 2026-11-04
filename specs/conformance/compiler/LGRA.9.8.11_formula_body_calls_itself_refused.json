@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.9.8.11_formula_body_calls_itself_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.9.8.11]: \"The compiler must reject a call there to a formula's function, the formula's own included, ... whether or not anything calls the formula.\" `there`'s body calls `there` itself, and no rule calls the formula. Both ends are base units, so the program would reach lowering. PATH PINNED: `dsc.validate.lgra_9_8_11_formula_body`, from `unit_decl_checks`.",
+    "rules_ds": "unit dimension da storage float64 base ua\nunit ua: da\nunit dimension db storage float64 base ub\nunit ub: db\n\nunit formula ab:\n    there(x: ua): ub = there(x)\n    back(x: ub): ua = x\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION",
+        "expected_line": 7
+    }
+}

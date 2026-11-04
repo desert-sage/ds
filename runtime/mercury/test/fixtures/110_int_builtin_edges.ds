@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Integer builtins at the int64 edges. Each guard holds for exactly the
+# clause's answer:
+#
+#   abs_wraps       [LEXP.3.2], [LEXP.7.13.1]: |INT64_MIN| wraps to INT64_MIN.
+#   min_exact,      [LEXP.3.8] over [LDET.3.2.2]'s exact Int: 2^53+1 and 2^53
+#   max_exact       are distinct.
+#   int_rounding    [LEXP.3.2]: floor/ceil/trunc/round of an Int are the Int
+#                   (the first three are `math`'s, imported bare, [LIMP.3.3.4]).
+#   floordiv_wrap,  [LEXP.7.5] / [LEXP.7.6]: INT64_MIN // -1 wraps to
+#   floormod_zero   INT64_MIN, and the remainder is 0.
+#   mul_wraps       [LEXP.7.13.1]: INT64_MAX * 2 is -2.
+#   bit_length_min  [LEXP.3.7.1]: the bits of |INT64_MIN| = 2^63 are 64.
+#   bit_count_word  [LEXP.3.7.1]: popcount of the two's-complement word, so
+#                   INT64_MIN has one bit set.
+#   bit_control     both bit builtins at 5: two bits set, three wide.
+#
+# The guards are in `where` position, the channel the runtime differential
+# compares.
+
+use default
+
+from math import floor, ceil, trunc
+
+
+schema E scope logical:
+    entity_id: String key
+    x: Int mutable
+    y: Int mutable
+
+rule abs_wraps:
+    E e where abs(e.x) == e.x and e.x < 0
+->
+    log info "abs wraps"
+
+rule min_exact:
+    E e where min(e.x, e.y) == e.y and e.x != e.y
+->
+    log info "min is y"
+
+rule max_exact:
+    E e where max(e.y, e.x) == e.x and e.x != e.y
+->
+    log info "max is x"
+
+rule int_rounding:
+    E e where floor(e.x) == e.x and ceil(e.x) == e.x and trunc(e.x) == e.x and round(e.x) == e.x
+->
+    log info "rounding an Int is the Int"
+
+rule floordiv_wrap:
+    E e where e.y == -1 and e.x < 0 and e.x // e.y == e.x
+->
+    log info "floordiv wraps"
+
+rule floormod_zero:
+    E e where e.y == -1 and e.x % e.y == 0
+->
+    log info "floormod zero"
+
+rule mul_wraps:
+    E e where e.x * 2 == -2
+->
+    log info "mul wraps"
+
+rule bit_length_min:
+    E e where e.x < 0 and e.x.bit_length == 64
+->
+    log info "bit_length of INT64_MIN is 64"
+
+rule bit_count_word:
+    E e where e.x < 0 and e.x.bit_count == 1
+->
+    log info "INT64_MIN has one bit set"
+
+rule bit_control:
+    E e where e.x.bit_count == 2 and e.x.bit_length == 3
+->
+    log info "5 is two bits set, three wide"

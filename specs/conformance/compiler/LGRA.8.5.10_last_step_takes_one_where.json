@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.8.5.10_last_step_takes_one_where",
+    "category": "compiler",
+    "scenario": "[LGRA.8.5.10] / [LGRA.8.1]: a one-line sequence's trailing `where` is its last step's, and `then_step ::= 'then' 'latest'? type_ref binding? 'within' time_expr where_clause?` gives a step exactly one `where`, AFTER its `within`. So a step written with a `where` before its `within` and a trailing one after it is no `then_step`, and it is refused at the parse. The line-leading form refuses the same text the same way. PATH PINNED: `dsc.parse.lgra_8_5_2_take_then_steps`, whose step body cannot close on a `where` and then find a `within`, so the chain does not form and the line is not a pattern.",
+    "rules_ds": "schema A scope ttl 1_h:\n    v: Int\n    ts: Time\n\nschema B scope ttl 1_h:\n    v: Int\n    ts: Time\n\nrule r:\n    A a then B b where b.v > 0 within 5_s where b.v > a.v\n->\n    log info \"{b.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 10
+    }
+}

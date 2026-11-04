@@ -1,0 +1,127 @@
+{
+  "id": "LNUL.2.1",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.2",
+  "seq": 33,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.2.1] One canonical value, spelled **`null`** — the same spelling as\n`Json` null, which the language already represents. There is exactly **one**\n`null` (no\nNaN-style variants), so it hashes, encodes, orders, and compares identically\non every conforming engine.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lnul_2_1__value",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The values of the where fragment: Int, an IEEE binary64 Float, a String (its text, a sequence of codepoints, [LSTR.1.1]), Bool, a Json document, and exactly one null -- the one canonical null the clause requires, with no variant a comparison could tell apart (a NaN is a Float, never a null; a JSON null inside a document reads as this null, [LNUL.3.4])."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "Lnul_2_1__signal",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a member of `Expr.kind` was found to mean. FOUR constructors, three of which are the subject: `lit_bool` (4), `now` (11) and `lit_null` (16) are all `bool` on the wire. `SUninterpreted` KEEPS THE FIELD NUMBER rather than collapsing to one \"other\", so an unmodelled member and a member arriving under the wrong wire type stay distinguishable -- collapsing them would be the same blur this module exists to refuse."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__bool_is_the_payload",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`lit_bool` IS its payload -- the contrast that gives the other two their content. Without it the module reads as \"bool payloads are ignored\", which is false and is the mirror-image mistake. Three members carry a bool; exactly one means it."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__declared",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The members of `Expr.kind` as `proto/rete_expr.proto` declares them, written out as literal patterns: 1 to 8, 11 to 18, 20 and 21. Nine and ten are reserved, and 19 (`json_tainted`) is a field of `Expr` beside the oneof."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__field_outside_the_oneof_is_not_a_member",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The field beside the oneof (19, `json_tainted`) is not a member, for every payload."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__kind_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The member a body sets, or `Nothing` if it sets none. Delegates last-one-wins to `rfcs_19_1__last_oneof` because that rule is protobuf's rather than this schema's."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__late_member_keeps_its_number",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The late member (20, `interp`) keeps its number, past the reserved pair and the field beside the oneof, for every payload."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__member",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether one field is a member of `Expr.kind`, and what it means. `Nothing` means NOT A MEMBER -- a number outside the oneof, which a parser skips as unknown. It does not mean malformed and it does not mean unset; an unset oneof is a property of the BODY. It asks `lnul_2_1__declared`, the member set the proto declares written out, rather than a bound, so a reserved number or a field beside the oneof is never claimed as a member and a member added later surfaces as unknown until the set names it."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__now_is_the_case_not_the_payload",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`now` is the CASE, for EVERY payload -- the same hazard one field over. Stated separately rather than folded into the null lemma because a single lemma over \"the ignored-payload members\" would have to name that set, which is precisely what a reader gets wrong."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__null_is_not_false",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE HAZARD, as a refutation. `lit_null` payload 0 and `lit_bool` payload 0 are the same bytes but for the field number, so a decoder keyed on the payload answers `false` for `null` -- and `false` is a perfectly ordinary value, so nothing downstream would ever raise it. This clause's \"exactly ONE null ... encodes identically on every conforming engine\" is what such a decoder breaks."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__null_is_the_case_not_the_payload",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`lit_null` is the CASE, for EVERY payload -- quantified over the byte, which is what makes it a theorem rather than a worked example. The proto says the bool \"is ignored\"; this is that sentence with nothing left to trust."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__reserved_number_is_not_a_member",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A reserved number (9) is not a member, for every payload."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__undeclared_number_is_not_a_member",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The next number (22) is not a member, for every payload: an undeclared number reads as unknown. It read 21 until `entry_stamp` took 21, and failed its `Refl` the moment the set gained it, which is the probe doing its job."
+      },
+      {
+        "path": "formal/idris/Rete/Expr.idr",
+        "name": "lnul_2_1__unset_kind_is_not_an_expression",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A body setting no member is not an expression. The tempting default is `null` and it would be the worst available: it turns a producer defect into the one value [LNUL] gives Kleene semantics to, so a malformed `Expr` would evaluate, propagate, and read as deliberate."
+      }
+    ]
+  }
+}

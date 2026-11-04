@@ -1,0 +1,10 @@
+{
+    "id": "LINT.4.2",
+    "category": "compiler",
+    "scenario": "Mixed-type interval `overlaps` per LINT.4.2 — both intervals must have matching element types. `Int`-interval `overlaps` `Time`-interval rejects with DS_VALIDATE_TYPE_MISMATCH.",
+    "rules_ds": "schema Check scope logical:\n    entity_id: String key\n    i_start: Int mutable\n    i_end: Int mutable\n    t_start: Time mutable\n    t_end: Time mutable\n\nrule r:\n    Check c where (c.i_start..c.i_end) overlaps (c.t_start..c.t_end)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

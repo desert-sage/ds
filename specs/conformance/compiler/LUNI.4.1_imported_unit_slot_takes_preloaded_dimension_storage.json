@@ -1,0 +1,12 @@
+{
+    "id": "LUNI.4.1_imported_unit_slot_takes_preloaded_dimension_storage",
+    "category": "compiler",
+    "scenario": "A slot typed with an IMPORTED unit symbol whose dimension comes from the implicitly-preloaded `units.core`. Pins the arrangement every shipped unit actually has: the symbol (`fahrenheit`) is in one library (`cust`, standing in for `units.customary`), the `unit dimension ... storage` clause declaring its runtime storage is in `units.core`, and `units.core` is preloaded rather than imported, so it is absent from the import walk and its storage reaches slot emission only through the preload. The `units.core` is the one the repository ships, on every fixture's search path ([RCTS.1.2.14]). NOT pinned here: the emitted Slot atom's kind, which needs byte inspection.",
+    "rules_ds": "from cust import fahrenheit\n\nschema Reading scope logical:\n    id: String key\n    temp: fahrenheit mutable\n",
+    "libraries": {
+        "cust": "unit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

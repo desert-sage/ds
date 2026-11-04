@@ -1,0 +1,23 @@
+{
+    "id": "LSER.17.2_min_max_all_time",
+    "category": "logical",
+    "scenario": "[LSER.17.2] / [LSER.14.1]: `min` and `max` over `all_time` return the slot's type, nullable, over the whole history with no forgetting, on the running-stats backing (SeriesBackendWelfordEwma, [LSER.18.1] -- on a window they ride the monotonic deque instead). Values 5, 2, 9 then 6, one per pump, each read pre-sample ([LSER.8.6.1]): cold is `null` (no log), then [5] -> 5 and 5, [5, 2] -> 2 and 5, [5, 2, 9] -> 2 and 9. Drives libds `welford_ewma.c`'s running `min_v` / `max_v` and the Mercury `ds.series` `agg_min` / `agg_max` over the all-time samples. The text `min 2` pins the Int slot's type.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    min, max all_time\n\nrule r:\n    Reading s where s.min is not null\n->\n    log info \"min {s.min} max {s.max}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 9 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 6 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["min 5 max 5", "min 2 max 5", "min 2 max 9"]
+    }
+}

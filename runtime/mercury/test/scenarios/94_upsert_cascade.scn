@@ -1,0 +1,16 @@
+# A host upsert records its own FactAssert before the cascade it causes
+# ([LFST.7.3.6], [RFCS.6.7]). See fixtures/127_upsert_cascade.ds.
+#
+#   pump 1   Ref(1, note 1) derives Main(1) logically
+#   assert   Ref(1, note 2) replaces Ref(1, note 1). The arriving input is
+#            recorded first (`assert Ref`), then the withdrawal it causes
+#            (`retract`, SUPERSEDED), then the truth-maintenance cascade: Main(1)
+#            loses its only justifier and is withdrawn too
+#   pump 2   `derive` matches the new Ref and Main(1) is derived again
+#
+# The second `assert` is the case: [LFST.7.3.6] gives the input's own record
+# a seq before the records of the effects it causes, the cascade among them.
+assert Ref id=1 note=1
+pump
+assert Ref id=1 note=2
+pump

@@ -1,0 +1,28 @@
+# A Time, Date and Duration slot cross tiers as KIND_INT ([RFCS.23.2],
+# [RFCS.23.3], [NCBK.10.4]). Fixture 134_temporal_external. Drives each
+# runtime's FactExternal writer through the call, whose fact argument the
+# trace prints as its bytes, and its receiver through `resend`.
+#
+# Handles: 0 the Stamp, 1 the trigger.
+#
+#   seen = 1700000000000000000  2023-11-14T22:13:20Z
+#   day  = 19675                2023-11-14
+#   span = 90000000000          90 s
+# @spec [RFCS.23.2]
+assert Stamp k=1 seen=1700000000000000000 day=19675 span=90000000000
+pump
+assert SendStamp n=1
+pump
+#
+# 1. SENT BACK WHILE LIVE. The record's fact equals the live Stamp: a no-op
+# reassertion, nothing on the trace.
+resend 0
+pump
+#
+# 2. SENT BACK AFTER A RETRACT. The Stamp arrives again with the same three
+# integers, read as its declared types: `show` fires and renders the same
+# instant as before.
+retract 0
+pump
+resend 0
+pump

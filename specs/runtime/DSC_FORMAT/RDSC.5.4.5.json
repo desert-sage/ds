@@ -1,0 +1,31 @@
+{
+  "id": "RDSC.5.4.5",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.5.4",
+  "seq": 656,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.5.4.5] **The `SchemaLogical` atom carries the schema's declared\nlifecycle**, in `lifecycle` (`proto/schema_logical.proto#SchemaLifecycle`):\n`EXPLICIT`, `LOGICAL` or `ACTIVATION`, as `scope` declared it ([LSCP.1.5]).\n`ttl` is not a member — a `ttl` schema carries an `SchemaTtl` atom with its duration\ninstead. A runtime must refuse an `SchemaLogical` atom whose `lifecycle` is\n`UNSPECIFIED` with `DS_ERR_DSC_SEMANTIC` ([NERR.8.1]): every artefact a runtime\naccepts was written by a release in its own version series ([LDET.1.10]), and\nevery such release writes the field, so the zero value is a field nobody wrote.\n\nThe compiler must emit the field, and the runtime must drive each\nlifecycle's retraction from it: no engine retraction for `EXPLICIT`\n([LSCP.2.1.1]), justification withdrawal for `LOGICAL`, and every completion\npath of the asserting activation for `ACTIVATION` ([LSCP.2.4.1]).\n\n**Slot roles do not carry this and cannot be made to.** A `logical` schema\nmarks every slot `key` or `mutable` ([LFAC.1.7.4]), so a schema with a role on\nno slot is not logical — but `explicit` and `activation` are both in that\nstate, and `IDENTITY_ROLE_UNSPECIFIED` is proto3's zero, so the absence a\nreader would have to infer from is indistinguishable from a field nobody\nwrote. A reader that took the absence for `MUTABLE` would build a logical\nschema with an empty identity key, under which every fact of the schema is the\nsame fact.\n\n",
+  "refs": [
+    "LDET.1.10",
+    "LFAC.1.7.4",
+    "LSCP.1.5",
+    "LSCP.2.1.1",
+    "LSCP.2.4.1",
+    "NERR.8.1"
+  ],
+  "errors": [
+    "DS_ERR_DSC_SEMANTIC"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/schema_logical.proto",
+        "name": "SchemaLifecycle",
+        "tag": "spec"
+      }
+    ]
+  }
+}

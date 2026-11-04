@@ -1,0 +1,31 @@
+{
+    "id": "RFCS.23.7_a_reference_with_no_target_crosses",
+    "clauses": ["RFCS.23.7", "RFCS.23.4"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7]: \"`KIND_NULL` in a fact-reference slot is a reference with no target ... The engine must admit it whether or not the slot is nullable\". [RFCS.23.4]: \"A reference whose target has left working memory is written as `KIND_NULL`, whether or not the slot is nullable\". The sender holds a `ttl` `U` and rule `mk` emits an `F` whose non-nullable `u` refers to it. `F` is `ttl` too, so `U`'s leaving does not retract it. The clock passes `U`'s 1 s and `U` expires, so the sender holds `F` alone. Then `up` publishes an `R` referring to `F`, whose record inlines `F` with `u` as `KIND_NULL`. The receiver's fact count is 2: `F` and `R`. A receiver that refuses `KIND_NULL` in a non-nullable slot reads 0. The sender holds `F` and `Go`: a `publish` asserts nothing there ([LTIE.4.3]). PATH PINNED: libds's `fx_field` (rfcs/codec.c), `fx_no_target`, through pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.plan_field`, `pv_no_target`, through test_behave.m's `receive_on_tier`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema U scope ttl 1_s:\n    v: Int\n\nschema F scope ttl 1_h:\n    v: Int\n    u: U\n\nschema R scope logical:\n    k: Int key\n    f: F mutable\n\nschema Go scope logical:\n    k: Int key\n\nrule mk:\n    U x\n->\n    emit F v: x.v u: x\n\nrule up:\n    Go g\n    F y\n->\n    publish R k: g.k f: y\n"
+            },
+            "receiver": {
+                "rules_ds": "schema U scope ttl 1_s:\n    v: Int\n\nschema F scope ttl 1_h:\n    v: Int\n    u: U\n\nschema R scope logical:\n    k: Int key\n    f: F mutable\n"
+            }
+        },
+        "steps": [
+            { "engine": "sender", "op": "assert", "schema": "U", "slots": { "v": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "sender", "op": "advance", "delta_ns": 2000000000 },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "receiver", "op": "forward_external", "from": "sender" }
+        ],
+        "engine_fact_counts_after": {
+            "sender": 2,
+            "receiver": 2
+        }
+    }
+}

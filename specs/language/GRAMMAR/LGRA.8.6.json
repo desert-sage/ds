@@ -1,0 +1,23 @@
+{
+  "id": "LGRA.8.6",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.8",
+  "seq": 964,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LGRA.8.6] **A pattern binding, if written, must be referenced — and the\nbinding is optional.** A reference in the pattern's own `where` clause, in a\nlater pattern's `where` clause, in a `let` right-hand side, or in an action\ncounts. A binding that is never referenced is a **compile error**.\n\n**A negated pattern's binding is in scope in its own `where` alone.** It names\na fact whose absence the pattern tests, so no other part of the rule has a fact\nto read through it. The compiler must refuse a reference to it in a later\npattern's `where`, in a `let` right-hand side or in an action with\n`DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE`. The name is bound, so this is not\n[LGRA.13.8]'s unknown binding; it is a bound name read where it has no fact.\n\nAn author who does not need the name omits it ([LGRA.8.1]): `Graph` and `no\nGraph` are well-formed patterns, and say what the existence-trigger idiom means.\n\n**A reference in the pattern's own `where` counts, and that is load-bearing.**\n`Graph r where r.status == \"ok\"` cannot drop `r` — the filter is unexpressible\nwithout the name. A rule that did not count same-pattern references would demand\nthe impossible.\n\n⚠ **The inverse is NOT true: a `where` does not require a binding.** A\n`where` is pattern-attached for Rete early-pruning but may legitimately\nreference only constants or an **earlier** pattern's binding, and the pattern\nit is attached to then needs no binding of its own. The rule is about an\nunreferenced *binding*, never about an unaccompanied `where`.\n\n**No ambiguity arises from making the binding optional.** `where`, `no` and\n`within` are reserved words ([LLEX.9.5]), so `Graph where …` and\n`TempReading within 30_s` cannot be read as a binding named `where` or `within`.\n\n```{admonition} What this does and does not affect\n:class: note\n**`then` sequences.** Each member may omit its binding independently; the `ts`\nordering `then` enforces is structural, and the trailing `where` follows the\nrule above.\n\n**`latest`.** No interaction: it pins **the first pattern** to its most recent\nmatch ([LTHE.2.5.3], [LTHE.2.5.4]), positionally rather than by name.\n\n**Negation.** A negated pattern's binding is referenced when its own `where`\nreads it, which is the one place it is in scope (above).\n```\n\n",
+  "refs": [
+    "LGRA.13.8",
+    "LGRA.8.1",
+    "LLEX.9.5",
+    "LTHE.2.5.3",
+    "LTHE.2.5.4"
+  ],
+  "errors": [
+    "DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE",
+    "DS_VALIDATE_UNREFERENCED_BINDING"
+  ]
+}

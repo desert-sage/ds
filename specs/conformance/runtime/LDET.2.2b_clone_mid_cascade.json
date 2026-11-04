@@ -1,0 +1,24 @@
+{
+    "id": "LDET.2.2b_clone_mid_cascade",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1]: a clone taken between an assert and the pump that fires it. A, B and C are logical; `ab` emits B from A, `bc` emits C from B, `cl` logs each C. Pin: set 0; assert A 1, NOT pumped, so the activation of `ab` is pending; CLONE; then on both: pump (the cascade: ab, bc, cl fire, three rule fires); FREE the source; on the clone: assert A 2; pump (the cascade again). The post-clone streams are compared event for event (runner.py `_run_clone_determinism`), so a clone that lost the pending activation, or the asserted fact, fires nothing on its first pump and its stream parts from the source's. PATHS: libds `ds_engine_clone` through pyds `Engine.clone()`; the Mercury runtime in test_behave.m's `run_clone_determinism`, which holds it to its counts.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nschema C scope logical:\n    v: Int key\n\nrule ab:\n    A a\n->\n    emit B logical v: a.v\n\nrule bc:\n    B b\n->\n    emit C logical v: b.v\n\nrule cl:\n    C c\n->\n    log info \"c {c.v}\"\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "A", "slots": { "v": 1 } }
+        ],
+        "after_clone": [
+            { "op": "pump" }
+        ],
+        "free": "source",
+        "after_free": [
+            { "op": "assert", "schema": "A", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "min_rule_fires": 3,
+        "min_rule_fires_after_free": 3
+    }
+}

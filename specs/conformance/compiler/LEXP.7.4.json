@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.7.4",
+    "category": "compiler",
+    "scenario": "`/` always produces `Float` (Python 3 semantics) per LEXP.7.4, even when both operands are `Int`. `Int / Int` does not truncate. Pin: `n.dividend / n.divisor < 0.5` over two Int slots compiles. PINS ONLY THAT IT COMPILES. The Float result is pinned at runtime by runtime/LEXP.7.4.div.",
+    "rules_ds": "schema Nums scope logical:\n    dividend: Int key\n    divisor: Int mutable\n\nrule r:\n    Nums n where n.dividend / n.divisor < 0.5\n->\n    log info \"small ratio\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

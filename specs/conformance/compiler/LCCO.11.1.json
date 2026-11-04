@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.11.1",
+    "category": "compiler",
+    "scenario": "Compile-time validation per LCCO.11.1 — every continuation predicate is checked against the call target's response schema (LCRS.5.5), and a reference to a slot the schema does not declare is a compile error, DS_VALIDATE_UNKNOWN_SLOT (LGRA.13.8). Path: `response` binds the response fact, a fact of the schema the service's `response T` line names, so `response.<field>` is a slot access on that schema. `service weather.get_forecasts` declares `response WeatherResponse`, whose slots are `corr`, `forecast` and `code`; the `on` clause references `response.unknown_field`, which is none of them. Rejects with DS_VALIDATE_UNKNOWN_SLOT. NOT pinned by this vector: a sibling rule matching `WeatherResponse` directly, which is checked as any pattern is.",
+    "rules_ds": "schema TimeOfDay scope ttl 1_min:\n    state: String\n\nschema WeatherResponse scope ttl 1_h:\n    corr: String\n    forecast: Json\n    code: Int\n\nservice weather.get_forecasts:\n    kwarg entity_id: String literal required\n    response WeatherResponse\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.unknown_field > 0:\n            log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SLOT"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LECC.1.4",
+    "category": "compiler",
+    "scenario": "Maximum segment count per LECC.1.4 — code patterns deeper than `<family>.<a>.<b>.<c>` (four segments) are forbidden. The compiler must reject `error <pattern>:` clauses whose pattern exceeds four segments. Pin: a five-segment error pattern under the `adapter` family rejects with DS_VALIDATE_ERROR_PATTERN_TOO_DEEP, and with no other code: the family is one [LECC.6.4] admits.",
+    "rules_ds": "service weather.get_forecasts:\n    kwarg entity_id: String\n    no response\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        error adapter.failed.scope.subcategory.toodeep:\n            log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ERROR_PATTERN_TOO_DEEP"
+    }
+}

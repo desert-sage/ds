@@ -1,0 +1,11 @@
+{
+    "id": "LIMP.12.3_local_callerror_is_a_collision",
+    "clauses": ["LIMP.12.3", "LIMP.12.1"],
+    "category": "compiler",
+    "scenario": "[LIMP.12.3]: every compilation imports the built-in module ([LIMP.12.1]), so a file's own `schema CallError` is two distinct schemas under one name, refused with DS_VALIDATE_IMPORT_NAME_COLLISION. No alias resolves it, because nothing names the module. The file declares `CallError` with a slot of its own and a different lifetime, and a rule matches it. PATH PINNED: `dsc.resolve`'s `limp_12_3_builtin_collisions`, over the author's schema declarations; `dsc.driver.inject_builtin_schemas` leaves the module's copy out of such a file, so the collision is not reported as DS_VALIDATE_DUPLICATE_SCHEMA. Break: a compiler that lets a local declaration shadow the builtin compiles this file.",
+    "rules_ds": "schema CallError scope ttl 1_h:\n    mine: Int\n\nrule r:\n    CallError e where e.mine == 1\n->\n    log info \"local\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_NAME_COLLISION"
+    }
+}

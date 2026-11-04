@@ -1,0 +1,14 @@
+{
+    "id": "LSTR.2.1",
+    "category": "runtime",
+    "scenario": "`len(s)` returns the codepoint count per LSTR.2.1. A rule gated on `len(m.text) == 5` fires for a 5-character ASCII string. Fact lands in working memory.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule trig:\n    Msg m where len(m.text) == 5\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Msg", "slots": { "entity_id": "m1", "text": "hello" } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

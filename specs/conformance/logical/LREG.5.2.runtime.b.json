@@ -1,0 +1,16 @@
+{
+    "id": "LREG.5.2.runtime.b",
+    "category": "logical",
+    "scenario": "Case-insensitive `/i` flag at runtime per LREG.5.2. `/^WARN/i` matches `WARN`, `warn`, and `Warn`. Three users: `WARN level` (matches), `warn: low` (matches), `info msg` (doesn't). Two fires.",
+    "rules_ds": "schema Log scope logical:\n    entity_id: String key\n    msg: String mutable\n\nrule warn_log:\n    Log l where l.msg ~ /^WARN/i\n->\n    log info \"warn\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l1", "msg": "WARN level high" } },
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l2", "msg": "warn: low priority" } },
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l3", "msg": "info: everything fine" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["warn_log", "warn_log"]
+    }
+}

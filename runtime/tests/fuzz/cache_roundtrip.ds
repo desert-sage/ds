@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# cache_roundtrip.ds -- the program fuzz_cache_roundtrip.c loads. `copy`
+# reads the cache key named in a Probe's `name` with `cached()` and writes it,
+# as a String, under "out".
+
+use default
+
+schema Probe scope logical:
+    name: String key
+
+rule copy:
+    Probe p
+->
+    let v = cached(p.name)
+    cache key: "out" value: v

@@ -1,0 +1,13 @@
+{
+  "id": "LGRA.13.4_duplicate_slot_in_imported_library",
+  "category": "compiler",
+  "scenario": "[LGRA.13.4]: field names are unique within a schema, and the check runs on an imported library's schemas too, even when the library declares no rule: a library's schemas are part of its importable surface ([LIMP.7.1]), and an imported library is emitted whole into the importer's artefact ([RDSC.4.7]). The library declares one schema with `v` twice and nothing else; the importer uses the qualified form, declares its own schema and rule, and depends on nothing the library declares, so the library's DS_VALIDATE_DUPLICATE_SLOT is the program's only error. Pins the path in `dsc.driver`'s library validation for a library with NO rule; `compiler/LGRA.8.6_unreferenced_binding_in_imported_library` pins a library that has one.",
+  "rules_ds": "import pack\n\nschema Own scope logical:\n    k: Int key\n\nrule main_rule:\n    Own\n->\n    log info \"main\"\n",
+  "libraries": {
+    "pack": "schema Sensor scope logical:\n    v: Int key\n    v: Float mutable\n"
+  },
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_DUPLICATE_SLOT"
+  }
+}

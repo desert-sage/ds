@@ -1,0 +1,23 @@
+{
+    "id": "LSER.16.9_first_last_all_time",
+    "category": "logical",
+    "scenario": "[LSER.16.9] / [LSER.14.1]: `first` and `last` over `all_time` are the earliest and the newest sample ever absorbed for the identity, in the slot's own type, on the running-stats backing (SeriesBackendWelfordEwma, [LSER.18.1] -- on a window they ride SeriesBackendFifoDeque instead). Values 3, 5, 8 one per pump, each read pre-sample ([LSER.8.6.1]): cold is `null` (no log), then [3] -> 3 and 3, [3, 5] -> 3 and 5, [3, 5, 8] -> 3 and 8. Drives libds `welford_ewma.c`'s `typed_first` / `typed_prev` and the Mercury `ds.series` `agg_first` / `agg_last` over the all-time samples.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    first, last all_time\n\nrule r:\n    Reading s where s.first is not null\n->\n    log info \"first {s.first} last {s.last}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 8 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 9 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["first 3 last 3", "first 3 last 5", "first 3 last 8"]
+    }
+}

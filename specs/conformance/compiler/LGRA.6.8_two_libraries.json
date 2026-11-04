@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.6.8_two_libraries",
+    "category": "compiler",
+    "scenario": "[LGRA.6.8]: libraries `hi` and `lo` each declare a rule `alarm`, and the root file imports a schema from each and declares no rule of its own. Both library rules compile into the artefact ([LIMP.7.5]), so the unit holds two rules named `alarm` and the compiler refuses it with DS_VALIDATE_DUPLICATE_RULE. PATH PINNED: the check between two libraries, neither of which is the file being compiled. A check that only compared library rules against the root file's would pass this program.",
+    "rules_ds": "from hi import High\nfrom lo import Low\n\nschema Unused scope logical:\n    k: Int key\n",
+    "libraries": {
+        "hi": "schema High scope logical:\n    v: Int key\n\nrule alarm:\n    High h where h.v > 10\n->\n    log info \"high\"\n",
+        "lo": "schema Low scope logical:\n    v: Int key\n\nrule alarm:\n    Low l where l.v < 0\n->\n    log info \"low\"\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_RULE"
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "LLOG.4.2.late_emit",
+  "category": "logical",
+  "scenario": "LLOG.4.2 negation-justified retraction must fire for a fact emitted by a rule AFTER the guarded token already exists. `block_input` emits `Blocked{C}` while `no Product where name == c.product` holds; once `produce` emits the matching `Product{foo.o}` in a later pump, the negation must retract `Blocked{C}` so `ready(C)`/`fetch_key(C)` schedule. A not_right_activate that consults a right-fact index populated only from the left side misses a late-arriving fact once that index is allocated by an unrelated earlier join (the source `Product{foo.c}` joining `Consumes{P}`). The `fetch_key` rule logs `key` on each firing; it fires once for P (pump1) and — only if the unblock works — once for C (pump2).",
+  "rules_ds": "schema Product scope logical:\n    name: String key\n    pathname: String mutable\n    digest: String mutable\nschema Step scope logical:\n    id: String key\n    tool: String mutable\n    argv: String mutable\nschema Output scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\nschema Consumes scope logical:\n    step: String key\n    product: String key\nschema Blocked scope logical:\n    step: String key\nschema Ready scope logical:\n    step: String key\nschema ActionKey scope logical:\n    step: String key\n    action_key: String mutable\nschema Dispatched scope logical:\n    step: String key\nschema StepOutput scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\n    digest: String mutable\nservice cache.key:\n    kwarg step: String\n    no response\nservice exec.run:\n    kwarg step: String\n    kwarg argv: String\n    no response\nrule block_input:\n    Consumes c\n    no Product p where p.name == c.product\n->\n    emit Blocked logical step: c.step\nrule ready:\n    Step s\n    no Blocked b where b.step == s.id\n->\n    emit Ready logical step: s.id\nrule fetch_key:\n    Ready r\n    no ActionKey k where k.step == r.step\n->\n    call cache.key step: r.step nocooldown\n    log critical \"key\"\nrule run:\n    ActionKey k\n    no Dispatched d where d.step == k.step\n    Step s where s.id == k.step\n->\n    call exec.run step: s.id argv: s.argv nocooldown\nrule produce:\n    ActionKey k\n    StepOutput so where so.step == k.step\n->\n    emit Product logical name: so.name pathname: so.pathname digest: so.digest\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Product",  "slots": { "name": "foo.c", "pathname": "src/foo.c", "digest": "Hc" } },
+      { "op": "assert", "schema": "Step",     "slots": { "id": "P", "tool": "cc", "argv": "ccP" } },
+      { "op": "assert", "schema": "Output",   "slots": { "name": "foo.o", "step": "P", "pathname": "b/foo.o" } },
+      { "op": "assert", "schema": "Consumes", "slots": { "step": "P", "product": "foo.c" } },
+      { "op": "assert", "schema": "Step",     "slots": { "id": "C", "tool": "cc", "argv": "ccC" } },
+      { "op": "assert", "schema": "Output",   "slots": { "name": "bin", "step": "C", "pathname": "b/bin" } },
+      { "op": "assert", "schema": "Consumes", "slots": { "step": "C", "product": "foo.o" } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "ActionKey",  "slots": { "step": "P", "action_key": "kP" } },
+      { "op": "assert", "schema": "StepOutput", "slots": { "name": "foo.o", "step": "P", "pathname": "b/foo.o", "digest": "Hfoo" } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["key", "key"]
+  }
+}

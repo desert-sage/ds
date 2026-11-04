@@ -1,0 +1,20 @@
+{
+  "id": "LUNI.13.5.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.13.5",
+  "seq": 1368,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.13.5.2] **No implicit rounding.** Any expression producing a\nfractional-currency intermediate (`Float × currency`, `currency / Float`, FX\nconversion) must be wrapped in an explicit `.round(\"<mode>\")` *before*\nassignment to a currency slot, comparison against a currency slot, or use as an\n`emit`-action argument typed as currency. Compile error:\n`DS_VALIDATE_CURRENCY_IMPLICIT_ROUND`.\n\n**`is` / `is not` ([LNUL.4.9]) is not a fourth position.**\n\nThe three positions above share a property the tag test does not: each\n**consumes the value** — stores it, compares its magnitude, or ships it — so a\nrounding the author did not write would change what is stored, matched or sent.\nA tag test consumes only the discriminant, and reads it **before any value\nconversion** ([LNUL.4.9]), so there is no implicit rounding for it to be\nimplicit about.\n\nAn unrounded fractional-currency intermediate is a `Ratio`, and a `Ratio`\nanswers `false` to all six tag names ([LNUL.4.9]). That is the true answer\nabout the value in hand, not a silently wrong one: the author who asks whether\nan unrounded intermediate is an `Int` is told that it is not. Refusing the\nspelling would make `is` the one operator forbidden to observe a\nrepresentation the language admits.\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_VALIDATE_CURRENCY_IMPLICIT_ROUND"
+  ],
+  "refs": [
+    "LNUL.4.9"
+  ],
+  "verification": "gap",
+  "gap_reason": "The COMPARISON position has neither an implementation nor a vector. DS_VALIDATE_CURRENCY_IMPLICIT_ROUND is raised from one site only, _check_emit_publish_kwargs, and all three conformance ties drive an emit -- so the clause reads as covered while one of the three positions it names is unexercised. Asserted so the gap is visible instead of implied by the absence of a vector nobody thought to write ([STYL.5.10.8])."
+}

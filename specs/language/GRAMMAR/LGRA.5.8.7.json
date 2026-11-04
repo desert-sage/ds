@@ -1,0 +1,61 @@
+{
+  "id": "LGRA.5.8.7",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5.8",
+  "seq": 654,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.5.8.7] **A `Json` object names each key once.** JSON text in which one\nobject has two members with the same key is malformed. A runtime **must**\nrefuse such text wherever it parses JSON text, whoever supplies it, as it\nrefuses any other malformed text: a host call that parses it returns\n`DS_ERR_PARSE` ([NERR.5]) and changes nothing. A runtime **must not** keep one\nof the two members and drop the other.\n\nTwo keys are the same key when their strings are equal once escapes are\nresolved, compared as UTF-8 bytes: `\"a\"` and `\"\\u0061\"` are one key.\n\nA recording read on replay whose `Json` value has an object with a repeated key\nis a malformed atom body, and the runtime refuses the stream.\n\n",
+  "refs": [
+    "NERR.5"
+  ],
+  "errors": [
+    "DS_ERR_PARSE"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lgra_5_8_1__json",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The type carries no uniqueness index: `lgra_5_8_7__keys_unique` decides the clause's condition and the fixture runner refuses a document that fails it, so every document the model runs on names each key once. The refusal with DS_ERR_PARSE, and on replay, is the runtime's."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_7__keys_once",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether a list of keys names each once."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_7__keys_unique",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether every object in a document names each of its keys once: the clause's condition, decided. Keys are tokens of one string table, so two keys are the same key when their text is; escapes are resolved by the JSON parse that interns them."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_7__keys_unique_list",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The walk over an array's elements."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_7__keys_unique_members",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The walk over an object's members' values."
+      }
+    ]
+  }
+}

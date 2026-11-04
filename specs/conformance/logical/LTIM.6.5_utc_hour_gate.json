@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.6.5_utc_hour_gate",
+    "category": "logical",
+    "dead_rules_expected": ["late"],
+    "scenario": "LTIM.6.5: `t.utc.hour` is FN_HOUR over the instant and the zone \"UTC\", an Int in [LTIM.6.3]'s range. One Event at 2024-03-01T09:00:00Z, so its UTC hour is 9. `morning` (`e.seen.utc.hour > 8`) fires and `late` (`e.seen.utc.hour > 9`) does not. Exactly ['morning']: a runtime that read the hour as 0, or left the rule unlowered, fires neither, and one that read it an hour late fires both. Drives the compiler's component lowering (dsc.rete `ltim_6_5_fn`), libds's adapter_time_hour and Mercury's ltim_6_5_component, with no `TimeZoneOffset` row asserted, which \"UTC\" does not need ([LTIM.10.8]).",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule morning:\n    Event e where e.seen.utc.hour > 8\n->\n    log critical \"morning\"\n\nrule late:\n    Event e where e.seen.utc.hour > 9\n->\n    log critical \"late\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen":1709283600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["morning"]
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LCRS.4.2.1_callerror_ttl_dead",
+    "clauses": ["LCRS.6.6.1"],
+    "category": "temporal",
+    "scenario": "LCRS.4.2.1 and LCRS.6.6.1: `CallError` is `ttl`-scoped at 5_min, so an orphaned one leaves working memory 5 minutes after it is asserted. High half of the discriminating pair: identical to LCRS.4.2.1_callerror_ttl_alive until the clock stands at 5 min minus 1 ns, then it advances one further nanosecond onto the deadline and the fact is retracted ([LFAC.1.2], expiry at now >= deadline). The advance is a separate step so that the alive half's instant is reached here too. `seen` names `CallError` so the compiler injects the built-in schema. PATH PINNED: the built-in declaration in `dsc.builtins` (`builtin_schema(\"CallError\", ...)`), lowered to the schema's TTL atom; libds and the Mercury runtime both take the deadline from the artefact. The break is a built-in schema of `ttl 24_h`: the fact is still live and the count is 1.",
+    "rules_ds": "rule seen:\n    CallError e\n->\n    log info \"error {e.code}\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no response", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 299999999999 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 0
+    }
+}

@@ -1,0 +1,37 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// composed_founded -- two recursive strata, the second reading the first's
+// output, with the first stratum's seed PRESENT. Stratum 1 is a
+// transitive-closure shape over Edge from Seed; stratum 2 closes
+// Far over Link from what stratum 1 derived AND from its own seed Seed2, so
+// the second stratum's answer has a part founded on the first and a part of
+// its own. The least model is what recompute-and-diff must reproduce stratum
+// by stratum; the mechanism itself is simulated in Idris or Mercury, not
+// here. Twin: composed_unfounded.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl Edge(x: DsStr, y: DsStr)
+.decl Seed(x: DsStr, y: DsStr)
+.decl Link(x: DsStr, y: DsStr)
+.decl Seed2(x: DsStr, y: DsStr)
+.decl Reach(x: DsStr, y: DsStr)
+.decl Far(x: DsStr, y: DsStr)
+.input Edge(filename="composed_founded.Edge.facts")
+.input Seed(filename="composed_founded.Seed.facts")
+.input Link(filename="composed_founded.Link.facts")
+.input Seed2(filename="composed_founded.Seed2.facts")
+
+// stratum 1
+Reach(x, y) :- Seed(x, y).
+Reach(x, z) :- Reach(x, y), Edge(y, z).
+
+// stratum 2, reading stratum 1's output and its own seed
+Far(x, z) :- Reach(x, y), Link(y, z).
+Far(x, z) :- Seed2(x, z).
+Far(x, z) :- Far(x, y), Link(y, z).
+
+.output Reach
+.output Far

@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.4.1.runtime",
+    "category": "logical",
+    "scenario": "Comparison operators < > <= >= == != work at runtime per LEXP.4.1. Rules gated on different comparison operators fire for the right facts.",
+    "rules_ds": "schema Val scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule low:\n    Val x where x.v < 10\n->\n    log info \"low\"\n\nrule exact:\n    Val x where x.v == 50\n->\n    log info \"exact\"\n\nrule high:\n    Val x where x.v > 90\n->\n    log info \"high\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v1", "v": 5 } },
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v2", "v": 50 } },
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v3", "v": 95 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["low", "exact", "high"]
+    }
+}

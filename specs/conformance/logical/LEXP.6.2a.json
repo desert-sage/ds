@@ -1,0 +1,20 @@
+{
+  "id": "LEXP.6.2a",
+  "clauses": ["LEXP.12.8"],
+  "category": "logical",
+  "scenario": "[LEXP.6.2] `len` of a Json value that is not an array is a TypeError ([LEXP.7.12.1]), which abandons the activation, so the rule does not fire. Two dead rules for the two non-array shapes the clause covers — an object and a scalar — plus a live control over a real array, without which a `len` that faulted on EVERYTHING would pass the dead pair and pin nothing. Each runtime reaches the node through the root and the path (DS_FN_JSON_LEN), not through the projected value, in which an object, an array and a string are one String. The unresolved-path case rides the same arm and is not separately driven: [LNUL.8.4] makes it `null`, which is not an array either.",
+  "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule len_of_an_object_is_a_type_error:\n    Payload p where len(p.body.obj) == 1\n->\n    log critical \"len-obj\"\n\nrule len_of_a_scalar_is_a_type_error:\n    Payload p where len(p.body.scalar) == 2\n->\n    log critical \"len-scalar\"\n\nrule len_of_the_array_still_answers:\n    Payload p where len(p.body.arr) == 2\n->\n    log critical \"len-arr\"\n",
+  "dead_rules_expected": ["len_of_an_object_is_a_type_error", "len_of_a_scalar_is_a_type_error"],
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Payload",
+        "slots": { "body": {"obj": {"k": 1}, "scalar": 7, "arr": [1, 2]} }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["len-arr"]
+  }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.5.11.3_bad_coordinate_never_matches",
+    "clauses": ["LEXP.5.11.3", "LEXP.5.11.1"],
+    "category": "logical",
+    "dead_rules_expected": ["inf_near", "inf_far", "nan_near", "nan_far"],
+    "scenario": "[LEXP.5.11.3]: a latitude outside [-90, 90], a longitude outside [-180, 180], or a NaN or infinite argument, makes `distance.great_circle` NaN, and every comparison with a NaN is false ([LDET.3.6.2]), so neither `< 50000_m` nor `> 50000_m` matches. Each rule pair compares one call's result both ways. The plain pair (`near`/`far`) reads latitude and longitude from the fact as the FIRST point; the `near2`/`far2` pair reads them as the SECOND point, because the clause says \"either latitude\" and \"either longitude\" and a builtin range-checking only `lat1` and `lon1` passes the first pair alone; the `inf_` pair gives an infinite longitude, `c.big * c.big` with big 1e300; the `nan_` pair a NaN latitude, `c.big * c.big - c.big * c.big`. Four facts, each against the point (0, 0): `close` at latitude 0.2 (about 22 km), `away` at latitude 10 (about 1 112 km), `pole91` at latitude 91, and `lon181` at latitude 0, longitude 181. Every operand that varies is a slot, so nothing folds at compile time. Messages: `near close`, `far away`, `near2 close`, `far2 away`, in that order because the terminal ordinal is the outer agenda key ([LDET.5.4]); the two points' order does not change the distance, since `sin` is odd and the cosine product commutes. A builtin that clamped or wrapped latitude 91 would log a `far pole91` or `near pole91` (or a `far2`/`near2` one, if it checked only the first point); one that took longitude 181 as -179, or ran the composition on it, would log `far lon181` or `far2 lon181`; one that ran the composition on an infinity or a NaN and returned a number would log an `inf_` or `nan_` line. PATH PINNED: the domain check ahead of the composition in FN_GREAT_CIRCLE, in libds (`builtins.c`) and Mercury (`ds.eval`).",
+    "rules_ds": "import distance\n\nschema C scope logical:\n    id: String key\n    lat: Float mutable\n    lon: Float mutable\n    big: Float mutable\n\nrule near:\n    C c where distance.great_circle(c.lat, c.lon, 0.0, 0.0) < 50000_m\n->\n    log info \"near {c.id}\"\n\nrule far:\n    C c where distance.great_circle(c.lat, c.lon, 0.0, 0.0) > 50000_m\n->\n    log info \"far {c.id}\"\n\nrule near2:\n    C c where distance.great_circle(0.0, 0.0, c.lat, c.lon) < 50000_m\n->\n    log info \"near2 {c.id}\"\n\nrule far2:\n    C c where distance.great_circle(0.0, 0.0, c.lat, c.lon) > 50000_m\n->\n    log info \"far2 {c.id}\"\n\nrule inf_near:\n    C c where distance.great_circle(c.lat, c.big * c.big, 0.0, 0.0) < 50000_m\n->\n    log info \"inf_near {c.id}\"\n\nrule inf_far:\n    C c where distance.great_circle(c.lat, c.big * c.big, 0.0, 0.0) > 50000_m\n->\n    log info \"inf_far {c.id}\"\n\nrule nan_near:\n    C c where distance.great_circle(c.big * c.big - c.big * c.big, c.lon, 0.0, 0.0) < 50000_m\n->\n    log info \"nan_near {c.id}\"\n\nrule nan_far:\n    C c where distance.great_circle(c.big * c.big - c.big * c.big, c.lon, 0.0, 0.0) > 50000_m\n->\n    log info \"nan_far {c.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "C", "slots": { "id": "close", "lat": 0.2, "lon": 0.0, "big": 1e300 } },
+            { "op": "assert", "schema": "C", "slots": { "id": "away", "lat": 10.0, "lon": 0.0, "big": 1e300 } },
+            { "op": "assert", "schema": "C", "slots": { "id": "pole91", "lat": 91.0, "lon": 0.0, "big": 1e300 } },
+            { "op": "assert", "schema": "C", "slots": { "id": "lon181", "lat": 0.0, "lon": 181.0, "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["near close", "far away", "near2 close", "far2 away"]
+    }
+}

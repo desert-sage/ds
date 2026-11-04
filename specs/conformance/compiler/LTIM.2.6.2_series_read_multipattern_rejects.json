@@ -1,0 +1,10 @@
+{
+  "id": "LTIM.2.6.2_series_read_multipattern_rejects",
+  "category": "compiler",
+  "scenario": "[LTIM.2.6.2]: a series read in a `where` on a rule with two positive patterns is DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. A series read is time-dependent ([LTIM.2.4.1]): its value moves as the series absorbs other facts' samples and as its window moves with the clock, with no change to the matched facts, and v1 re-evaluates such a condition only on a single-positive-pattern rule. `r.mean` is the companion read of `series Reading.state: mean sliding 10_min`. PATH: `dsc.validate.ltim_2_6_2_clock_where`, its `time_read` finding the read through `dsc.typecheck.ltim_2_4_1_series_read`.",
+  "rules_ds": "use default\n\nschema Zone scope logical:\n    name: String key\n    armed: Bool mutable\n\nschema Reading scope logical:\n    entity_id: String key\n    zone: String mutable\n    state: Float mutable\n\nseries Reading.state:\n    mean sliding 10_min\n\nrule gated:\n    Zone z\n    Reading r where r.zone == z.name and r.mean > 30.0\n->\n    log warning \"gated\"\n",
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+  }
+}

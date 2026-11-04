@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.10.7_row_answers",
+    "clauses": ["LTIM.10.7", "LTIM.10.6", "LTIM.3.2.1"],
+    "category": "logical",
+    "scenario": "[LTIM.10.7]: a zone resolves through the live `TimeZoneOffset` facts ([LTIM.10.6]) whose `zone` is the designation, the one with the greatest `valid_from` not after the instant answering while its `valid_until` is after it. The host asserts two rows for `Europe/Paris`: +3600 from 2024-01-01T00:00Z until the March transition at 2024-03-31T01:00Z, and +7200 from there until 2024-10-27T01:00Z. Two Events: one at 2024-03-01T09:00Z, which is 10:00 in Paris, and one at 2024-04-01T09:00Z, which is 11:00. `winter` fires on the first and `summer` on the second, so the messages are exactly ['winter', 'summer']. PATH PINNED: the component read in a zone, libds's `time_component` (rete/adapters.c) through its per-zone index of `TimeZoneOffset` facts, and Mercury's `ds.eval` component read through `ds.wm`'s index.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule winter:\n    Event e where e.id == 1 and e.seen.local(\"Europe/Paris\").hour == 10\n->\n    log critical \"winter\"\n\nrule summer:\n    Event e where e.id == 2 and e.seen.local(\"Europe/Paris\").hour == 11\n->\n    log critical \"summer\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1711846800000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1711846800000000000, "valid_until": 1729990800000000000, "offset_s": 7200 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 2, "seen": 1711962000000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["winter", "summer"]
+    }
+}

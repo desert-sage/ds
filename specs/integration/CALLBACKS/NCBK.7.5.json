@@ -1,0 +1,23 @@
+{
+  "id": "NCBK.7.5",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.7",
+  "seq": 432,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.7.5] Errors via the pending slot: a NULL persistence callback is **not** an\nerror (the write lands in the engine's cache and skips persistence); a write\nthat would breach a cache bound → `DS_ERR_CONTRACT_BREACH`, with a\n`DS_EV_BOUNDS_ERROR`, and the cache is unchanged and the firing stops\n([LSTO.4.7.5]); a non-OK result from a wired persistence callback propagates\nverbatim — the engine's cache is already mutated, so a persistence failure is\nreported, not rolled back (rolling back would make cache state depend on external\nsuccess, [LSTO.4.7.2]).\n\nA value the write cannot store is a trap, not a status: a value over one of the\n`Json` limits ([LGRA.5.8.6]), a non-finite `Float` in the value ([LCST.4.5.2]),\nor a deadline outside the `Time` range ([LTIM.1.1.5]) abandons the activation\nat the write with a `NOT_REPRESENTABLE` `ComputationError`, and the cache is\nnever touched ([LERR.1.4.10]).\n\nThe TTL and the value need no other check. A TTL is a `Duration`, which is never\nnegative ([LTIM.1.3.1]), and the value is the engine's own serialization.\n\n",
+  "refs": [
+    "LCST.4.5.2",
+    "LERR.1.4.10",
+    "LGRA.5.8.6",
+    "LSTO.4.7.2",
+    "LSTO.4.7.5",
+    "LTIM.1.1.5",
+    "LTIM.1.3.1"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH"
+  ]
+}

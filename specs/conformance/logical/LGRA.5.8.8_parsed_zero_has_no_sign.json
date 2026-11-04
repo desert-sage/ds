@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.5.8.8_parsed_zero_has_no_sign",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.8]: a float zero in a Json value has no sign. The host asserts a Json slot `{\"v\": -0.0, \"w\": -1.5}`, and `1.0 / p.body.v > 0.0` holds, because the leaf is +0.0 and 1.0 / +0.0 is +inf; a leaf that keeps its sign gives 1.0 / -0.0, which is -inf, and `zero_has_no_sign` does not fire. `negative_kept` is the control: a nonzero negative leaf keeps its sign, so the fold is for zero only. PATH PINNED: where the value comes into being from the host. libds: pyds hands the slot to libds, which builds its float nodes through `json.c`'s `json_new_float_node` (the parser and `ds_json_new_float` both). Mercury: `ds.engine.host_slot_value` through `ds.json.unsigned_zeros`, run by the behaviour suite.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule zero_has_no_sign:\n    Payload p where 1.0 / p.body.v > 0.0\n->\n    log info \"zero has no sign\"\n\nrule negative_kept:\n    Payload p where p.body.w < 0.0\n->\n    log info \"negative kept\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Payload",
+                "slots": { "body": { "v": -0.0, "w": -1.5 } }
+            },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zero has no sign", "negative kept"]
+    }
+}

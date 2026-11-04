@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.3.1.1c",
+    "category": "compiler",
+    "scenario": "LUNI.3.1.1 gives `45°`, `30′` and `45″` as valid literals and `45_arcsec` as the word-form. PATH PINNED: the lexer half is `dsc.lex.llex_12_3_take_unit_suffix`, which takes `°`, `′` and `″` (U+2032 / U+2033) into a unit suffix through `llex_12_2_unit_glyph`; the symbol half is `dsc.resolve.add_unit_alias`, which makes each `alias` an input symbol. A `label` is display-only — only the canonical name and explicit `alias` entries become input symbols — so `label \"arcsec\"` does not make `arcsec` writable. This pins all four forms at once, and pins them through an alias rather than a canonical name so a regression in either half (lexer or symbol table) fails it.",
+    "rules_ds": "unit dimension angle storage float64 base radian\nunit radian: angle\nunit degree: angle = x * 0.017453292519943295 alias deg, °\nunit arcminute: angle = x * 0.0002908882086657216 alias arcmin, ′\nunit arcsecond: angle = x * 0.00000484813681109536 alias arcsec, ″\n\nschema Bearing scope logical:\n    id: String key\n    heading: Float mutable\n\nrule degree_glyph:\n    Bearing b where b.heading::degree > 45°\n->\n    log info \"degree glyph\"\n\nrule arcminute_glyph:\n    Bearing b where b.heading::degree > 30′\n->\n    log info \"arcminute glyph\"\n\nrule arcsecond_glyph:\n    Bearing b where b.heading::degree > 45″\n->\n    log info \"arcsecond glyph\"\n\nrule arcsecond_word_form:\n    Bearing b where b.heading::degree > 45_arcsec\n->\n    log info \"arcsec word form\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

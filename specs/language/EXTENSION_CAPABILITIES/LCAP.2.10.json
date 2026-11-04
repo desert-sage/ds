@@ -1,0 +1,40 @@
+{
+  "id": "LCAP.2.10",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": "LCAP.2",
+  "seq": 225,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "The deferred storage and samples-plane capabilities",
+  "text": "### The deferred storage and samples-plane capabilities [LCAP.2.10]\n\nFour construct capabilities gate constructs of the storage layer, which is\nnot part of this edition ([LSTO.2], [LSTO.3], [LHYD.1]):\n\n| Capability | Would permit |\n|---|---|\n| `sampled_slots` | the `sampled` marker on a schema slot, routing its values to the samples plane |\n| `persist_on_series` | `persist <dur>` on a series declaration, writing through to the samples plane |\n| `storage_hydrate_facts` | bringing stored facts back as facts |\n| `storage_hydrate_samples` | bringing sample history back as facts |\n\nThey stay in the registry ([LCAP.1]), so their names and numbers keep their\nmeaning for the edition that adds the storage layer. In this edition every\nprogram and every dialect sets each of them `false`. The compiler **must**\nrefuse, with `DS_VALIDATE_CAPABILITY_DEFERRED`, a `use` block line setting\none `true` ([LDIA.3.3.7]) and a dialect definition whose `settings` set one\n`true` ([NDLC.6.1]). A line or a setting naming one `false` is accepted.\n\nNo artefact the compiler accepts therefore enables or requires any of them,\nand a runtime need contain no code for them.\n\n",
+  "refs": [
+    "LCAP.1",
+    "LDIA.3.3.7",
+    "LHYD.1",
+    "LSTO.2",
+    "LSTO.3",
+    "NDLC.6.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_CAPABILITY_DEFERRED"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/dialect_capability.als",
+        "name": "lcap_2_10__deferred",
+        "tag": "spec",
+        "note": "The four capabilities of the clause's table, transcribed. The refusal of a use line or dialect setting one true (DS_VALIDATE_CAPABILITY_DEFERRED) is not modelled, as LCAP.2.1.5's is not: the model states the algebra of the settings."
+      },
+      {
+        "path": "formal/alloy/dialect_capability.als",
+        "name": "lcap_2_10__written_dialects_set_the_deferred_false",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Every dialect the corpus writes out (base, default, realtime, frame) sets each of the four false: the transcriptions of LDIA.9 and NDLC.2.1 against the clause's table. Fails if sampled_slots is moved to default's true row."
+      }
+    ]
+  }
+}

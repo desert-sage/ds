@@ -1,0 +1,26 @@
+{
+  "id": "LSTR.8.5",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.8",
+  "seq": 266,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSTR.8.5] **The engine refuses text that is not valid UTF-8.** Text a host hands the engine **must** be well-formed UTF-8\n(RFC 3629): a `String` slot value, JSON text to parse, a string or object key\nof a `Json` value the host builds, a cache seed, a call's response, and an\nengine's run and tier identifiers ([NLFC.1.2]). The\nengine **must** check each where it enters, and **must** refuse one that is not\nwith `DS_ERR_ENCODING`, changing nothing. The status is the whole refusal: the\nengine records no event for it and raises no fault, as for a value over a\n`Json` limit ([LGRA.5.8.6]). The engine **must not** repair the text by\nreplacing, dropping or truncating any of its bytes.\n\nThe engine **must** check JSON text whole, after [LGRA.5.8.6]'s text limit and\nbefore it parses any of it, so text that is both ill-formed and malformed JSON\nis `DS_ERR_ENCODING`.\n\n**JSON text is refused before the engine's state is judged.** Where a\nhost gives a seed or a `Json` slot as JSON text, the engine **must** judge the\ntext first: its limit (`DS_ERR_JSON_LIMIT`, [LGRA.5.8.6]), then its encoding\n(`DS_ERR_ENCODING`), then its parse (`DS_ERR_PARSE`). Only text that passes all\nthree becomes the value that [NFCT.2.11] and [NLFC.9.6] judge, so a text\nrefusal comes before every step they order, a halted engine included. Where\nthat value breaks this clause and another refusal, those two clauses say which\nstatus it returns.\n\nSo every operation behind the boundary meets only well-formed UTF-8, and every\nconforming runtime refuses the same inputs. A `.dsc`'s strings are judged where\nthe artefact is decoded ([RDSC.9.12]). A recorded fact stream and a\n`FactExternal` are trusted input ([RDSC.9.9]), and this clause does not reach\nthe text they carry. A `FactExternal` whose text is not well-formed is a\nmalformed record, and [NCBK.10.4] refuses it as one. A recorded fact body\nwhose text is not well-formed is a malformed body, and [RFCS.6.3] refuses it as\none.\n\n---\n\n",
+  "refs": [
+    "LGRA.5.8.6",
+    "NCBK.10.4",
+    "NFCT.2.11",
+    "NLFC.1.2",
+    "NLFC.9.6",
+    "RDSC.9.12",
+    "RDSC.9.9",
+    "RFCS.6.3"
+  ],
+  "errors": [
+    "DS_ERR_ENCODING",
+    "DS_ERR_JSON_LIMIT",
+    "DS_ERR_PARSE"
+  ]
+}

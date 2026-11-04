@@ -1,0 +1,10 @@
+{
+    "id": "LLOG.15.3_withdraw_refused",
+    "category": "compiler",
+    "scenario": "[LLOG.15.3]'s second bullet: any other way of ending the justifier's match is refused. LLOG.15.3_self_replacing_flip_refused's rules, with `corrupt` ending `hope`'s match by `withdraw p` instead of an emit. `hope` emits `Hope` and `corrupt` matches it (an emit edge, hope -> corrupt). `corrupt` withdraws the `Politician` that `hope` matches (a withdraw edge, corrupt -> hope, [LCYC.3.2.2]); no literal break applies to a withdraw. So the two rules are one SCC with `Hope` emitted and matched inside it, and the program is refused with DS_VALIDATE_RULE_CYCLE ([LCYC.3.1.1]). That the truth-maintenance retraction of `Hope` would end the loop is not an argument the check takes ([LCYC.3.5.1]): a compiler that exempted `logical` emits from the SCC condition would compile this. PATH PINNED: the Mercury compiler's withdraw edge (`dsc.cycle`) closing the SCC, and `lcyc_3_1_1_admitted` refusing it. `Politician` is `explicit` because only an explicit fact may be withdrawn by hand ([LSCO.4.5.9]), so its slots carry no `key` or `mutable` marker.",
+    "rules_ds": "schema Politician scope explicit:\n    name: String\n    honest: Bool\n\nschema Hope scope logical:\n    name: String key\n\nrule hope:\n    Politician p where p.honest == true\n->\n    emit Hope logical name: p.name\n\nrule corrupt:\n    Politician p where p.honest == true\n    Hope h where h.name == p.name\n->\n    withdraw p\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

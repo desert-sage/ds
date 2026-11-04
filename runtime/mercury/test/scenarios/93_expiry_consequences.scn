@@ -1,0 +1,24 @@
+# An engine withdrawal is recorded before what it causes ([RFCS.7a.4]). See
+# fixtures/126_expiry_consequences.ds.
+#
+#   pump 1   Gate blocks `ratio`'s `no Gate`, so its join on Q never runs;
+#            `keep` emits Held logically from Gate
+#   pump 2   the hour has passed and the sweep expires Gate (TTL_EXPIRED).
+#            Its removal releases `ratio`'s negated pattern, so the join
+#            `(p.n // q.d) > 0` runs against Q d=0 and traps DIVIDE_BY_ZERO;
+#            and Held's only justifier is gone, so Held is withdrawn
+#            (JUSTIFIER_ENDED)
+#
+# Pump 2 records Gate's `retract` first, then the fault, then Held's
+# `retract`, then the fault fact the drain asserts. RFCS.7a.4 requires the
+# first; of the two consequences it admits either order, and this scenario
+# holds the runtimes to the one they share (the network re-evaluates during
+# the removal, truth maintenance runs after it). The vector
+# RFCS.7a.4_expiry_withdraw_precedes_its_consequences pins the sequence
+# against the clause.
+assert Gate g=1
+assert P entity_id=p n=7
+assert Q entity_id=zero d=0
+pump
+advance 3600000000001
+pump

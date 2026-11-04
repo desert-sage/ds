@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_f_precision_on_string_leaf_is_a_type_error",
+    "category": "logical",
+    "scenario": "`{p.body.x:.3f}` where the leaf is a String. `f` takes a number, so the spec is refused at run time as a TypeError (LGRA.2.9.6.11): the activation is abandoned, the `TypeError` fault fact is asserted, and `handler` logs. `r`'s log line is absent. PATH PINNED: the type-against-kind refusal in the interpolation renderer (libds `render_value`'s `f` arm, Mercury `ds.format.value_body`). The break is rendering the canonical text with the part dropped, which logs `v abc`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.x:.3f}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": "abc" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

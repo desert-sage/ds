@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A `unit formula`, called explicitly ([LGRA.9.8.11]) and applied implicitly
+# where a value of one dimension is emitted into a slot of the other
+# ([LUNI.4.5.1], boundary 3). Both lower to an ordinary expression, evaluated
+# through CORE-MATH. The formulas are `units.audio`'s `midi_hz` and `dBm_watt`
+# as [LUNI.16.2] states them, declared here; `log2` and `log10` are `math`'s,
+# reached only through an import ([LIMP.3.3.4]).
+#
+# The runtime differential compares a log's message and not an emit's payload, so
+# every converted value is interpolated into a log line ([LUNI.11.3]). One
+# reading per formula is exact under correct rounding and the other is not.
+# `a4` also calls `midi_to_hz` in a `where`.
+
+use default
+
+from math import log2, log10
+
+unit dimension frequency  storage float64  base Hz
+unit Hz: frequency
+
+unit dimension power  storage float64  base watt
+unit watt: power
+
+unit scalar pitch  storage float64
+unit midi_note: pitch
+
+unit scalar power_db  storage float64
+unit dBm: power_db
+
+unit formula midi_hz:
+    midi_to_hz(x: midi_note): Hz   = 440.0 * 2.0 ** ((x - 69.0) / 12.0)
+    hz_to_midi(x: Hz): midi_note   = 69.0 + 12.0 * log2(x / 440.0)
+
+unit formula dBm_watt  implicit:
+    dBm_to_watt(x: dBm): watt  = 10.0 ** (x / 10.0) / 1000.0
+    watt_to_dBm(x: watt): dBm  = 10.0 * log10(x * 1000.0)
+
+schema Tone scope logical:
+    id: String key
+    note: midi_note mutable
+    freq: Hz mutable
+
+schema Level scope logical:
+    id: String key
+    p: dBm mutable
+    w: watt mutable
+
+schema Pitch scope ttl 1_h:
+    id: String
+    freq: Hz
+    note: midi_note
+
+schema Power scope ttl 1_h:
+    id: String
+    w: watt
+    p: dBm
+
+# Explicit, both functions of `midi_hz`, as emit arguments.
+rule explicit_calls:
+    Tone t
+->
+    emit Pitch id: t.id freq: midi_to_hz(t.note) note: hz_to_midi(t.freq)
+
+# Implicit, both directions of `dBm_watt`: each slot argument is of the other
+# dimension, so the compiler applies the formula ([LUNI.4.5.1], boundary 3).
+rule implicit_at_emit:
+    Level l
+->
+    emit Power id: l.id w: l.p p: l.w
+
+rule pitch_values:
+    Pitch q
+->
+    log info "pitch {q.id} freq={q.freq} note={q.note}"
+
+rule power_values:
+    Power q
+->
+    log info "power {q.id} w={q.w} p={q.p}"
+
+# Explicit, in a guard: midi_to_hz(69) is 440 exactly, so `a4` fires for the
+# exact reading and not for the other.
+rule a4:
+    Tone t where midi_to_hz(t.note) == 440_Hz
+->
+    log info "a4 {t.id}"

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.9.8.2.impure_let_embedded",
+    "category": "compiler",
+    "scenario": "Impure call embedded inside a let RHS (rather than being the entire RHS) rejects with DS_VALIDATE_LET_IMPURE_EMBEDDED per LGRA.9.8 / LLET.10. The let-RHS purity gate per LGRA.9.8.4 requires impure builtins (`sync_impure` / `async`) to be the entire RHS so the lowerer can route them to the right tier; nested impure calls would require auto-hoisting which is deferred. Pin: `let v = abs(cached(\"k\"))` — `cached()` is sync-impure and is wrapped inside `abs()`, so the let RHS classifier returns 'impure_embedded'.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    let v = abs(cached(\"k\"))\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_IMPURE_EMBEDDED"
+    }
+}

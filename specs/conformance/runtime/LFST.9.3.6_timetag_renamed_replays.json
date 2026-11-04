@@ -1,0 +1,19 @@
+{
+    "id": "LFST.9.3.6_timetag_renamed_replays",
+    "clauses": ["RFCS.11.2"],
+    "category": "runtime",
+    "scenario": "[LFST.9.3.6]: a replayer compares `timetag` as an identity. It pairs each recorded `timetag` with the re-derived one the first time either occurs, and every later atom must agree with that pairing. [RFCS.11.2]: a `timetag` is stream-local, so two conforming engines may record different values for one run. The harness ([RCTS.1.2.24]) records two Trig asserts and a pump, so `seen` fires twice and each firing's RuleFireAnnotation carries a `timetag`, and then adds 1000 to every nonzero `timetag` in the recording (`timetag_offset`). Every recorded value now differs from the one the replay re-derives, but the pairing is a consistent renaming, so the replay must reproduce the run: no DS_ERR_FS_DIVERGENCE, the same facts at the end, and at least two rule fires compared. A replayer that compares the value byte for byte fails this vector at the first firing. PATHS: libds's `Engine.replay` in verify mode, whose `timetag` pairing is `rfcs/codec.c`'s; the Mercury runtime's `ds.replay`, which pairs a recorded `timetag` with the re-derived one at first occurrence.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule seen:\n    Trig t\n->\n    log info \"{t.v}\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "timetag_offset": 1000,
+        "min_events": 1,
+        "min_rule_fires": 2
+    }
+}

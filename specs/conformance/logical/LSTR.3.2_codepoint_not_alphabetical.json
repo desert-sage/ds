@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.3.2_codepoint_not_alphabetical",
+    "category": "logical",
+    "scenario": "[LSTR.3.2] Ordering is by codepoint, not locale or case-folded alphabetical order. \"a\" is U+0061 and \"Z\" is U+005A, so \"a\" > \"Z\"; \"Y\" (U+0059) is not. Against `i.label > \"Z\"` only \"a\" fires. A locale-aware or case-insensitive comparison puts \"a\" before \"Z\" and logs nothing.",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label > \"Z\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "lower", "label": "a" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "upper", "label": "Y" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a"]
+    }
+}

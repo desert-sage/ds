@@ -1,0 +1,12 @@
+{
+    "id": "LCYC.6.1_call_edge_when_the_caller_has_no_reference_pins_another_corr",
+    "category": "compiler",
+    "scenario": "[LCYC.6.1]'s literal break on the unit graph's response outcome, the control of `LCYC.3.2.2_call_edge_when_the_caller_has_no_reference_to_the_response`. The same program, but `on_reply` pins `corr` to \"other\", which the call's `as` \"a-response\" is not, so there is no edge and no cycle: it compiles. It shows the outcome still carries the call's `as`. PATH PINNED: `dsc.cycle.lcyc_3_2_2_unit_outcomes`'s `corr` argument, read by the literal break. The break is an outcome with no `corr`, which pins nothing and keeps the edge: DS_VALIDATE_RULE_CYCLE.",
+    "rules_ds": "from lib import service, Trig\n\nrule again:\n    Trig\n->\n    call service.a nocooldown as \"a-response\"\n",
+    "libraries": {
+        "lib": "schema AReply scope ttl 1_h:\n    corr: String\n\nschema Trig scope ttl 1_h:\n    k: Int\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    response AReply\n\nrule on_reply:\n    AReply r where r.corr == \"other\"\n->\n    emit Trig k: 1\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

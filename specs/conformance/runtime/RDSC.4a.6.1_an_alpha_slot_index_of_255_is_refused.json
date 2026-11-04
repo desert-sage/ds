@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.4a.6.1_an_alpha_slot_index_of_255_is_refused",
+    "clauses": ["RDSC.4a.9.1"],
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1] with [RDSC.4a.9.1]: an `AlphaTest`'s `slot_index` has no marker, so a value above 254 is one the field cannot hold, and the artefact is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_t`, whose `T t where t.v > 5` puts one CMP test on `T`'s `AlphaNode` (node 1), and `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 2], value: 255}}` ([RCTS.1.2.21]) writes that test's field 2, `slot_index`, as 255, the least value refused, and re-seals `dsc_sha256` ([RDSC.3.6]). What it discriminates: a loader that reads 255 as `VarExpr`'s fact-itself marker, or truncates the index, loads; one that takes it as an index naming no slot loads and faults at the first assert ([RDSC.4a.9.1]'s `RDSC.4a.9.1_an_alpha_slot_past_the_schema_faults`). Either fails the vector as unrefused at load. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 5\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 2], "value": 255}},
+        "code": "-504"
+    }
+}

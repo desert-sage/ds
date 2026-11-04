@@ -1,0 +1,28 @@
+{
+  "id": "RDSC.4a.6.1",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.6",
+  "seq": 441,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.6.1] **A malformed `AlphaTest` is refused at load.** A loader **must** refuse, with `DS_ERR_DSC_SEMANTIC`, an\nartefact holding an `AlphaTest` (`proto/alfa.proto#AlphaTest`):\n\n- whose `kind` is no member of `AlphaTestKind`;\n- of kind `ALPHA_TEST_EQ` or `ALPHA_TEST_CMP` with no `literal`, or with a\n  `literal` that sets no member of its `value`;\n- of kind `ALPHA_TEST_CMP` whose `op` is no member of `AlphaCmpOp`;\n- of kind `ALPHA_TEST_REGEX` whose `pattern` is empty, or does not compile;\n- whose `slot_index` is above 254, which the field cannot hold: it has no\n  marker ([RDSC.4a.9.1]).\n\nEach of these but a pattern that does not compile is a shape of the\n`AlphaNode`'s body, refused as the body is decoded, and so before a name\n[RDSC.8.7] checks. Compiling a pattern is not part of decoding the body. None\nof these has a meaning, and the compiler must not emit any of them. Each is a\ncheap structural need of the loader under [RDSC.9.9], not a defence against a\nhostile artefact.\n\n---\n\n",
+  "refs": [
+    "RDSC.4a.9.1",
+    "RDSC.8.7",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_DSC_SEMANTIC"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/alfa.proto",
+        "name": "AlphaTest",
+        "tag": "spec"
+      }
+    ]
+  }
+}

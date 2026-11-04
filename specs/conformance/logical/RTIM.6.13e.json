@@ -1,0 +1,52 @@
+{
+    "id": "RTIM.6.13e",
+    "clauses": ["RTIM.6.13.1"],
+    "category": "logical",
+    "scenario": "Stream cb receives `clock_ns` matching the engine clock at emission. Each fact_assert at a different mock-clock time carries that exact clock value. Filtered to fact_assert events to skip any concurrent setup events. Pins RTIM.6.13 \u2014 clock_ns tracks engine clock at emission time per event.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "filter_kind": "fact_assert",
+        "steps": [
+            {
+                "op": "set",
+                "now_ns": 1000
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "set",
+                "now_ns": 2000
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "set",
+                "now_ns": 5000
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 3
+                }
+            }
+        ],
+        "min_events": 3,
+        "expected_clocks": [
+            1000,
+            2000,
+            5000
+        ]
+    }
+}

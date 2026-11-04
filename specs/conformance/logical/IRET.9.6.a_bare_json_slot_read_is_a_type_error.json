@@ -1,0 +1,16 @@
+{
+    "id": "IRET.9.6.a_bare_json_slot_read_is_a_type_error",
+    "category": "logical",
+    "scenario": "[IRET.9.6]: provenance starts at EVERY `Json` slot read, not only at a projection into one. `a.j == b.n` with j = {\"x\": 1} and n = 5 compares a Json object with an Int, which neither runtime can compare, and because `a.j` is a whole `Json` slot the mismatch is a TypeError -- the activation is abandoned, the tier does not halt. Its twin IRET.9.6.a_bare_json_slot_read_does_not_halt forbids the EngineError. Paths: the compiler taints the bare read in `iret_9_6_slot_read` (dsc.rete), and the `==` above it inherits the taint; the `where` is a bare `a.x == b.y`, so libds's EQ index would engage were the key decided -- `eq_key_decided` (rete/beta.c) refuses a `Json` key, so the pair is SCANNED and the EQ evaluated, `val_cmp` answers CMP_INCOMPAT and `type_error_at` classifies it by the tainted node. Mercury: ds.eval.compare_outcome's value_family arm, classified at the tainted node. A runtime whose index probe skips the pair records nothing; one without the taint records an EngineError.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    j: Json mutable\n\nschema B scope logical:\n    id: String key\n    n: Int mutable\n\nrule r:\n    A a\n    B b where a.j == b.n\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "a", "j": { "x": 1 } } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b", "n": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

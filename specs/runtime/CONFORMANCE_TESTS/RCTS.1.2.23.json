@@ -1,0 +1,25 @@
+{
+  "id": "RCTS.1.2.23",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 111,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.23] **The recording fields** (each optional, `rfcs_roundtrip`\n  only) — what a harness gives the engine before it records, and what it\n  reads back from the recording, beside `expected_atoms`. A harness must fail\n  a fixture whose value for one is not of the type stated here, and a fixture\n  of any other `expect.kind` that carries one of them. `late_start` is the one\n  exception: a `replay_refused` fixture carries it too ([RCTS.1.2.18]).\n\n  - `run_id` and `tier_id`, strings: a harness must give them to the engine\n    through the runtime's own interface before it records anything. `\"\"` is\n    the same as absent ([NLFC.1.2]). A harness that cannot give the runtime\n    under test an id the fixture names must fail the fixture, and must not\n    run it without the id.\n  - `late_start`, an integer N: a harness must attach the recorder after the\n    first N `steps`, so the recording holds only what the steps after them\n    produce. The field's range, and the refusal of first N `steps` that put\n    no event on the stream, are [RCTS.1.2.18]'s.\n  - `expected_event_ids`, an array of strings: the `event_id` of every\n    `FactAssert` in the recording, in stream order ([LFST.5.6], [RFCS.6.8]).\n    A harness must read each from the decoded recording, and must fail the\n    fixture if the counts differ or any entry differs.\n  - `expected_fact_ids`, an array of objects `{\"atom\": A, \"fact_id\": N}`,\n    A one of `FactAssert`, `FactEmit` and `FactWithdraw` and N a\n    non-negative integer: every atom of those three in the recording, in\n    stream order, as its message's name and its `fact_id` ([RFCS.6.9]). A\n    harness must read each from the recording, and must fail the fixture if\n    the counts differ or any entry differs.\n  - `expected_emits`, an array of objects `{\"rule_name\": R}`, R a string:\n    every `FactEmit` in the recording, in stream order, as its `rule_name`\n    ([RFCS.6a.2]), an absent field read as its protobuf default. A harness\n    must read each from the recording, and must fail the fixture if the\n    counts differ or any entry differs.\n  - `expected_publishes`, an array of objects\n    `{\"schema_name\": S, \"rule_name\": R}`, S and R strings: every\n    `FactPublish` in the recording, in stream order, as its `schema_name` and\n    its `rule_name` ([RFCS.27.1]), an absent field read as its protobuf\n    default. A harness must read each from the recording, and must fail the\n    fixture if the counts differ or any entry differs.\n  - `expected_cache_seeds`, an array of objects\n    `{\"key\": K, \"value_json\": V, \"deadline_ns\": N}`, K and V strings and N\n    an integer from 0 to 2^63 − 1: every `CacheSeed` in the recording, in\n    stream order, as its three fields ([RFCS.26.1]), an absent field read as\n    its protobuf default. A harness must read each from the recording, and\n    must fail the fixture if the counts differ or any entry differs.\n  - `expected_stream_kinds`, an array of event kind names, as\n    `event_sequence`'s `expected_kinds` names them ([RCTS.1.2.10]): the\n    events the stream callback receives while the steps run, cut down to the\n    kinds the array names, must be the array, in order. Events of other kinds\n    may come between them. With `expected_atoms`, it holds the recording to\n    the events of the same run ([RFCS.3.6]).\n  - `expected_slots`, an array of objects: every `Slot` atom of the schemas\n    the objects name in `schema_name`, in stream order, each as the fields\n    present on it, by their `proto/slot.proto` names, an enum by its number\n    ([RFCS.5.1]).\n  - `expected_withdraw_causes`, an array of strings: the cause of every\n    `FactWithdraw` in the recording, in stream order, by its name in\n    `FactWithdraw.Cause`, or `CAUSE_<n>` for a number the enum does not name\n    ([RFCS.7a.2]).\n  - `rewrite_withdraw_cause`, an object `{\"index\": I, \"cause\": N}` of two\n    non-negative integers: before anything decodes the recording, a harness\n    must re-encode its I-th `FactWithdraw`, counting from 0 in stream order,\n    with cause N, and keep every other field and atom. A harness must fail a\n    fixture whose run records no I-th `FactWithdraw`.\n\n",
+  "refs": [
+    "LFST.5.6",
+    "NLFC.1.2",
+    "RCTS.1.2.10",
+    "RCTS.1.2.18",
+    "RFCS.26.1",
+    "RFCS.27.1",
+    "RFCS.3.6",
+    "RFCS.5.1",
+    "RFCS.6.8",
+    "RFCS.6.9",
+    "RFCS.6a.2",
+    "RFCS.7a.2"
+  ]
+}

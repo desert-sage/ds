@@ -1,0 +1,19 @@
+{
+  "id": "LUNI.4.6.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.4.6",
+  "seq": 674,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.4.6.2] **\"The latest matching fact\" means the greatest `asof`.**\nWhen several live `FxRate` facts satisfy one `fx_pair` selector, the\nconversion uses the one whose `asof` ([LUNI.13.3]) is greatest. Ties\non `asof` are a malformed feed: the conversion uses either, and an\nimplementation should surface the collision the same way it surfaces\nthe 1:1 fallback ([LUNI.4.6.1]).\n\nMultiple live matches are the **normal** case, not an edge case:\n`FxRate` is `scope ttl 1_h` ([LUNI.13.3]), and a `ttl` base\naccumulates rather than upserting ([LSCP.2.5.7]), so a feed that\nrepublishes hourly has several live facts per pair for most of the\nhour.\n\n`asof` is what the rest of the language already means by the word:\n`latest` on a sequence anchor pins it to its **most recent match**\n([LTHE.2.5.3]), lowered as a timestamp comparison ([LTHE.4.3]).\n`FxRate` carries `asof` — \"rate observation time\" — for precisely this\npurpose.\n\n**This does not force a scan.** An implementation may keep a table\nkeyed by the selector tuple holding the greatest-`asof` entry seen,\nupdated on assert and retract; the requirement is only that `asof`\nbreaks the tie, not that arrival order does.\n\n",
+  "deferred": true,
+  "refs": [
+    "LSCP.2.5.7",
+    "LTHE.2.5.3",
+    "LTHE.4.3",
+    "LUNI.13.3",
+    "LUNI.4.6.1"
+  ]
+}

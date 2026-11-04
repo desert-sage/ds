@@ -1,0 +1,11 @@
+{
+    "id": "LCYC.3.3.1",
+    "category": "compiler",
+    "scenario": "LCYC.3.3.1 — the cycle-detection error message names each rule in the cycle so the author can see the loop. For a two-rule cycle between `rule_a_named` and `rule_b_named`, the DS_VALIDATE_RULE_CYCLE message contains both rule names. Pin: diagnostic quality, not just the error code.",
+    "rules_ds": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nrule rule_a_named:\n    X\n->\n    emit Y logical v: 1\n\nrule rule_b_named:\n    Y\n->\n    emit X logical v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE",
+        "message_contains": "rule_a_named"
+    }
+}

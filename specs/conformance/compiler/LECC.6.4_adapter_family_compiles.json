@@ -1,0 +1,9 @@
+{
+    "id": "LECC.6.4_adapter_family_compiles",
+    "category": "compiler",
+    "scenario": "[LECC.6.4]: `adapter` is a family [LECC.2.2] names, so `error adapter:` (the family) and `error adapter.throttled:` (a leaf under it) on one call both compile. The control for compiler/LECC.6.4_unknown_family_refused: a check that refused every pattern would fail here. PATH PINNED: dsc.validate `lecc_6_4_error_family`, which admits the first segment `adapter`.",
+    "rules_ds": "service svc.connect:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.connect entity_id: t.entity_id cooldown: 30_s\n        error adapter:\n            log info \"adapter error\"\n        error adapter.throttled:\n            log info \"throttled\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

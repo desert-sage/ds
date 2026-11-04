@@ -1,0 +1,11 @@
+{
+    "id": "LRST.1.4_opaque_key_refused",
+    "clauses": ["LRST.1.4"],
+    "category": "compiler",
+    "scenario": "[LRST.1.4]: an `as` key whose type is outside the eight legal ones is refused with DS_VALIDATE_AS_NON_EQUATABLE_TYPE. Pin: `after 5_min as a.k:`, where `k` has the opaque type `Key over Bytes` ([LOPQ.2.2]), is refused with that code. The representation is a legal key type; the opaque type is not one, and its sealing ([LOPQ.3.3]) is why. PATH PINNED: `dsc.validate.lrst_1_4_key_type`'s `lk_opaque` row.",
+    "rules_ds": "opaque type Key over Bytes\n\nschema A scope logical:\n    id: String key\n    k: Key mutable\n\nrule trig:\n    A a\n->\n    log info \"trig\"\n    after 5_min as a.k:\n        log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AS_NON_EQUATABLE_TYPE"
+    }
+}

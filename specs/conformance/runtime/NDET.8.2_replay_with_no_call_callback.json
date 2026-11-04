@@ -1,0 +1,18 @@
+{
+    "id": "NDET.8.2_replay_with_no_call_callback",
+    "clauses": ["LFST.9.2"],
+    "category": "runtime",
+    "scenario": "[LFST.9.2] and [NDET.8.2]: a replay re-derives an engine-initiated action and compares it, and does not execute it externally. No re-derived call goes to the call callback, and no effect callback need be registered to replay. Two Trig asserts and a pump fire `r` twice, and each firing calls `svc.put`, so the recording holds two CallIssued atoms. The recording engine has a call callback that accepts every call. The recording is replayed into a fresh engine with NO call callback, and the replay must reproduce the run: no refusal, the same facts at the end, and at least two rule fires compared, each firing's CallIssued among what is compared ([RFCS.15.4]). A replayer that hands the re-derived call to the integrator fails without a callback, refusing this replay with DS_ERR_STORAGE_UNAVAILABLE (-400). Every replay driver in runner.py registers no effect callback on the replaying engine, so every replay vector with a call holds the same. NOT PINNED HERE: that a callback the replaying engine does register is not called. libds-unit's `test_ndet_8_2__replay_invokes_no_effect_callback` counts that. PATHS: libds's `ds_dispatcher_call_typed` replay arm, through pyds `Engine.replay` (runner.py `_replay_through_libds_rfcs`); the Mercury runtime's `ds.replay`, which compares each pump's effects and hands none to a host (test_behave.m).",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 1,
+        "min_rule_fires": 2
+    }
+}

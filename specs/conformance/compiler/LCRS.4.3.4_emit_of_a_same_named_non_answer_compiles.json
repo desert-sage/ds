@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.4.3.4_emit_of_a_same_named_non_answer_compiles",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4], [LIMP.13.2]: `response BR` names `b`'s `Reply`. `a`'s `Reply` is another schema, which no `response_decl` names, so a rule may emit it: `emit AR` compiles. Its pair is `LCRS.4.3.4_emit_of_the_answer_through_an_alias_is_refused`. The break is a comparison of `NAME`s, which refuses this with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN. PATH PINNED: `dsc.validate.llog_11_1_lifecycle_flag` through `lcrs_4_3_4_answer_schema`, comparing own names.",
+    "rules_ds": "from a import Reply as AR\nfrom b import Reply as BR\n\nservice svc.read:\n    kwarg n: Int\n    response BR\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit AR corr: \"c\" v: 1\n",
+    "libraries": {
+        "a": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n",
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    w: Int\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

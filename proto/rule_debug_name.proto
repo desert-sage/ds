@@ -1,0 +1,26 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+package ds.v1;
+
+// RuleDebugName atom — rule debug display-name template (RDSC.6.8).
+// One per rule per module; optional — old compilers omit it and old
+// runtimes skip it per the unknown-atom policy (RDSC.9.4).
+//
+// `name_template` is a DS-interpolation-style string evaluated against
+// an activation's bound variables at the moment the activation is
+// created.  Placeholders are `{binding.slot}` where `binding` matches
+// one of the rule's LHS pattern binding names and `slot` is a slot
+// declared on that binding's schema.  Literal text outside `{...}`
+// passes through unchanged.
+//
+// Example:
+//   rule  alert_high:
+//       Sensor s where s.value > 90.0
+//   generated template: "alert_high(s={s.entity_id})"
+//   at activation:      "alert_high(s=kitchen_temp)"
+message RuleDebugName {
+  string rule_name     = 1;
+  string name_template = 2;
+  uint32 module_id     = 10;
+}

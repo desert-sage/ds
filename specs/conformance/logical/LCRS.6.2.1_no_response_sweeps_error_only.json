@@ -1,0 +1,22 @@
+{
+    "id": "LCRS.6.2.1_no_response_sweeps_error_only",
+    "category": "logical",
+    "dead_rules_expected": ["seen_late"],
+    "scenario": "[LCRS.6.2.1], RLOW.7.3.8: a call to a `no response` service still retracts the prior `CallError` of its correlation. A rule calls `svc.ping ... nocooldown as \"c1\"`; a `CallError` of corr `c1` is asserted after the first call, and a probe logs it [\"before no response\"]. The rule fires again, the call is issued, and the engine retracts the `CallError` before issuing it; the probe after logs nothing. PATH PINNED: the call's own supersede inside the `FN_CALL` handler -- `lcrs_6_2_1_call_supersede` from `ds_dispatcher_call_typed` (libds), `ds.exec.lcrs_6_2_1_call_supersede` from `call_verb_admitted` (Mercury) -- for a service whose `ServiceDef.response` is empty, so only the `CallError` sweep runs. The break is an `FN_CALL` that skips the whole sweep when `response` is empty: the `CallError` stays and the second probe logs [\"after no response\"].",
+    "rules_ds": "service svc.ping:\n    kwarg n: Int\n    no response\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nschema Early scope explicit:\n    k: Int\n\nschema Late scope explicit:\n    k: Int\n\nrule r:\n    Trig t\n->\n    call svc.ping n: t.k nocooldown as \"c1\"\n\nrule seen_early:\n    Early\n    CallError e\n->\n    log info \"before {e.message}\"\n\nrule seen_late:\n    Late\n    CallError e\n->\n    log info \"after {e.message}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no response", "ts": 0 } },
+            { "op": "assert", "schema": "Early", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Late", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before no response"]
+    }
+}

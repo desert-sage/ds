@@ -1,0 +1,23 @@
+{
+    "id": "LFST.9.1_replay_ttl_expiry",
+    "category": "runtime",
+    "scenario": "TTL EXPIRY replayed ([LFST.9.1], [LFAC.1.3.3]). `Ping` lives 10_s; `seen` copies each Ping to `Seen`, and `gone` fires for a `Seen` whose Ping is no longer live. Ping a at 0, Ping b at 4_s, pumps at 11_s and 15_s: the pump-entry sweep expires a at the 11_s pump and b at the 15_s one, so `gone` fires once at each, and the expiry is visible only through WHEN `gone` fires. Nothing records an expiry as an input: the replay must re-derive it from its own sweep at the recorded clock. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Ping scope ttl 10_s:\n    k: String\n\nschema Seen scope ttl 1_h:\n    k: String\n\nschema Gone scope ttl 1_h:\n    k: String\n\nrule seen:\n    Ping p\n->\n    emit Seen k: p.k\n\nrule gone:\n    Seen s\n    no Ping p where p.k == s.k\n->\n    emit Gone k: s.k\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 7000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "pump" }
+        ],
+        "min_events": 8,
+        "min_rule_fires": 4
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.9_binding_shadows_library_refused",
+    "category": "compiler",
+    "scenario": "LGRA.22.9: \"A binding never shadows a library. The compiler must reject a pattern binding, a `let` binding or a constant whose NFC name equals the first segment of the path of a library the file imports\". The PATTERN BINDING case: `import ha`, then a pattern `Door ha`, so `ha.id` would read both as slot access and as library `ha`'s member `id`. Refused with DS_VALIDATE_BINDING_SHADOWS_LIBRARY. The `let` and constant cases are LGRA.22.9_let_shadows_library_refused and LGRA.22.9_const_shadows_library_refused. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, over the rule's pattern bindings.",
+    "rules_ds": "import ha\n\nschema Door scope logical:\n    id: Int key\n\nrule r:\n    Door ha\n->\n    log info \"door {ha.id}\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 3\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

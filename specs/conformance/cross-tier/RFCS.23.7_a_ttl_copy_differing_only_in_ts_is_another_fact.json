@@ -1,0 +1,31 @@
+{
+    "id": "RFCS.23.7_a_ttl_copy_differing_only_in_ts_is_another_fact",
+    "clauses": ["RFCS.23.7", "LFAC.9.1"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7]: \"On any other schema it is compared like any slot, so a copy that differs from a live fact only in `ts` is another fact\"; [LFAC.9.1]: on a schema that is not `logical`, `ts` is a slot like the rest wherever two facts are compared. `T` is `ttl` and keyless and declares `ts`. The receiver holds a host `T v: 1` at `ts` 100 and a `Mark t: 200`. The sender holds a host `T v: 1` at `ts` 200 and publishes an `R` referring to it, so the record inlines a copy equal to the receiver's `T` but for `ts`. The receiver takes it ([RFCS.23.1]) and pumps: no live `T` is equal to the copy (step 1), and `T` has no identity key (step 2), so the copy is asserted and `R` refers to it. Rule `hit` (`R r`, `T x where r.t == x`, `Mark m where m.t == x.ts`) reads the referred `T`'s `ts` as 200 and emits a `Hit`. The receiver holds 5 facts: both `T`, `R`, `Mark` and `Hit`. What it discriminates: a runtime that leaves `ts` out of the comparison resolves the copy onto the live `T`, whose `ts` 100 does not match the `Mark`, and holds 3; one that asserts the copy but refers to the live `T` holds 4; one that refuses the record holds 2. The sender's count is not asserted. PATH PINNED: libds's `fx_live_equal` (rfcs/codec.c), whose comparison is `ds_rete_slots_equal` (rete/wm_rete.c), comparing a slot whose identity role is not ENGINE, through pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.live_equal_fact`, whose comparison is `ds.wm.unchanged`, comparing a slot `slot_tests` marks `compared`, through test_behave.m's `receive_on_tier`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema T scope ttl 1_h:\n    v: Int\n    ts: Time\n\nschema R scope ttl 1_h:\n    k: Int\n    t: T\n\nschema Go scope logical:\n    k: Int key\n\nrule up:\n    Go g\n    T y\n->\n    publish R k: g.k t: y\n"
+            },
+            "receiver": {
+                "rules_ds": "schema T scope ttl 1_h:\n    v: Int\n    ts: Time\n\nschema R scope ttl 1_h:\n    k: Int\n    t: T\n\nschema Mark scope logical:\n    k: Int key\n    t: Time mutable\n\nschema Hit scope logical:\n    k: Int key\n\nrule hit:\n    R r\n    T x where r.t == x\n    Mark m where m.t == x.ts\n->\n    emit Hit logical k: r.k\n"
+            }
+        },
+        "steps": [
+            { "engine": "receiver", "op": "assert", "schema": "T", "slots": { "v": 1, "ts": 100 } },
+            { "engine": "receiver", "op": "assert", "schema": "Mark", "slots": { "k": 1, "t": 200 } },
+            { "engine": "receiver", "op": "pump" },
+            { "engine": "sender", "op": "assert", "schema": "T", "slots": { "v": 1, "ts": 200 } },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "receiver", "op": "forward_external", "from": "sender" },
+            { "engine": "receiver", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "receiver": 5
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LFAC.2.negzero",
+    "clauses": ["LFAC.1.7.1", "LFAC.1.7.2"],
+    "category": "runtime",
+    "scenario": "[LFAC.1.7.1]: a `Float` key compares by IEEE 754 `==`, so -0.0 and 0.0 are one identity. A logical fact keyed on a Float slot must treat the two zeros as ONE identity: the engine's identity equality (idkey_equal) and value equality use IEEE ==, and the identity HASH (hash_idval) normalizes -0.0 -> +0.0 so the two zeros land in the same bucket. Assert Zero(k=-0.0, n=1) then Zero(k=+0.0, n=2): the second is the SAME identity key, so it upserts the mutable n (1 -> 2) rather than creating a second fact. fact_count stays 1. Without the hash normalization the two zeros hash apart and this leaves two facts (a spurious duplicate instead of an upsert). Distinct from the display plane, which PRESERVES the -0.0 sign (LDET.3.2.7.negzero) — normalization is identity-key-only.",
+    "rules_ds": "schema Zero scope logical:\n    k: Float key\n    n: Int mutable\n\nrule touch:\n    Zero\n->\n    log info \"z\"\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Zero", "slots": { "k": -0.0, "n": 1 } },
+            { "schema": "Zero", "slots": { "k": 0.0, "n": 2 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

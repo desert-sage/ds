@@ -1,0 +1,14 @@
+{
+    "id": "LCRS.3.1_a_service_named_hydrate_samples_runs",
+    "category": "logical",
+    "scenario": "Hydration is not in v1, so a call to a declared service that happens to be named `storage.hydrate_samples` lowers as an ordinary call, and the artefact loads and runs: rule `r` fires and logs. The break is a lowering keyed on the name: a call with an `as` becomes `FN_HYDRATION_CALL`, for which no runtime holds a handler ([RDSC.4a.9.5]), so the artefact does not load. PATH PINNED: `dsc.rete`'s `rlow_7_3_1_call`, then each runtime's load and pump (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "service storage.hydrate_samples:\n    no response\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job\n->\n    log info \"called\"\n    call storage.hydrate_samples nocooldown as \"h\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["called"]
+    }
+}

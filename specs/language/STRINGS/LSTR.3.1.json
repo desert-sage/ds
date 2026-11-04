@@ -1,0 +1,95 @@
+{
+  "id": "LSTR.3.1",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.3",
+  "seq": 91,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[LSTR.3.1] String equality is codepoint-by-codepoint. Two\nstrings are equal iff they have the same length and matching\ncodepoints at every position. No normalisation is applied; the\nNFC and NFD forms of the same grapheme cluster are not equal: `café` spelled\nwith U+00E9 is not equal to `café` spelled with U+0065 U+0301.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_str",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A String compared with a String: `==` and `!=` by this clause's equality, the orderings by [LSTR.3.2]'s order; a `null` right operand propagates ([LNUL.4.1]); anything else is ill-typed, a trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__str_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six comparisons on two texts: `==` and `!=` the equality codepoint by codepoint, `<` and `>` [LSTR.3.2]'s order, `<=` and `>=` the order or the equality."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__cp_cmp_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two codepoints the structural comparison calls EQ are one codepoint."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__eq",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Equality of two texts: the same length and the same codepoint at every position, the structural codepoint comparison deciding each; no normalisation."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__eq_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One step of the equality: equal heads leave it to the tails, any other pair decides false."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__eq_refl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Every text equals itself, by induction on the text."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__eq_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Two texts the test calls equal are one text, for every pair: the same length and matching codepoints at every position, the clause's iff read from the test's side."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_1__nfc_is_not_nfd",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's example, executed: `café` with U+00E9 and `café` with U+0065 U+0301 are not equal."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Two texts this clause calls unequal are ordered one way or the other by [LSTR.3.2]'s order: equality and order together are total on texts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__corr_is",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A read correlation is the sweep's under LSTR.3.1's codepoint equality; a fact that reads none never matches."
+      }
+    ]
+  }
+}

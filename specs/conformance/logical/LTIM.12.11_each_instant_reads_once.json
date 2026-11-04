@@ -1,0 +1,29 @@
+{
+    "id": "LTIM.12.11_each_instant_reads_once",
+    "clauses": ["LTIM.12.11", "LTIM.10.7"],
+    "category": "logical",
+    "scenario": "[LTIM.12.11]: no wall-clock time is resolved to an instant, so a zone's transitions leave no gap or overlap: each instant reads one local time, at the offset of the one `TimeZoneOffset` fact answering it ([LTIM.10.7]). Three `Europe/Paris` rows over 2024's two transitions: +3600 from 2024-01-01T00:00Z until 2024-03-31T01:00Z, +7200 from there until 2024-10-27T01:00Z, and +3600 from there until 2025-03-30T01:00Z. `show` binds `z = e.t.local(\"Europe/Paris\")` and writes it through `::String` ([LTIM.8.2.4]), one Event per pump. Spring-forward: fact 1, 2024-03-31T00:59:59Z, is `2024-03-31T01:59:59+01:00`, and fact 2, one second later at 01:00:00Z, is `2024-03-31T03:00:00+02:00`: the local hour 02 is never read. Fall-back: fact 3, 2024-10-27T00:30:00Z, is `2024-10-27T02:30:00+02:00`, and fact 4, 01:30:00Z, is `2024-10-27T02:30:00+01:00`: the repeated wall clock is two instants, each at its own offset. A runtime that does not take a fact at its own `valid_from` writes no `2 2024-03-31T03:00:00+02:00`: it reads fact 2 through the earlier row, `2024-03-31T02:00:00+01:00`, a skipped local time, or finds no answer and faults DOMAIN ([LTIM.10.5.3]). PATH PINNED: libds's `adapter_ds_local` (rete/adapters.c) through `ds_rete_tz_resolve` (rete/wm_rete.c), rendered by `render_time` (rete/eval.c) through `ds_rete_local_split`; Mercury's `ds.eval.ltim_3_2_local`, rendered by `ds.format.render_time`.",
+    "rules_ds": "schema E scope logical:\n    id: Int key\n    t: Time mutable\n\nrule show:\n    E e\n->\n    let z = e.t.local(\"Europe/Paris\")\n    let s = z::String\n    log info \"{e.id} {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1711846800000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1711846800000000000, "valid_until": 1729990800000000000, "offset_s": 7200 } },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1729990800000000000, "valid_until": 1743296400000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "E", "slots": { "id": 1, "t": 1711846799000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "E", "slots": { "id": 2, "t": 1711846800000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "E", "slots": { "id": 3, "t": 1729989000000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "E", "slots": { "id": 4, "t": 1729992600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1 2024-03-31T01:59:59+01:00",
+            "2 2024-03-31T03:00:00+02:00",
+            "3 2024-10-27T02:30:00+02:00",
+            "4 2024-10-27T02:30:00+01:00"
+        ]
+    }
+}

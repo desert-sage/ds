@@ -1,0 +1,19 @@
+{
+  "id": "IARC.11.1",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.11",
+  "seq": 947,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IARC.11.1] **Share-immutable / deep-copy-mutable.** The immutable-per-session\nstructures — the Rete network topology (`AlphaNode`/`BetaNode`/`TerminalNode` nodes, tests,\nsalience), the schema registry, the loaded DSC — MAY be shared read-only behind a\nrefcount (cheaper — they are the large parts) or copied (simplest ownership);\neither conforms, but a shared owner **must** refcount so the two engines free in\nany order. The mutable state **must** be\ndeep-copied: the fact set; the Rete memories (alpha hash-sets, beta **tokens**);\nthe TMS justifier table; series backings; the TTL FIFO/heap; the agenda +\nrefraction sets; the clock value; **the cache map** ([LSTO.4.7], mutable engine\nstate); **the string intern table** (deep-copied, not shared: it interns\nString-typed slot values and grows at runtime, so sharing it is shared-mutable state that races the\nparallel-clone use and, even serial, leaks a discarded clone's strings back into\nthe source). The cache copies verbatim — its\nvalues are opaque (JSON-text keyed by string), so it needs no fact-pointer remap.\nThe deep-copy is a\n**graph clone with fact-pointer remap** — build an `old_fact* → new_fact*` map\nwhile copying facts, then repoint every fact reference (beta tokens, alpha/beta\nmemories, `FACT_REF` slots — the fact data model ([IDAT])). The intern table is re-created — content\nre-interned into the clone's own fresh table — and interned-string references\nremap via the resulting old→new string map.\n\n",
+  "refs": [
+    "LSTO.4.7"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "BetaNode",
+    "TerminalNode"
+  ]
+}

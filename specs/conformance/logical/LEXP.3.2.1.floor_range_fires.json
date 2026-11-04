@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.3.2.1.floor_range_fires",
+    "category": "logical",
+    "dead_rules_expected": ["floor_above_traps", "floor_below_traps", "floor_pos_inf_traps", "floor_neg_inf_traps", "floor_nan_traps"],
+    "scenario": "LEXP.3.2.1 for `floor`: a `Float` whose result does not fit `Int`, or which is not finite, traps NOT_REPRESENTABLE as `Float :: Int` does ([LCST.4.5.4]). One fact carries every operand in a slot, so nothing folds. `hi` is 9223372036854774784.0, the last double below 2^63, and `lo` is -2^63; both convert, and each rule compares the result with the exact `Int` in `hi_i` / `lo_i`. `above` is 2^63 and `below` the first double below -2^63 (-2^63 - 2048); +Inf is `t.big * t.big` on 1e300, -Inf its negation, NaN +Inf minus +Inf ([LEXP.4.2]). Each of those five rules tests `floor(...) != 0`, which an unchecked conversion satisfies on both arches (x86-64 gives INT64_MIN, arm64 saturates), so a runtime that does not trap fires it. Pin: exactly the two converting rules fire, in source order. The sibling LEXP.3.2.1.floor_range_traps pins the five ComputationErrors. PATH PINNED: libds builtins.c builtin_floor; Mercury ds.eval to_integer's `fn_floor` arm.",
+    "rules_ds": "from math import floor\n\nschema T scope logical:\n    entity_id: String key\n    hi: Float mutable\n    hi_i: Int mutable\n    lo: Float mutable\n    lo_i: Int mutable\n    above: Float mutable\n    below: Float mutable\n    big: Float mutable\n\nrule floor_hi_converts:\n    T t where floor(t.hi) == t.hi_i\n->\n    log info \"a\"\n\nrule floor_lo_converts:\n    T t where floor(t.lo) == t.lo_i\n->\n    log info \"b\"\n\nrule floor_above_traps:\n    T t where floor(t.above) != 0\n->\n    log info \"c\"\n\nrule floor_below_traps:\n    T t where floor(t.below) != 0\n->\n    log info \"d\"\n\nrule floor_pos_inf_traps:\n    T t where floor(t.big * t.big) != 0\n->\n    log info \"e\"\n\nrule floor_neg_inf_traps:\n    T t where floor(-(t.big * t.big)) != 0\n->\n    log info \"f\"\n\nrule floor_nan_traps:\n    T t where floor((t.big * t.big) - (t.big * t.big)) != 0\n->\n    log info \"g\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "t", "hi": 9223372036854774784.0, "hi_i": 9223372036854774784, "lo": -9223372036854775808.0, "lo_i": -9223372036854775808, "above": 9223372036854775808.0, "below": -9223372036854777856.0, "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["floor_hi_converts", "floor_lo_converts"]
+    }
+}

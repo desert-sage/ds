@@ -1,0 +1,10 @@
+{
+    "id": "LTAC.7.3",
+    "category": "compiler",
+    "scenario": "[LTAC.7.3]: a binding referenced inside an `after` body must be declared on the parent rule's LHS. The `after` body's log reads `x.entity_id`, and the LHS binds only `m`, so the program is refused with DS_VALIDATE_UNKNOWN_BINDING. PATH PINNED: `dsc.validate`'s `scoped_after`, which carries the rule's bindings into the body, then `action_strings` and `check_interpolation` on the body's log.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule auto_off:\n    Motion m where m.state == true\n->\n    log info \"trig\"\n    after 5_min:\n        log info \"on for {x.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

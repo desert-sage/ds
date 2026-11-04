@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.7",
+    "category": "compiler",
+    "scenario": "Bitwise operators (`&`, `|`, `^`, `~`, `<<`, `>>`) require integer operands per LEXP.7.7. Applying them to a Float-typed slot is a compile-time error when the type is known statically. Pin: `where t.f & 1 != 0` on a Float slot rejects with a static-type-mismatch diagnostic. Mirror of LEXP.12.3 which pins the supported (Int) branch.",
+    "rules_ds": "schema Trig scope logical:\n    f: Float key\n\nrule r:\n    Trig t where t.f & 1 != 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BITWISE_TYPE"
+    }
+}

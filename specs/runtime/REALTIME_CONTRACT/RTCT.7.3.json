@@ -1,0 +1,55 @@
+{
+  "id": "RTCT.7.3",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.7",
+  "seq": 586,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.7.3] **A `pump_wcet_ns` breach halts the tier.** Pump timing is measured\nat pump completion. On a breach the engine **must** emit an `EngineError`\ncarrying `ENGINE_FAULT_PUMP_WCET` and halt the tier — rung 7 of [LERR.1] — and\n**must** return `DS_ERR_CONTRACT_WCET_HALT` from the pump that breached. From\nthere the halt is every `EngineError`'s halt ([NCBK.2.9]): the integrator **must\nnot** resume service, the engine's state is undefined ([LERR.1.4.7]), and each\nlater call but the few that clause leaves valid is refused with\n`DS_ERR_ENGINE_HALTED`.\n\n**Exceeding the worst-case execution time is a system failure, not a refused\noperation.** Ten of [RTCT.7.1]'s caps decide **before** the work happens, so\nthe operation does not begin and the engine is intact ([RTCT.7.2]). This one\ndecides **after**. The engine cannot interrupt a pump mid-execution, so by the\ntime the breach is known the tier has already missed the deadline it exists to\nkeep — and a real-time tier that has overrun is one whose timing contract no\nlonger holds, for that pump and for every pump after it. There is no state in\nwhich continuing is safe, which is what puts this cap on rung 7 rather than\nrung 2 ([LERR.1.5]).\n\n**This cap reads a measurement, and it is the only one of the eleven that\ndoes.** The other ten compare a count the engine holds; this one compares an\nelapsed wall-clock time, which is a property of the host rather than of the\nprogram. Two live runs of one event trace against one contract therefore\ndisagree about whether the cap was breached whenever their elapsed times fall\neither side of it — a loaded host halts where an idle one does not. **No clause\npromises that two live runs agree on this cap**, and one that did could not be\nhonoured by any engine.\n\n**That is not a determinism failure, because [LDET.1.1] scopes the guarantee to\nthe event trace rather than to live reality.** Live execution is where the\nmeasurement is taken; the trace is what the guarantee is about. Two live runs\nat different speeds produce two different traces — one that halts here and one\nthat does not — and each replays faithfully as itself.\n\n**A trace recording this fault ends with it**, because the tier halted: the\n`EngineError` is the last record on the trace ([RFCS.3.1]). A replayer drives\nthe trace to that point, comparing every atom before it, and stops. The\nterminal fault is the recorded run's cause of death rather than an observable\nthe replay must reproduce, so a replaying host that would not itself have\nbreached does not report a divergence ([LFST.9.2.1]).\n\n```{admonition} This is the one recorded compare atom a replay does not compare\n:class: warning\n[LFST.9.3.1] forbids the compare acquiring an exclusion list, and this is not\none. An exclusion list narrows the comparison **within** a run that continues,\nso the un-compared thing goes unnoticed while everything after it is still\nchecked. A terminal fault has nothing after it: the trace ends, and there is no\nremainder whose verification it could weaken. The replay reports what it found\nrather than passing over it.\n```\n\n**No requirement here is written against where a recording ends.** A recording\nis evidence of how far one run got, and a run ends for reasons that are the\nengine's and for reasons that are not; a host losing power mid-pump ends a trace\nas surely as a fault does. Nothing in a recording attests that it is complete\n([RFCS.19.8]), so a requirement written against its end would be a requirement\nabout the power supply.\n",
+  "deferred": true,
+  "errors": [
+    "DS_ERR_CONTRACT_WCET_HALT",
+    "DS_ERR_ENGINE_HALTED"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/CapBreach.idr",
+        "name": "rtct_7_3__wcet_breach",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pump_wcet_ns decision. Its first argument is not logical state -- it is the wall-clock time the pump took, measured at completion."
+      },
+      {
+        "path": "formal/idris/CapBreach.idr",
+        "name": "rtct_7_3__wcet_breach_varies_with_the_host",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The wcet decision varies with the HOST: elapsed 5ns against a 3ns cap breaches, elapsed 1ns against the same cap does not, with the logical state identical by construction. That is why the breach is a halt rather than a refusal -- a decision the program does not determine cannot be one the engine carries on from. It refutes a property the corpus never granted: [LDET.1.1] scopes the guarantee to the trace, and two live runs produce two traces."
+      }
+    ]
+  },
+  "refs": [
+    "LDET.1.1",
+    "LERR.1",
+    "LERR.1.4.7",
+    "LERR.1.5",
+    "LFST.9.2.1",
+    "LFST.9.3.1",
+    "NCBK.2.9",
+    "RFCS.19.8",
+    "RFCS.3.1",
+    "RTCT.7.1",
+    "RTCT.7.2"
+  ],
+  "atoms": [
+    "EngineError"
+  ],
+  "symbols": [
+    "ENGINE_FAULT_PUMP_WCET"
+  ]
+}

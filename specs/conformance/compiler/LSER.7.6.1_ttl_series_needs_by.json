@@ -1,0 +1,10 @@
+{
+    "id": "LSER.7.6.1_ttl_series_needs_by",
+    "category": "compiler",
+    "scenario": "[LSER.7.6.1]: on a `ttl` schema, which carries no identity markers ([LFAC.1.7.6]), there is no default identity for a series to follow -- the declaration must name `by: <slot>` or `by: none`, and `entity_id` is an ordinary slot name with no grouping privilege. A `mean sliding 10_min` over a `ttl` schema with an `entity_id` slot and no `by:` is refused with `DS_VALIDATE_SERIES_NO_IDENTITY_SLOT`. PATH PINNED: `dsc.series.lser_7_6_1_identity`'s `al_ttl` arm. A compiler that groups by `entity_id` by name compiles this.",
+    "rules_ds": "use default\n\nschema Sensor scope ttl 1_min:\n    entity_id: String\n    state: Float\n\nseries Sensor.state:\n    mean sliding 10_min\n\nrule r:\n    Sensor s where s.mean > 5.0\n->\n    log info \"high mean\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_IDENTITY_SLOT"
+    }
+}

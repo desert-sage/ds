@@ -1,0 +1,39 @@
+{
+    "id": "IDAT.5.5b",
+    "category": "cross-tier",
+    "scenario": "Independent dialect choices per engine \u2014 engine A uses default dialect (call permitted); engine B uses restricted_v1 (call disabled). Demonstrates per-engine gating in coexisting tiers. (Uses fact_count to confirm engines loaded with their respective dialects without errors; the actual gating is compile-time, validated when each engine's DSC is built.). Pins IDAT.5.5 \u2014 per-engine dialect choice, compile-time gating.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "b": {
+                "rules_ds": "use restricted_v1\n\nschema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 1,
+            "b": 1
+        }
+    }
+}

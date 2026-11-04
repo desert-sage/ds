@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.10.8_no_block_under_log",
+    "category": "compiler",
+    "scenario": "[LGRA.10.8]: only `emit`, `publish` and `call` take an indented block; under `log` one is a syntax error, and the compiler must refuse it. A `log` line followed by an indented argument line is refused with DS_PARSE_GENERIC. The same rule with no block line compiles (every `log info` action in the corpus), so the refusal is the block's. PATH PINNED: `dsc.parse`'s `lcco_2_1_action_block`, whose arm for `log`, `cache`, `cache_delete` and `withdraw` refuses any block (`pe_action_block`), reported by `parse_front_code` as DS_PARSE_GENERIC.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n        level: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

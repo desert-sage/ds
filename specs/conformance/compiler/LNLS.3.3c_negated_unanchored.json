@@ -1,0 +1,11 @@
+{
+    "id": "LNLS.3.3c_negated_unanchored",
+    "clauses": ["LNLS.3.3"],
+    "category": "compiler",
+    "scenario": "[LNLS.3.3c]: a negated pattern whose `where` references an earlier binding is anchored like a positive one. `no R x where x.amount > d.level` pins no key of `R`, so each new `D` token would scan every `R` to decide whether one blocks it. Refused. PATH PINNED: `dsc.validate.lnls_3_3_anchors` judging a `no` pattern; judging positive patterns only turns this vector red with compile_ok.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema D scope logical:\n    id: String key\n    level: Int mutable\n\nschema R scope logical:\n    id: String key\n    amount: Int mutable\n\nrule r:\n    D d\n    no R x where x.amount > d.level\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

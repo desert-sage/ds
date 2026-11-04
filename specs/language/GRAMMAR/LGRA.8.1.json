@@ -1,0 +1,38 @@
+{
+  "id": "LGRA.8.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.8",
+  "seq": 934,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.8.1] Pattern productions:\n\n```\npattern ::= 'no' negated_pattern NEWLINE\n         |  pattern_body NEWLINE\n         |  sequence_pattern NEWLINE\n         |  then_step+ NEWLINE                              # line-leading `then`\n\nnegated_pattern ::= pattern_body\n                 |  '(' pattern_body ')'\n\npattern_body ::= type_ref binding? within_clause? where_clause?\n\nsequence_pattern ::= 'latest'? pattern_body then_step+\n\nthen_step ::= 'then' 'latest'? type_ref binding? 'within' time_expr where_clause?\n\ntype_ref ::= NAME ('.' NAME)*                                # a schema, bare or library-qualified ([LGRA.22.4])\n\nbinding ::= NAME\n\nwithin_clause ::= 'within' time_expr\n\nwhere_clause ::= 'where' expression\n              |  'where' capture_binding ('and' expression)?\n\ncapture_binding ::= '(' NAME (',' NAME)* ')' '=' expression\n```\n\n**`capture_binding` is deliberately permissive about its right-hand side**\n([LGRA.10.3.2]'s phase split). The production accepts any `expression`; the\ncontract restricts it to a capture-bearing `~` and refuses everything else with\na diagnostic ([LREG.4.6]). A grammar that closed the surface here would fail\nearlier and differently, and would have no code to raise.\n\n**One token of lookahead separates it from a parenthesised expression.** After\n`'(' NAME ')'` the parser must choose between reducing to `primary`\n([LGRA.9.7.1]) and reducing to `capture_binding`; `=` selects the second and\nanything else the first, and `=` and `==` are distinct tokens ([LLEX.9]). The\nmulti-name form is not ambiguous at all: `(a, b)` is not an expression.\n\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lgra_8_1__no_pat",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`no K` with no where clause: any live K blocks."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Lgra_6_1__rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Patterns as kinds with a guard, `no` patterns as kind plus blocker. `within`, `latest` / `then` sequences and capture bindings have no model."
+      }
+    ]
+  },
+  "refs": [
+    "LGRA.10.3.2",
+    "LGRA.22.4",
+    "LGRA.9.7.1",
+    "LLEX.9",
+    "LREG.4.6"
+  ]
+}

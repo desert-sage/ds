@@ -1,0 +1,24 @@
+{
+    "id": "LTAC.2.2.1_as_keyed_supersedure_int",
+    "category": "logical",
+    "scenario": "[LTAC.2.2.1] / [LRST.1.4]: the non-String half of `logical/LTAC.2.2.1_as_keyed_supersedure_string`. [LRST.1.4] makes `Int` a legal `as` key, and a key is compared by value. Three Req facts (distinct `entity_id`, so the logical upsert keeps all three) each arm a 100ms timer keyed on `r.n`, an Int: a (n 7) and b (n 7) at t=0, c (n 8) at t=50ms. b's arming supersedes a's (same key), so the key-7 timer fires once, at 100ms; c's key differs, so its timer survives and fires at 150ms. Pumping at 120ms and again at 200ms separates the two firings in time. Exact messages: armed x3, then `timer fired` twice. No supersedure gives three firings; keys compared as anything that collapses distinct Ints (every key read as \"\") lets c supersede the key-7 timer and gives one. log_message_sequence is exact list equality, for the reason the String vector gives.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.n:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "n": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "n": 7 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "n": 8 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

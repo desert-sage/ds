@@ -1,0 +1,9 @@
+{
+    "id": "LSER.6.8.2",
+    "category": "compiler",
+    "scenario": "Unlabelled companion-slot access on a single-line series works per LSER.6.8.2 \u2014 when only one observation line covers an aggregation, the unqualified `s.mean` form resolves without label disambiguation. Pin: `series Sensor.state (by: entity_id): mean sliding 10_min` then `where s.mean > 5.0` compiles, so the unqualified form resolves. PINS ONLY THAT IT COMPILES.",
+    "rules_ds": "use default\n\nschema Sensor scope ttl 1_min:\n    entity_id: String\n    state: Float\n\nseries Sensor.state (by: entity_id):\n    mean sliding 10_min\n\nrule r:\n    Sensor s where s.mean > 5.0\n->\n    log info \"high mean\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

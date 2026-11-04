@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.9.a_present_value_never_evaluates_the_default",
+    "category": "logical",
+    "scenario": "[LNUL.8.9]: `x ?? d` evaluates `d` only when `x` is null. This is the clause's own case, `x ?? y / z` with `x` present and `z` zero. `(l.v ?? (l.a // l.z)) > 0` with v = 5, a = 1 and z = 0 is `5 > 0`, true, and the rule fires. A runtime that evaluated `d` eagerly would meet the Int division by zero, a DIVIDE_BY_ZERO trap ([LEXP.7.15.1]), and abandon the activation, so `r` would not fire. A `??` that never evaluated `d` is caught by `runtime/LNUL.8.9a` and `8.9b`, where a null takes its default. Path: libds rete/eval.c DS_RETE_EXPR_COALESCE, which evaluates its right operand only on a null left; Mercury ds.eval ev_node(e_coalesce(...)) likewise.",
+    "rules_ds": "schema L scope logical:\n    id: String key\n    v: Int? mutable\n    a: Int mutable\n    z: Int mutable\n\nrule r:\n    L l where (l.v ?? (l.a // l.z)) > 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "L", "slots": { "id": "l", "v": 5, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

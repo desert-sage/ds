@@ -1,0 +1,181 @@
+{
+  "id": "RDSC.4a.8.2.3",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.8.2",
+  "seq": 499,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.8.2.3] **The rate gate is evaluated once per firing, inside it.**\nThe runtime **must** evaluate it after `RULE_FIRE_BEGIN` ([NCBK.2.6]) and\nbefore the first action, exactly once per firing, and only for an activation\nwhose condition, where the guard has one, was `true`. The gate records the\nfiring it admits ([LCDB.3.2.1]), so a second evaluation would deny the firing\nthe first admitted. It is a guard: `null` admits ([LNUL.4.8]), and `false`\nsuppresses the actions while the firing stands ([LCDB.3.2.1.1]).\n\nA firing whose actions the gate suppressed is still the match's firing. The\nruntime **must not** fire that match again on a later tick while it persists\n([LTIM.2.5.1]); the next firing comes from a new match.\n\n---\n\n",
+  "refs": [
+    "LCDB.3.2.1",
+    "LCDB.3.2.1.1",
+    "LNUL.4.8",
+    "LTIM.2.5.1",
+    "NCBK.2.6"
+  ],
+  "symbols": [
+    "FN_RATE_ALLOW"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_3__gate_inside_the_firing",
+        "tag": "spec",
+        "note": "The gate is evaluated inside the firing and nowhere else -- a withheld activation has no verdict -- and `false` leaves the frame no body event while RULE_LHS_FACTS and RULE_FIRE_BEGIN, emitted before it is read, stand. Where among the events it is read is not an event and is drawn only through that consequence; 'once per firing' and the recorded admission are not drawn; that the match is not fired again while it persists is a statement over ticks, Rete/NetworkTick.idr's and Rete/RateGate.idr's."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_3__gate_needs_a_firing",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A gate verdict implies a firing, hence a condition that was `true` or absent: the clause's 'only for an activation whose condition was true', and RDSC.4a.8.2.2's 'does not evaluate the rate gate'. Bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_3__suppressed_firing_keeps_bracket",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A gate-suppressed firing's frame is one RULE_FIRE_BEGIN, one RULE_FIRE_END, no body event, and RULE_LHS_FACTS exactly when the firing matched a fact: NCBK.2.6's frame with an empty body, 'the actions suppressed while the firing stands'; the suppressed probe shows the instance. Bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_3__verdict",
+        "tag": "spec",
+        "note": "The gate's verdict where it was evaluated: `true` and `null` admit the actions (LNUL.4.8), `false` suppresses them."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__fire_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gated firing with calls: Rete/NetworkTimed.idr's selection and mark, then the gated RHS with calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_outcome",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO SITE THE GATED RHS IS Rete/NetworkTimed.idr's: the same gate, verdict, net, stamps and trackers, the call trackers untouched and no call issued."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rhs_gated_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls gated by the rule's cooldown: Rete/NetworkTimed.idr's gate, then the RHS with calls under its verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__allowed_is_the_firing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An admitted gate: the actions run after the mark, the admission recorded."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__rhs_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Evaluated once per firing, after the activation was marked and before the first action, and the firing stands either way. LESS than the clause: 'only for an activation whose condition was true' is not here -- the guard is the gate alone, which RDSC.4a.8.2.1 says of an untimed rule; the condition half is Rete/NetworkTimed.idr's (`ltim_2_5_4__rhs_gated`, the Idris lane's rung R4a), where an activation exists only because the pump's sample admitted it. `null` admits: the gate answers a Bool, so no `null` arises."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__rhs_once",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'Exactly once per firing': one lookup, at most one stamp, in the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__suppressed_runs_no_action",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'`false` suppresses the actions while the firing stands': no action runs, the activation is marked, nothing else moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__fire_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The gate inside the firing, once, after the mark and before the first action; a suppressed firing is still the match's firing. LESS than the clause: the condition half is Rete/NetworkTimed.idr's (`ltim_2_5_4__fire_timed`, the Idris lane's rung R4a; the note on `lcdb_3_2_1_1__rhs_gated`)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rdsc_4a_8_2_3__gate_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE LOOKUP, AT MOST ONE STAMP, PER FIRING: the trackers after any gated firing are the trackers before, or those with the fired rule's key stamped at the clock in front -- 'exactly once per firing', and 'the gate records the firing it admits'. Over every program, state and firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rdsc_4a_8_2_3__suppressed_is_still_the_firing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A SUPPRESSED FIRING IS STILL THE MATCH'S FIRING: after the mark, the chain at the ordinal is the chain with activation j marked, that activation is the selected match, and it carries `fired`; the selection of IRET.11.4 1a takes the first activation NOT fired, so the match is not selected again while it persists, and the next firing comes from a new match. The flag's general statement is Rete/NetworkRefraction.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__fire_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firing whose actions the gate may suppress is still the match's firing: selected and marked as Rete/NetworkCooldown.idr's is, so a suppressed match is not fired again while it persists; the gate is read once, inside, by `ltim_2_5_4__rhs_gated`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__fire_timed_projects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The gate's once-per-firing evaluation and its record are Rete/NetworkCooldown.idr's, by projection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__rhs_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RATE GATE, once per firing, after the mark and before the first action, 'only for an activation whose condition was true': the selection is of the re-timed chains, so an activation whose condition the pump's sample refused does not exist to be selected, and the gate is evaluated for no such activation. `null` admits: the gate answers a Bool."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__rhs_gated_drops",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gate is evaluated here exactly as Rete/NetworkCooldown.idr evaluates it: once, inside the firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__second_maturity_is_gated",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A firing whose actions the gate suppressed is still the match's firing. The runtime must not fire that match again on a later tick while it persists': gated at 12, silent at 70. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__suppressed_runs_no_action",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'`false` suppresses the actions while the firing stands': the firing is named with its verdict, the activation marked, no stamp and no tracker moved."
+      }
+    ]
+  }
+}

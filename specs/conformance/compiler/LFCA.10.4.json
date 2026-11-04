@@ -1,0 +1,10 @@
+{
+    "id": "LFCA.10.4",
+    "clauses": ["LFCA.2.4"],
+    "category": "compiler",
+    "scenario": "[LFCA.2.4] (LFCA.10.4, the id, is a tombstone): `cached(key)` is not gateable at all, because every engine owns its cache. Pin: `let v = cached(\"k\")` compiles under `base`, which sets every capability false ([LDIA.4.2]), `cache` among them. A compiler that gated the read on any capability refuses this. The schema is `ttl`, not `logical`, because `base` disables `logical` too.",
+    "rules_ds": "use base\n\nschema Trig scope ttl 1_h:\n    v: Int\n\nrule r:\n    Trig\n->\n    let v = cached(\"k\")\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

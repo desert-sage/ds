@@ -1,0 +1,783 @@
+{
+  "id": "IRET.11.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11",
+  "seq": 905,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Refraction",
+  "text": "### Refraction [IRET.11.3]\n\nRefraction is a property of the activation, the flag [LDET.5.3] describes\n([IRET.11]). Each terminal node also keeps a **refraction table** of the token\nidentities that fired in the engine's current **cycle generation**. The\ngeneration advances on every working-memory assert and retract and once per\npump; an entry of an earlier generation is stale and matches nothing, so the\ntable empties without being walked. The table catches an activation formed\nagain for an identity that already fired before any change to working memory,\nand so before the match could have ended ([IRET.11.3.2]). The token identity\nis the activation's tuple of participating fact ids; the 32-bit token hash is a\npre-filter, **not** the key. An entry matches only when both its token hash\n**and** its fact-id tuple match (`refract_identity_match`, `terminal.c`).\n\n",
+  "refs": [
+    "IRET.11",
+    "IRET.11.3.2",
+    "LDET.5.3"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__activation",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__fired",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__hash",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__hash_determined_by_tuple",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__refire_is_suppressed",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__refracted",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__suppress_iff_identity_refracted",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__suppressed",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3__tuple",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3__fact_ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The identity of a match is its tuple of participating fact ids, as the clause requires; the 32-bit hash pre-filter is an unobservable optimisation and is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3__ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A token's identity: `map fid tfacts`."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3__now_ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The identities of the current match tuples -- what a kept token is looked up against."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3__tok_ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The identities of a table's tokens."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__same_tick_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two activations, two firings, each once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_3__distinct_pairwise_short",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A distinct list whose members are pairwise equal has at most one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_7_7__consistent_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A consistent chain's activations carry distinct identities."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME. From the loaded network, after any inputs applied with no pump between them, a pump that reaches quiescence fires a framed chain exactly as many times as it has matches when the pump begins: its activations are its distinct matches ([IRET.7.7], [IRET.11.1], in the view), each fires once and none twice ([IRET.11.3], [LDET.5.3], in the run), whatever the other rules emit and withdraw meanwhile. Rete/NetworkOnce.idr's theorem with the action-free frame replaced by this one; the plain network, so no cascade and no sweep. Every hypothesis is discharged by computation at `ltim_2_5_1__two_rules_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the fixture: A's firings are its matches, 2. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once per match, twice, with B's RHS writing between: no identity fires twice. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE AND THE CLOCK. From the loaded clocked network, after any inputs -- data events and ticks that sweep -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins, whatever the other rules emit and withdraw and whatever their endings cascade: a cascade's targets are emitted kinds, which a framed chain does not read. Rete/NetworkFrame.idr's theorem on the engine Rete/NetworkClocked.idr runs; a prepare that re-times is outside it and is Rete/NetworkFrameRetime.idr's. Every hypothesis is discharged by computation at `ltim_2_5_1__one_fact_is_an_instance_ttl`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE ENTITY FIXTURE: A's firings are its matches, 1, the replacement's; the replaced wrapper's is gone and the no-ops made none. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE ENTITY STATE: A fires for the replacement's match, B fires and cascades, `[1, 0]`, quiescent; the entity and the input relation, which no row targets, are left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the fixture: A's firings are its matches, 1. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once for its match, with B's RHS and its cascade inside the run: no identity fires twice. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE THEOREM AT THE TICKED FIXTURE: A's firings are its matches after the sweep, 1; the expired fact's match is not among them. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE TICKED STATE: A fires for the surviving match, B fires and cascades, `[1, 0]`, quiescent, the kind-0 fact alone left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the two-fact fixture: A's firings are its matches, 2. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_run_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once per match, twice, with B's RHS and its cascade between: no identity fires twice, and the id B withdrew is minted again for a new identity. Executed, firing by firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE, THE CLOCK AND THE RE-TIME. From the loaded clocked network, after any inputs -- data events, and ticks that sweep and re-time every timed chain -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins: the matches the ticks made counted, the matches they ended not. Rete/NetworkFrameClocked.idr's theorem with Rete/NetworkClocked.idr's prepare. Every hypothesis is discharged by computation at `ltim_2_5_1__gated_is_an_instance` and `ltim_2_5_1__shut_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once, B fires once, no identity twice. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the opening fixture: A's firings are its matches, 1. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once for the match the tick made, with B's RHS and its cascade inside the run: no identity fires twice. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the shutting fixture: A's firings are its matches, 0. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "No identity remains to fire after the tick ended A's match. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the swept fixture: A's firings are its matches, 0. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "No identity remains after the sweep. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "Iret_11_3__unfired_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "EVERY ACTIVATION UNFIRED, over every chain: what the agenda holds before any pump has run -- no identity has fired, so nothing is refracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__all_of_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A property of every indexed member is a property of every member."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__applied_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And keep every activation unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__apply_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "AN INPUT keeps every activation unfired: an assert by the lifecycle, a retraction of a live fact, a retraction of nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__assert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps every activation unfired: a no-op changes nothing, an insert is of a fresh fact, a replace retracts a live fact then inserts a fresh one. The cases of Rete/NetworkDispatch.idr's `iret_19_1__assert_view`, each executed on the one-row rule below."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__distinct_same_set_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "TWO DISTINCT LISTS WITH THE SAME MEMBERS HAVE ONE LENGTH: a terminal that holds each match once holds as many activations as there are matches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A token taken out of a list, by `==`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Taking a token out of a distinct list leaves a distinct list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop_elem_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member other than the one taken out is still there."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop_elem_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What is left was there, and is not the one taken out."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Taking out a member of a distinct list shortens it by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__drop_none",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Taking out a token that is not there changes nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__elem_cons_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of a list whose head tests unequal to it is in the tail."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__fires_the_match_count",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE COUNT: under the view, the activations of every chain are as many as its matches, so the pump's firings are the number of distinct matches, summed over the rules."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__flags",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `fired` flags of every chain's activations: the agenda before a pump, as flags."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__insert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT keeps every activation unfired: what it creates is unfired, what it keeps was. From Rete/NetworkTransferFlags.idr's `iret_19_1__insert_flags`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__match_count_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Chain by chain: a terminal that holds its recompute once holds as many activations as matches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE THEOREM. For an action-free program, from the loaded network, after any inputs applied with no pump between them, a pump with fuel enough halts `Quiescent`, fires exactly as many times as there are activations, leaves every activation fired with its tuple, and every chain's tuples are exactly its recompute over working memory, none twice: once per match, and each match once. [IRET.7.7] and [IRET.11.1] in the view; [IRET.11.3] and [LDET.5.3] in the run. The clauses a duplicate firing breaks, held together."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match_from",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH, from any state where every activation is unfired and the view holds: a pump with fuel above the activation count halts `Quiescent`, fires exactly as many times as there are activations, and leaves every activation fired with its tuple; and every chain's tuples are exactly its recompute over working memory, none twice. The activations ARE the matches, each once, and each fires once. Under the frame: an action-free program (every rule only logs), inputs applied with no pump between them, fuel above the activation count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__retract_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps every activation unfired: a retraction creates nothing fired and keeps what survives as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__tok_eq_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two equal tokens test equal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_19_2__retract_between_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A RETRACTION BETWEEN ASSERTS, AND ONE OF NOTHING: two facts asserted, the first retracted by its id, then an id no fact carries. The survivor's activation fires once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A DUPLICATE DOES NOT HAPPEN, rows first: three `Word` facts whose letters make each a row and the matching column, with a fourth that completes nothing, under a six-pattern self-join; the pump fires once, and the one chain holds the one match, `50 1 12 50 1 12` by key, each fact filling a row and its column. Executed. That the join tests transcribe the self-join's `where` clauses onto a letter table keyed by the fact's payload is checked by reading."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_interleaved_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND INTERLEAVED, the issue's second pattern order (row, column, row, column, row, column): once, the one match with the columns beside their rows. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_1__entity_noop_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN ENTITY ASSERTED TWICE WITH ONE PAYLOAD is the no-op too: the Entity case with the payload equal. One firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_1__relation_noop_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A RELATION ASSERTED TWICE is one fact and one activation: the second assert is the clause's no-op, `iret_11_3__assert_unfired`'s Relation case with the fact found. One firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_3__entity_replace_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND THE PUMP FIRES ONCE, on the fresh wrapper, id 1: the assert mints the fresh id against the memory the old wrapper is still in, so the replace does not reuse the hole its retraction leaves, and 'a fresh wrapper with a new `fact_id`' holds literally. Executed; a first draft said id 0 and the model said otherwise."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_3__replaced_is_unfired",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN ENTITY ASSERTED TWICE WITH A CHANGED PAYLOAD is the clause's retract-and-replace: the first wrapper's activation ends and the fresh wrapper's is created unfired. Before the pump the one activation is unfired. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rdsc_4a_5__load_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded network, from the loader's alpha table: every activation unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rdsc_4a_5__load_unfired_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE LOADED NETWORK holds unfired activations only: each root's seeding wave creates, and what it creates is unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__ghost",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The refraction set of [IRET.11.3] beside the engine, kept through every operation and cleared where [IRET.11.3.2] clears it. A ghost: the engine never reads it, which is what the theorem shows it need not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__refracted_fired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every identity in the set belongs to an activation carrying `fired`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__refraction",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every terminal's refraction set as one list of (ordinal, identity): the token identities that fired in the current cycle."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__sound",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SOUND GHOST: the view, and every identity in the set belonging to an activation carrying `fired` -- the set refuses nothing the flag does not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__elem_set_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of a list after an update at one position is an old member or the update of one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__engine_maybe",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine of a possible ghost; named so that no statement mentions a projection unapplied."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE REFRACTION THEOREM, closed at the top: after any history from a loaded network the ghost's engine is the history's engine, every refracted identity belongs to an activation carrying `fired`, and the selection of [IRET.11.4] 1a -- the first activation neither popped nor refracted -- is the model's first unfired activation. In the tick-free fragment the `fired` flag is the whole of refraction under each of the five statements of it, and Rete/FireLoop.idr's abstraction of refraction to that flag is grounded in the spec."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__select_spec_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "UNDER A SOUND GHOST the section's filtered selection is the model's: the set refuses nothing the flag does not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_sampled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH EVERY INPUT SAMPLED. From the loaded clocked network, after any steps -- each a sample with a data event or none -- consumed with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins. Rete/NetworkFrameRetime.idr's theorem through the expansion: a step is a tick then its event. Every hypothesis is discharged by computation at `ltim_2_8_4__arrives_open_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the sampled arrival: A's firings are its matches, 1. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A fires once for the match the sampled arrival made, B's RHS and cascade inside the run: no identity fires twice. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_1__pairs_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The sequence rule's firings are its matches, 2. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_1__trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two identities, each fired once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11_3__same_tuple_same_tok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With distinct tuples, two tokens of one table with one tuple are one token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_11_3__same_tuple_same_act",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With distinct identities, two activations of one terminal with one match are one activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_11_3__tuples_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tuples of a table, in table order; named so that no statement mentions a projection unapplied."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_11_3__tuples_of_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The tuples of an appended table are the appended tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "Iret_11_3__distinct",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No two entries with the same identity, the property [IRET.11.3] keys on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__distinct_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Disjoint distinct lists append to a distinct list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__distinct_concat",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A distinct list of distinct, pairwise disjoint lists concatenates to a distinct list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__distinct_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist by filter of a distinct list is distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__distinct_map_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist by filter, under a map, stays distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__distinct_map_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An injective map keeps a list distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__elem_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of a non-empty list is its head or a member of its tail. Once in NetworkRefraction and, as ldet_5_9__elem_cons, in NetworkOrderKeep; shared from here."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__elem_tok_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Membership of a token list, from the Bool to the proof."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__elem_tok_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Bool non-membership refutes membership."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__elem_tok_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Membership of a token list, from the proof to the Bool."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__not_elem_tok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refuted membership is Bool non-membership."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__tok_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Token identity: tuple equality is equality."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__tok_eq_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tuple equals itself."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_11_3__tok_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Distinct tuples compare unequal."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3__Identities",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3__identity",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "NFCT.2.11",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.2",
+  "seq": 129,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.2.11] **Where one assert breaks several refusals, the first in this order\ndecides.** `ds_engine_assert` **must** return the\nstatus of the first of these steps that refuses:\n\n1. The engine is halted: `DS_ERR_ENGINE_HALTED` ([NCBK.2.9]).\n2. The schema is not one the engine holds: `DS_ERR_SCHEMA_UNKNOWN` ([NFCT.1.1]).\n3. The value count is not the schema's slot count: `DS_ERR_INVAL` ([NFCT.2.2]).\n4. A value its slot does not admit: a `null` in a slot not declared `T?`\n   ([LNUL.3.1]), a kind [NFCT.2.3]'s table does not pair with the slot's type, or\n   a reference that clause does not admit, is `DS_ERR_SLOT_TYPE_MISMATCH`. A pointer that table requires to be\n   non-`NULL` and that is `NULL` is `DS_ERR_INVAL`, at its slot's place in this\n   step.\n5. A NaN `Float`: `DS_ERR_NAN_REJECTED` ([LEXP.4.2]).\n6. A `Json` value over one of its limits: `DS_ERR_JSON_LIMIT` ([LGRA.5.8.6]).\n7. Text that is not well-formed UTF-8: `DS_ERR_ENCODING` ([LSTR.8.5]).\n8. A `Date` outside its range: `DS_ERR_TIME_RANGE` ([LTIM.1.2.2]).\n9. A malformed `TimeZoneOffset` fact: `DS_ERR_INVAL` ([LTIM.10.9]).\n10. A TTL deadline outside the `Time` range: `DS_ERR_TIME_RANGE` ([RFCS.6.7]).\n11. A held seed's deadline, which this call's sample would fix, outside the\n    `Time` range: `DS_ERR_TIME_RANGE` ([NLFC.9.5]).\n\nA step that judges slot values judges every slot, in declaration order, before\nthe next step begins, and the first slot it refuses decides. So a NaN in the\nfirst slot beside a `Json` value over a limit in the second is\n`DS_ERR_NAN_REJECTED`, and either beside a kind mismatch in any slot is\n`DS_ERR_SLOT_TYPE_MISMATCH`. A `NULL` engine is `DS_ERR_INVAL` before step 1, and\na `NULL` schema is `DS_ERR_INVAL` after step 1 and before step 2.\n\nThe order judges values. A `Json` slot given as JSON text is judged as text\nfirst, and a refusal of the text comes before step 1 ([LSTR.8.5]).\n\n`ds_json_t` is opaque, and `ds_json_parse` and the builders refuse a tree over a\nlimit or holding ill-formed text before it exists ([LGRA.5.8.6], [LSTR.8.5]). So\na `libds.h` caller meets neither step 6 nor, for a `Json` slot, step 7. The\nengine **must** judge both all the same: a runtime whose host builds a value\nanother way meets them.\n\nStep 2 stands on the same footing. Every schema handle `libds.h` hands out names\na schema its engine holds, and any other handle is undefined behaviour\n([IDAT.1.6]), so a `libds.h` caller does not meet step 2. A runtime whose host\nnames a schema another way does. A reference that names no live fact, in\nstep 4, stands on it too ([NFCT.2.3]).\n\nEvery step is an argument check. A call any of them refuses is not a step\n([LTIM.2.8.4]): it changes nothing and records nothing ([RFCS.6.7]). A refusal\nthe engine makes after it samples, such as a `String` over its slot's capacity\n([LSTR.11.3]) or an `initial` block over a cache cap ([LGRA.24.3]), answers a\ncall that passed all eleven.\n\n",
+  "refs": [
+    "IDAT.1.6",
+    "LEXP.4.2",
+    "LGRA.24.3",
+    "LGRA.5.8.6",
+    "LNUL.3.1",
+    "LSTR.11.3",
+    "LSTR.8.5",
+    "LTIM.1.2.2",
+    "LTIM.10.9",
+    "LTIM.2.8.4",
+    "NCBK.2.9",
+    "NFCT.1.1",
+    "NFCT.2.2",
+    "NFCT.2.3",
+    "NLFC.9.5",
+    "RFCS.6.7"
+  ],
+  "errors": [
+    "DS_ERR_ENCODING",
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INVAL",
+    "DS_ERR_JSON_LIMIT",
+    "DS_ERR_NAN_REJECTED",
+    "DS_ERR_SCHEMA_UNKNOWN",
+    "DS_ERR_SLOT_TYPE_MISMATCH",
+    "DS_ERR_TIME_RANGE"
+  ],
+  "symbols": [
+    "ds_engine_assert"
+  ]
+}

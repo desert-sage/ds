@@ -1,0 +1,269 @@
+{
+  "id": "RFCS.3.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.3",
+  "seq": 108,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "",
+  "data": {
+    "columns": [
+      "Atom",
+      "Field #",
+      "Direction",
+      "Purpose",
+      "Container-legality",
+      "Stream-class"
+    ],
+    "rows": [
+      [
+        "StreamHeader",
+        "258",
+        "—",
+        "Stream header; first atom in body",
+        "stream",
+        "structural"
+      ],
+      [
+        "SchemaDef",
+        "256",
+        "—",
+        "Schema definition (from DSC format)",
+        "both",
+        "structural"
+      ],
+      [
+        "Slot",
+        "257",
+        "—",
+        "Slot definition (from DSC format)",
+        "both",
+        "structural"
+      ],
+      [
+        "FactAssert",
+        "1",
+        "—",
+        "Fact assert",
+        "stream",
+        "inject"
+      ],
+      [
+        "FactRetract",
+        "2",
+        "—",
+        "Fact retract",
+        "stream",
+        "inject"
+      ],
+      [
+        "Checkpoint",
+        "259",
+        "—",
+        "Inline checkpoint; random-access entry point ([RFCS.9]) (v2): deferred, so not allocated in `proto/atom.proto`; 259 is held for it",
+        "stream",
+        "structural"
+      ],
+      [
+        "ClockAdvance",
+        "3",
+        "—",
+        "Clock advance",
+        "stream",
+        "inject"
+      ],
+      [
+        "PumpBoundary",
+        "4",
+        "—",
+        "Pump-to-quiescence boundary ([RFCS.22]); a replayer pumps on meeting one",
+        "stream",
+        "inject"
+      ],
+      [
+        "ExternalAssert",
+        "5",
+        "—",
+        "Host input whose fact holds a fact reference, as a `FactExternal` ([RFCS.24])",
+        "stream",
+        "inject"
+      ],
+      [
+        "CacheSeed",
+        "6",
+        "—",
+        "A cache entry the host seeded before the first stream event, in the prelude ([RFCS.26])",
+        "stream",
+        "inject"
+      ],
+      [
+        "RuleFireAnnotation",
+        "261",
+        "—",
+        "Rule-fire annotation: begin/end of activation",
+        "stream",
+        "compare"
+      ],
+      [
+        "CallIssued",
+        "262",
+        "—",
+        "Outbound-call provenance ([RFCS.15.2]); compared, never injected",
+        "stream",
+        "compare"
+      ],
+      [
+        "~~Seal~~",
+        "260",
+        "—",
+        "Reserved, out of use. Field 260 is never reissued",
+        "—",
+        "—"
+      ],
+      [
+        "TextNote",
+        "323",
+        "—",
+        "Optional clear-text annotation ([RFCS.25]) (v2): deferred, so not allocated in `proto/atom.proto`; 323 is held for it",
+        "stream",
+        "structural"
+      ],
+      [
+        "ComputationError",
+        "325",
+        "—",
+        "Trap provenance — a computation with no honest answer ([LERR.1.4.7])",
+        "stream",
+        "compare"
+      ],
+      [
+        "FactEmit",
+        "326",
+        "—",
+        "Author-emitted fact — a rule fired and the engine produced it ([RFCS.6a])",
+        "stream",
+        "compare"
+      ],
+      [
+        "FactPublish",
+        "331",
+        "—",
+        "A rule's `publish` ran; carries no slot value ([RFCS.27])",
+        "stream",
+        "compare"
+      ],
+      [
+        "FactWithdraw",
+        "327",
+        "—",
+        "Engine withdrawal + closed cause enum ([RFCS.7a]); compared, never injected",
+        "stream",
+        "compare"
+      ],
+      [
+        "TypeError",
+        "328",
+        "—",
+        "Invalid operation at a present value; the activation is abandoned ([LERR.1.2]); compared, never injected",
+        "stream",
+        "compare"
+      ],
+      [
+        "BoundsError",
+        "329",
+        "—",
+        "A declared cap was reached ([RTCT.7.1]); the operation is rejected and the engine is intact; compared, never injected",
+        "stream",
+        "compare"
+      ],
+      [
+        "EngineError",
+        "330",
+        "—",
+        "Engine state is no longer trustworthy; the tier halts ([LERR.1.4.7]); compared, never injected",
+        "stream",
+        "compare"
+      ]
+    ]
+  },
+  "atoms": [
+    "CacheSeed",
+    "CallIssued",
+    "ClockAdvance",
+    "ExternalAssert",
+    "FactAssert",
+    "FactRetract",
+    "PumpBoundary",
+    "RuleFireAnnotation",
+    "SchemaDef",
+    "Slot",
+    "StreamHeader"
+  ],
+  "defines": {
+    "atoms": [
+      "BoundsError",
+      "CacheSeed",
+      "CallIssued",
+      "ClockAdvance",
+      "ComputationError",
+      "EngineError",
+      "ExternalAssert",
+      "FactAssert",
+      "FactEmit",
+      "FactPublish",
+      "FactRetract",
+      "FactWithdraw",
+      "PumpBoundary",
+      "RuleFireAnnotation",
+      "StreamHeader",
+      "TypeError"
+    ]
+  },
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_1__live_atom",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_1__numbers_unique",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_1__registry_number",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_4__class_band_alignment",
+        "tag": "derives"
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/atom.proto",
+        "name": "Atom",
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LERR.1.2",
+    "LERR.1.4.7",
+    "RFCS.15.2",
+    "RFCS.22",
+    "RFCS.24",
+    "RFCS.25",
+    "RFCS.26",
+    "RFCS.27",
+    "RFCS.6a",
+    "RFCS.7a",
+    "RFCS.9",
+    "RTCT.7.1"
+  ]
+}

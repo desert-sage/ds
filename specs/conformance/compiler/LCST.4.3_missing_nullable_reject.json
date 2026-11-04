@@ -1,0 +1,8 @@
+{
+    "id": "LCST.4.3_missing_nullable_reject",
+    "clauses": ["LCST.4.3.2", "LCST.4.3.1"],
+    "category": "compiler",
+    "scenario": "LCST.4.3.1 — a fallible conversion with a MISSING `?` is a hard error (the load-bearing safety). Pin: `s.raw::Int` (String->Int is fallible, [LCST.4.5.2]) rejects with DS_VALIDATE_CAST_NULLABILITY. The pair is incidental to what this pins.",
+    "rules_ds": "schema Sample scope logical:\n    raw: String key\n\nrule r:\n    Sample s\n->\n    let t = s.raw::Int\n    log info \"x\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_CAST_NULLABILITY" }
+}

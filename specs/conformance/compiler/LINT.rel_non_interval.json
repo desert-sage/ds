@@ -1,0 +1,11 @@
+{
+    "id": "LINT.rel_non_interval",
+    "clauses": ["LINT.4.5"],
+    "category": "compiler",
+    "scenario": "Interval relation with non-interval operand per LINT.4 — using `contains` with a non-interval right-hand side (a literal number) is a compile error DS_VALIDATE_INTERVAL_REL_NON_INTERVAL.",
+    "rules_ds": "schema Window scope logical:\n    entity_id: String key\n    start: Int mutable\n    end: Int mutable\n\nrule check:\n    Window w where (w.start..w.end) contains 42\n->\n    log info \"ok\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERVAL_REL_NON_INTERVAL"
+    }
+}

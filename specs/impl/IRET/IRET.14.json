@@ -1,0 +1,23 @@
+{
+  "id": "IRET.14",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": null,
+  "seq": 1076,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Clock integration",
+  "text": "## Clock integration [IRET.14]\n\nThe engine does not read a clock. It is **given** its two ([LTIM.2.8.1]):\na monotonic function returning nanoseconds, and a wall function writing UTC\nnanoseconds and answering false while it has no reading, sharing one opaque\ncontext pointer handed back on each call. The engine calls them only at the\nsample points [LTIM.2.8.4] names.\n\nThat indirection is what makes determinism testable rather than merely\nintended. The same engine takes wall time in production and a mock clock\nunder test, with no code path that differs between them — so a recorded\nrun replays against the recorded `ClockAdvance` values and reproduces\nexactly ([LFST.9.2.1]). An engine that called a system clock directly\ncould not offer that.\n\nThe context pointer means the clock needs no globals, so two engines in\none process may run on entirely independent clocks.\n\nThe setters are `ds_rete_set_clock`, which takes the monotonic function and\nthe context, and `ds_rete_set_wall_clock`, which takes the wall function,\nboth declared in `runtime/src/libds/rete/engine.h`. Each returns\n`ds_result_t` and refuses a NULL function with `DS_ERR_INVAL`.\n\n",
+  "refs": [
+    "LTIM.2.8.1",
+    "LTIM.2.8.4",
+    "LFST.9.2.1"
+  ],
+  "errors": [
+    "DS_ERR_INVAL"
+  ],
+  "symbols": [
+    "ds_rete_set_clock",
+    "ds_rete_set_wall_clock"
+  ]
+}

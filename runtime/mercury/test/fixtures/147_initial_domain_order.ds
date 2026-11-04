@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# An `initial:` block whose fact the wall clock cannot stamp ([LTIM.2.8.3],
+# [LGRA.24.3]). `check_initial_domain_order` runs it on a mock clock whose
+# wall value is never set, so the `Marker` is a ComputationError of kind
+# DOMAIN and is not placed. The step records its tick, then its input, then
+# the fault, for a first step that is a host assert and one that is a pump.
+# libds's `test_assert_external.c` builds the same program by hand.
+
+schema Marker scope explicit:
+    k: Int
+    ts: Time
+
+schema Trig scope explicit:
+    k: Int
+
+initial:
+    Marker k: 1
+
+rule trig:
+    Trig t
+->
+    log info "trig {t.k}"

@@ -1,0 +1,9 @@
+{
+    "id": "LSTR.4.6_bytes_pass_through_ok",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6]: `Bytes` values pass through. A rule reads a `Bytes` slot, compares it, and stores it in another fact's `Bytes` slot, and the program compiles. The control for the four refusal vectors: the refusal is the conversion's, not the type's.",
+    "rules_ds": "schema Pkt scope ttl 1_h:\n    raw: Bytes\n    prev: Bytes\n\nschema Out scope ttl 1_h:\n    blob: Bytes\n\nrule r:\n    Pkt p where p.raw != p.prev\n->\n    emit Out blob: p.raw\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

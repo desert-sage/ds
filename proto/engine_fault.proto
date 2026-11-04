@@ -1,0 +1,75 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// EngineError — atom body. Engine state is NO LONGER TRUSTWORTHY
+// ([LERR.1.4.7]). HALTS THE TIER, so this is the last record on the stream
+// for this tier — a consumer that sees one and then sees more traffic has a
+// defect to report.
+//
+// ⚠ THE FILE IS `engine_fault.proto` AND THE MESSAGE IS `EngineError`, which
+// looks like a mistake and is not. `engine_error.proto` is taken: it holds
+// ComputationError, and its path is that message's official reference
+// ([STYL.2.14.3]). A move is a rename with fixups, never a tidy-up
+// ([STYL.5.2.6]), so renaming that file to free this basename would break every
+// citation to it in order to buy a tidier one here.
+//
+// STREAM-CLASS: compare ([RFCS.3.4]). Stream-only, as TypeError and
+// BoundsError.
+//
+// ALL THREE ARE STREAM EVENTS ON THE EXISTING STREAM CALLBACK, so
+// [RARC.5.8.11] — which already lists EngineError among engine
+// internals "recorded inline at the site that generates them" — and
+// [RARC.5.8.5]'s losslessness both apply. There is no callback or setter of
+// its own; delivery is `ds_engine_set_stream_callback`, at kind
+// DS_EV_ENGINE_ERROR = 23 ([NCBK.2.8]).
+//
+// THE LAST GASP IS A CONTRACT, NOT A REMARK: after this event the integrator
+// MUST NOT resume service — no pump, assert, retract, load, clone or setter
+// ([NCBK.2.9]). The engine refuses each with DS_ERR_ENGINE_HALTED whatever the
+// fault was; the cause is this message's `fault`, never the status code. A
+// read of working memory, a schema or the introspection surface is refused
+// too, since the halt leaves that state undefined ([LERR.1.4.7]). Four calls
+// stay valid outside the callback: `ds_engine_halted`, the platform signature,
+// the session header, and `ds_engine_free`, because otherwise a halted tier
+// would leak everything it holds.
+//
+// NO `disposition` AND NO `recoverable`: an EngineError is NEVER survivable, so
+// the disposition is the class and the field number carries it.
+message EngineError {
+  EngineFault fault    = 1;
+  uint32      node_id  = 2;   // where known; 0 for faults with no node site
+  uint64      clock_ns = 3;
+  uint64      seq      = 4;
+  string      rule_name = 5;  // the fault's rule name ([LERR.9.11]); never ""
+}
+
+// The conditions [LERR.1.4.7] routes here. Each has a clause, which is what makes
+// this a closed set rather than a bag.
+enum EngineFault {
+  ENGINE_FAULT_UNSPECIFIED   = 0;   // refused at load
+  ENGINE_FAULT_ARTEFACT_LIED = 1;   // ill-typed op on a non-Json-sourced value
+                                    // ([IRET.9.6]), or a call whose
+                                    // operand count or shape its op does not
+                                    // admit ([RDSC.4a.9.3]), or a slot index
+                                    // naming no slot of its schema
+                                    // ([RDSC.4a.9.1])
+  ENGINE_FAULT_PATTERN_INDEX = 2;   // [RARC.5.3.3]
+  ENGINE_FAULT_BINDING_ORDER = 3;   // [RARC.5.6.11]
+  ENGINE_FAULT_ORDER_KEY     = 4;   // [RARC.5.4.9]
+  // A failing stream sink halts nothing: the call
+  // that fired the callback returns its status ([NCBK.1.5]). Reserved, never
+  // reissued ([STYL.2.8.7]).
+  reserved 5;
+  reserved "ENGINE_FAULT_RECORDER";
+  ENGINE_FAULT_ALLOCATION    = 6;   // no declared cap ([LERR.1.5])
+  // The one cap of [RTCT.7.1] decided on a MEASUREMENT rather than on a count
+  // the engine holds. It is known only at pump completion, and the engine
+  // cannot interrupt a pump mid-execution, so by the time it is known the tier
+  // has already missed the deadline it exists to keep. Exceeding WCET is system
+  // failure in a real-time system, not a refused operation: there is no state
+  // in which continuing is safe ([RTCT.7.3]).
+  ENGINE_FAULT_PUMP_WCET     = 7;   // [RTCT.7.3]
+}

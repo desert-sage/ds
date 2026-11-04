@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.9.6.3_is_null_refused",
+    "clauses": ["LGRA.9.6.3", "LNUL.4.9"],
+    "category": "compiler",
+    "scenario": "[LGRA.9.6.3]: `is_null(x)` is not in the language, and the compiler refuses it with DS_VALIDATE_RETIRED_BUILTIN_SPELLING, naming `x is null` ([LNUL.4.9]), rather than with an unknown-function error. `x is null` is the one null test ([LNUL.4.4]). PATH PINNED: `dsc.typecheck.lgra_9_6_3_retired`'s `retired_function` row for `is_null`.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where is_null(s.state)\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RETIRED_BUILTIN_SPELLING"
+    }
+}

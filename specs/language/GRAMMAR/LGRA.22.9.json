@@ -1,0 +1,25 @@
+{
+  "id": "LGRA.22.9",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.22",
+  "seq": 1987,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.22.9] **A dotted name in expression position resolves by scope.** The\ngrammar reads `a.b.c` as one chain of `.`-separated names ([LGRA.9.6]) and does\nnot decide what it denotes. The compiler must resolve it by its first segment `a`,\nin this order:\n\n1. **A binding.** If `a` is a pattern binding, a regex capture ([LREG.4.6]) or a\n   `let` binding in scope, the chain is access on its value.\n2. **A library.** Otherwise, if a prefix of the chain is the path of a library the\n   file imports, or an `as` alias of one ([LIMP.2.1.7]), the longest such prefix\n   is the library, and the segment after it names a member the library exports: a\n   constant ([LGRA.22.6]), or a builtin where the library is one that carries\n   builtins ([LIMP.3.3.4]). That one segment is the member. Any segment after\n   it is a member of the member's value, read as [LGRA.9.6] reads one on any\n   value: `ha.RETRY.utc` is `.utc` of the constant `ha.RETRY`.\n3. **Otherwise** the name is unresolved, and the compiler must reject it as\n   [LGRA.22.7] rejects an unresolved `NAME`.\n\nA type position ([LGRA.22.4]) and a `call` position ([LGRA.10.1.6]) are not\nresolved this way: neither can hold a binding.\n\n**A binding never shadows a library.** The compiler must reject a pattern binding,\na regex capture, a `let` binding or a constant whose NFC name equals the first segment of the path of\na library the file imports, or an `as` alias of one, with\n`DS_VALIDATE_BINDING_SHADOWS_LIBRARY`. So step 1 and step 2 never both apply, and\nevery dotted name has at most one reading.\n\n**Nor a member of a library that carries builtins, imported bare.** The\ncompiler must reject a pattern binding, a regex capture, a `let` binding or a\nconstant whose NFC name equals a member of such a library ([LIMP.3.3.4]) that a\nselective import of that library names ([LIMP.2.1.4]), with `DS_VALIDATE_BINDING_SHADOWS_LIBRARY`. So its\nbare name has one reading too.\n\n",
+  "refs": [
+    "LGRA.10.1.6",
+    "LGRA.22.4",
+    "LGRA.22.6",
+    "LGRA.22.7",
+    "LGRA.9.6",
+    "LIMP.2.1.4",
+    "LIMP.2.1.7",
+    "LIMP.3.3.4",
+    "LREG.4.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "id": "LNLS.5.1",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.5",
+  "seq": 670,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Beta join — both directions are always O(1)",
+  "text": "### Beta join — both directions are always O(1) [LNLS.5.1]\n\nEvery beta node in a `linear_scan: false` program has its lmem_idx and\nralpha_idx join-key indexes always active, and — because LNLS.3.3\nrequires joining on the identity slot of `logical`-lifecycle schemas\n— each index probe returns **exactly one candidate** (J_max = 1).\n\n- `beta_right_activate(fact)` → **O(1)**: identity-slot probe via\n  lmem_idx; exactly one left-memory token (if any) shares that key.\n- `beta_left_activate(token)` → **O(1)**: identity-slot probe via\n  ralpha_idx; exactly one right-alpha fact (if any) shares that key.\n- `beta_right_retract(fact)` → **O(1)**: `right_idx` holds exactly\n  one joined token per fact (J_max = 1).\n- `beta_left_retract(token)` → **O(1)**: `ltok_idx` holds exactly\n  one joined right fact per token (J_max = 1); no join tests needed.\n- NOT-node equivalents: same O(1) guarantees via `ltok_idx` for\n  `not_left_retract`.\n\nThe \"fallback scan\" code paths and the J_max iteration loops are\nprovably unreachable for any DSC compiled with `linear_scan: false`.  In a\ndedicated `linear_scan: false` build configuration they may be stripped.\n\n",
+  "deferred": true,
+  "refs": [
+    "LNLS.3.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__at_most_one",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The candidate list has at most one member."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__extend_at_most_one",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Left-activation of an anchored node extends a token by at most one candidate: the clause's `beta_left_activate` in O(1)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "J_MAX = 1: under a full-key anchor two candidates of a live memory joining one token are one fact -- the clause's `beta_left_activate` probe returns at most one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THEOREM 5, closed at the top: after any history from a loaded network, at every node whose join test is a full-key anchor on an entity-lifecycle kind, every token joins at most one fact of the node's memory. The clause's left-activation half. Its right-activation half -- exactly one left-memory token per key -- needs every pattern of the prefix anchored, not only the right one: with a pattern of the prefix unconstrained by the anchor, tokens differing in that pattern share the key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At any engine with the view and one live fact per key, an anchored node's memory offers each token at most one candidate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_singleton_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THEOREM 5, THE SINGLETON FORM: after any history of a program keyless for an entity-lifecycle kind, from keyless inputs, every token joins at most one fact of the node's memory, under any join test."
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+    "id": "LLOG.2.1",
+    "category": "logical",
+    "scenario": "Two rules jointly justify the same logical fact per LLOG.2.1 — the fact persists as long as at least one justifier remains. Assert A and B: rule_a and rule_b both emit Occupied. Retract A: Occupied stays (still justified by B). Retract B: Occupied retracts. The `pump` boundaries are stated so the list sees which retract Occupied goes with: a retract's justification change happens at the retract, before the next pump. So one fact_retract (A's) before the second pump, and two (B's, then Occupied's) before the third. Two fact_retracts anywhere are satisfied by A's and B's whether or not Occupied ever goes, and whichever retract it goes with.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nschema Occupied scope logical:\n    dummy: Int key\n\nrule rule_a:\n    A\n->\n    emit Occupied logical dummy: 0\n\nrule rule_b:\n    B\n->\n    emit Occupied logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "v": 1 }, "as": "fa" },
+            { "op": "assert", "schema": "B", "slots": { "v": 2 }, "as": "fb" },
+            { "op": "pump" },
+            { "op": "retract", "label": "fa" },
+            { "op": "pump" },
+            { "op": "retract", "label": "fb" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "pump",
+            "fact_assert",
+            "rule_fire_end",
+            "rule_fire_end",
+            "fact_retract",
+            "pump",
+            "fact_retract",
+            "fact_retract",
+            "pump"
+        ]
+    }
+}

@@ -1,0 +1,17 @@
+# Where the cascade retraction lands: per action, not per firing
+# ([RARC.5.6.8]). The vector
+# logical/RARC.5.6.8_a_cascade_lands_between_two_emits holds the
+# runtimes to the clause on this program; this holds them to each other.
+# `two_emits` has two actions, and only the second invalidates
+# `make_artifact`'s `no (…)`:
+#
+#   emit Bystander      -- no cascade
+#   emit Refusal        -- retracts the already-emitted Artifact
+#
+# so they predict different traces:
+#
+#   per action (the clause)   assert Bystander, emit, RETRACT, assert Refusal, emit
+#   per firing                assert Bystander, emit, assert Refusal, emit, RETRACT
+assert Build id=1
+assert RefusalText id=1
+pump

@@ -1,0 +1,29 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "rete_expr.proto";
+
+// BetaNode atom — one beta (join) node in the RETE network.
+//
+// node_id is globally unique across AlphaNode / BetaNode / TerminalNode atoms. 0 = null.
+//
+// right_alpha_id → AlphaNode.node_id of the right-input alpha node.
+// left_parent_id → BetaNode.node_id of the left-parent beta node;
+//                  0 = WM root (single-pattern rule or first pattern).
+//
+// join_tests are boolean Expr trees evaluated against
+// (left_token, right_candidate_fact). An empty list means unconditional join.
+//
+// is_negative = true makes this a NOT node: the rule pattern must
+// have zero matching facts in the right alpha memory.
+
+message BetaNode {
+    uint32         node_id        = 1;
+    uint32         right_alpha_id = 2;
+    uint32         left_parent_id = 3;  // 0 = WM root
+    repeated Expr  join_tests     = 4;
+    bool           is_negative    = 5;
+}

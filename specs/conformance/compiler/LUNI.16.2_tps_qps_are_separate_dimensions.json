@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.16.2_tps_qps_are_separate_dimensions",
+    "category": "compiler",
+    "scenario": "[LUNI.16.2]: `units.computer`'s `transactions_per_second` and `queries_per_second` are the bases of their own dimensions, `transaction_rate` and `query_rate`, so adding a transaction rate to a query rate is [LUNI.8.2]'s cross-dimension addition, refused with DS_VALIDATE_DIM_MISMATCH. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]), then `dsc.typecheck`'s `lexp_7_1a_arithmetic`, on the `dr_cross_dimension` that `dsc.types`'s `luni_8_1_combine` answers. The break is declaring both units on one dimension, as `request_rate`, which lets the program compile.",
+    "rules_ds": "from units.computer import transactions_per_second, queries_per_second\n\nschema Load scope logical:\n    id: String key\n    txn: transactions_per_second mutable\n    qry: queries_per_second mutable\n\nrule r:\n    Load l where (l.txn + l.qry) > 100_transactions_per_second\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

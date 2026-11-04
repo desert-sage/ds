@@ -1,0 +1,545 @@
+{
+  "id": "LFST.9.2.1",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.9.2",
+  "seq": 533,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.9.2.1] **A replayable event trace.** A trace is replayable when it holds\nevery recordable event the engine emitted, as [RFCS.3.6] records it: an\ninject-class atom for every input the engine consumed, a compare-class atom for\nevery observable [RFCS.3.6] gives an atom, and every clock value it observed\n([RFCS.17.1]). Its prelude also carries the host's cache seeds, which are\nstarting state and no event ([RFCS.26.1]). An event of a kind [RFCS.3.6] gives no atom is not in a trace,\nand its absence does not make the trace unreplayable. A replayable trace is replayed\nagainst an engine configured as the recording one was: the trace carries no\nengine setting, and configuration is a precondition of replay ([LDET.2.7]).\n\n**The engine must emit all three, so producing a replayable trace is not a\ndiscipline the integrator follows** ([LFST.1.3]). An integrator that subscribes\nto the whole surface and records what it receives holds one by construction. A\ntrace is unreplayable only where a subscriber filtered, and a replayer **must**\nrefuse such a trace rather than report the absent events as divergences.\n\n**Replay drives the engine from the trace's own clock.** The replayer applies\neach `ClockAdvance` before the atoms that follow it ([RFCS.10.5]), so every\nre-derived atom's `clock_ns` reproduces. Where the recording engine read that\nclock from is immaterial — a wall-clock reading written into a `ClockAdvance`\nis a recorded number like any other. What matters is that the engine recorded\n**every** value it observed, which [RFCS.10.3] requires of it.\n\n**Cadence is likewise the recorder's obligation and not the replayer's\nproblem.** The replayer fires the engine to quiescence ([RARC.5.6.6]) between\nthe inputs the trace marks as separately pumped, and the trace marks them\nbecause the engine emits a pump boundary rather than leaving a reader to infer\none.\n\n**One fault ends a trace rather than making it unreplayable.** A\n`pump_wcet_ns` overrun halts the tier ([RTCT.7.3]), so the `EngineError` it\nemits is the last record on the trace. A replayer drives the trace to that\npoint, comparing every atom before it, and stops there; the terminal fault is\nthe recorded run's cause of death, not an observable the replay must reproduce.\nThat is the only cap of [RTCT.7.1] decided on a measurement rather than on a\ncount the engine holds, and it is the only place a replay meets a recorded atom\nit does not compare.\n\n",
+  "refs": [
+    "LDET.2.7",
+    "LFST.1.3",
+    "RARC.5.6.6",
+    "RFCS.10.3",
+    "RFCS.10.5",
+    "RFCS.17.1",
+    "RFCS.26.1",
+    "RFCS.3.6",
+    "RTCT.7.1",
+    "RTCT.7.3"
+  ],
+  "atoms": [
+    "ClockAdvance",
+    "EngineError"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "lfst_9_2_1__boundary_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence: one input, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "lfst_9_2_1__replay_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A history: the inputs, each pumped, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__agree_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER OF CONTENT, closed at the top: after any history from a loaded network, every terminal holds exactly the unblocked matches FireLoop's recompute gives the rule its chain lowers to. Order and flags are part two."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__run_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's cadence folded over a list of inputs: each pumped to quiescence before the next, the state and the counts returned together."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__run_clocked_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cadence unfolded by one input: pump it, then the rest from the state it left."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "lfst_9_2_1__after_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state the clause's cadence leaves after a list of inputs. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "lfst_9_2_1__boundary_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's cadence -- one input, then a pump to quiescence -- on the clocked network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__acquire_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THEOREM 6, closed at the top: after any history every live fact is rejected by every activation's NOT nodes that admit it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__boundary_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__boundary_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__boundary_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One input pumped keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__replay_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__replay_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__replay_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Every history keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__replay",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The replay's history under the dense reading: the surviving facts, by assertion."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "lfst_9_2_1__boundary_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One input pumped keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "lfst_9_2_1__replay_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_3__prepared_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The inputs of a replay prepared with no pump between them; the clause's cadence pumps after each, which is the special case of one input."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "rarc_5_6_3__prepared_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The inputs of a replay prepared with no pump between them, ticks re-timing as they go; the clause's cadence pumps after each, which is the special case of one input."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "lfst_9_2_1__boundary_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One input pumped keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "lfst_9_2_1__replay_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__boundary_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One input pumped, with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__boundary_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's boundary is the model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__boundary_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One input pumped keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__replay_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A history with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__replay_g_fst",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE GHOST SHADOWS THE ENGINE through every history: its engine component is the engine of Rete/Network.idr."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lfst_9_2_1__replay_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The inputs of a replay, each at its sample, with no pump between them; the clause's cadence pumps after each, the one-step case."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed_is_prepared",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A replay's sampled inputs are prepared inputs with the samples made explicit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__cycles",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cadence folded over the ticks: one input then a pump. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "Lfst_9_2_1__canonical_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A canonical replay on the network: each input pumped to quiescence, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "lfst_9_2_1__boundary_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence on the network: one input, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "lfst_9_2_1__replay_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same history on FireLoopTms's engine, under one fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "lfst_9_2_1__replay_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A history on the network with truth maintenance: the inputs, each pumped, in order, under one fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__boundary_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the input, then the run, with the same halt and count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__canonical_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CANONICAL REPLAY ON FIRELOOP IS CANONICAL ON THE NETWORK, input by input with the same fuel: each pump quiesces on both sides, and the states agree throughout."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__replay_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the agreement, under one fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_canonical",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CANONICAL TRANSFER: a canonical replay from FireLoopTms's empty state is a canonical replay from the loaded network, with the same fuel per input, and the states agree at its end."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM WITH TRUTH MAINTENANCE: run on one history from the loaded network and from FireLoopTms's empty state under the program the network lowers to, the two engines reach one working memory and one dependency table, and each table's unblocked tokens are the terminal's activations, in order and with their flags. Every theorem stated over FireLoopTms's run -- Rete/TmsRun.idr, Lcyc/TmsTermination.idr, Rete/PumpBoundary.idr -- is a theorem about the spec's network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "Rarc_5_6_1__step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence is one shape of step sequence; a batched pump -- the clause's live optimisation outside verify-replay -- is another, and the Idris model runs the one the fixture wrote."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__boundary_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the input, then a run to quiescence or out of fuel, on both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__replay_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the agreement: the inputs in order, each pumped, on both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__transfer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM: run on one history from the loaded network and from FireLoop's empty state under the program the network lowers to, the two engines reach one working memory, and each table's unblocked tokens are its terminal's activations, in order and with their flags. Against the plain pipeline, inputs without Rete/PumpBoundary.idr's TMS phase and without the clock; Rete/NetworkTmsTransfer.idr carries the phase and Rete/NetworkTtl.idr the clock, on this agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "lfst_9_2_1__boundary_plain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence without the TMS phase: one input, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "lfst_9_2_1__boundary_plain_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One input pumped keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "lfst_9_2_1__replay_plain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A history on FireLoop without the TMS phase: the inputs, each pumped, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "lfst_9_2_1__replay_plain_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps a FireLoop state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "FIRELOOP'S STATE AFTER ANY HISTORY -- inputs applied without the TMS phase, each pumped -- is well-formed: every table in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "Lfst_9_2_1__canonical_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A canonical replay with ticks on the network: each input pumped to quiescence."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "lfst_9_2_1__boundary_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence with ticks on the network: one input, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__boundary_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the steps before firing, then the run, same halt and count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__canonical_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CANONICAL REPLAY WITH TICKS ON FIRELOOP IS ONE ON THE NETWORK, input by input with the same fuel, and the states agree throughout -- one working memory, one dependency table, one deadline table, one clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__transfer_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER WITH TICKS: a canonical replay with ticks from FireLoop's empty state is one from the loaded network, and at its end the two agree. Rete/TtlSweep.idr's theorems are theorems of the network."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "Lfst_9_2_1__canonical",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A canonical replay: each input pumped to quiescence, in order."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__boundary",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence: one input, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__boundary_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One boundary keeps the run invariant and the target kinds, however the pump halted."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__canonical_exists",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CANONICAL REPLAY EXISTS. For a positive program certified as [LCYC.3.1.1] admits it, from an invariant state every input sequence has a replay in which each pump reaches quiescence, and the invariant holds at its end."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__canonical_from_input",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "FROM THE INPUT: the same from the initial state of any input with unique ids, the domain being the program's literals, the input's values and the asserted values. `partial`: 'certified' is the kind-level certificate, which a program [LCYC.3.1.1] admits only through [LCYC.6.1]'s literal break lacks."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__canonical_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A canonical replay keeps the invariant to its end, so at every boundary along the way."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Lfst_9_2_1__canonical_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A canonical replay with ticks: each input pumped to quiescence, in order."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__boundary_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical cadence with ticks: one input, prepared, then a pump."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__boundary_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One boundary with ticks keeps the clocked invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__canonical_ttl_exists",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CANONICAL REPLAY WITH TICKS EXISTS: for a certified positive program, from an invariant clocked state every input sequence has a replay in which each pump reaches quiescence."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__canonical_ttl_from_input",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "FROM THE INPUT, with the start clock: the same from any input with unique ids, its TTL facts stamped at the start clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__canonical_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A canonical replay with ticks keeps it to its end, so at every boundary."
+      }
+    ]
+  }
+}

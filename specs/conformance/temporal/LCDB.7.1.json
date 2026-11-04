@@ -1,0 +1,15 @@
+{
+    "id": "LCDB.7.1",
+    "category": "temporal",
+    "scenario": "Per-activation-key cooldown is the default per LCDB.7.1 — the cooldown key is the tuple of the rule's pattern bindings, matching refraction semantics. Two distinct facts that match the same rule produce two independent activations; cooldown applied to one does not suppress the other. Asserting Trig(v=1) and Trig(v=2) within the cooldown window fires both rules.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r cooldown 1_h:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 2
+    }
+}

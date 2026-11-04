@@ -1,0 +1,15 @@
+{
+    "id": "LCST.4.5.4.non_finite_float_to_int_is_not_a_null",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "The negative half, and the one that carries the content: [LCST.4.5.4] says the trap 'is not a fallible result: it never feeds the `T?` / `??` / Kleene stack'. A runtime that answered `null` here would leave the activation alive and let `??` rescue it, so the observable difference is the rule firing. `type_error` and `engine_error` are forbidden for the usual reasons — the operand is a well-typed Float and the engine stays intact.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    big: Float mutable\n\nrule r:\n    S s where ((s.big * s.big)::Int ?? 7) == 7\n->\n    log info \"rescued\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "engine_error", "rule_fire_begin"]
+    }
+}

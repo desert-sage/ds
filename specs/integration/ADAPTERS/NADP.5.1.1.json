@@ -1,0 +1,17 @@
+{
+  "id": "NADP.5.1.1",
+  "prefix": "NADP",
+  "doc": "ADAPTERS.md",
+  "parent": "NADP.5.1",
+  "seq": 351,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NADP.5.1.1] Adapters maintain their own connection\nstate; libds has no concept of \"adapter\ndisconnected.\" The adapter:\n\n- On disconnect, **continues to receive callbacks**\n  from the engine (rules don't pause when an\n  adapter disconnects). The cb returns a `CallError`\n  with an `adapter.*` code ([LECC.4.3]) per LCRS.4.2.3 +\n  LCRS.10.6 instead of attempting the operation.\n  Author rules that expect timely responses use the\n  absence idiom ([LCRS.7.1]).\n- On reconnect, **re-publish LOGICAL state** the\n  source system has (re-fetch all entity states;\n  subscribe to retained topics; etc.) so the\n  engine's working memory matches the source again. Adapter does this by walking the source's\n  current state and asserting facts; engine-side\n  no-op-reassertion-dedup absorbs unchanged values.\n\n",
+  "refs": [
+    "LCRS.10.6",
+    "LCRS.4.2.3",
+    "LCRS.7.1",
+    "LECC.4.3"
+  ]
+}

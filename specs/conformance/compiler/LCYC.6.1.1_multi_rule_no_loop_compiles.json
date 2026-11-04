@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.6.1.1_multi_rule_no_loop_compiles",
+    "category": "compiler",
+    "scenario": "LCYC.6.1 applied PER EDGE — two rules on one schema whose emits satisfy neither LHS close no loop, so both edges drop and the program compiles. PATH PINNED: `dsc.cycle.lcyc_6_1_dropped_edge`, which `edge_to` consults for every candidate edge, source and target distinct or not. A check applied only to self-edges rejects this source as `rule_a -> rule_d -> rule_a`. Both rules match `val == \"A\"`; rule_a emits `val: \"B\"` and rule_d emits `val: \"D\"`, so each emit is refuted by the other's LHS and by its own. This is the POSITIVE direction of the break — its negative counterpart is LCYC.6.1.1_multi_rule_different_literals, a literal toggle where each emit DOES satisfy the next LHS, which must still reject. Both are needed: the break must drop an edge that cannot close a loop and keep one that can, and a fixture for either alone would pass on a check stuck in one position.",
+    "rules_ds": "use default\n\nschema Str scope logical:\n    val: String key\n\nrule rule_a:\n    Str s where s.val == \"A\"\n->\n    emit Str logical val: \"B\"\n\nrule rule_d:\n    Str s where s.val == \"A\"\n->\n    emit Str logical val: \"D\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

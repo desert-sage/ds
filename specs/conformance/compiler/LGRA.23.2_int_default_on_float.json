@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.23.2_int_default_on_float",
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a `Float` kwarg takes an `Int` literal as its `default`. `kwarg x: Float default 5` compiles. PATH PINNED: `lgra_23_2_default_misfit`'s `te_builtin(_)` arm in dsc.validate, its `Type = \"Float\", default_literal_of(\"Int\", E)` exception. The break is dropping that exception, which refuses this program with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE, as the strict check did. `LGRA.23.2_kwarg_default_type` pins the other direction: a String literal on an Int kwarg stays refused.",
+    "rules_ds": "service svc.foo:\n    kwarg x: Float default 5\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

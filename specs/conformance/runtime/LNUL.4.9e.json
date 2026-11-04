@@ -1,0 +1,21 @@
+{
+    "id": "LNUL.4.9e",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LNUL.4.9] a CONSTANT subject tests tag AND value, where a tag name tests the tag alone. Drives the eval arm with subject IS_SUBJECT_TRUE over a Bool slot holding false, un-negated. The rule does NOT fire: the tag matches Bool but the value is not the one the constant names. Contrast LNUL.4.9c, where the tag-name subject fires on any Float including inf. An implementation that folded the six constants into their tag — answering `is true` for every Bool — would fire here. fact_count 1.",
+    "rules_ds": "schema Flag scope logical:\n    entity_id: String key\n    is_on: Bool? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Flag f where f.is_on is true\n->\n    emit Marker logical entity_id: f.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Flag",
+                "slots": {
+                    "entity_id": "a",
+                    "is_on": false
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

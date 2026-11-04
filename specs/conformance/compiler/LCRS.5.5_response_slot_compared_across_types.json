@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.5.5_response_slot_compared_across_types",
+    "category": "compiler",
+    "scenario": "A response slot's reads are type-checked as any slot access is (LCRS.5.5, LGRA.13.8). Pin: library `ha` declares `response HALightResponse`, whose `error_code` is `String`; a sibling rule compares `r.error_code < 60`, a String against an Int. Rejects with DS_VALIDATE_TYPE_MISMATCH, the code any comparison across types gets. Path: the ordinary comparison typing on a pattern binding.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule trigger:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s as \"corr1\"\n\nrule check:\n    ha.HALightResponse r where r.corr == \"corr1\" and r.error_code < 60\n->\n    log info \"y\"\n",
+    "libraries": {
+        "ha": "schema HALightResponse scope ttl 1_h:\n    corr: String\n    success: Bool\n    error_code: String\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response HALightResponse\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

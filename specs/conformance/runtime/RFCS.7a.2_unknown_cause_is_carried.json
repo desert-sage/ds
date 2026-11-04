@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.7a.2_unknown_cause_is_carried",
+    "category": "runtime",
+    "scenario": "[RFCS.7a.2]: \"A reader must accept a `FactWithdraw` whose cause the enum does not hold, the reserved 4 included, and carry the number. The atom is compare class ([RFCS.7a.3]), so an unknown cause is a difference the comparison finds, not a decode error.\" No engine writes such a cause, so the harness puts one in the recording: Tmp (ttl 1 s) is asserted and pumped, the clock advances 2 s, and a pump's sweep withdraws it TTL_EXPIRED; `rewrite_withdraw_cause` then writes that one `FactWithdraw` with cause 4, the reserved number. The stream must decode end to end, and the cause must read back as `CAUSE_4`. PATH PINNED: each runtime's reader of a recorded FactWithdraw. libds's side re-frames that one atom of libds's recording with libds's framing (`pyds.atoms.frame`, runner.py's `_rewrite_withdraw_cause`) and reads the stream back through libds's reader (`pyds.atoms.iter_atoms`); the replay leg replays the recording as libds wrote it, since a rewritten cause is not what the program derives; the Mercury runtime's writes the cause with `ds.rfcs`'s encoder (`se_fact_withdraw_unnamed`) and reads it back through `ds.rfcs`'s decoder (test_behave's `rewrite_withdraw_cause`, `withdraw_cause_names`). A reader that refuses the atom fails the decode; one that drops or renames the number fails the cause list.",
+    "rules_ds": "schema Tmp scope ttl 1_s:\n    k: String\n\nrule seen:\n    Tmp t\n->\n    log info \"{t.k}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tmp", "slots": { "k": "t" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "rewrite_withdraw_cause": { "index": 0, "cause": 4 },
+        "expected_withdraw_causes": ["CAUSE_4"]
+    }
+}

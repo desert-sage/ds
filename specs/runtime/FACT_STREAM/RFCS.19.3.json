@@ -1,0 +1,27 @@
+{
+  "id": "RFCS.19.3",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.19",
+  "seq": 925,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[RFCS.19.3] A conforming reader **must** refuse a container containing an `Atom` whose\n`body` oneof is unset. There is no identity to dispatch on ([RFCS.16.1]), so there is no\nband to consult and no disposition to apply — the adjudication surface of [RFCS.16.2] has nothing\nto read.\n\nThis has to be said because **protobuf disagrees, and silently**. An empty `Atom` is a\nperfectly valid protobuf message: every field is optional, so a generated parser accepts\nit and reports success. An implementer building on protobuf's own parser therefore gets\nthis wrong **by default**, and gets no diagnostic saying so.\n\nWith it, DS's three departures from protobuf's parsing behaviour are stated rather than\ntwo:\n\n| case | protobuf | DS | where |\n|---|---|---|---|\n| truncated trailing atom | refuses the message | **reads on**, keeps the complete atoms | [RFCS.19.2] — DS is *weaker* |\n| `Atom` with no oneof member | **accepts** — a valid message | **refuses** — no identity to dispatch on | **this clause** — DS is *stricter* |\n| unallocated field number | accepts, retains as an unknown field | the number's **band** decides, and may refuse the container | [RFCS.16.3], [RFCS.18.8] |\n\n`[RFCS.18.8]` states *why* DS hand-parses rather than inheriting protobuf's unknown-field\nhandling; this clause states the observable consequence of doing so.\n\n",
+  "refs": [
+    "RFCS.16.1",
+    "RFCS.16.2",
+    "RFCS.16.3",
+    "RFCS.18.8",
+    "RFCS.19.2"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/atom.proto",
+        "name": "Atom",
+        "tag": "spec"
+      }
+    ]
+  }
+}

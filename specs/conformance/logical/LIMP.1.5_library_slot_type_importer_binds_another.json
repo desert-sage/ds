@@ -1,0 +1,19 @@
+{
+    "id": "LIMP.1.5_library_slot_type_importer_binds_another",
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: \"An importer's declarations, imports and aliases take no part.\" `c`'s `Held.r` is `a`'s `Reply`, by `c`'s own import, and the program binds bare `Reply` to `b`'s, of the same `NAME` and another shape: `a`'s has `v`, `b`'s has `w`. What this vector pins is that `r: x` compiles with an `a.Reply` and the join on `h.r` runs: `make` puts the fact in the slot, and `read`, whose head is `a.Reply y`, logs exactly [\"held 10\"]. Which schema the slot names is `RDSC.5.5.5_schema_ref_is_the_declaring_files_resolution`'s. The break is the slot read in the importer's scope, which makes it `b`'s without a word: `r: x` is then a schema mismatch. PATH PINNED: `dsc.imports.limp_1_5_tree`, then `dsc.typecheck.schema_slot` and `dsc.validate`'s emit argument check, which read the field's type in the program's namespace.",
+    "rules_ds": "from b import Reply\nimport a\nimport c\n\nrule make:\n    a.Reply x\n->\n    emit c.Held logical k: x.k r: x\n\nrule read:\n    c.Held h\n    a.Reply y where h.r == y\n->\n    log info \"held {y.v}\"\n",
+    "libraries": {
+        "a": "schema Reply scope logical:\n    k: Int key\n    v: Int mutable\n",
+        "b": "schema Reply scope logical:\n    k: Int key\n    w: Int mutable\n",
+        "c": "from a import Reply\n\nschema Held scope logical:\n    k: Int key\n    r: Reply mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.Reply", "slots": { "k": 1, "v": 10 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["held 10"]
+    }
+}

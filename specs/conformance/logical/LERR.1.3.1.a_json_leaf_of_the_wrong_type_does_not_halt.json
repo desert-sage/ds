@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.3.1.a_json_leaf_of_the_wrong_type_does_not_halt",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "The negative half, and the one with teeth: `engine_error` is forbidden because rung 7 HALTS THE TIER ([NCBK.2.9]) and a wrong-typed Json leaf must not. This is the difference the provenance split exists to make — the same ill-typed comparison on a non-Json-sourced value IS an EngineError, because only the artefact could have produced it. `computation_error` is forbidden too: the operation was invalid at the site, it did not merely fail to have an answer.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where p.body.name > 5\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["engine_error", "computation_error", "rule_fire_begin"]
+    }
+}

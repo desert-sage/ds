@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.9.2_comparison_let_ok",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: the `let` the clause gates is one whose value carries the unstateable dimension. `let hot = f.integral > 1000.0` reads `integral` over the `meter` slot `q`, but its value is a `Bool`, which carries no dimension, so it needs no annotation and compiles; the rule emits it into a `Bool` slot. PATH: dsc.validate's `luni_9_2_unannotated` refuses only a value the walk types `ty_unknown`; a comparison types `Bool` whatever its operands (dsc.typecheck's `kleene_bool`).",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nschema Hot scope logical:\n    entity_id: String key\n    hot: Bool mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f\n->\n    let hot = f.integral > 1000.0\n    emit Hot logical entity_id: f.entity_id hot: hot\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

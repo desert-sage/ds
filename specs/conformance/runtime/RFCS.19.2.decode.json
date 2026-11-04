@@ -1,0 +1,12 @@
+{
+  "id": "RFCS.19.2.decode",
+  "category": "runtime",
+  "scenario": "[RFCS.19.2] / [RFCS.19.4] / [RFCS.16.3] / [RFCS.19.8] — protobuf-native containers (introduced at format_major 3, unchanged since), read side, with protobuf's own parser as the independent reference. The vectors record what protobuf does with each byte string, and the rows where DS deliberately differs are asserted rather than skipped: on a truncated tail protobuf refuses and DS returns the atoms that arrived ([RFCS.19.2], because a live recording always has a half-written tail), and on an Atom carrying no oneof member protobuf accepts and DS refuses (an atom with no identity is nothing to dispatch on). The atom sequences, terminal step and container type are read here through libds's own reader (pyds.atoms), leniently and strictly, and walked by test_pbf_reader.c over the same corpus.",
+  "rules_ds": "",
+  "expect": {
+    "kind": "pbf_framing",
+    "groups": [
+      "decode"
+    ]
+  }
+}

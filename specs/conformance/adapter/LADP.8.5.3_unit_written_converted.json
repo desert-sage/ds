@@ -1,0 +1,46 @@
+{
+    "id": "LADP.8.5.3_unit_written_converted",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3]: a quantity written at the `call` on a unit-typed kwarg is converted to the kwarg's unit, as that kwarg's `default` is ([LADP.8.5.2]). `hvac.set` declares `t: celsius`. Rule `go` writes `t: 68_fahrenheit`, and the integrator receives 20, not the 293.15 K the literal is stored as. Rule `cold` writes the negated literal `t: -40_fahrenheit`, whose number is negated and then converted ([LUNI.3.3]), and the integrator receives -40. PATH PINNED: `ladp_8_5_3_written_in_unit` in dsc.rete, which `rlow_7_3_1_call` applies to the written kwargs before `ladp_8_5_1_with_defaults` joins the defaults, and which folds a same-dimension quantity known at compile time with `dsc.quantity.known_quantity` and lowers it through `in_unit_literal` -- the lowering `ladp_8_5_2_default` gives a `default` -- and `dsc.quantity.ladp_8_5_2_in_unit`. Both runtimes render the body the compiler emits, so libds and the Mercury runtime take the same path.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\nunit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg zone: String literal required\n    kwarg t: celsius required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set zone: \"hall\" t: 68_fahrenheit nocooldown\n\nrule cold:\n    Trig g where g.v == 2\n->\n    call hvac.set zone: \"porch\" t: -40_fahrenheit nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "t": 20.0,
+                    "zone": "hall"
+                }
+            },
+            {
+                "service": "hvac.set",
+                "correlation": "$cold_c0_g1",
+                "body": {
+                    "t": -40.0,
+                    "zone": "porch"
+                }
+            }
+        ]
+    }
+}

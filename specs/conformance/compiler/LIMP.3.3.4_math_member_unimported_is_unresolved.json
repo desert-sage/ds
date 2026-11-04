@@ -1,0 +1,11 @@
+{
+    "id": "LIMP.3.3.4_math_member_unimported_is_unresolved",
+    "clauses": ["LIMP.3.3.4", "LEXP.17.1"],
+    "category": "compiler",
+    "scenario": "[LIMP.3.3.4]: a member of `math` is reached only through an import of it, and its name is not a reserved word. A file with no import calls `sin(s.v)` in a `where`, and the compiler rejects it as it rejects any call to a name nothing resolves, DS_VALIDATE_UNKNOWN_FUNCTION. PATH PINNED: `dsc.resolve`'s rewrite of a library member's call to its [LEXP.17.2] row, which leaves a bare `sin` with no import as it is, then `dsc.typecheck`'s unknown-function arm, which finds no row named `sin`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Sensor s where sin(s.v) > 0.5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

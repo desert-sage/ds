@@ -1,0 +1,9 @@
+{
+    "id": "LCRS.4.3.4_emit_of_a_schema_no_service_answers_with_compiles",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: the refusal keys on a `response_decl`. `Note` is a `ttl` schema that also declares `corr: String`, the shape of a response schema, and no service answers with it, so a rule may emit it, beside a service that answers with `Reply`. A check keyed on the `corr` slot or on `ttl` refuses this. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag`, where `lcrs_4_3_4_answer_schema` fails for `Note`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema Note scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule ask:\n    Trig t\n->\n    call svc.read n: t.k cooldown: 10_s as \"c1\"\n\nrule r:\n    Trig\n->\n    emit Note corr: \"c\" v: 1\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

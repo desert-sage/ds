@@ -1,0 +1,185 @@
+================================================================================
+A rule: a cooldown, a docstring, a pattern, a negation, a let and two actions (LGRA.6.1)
+================================================================================
+
+rule hot cooldown 30_s:
+    "Hot readings."
+    Reading r where r.level > 80.0
+    no Ack a where a.corr == r.sensor
+->
+    let q = math.floor(r.level)
+    emit Alert logical sensor: r.sensor
+    log info "level {r.level:.2f}"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule_declaration
+    name: (identifier)
+    (cooldown
+      (unit_literal))
+    (docstring
+      (string
+        (string_content)))
+    (pattern
+      type: (type_ref
+        (identifier))
+      binding: (identifier)
+      (where_clause
+        (comparison_operator
+          left: (attribute
+            object: (identifier)
+            attribute: (identifier))
+          right: (float))))
+    (negated_pattern
+      type: (type_ref
+        (identifier))
+      binding: (identifier)
+      (where_clause
+        (comparison_operator
+          left: (attribute
+            object: (identifier)
+            attribute: (identifier))
+          right: (attribute
+            object: (identifier)
+            attribute: (identifier)))))
+    (let_declaration
+      (let_binding
+        name: (identifier)
+        value: (call
+          function: (attribute
+            object: (identifier)
+            attribute: (identifier))
+          (argument_list
+            (attribute
+              object: (identifier)
+              attribute: (identifier))))))
+    (emit_action
+      type: (type_ref
+        (identifier))
+      (flag
+        (identifier))
+      (kwarg
+        name: (identifier)
+        value: (attribute
+          object: (identifier)
+          attribute: (identifier))))
+    (log_action
+      level: (identifier)
+      message: (string
+        (string_content)
+        (interpolation
+          (identifier)
+          (identifier)
+          (format_spec))))))
+
+================================================================================
+A call with continuations, and an after clause (LGRA.10.8, LCCO.2.1, LGRA.6.1)
+================================================================================
+
+rule r:
+    Job j
+->
+    call svc.read n: j.id nocooldown as "c1"
+        on response.ok == true:
+            withdraw j
+        timeout 30_s:
+            log info "late"
+    after 5_s:
+        cache key: "k" value: 1
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule_declaration
+    name: (identifier)
+    (pattern
+      type: (type_ref
+        (identifier))
+      binding: (identifier))
+    (call_action
+      service: (dotted_name
+        (identifier)
+        (identifier))
+      (kwarg
+        name: (identifier)
+        value: (attribute
+          object: (identifier)
+          attribute: (identifier)))
+      (flag
+        (identifier))
+      (call_as
+        (string
+          (string_content)))
+      (action_block
+        (continuation
+          condition: (comparison_operator
+            left: (attribute
+              object: (identifier)
+              attribute: (identifier))
+            right: (boolean))
+          (withdraw_action
+            binding: (identifier)))
+        (continuation
+          duration: (unit_literal)
+          (log_action
+            level: (identifier)
+            message: (string
+              (string_content))))))
+    (after_clause
+      delay: (unit_literal)
+      (cache_action
+        (kwarg
+          name: (identifier)
+          value: (string
+            (string_content)))
+        (kwarg
+          name: (identifier)
+          value: (integer))))))
+
+================================================================================
+A multi-line where, inside parentheses (LGRA.8.3.5, LLEX.7.5.5)
+================================================================================
+
+rule seen:
+    Heat h
+    Thermometer t where (
+        t.entity_id == h.entity_id
+        and t.temperature > 90.0    # the threshold
+    )
+->
+    log info "seen"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (rule_declaration
+    name: (identifier)
+    (pattern
+      type: (type_ref
+        (identifier))
+      binding: (identifier))
+    (pattern
+      type: (type_ref
+        (identifier))
+      binding: (identifier)
+      (where_clause
+        (parenthesized_expression
+          (boolean_operator
+            left: (comparison_operator
+              left: (attribute
+                object: (identifier)
+                attribute: (identifier))
+              right: (attribute
+                object: (identifier)
+                attribute: (identifier)))
+            right: (comparison_operator
+              left: (attribute
+                object: (identifier)
+                attribute: (identifier))
+              right: (float)))
+          (comment))))
+    (log_action
+      level: (identifier)
+      message: (string
+        (string_content)))))

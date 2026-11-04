@@ -1,0 +1,58 @@
+{
+  "id": "LFAC.9.2",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.9",
+  "seq": 620,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFAC.9.2] **Where `ts` comes from.** When a fact of a schema that declares\n`ts` enters working memory, its `ts` is set by where the fact comes from:\n\n- for a fact a rule asserts (`emit`), and for a fact a rule publishes, which\n  enters no working memory here ([LTIE.4.3]), the engine must set it to the\n  wall clock's current sample, as a UTC `Time` (RLOW.7.1.2). The engine **must**\n  fill `ts` before it evaluates any of the action's slot values. Where the wall clock has no value ([LTIM.2.8.3]), the\n  fault it records is the `ts` fill's, whatever a slot value would have\n  raised;\n- for a fact an `initial` block places ([LGRA.24.3]), which supplies no `ts`,\n  the engine must set it to the wall clock's sample of the step that consumes\n  it ([LTIM.2.8.4]);\n- for a host input, the host must supply it ([NFCT.2.10]), and it is source\n  time ([LADP.4.2.1]). The engine must not fill a host input's `ts`.\n\nA test input writes no `ts` ([LFAC.9.3]). The test runner must supply it, as a\nhost supplies source time: the test clock's wall sample at the input's `at`\ncoordinate, which is the coordinate's instant in absolute mode ([LTSL.3.2]) and\nits offset from the Unix epoch in relative mode ([LTSL.3.1]).\n\n",
+  "refs": [
+    "LADP.4.2.1",
+    "LFAC.9.3",
+    "LGRA.24.3",
+    "LTIE.4.3",
+    "LTIM.2.8.3",
+    "LTIM.2.8.4",
+    "LTSL.3.1",
+    "LTSL.3.2",
+    "NFCT.2.10",
+    "RLOW.7.1.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "idat_4_4__reassert_outcome",
+        "tag": "spec",
+        "note": "A reassertion that enters is filled at entry; one that is suppressed keeps the live ts. The clause's three sources of the filled value collapse to two here: a supplied source time, else the step's sample (an emit supplies none)."
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_9_2__fill",
+        "tag": "spec",
+        "note": "The value ts enters with: the supplied source time, else the step's wall sample."
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_9_2__noop_keeps_ts",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A suppressed reassertion does not enter, so the live fact keeps the ts it entered with. Bounded: six of each sig."
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_9_2__replace_fills_ts",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A meaningful change leaves live a fact whose ts is the supplied value, else the step's sample. The outcome fact said a second way. Bounded: six of each sig."
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_9_2__time",
+        "tag": "spec"
+      }
+    ]
+  }
+}

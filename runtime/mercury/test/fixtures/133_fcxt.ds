@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A host input whose fact holds a reference, recorded as one ExternalAssert
+# and replayed from it ([RFCS.24]). A record of an Outer inlines a fact two
+# deep (Outer -> Mid -> Inner). The `make_*` rules derive a Mid and an Outer,
+# `send_outer` hands an Outer to a call for the scenario's `resend`, and
+# `drop_mid` withdraws the derived Mid, so a later resend finds its copy new
+# while its Inner is still live. The scenario asserts `Holder` itself. Each
+# trigger is withdrawn by the rule it fires, so a returning copy re-derives
+# nothing.
+
+schema Inner scope explicit:
+    v: Int
+
+schema Mid scope explicit:
+    k: Int
+    r: Inner
+
+schema Outer scope explicit:
+    k: Int
+    r: Mid
+
+schema Holder scope explicit:
+    h: Int
+    m: Mid
+
+schema MakeMid scope explicit:
+    k: Int
+
+schema MakeOuter scope explicit:
+    n: Int
+
+schema SendOuter scope explicit:
+    n: Int
+
+schema DropMid scope explicit:
+    n: Int
+
+service out.outer:
+    kwarg fact: Outer
+    no response
+
+rule make_mid:
+    MakeMid g
+    Inner i
+->
+    emit Mid k: g.k r: i
+    withdraw g
+
+rule make_outer:
+    MakeOuter g
+    Mid m
+->
+    emit Outer k: m.k r: m
+    withdraw g
+
+rule send_outer:
+    SendOuter g
+    Outer o
+->
+    withdraw g
+    call out.outer fact: o nocooldown
+
+rule drop_mid:
+    DropMid g
+    Mid m
+->
+    withdraw g
+    withdraw m

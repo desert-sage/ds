@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.2.2.1",
+    "category": "compiler",
+    "scenario": "LCYC.2.2.1 — three-rule emit chain forming a cycle A→B→C→A is rejected with DS_VALIDATE_RULE_CYCLE. Complements LCYC.3.3 (two-rule cycle) by exercising the multi-hop detection path. Rule a emits X→Y; rule b matches Y emits Z; rule c matches Z emits X, closing the loop.",
+    "rules_ds": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nschema Z scope logical:\n    v: Int key\n\nrule a:\n    X\n->\n    emit Y logical v: 1\n\nrule b:\n    Y\n->\n    emit Z logical v: 1\n\nrule c:\n    Z\n->\n    emit X logical v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

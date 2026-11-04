@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# THE CAP-MEASUREMENT FIXTURE — one artefact that touches every surface
+# `[RTCT.7]`'s caps bound, so that nine measurements need one compile each
+# rather than nine fixtures.
+#
+# Each cap gets its own `.dsrt` with that one value tightened; everything else
+# stays generous, so whatever libds does is attributable to the cap under test.
+# What is being measured is not only WHETHER the reference enforces a cap but
+# WHERE -- `wm_max` turned out to be checked at the assert and
+# `max_fires_per_pump` at the pump, and the placement is the part that cannot
+# be read off the clause.
+#
+# The surfaces, and which cap each is here for:
+#
+#   two schemas + a join      cap_node, cap_token_pool, cap_agenda
+#
+# THE JOIN IS AN EQUALITY AND THE THRESHOLD IS A LITERAL, because `+realtime`
+# refuses a cross-pattern ORDERING comparison: DS_VALIDATE_RT_STRING_ORDER,
+# "ordering operator `>` between cross-pattern bindings requires O(len)
+# strncmp; unbounded without `max_length`" (LNLS.3.8). A realtime dialect is a
+# smaller language, which is worth knowing before writing a realtime fixture.
+#   several distinct strings  cap_intern, cap_intern_bytes
+#   a cache write             cap_cache, cap_cache_bytes
+#   a series                  cap_series
+#   a rule that cascades      cap_max_fires_per_pump, cap_pump_wcet
+#
+# `Reading` is logical with a key so that distinct entities are distinct facts;
+# `Zone` is what the join binds against.
+
+use realtime
+
+schema Zone scope logical:
+    name: String key
+    threshold: Float mutable
+
+schema Reading scope logical:
+    entity_id: String key
+    zone: String mutable
+    state: Float mutable
+
+schema Alarm scope ttl 1_h:
+    entity_id: String
+    detail: String
+
+rule warm:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 30.0
+->
+    log warning "warm {r.entity_id} in {z.name}"
+    cache key: "last-warm" value: r.zone
+    cache key: "second-key" value: r.zone
+    emit Alarm entity_id: r.entity_id detail: "over in {z.name}"

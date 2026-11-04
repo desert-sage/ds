@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.8.7_a_kindless_expr_is_refused_before_a_dangling_schema",
+    "category": "runtime",
+    "scenario": "[RDSC.8.7]'s stream is parsed when every atom body is decoded in full, an expression's shape ([RDSC.11.3]) included: an artefact carrying an `Expr` of no kind and a name no atom defines is refused for the expression, with DS_ERR_DSC_SEMANTIC (-504), not for the name (DS_ERR_DSC_DANGLING, -506). The harness compiles a two-pattern rule, then `runtime_error`'s `tamper` list ([RCTS.1.2.21]) makes two edits in order and re-seals `dsc_sha256` once ([RDSC.3.6]): `drop_schema_group: Reading` removes `Reading`'s group, so `pair`'s `AlphaNode` for `Reading` names a schema the artefact does not declare, and `clear_action_expr: pair` replaces the `expr` of `pair`'s `log` action, an `ACTION_CALL`, with an `Expr` of no field. Each defect alone has its own vector: `RDSC.8.7_alpha_schema_group_dropped_is_dangling` (-506) and `RDSC.11.3_expr_with_no_kind_is_refused` (-504). What it discriminates: a loader that checks an expression's shape only after [RDSC.8.7]'s names refuses with -506. Judged on the code alone, as the single-defect vector is. PATHS: libds's atom walk (`ds_engine_load_dsc`), which decodes each node body in full at its frame (`ds_dsc_rete_body_decodes`, `decode_expr_msg` with no engine) before the cross-atom checks; the Mercury runtime's `ds.dsc` walk, whose `network_decoder` decodes the `TerminalNode`'s actions as it reaches it (`ds.dsc_expr`, `lek_semantic` under RDSC.11.3), mapped to -504 by test_behave.m's `libds_load_status`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nschema Sensor scope logical:\n    id: String key\n\nrule pair:\n    Reading r\n    Sensor s where s.id == r.id\n->\n    log info \"p\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": [{"drop_schema_group": "Reading"}, {"clear_action_expr": "pair"}],
+        "code": "-504"
+    }
+}

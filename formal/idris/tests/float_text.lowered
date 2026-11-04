@@ -1,0 +1,174 @@
+# lowered from the probe float_text.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# float_text.expected (scripts/formal/check_idris.py). The Float-text rung's
+# smoke pair: twenty-three S facts with a String slot txt
+# (payload 0), a Float slot f (payload 1) and a Float? slot g (payload 2),
+# one rule per reading. The fixture reads texts, so the lowering writes a
+# `string` record for every token of its table before the rules: 0 to 9 the
+# rules' literals in rule order -- the canonical texts the renders are
+# compared with, 0.30000000000000004, 42.0, 1e-05, 1.5e+16, -0.0, 5e-324,
+# 1.7976931348623157e+308, 0.0001, 1e+16, and 2.5 -- then the steps' values
+# in slot order, the entity id and the txt alternating: 10 a, 11 1500, 12 b,
+# 13 1_500, 14 c, 15 1500.0, ... 44 r, 45 the empty text, ... 54 w, 55 ` 1.5`
+# (the spellings of LCST.4.5.8_float_formats_parse, then those of
+# LCST.4.5.8_float_non_literals_are_null). `cast float 1` is [LCST.4.5.8]'s
+# parse (rules 0 to 4: ten spellings of 1500, one of -1500, inf, -inf, and
+# ten texts that are null); `cast string 0` is [LCST.4.5.6]'s render in
+# [LDET.3.2.7]'s form (rules 5 to 12, each against its literal; rule 9
+# renders the -0.0 that negating r's 0.0 makes, a slot's own -0.0 being
+# refused by the lowering); rule 13 round-trips every f through its text;
+# rules 14 and 15 are the null g of every fact but w and w's 2.5; rule 16
+# logs a Float site, the cast over the site, and the txt. The keys are the
+# codes of the twenty-three entity ids (8 * token + 3: 83, 99, ... 435) and
+# the payloads the codes of (txt, f, g): a String is 8 * token + 3, a Float
+# 8 * its binary64 bits + 4 (2.5 ends in 228), and null is 0. A hundred and
+# one firings, in rule order then assertion order.
+schema 0 entity S
+alpha 0 0
+string 0 19 48 46 51 48 48 48 48 48 48 48 48 48 48 48 48 48 48 48 52
+string 1 4 52 50 46 48
+string 2 5 49 101 45 48 53
+string 3 7 49 46 53 101 43 49 54
+string 4 4 45 48 46 48
+string 5 6 53 101 45 51 50 52
+string 6 23 49 46 55 57 55 54 57 51 49 51 52 56 54 50 51 49 53 55 101 43 51 48 56
+string 7 6 48 46 48 48 48 49
+string 8 5 49 101 43 49 54
+string 9 3 50 46 53
+string 10 1 97
+string 11 4 49 53 48 48
+string 12 1 98
+string 13 5 49 95 53 48 48
+string 14 1 99
+string 15 6 49 53 48 48 46 48
+string 16 1 100
+string 17 5 49 46 53 101 51
+string 18 1 101
+string 19 5 49 46 53 69 51
+string 20 1 102
+string 21 7 49 46 53 101 43 48 51
+string 22 1 103
+string 23 4 49 53 101 50
+string 24 1 104
+string 25 5 48 120 53 68 67
+string 26 1 105
+string 27 6 43 49 46 53 101 51
+string 28 1 106
+string 29 7 49 95 53 48 48 46 48
+string 30 1 107
+string 31 6 45 49 46 53 101 51
+string 32 1 108
+string 33 3 105 110 102
+string 34 1 109
+string 35 4 45 105 110 102
+string 36 1 110
+string 37 3 110 97 110
+string 38 1 111
+string 39 4 49 95 46 53
+string 40 1 112
+string 41 5 49 101 52 48 48
+string 42 1 113
+string 43 6 49 53 48 48 95 115
+string 44 1 114
+string 45 0
+string 46 1 115
+string 47 2 46 53
+string 48 1 116
+string 49 5 48 120 49 112 51
+string 50 1 117
+string 51 2 49 46
+string 52 1 118
+string 53 4 49 46 53 101
+string 54 1 119
+string 55 4 32 49 46 53
+rule 0 parse_1500
+pattern 0 0 0
+where 0 0 eq coalesce cast float 1 slot 0 pay 0 lit f:0 lit f:4654311885213007872
+log 0 0 0
+rule 1 parse_neg
+pattern 1 0 0
+where 1 0 eq coalesce cast float 1 slot 0 pay 0 lit f:0 neg lit f:4654311885213007872
+log 1 0 0
+rule 2 parse_pos_inf
+pattern 2 0 0
+where 2 0 gt coalesce cast float 1 slot 0 pay 0 lit f:0 lit f:9214871658872686752
+log 2 0 0
+rule 3 parse_neg_inf
+pattern 3 0 0
+where 3 0 lt coalesce cast float 1 slot 0 pay 0 lit f:0 neg lit f:9214871658872686752
+log 3 0 0
+rule 4 parse_null
+pattern 4 0 0
+where 4 0 is null cast float 1 slot 0 pay 0
+log 4 0 0
+rule 5 render_sum
+pattern 5 0 0
+where 5 0 eq cast string 0 slot 0 pay 1 lit s:0
+log 5 0 0
+rule 6 render_whole
+pattern 6 0 0
+where 6 0 eq cast string 0 slot 0 pay 1 lit s:1
+log 6 0 0
+rule 7 render_small
+pattern 7 0 0
+where 7 0 eq cast string 0 slot 0 pay 1 lit s:2
+log 7 0 0
+rule 8 render_big
+pattern 8 0 0
+where 8 0 eq cast string 0 slot 0 pay 1 lit s:3
+log 8 0 0
+rule 9 render_negzero
+pattern 9 0 0
+where 9 0 eq cast string 0 neg slot 0 pay 1 lit s:4
+log 9 0 0
+rule 10 render_least
+pattern 10 0 0
+where 10 0 eq cast string 0 slot 0 pay 1 lit s:5
+log 10 0 0
+rule 11 render_most
+pattern 11 0 0
+where 11 0 eq cast string 0 slot 0 pay 1 lit s:6
+log 11 0 0
+rule 12 render_edge
+pattern 12 0 0
+where 12 0 or eq cast string 0 slot 0 pay 1 lit s:7 eq cast string 0 slot 0 pay 1 lit s:8
+log 12 0 0
+rule 13 round_trip
+pattern 13 0 0
+where 13 0 eq coalesce cast float 1 cast string 0 slot 0 pay 1 lit f:4607182418800017408 slot 0 pay 1
+log 13 0 0
+rule 14 g_absent
+pattern 14 0 0
+where 14 0 is null cast string 1 slot 0 pay 2
+log 14 0 0
+rule 15 g_present
+pattern 15 0 0
+where 15 0 eq cast string 1 slot 0 pay 2 lit s:9
+log 15 0 0
+rule 16 show
+pattern 16 0 0
+log 16 0 2 cast string 0 slot 0 pay 1 slot 0 pay 0
+step assert _0 0 1000000000000000000083 1000000000000000000091036902495346673844228000000000000000000000
+step assert _1 0 1000000000000000000099 1000000000000000000107036902495346673844228000000000000000000000
+step assert _2 0 1000000000000000000115 1000000000000000000123036902495346673844228000000000000000000000
+step assert _3 0 1000000000000000000131 1000000000000000000139036902495346673844228000000000000000000000
+step assert _4 0 1000000000000000000147 1000000000000000000155036902495346673844228000000000000000000000
+step assert _5 0 1000000000000000000163 1000000000000000000171036902495346673844228000000000000000000000
+step assert _6 0 1000000000000000000179 1000000000000000000187036902495346673844228000000000000000000000
+step assert _7 0 1000000000000000000195 1000000000000000000203036902495346673844228000000000000000000000
+step assert _8 0 1000000000000000000211 1000000000000000000219036902495346673844228000000000000000000000
+step assert _9 0 1000000000000000000227 1000000000000000000235036902495346673844228000000000000000000000
+step assert _10 0 1000000000000000000243 1000000000000000000251036902495346673844228000000000000000000000
+step assert _11 0 1000000000000000000259 1000000000000000000267036902495346673844228000000000000000000000
+step assert _12 0 1000000000000000000275 1000000000000000000283036902495346673844228000000000000000000000
+step assert _13 0 1000000000000000000291 1000000000000000000299036792607515766004132000000000000000000000
+step assert _14 0 1000000000000000000307 1000000000000000000315037048862334563385348000000000000000000000
+step assert _15 0 1000000000000000000323 1000000000000000000331036256164668887484300000000000000000000000
+step assert _16 0 1000000000000000000339 1000000000000000000347038790956795386265604000000000000000000000
+step assert _17 0 1000000000000000000355 1000000000000000000363000000000000000000004000000000000000000000
+step assert _18 0 1000000000000000000371 1000000000000000000379000000000000000000012000000000000000000000
+step assert _19 0 1000000000000000000387 1000000000000000000395073750947497819242492000000000000000000000
+step assert _20 0 1000000000000000000403 1000000000000000000411036376056976151550316000000000000000000000
+step assert _21 0 1000000000000000000419 1000000000000000000427038770956795386265604000000000000000000000
+step assert _22 0 1000000000000000000435 1000000000000000000443036902495346673844228036902495346673844228
+step pump

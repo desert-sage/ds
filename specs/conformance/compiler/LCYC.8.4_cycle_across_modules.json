@@ -1,0 +1,14 @@
+{
+  "id": "LCYC.8.4_cycle_across_modules",
+  "clauses": ["LCYC.3.1"],
+  "category": "compiler",
+  "scenario": "The cycle check runs over the rule graph of the compilation unit ([LCYC.3.1]), which is the importer and every library whose rules join its artefact ([LIMP.7.5]). LCYC.8.4, the id, is a tombstone. The library's rule `a` matches X and emits Y; the importer takes both schemas selectively and its rule `b` matches Y and emits X. Neither module has a cycle on its own -- each passes the per-module check in `validate` -- so the only thing that can refuse this is the unit-wide pass (`dsc.cycle.lcyc_6_3_unit_graph`), which keys each schema by its declaring library and so sees `pack`'s X and Y on both sides.",
+  "rules_ds": "from pack import X, Y\n\nrule b:\n    Y\n->\n    emit X logical v: 1\n",
+  "libraries": {
+    "pack": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nrule a:\n    X\n->\n    emit Y logical v: 1\n"
+  },
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_RULE_CYCLE"
+  }
+}

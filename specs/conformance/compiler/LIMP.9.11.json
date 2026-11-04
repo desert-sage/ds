@@ -1,0 +1,15 @@
+{
+    "id": "LIMP.9.11",
+    "category": "compiler",
+    "scenario": "Import cycles are compile errors per LIMP.9.11 / LIMP.6.1. The loader detects cycles at load-time and reports the full cycle path. Pin: rules-file imports `a`; `a` imports `b`; `b` imports `a` — DS_VALIDATE_IMPORT_CYCLE fires when the loader re-enters `a`.",
+    "rules_ds": "import a\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "a": "import b\n\nschema A_only scope logical:\n    x: Int key\n",
+        "b": "import a\n\nschema B_only scope logical:\n    y: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_CYCLE",
+        "message_contains": "a -> b -> a"
+    }
+}

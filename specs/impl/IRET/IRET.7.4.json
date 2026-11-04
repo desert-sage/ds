@@ -1,0 +1,406 @@
+{
+  "id": "IRET.7.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7",
+  "seq": 558,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Beta (join) node",
+  "text": "### Beta (join) node [IRET.7.4]\n\nA beta node joins a stream of tokens arriving on its **left** with a\nstream of facts arriving on its **right**, and passes what matches to its\nchildren. Its state divides three ways:\n\n**Inputs.** A left parent — another beta node, or nothing at all, which\nmarks this as the first pattern and makes working memory the left source.\nA right alpha node supplying candidate facts. A list of cross-pattern\njoin predicates. And a flag marking the node **negative**, which inverts\nthe test: a NOT node propagates when the join finds *nothing*.\n\n**Memory.** Only the left side is remembered. Tokens accumulate in the\nleft memory; the right side is not stored here, because the alpha node\nalready holds those facts.\n\n**Outputs.** Two child lists, kept separate: further beta nodes, and\nterminal nodes. A node may feed both.\n\n`ds_rete_beta_node_t` is declared in `runtime/src/libds/rete/beta.h`.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_7_4__beta_node",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "Iret_7_4__tok_ok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A well-formed token: its facts have the rule's pattern kinds in order and values in the domain."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "Iret_7_4__tuple_ok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same for a bare match tuple."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_7_4__match_tuples_ok",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Guarded tuples are well-formed."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_7_4__prop_with_ok",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Re-propagation produces well-formed tokens."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_7_4__tuples_dom",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every enumerated tuple's values come from the domain."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_7_4__tuples_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every enumerated tuple has the pattern kinds."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "iret_7_4__bound_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The i-th bound fact has the i-th pattern kind."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_7_4__extend",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The join's denotation, not its memories: prefix every partial tuple with every candidate fact, facts outermost. Left memory, right alpha and the child lists are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_7_4__match_tuples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The tuples that pass the rule's guard (its where clauses and join predicates), as a denotation of the beta chain."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_7_4__tuples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "All tuples of live facts matching the pattern kinds, in pattern order with each position enumerated in working-memory order -- the creation order for matches one assertion completes. The node structure is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_7_4__beta",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A beta node: its right alpha, its join tests over the positive prefix and the candidate [IRET.7.5], the negative flag [IRET.7.9], its left memory, and -- NOT nodes only -- block counts by token identity [IRET.7.9.4]. The right memory is the alpha's, as the clause says; the child lists are the chain's shape."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_4__with_lmem",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Replace a node's left memory and counts."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__store",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Store arriving tokens in the left memory; a NOT node records their block counts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "Rlow_4_2_1__from_front",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's tuples of the positive kinds, from a front of prefixes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__from_front_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every guarded, unblocked tuple of the positive kinds is a token the chain passes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__recompute_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The chain's recompute is the clause's tuple set, guarded and unblocked."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "Rlow_4_2_1__same_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two beta chains compared for the right alpha and the NOT flag of each node, and not for the join tests."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__same_shape_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Beta chains of one shape have the same alphas and flags."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_5_1__bound_kinds",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A token's fact at position j came through the j-th positive node's right alpha, so it has that alpha's schema."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_5_1__pos_kinds_same_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The positive nodes' alphas, read in order, are the same for chains of one kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Lgra_6_1__same_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "TWO RULES THAT ARE ONE, extensionally: the same positive kinds, a guard that decides alike on every tuple, blockers that read the same kinds and decide alike, the same actions. The lowering builds closures and there is no function extensionality, so this is the equality a run can tell."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__same_shape",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two chains of one shape: node by node the same alpha, join tests and flag; the memories and counts may differ. What the propagation paths never change, so a chain keeps lowering to one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_7_4__match_tuples_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rules that are one match the same tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__same_shape_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A chain has its own shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__same_shape_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Shapes compose."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "Ldet_5_5__lex_sorted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Tokens in the order the joins build them: pattern by pattern, facts outermost."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "Ldet_5_5__pos_sorted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The facts a join node reads from its alpha, in working-memory order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__extend_lex_sorted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A join's extensions, facts outermost, come out in pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__match_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match over one working memory whose facts are live in another is a match over that one: the guard reads the facts alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__tuples_lex_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ENUMERATION IS LEXICOGRAPHIC: the tuples of the positive kinds, facts outermost in working-memory order, are sorted by their keys in pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__tuples_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tuple of the kinds whose facts all lie in a working memory is a tuple over it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__filter_pos_sorted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist of a distinct working memory, taken by a test, sits at increasing positions: the facts of a kind, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_sorted_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One join step keeps the order: the left token's position decides first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_to_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE EVENT'S MATCHES, all completed at one position, are in the key's order when they are in pattern order: the latest positions tie, so the key falls through to the lexicographic comparison."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_7_4__tuples_empty",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Over empty working memory a rule has the nil tuple, if it has no positive pattern, or nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_4__chain_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A chain's LIVE pairs: each node's left memory against its right memory. By the view theorem a function of working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "Iret_7_4__same_set",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two lists with the same members, the relation the view is stated in: memories are sets [IRET.6.5], order is the terminal's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "Iret_7_7__consistent",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CONSISTENCY RELATION, per chain suffix relative to the front it receives and the alpha memories as they stand: each node's left memory is that front, distinct; a NOT node's counts are its blockers; the terminal holds exactly what the last node passes, distinct. Stated node by node so that each propagation path is proved one node at a time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is a congruence for append."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_concat",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is a congruence for concat-map."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is a congruence for filter."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_of_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Equal lists are the same set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is reflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_sym",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is symmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_4__same_set_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Same set is transitive."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_7_4__match_of_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And if they pass the guard, a current match."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_7_4__tuple_of_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Facts of the pattern kinds, all live, are an enumerated tuple."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_7_4__tuples_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every enumerated tuple is made of live facts."
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# VENDORWHL1 — the one thing meson cannot work out for itself.
+#
+# `_pyds.so` links RE2 and protobuf-c INTO ITSELF, so how they are linked
+# depends on WHOSE archives are on the path, and this build has no way to see
+# that:
+#
+#   * the VENDORED set is built `-DCMAKE_POSITION_INDEPENDENT_CODE=ON` /
+#     `--with-pic`, and `BUILD_SHARED_LIBS=OFF` — so there is no shared object
+#     to link, and only `pkg-config --static` emits the ~40 Abseil archives that
+#     re2.pc names in `Requires.private`. Static is the only thing that works.
+#
+#   * DEBIAN'S static archives are NOT PIC. `libprotobuf-c.a(protobuf-c.o)`
+#     fails with `relocation R_X86_64_PC32 ... can not be used when making a
+#     shared object; recompile with -fPIC`. Shared is the only thing that works.
+#
+# Both are true at once, which is why `static:` cannot be a constant here and
+# why an earlier attempt to make it one broke the substrate build. The caller
+# knows which set it put on PKG_CONFIG_PATH; meson does not. So the caller says.
+#
+# Set through meson-python's config-settings:
+#
+#   pip wheel -Csetup-args=-Dvendored=true ...
+#
+# together with the vendored prefixes on PKG_CONFIG_PATH. The two go together:
+# the option without the path finds the distro's RE2 and asks for its non-PIC
+# archive, which is the worst of both.
+option('vendored', type: 'boolean', value: false,
+       description: 'Link the vendored (pinned, PIC, static) RE2 and protobuf-c rather than the distribution shared libraries. Requires the vendored prefixes on PKG_CONFIG_PATH.')
+
+# THE COMPILER THE WHEEL CARRIES, and the notices that go with it. Both are paths
+# to files the caller has already built: a static `dsc` of the same release, and
+# a THIRD_PARTY_NOTICES.md with exactly the sections that build's contents owe,
+# because meson can neither build a Mercury program nor tell which notices a
+# wheel needs. Empty: no compiler, and the repository's notices file as it
+# stands.
+#
+#   pip wheel -Csetup-args=-Ddsc=/abs/dsc -Csetup-args=-Dnotices=/abs/NOTICES.md
+option('dsc', type: 'string', value: '',
+       description: 'A release dsc to install as pyds/bin/dsc, found by pyds.compile() when DS_MERCURY_DSC is unset.')
+option('notices', type: 'string', value: '',
+       description: 'The THIRD_PARTY_NOTICES.md to install in the package, in place of the repository file.')
+
+# THE STANDARD LIBRARY THE COMPILER SHIPS WITH ([LIMP.3.3.1]): the
+# repository's `stdlib/`, an absolute path, installed at `pyds/share/ds/stdlib`
+# where the carried `dsc` looks beside its own binary
+# (`pyds/bin/../share/ds/stdlib`). Given with `dsc`, and only with it.
+option('stdlib', type: 'string', value: '',
+       description: 'The standard library directory to install as pyds/share/ds/stdlib, beside the dsc the wheel carries.')
+
+# THE GLUE'S EXPLOIT MITIGATIONS: the two values libds.build takes, with its
+# defaults.
+# `harden` is the portable set, ON BY DEFAULT, so a source build is hardened
+# without being asked; a build linking an instrumented libds.a (the coverage
+# gate) sets it empty. `harden_cfi` is the architecture's CET or BTI flag,
+# which gcc refuses on the other architecture, so it is empty by default and
+# the caller names it: a linker ANDs the CET and BTI notes of every object,
+# and `_pyds.so` without them strips them from the extension whatever libds.a
+# carries. `harden`'s default is libds.build's, and a pin test holds the two
+# equal.
+#
+#   pip install -Csetup-args=-Dharden_cfi=-fcf-protection=full ...
+option('harden', type: 'string',
+       value: '-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fstack-clash-protection -ftrivial-auto-var-init=zero',
+       description: 'The portable exploit mitigations, libds.build\'s `harden`; empty for a build linking an instrumented libds.a.')
+option('harden_cfi', type: 'string', value: '',
+       description: 'The architecture\'s control-flow protection, libds.build\'s `harden_cfi`: -fcf-protection=full on x86_64, -mbranch-protection=standard on aarch64.')

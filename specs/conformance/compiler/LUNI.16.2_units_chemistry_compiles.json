@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.16.2_units_chemistry_compiles",
+    "clauses": ["LLEX.10.2"],
+    "category": "compiler",
+    "scenario": "[LUNI.16.2]'s `units.chemistry`, compiled as it ships: the standard library is on every fixture's search path and there is no `libraries` copy ([RCTS.1.2.14]), so this fails if the shipped `stdlib/units/chemistry.ds` stops compiling or stops declaring `pH`. `pH` is used as a literal against a `molar_h` slot, its base (tier-2 non-affine, [LUNI.4.3]); `units.chemistry` imports `proportion` from `units.si`, so that import is compiled too.",
+    "rules_ds": "from units.chemistry import molar_h, pH\n\nschema Sample scope logical:\n    id: String key\n    h: molar_h mutable\n\nrule acidic:\n    Sample s where s.h > 7_pH\n->\n    log info \"acidic\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

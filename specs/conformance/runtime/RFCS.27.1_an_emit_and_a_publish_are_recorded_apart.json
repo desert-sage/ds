@@ -1,0 +1,21 @@
+{
+    "id": "RFCS.27.1_an_emit_and_a_publish_are_recorded_apart",
+    "clauses": ["RFCS.27.1", "RFCS.6a.2"],
+    "category": "runtime",
+    "scenario": "[RFCS.27.1]: a `FactPublish` records that a rule's `publish` ran, as the schema it named and the rule, and a `publish` records no `FactEmit`, since it puts no fact in working memory ([LTIE.4.3]). [RFCS.6a.2]: a `FactEmit` carries `rule_name`, never empty on that atom. Rule `r` on a logical Trig emits a logical Out and publishes an explicit Pub. Steps: `set` the clock to 0, one host assert of Trig, one pump. `expected_emits` ([RCTS.1.2.23]) reads every FactEmit's `rule_name`: one, `r`, the emit's. `expected_publishes` reads every FactPublish's `schema_name` and `rule_name`: one, `Pub` / `r`. What it discriminates: a recorder that still writes a FactEmit for the publish gives two emits; one that writes no FactPublish gives no publishes; one that leaves `rule_name` or `schema_name` unset reads back \"\". PATHS: libds's recorder (`ds_rfcs_record_to`, `rfcs/codec.c`'s FactEmit and FactPublish encodes) through pyds `Engine.record`, read back through libds's reader, each atom's message (`pyds.atoms`, runner.py's `_run_rfcs_roundtrip` and `_recorded_publishes`); the Mercury runtime's `ds.rfcs` writer, read back field by field (test_behave.m's `recorded_emits` and `recorded_publishes`).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nschema Pub scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n    publish Pub v: t.v\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_emits": [
+            { "rule_name": "r" }
+        ],
+        "expected_publishes": [
+            { "schema_name": "Pub", "rule_name": "r" }
+        ]
+    }
+}

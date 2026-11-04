@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+service svc.body:
+    kwarg zeta: String
+    kwarg alpha: Int
+    kwarg mid: Float
+    kwarg flag: Bool
+    no response
+
+schema In scope logical:
+    id: Int key
+    txt: String mutable
+    num: Float mutable
+
+rule pass_through:
+    In i
+->
+    call svc.body mid: i.num zeta: i.txt alpha: i.id flag: true nocooldown
+
+rule literals:
+    In i where i.id == 1
+->
+    call svc.body mid: 2.0 zeta: "quote\" back\\ tab\t slash/ unicode-é" alpha: -6 flag: false nocooldown

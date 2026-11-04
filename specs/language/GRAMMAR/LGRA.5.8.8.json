@@ -1,0 +1,60 @@
+{
+  "id": "LGRA.5.8.8",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5.8",
+  "seq": 655,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.5.8.8] **A float zero in a `Json` value has no sign.** Every float zero a\n`Json` value holds is `+0.0`. Wherever a `Json` value comes into being, at each\nplace [LGRA.5.8.6] lists, a runtime **must** make every float `-0.0` inside it\n`+0.0`.\n\nThe zero stays a float: an integer `0` and a float `0.0` are still different\nkinds ([LFAC.2.5.1]). Outside a `Json` value nothing changes: a `Float` slot\nkeeps `-0.0`, and so do its text forms ([LDET.3.2.7]).\n\nSo a leaf read of a JSON `-0.0` is `+0.0`, a `Json` value's canonical text\ncarries no `-0.0`, and a recording read on replay holds the value the live\nrun held.\n\n",
+  "refs": [
+    "LDET.3.2.7",
+    "LFAC.2.5.1",
+    "LGRA.5.8.6"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_8__fold_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fold on one float, its decision taken first: +0.0 when the float is a zero of either sign, the float itself otherwise."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_8__fold_leaves_no_negative_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every float: a zero of either sign folds to +0.0 and a nonzero float is itself; an integer 0 stays an integer."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_8__unsigned_zeros",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every float zero a document holds made +0.0, at every depth, an integer 0 and every nonzero value untouched: the fold the clause has a runtime apply wherever a `Json` value comes into being. The fixture runner applies it to every document it reads, and the fixture lowering to every one it codes."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_8__unsigned_zeros_list",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fold over an array's elements."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lgra_5_8_8__unsigned_zeros_members",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fold over an object's members."
+      }
+    ]
+  }
+}

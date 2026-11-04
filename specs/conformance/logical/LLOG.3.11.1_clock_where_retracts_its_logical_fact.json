@@ -1,0 +1,29 @@
+{
+  "id": "LLOG.3.11.1_clock_where_retracts_its_logical_fact",
+  "clauses": ["LLOG.3.11.1", "LTIM.2.5.1"],
+  "category": "logical",
+  "scenario": "[LLOG.3.11.1] for a clock read: a `logical` fact justified by a `where` that reads `now()` is retracted at the first pump whose clock sample refuses the match, although its matched fact never changes. The match ends ([LTIM.2.5.1]), and the justification its firing made ends with it. Pump 1 (t=0): `a` arrives, `now() < 2 s` holds, and `Fresh` is emitted. Pump 2 (t=1 s): still true; edge-once firing keeps the rule from firing again, and `Fresh` stays. Pump 3 (t=3 s): false, and `Fresh` is retracted. A `Mark` is asserted before pumps 2 and 3, so the stream places the retraction: it must follow the second `Mark`, at pump 3, and not the first. PATH: the `where` is the terminal's fire guard behind the `$ClockTick` re-driver (`dsc.rete`'s `now_reeval_plan`), read under each pump's sample ([RDSC.4a.8.2.2]); the closed guard ends the justification the tick carried (libds `rete/engine.c`'s immature path, Mercury `ds.engine.end_match`). An engine whose closed guard ends only the edge-once mark never retracts `Fresh`.",
+  "rules_ds": "use default\n\nimport calendar\n\nschema Reading scope logical:\n    dev: String key\n\nschema Mark scope logical:\n    n: Int key\n\nschema Fresh scope logical:\n    dummy: Int key\n\nrule fresh:\n    Reading where now() < calendar.time(1970, 1, 1, 0, 0, 2)\n->\n    emit Fresh logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "set",     "now_ns": 0 },
+      { "op": "assert",  "schema": "Reading", "slots": { "dev": "a" } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "assert",  "schema": "Mark", "slots": { "n": 1 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 2000000000 },
+      { "op": "assert",  "schema": "Mark", "slots": { "n": 2 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "fact_assert",
+      "action_emit",
+      "fact_assert",
+      "fact_assert",
+      "fact_retract"
+    ]
+  }
+}

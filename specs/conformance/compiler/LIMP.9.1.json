@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.9.1",
+    "clauses": ["RCTS.1.2.13"],
+    "category": "compiler",
+    "scenario": "Two import forms only per LIMP.9.1 \u2014 `import IDENT` for qualified access, `from IDENT import IDENT (',' IDENT)*` for selective bare access. Pin: a file with both forms compiles, each resolved against the library `ha` the fixture supplies, which declares the `light` and `switch` service domains the selective form names ([RCTS.1.2.13]: a fixture with neither `libraries` nor `stdlib` has no library to import, so `ha` must be supplied).",
+    "rules_ds": "import ha\nfrom ha import light, switch\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    no response\n\nservice switch.turn_on:\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

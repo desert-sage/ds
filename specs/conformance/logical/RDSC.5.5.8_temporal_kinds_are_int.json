@@ -1,0 +1,15 @@
+{
+    "id": "RDSC.5.5.8_temporal_kinds_are_int",
+    "category": "logical",
+    "scenario": "RDSC.5.5.8: a runtime accepts SLOT_KIND_TIME, _DATE and _DURATION as it accepts INT for storage and comparison, and `is Int` stays a representation test, true of all three ([LNUL.4.9]). The host asserts each as an integer (UTC ns, epoch days, ns). Rule `ints` fires only if every temporal slot reads back as an Int, and rule `long` only if the Duration compares as nanoseconds against `1_s`. Expect `ints` then `long`. PATH: both loaders' SlotKind map (libds `dsc/loader.c` `slot_kind_to_type`, Mercury `ds.dsc_schema.simple_kind`) and the host assert's slot check (libds `wm.c` `wm_validate_assert_values`, Mercury `ds.fact.admits_kind`).",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    seen: Time mutable\n    due: Date mutable\n    span: Duration mutable\n\nrule ints:\n    Visit v where v.seen is Int and v.due is Int and v.span is Int\n->\n    log info \"ints\"\n\nrule long:\n    Visit v where v.span > 1_s\n->\n    log info \"long\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "seen": 1700000000000000000, "due": 19675, "span": 2000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["ints", "long"]
+    }
+}

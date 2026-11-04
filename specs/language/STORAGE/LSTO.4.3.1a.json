@@ -1,0 +1,19 @@
+{
+  "id": "LSTO.4.3.1a",
+  "prefix": "LSTO",
+  "doc": "STORAGE.md",
+  "parent": "LSTO.4.3",
+  "seq": 240,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSTO.4.3.1a] **`cached()` is allowed in `where` clauses** — the one\nexception to the read-function placement rule ([LGRA.9.8.2]).\nThe cache is read-only during pattern matching — no rule RHS\ncan execute while patterns are being evaluated — so the value\nis stable for the duration of a single activation. This\nenables **cache-keyed refraction**: a rule can skip firing\nwhen the relevant cache state has not changed since the last\ndispatch, by testing a fact's revision against the cached value\nfrom the prior dispatch and writing the new value back on the\nsame firing.\n\n**The read key may be interpolated**: `[LGRA.2.9.6.8]` makes a `cached(…)` key\nan interpolation-eligible position, and every segment of it must be\nnon-nullable and non-absent. A `cache` write's key is a literal\n([LGRA.10.3.7]), so a rule writes its value back to one fixed key. An\ninterpolated key is filled by the host's seed or an `initial` cache item\n([LGRA.24.3]).\n\nA cache miss returns `null` ([LSTO.4.3.1b]). Because `null` **propagates**\nthrough the `!=` comparison (Kleene 3-valued null semantics, [LNUL]), a\nbare inequality test against the cached value would be `null` on a miss and so\nwould not fire; an explicit `cached(...) is null` disjunct — the total null test\n([LNUL.4.4]) — catches the miss, so the first dispatch always fires. Each later\nhit then refracts (an unchanged value compares false) and a changed value\nre-fires.\n\n**The miss-catching disjunct must be `is null`.** Spelling it `cached(...) ==\nnull` is a compile error ([LNUL.4.4]) — and the reason it is refused is exactly\nthe reason the idiom needs it: `==` propagates, so on a miss that disjunct would\nbe `null` too, and the whole `or` would be `null` rather than `true`. The rule\nwould then never fire on a cold cache, which is the one case the idiom exists to\nhandle.\n\n",
+  "refs": [
+    "LGRA.10.3.7",
+    "LGRA.2.9.6.8",
+    "LGRA.24.3",
+    "LGRA.9.8.2",
+    "LNUL.4.4",
+    "LSTO.4.3.1b"
+  ]
+}

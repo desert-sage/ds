@@ -1,0 +1,11 @@
+{
+    "id": "LDIA.7.3",
+    "clauses": ["LDIA.1.2", "LDIA.3.4.1"],
+    "category": "compiler",
+    "scenario": "Settings restrict constructs; they do not change the grammar ([LDIA.1.2], [LDIA.3.4.1]; LDIA.7.3, the id, is a tombstone). Pinned via the parse-then-validate split: the `call` action parses as it does under `default`, and validation rejects it with DS_VALIDATE_CAPABILITY_DISABLED because the program sets `call: false` (compiler/LFCA.10.1 is the sibling pin, for `nocooldown`).",
+    "rules_ds": "use default:\n    call: false\n    nocooldown: false\n    storage_hydrate_facts: false\n    storage_hydrate_samples: false\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

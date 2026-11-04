@@ -1,0 +1,18 @@
+{
+  "id": "NDLC.3.1",
+  "prefix": "NDLC",
+  "doc": "DIALECTS.md",
+  "parent": "NDLC.3",
+  "seq": 132,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDLC.3.1] The construct capabilities that gate a surface construct, and\nwhen a tier sets each `false`:\n\n| Capability | Language surface | Set `false` when |\n|---|---|---|\n| `call` | `call <domain>.<method> ...` | tier has no adapter or service connection, or can't absorb call latency |\n| `publish` | `publish <Schema> ...` | tier is the topmost (has nowhere to publish to) |\n| `cache` | `cache key: k value: v` | rules on this tier must not mutate cache state |\n| `cache_delete` | `cache_delete key: k` | rules on this tier must not mutate cache state |\n| `nocooldown` | the bare `nocooldown` flag on `call` ([LCRS.8.1]) | tier requires an explicit rate bound on every call |\n| `series` | `series ...` declaration plus the aggregation surface ([LFCA.5.1]) | tier has no series subsystem — no backend is registered for the series atoms the artefact would carry |\n\nThe capabilities with engine consequences (`realtime`, `constspace`,\n`linear_scan`, `logical`, `dynamic_ttl`, `regex`, `float`) are specified in\n[LCAP.2]. The storage and samples-plane capabilities are deferred, and every\ndialect sets them `false` ([LCAP.2.10]).\n\n`cached(...)` is **not** a capability and is not gateable. The cache is\nengine-owned — every engine has one, a read takes no integrator callback,\nso there is no tier that lacks it ([LFCA.2.4]); only the two cache write\nverbs above are gateable.\n\n",
+  "refs": [
+    "LCAP.2",
+    "LCAP.2.10",
+    "LCRS.8.1",
+    "LFCA.2.4",
+    "LFCA.5.1"
+  ]
+}

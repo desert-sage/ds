@@ -1,0 +1,27 @@
+{
+  "id": "LHYD.4.1.7",
+  "prefix": "LHYD",
+  "doc": "HYDRATION.md",
+  "parent": "LHYD.4.1",
+  "seq": 200,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LHYD.4.1.7] **A hydration target declares `corr`.** A schema named in a\n  hydration service's `hydrates:` list ([LHYD.9.4.1]), a schema named by the\n  `schema:` of a `hydrate_facts` call ([LSTO.13.1]), and the builtin\n  `HydratedSample` ([LHYD.4.3.1]) are **hydration targets**. A hydration target\n  must declare `corr` ([LCRS.4.3.2]) as a non-nullable `String`; the compiler\n  must reject one that does not (`DS_VALIDATE_HYDRATE_TARGET_NO_CORR`). The\n  compiler adds no slot to it.\n\n  A fact of a hydration target asserted without a value for `corr` must read\n  `\"\"`, the zero of `String`; the adapter sets `corr` on every fact it\n  hydrates ([LHYD.3.1]). So on a hydration target `corr` marks a fact as\n  history: a non-empty `corr` is a hydrated fact, and the live-only match\n  ([LHYD.4.1.4]) and the series skip ([LHYD.10.4.1]) key on it.\n\n  **On a `logical` hydration target, `corr` is a `key` slot** ([LFAC.1.7.1]),\n  so a hydrated fact never shares an identity with a live one and never\n  replaces it; facts hydrated under different correlations are distinct too.\n  The compiler must reject a `logical` hydration target whose `corr` is marked\n  `mutable` (`DS_VALIDATE_HYDRATE_TARGET_CORR_NOT_KEY`).\n\n  **No schema is both a hydration target and a response schema**\n  ([LCRS.4.3.2]). On a response schema `corr` names the call a live fact\n  answers, so a schema in both roles would give one slot two meanings. The\n  compiler must reject a schema that is both\n  (`DS_VALIDATE_CORR_ROLE_CONFLICT`).\n\n",
+  "deferred": true,
+  "refs": [
+    "LCRS.4.3.2",
+    "LHYD.10.4.1",
+    "LHYD.3.1",
+    "LHYD.4.1.4",
+    "LHYD.4.3.1",
+    "LHYD.9.4.1",
+    "LSTO.13.1",
+    "LFAC.1.7.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_CORR_ROLE_CONFLICT",
+    "DS_VALIDATE_HYDRATE_TARGET_NO_CORR",
+    "DS_VALIDATE_HYDRATE_TARGET_CORR_NOT_KEY"
+  ]
+}

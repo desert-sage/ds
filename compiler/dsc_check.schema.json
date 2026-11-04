@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dsc_check.schema.json",
+  "title": "dsc check --dump-ast",
+  "description": "What `dsc check --dump-ast` writes to standard output ([RCLI.1.12]): one document, the input's tree and the compile's diagnostics. The residue this schema cannot carry is [RCLI.1.12]'s.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tree", "diagnostics"],
+  "properties": {
+    "tree": {
+      "description": "The document `dsc dump-ast` writes for the input ([RCLI.1.10]), or null when the input does not parse.",
+      "type": ["object", "null"]
+    },
+    "diagnostics": {
+      "description": "What `dsc compile` writes to standard error for the input: under `--diagnostics text`, a string, empty when it writes nothing; under `--diagnostics json`, the document of `dsc_diagnostics.schema.json`, or null when it writes none.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "null" },
+        { "$ref": "dsc_diagnostics.schema.json" }
+      ]
+    }
+  }
+}

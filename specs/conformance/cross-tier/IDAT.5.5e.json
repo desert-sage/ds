@@ -1,0 +1,55 @@
+{
+    "id": "IDAT.5.5e",
+    "category": "cross-tier",
+    "scenario": "Two engines with completely different schemas \u2014 neither sees the other's facts. Pins schema-registry partition. Pins IDAT.5.5 \u2014 schema registry partition between engines.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "left": {
+                "rules_ds": "schema Sensor scope logical:\n    state: Int key\n"
+            },
+            "right": {
+                "rules_ds": "schema Switch scope logical:\n    is_on: Bool key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "left",
+                "op": "assert",
+                "schema": "Sensor",
+                "slots": {
+                    "state": 25
+                }
+            },
+            {
+                "engine": "right",
+                "op": "assert",
+                "schema": "Switch",
+                "slots": {
+                    "is_on": true
+                }
+            },
+            {
+                "engine": "left",
+                "op": "assert",
+                "schema": "Sensor",
+                "slots": {
+                    "state": 30
+                }
+            },
+            {
+                "engine": "right",
+                "op": "assert",
+                "schema": "Switch",
+                "slots": {
+                    "is_on": false
+                }
+            }
+        ],
+        "engine_fact_counts_after": {
+            "left": 2,
+            "right": 2
+        }
+    }
+}

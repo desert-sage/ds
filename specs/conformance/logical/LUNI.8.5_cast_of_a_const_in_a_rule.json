@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_cast_of_a_const_in_a_rule",
+    "category": "logical",
+    "scenario": "[LGRA.13.3] with [LUNI.8.5] and [LCST.4.5.2]: a rule reads a `const` whose value is a `::` cast of another `const`. `RAW = WARM::Float` strips the unit from `WARM = 21.5_celsius`, which is its stored base-unit number, 294.65 K ([LUNI.8.5]); `TEXT = N::String` converts the `Int` `const N = 42` to `\"42\"` ([LCST.4.5.2]). A `Reading` carrying those two values makes both rules fire. Pin: `raw`, then `text`. A compiler that gives a `const` name no static type cannot type either cast's operand, so it leaves both rules unlowered and the program is refused. PATH PINNED: `dsc.typecheck.lgra_13_3_const_type`, which types a `const` name from its right-hand side, and `dsc.rete`'s `ex_cast` arm, which then finds the cast's pair (`lcst_4_cast_pair`), against each runtime's evaluation of the strip (an identity) and of `FN_INT_TO_STRING`.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nconst WARM = 21.5_celsius\nconst RAW = WARM::Float\nconst N = 42\nconst TEXT = N::String\n\nschema Reading scope logical:\n    id: String key\n    f: Float mutable\n    s: String mutable\n\nrule raw:\n    Reading r where r.f == RAW\n->\n    log info \"raw\"\n\nrule text:\n    Reading r where r.s == TEXT\n->\n    log info \"text\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "f": 294.65, "s": "42" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["raw", "text"]
+    }
+}

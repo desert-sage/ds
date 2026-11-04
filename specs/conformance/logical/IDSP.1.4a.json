@@ -1,0 +1,25 @@
+{
+    "id": "IDSP.1.4a",
+    "category": "logical",
+    "scenario": "An asserted fact that triggers no rule fires only `fact_assert`, not any rule_fire_* events. Pins that the dispatcher only emits action / rule events when something actually fires. Pins IDSP.1.4 \u2014 dispatcher only emits action / rule events when something fires.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Other scope logical:\n    x: Int key\n\nrule r:\n    Other\n->\n    log info \"x\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert"
+        ]
+    }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "LEXP.3.7.3",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.3.7",
+  "seq": 207,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.3.7.3] **Five of these members are this arithmetic and no other.** Let\n$p = x \\bmod 2^{64}$, the pattern read as an unsigned number, and let\n$\\mathrm{int}(v)$, for $0 \\le v < 2^{64}$, be the `Int` whose pattern is $v$:\n$v$ when $v < 2^{63}$, else $v - 2^{64}$.\n\n| Member | Domain | Result |\n|---|---|---|\n| `x.bits(lo, w)` | $0 \\le lo$, $1 \\le w$, $lo + w \\le 64$ | $\\mathrm{int}(\\lfloor p / 2^{lo} \\rfloor \\bmod 2^{w})$ |\n| `x.sign_extend(w)` | $1 \\le w \\le 64$ | $u - 2^{w}$ when $u \\ge 2^{w-1}$, else $u$, where $u = p \\bmod 2^{w}$ |\n| `x.swap_bytes(w)` | $w \\in \\{16, 32, 64\\}$ | $\\mathrm{int}\\big(\\sum_{i=0}^{n-1} b_i \\, 2^{8(n-1-i)}\\big)$, where $n = w / 8$ and $b_i = \\lfloor p / 2^{8i} \\rfloor \\bmod 2^{8}$ |\n| `x.leading_zeros` | every `x` | $64 - \\lceil \\log_2 (p + 1) \\rceil$ |\n| `x.trailing_zeros` | every `x` | the largest $k \\le 64$ with $2^{k} \\mid p$ |\n\nThe bits of `x` above the field do not reach the result. `bits` and\n`swap_bytes` are non-negative unless $w = 64$; `x.bits(0, 64)` and\n`x.sign_extend(64)` are `x`. Every argument is an `Int`, and a null receiver or\nargument yields null ([LNUL.4.1]).\n\nThe compiler must lower each of these members to its own builtin, the receiver\nfirst: `FN_BITS`, `FN_SIGN_EXTEND`, `FN_SWAP_BYTES`, `FN_LEADING_ZEROS` and\n`FN_TRAILING_ZEROS` (`proto/builtin_fn.proto#BuiltinFn`).\n\n",
+  "refs": [
+    "LEXP.3.7.1",
+    "LNUL.4.1"
+  ],
+  "symbols": [
+    "FN_BITS",
+    "FN_LEADING_ZEROS",
+    "FN_SIGN_EXTEND",
+    "FN_SWAP_BYTES",
+    "FN_TRAILING_ZEROS"
+  ],
+  "defines": {
+    "symbols": [
+      "FN_BITS",
+      "FN_LEADING_ZEROS",
+      "FN_SIGN_EXTEND",
+      "FN_SWAP_BYTES",
+      "FN_TRAILING_ZEROS"
+    ]
+  },
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/builtin_fn.proto",
+        "name": "BuiltinFn",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_composite_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] — a composite key is anchored by one equality per `key` slot, and a further cross-pattern comparison ON TOP of the anchor is allowed (\"Additional constraints ... are allowed on top of this anchor\"). Both schemas key on (site, bay); the second pattern equates both slots, written with the earlier binding on the left for one and on the right for the other, and adds `x.amount > d.level`. PATH PINNED: `dsc.validate.slot_equality` normalises either operand order, and `full_key_anchor` ignores the non-key comparison. Reading the extra comparison as a partial anchor would raise DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A here.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    site: String key\n    bay: Int key\n    level: Int mutable\n\nschema Reading scope logical:\n    site: String key\n    bay: Int key\n    amount: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.site == d.site and d.bay == x.bay and x.amount > d.level\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

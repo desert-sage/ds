@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dsc_schemas.schema.json",
+  "title": "dsc dump-schemas --json",
+  "description": "What `dsc dump-schemas --json` writes ([RCLI.1.14]): the schemas the input declares, each slot's declared type, and for a unit-typed slot its unit and the conversion to its dimension's base unit. The residue this schema cannot carry is [RCLI.1.14]'s.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemas"],
+  "properties": {
+    "schemas": {
+      "description": "The schemas the input declares, in declaration order.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/schema" }
+    }
+  },
+  "$defs": {
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "slots"],
+      "properties": {
+        "name": { "type": "string" },
+        "slots": {
+          "description": "The schema's slots, in declaration order.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/slot" }
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "nullable", "unit"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": {
+          "description": "The slot's declared type as the source names it, without the `?` of a nullable slot.",
+          "type": "string"
+        },
+        "nullable": { "type": "boolean" },
+        "unit": {
+          "description": "The slot's unit, or null for a slot that is not unit-typed.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/unit" }
+          ]
+        }
+      }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared", "label", "dimension", "base", "storage", "conversion"],
+      "properties": {
+        "declared": {
+          "description": "The canonical symbol of the unit the slot names, or null for a slot typed by its dimension or scalar group.",
+          "type": ["string", "null"]
+        },
+        "label": {
+          "description": "The declared unit's label, or null when it declares none or the slot names no unit.",
+          "type": ["string", "null"]
+        },
+        "dimension": {
+          "description": "The dimension or scalar group.",
+          "type": "string"
+        },
+        "base": {
+          "description": "The canonical symbol of the dimension's base unit.",
+          "type": "string"
+        },
+        "storage": {
+          "description": "The dimension's storage type.",
+          "enum": ["int32", "int64", "float64"]
+        },
+        "conversion": {
+          "description": "From the declared unit to the base unit, or null when the slot names no unit.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/affine" },
+            { "$ref": "#/$defs/tier2" }
+          ]
+        }
+      }
+    },
+    "affine": {
+      "description": "base = a * declared + b, with the constants the compiler bakes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "a", "b"],
+      "properties": {
+        "kind": { "const": "affine" },
+        "a": { "type": "number" },
+        "b": { "type": "number" }
+      }
+    },
+    "tier2": {
+      "description": "A tier-2 unit, whose conversion is not affine.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "tier2" }
+      }
+    }
+  }
+}

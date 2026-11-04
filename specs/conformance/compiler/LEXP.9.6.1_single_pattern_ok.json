@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.9.6.1_single_pattern_ok",
+    "category": "compiler",
+    "scenario": "[LEXP.9.6.1] — \"Single-positive-pattern rules are unaffected. They have no join, so these reads stay available where authors mostly write them.\" The positive control for `dsc.validate`'s `lexp_9_6_1_nonfact_where`, which refuses only when `Positive > 1`: the same `cached()` read that LEXP.9.6.1_cached_multipattern refuses must COMPILE on a one-pattern rule. Without this a check that rejected every `cached()` in a `where` would look correct.",
+    "rules_ds": "schema Reading scope logical:\n    entity_id: String key\n    state: Float mutable\n\nrule gated:\n    Reading r where cached(\"threshold\") == r.state\n->\n    log warning \"gated\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

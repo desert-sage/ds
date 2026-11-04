@@ -1,0 +1,23 @@
+{
+    "id": "LNUL.8.6_nulls_hold_repeats_the_last_value",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] `nulls: hold`: a sample that carries `null` absorbs the last value absorbed for that identity, as a new sample at the null's own instant. `count, mean all_time` over a `Float?` slot with `nulls: hold` takes 2.0, null, 8.0 then 9.0, one per pump, each read pre-sample ([LSER.8.6.1]); the guard `s.count >= 3` logs once, over [2.0, 2.0, 8.0]: `mean 4.0`, and the count of 3 pins that the held value is a SAMPLE, counted. Drives both runtimes' HOLD arm: libds's row `last_value`, captured at absorb, and the Mercury `series_state`'s held map through `held_value`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev, nulls: hold):\n    count, mean all_time\n\nrule r:\n    Reading s where s.count >= 3\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 8.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 9.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 4.0"]
+    }
+}

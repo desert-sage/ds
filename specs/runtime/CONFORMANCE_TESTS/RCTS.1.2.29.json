@@ -1,0 +1,24 @@
+{
+  "id": "RCTS.1.2.29",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 125,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.29] **A cross-tier fixture** — a fixture in the `cross-tier`\n  category ([RCTS.1.1.4]) carries `expect.engines`, an object of at least one\n  member: each member's name is an engine's label, and its value an object\n  of `rules_ds`, a string, that engine's program, and optionally\n  `wall_clock`, the string `\"unset\"`. A harness must compile and load each\n  program into an engine of its own, on mock clocks of its own and with a\n  stream callback of its own, and must run each step on the engine its\n  `engine` member, a label, names. A harness must leave the mock wall clock\n  of an engine whose entry carries `wall_clock` unset, as [RCTS.1.2.32] has\n  it for a logical fixture, until a `wall_set` step on that engine gives it a\n  value ([LTIM.2.8.3]). Besides [RCTS.1.2.28]'s ops, a step of a cross-tier fixture may be:\n\n  - `forward`, with `from`, a label: every fact the `from` engine published\n    since the last `forward` from it to this engine ([NCBK.10.1]) is asserted\n    into this engine, under its schema's name and with its slot values, in\n    publication order. A harness must read the name and the values from the\n    publish event while its callback runs ([NCBK.2.5]): the fact is in no\n    working memory of the `from` engine ([LTIE.4.3]). Nothing else crosses\n    ([NCBK.10.3]).\n  - `forward_external`, with `from`, a label: every `FactExternal` the `from`\n    engine's publications carried ([RFCS.23.1]), since the last\n    `forward_external` from it to this engine, is given to this engine's own\n    receiving interface ([NCBK.10.4]), in publication order.\n\n  A cross-tier fixture's `expect` may carry `expected_published_asserted_at`,\n  an object: each member's name is an engine's label, and its value an array\n  with one entry for each fact that engine published while the steps ran, in\n  publication order. The entry is the `asserted_at` of the `FactExternal` the\n  publication carried ([RFCS.23.1], [RFCS.23.5]), an integer, or `null` where\n  its `has_asserted_at` is false. A harness must read each from the record\n  the publish event carried, and must fail the fixture when one of those\n  publications carried no record, when the counts differ, or when an entry\n  differs.\n\n  A harness must fail a cross-tier fixture whose `engines` is not such an\n  object, one whose `expected_published_asserted_at` is not such an object or\n  names a label `engines` does not, and one with a step that carries no\n  `engine`, or whose `engine` or `from` names no label. It must fail a fixture\n  of any other category that carries `engines` or\n  `expected_published_asserted_at`, or a step that carries `engine` or takes\n  either op.\n\n",
+  "refs": [
+    "LTIE.4.3",
+    "LTIM.2.8.3",
+    "NCBK.10.1",
+    "NCBK.10.3",
+    "NCBK.10.4",
+    "NCBK.2.5",
+    "RCTS.1.1.4",
+    "RCTS.1.2.28",
+    "RCTS.1.2.32",
+    "RFCS.23.1",
+    "RFCS.23.5"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.8_block_equals_head_line_call",
+    "category": "compiler",
+    "scenario": "[LGRA.10.8]: an action's indented block is layout and nothing else. A `call` with one kwarg on its head line, two more kwargs and the `cooldown` modifier on block lines, and its `as` correlation on the block's last line must compile exactly as the same call with every argument, in the same order, and the `as` clause all on its head line. Drives `dsc_equivalent`: both spellings are compiled and the two artefacts compared with the source-position atoms dropped, so a parser that lost a block line, kept the block's `as` apart from the head line's, or folded the `cooldown` line into a kwarg differs here. PATH PINNED: `dsc.parse`'s `lcco_2_1_call_block` (block lines) and `finish_action` (head line plus block, one `as`), against the single-line path through `lcrs_6_2_3_take_as`. Its siblings compiler/LGRA.10.6_multi_line_kwargs and _block_mixed_kwargs_continuations pin that the block parses; this pins what it means.",
+    "rules_ds": "service svc.samples:\n    kwarg entity: String\n    kwarg field: String\n    kwarg window: Duration\n    no response\n\nschema TimeOfDay scope logical:\n    state: String key\n\nrule prepare:\n    TimeOfDay t where t.state == \"08:00\"\n->\n    call svc.samples entity: \"sensor.living_temp\"\n        field: \"state\"\n        window: 1_h\n        cooldown: 1_h\n        as \"recent-temp\"\n",
+    "expect": {
+        "kind": "dsc_equivalent",
+        "equivalent_ds": "service svc.samples:\n    kwarg entity: String\n    kwarg field: String\n    kwarg window: Duration\n    no response\n\nschema TimeOfDay scope logical:\n    state: String key\n\nrule prepare:\n    TimeOfDay t where t.state == \"08:00\"\n->\n    call svc.samples entity: \"sensor.living_temp\" field: \"state\" window: 1_h cooldown: 1_h as \"recent-temp\"\n"
+    }
+}

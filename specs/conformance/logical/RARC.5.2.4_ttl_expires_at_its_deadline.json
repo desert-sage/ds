@@ -1,0 +1,20 @@
+{
+    "id": "RARC.5.2.4_ttl_expires_at_its_deadline",
+    "category": "logical",
+    "scenario": "RARC.5.2.4 — a `ttl` fact whose deadline is AT the engine clock is expired: \"a fact due at the current instant does not survive it\". Blip lives 5 s; the clock advances by exactly 5_000_000_000 ns and the next pump retracts it. Its twin, RARC.5.2.4_ttl_survives_until_its_deadline, stops 1 ns short and forbids the retract, so together they pin the boundary to the nanosecond: a strict `<` in the sweep fails this one, a sweep running one tick late fails the twin. Path: the consumption loop's TTL sweep at clock advance — libds's `ds_engine_sweep_ttl_via_wrappers` (engine.c), the Mercury runtime's `ds.engine.sweep_expired` — observed as the `fact_retract` it streams.",
+    "rules_ds": "schema Blip scope ttl 5_s:\n    id: Int\n\nrule seen:\n    Blip b\n->\n    log info \"blip {b.id}\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Blip", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_retract"
+        ]
+    }
+}

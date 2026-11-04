@@ -1,0 +1,15 @@
+{
+    "id": "LSTO.4.3.1a.a_cache_miss_raises_no_fault",
+    "category": "logical",
+    "dead_rules_expected": ["rw"],
+    "scenario": "A `cached(key)` miss is `null` ([LSTO.4.3.1a]) and raises nothing — the null arm, and the absence Mercury's `ds.cache.cache_get` keeps apart from a stored null by being `semidet`. `cached()` is sync-impure so it is read through a `let`, and the program carries a `cache` write for a DIFFERENT key: a read-only program is refused by the compiler, and the write also proves the miss is a MISS rather than an engine with no cache at all. The step asserts only the reading rule, so \"absent\" is never written.",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nrule rw:\n    Trig t where t.tag == \"w\"\n->\n    cache key: \"k\" value: 7\n\nrule rm:\n    Trig t where t.tag == \"m\"\n->\n    let m = cached(\"absent\")\n    log info \"m=[{m}]\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "m" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

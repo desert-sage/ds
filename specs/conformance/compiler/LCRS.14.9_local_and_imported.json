@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.14.9_local_and_imported",
+    "category": "compiler",
+    "scenario": "[LCRS.14.9]: a service the file declares and one an imported library declares under the same name are a duplicate like any other pair. The file imports only a schema from `pack`, so `pack`'s `svc.method` is never bound in the file, and the check must still see it. PATH PINNED: dsc.driver.lcrs_14_9_duplicate_services, the file against one library, DS_VALIDATE_DUPLICATE_SERVICE.",
+    "rules_ds": "from pack import Trig\n\nservice svc.method:\n    \"\"\"the file's\"\"\"\n    no response\n",
+    "libraries": {
+        "pack": "schema Trig scope logical:\n    v: Int key\n\nservice svc.method:\n    \"\"\"pack's\"\"\"\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_SERVICE"
+    }
+}

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Reading scope logical:
+    state: Float key
+
+schema Probe scope ttl 1_min:
+    delta: Float
+
+rule normalised_reading:
+    Reading r
+->
+    let scaled = r.state * 100.0
+    let firing_at = now()
+    log info "raw {r.state}"
+    emit Probe delta: scaled
+    cache key: "last_fire" value: firing_at

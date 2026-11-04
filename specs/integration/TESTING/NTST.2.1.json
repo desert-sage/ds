@@ -1,0 +1,17 @@
+{
+  "id": "NTST.2.1",
+  "prefix": "NTST",
+  "doc": "TESTING.md",
+  "parent": "NTST.2",
+  "seq": 65,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NTST.2.1] A deterministic libds test has three moving parts: a clock the\ntest owns, a callback that records, and assertions made against what was\n**observed** rather than against engine internals.\n\nThe stream is the observation surface. The test registers one callback with a\npointer to a buffer of its own, drives the engine, and then inspects that\nbuffer -- the engine is never interrogated about what it did. What the test\nverifies is therefore exactly what a production integrator would see.\n\nBoth preparations happen before any schema is registered or any fact\nasserted, and that ordering is a requirement rather than tidiness\n([NTST.2.2]).\n\nOne practical caution: a bounded observation buffer that fills stops\nrecording, so a test that overruns one fails on a truncated\nhistory instead of on the behaviour it meant to check. Size it for the events\nthe test expects, or make filling it a loud failure.\n\n",
+  "refs": [
+    "NTST.2.2"
+  ],
+  "symbols": [
+    "ds_engine_set_stream_callback"
+  ]
+}

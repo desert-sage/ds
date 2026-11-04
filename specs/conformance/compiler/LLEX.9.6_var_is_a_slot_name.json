@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.9.6_var_is_a_slot_name",
+    "clauses": ["LLEX.9.6", "LSER.16.3.1"],
+    "category": "compiler",
+    "scenario": "[LLEX.9.6]: `var` and `pvar` are not in the language (the names are `variance` and `pvariance`, [LSER.16.3.1]), and `series_min`, `series_max` and `bytes_to_utf8` are not builtin names, so none of the five is a reserved word. A schema may name slots `var`, `pvar`, `series_min`, `series_max` and `bytes_to_utf8`, and a rule may read them. PATH PINNED: `dsc.reserved.llex_9_6_reserved_word`, generated from [LLEX.9.6]'s table, which does not list the five.",
+    "rules_ds": "schema Stat scope logical:\n    id: String key\n    var: Float mutable\n    pvar: Float mutable\n    series_min: Int mutable\n    series_max: Int mutable\n    bytes_to_utf8: Bool mutable\n\nrule r:\n    Stat s where s.var > s.pvar and s.series_min < s.series_max and s.bytes_to_utf8\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

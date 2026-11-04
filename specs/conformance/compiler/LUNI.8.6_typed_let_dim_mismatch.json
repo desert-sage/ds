@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.6_typed_let_dim_mismatch",
+    "category": "compiler",
+    "scenario": "LUNI.8.6 — typed-let annotation must match the RHS dimension when the RHS has a static dim. `let x: meter = r.temp` (annotation length vs RHS temperature) rejects with DS_VALIDATE_LET_DIM_MISMATCH. Drives `dsc.validate.luni_8_6_unit_annotation`'s dimension arm with no `implicit` bridge. An untyped right-hand side does not admit (LUNI.8.6_typed_let_untyped_rhs_refused), and a dimension product a unit annotation names does ([LUNI.8.4], LUNI.8.6_typed_let_unit_ok).",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    temp: celsius key\n\nrule bad:\n    Reading r\n->\n    let x: meter = r.temp\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_DIM_MISMATCH"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LSTR.11.3_over_capacity_assert_refused",
+    "category": "runtime",
+    "scenario": "[LSTR.11.3]: a value longer than its slot's `capacity` that reaches the slot at run time is a bounds refusal naming `CAP_VALUE_CAPACITY` ([RTCT.7.1]): the assert does not happen and the engine is intact ([RTCT.7.2]). The slot has `capacity 8` and the host asserts nine codepoints, so the assert returns `DS_ERR_CONTRACT_BREACH` (-710) and names the capacity. PATH PINNED: libds `rete_validate_slot_kinds` in `wm_rete.c`, which every path into working memory reaches through `ds_rete_wm_assert_ex` and which runs before the no-op probe, the identity retract and the intern acquire; the Mercury runtime's `ds.engine.host_assert` through `ds.fact.lstr_11_3_over_capacity`, which refuses the candidate before `wm_max`. A runtime that truncated the value, or stored it and reported afterwards, raises nothing here and the vector goes red.",
+    "rules_ds": "schema Line scope logical:\n    k: Int key\n    text: String capacity 8 mutable\n\nrule r:\n    Line\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "asserts": [
+            { "schema": "Line", "slots": { "k": 1, "text": "abcdefghi" } }
+        ]
+    }
+}

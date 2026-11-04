@@ -1,0 +1,9 @@
+{
+    "id": "LCRS.17.2_error_compiles",
+    "category": "compiler",
+    "scenario": "LCRS.17.2: a call to a `no response` service may bind `as`, so that its `CallError` carries the correlation, and an `error` continuation on it stays legal -- the failure is the one thing that comes back. Pin: the same call as LCRS.17.2_timeout_refused with an `error:` clause in place of the `timeout`, compiling. Path: the validator's continuation check passes `error`. The program also lowers, but `compile_ok` does not observe that the error sibling matches `CallError` on the literal `as`. The pair shows the refusal is the `timeout`'s alone.",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown as \"p\"\n        error:\n            log info \"put failed\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

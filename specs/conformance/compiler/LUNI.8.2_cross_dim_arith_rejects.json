@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.2_cross_dim_arith_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.8.2 — adding a mass literal to a temperature slot rejects with DS_VALIDATE_DIM_MISMATCH. Same dim-checking applies to `+` and `-` as to comparisons. Pin: `r.temp + 5_kilogram` is unambiguously a dimensional bug; PATH PINNED: `dsc.typecheck`'s `lexp_7_1a_arithmetic`, on the `dr_cross_dimension` that `dsc.types`'s `luni_8_1_combine` answers.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    temp: celsius key\n\nrule bad:\n    Reading r where (r.temp + 5_kilogram) > 100_celsius\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

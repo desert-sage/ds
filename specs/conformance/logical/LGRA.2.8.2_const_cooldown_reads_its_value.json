@@ -1,0 +1,22 @@
+{
+    "id": "LGRA.2.8.2_const_cooldown_reads_its_value",
+    "clauses": ["LGRA.2.8.1", "LCDB.3.2.1"],
+    "category": "logical",
+    "scenario": "[LGRA.2.8.2]: every construct that takes a duration accepts `time_expr`, so a rule's `cooldown` written as a `time` const is the window the const's value names. `r cooldown W`, `const W = 10_s`, logs `t.n`. Pin: set 0; assert Trig k=1 n=0; pump (`fire 0`); advance 5 s; set n=1, a mutable-slot change under the same key, so a new match with the same activation key ([LCDB.3.3.1]); pump (+5 s, inside the window: suppressed); advance 6 s; set n=2; pump (+11 s, past the window: `fire 2`). Messages are exactly ['fire 0', 'fire 2']. A window lowered from anything but the const's value moves the answer: one of 5 s or less logs ['fire 0', 'fire 1', 'fire 2'], one of more than 11 s logs ['fire 0']. PATH PINNED: `dsc.rete.rate_windows` resolving the NAME through `lgra_2_8_2_rate_window_ns` and `dsc.dstest.lgra_2_8_1_time_expr_ns`, then the window as `FN_RATE_ALLOW`'s `cool_ns` on the fire guard, in both runtimes.",
+    "rules_ds": "const W = 10_s\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown W:\n    Trig t\n->\n    log info \"fire {t.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "k": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fire 0", "fire 2"]
+    }
+}

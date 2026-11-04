@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.8.1_unbound_then_predecessor",
+    "category": "compiler",
+    "scenario": "LGRA.8.1 `binding?` against LGRA.8.5's sequence form, on the side that has no name to offer. Pin: `A` then `B b within 30_s` compiles when the PREDECESSOR is unbound. PATH PINNED: `dsc.parse`'s `lgra_8_1_parse_body` for the predecessor, with no binding, and `lgra_8_5_2_parse_then_line` for the follower. `compile_ok` does not observe the artefact, so this does NOT pin how lowering joins the two. The written `b` is referenced in the action because [LGRA.8.6] makes a written binding no one references an error.",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n    ts: Time\n\nschema B scope logical:\n    id: Int key\n    ts: Time\n\nrule r:\n    A\n    then B b within 30_s\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LGRA.5.8.10_assert_json_infinity_refused",
+    "category": "runtime",
+    "clauses": ["IDAT.3.3.9"],
+    "scenario": "[LGRA.5.8.10]: \"A host call that would put a non-finite `Float` into a `Json` value returns `DS_ERR_JSON_NONFINITE` ([NERR.6]) and changes nothing. The status is the whole refusal: the runtime records no event for it\". The host asserts a `Blob` whose `Json` slot is `{\"v\": Infinity}` (the fixture's reader is Python's, which reads `Infinity` as the float): refused with `DS_ERR_JSON_NONFINITE` (-217), with no fault event and no fact. A `Float` slot admits +Inf ([LEXP.4.2]); a `Json` value does not. What it discriminates: a runtime that builds the value and holds the infinity admits the assert, and the vector fails; one that refuses it as a TypeError or a BoundsError records an event and fails `no_fault_events`. PATH PINNED: on libds, pyds's `pyds_py_to_json_tree_at` builds the value through `ds_json_new_float` ([IDAT.3.3.9]), which refuses the infinity, so the engine is never called; on the Mercury runtime, the host hands over the finished term and `ds.engine.host_assert` refuses it through `ds.fact.slot_fault`'s `sr_json_nonfinite` (`ds.json.holds_non_finite`), writing no effect.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n    doc: Json mutable\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-217",
+        "message_contains": "a non-finite float, which a Json value does not hold",
+        "no_fault_events": true,
+        "fact_count_after": 0,
+        "asserts": [
+            { "schema": "Blob", "slots": { "id": 1, "doc": { "v": Infinity } } }
+        ]
+    }
+}

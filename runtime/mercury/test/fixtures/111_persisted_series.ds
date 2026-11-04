@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A negative: `persist:` is not in the v1 grammar, so `compile_corpus.py`
+# expects this file refused with DS_PARSE_GENERIC.
+use default
+
+schema Thermometer scope logical:
+    entity_id: String key
+    temperature: Float mutable
+    humidity: Float mutable
+
+schema Report scope ttl 1_h:
+    label: String
+    avg: Float
+    lo: Float
+    damp: Float
+
+series Thermometer.temperature (by: entity_id, persist: 1_h):
+    mean, min sliding 10_min
+
+series Thermometer.humidity (by: entity_id):
+    mean sliding 5_min
+
+rule report:
+    Thermometer t
+->
+    emit Report label: t.entity_id
+        avg: mean(t.temperature) ?? -1.0
+        lo: min(t.temperature) ?? -1.0
+        damp: mean(t.humidity) ?? -1.0

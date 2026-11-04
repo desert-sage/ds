@@ -1,0 +1,54 @@
+{
+  "id": "NCBK.6.4",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.6",
+  "seq": 349,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.6.4] **Async via fact assertion, not synchronous return.** The callback\ndispatches the request (sync HTTP, queue, thread pool — your choice) and returns\n`DS_OK_R`. The response arrives later: the integrator asserts a fact of the\nservice's response schema, or a `CallError`, via `ds_engine_assert`, setting its\n`corr` slot to the correlation ([LCRS.4.3.1]); sibling rules match on `corr` to\nconsume it. For a service declaring `no response` the integrator asserts\nnothing on success and a `CallError` on failure ([LCRS.17.1]).\n\n",
+  "refs": [
+    "LCRS.17.1",
+    "LCRS.4.3.1"
+  ],
+  "symbols": [
+    "DS_OK_R"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_keeps_one_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A HOST ASSERT KEEPS ONE ANSWER PER CORRELATION with the arrival's sweep before it, over every state. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_victims",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The supersede applied when an answer is asserted, before the answer. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrive_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The supersede on the host assert, before the answer enters. LESS than the clause: the callback and the stream are not modelled. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrive_timed_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A data input arriving keeps the invariant: an assert through the arrival's sweep, the TTL sweep and the event; a retraction through the TTL sweep and the event. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      }
+    ]
+  }
+}

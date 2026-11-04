@@ -1,0 +1,72 @@
+{
+  "id": "LRST.1.2",
+  "prefix": "LRST",
+  "doc": "RESTART.md",
+  "parent": "LRST.1",
+  "seq": 68,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LRST.1.2] The expression evaluates against the rule's LHS\nbindings at activation start per [LCCO.5.4]. The evaluated value\nbecomes the synthesized fact's correlation key.\n\nA key that evaluates to the empty `String` is no key: the engine **must not**\nsupersede anything for it, exactly as for a declaration with no `as`. The\ncompiler **must** reject an `as` whose expression is the literal `\"\"`, with\n`DS_VALIDATE_AS_EMPTY_KEY`. A computed key that evaluates to `\"\"` compiles and\nsupersedes nothing.\n\nOn a `call`, the engine **must** give a call whose key evaluates to `\"\"` the\ncorrelation it gives a call with no `as` ([LCCO.3.4]), so that the call's\ncorrelation is never empty ([LCRS.3.1]). That value is unique to the firing,\nso the call supersedes nothing.\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LCCO.5.4",
+    "LCRS.3.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__empty_corr_call_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A call whose `as` evaluates to \"\" supersedes nothing: its issue is the identity on the net. The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__empty_corr_retracts_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The host's answers with the empty correlation retract nothing, computed; the clause's generated correlation is the call's. The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__empty_corr_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The clause's \"supersedes nothing\" for a key that evaluates to \"\". The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__no_carrier_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The clause's \"supersedes nothing\" for a key that evaluates to \"\". The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__victims",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The clause's \"supersedes nothing\" for a key that evaluates to \"\". The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lrst_1_2__generated_supersedes_nothing",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The clause's last sentence: a call whose `as` evaluates to \"\" takes the generated correlation, unique to the firing, and supersedes nothing -- it retracts no answer when it fires and none when its answer arrives. Bounded: two calls, the one with a generated correlation uncooled, two firings each, TTLs of 2 and 3 ticks in either order; the sitecorr teeth engine, one correlation per call site, violates it. The compile-time refusal of a literal \"\" and the key of a synthesized fact outside a call are not modelled."
+      }
+    ]
+  },
+  "errors": [
+    "DS_VALIDATE_AS_EMPTY_KEY"
+  ]
+}

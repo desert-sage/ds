@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.24.3_entry_stamp_is_the_first_step",
+    "category": "logical",
+    "scenario": "[LGRA.24.3]: a block fact enters at the engine's first step, under that step's sample, so its entry stamp is the step's monotonic sample ([LTIM.2.8.6]), not the instant of the load. The test clock is set to 100 s before anything steps; the first step is the pump, which applies the block and then evaluates the rules. `fresh` matches a `Ping` only `within 2_s` of its entry stamp ([LTIM.2.7.1], read under the pump's sample); `any` matches every `Ping`, so the pump is shown to have run with the fact present. (`dwell` would say the same, but it is defined on a `logical` schema only ([LFAC.1.2.4]), and a block places `scope explicit` facts.) Pin: `fresh` then `any`. A runtime that applied the block at load, stamping the fact 0, is 100 s past the window at the pump and logs `any` alone. PATH PINNED: the first step's application under its sample -- libds's `ds_engine_clock_step` into `dsc/loader.c`'s `ds_engine_initial_apply`, a nested `ds_engine_assert` that takes the step's held sample as its entry stamp; the Mercury runtime's `clock_step` into `ds.engine.lgra_24_3_apply`, `host_assert_core` with `Own = no`.",
+    "rules_ds": "schema Ping scope explicit:\n    k: Int\n\ninitial:\n    Ping k: 1\n\nrule fresh:\n    Ping within 2_s\n->\n    log info \"fresh\"\n\nrule any:\n    Ping\n->\n    log info \"any\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 100000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fresh", "any"]
+    }
+}

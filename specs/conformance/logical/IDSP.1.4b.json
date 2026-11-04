@@ -1,0 +1,26 @@
+{
+    "id": "IDSP.1.4b",
+    "category": "logical",
+    "scenario": "A rule firing `call` produces an action_call stream event. Pins call dispatch observability through the stream sink (alongside the typed call cb). Pins IDSP.1.4 \u2014 call dispatch observable via stream sink.",
+    "rules_ds": "service svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end"
+        ]
+    }
+}

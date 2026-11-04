@@ -1,0 +1,14 @@
+{
+  "id": "NADP.1.1",
+  "prefix": "NADP",
+  "doc": "ADAPTERS.md",
+  "parent": "NADP.1",
+  "seq": 56,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NADP.1.1] An adapter is **integrator code** that:\n\n1. Connects to an external system at startup\n   (subscribes to HA's state machine, opens an MQTT\n   client, schedules a weather-fetch loop, etc.).\n2. Registers libds callbacks for the action verbs\n   the source system handles: `call` for service dispatch, `cache_*` for a\n   storage backend, the stream callback for cross-tier bridging.\n3. On source-system events, translates the event to\n   slot values and calls `ds_engine_assert` to drive\n   facts into working memory.\n4. On registered callbacks firing, performs the\n   adapter-side work. Where the service answers, it asserts\n   response facts via `ds_engine_assert` once the call that fired\n   the callback has returned ([NADP.4.2.2]).\n5. Pumps the engine on whatever cadence suits the\n   integrator's runtime (asyncio loop, dedicated\n   thread, embedded scheduler, anything).\n\n",
+  "refs": [
+    "NADP.4.2.2"
+  ]
+}

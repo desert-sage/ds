@@ -1,0 +1,15 @@
+{
+    "id": "LFAC.2.5.1_json_negative_zero",
+    "category": "runtime",
+    "scenario": "[LFAC.2.5.1], with [LGRA.5.8.8]: `{\"v\": 0.0}` and `{\"v\": -0.0}` are one identity, so one fact. PATH PINNED: the fold where the value comes into being. Both payloads hold +0.0 by the time either is compared (libds `json.c` `json_new_float_node`; Mercury `ds.engine.host_slot_value` through `ds.json.unsigned_zeros`), so the identity-key comparison and its hash (libds `rete/wm_rete.c` `idkey_equal`, `ds_json_deep_equal`'s float arm; Mercury `=` on `j_float`) see two equal terms. ⚠ NOT PINNED: whether that comparison answers `0.0 == -0.0` as IEEE does. No `Json` value holds a `-0.0` for the comparison to meet.",
+    "rules_ds": "schema Reading scope logical:\n    payload: Json key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Reading", "slots": { "payload": { "v": 0.0 } } },
+            { "schema": "Reading", "slots": { "payload": { "v": -0.0 } } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

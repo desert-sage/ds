@@ -1,0 +1,53 @@
+{
+  "id": "NCBK.10.4",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.10",
+  "seq": 530,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.10.4] **`ds_engine_assert_external(engine, bytes, len)`** asserts a\n`FactExternal`, a published fact from another tier. The engine checks its\n`schema_hash`, decodes it, and resolves its fact references as [RFCS.23.7]\nstates. Each fact it asserts gets this engine's own `event_id` ([NCBK.10.3])\nand takes its lifetime from the receiving schema ([RFCS.23.6]).\n\nThe engine must refuse the whole `FactExternal`, asserting nothing, with:\n\n| Status | When |\n|---|---|\n| `DS_ERR_PARSE` | the bytes are not a `FactExternal`, a text field at any depth holds U+0000 ([LSTR.1.5]) or is not well-formed UTF-8, a `Json` field's text does not parse, or its references nest deeper than [RFCS.23.4] allows |\n| `DS_ERR_SCHEMA_UNKNOWN` | it names a schema the program does not declare |\n| `DS_ERR_SCHEMA_HASH_MISMATCH` | its `schema_hash` differs from the program's schema of that name ([RFCS.23.3]) |\n| `DS_ERR_FACT_REF_CONFLICT` | a nested reference meets a live fact with the same identity key and different values ([RFCS.23.7]) |\n| `DS_ERR_SLOT_TYPE_MISMATCH` | a field's kind is not its slot's, a reference names another schema than its slot's ([NFCT.2.3]), `KIND_NULL` is in a slot not declared `T?` that holds no fact reference ([LNUL.3.1], [RFCS.23.7]), or a `Json` field's document is `null` at its root, in any slot: a `null` slot travels as `KIND_NULL` ([RFCS.23.4], [LNUL.3.4]) |\n| `DS_ERR_NAN_REJECTED` | a `Float` field is a NaN ([LEXP.4.2]) |\n| `DS_ERR_JSON_LIMIT` | a `Json` field is over one of its limits ([LGRA.5.8.6]) |\n| `DS_ERR_TIME_RANGE` | a `Date` field is outside its range ([LTIM.1.2.2]), a fact's TTL deadline would fall outside the `Time` range ([RFCS.6.7]), or the call's sample would give a held seed a deadline outside it ([NLFC.9.5]) |\n| `DS_ERR_INVAL` | a `TimeZoneOffset` fact it holds is malformed ([LTIM.10.9]) |\n| `DS_ERR_CONTRACT_BREACH` | a field's value is longer than its slot's `capacity` ([LSTR.11.3]) |\n\nEach holds at any depth. The engine must judge every row before the first assert\nand before it takes the call's sample, so a refused call is not a step\n([LTIM.2.8.4]). The status is the whole refusal: the engine records no event for\nit, a `BoundsError` included ([RFCS.24.1]). `capacity` is outside `schema_hash`\n([RFCS.23.3]), so two tiers can declare one slot with different capacities.\n\n**Between its first assert and its last, only a failed allocation ([NERR.4]) or\na halt an assert raises ([LERR.1.4.7]) can stop a delivery.** The call returns\nthat status ([NCBK.2.9]) and the engine asserts nothing more. The engine must not\ntake back a fact it has already asserted: the stream has delivered its event.\nAfter a failed allocation those facts stay live and the engine runs on. After a\nhalt the engine's state is what [LERR.1.4.7] says. A non-OK status from the\nstream callback stops nothing ([NCBK.1.5]).\n\n**A `FactExternal` is trusted input** ([RDSC.9.9]).\nThe integrator **must** accept one only from a tier it trusts, and the engine\ndoes not examine it for malicious construction. The engine still refuses every\nrecord the table above names, whatever its bytes, and is never corrupted by\none ([RDSC.9.9]).\n\n",
+  "refs": [
+    "LEXP.4.2",
+    "LGRA.5.8.6",
+    "LNUL.3.1",
+    "LNUL.3.4",
+    "LSTR.1.5",
+    "LTIM.1.2.2",
+    "NFCT.2.3",
+    "RDSC.9.9",
+    "RFCS.23.3",
+    "RFCS.23.4",
+    "RFCS.23.6",
+    "RFCS.23.7",
+    "NCBK.10.3",
+    "LERR.1.4.7",
+    "LSTR.11.3",
+    "LTIM.10.9",
+    "LTIM.2.8.4",
+    "NCBK.1.5",
+    "NCBK.2.9",
+    "NERR.4",
+    "NLFC.9.5",
+    "RFCS.24.1",
+    "RFCS.6.7"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH",
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_FACT_REF_CONFLICT",
+    "DS_ERR_INVAL",
+    "DS_ERR_JSON_LIMIT",
+    "DS_ERR_NAN_REJECTED",
+    "DS_ERR_OOM",
+    "DS_ERR_PARSE",
+    "DS_ERR_SCHEMA_HASH_MISMATCH",
+    "DS_ERR_SCHEMA_UNKNOWN",
+    "DS_ERR_SLOT_TYPE_MISMATCH",
+    "DS_ERR_TIME_RANGE"
+  ],
+  "symbols": [
+    "ds_engine_assert_external"
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "id": "LNUL.8.4",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.8",
+  "seq": 262,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.8.4] **Surface + JSON absence.** Schema/adapter syntax is `T?`.\nJSON's **two** missings are\npinned distinct: `has(path) == false` is *absent*; a path present with JSON\n`null` **reads as `null`**; `?.` on an absent path yields `null`. `has()` is\nthe only absence test; a leaf-read of a present-JSON-`null` is a value\n(`null`), not absence.\n\nA path does not resolve where a segment addresses a value that is not its\ncontainer: a key into an array or a scalar, or an index into an object or a\nscalar. Such a path is absent, as a missing key is: it reads as `null`, and\n`has` of it is `false`.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_5__parse_is_a_value_or_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A failed fallible conversion is absence: `s :: Bool?` is a Bool or `null` for every text, never a fault. The clause's fixtures pin the failed parse; its text names the `T?` surface and JSON's two missings, which is why the tie is partial."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__parse_is_a_value_or_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "`s :: Int?` is an Int or `null` for every text, never a fault: a failed fallible conversion read as the clause's absence. The clause's fixtures pin the failed parse; its text names the `T?` surface and JSON's two missings, which is why the tie is partial."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__parse_is_a_value_or_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "`s :: Float?` is a Float or `null` for every text, never a fault: a failed fallible conversion read as the clause's absence, as its Int and Bool twins are. The clause's fixtures pin the failed parse (an out-of-range parse among them); its text names the `T?` surface and JSON's two missings, which is why the tie is partial."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lerr_1_3_1__absence_never_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A path read is a value for every path and every document: absence is `null`, never a fault."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_6_1__has",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one absence test: whether the path resolves, a Bool for every document -- true of a path present with a JSON null, false of one that does not resolve. A `null` root (a `Json?` slot holding none) is not a document and not the clause's case: [LNUL.5.1] refuses an unnarrowed `Json?` under `has`, a builtin that demands a value of a particular kind (`DS_VALIDATE_NULLABLE_UNNARROWED`, compiler/LNUL.5.1_has_on_unnarrowed_json_refused), so no well-formed program reaches it, and [LNUL.4.1]'s propagation is for operators and does not apply. Should one reach it, both runtimes raise a type mismatch, and so does the model: a trap, as for any root that is not a document."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__a_segment_into_a_leaf_is_absent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's second paragraph: a key into a scalar leaf or an array, and an index into a leaf or an object, leave the path unresolved -- absence and `null`, not a TypeError -- for every key, index, remaining path and value. Both runtimes agree: libds's `path_step` misses, and Mercury's `ds.json.resolve` has no clause for either."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__absent_reads_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An unresolved path reads as `null`, for every path and document that does not resolve."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__has_separates_the_missings",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The two missings are distinct and `has` is what separates them, for every path and document: `has` is a Bool, whether the path resolves; when false the read is `null` (absence); when the path resolves to a JSON null `has` is true and the read is `null` as well, a value. The read alone cannot tell the two apart and `has` can."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__member",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The member of an object under a key, if it has one."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__parsed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "What a fallible parse yields: the value it found, or `null` for a text it does not accept -- absence, never a fault, the failed fallible conversion of [LERR.1.3.1] read as this clause's absence. Partial because the clause's text states the `T?` surface and JSON's two missings and its fixtures the failed parse."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__path",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A path read over its evaluated root: of a `Json` value the read of its resolution; of `null` (a `Json?` slot holding none) `null`; of a fault the fault. Of a value of any other kind a trap here and not DS: the compiler refuses a path past a slot that is not `Json` ([LGRA.5.8.5]), and the fixture lowering admits none."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__present_null_reads_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A path present with a JSON null reads as `null` too, the same value, for every path and document that resolves to one."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__read",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a path read yields: an unresolved path `null` (absence); a path present with a JSON null `null` as a value, the one null; a scalar leaf its value, of the kind it was written with; an array or an object the sub-document, a `Json` value."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__resolve",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether a path resolves, and to what: segment by segment, a key into the object's member under it and an index into the array's element at it; a key with no member, an index past the end, and either segment into a value that is not the container it addresses leave the path unresolved, as the clause's second paragraph states."
+      }
+    ]
+  }
+}

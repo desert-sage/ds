@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.10.1.3_outer_action_after_nested_withdraw",
+    "category": "compiler",
+    "scenario": "LGRA.10.1.3 with LGRA.10.1.4: an action of the outer RHS after the one containing a nested `withdraw t` may still read `t`, because the body runs later. The `log` after the `call` reads `{t.v}`. Compiles. PATH PINNED: `dsc.validate`'s outer walk, where a nested `withdraw` counts as a reference and never starts the outer count (`withdrawn_step` inserts only a top-level one). Refusing this program is the break. Twin: LGRA.10.1.3_nested_body_reads_after_its_withdraw.",
+    "rules_ds": "schema NotifySendReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice notify.send:\n    kwarg n: Int\n    response NotifySendReply\n\nschema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    call notify.send n: 1 cooldown: 30_s\n        on response.status == 200:\n            withdraw t\n    log info \"still here {t.v}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

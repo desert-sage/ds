@@ -1,0 +1,54 @@
+{
+  "id": "LNUL.4.10",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 64,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.10] **A `null` operand does not absorb a fault.** For every operator other than\n`and` / `or` ([LNUL.4.2]) and `??` ([LNUL.8.9]), and for the arguments of every builtin\ncall, the engine must yield the result of evaluating every operand. If an operand faults,\nas [LNUL.4.2] defines it, the expression yields a fault whatever the other operands are,\n`null` included; [LNUL.4.1]'s propagation applies only when no operand faults.\n\nWhen several operands fault, the expression yields one, chosen by [LNUL.4.2]'s order. An\noperand's position never enters, so `a + b` and `b + a` yield the same fault on every\ninput. Only that fault reaches a surface ([LERR.1.4.11]). The engine may evaluate the\noperands in any order.\n\nA `null` operand still prevents the operation itself ([LNUL.9.3]), and a fault comes only\nfrom evaluating an operand or from performing the operation. So `x / z` with `x` null and\n`z` zero is `null`: the division is not performed, and there is no zero divisor to refuse.\n\n",
+  "refs": [
+    "LERR.1.4.11",
+    "LNUL.4.1",
+    "LNUL.4.2",
+    "LNUL.8.9",
+    "LNUL.9.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_10__cast_of_a_trap_is_the_trap",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cast: an operand that faults is the fault, for either form and every target."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_10__null_beside_a_trap_is_the_trap",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A trap on either side of a binary operator is the expression's answer whatever the other operand is, null included, for every operator over values. The choice between two faults by [LNUL.4.2]'s kind order, and the arguments of a builtin call, are not modelled: the evaluator has one trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_10__tag_test_of_a_trap_is_the_trap",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The unary case: an operand of `is` or `is not` that faults is the expression's answer, for every subject and either polarity."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_9_3__null_before_the_divisor",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The last paragraph: a null operand prevents the operation, so null / 0, null // 0 and null % 0 are null and no zero divisor is refused, on either side and for every arithmetic operator of the fragment -- the clause's own example, `/`, included."
+      }
+    ]
+  }
+}

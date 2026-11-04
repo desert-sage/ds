@@ -1,0 +1,17 @@
+{
+    "id": "LSCP.2.4.1.after_timer",
+    "category": "temporal",
+    "scenario": "LSCP.2.4.1 / LSCP.3.1 steps 6-7 -- an activation with an `after` tail keeps its `scope activation` fact until the timer fires, then retracts it. `gated` emits a Lock and arms `after 1_s`; the Lock lives across the async tail, so `watch` fires on the first pump and emits a ttl Seen (which a Lock retracted at the synchronous end of the RHS could not produce). At 2_s the follow-up fires, emits Done, and discharges its timer, which is the completion path: the Lock goes with it (LSCP.3.3, idempotent). Pin: fact_count 3 -- Trig + Seen + Done. 2 would be the Lock retracted too early (no Seen); 4 would be the Lock never retracted.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Lock scope activation:\n    entity_id: String\n\nschema Seen scope ttl 1_h:\n    entity_id: String\n\nschema Done scope ttl 1_h:\n    entity_id: String\n\nrule gated:\n    Trig\n->\n    emit Lock entity_id: \"x\"\n    after 1_s:\n        emit Done entity_id: \"x\"\n\nrule watch:\n    Lock l\n->\n    emit Seen entity_id: l.entity_id\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 3
+    }
+}

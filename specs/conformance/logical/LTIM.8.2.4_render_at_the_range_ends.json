@@ -1,0 +1,22 @@
+{
+    "id": "LTIM.8.2.4_render_at_the_range_ends",
+    "clauses": ["LTIM.8.2.4", "LGRA.2.9.6.4"],
+    "category": "logical",
+    "scenario": "[LTIM.8.2.4] and [LGRA.2.9.6.4]: `::String` and the `%` fields write the wall clock at the value's offset, and that wall clock is computed from the UTC day and its remainder, never as `utc_ns + offset`, which passes the int64 range within |offset| of either end and wraps to a date at the other end (undefined behaviour in C). Two `TimeZoneOffset` rows ([LTIM.10.7]): `Minus8`, -08:00, over every instant before the epoch, and `Plus8`, +08:00, over every instant from it. `show` binds `z = e.t.local(e.zone)` and writes it through `::String` and through `%Y-%m-%dT%H:%M:%S%z`. Fact 1 is 1677-09-21T03:00:00Z in `Minus8`: `1677-09-20T19:00:00-08:00`, a wall-clock date before the first `Time`'s, which is harmless because these write a `Time`'s text and not a `Date`. Fact 2 is 2262-04-11T20:00:00Z in `Plus8`: `2262-04-12T04:00:00+08:00`. A runtime that forms the sum writes a date in 2262 for the first and 1677 for the second. The instants come from `Int` slots ([LTIM.1.1.3]); `.local` gives the offsets, as DS reads no temporal text ([LTIM.14]). PATH PINNED: libds `fmt_iso8601` (rete/adapters.c) and `render_time` (rete/eval.c), both through `ds_rete_local_split`; Mercury `ds.format.civil_fields`, read by `render_iso8601` and `render_time`.",
+    "rules_ds": "schema E scope logical:\n    id: Int key\n    zone: String mutable\n    t: Time mutable\n\nrule show:\n    E e\n->\n    let z = e.t.local(e.zone)\n    let s = z::String\n    log info \"{e.id} {s} {z:%Y-%m-%dT%H:%M:%S%z}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Minus8", "valid_from": -9223372036854775808, "valid_until": 0, "offset_s": -28800 } },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Plus8", "valid_from": 0, "valid_until": 9223372036854775807, "offset_s": 28800 } },
+            { "op": "assert", "schema": "E", "slots": { "id": 1, "zone": "Minus8", "t": -9223362000000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "E", "slots": { "id": 2, "zone": "Plus8", "t": 9223358400000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1 1677-09-20T19:00:00-08:00 1677-09-20T19:00:00-0800",
+            "2 2262-04-12T04:00:00+08:00 2262-04-12T04:00:00+0800"
+        ]
+    }
+}

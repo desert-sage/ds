@@ -1,0 +1,14 @@
+{
+    "id": "LCRS.8.1d",
+    "clauses": ["RLOW.4.6.6.5"],
+    "category": "compiler",
+    "scenario": "Call-level cooldown inside a rule that also carries a rule-level cooldown rejects with DS_VALIDATE_CALL_COOL_INSIDE_RULE_COOL — the two rate-limit surfaces compose unpredictably and the spec disallows nesting them on the same activation chain. Pin: `rule r cooldown 5_min: ... -> call svc.foo cooldown: 2_min` rejects (rule already throttles; call-level cooldown is redundant or contradictory). The compile-time error keeps the per-activation rate behavior unambiguous.",
+    "rules_ds": "service svc.foo:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r cooldown 5_min:\n    Trig\n->\n    call svc.foo cooldown: 2_min\n",
+    "libraries": {
+        "ha": "service svc.foo:\n    kwarg dummy: Int\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CALL_COOL_INSIDE_RULE_COOL"
+    }
+}

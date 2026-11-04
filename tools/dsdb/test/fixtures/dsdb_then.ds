@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# A `then` compares each step's `ts` (LTHE.4.5), so it shows what `ts` a
+# fact-file row gave the engine. Batch reads the `Pair` it publishes; a
+# published fact is in no working memory of this tier (LTIE.4.3), so a
+# session reads the `Paired` it emits. Compiled by the branch's own Mercury
+# dsc in the js gate.
+
+use default
+
+schema Reading:
+    id: String
+    ts: Time
+
+schema Pair:
+    id: String
+
+schema Paired:
+    id: String
+
+rule follows:
+    Reading a then Reading b within 3_s where b.id == a.id
+->
+    publish Pair id: b.id
+    emit Paired id: b.id

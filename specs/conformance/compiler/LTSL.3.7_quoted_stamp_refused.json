@@ -1,0 +1,11 @@
+{
+    "id": "LTSL.3.7_quoted_stamp_refused",
+    "clauses": ["LTSL.3.7"],
+    "category": "compiler",
+    "scenario": "[LTSL.3.7]: an absolute timeline coordinate is a `calendar.time` call whose arguments fold, and a coordinate of any other form is DS_VALIDATE_TEST_BAD_TIMESTAMP. A quoted ISO-8601 stamp, `at \"2026-06-18T14:00:00Z\":`, is refused, offset or not: DS reads no temporal text ([LTIM.14]). PATH PINNED: `dsc.dstest.ltsl_3_1_coordinate`, whose `ltim_14_3_calendar_fold` fails on a string.",
+    "rules_ds": "schema Ping scope logical:\n    id: Int key\n\nrule seen:\n    Ping p\n->\n    log info \"seen {p.id}\"\n\ntest \"a quoted stamp\":\n    inputs:\n        at \"2026-06-18T14:00:00Z\":\n            Ping id: 1\n    produces:\n        activated seen\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_BAD_TIMESTAMP"
+    }
+}

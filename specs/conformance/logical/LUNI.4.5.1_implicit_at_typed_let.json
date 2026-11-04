@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.4.5.1_implicit_at_typed_let",
+    "category": "logical",
+    "scenario": "[LUNI.4.5.1]'s boundary 1: an `implicit` formula auto-applies at a typed `let` whose annotation's dimension differs from its value's. `hz_tick` bridges `frequency` and `period`; `let p: tick = s.freq` on a `Hz` slot holding 4 is `hz_to_tick(4)` = 1.0 / 4.0 = 0.25, exact, and `p` is emitted into a `tick` slot, where `quarter` matches it against 0.25_tick. Unconverted, the slot holds 4 and `quarter` does not fire. PATH PINNED: `luni_4_5_1_let_value` in dsc.rete, which makes a pure typed `let`'s value the formula's call before it is inlined, then `lgra_9_8_11_formula_call`; the emit itself converts nothing, because the `let` has its annotation's type ([LUNI.8.6]).",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\nunit dimension period storage float64 base tick\nunit tick: period\n\nunit formula hz_tick inverting implicit:\n    hz_to_tick(x: Hz): tick  = 1.0 / x\n    tick_to_hz(x: tick): Hz  = 1.0 / x\n\nschema Signal scope logical:\n    id: String key\n    freq: Hz mutable\n\nschema Wave scope logical:\n    id: String key\n    p: tick mutable\n\nrule to_wave:\n    Signal s\n->\n    let p: tick = s.freq\n    emit Wave logical id: s.id p: p\n\nrule quarter:\n    Wave w where w.p == 0.25_tick\n->\n    log info \"quarter\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Signal", "slots": { "id": "a", "freq": 4.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["quarter"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LDTL.5.4",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.5",
+  "seq": 233,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "LIVE deadline heap",
+  "text": "### LIVE deadline heap [LDTL.5.4]\n\nThe deadline heap exists only under `dynamic_ttl`. Its presence or absence is\nwhat separates the two LIVE tick paths.\n\nIn LIVE **without** `dynamic_ttl`: there is no heap, and the TTL tick is\nO(expired × log n_ttl_schemas + n_ttl_schemas) ([LDTL.6.1]). What the engine\nreserves before the transition to LIVE is each schema's TTL queue ([LDTL.3.1]),\nnot a heap.\n\nIn LIVE **with** `dynamic_ttl`: the engine reserves the heap before the\ntransition to LIVE, inserting a deadline is O(log N_ttl), and the TTL tick is\nO(expired × log N_ttl) ([LDTL.4.2]).\n\nBoth paths are bounded and neither allocates during LIVE, which is what\n[RTCT.12.4] requires of the pump.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "LDTL.3.1",
+    "LDTL.4.2",
+    "LDTL.6.1",
+    "RTCT.12.4"
+  ]
+}

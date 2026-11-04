@@ -1,0 +1,21 @@
+{
+    "id": "LEXP.7.6.float_composition",
+    "category": "logical",
+    "scenario": "With a Float operand, `%` is the exact truncated remainder moved to the divisor's sign and `//` is derived from it, as CPython 3.12's float.__mod__ / __floordiv__ ([LEXP.7.6], [LEXP.7.5]). One rule per vector, each firing iff the result equals CPython's, every expected value printed under python:3.12 and never derived from a runtime; the large pairs come from a seeded search (seed 1602), |a/b| > 2^53. Operands are slots, so nothing folds at compile time. PATH PINNED: the Float arm of DS_RETE_BINOP_IDIV / DS_RETE_BINOP_MOD in runtime/src/libds/rete/eval.c (float_divmod over exact_fmod), and ds.eval's arith(op_floordiv) / arith(op_rem) (lexp_7_5_float_floordiv / lexp_7_6_float_mod over exact_fmod). WHAT EACH VECTOR PINS against a runtime using the formula a - b*floor(a/b), floor(a/b): the two large `%` vectors (it answers 0.0); the rest it gets right, and they pin the composition's ordinary cases. A runtime with no Float arm gives a type error on every vector. Pin: one fact, all eleven rules fire, in source order.",
+    "rules_ds": "schema T scope logical:\n    entity_id: String key\n    five_half: Float mutable\n    two: Float mutable\n    n75: Float mutable\n    tenths3: Float mutable\n    tenth: Float mutable\n    a1: Float mutable\n    b1: Float mutable\n    m1: Float mutable\n    d1: Float mutable\n    a2: Float mutable\n    b2: Float mutable\n    m2: Float mutable\n    d2: Float mutable\n    seven: Int mutable\n    two_half: Float mutable\n\nrule mod_5_5_by_2:\n    T t where (t.five_half % t.two) == 1.5\n->\n    log info \"a\"\n\nrule mod_neg_7_5_by_2:\n    T t where (t.n75 % t.two) == 0.5\n->\n    log info \"b\"\n\nrule floordiv_neg_7_5_by_2:\n    T t where (t.n75 // t.two) == -4.0\n->\n    log info \"c\"\n\nrule mod_0_3_by_0_1:\n    T t where (t.tenths3 % t.tenth) == 0.09999999999999998\n->\n    log info \"d\"\n\nrule floordiv_0_3_by_0_1:\n    T t where (t.tenths3 // t.tenth) == 2.0\n->\n    log info \"e\"\n\nrule mod_large_1:\n    T t where (t.a1 % t.b1) == t.m1\n->\n    log info \"f\"\n\nrule floordiv_large_1:\n    T t where (t.a1 // t.b1) == t.d1\n->\n    log info \"g\"\n\nrule mod_large_2:\n    T t where (t.a2 % t.b2) == t.m2\n->\n    log info \"h\"\n\nrule floordiv_large_2:\n    T t where (t.a2 // t.b2) == t.d2\n->\n    log info \"i\"\n\nrule mod_int_by_float:\n    T t where (t.seven % t.two_half) == 2.0\n->\n    log info \"j\"\n\nrule floordiv_int_by_float:\n    T t where (t.seven // t.two_half) == 2.0\n->\n    log info \"k\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": {
+                "entity_id": "t", "five_half": 5.5, "two": 2.0, "n75": -7.5,
+                "tenths3": 0.3, "tenth": 0.1,
+                "a1": 4.627487705881677e+18, "b1": -8.270687598131394,
+                "m1": -0.9934620030826427, "d1": -5.595045939018626e+17,
+                "a2": -1.013116706381308e+18, "b2": -1.4307167942600465,
+                "m2": -0.9473249047597321, "d2": 7.0811827361353e+17,
+                "seven": 7, "two_half": 2.5 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["mod_5_5_by_2", "mod_neg_7_5_by_2", "floordiv_neg_7_5_by_2", "mod_0_3_by_0_1", "floordiv_0_3_by_0_1", "mod_large_1", "floordiv_large_1", "mod_large_2", "floordiv_large_2", "mod_int_by_float", "floordiv_int_by_float"]
+    }
+}

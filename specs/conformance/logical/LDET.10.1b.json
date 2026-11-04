@@ -1,0 +1,16 @@
+{
+    "id": "LDET.10.1b",
+    "clauses": ["LFST.5.3", "LFST.12.1"],
+    "category": "logical",
+    "scenario": "`seq` is per-stream monotonic and gap-free ([LFST.5.3], [LFST.12.1]; LDET.10.1, the id, is a tombstone). Multiple events from one engine session arrive with `seq` increasing by exactly one.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"first\"\n    log info \"second\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "expected_seq_step": 1
+    }
+}

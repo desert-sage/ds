@@ -1,0 +1,43 @@
+{
+    "id": "LSIG.1.4.1_golden_or_2",
+    "clauses": ["LSIG.1.4.1", "LSIG.2.2.4"],
+    "category": "logical",
+    "scenario": "Golden vector OR-2 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: a steady rate over the (t-W, t] edge count. `onset_rate sliding 20s` with rising edges at 5, 10, 15, 20 and 25 s (falling between), read at 26 s. The edges in (6, 26] are 10, 15, 20 and 25 (the edge at 5 is at or below t-W = 6 and excluded), so N+ = 4; elapsed is 26 - 5 = 21 s, capped at W = 20 s; 4/20 = 0.2 Hz. At 26 s a `Probe` arrives and `read` logs the binding's `onset_rate` ([NSBK.6.3]).",
+    "rules_ds": "use default\n\nschema Door scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Door.state:\n    onset_rate sliding 20s\n\nrule read:\n    Probe\n    Door d\n->\n    log info \"{d.onset_rate}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 6000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 11000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 15000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 16000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 21000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 25000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 26000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0.2"]
+    }
+}

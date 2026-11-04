@@ -1,0 +1,12 @@
+{
+    "id": "LGRA.2.6",
+    "clauses": ["LLEX.8.2.1", "LGRA.2.10.3"],
+    "category": "compiler",
+    "scenario": "[LLEX.8.2.1]: `@` \"is lexed as a single-character token `@` and is reserved: any parser production sees it as an error\". In an operator position, `t.v @ 5`, the parser refuses it with DS_PARSE_GENERIC. A compiler that gives it DS_LEX_GENERIC fails this. PATH PINNED: `dsc.driver.parse_front_code`, which gives a parse failure at the `@` token the parser's code.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v @ 5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 5
+    }
+}

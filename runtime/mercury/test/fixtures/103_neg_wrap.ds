@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Negating INT64_MIN wraps to INT64_MIN ([LEXP.7.13.1], [LEXP.7.10]).
+# `-n == n` holds only for 0 and INT64_MIN, and `boundary` requires `n < 0`,
+# so both rules firing is the wrap. The guards are in `where` position, the
+# channel the runtime differential compares.
+
+use default
+
+
+schema Big scope logical:
+    entity_id: String key
+    n: Int mutable
+
+rule negation_wraps:
+    Big b where -b.n == b.n
+->
+    log info "neg wraps"
+
+rule boundary:
+    Big b where b.n < 0
+->
+    log info "negative"

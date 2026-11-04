@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.4.null_tests_over_every_value_kind",
+    "category": "logical",
+    "scenario": "[LNUL.4.4]: `is null` and `is not null` are total and answer for every value. Only null is null: a present value of any kind is not, the ones a sentinel reading would confuse with absence included (`false`, Int `0`, Float `0.0`, the empty String, [LNUL.7.1]). One V fact holds a null Int and six present values in nullable slots: true, false, 0, 0.0, \"\" and \"x\". Each slot has an `_is_null` rule and an `_is_not_null` rule. `n_is_null` fires and every present slot's `_is_not_null` fires. `dead_rules_expected` requires the other seven never to: a runtime treating `false`, `0`, `0.0` or `\"\"` as absent fires that slot's `_is_null`. Because the test is total, each slot fires exactly one of its pair; a test that propagated null would fire neither of `n`'s. `runtime/LNUL.4.4a`, `4.4b` and `4.4d` pin the same test over a Float slot alone. Agenda order is source order ([LDET.5.4]). Path: the IsTestExpr arm with IS_SUBJECT_NULL, negated for `is not null` ([LNUL.4.9]); libds rete/eval.c DS_RETE_EXPR_IS_TEST, Mercury ds.eval ev_node(e_is_test(...)).",
+    "rules_ds": "schema V scope logical:\n    id: String key\n    n: Int? mutable\n    bt: Bool? mutable\n    bf: Bool? mutable\n    i0: Int? mutable\n    x0: Float? mutable\n    se: String? mutable\n    sx: String? mutable\n\nrule n_is_null:\n    V v where v.n is null\n->\n    log info \"n_is_null\"\n\nrule n_is_not_null:\n    V v where v.n is not null\n->\n    log info \"n_is_not_null\"\n\nrule bt_is_null:\n    V v where v.bt is null\n->\n    log info \"bt_is_null\"\n\nrule bt_is_not_null:\n    V v where v.bt is not null\n->\n    log info \"bt_is_not_null\"\n\nrule bf_is_null:\n    V v where v.bf is null\n->\n    log info \"bf_is_null\"\n\nrule bf_is_not_null:\n    V v where v.bf is not null\n->\n    log info \"bf_is_not_null\"\n\nrule i0_is_null:\n    V v where v.i0 is null\n->\n    log info \"i0_is_null\"\n\nrule i0_is_not_null:\n    V v where v.i0 is not null\n->\n    log info \"i0_is_not_null\"\n\nrule x0_is_null:\n    V v where v.x0 is null\n->\n    log info \"x0_is_null\"\n\nrule x0_is_not_null:\n    V v where v.x0 is not null\n->\n    log info \"x0_is_not_null\"\n\nrule se_is_null:\n    V v where v.se is null\n->\n    log info \"se_is_null\"\n\nrule se_is_not_null:\n    V v where v.se is not null\n->\n    log info \"se_is_not_null\"\n\nrule sx_is_null:\n    V v where v.sx is null\n->\n    log info \"sx_is_null\"\n\nrule sx_is_not_null:\n    V v where v.sx is not null\n->\n    log info \"sx_is_not_null\"\n",
+    "dead_rules_expected": ["n_is_not_null", "bt_is_null", "bf_is_null", "i0_is_null", "x0_is_null", "se_is_null", "sx_is_null"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "id": "v", "n": null, "bt": true, "bf": false, "i0": 0, "x0": 0.0, "se": "", "sx": "x" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["n_is_null", "bt_is_not_null", "bf_is_not_null", "i0_is_not_null", "x0_is_not_null", "se_is_not_null", "sx_is_not_null"]
+    }
+}

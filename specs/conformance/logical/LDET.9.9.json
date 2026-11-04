@@ -1,0 +1,14 @@
+{
+    "id": "LDET.9.9",
+    "category": "logical",
+    "scenario": "Basic float stability per LDET.9.9 — IEEE 754 basic operations are correctly rounded. Pin: 0.1 + 0.2 produces a predictable float result; rule with `where` guard on the exact bit-pattern fires as expected (tests that the runtime does not apply non-standard rounding).",
+    "rules_ds": "schema Floats scope logical:\n    x: Float key\n    y: Float mutable\n\nrule r:\n    Floats f where f.x + f.y > 0.29 and f.x + f.y < 0.31\n->\n    log info \"in range\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Floats", "slots": { "x": 0.1, "y": 0.2 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

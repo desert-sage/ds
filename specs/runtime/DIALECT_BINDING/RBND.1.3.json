@@ -1,0 +1,22 @@
+{
+  "id": "RBND.1.3",
+  "prefix": "RBND",
+  "doc": "DIALECT_BINDING.md",
+  "parent": "RBND.1",
+  "seq": 43,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[RBND.1.3] **The dialect binding tuple.** Every DS artifact\ngoverned by this spec carries the same three fields, each container under the\nnames [RBND.2.2] gives:\n\n- `dsc_sha256`, the SHA-256 of the compiled DSC bytes that were active when\n  the artifact was produced ([RBND.3.1]);\n- `capabilities`, the program's resolved settings: every capability set\n  `true`, in ascending `Capability` order ([LDIA.1.3]);\n- `dialect_def_sha256`, the SHA-256 of the canonical serialization of those\n  settings ([RBND.4]).\n\nThe dialect's name is not part of the tuple: two programs whose settings\nresolve alike are bound alike, whatever dialect each named.\n\n**A malformed `capabilities` list is refused.** The list is strictly\nascending, and each entry is a member of `proto/capabilities.proto#Capability`\nother than `CAPABILITY_UNSPECIFIED`. So no capability appears twice, and the\nlist is never longer than the enum has members. A reader **must** refuse a list\nthat breaks either rule: at load, with `DS_ERR_DSC_SEMANTIC`; in a recording's\nheader, with `DS_ERR_PARSE`. It must not cut, sort or de-duplicate the list,\nbecause a list repaired that way would compare as a different tuple.\n\n**The load refusal stays although a `.dsc` is trusted input** ([RDSC.9.9]).\nIt is a cheap structural need of the loader: the\nengine copies the list into the header of every recording it writes\n([RBND.3.1]), and a recording's reader refuses a malformed one.\n\nTogether these answer the question *\"is this artifact talking\nabout the same rules-and-behavior-system as that artifact?\"*\nwithout consulting any external registry.\n\n",
+  "refs": [
+    "LDIA.1.3",
+    "RBND.2.2",
+    "RBND.3.1",
+    "RBND.4",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_DSC_SEMANTIC",
+    "DS_ERR_PARSE"
+  ]
+}

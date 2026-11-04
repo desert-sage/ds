@@ -1,0 +1,41 @@
+{
+    "id": "LECC.1.5_malformed_code_is_rewritten",
+    "clauses": ["LECC.1.2"],
+    "category": "logical",
+    "scenario": "[LECC.1.5]: a host-asserted `CallError` whose `code` does not match [LECC.1.2]'s pattern enters working memory with `code` = `internal.invariant` and every other slot as given; one that matches enters as given. Nine CallErrors, each with its own correlation (so none supersedes another, [LCRS.6.2.4]) and its own message, each asserted and pumped on its own, so the log order is the assert order. Malformed, one per way to break the pattern: c1 `Transport.timeout` (uppercase), c2 `transport-timeout` (a hyphen), c3 `.transport` (a leading dot), c4 `transport.` (a trailing dot), c5 `transport..timeout` (an empty segment), c6 `transport.9x` (a segment led by a digit), c7 `` (empty). Well-formed: c8 `transport.timeout`, and c9 `timeout_2`, one segment, which [LECC.1.5] admits though [LECC.1.3] forbids an adapter to send it. Rule `seen` logs each CallError's corr, code and message, so the log compares the rewrite and the pass-through of the other slots, not only that a rule fired. PATH PINNED: the CallError ingestion rewrite -- `wm.c`'s hook in `ds_engine_assert` calling `ds_error_code_valid` (`builtins.c`) (libds), `ds.engine.lecc_1_2_code_rewrite` (Mercury). The breaks: a rewrite that misses a class leaves that code in its line; one that also rewrites a well-formed or one-segment code puts `internal.invariant` in c8's or c9's; one that rebuilds the fact drops or changes a corr or message. NOT HERE: the `ds.errors.code_invariant_total` count, which no `expect.kind` reads ([RCTS.1.2.10]); it is libds's `test_nmet_4_1_inventory.c` and Mercury's scenario 107.",
+    "rules_ds": "rule seen:\n    CallError e\n->\n    log info \"{e.corr} {e.code} {e.message}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "Transport.timeout", "message": "m1", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c2", "code": "transport-timeout", "message": "m2", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c3", "code": ".transport", "message": "m3", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c4", "code": "transport.", "message": "m4", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c5", "code": "transport..timeout", "message": "m5", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c6", "code": "transport.9x", "message": "m6", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c7", "code": "", "message": "m7", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c8", "code": "transport.timeout", "message": "m8", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c9", "code": "timeout_2", "message": "m9", "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "c1 internal.invariant m1",
+            "c2 internal.invariant m2",
+            "c3 internal.invariant m3",
+            "c4 internal.invariant m4",
+            "c5 internal.invariant m5",
+            "c6 internal.invariant m6",
+            "c7 internal.invariant m7",
+            "c8 transport.timeout m8",
+            "c9 timeout_2 m9"
+        ]
+    }
+}

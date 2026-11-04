@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.8.1b",
+    "category": "compiler",
+    "scenario": "`call svc.x` without `cooldown:` and without `nocooldown` is rejected with DS_VALIDATE_CALL_RATE_MOD per LCRS.8.1. The author must opt into one or the other; silent default would create unbounded call rates.",
+    "rules_ds": "service svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CALL_RATE_MOD"
+    }
+}

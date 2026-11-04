@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.8.11_within_const_not_duration_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.2.8.11] at a pattern's `within`: a NAME that names a constant of a type other than `Duration` is refused with DS_VALIDATE_TYPE_MISMATCH, as it is at a `ttl` (compiler/LGRA.2.8.11_ttl_const_not_duration_refused), so a check wired only into the `ttl` lowering fails here. `const N = 5` and `Alarm within N`. PATH PINNED: `dsc.validate.lgra_2_8_11_name`, reached for the pattern's `within` through `clause_windows`.",
+    "rules_ds": "const N = 5\n\nschema Alarm scope logical:\n    state: Int key\n\nrule r:\n    Alarm within N\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "LUNI.17.7",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.17",
+  "seq": 2098,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "17.7 Compiler constant-baking must be cross-host deterministic",
+  "text": "### 17.7 Compiler constant-baking must be cross-host deterministic [LUNI.17.7]\n\nPinned normatively in [§2.7]: Rational→`float64` baking\nand the tier-2 build-time round-trip test use IEEE 754 `roundTiesToEven` plus a\nfixed left-to-right evaluation order, so the same `.ds` yields byte-identical\nbaked factors on any IEEE-754-compliant build host (DSC reproducibility).\n\nCross-host conformance vector: the current-state proxy\nis `LUNI.2.7_float_repr_roundtrip`, which pins the `FloatLit` source-text →\nPython `float()` → `repr()` → lowered-form round-trip for a representative\nliteral set (a non-binary-representable decimal `0.1`, a small-exponent form\n`1e-6`, a full-precision irrational `3.141592653589793`). The chain inherits\nIEEE 754 `roundTiesToEven` at parse and produces the shortest round-trippable\ndecimal at emit, so any IEEE-754-compliant host produces byte-identical\nlowered output. The **runtime** serializes a `Float` *value* to JSON in this\nsame shortest-round-trip form ([LDET.3.2.7]), so a value serialized at runtime\n(a cache value, a `call` body) is byte-identical to the same value written as a\nsource literal here, and round-trips. The full unit-factor-table cross-host vector — bit-comparing\nthe emitted `.dsc` factor table across architectures — lands with the unit\nfactor emission slice; a `.dsc` factor table does not exist in the current\nemission set.\n\n",
+  "refs": [
+    "LDET.3.2.7",
+    "LUNI.2.7"
+  ]
+}

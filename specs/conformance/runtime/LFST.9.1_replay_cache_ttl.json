@@ -1,0 +1,22 @@
+{
+    "id": "LFST.9.1_replay_cache_ttl",
+    "category": "runtime",
+    "scenario": "A CACHE ENTRY'S TTL replayed ([LFST.9.1], [NSTG.2.4.2]). `rw` writes \"k\" with a 10_s TTL at 0; `rr` reads it and emits what it read into a String slot, at 5_s (a hit, `v=[7]`) and at 11_s (expired, a miss, `v=[]`). The deadline is engine state no atom carries, so the replay must expire the entry from its own clock, and the hit-or-miss is in a compared fact. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nschema Got scope ttl 1_h:\n    tag: String\n    text: String\n\nrule rw:\n    Trig t where t.tag == \"w\"\n->\n    cache key: \"k\" value: 7 ttl: 10_s\n\nrule rr:\n    Trig t where t.tag != \"w\"\n->\n    let v = cached(\"k\")\n    emit Got tag: t.tag text: \"v=[{v}]\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "w" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "r1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "r2" } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "min_rule_fires": 3
+    }
+}

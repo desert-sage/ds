@@ -1,0 +1,16 @@
+{
+    "id": "LSTR.3.2_prefix_sorts_first",
+    "category": "logical",
+    "scenario": "[LSTR.3.2] Lexicographic order puts a proper prefix first: \"ab\" < \"abc\". Against `i.label < \"abc\"`, \"ab\" fires; \"abc\" (equal) and \"abd\" (greater at the third codepoint) do not. A comparison that stopped at the shorter length would call \"ab\" and \"abc\" equal and log nothing.",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label < \"abc\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "p", "label": "ab" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "e", "label": "abc" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "g", "label": "abd" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["ab"]
+    }
+}

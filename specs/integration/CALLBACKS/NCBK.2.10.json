@@ -1,0 +1,16 @@
+{
+  "id": "NCBK.2.10",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 156,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.2.10] **Each fault kind carries a payload, and its cause vocabulary is a\nmirror of the wire enum.** `ds_stream_ev`'s union **must** carry one arm per\nkind allocated by [NCBK.2.8]. Three of the four lead with a cause, and each\ncause **must** be a C enum mirroring the protobuf enum that defines it — same\nmembers, **same values**, per [STYL.5.9.7]:\n\n| Kind | Union arm | Cause enum | Mirrors |\n|---|---|---|---|\n| `DS_EV_TYPE_ERROR` | `type_error` | *(none)* | `proto/type_error.proto#TypeError` |\n| `DS_EV_BOUNDS_ERROR` | `bounds_error` | `ds_cap_name_t` (`DS_CAP_*`) | `proto/bounds_error.proto#CapName` |\n| `DS_EV_ENGINE_ERROR` | `engine_error` | `ds_engine_fault_t` (`DS_ENGINE_FAULT_*`) | `proto/engine_fault.proto#EngineFault` |\n| `DS_EV_COMPUTATION_ERROR` | `computation_error` | `ds_trap_kind_t` (`DS_TRAP_*`) | `proto/engine_error.proto#TrapKind` |\n\n`clock_ns` and `seq` are on `ds_stream_ev` itself and **must not** be repeated\nin an arm; the remaining fields of each protobuf message are the arm's members.\n\n**Same values.** A cause enum carries the proto's `UNSPECIFIED` member at zero\nrather than re-basing, and the reconciliation gate compares values, not only\nnames.\n\n**A cause is an enum and never a bare integer** ([STYL.5.9.7]). Documenting the\nvalues instead of enumerating them removes the compile error a consumer gets\nwhen a member is added, and leaves nothing for the reconciliation to compare —\nwhich is not a lighter registry but no registry.\n\n⚠ **`DS_EV_TYPE_ERROR` and `DS_EV_ENGINE_ERROR` must ship together.** The engine's\nill-typed-operation site splits between them on whether the value came from\n`Json` — the artefact-lied half is an `ENGINE_FAULT_ARTEFACT_LIED`\n([`proto/engine_fault.proto`]) and the tainted half is a TypeError — so shipping\nthe TypeError arm alone leaves the other half still emitting nothing while its\nsibling emits. A consumer then reads the stream and correctly concludes that no\nEngineErrors occurred. That is worse than emitting nothing, because nothing is\nlegible as nothing and a half-populated vocabulary is not.\n\n`DS_EV_COMPUTATION_ERROR` and `DS_EV_BOUNDS_ERROR` have no such partner.\n`ds_cap_name_t` mirrors `CapName`, whose membership is [RTCT.7.1]'s cap table.\n",
+  "refs": [
+    "NCBK.2.8",
+    "NCBK.2.9",
+    "RTCT.7.1"
+  ]
+}

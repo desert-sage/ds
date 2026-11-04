@@ -1,0 +1,28 @@
+{
+  "id": "LIMP.7.5_library_rules_fire",
+  "category": "logical",
+  "scenario": "An imported library's rules are compiled into the importer's artefact and fire ([LIMP.7.5], [LIMP.1.3] rule packs), and they come FIRST in firing order ([LDET.5.4]: across files, import-DAG topological order, leaf libraries first). Library `pack` declares `Trig` and `pack_rule`; the importer takes only the schema (`from pack import Trig`) and declares `main_rule`, so nothing names `pack_rule` and it must load anyway -- the build-unit shape, where every buildfile does `from scheduler import Step, ...` and the scheduler's rules do the work. Both rules match one `Trig`. Pins the compiler's library loading (a library's rules reaching the importer's Rete network) and its terminal order across files; the runtime only fires what it is given. `compiler/LIMP.7.5.json` asserts only `compile_ok` and cannot see a dropped rule; this is the tie that can. A compiler that takes a library's schemas and drops its rules logs `main` alone; one that appends library rules after the importer's logs `main`, `pack`.",
+  "rules_ds": "from pack import Trig\n\nrule main_rule:\n    Trig\n->\n    log critical \"main\"\n",
+  "libraries": {
+    "pack": "schema Trig scope logical:\n    v: Int key\n\nrule pack_rule:\n    Trig\n->\n    log critical \"pack\"\n"
+  },
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "pack.Trig",
+        "slots": {
+          "v": 1
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "pack",
+      "main"
+    ]
+  }
+}

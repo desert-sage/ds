@@ -1,0 +1,29 @@
+{
+    "id": "LFST.9.1_replay_series_sliding",
+    "category": "runtime",
+    "scenario": "A SLIDING-WINDOW SERIES replayed ([LFST.9.1], [LSER.14.1]). `mean sliding 10_s` over one thermometer's readings 10, 20, 30, 40, 50 at 0, 4_s, 8_s, 12_s and 16_s; `report` emits the mean it reads each time, so every window state the run passed through is in a compared fact. The window's edge moves with the clock: by 12_s the reading at 0 has left it, and by 16_s the one at 4_s, so a boundary that lands differently on replay changes the emitted `avg`. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`. For [LDET.2.2a] it pins path (a): the recording begins with the engine cold, so the replay into a fresh engine rebuilds the window's backing from the stream's own samples, in the stream's order, and every re-derived `avg` compares equal. `runtime/LTIM.2.8.5_a_recording_begun_warm_is_refused` pins the other half, a recording begun against a warm engine. A seek to a checkpoint ([RFCS.9]) is not pinned.",
+    "clauses": ["LDET.2.2a"],
+    "rules_ds": "use default\n\nschema Thermometer scope logical:\n    entity_id: String key\n    temperature: Float mutable\n\nschema Report scope ttl 1_h:\n    label: String\n    avg: Float\n\nseries Thermometer.temperature (by: entity_id):\n    mean sliding 10_s\n\nrule report:\n    Thermometer t\n->\n    emit Report label: t.entity_id avg: t.mean ?? -1.0\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Thermometer", "slots": { "entity_id": "t", "temperature": 10.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Thermometer", "slots": { "entity_id": "t", "temperature": 20.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Thermometer", "slots": { "entity_id": "t", "temperature": 30.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Thermometer", "slots": { "entity_id": "t", "temperature": 40.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Thermometer", "slots": { "entity_id": "t", "temperature": 50.0 } },
+            { "op": "pump" }
+        ],
+        "min_events": 10,
+        "min_rule_fires": 5
+    }
+}

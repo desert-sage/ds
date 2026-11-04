@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.2.3_null_literal_cast_to_string_is_null",
+    "category": "logical",
+    "scenario": "[LCST.4.2.3] and [LCST.4.3.4] for a second target and a second consumer: `(null::String?) is null` is true whatever the target, because a null source never reaches the conversion. Beside the Int vector, which reads the result through `??`, so the rule is pinned as the literal's and not one target's. The `s.entity_id` conjunct only references the binding (`DS_VALIDATE_UNREFERENCED_BINDING` refuses a rule that never reads it). PATH PINNED: dsc.typecheck's and dsc.rete's handling of an `ex_null` cast operand, and `is null` in both runtimes.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n\nrule r:\n    S s where s.entity_id == \"a\" and (null::String?) is null\n->\n    log info \"null\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

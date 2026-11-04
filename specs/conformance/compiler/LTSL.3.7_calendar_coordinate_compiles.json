@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.3.7_calendar_coordinate_compiles",
+    "clauses": ["LTSL.3.2", "LTSL.3.7"],
+    "category": "compiler",
+    "scenario": "[LTSL.3.2] / [LTSL.3.7]: an absolute timeline coordinate is a `calendar.time` call whose arguments fold, in the `at` and the `until` positions ([LGRA.21.1]'s `time_coord ::= UNIT_LIT | postfix`), here gating a rule on `now()`, which absolute mode fixes. The control for LTSL.3.7_quoted_stamp_refused and LTSL.3.7_before_1970_refused: the same shape compiles when the coordinate is one. The folded instant, 2026-06-18T14:00:00Z as `when_ns` 1781791200000000000, is test_dstest's check. PATH PINNED: `dsc.parse`'s `ltsl_3_3_at_block` and `until` section reading a postfix, and `dsc.dstest.ltsl_3_1_coordinate` folding it through `ltim_14_3_calendar_fold`.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    id: Int key\n\nrule late:\n    Ping where now() > calendar.time(2026, 6, 18)\n->\n    log info \"late\"\n\ntest \"an absolute coordinate\":\n    inputs:\n        at calendar.time(2026, 6, 18, 14, 0, 0):\n            Ping id: 1\n    until calendar.time(2026, 6, 18, 15, 0, 0)\n    produces:\n        activated late\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.6.1_a_regex_pattern_that_does_not_compile_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1]: an `AlphaTest` of kind `ALPHA_TEST_REGEX` whose `pattern` does not compile is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_l`, whose `L l where l.s ~ /a+/` puts one REGEX test on `L`'s `AlphaNode` (node 1), hoisted because `s` is a non-nullable String with a `capacity` ([RLOW.5.2.2]). `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 5], value: \"(\"}}` ([RCTS.1.2.21]) writes that test's field 5, `pattern`, as `(`, an unclosed group RE2 refuses, and re-seals `dsc_sha256` ([RDSC.3.6]). The clause says compiling the pattern is not part of decoding the body, so this vector pins the code and not where among the load's checks the refusal comes. What it discriminates: a loader that compiles the pattern lazily, at the first match, loads, and the vector fails as unrefused; one that refuses it with another code fails on `code`. PATHS: libds's load of the alpha's REGEX test (`ds_engine_load_dsc`, through `ds_re2`); the Mercury runtime's `ds.dsc` load, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema L scope logical:\n    k: Int key\n    s: String capacity 16 mutable\n\nrule on_l:\n    L l where l.s ~ /a+/\n->\n    log info \"l\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 5], "value": "("}},
+        "code": "-504"
+    }
+}

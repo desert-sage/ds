@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.3.8.min_max_exact_above_2_53",
+    "clauses": ["LEXP.3.8.1", "LDET.3.2.2"],
+    "category": "runtime",
+    "scenario": "[LEXP.3.8] scalar min/max over two Ints, which [LDET.3.2.2] makes exact 64-bit values. 2^53+1 and 2^53 are distinct Ints and round to the same double, so a min/max that compares through double returns the wrong operand for one argument order. The guard `min(t.x, t.y) == t.y and max(t.y, t.x) == t.x` with x = 2^53+1, y = 2^53 holds only for an exact compare: through double, min returns its first argument x and max its first argument y. Path: builtins.c builtin_min / builtin_max (DS_FN_MIN / DS_FN_MAX); Mercury ds.eval pick. fact_count 2 = T plus the Hit the rule emits.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    y: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where min(t.x, t.y) == t.y and max(t.y, t.x) == t.x\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 9007199254740993, "y": 9007199254740992 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.24.3_cache_seed_read",
+    "category": "logical",
+    "dead_rules_expected": ["rw"],
+    "scenario": "[LGRA.24.3]: a cache item seeds its key as the host's cache seed does ([NLFC.9.1]), at the engine's first step, here the `Trig` assert, before that input is consumed. The block seeds `level` with 3 and no rule writes it; `rd` reads it with `cached()` when a `Trig` arrives. Pin: `level=3`, the seeded value. A runtime that skipped the ICAC atom reads a miss and logs `level=`. The program also caches a DIFFERENT key in `rw`, which no step triggers, so the cache verb is in the program as the other cache-read vectors carry it. PATH PINNED: the first step's application of ICAC atoms (libds's `ds_engine_clock_step`, the Mercury runtime's `clock_step`), through libds's cache seed and the Mercury runtime's `ds.cache` store, then `cached()` on each runtime.",
+    "rules_ds": "schema Trig scope explicit:\n    tag: String\n\ninitial:\n    cache \"level\": 3\n\nrule rd:\n    Trig t where t.tag == \"read\"\n->\n    let v = cached(\"level\")\n    log info \"level={v}\"\n\nrule rw:\n    Trig t where t.tag == \"write\"\n->\n    cache key: \"other\" value: 1\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "read" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["level=3"]
+    }
+}

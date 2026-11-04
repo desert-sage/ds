@@ -1,0 +1,15 @@
+{
+    "id": "LREG.5.2",
+    "category": "logical",
+    "scenario": "Case-insensitive `/i` flag at runtime per LREG.5.2 — `/HELLO/i` matches `hello`, `HELLO`, `Hello`. Pin: two User facts — `hello` (matches) and `world` (doesn't). Only one rule_fire_begin.",
+    "rules_ds": "schema User scope logical:\n    entity_id: String key\n    name: String mutable\n\nrule greet:\n    User u where u.name ~ /^hello$/i\n->\n    log info \"matched\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u1", "name": "Hello" } },
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u2", "name": "world" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["greet"]
+    }
+}

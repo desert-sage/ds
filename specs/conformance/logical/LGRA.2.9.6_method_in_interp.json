@@ -1,0 +1,17 @@
+{
+    "id": "LGRA.2.9.6_method_in_interp",
+    "clauses": ["LGRA.2.9.6.2", "LLET.12.5"],
+    "category": "logical",
+    "scenario": "LGRA.2.9.6 / LLET.12.5 — a `let` bound to a v1 method call renders its RESULT when interpolated. A pure let inlines into the segment per LLET.12.5. This pins the rendered VALUE: a lowering whose catch-all emits a literal `false` renders the text \"false\" with nothing reporting an error, since the rule fires and the log line is emitted.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    ts: Time\n\nrule r:\n    Ev e\n->\n    let s = e.ts.to_string(\"iso8601\")\n    log critical \"at {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "at 1970-01-01T00:00:00Z"
+        ]
+    }
+}

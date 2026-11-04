@@ -1,0 +1,26 @@
+{
+    "id": "LTHE.5.1",
+    "category": "logical",
+    "scenario": "Default cardinality of `then ... within` is all-matches per LTHE.5.1 — Rete fires one activation per valid (anchor, follower) pair, not just the first. Two anchor facts within window of one follower → rule fires twice. (LTHE.5.1's `latest` opt-in variant is blocked on the `latest` pattern-prefix not yet being in the grammar.)",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n    ts: Time\n\nschema B scope logical:\n    id: Int key\n    ts: Time\n\nrule r:\n    A\n    then B within 5_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": 1, "ts": 1 } },
+            { "op": "assert", "schema": "A", "slots": { "id": 2, "ts": 2 } },
+            { "op": "assert", "schema": "B", "slots": { "id": 3, "ts": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "fact_assert",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

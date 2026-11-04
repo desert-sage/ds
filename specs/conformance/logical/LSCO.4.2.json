@@ -1,0 +1,15 @@
+{
+    "id": "LSCO.4.2",
+    "category": "logical",
+    "scenario": "A rule guarded by an author-written `no` over a `scope activation` schema fires once per match per LSCO.4.2: a second pump with no working-memory change does not re-fire it. Only one rule_fire_begin appears across both pumps.",
+    "rules_ds": "schema Lock scope activation:\n    entity_id: String\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule gated:\n    no Lock l where l.entity_id == \"lock1\"\n    Trig\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["gated"]
+    }
+}

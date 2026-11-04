@@ -1,0 +1,352 @@
+{
+  "id": "LTIM.2.4.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.4",
+  "seq": 184,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.4.1] A `where`-condition is **time-dependent** when its truth value can\nchange from one pump to the next with no change to the matched facts. Three reads\nmake it so:\n\n- a **clock read**: `now()` or `monotonic_ns()`, directly or via the `dwell`\n  alias of [LEXP.9.5];\n- a **series read**: an aggregation of [LSER.16] over a series, written as a call\n  or as a companion slot ([LSER.6.3]). Its value moves as the series absorbs\n  other facts' samples at the end of each pump ([LSER.8.6]), and, over a window,\n  as the clock moves ([LSER.8.8.1]);\n- a **zone read**: the resolution of any zone but `UTC` ([LTIM.10.7],\n  [LTIM.10.8]), by any operation [LTIM.10.3] lists. Its answer moves as the host\n  asserts, replaces or retracts `TimeZoneOffset` facts ([LTIM.10.6]).\n\n",
+  "refs": [
+    "LEXP.9.5",
+    "LSER.16",
+    "LSER.6.3",
+    "LSER.8.6",
+    "LSER.8.8.1",
+    "LTIM.10.3",
+    "LTIM.10.6",
+    "LTIM.10.7",
+    "LTIM.10.8"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Ltim_2_4_1__read",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A CLOCK READ in a `where`: `now()`, `monotonic_ns()`, or `t.dwell` by the binding's rank. LESS than the clause: the first of its three reads alone; a series read and a zone read are outside the fragment, refused by the fixture lowering. The leaf carries no value: Rete/NetworkTimed.idr substitutes it under the pump's sample and the stamps before this evaluator runs, which traps on a leaf that reaches it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__due",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent test: the follow-up's guard reads the monotonic clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__b_shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which chain carries the time-dependent test: B's single positive pattern. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gate_open_match",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The time-dependent test read at clock 0 admits the pair. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gate_shut_no_match",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The time-dependent test read at clock 0 refuses the pair. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gates",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which chain carries a time-dependent test: A's single positive pattern. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__opens_at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent test: its value at each clock reading. True from clock 1. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shuts_at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent test, true at clock 0 alone. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which chain carries the shutting test: A's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "Ltim_2_4_1__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent join test: the test at each clock reading."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "Ltim_2_4_1__timed_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED STATE: Rete/NetworkTwoClocks.idr's sampled net -- the clocked net, the wall sample, the entry stamps -- with Rete/NetworkCooldown.idr's trackers beside it. What the Idris model runs on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "Ltim_2_4_1__ttest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TIMED TEST: Rete/NetworkTwoClocks.idr's two-clock test read from the stamp table -- what a time-dependent `where` is to the engine, a function of the stamps and the sample with the facts fixed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__at_sample",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SUBSTITUTION: every clock leaf replaced by its literal under the sample and the stamps, the rest of the expression as it is, so that the plain evaluator reads no clock. The sample a read sees is the one the state holds: 'every read between two samples returns the most recent sample'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__clock_free_unchanged",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `where` THAT READS NO CLOCK IS UNCHANGED by the substitution, under every sample, stamp table, token and expression: every untimed test of the Idris model is evaluated as it was before this rung. By induction on the expression."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__loaded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE LOADED TIMED STATE of a program: no rows, no deadlines, the clock at 0, the wall at 0, no stamps, no tracker. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__net_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clocked net of a timed state, by projections."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__no_timed_rule_is_the_gated_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FRAME: with no rule timed, from a state between actions, the timed pump's net, trackers, halt and trace are Rete/NetworkCooldown.idr's gated pump's from the same net and trackers, the stamps and the wall beside; over every program, cooldown list, fuel, state, stamp table and tracker table. Every fixture the Idris model compared before this rung runs through the timed engine, and its agreement holds by this theorem and Rete/NetworkCooldown.idr's frame rather than by a rerun: the nineteen smoke pairs stay byte for byte."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__one_timed_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE TIMED RULE over kind 0, action-free, its node loaded with the test at the sample (0, 0) and no stamps. A fixture family."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__one_timed_tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one timed rule's tests, by ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__or_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Bool disjunction false on both sides: the Bool fact the inductions need."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__proj",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gated state under a timed state: the stamps and the wall dropped, by projections. What the projection theorems compare through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__read_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A clock read under a sample and the stamps: `now()` the wall sample, `monotonic_ns()` the monotonic one, `t.dwell` the monotonic sample less the fact's entry stamp. LESS than the clause: the clock read alone, with `now()` held at zero by the runner in this half of the rung (R4b moves it)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__reads_clock",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "WHETHER A `where` IS TIME-DEPENDENT: a clock leaf anywhere in it. LESS than the clause: the clock read is the one of its three reads the fragment has; a series read and a zone read are refused by the lowering."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__run_steps_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A FIXTURE'S STEPS on the timed engine in its cadence: a tick, a data input, a pump under its fuel; every pump's verdicts collected. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__test_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED TEST OF A `where`: under the stamps and the sample, the substituted expression evaluated over the token and the candidate by Rete/Eval.idr, admitting on `true`. The positive node's join relation, re-timed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tests_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tests fixed at a wall sample over the stamps: Rete/NetworkTwoClocks.idr's `ltim_2_8_4__tests_at` at the program's tests."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tests_at_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WITH NO RULE TIMED THE TESTS ARE NONE: the fixed list is every ordinal's `Nothing`, however the wall and the stamps stand, so the re-time leaves every chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tests_fn",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED TESTS OF A PROGRAM, by rule ordinal: a test for a rule whose single positive pattern carries a time-dependent `where`, none for any other, read over a stamp table. What the lowering builds and Rete/NetworkClocked.idr's tick takes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tick_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WITH NO RULE TIMED THE RE-TIME IS THE IDENTITY on the engine: every chain is left alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__untimed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No rule timed: the frame theorem's hypothesis. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__verdicts_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE VERDICTS OF A SCHEDULE from the loaded network: one list per pump. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__wenv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WITNESSES' ENVIRONMENT: an id stands for the one-slot tuple of the Int it is, except 7, which stands for `null`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__wm_after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WORKING MEMORY after a schedule from the loaded network. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__entry_retime_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WITH NO RULE TIMED THE RE-TIME AT ENTRY IS THE CASCADE ALONE, the identity on a state between actions, one where no row has ended -- which every pump boundary is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__mono_test_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed test of a `where` that reads the monotonic clock alone, as the runner builds it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_8_4__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `where`-condition whose truth can change as either clock moves: a function of the sample, with the facts fixed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Time-dependent by reading `now()`: its truth changes with the wall sample and no fact."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_4_1__now_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent condition that reads `now()`: `now() > 5`. Time-dependent because it reads `now()`, the clause's criterion."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_4_1__holds",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_4_1__seen",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "ltim_2_4_1__shut_means_silent",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_1__gate",
+        "tag": "spec"
+      }
+    ]
+  }
+}

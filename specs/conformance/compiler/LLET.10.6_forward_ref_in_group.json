@@ -1,0 +1,10 @@
+{
+    "id": "LLET.10.6_forward_ref_in_group",
+    "category": "compiler",
+    "scenario": "LLET.10.6 — a hanging group is LAYOUT ONLY: the bindings stay ordered with no forward references, so a binding reading a LATER one in its own group is rejected exactly as the per-line form would reject it. This fixture pins the ordering rather than the syntax, and the clause exists because the form invites the opposite reading: Haskell's `let` group is mutually recursive and order-independent, so an author arriving from it expects a simultaneous binding set. DS's is sequential (SML's `let val ... val ...` is the closer relative). Pin: `let a = later` with `later` bound on the NEXT line of the same group rejects with DS_VALIDATE_UNKNOWN_BINDING — the name is not in scope yet, which is the same answer the per-line form gives. A parser that flattened a group into a simultaneous set, or that hoisted the group's names before resolving, would compile this.",
+    "rules_ds": "use default\n\nschema Ev scope ttl 1_h:\n    v: Float\n    ts: Time\n\nrule fwd:\n    Ev e\n->\n    let a = later * 2.0\n        later = e.v\n    log info \"{a}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

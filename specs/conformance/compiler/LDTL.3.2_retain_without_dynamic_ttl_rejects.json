@@ -1,0 +1,10 @@
+{
+    "id": "LDTL.3.2_retain_without_dynamic_ttl_rejects",
+    "category": "compiler",
+    "scenario": "LDTL.3.2 — a per-emit `retain: <dur>` override on an `emit` targeting a ttl-lifecycle schema requires the `dynamic_ttl` capability. Without it (and when the value is not a redundant constant equal to the schema TTL), the compiler rejects with DS_VALIDATE_CAPABILITY_DISABLED, the one code for a construct the settings forbid, rather than silently applying the schema TTL.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: 60_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

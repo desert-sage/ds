@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A rule-level `cooldown` against a control: `cooled` differs from `plain`
+# only by its `cooldown`. `test_ds`'s `op_rewritten` searches this artefact for
+# FN_RATE_ALLOW (56) as the byte pair 0x18 56, so no declaration may sit on
+# compiled line 56.
+
+schema Sensor scope logical:
+    entity_id: String key
+    reading: Int mutable
+
+schema Fired scope ttl 1_h:
+    who: String
+    v: Int
+
+rule plain:
+    Sensor s
+->
+    emit Fired who: "plain" v: s.reading
+
+rule cooled cooldown 30_s:
+    Sensor s
+->
+    emit Fired who: "cooled" v: s.reading

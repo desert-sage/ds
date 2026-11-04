@@ -1,0 +1,18 @@
+{
+  "id": "LFST.1.3",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.1",
+  "seq": 65,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.1.3] **The engine must emit completely, and the obligation is\nunconditional.** The engine must emit, through the callback surface\n([NCBK.2.1]), every event of every class: an inject-class event for every\ninput it consumed, a compare-class event for every observable it produced,\nand every clock value it observed ([RFCS.17.1]). The engine must emit whether\nor not a subscriber is registered, and must not let anything downstream of an\nevent decide whether that event is emitted.\n\nAn integrator may subscribe to all, some or none of that surface, and may\nrecord or discard what it receives. Neither choice is a conformance question,\nand neither is the engine's to constrain.\n\n**An integrator that records the whole surface therefore holds a replayable\nevent trace by construction**, having done nothing further. Replayability is\nnot a recording discipline the integrator must follow; it is a guarantee the\nengine owes. A trace is unreplayable only where a subscriber filtered\n([LFST.9.2.1]).\n\n**All or nothing, never selectively.** An engine with no stream surface at all\n— a `constspace` target, or a `realtime` one configured without one — emits\nnothing and produces no trace, which is a coherent state. What the engine must\nnot do is emit some kinds and withhold others: a trace missing one kind reads\nas complete and is not, and nothing in it says otherwise.\n\nThe recording hook sits at step (1) of the consumption loop — on arrival,\nbefore evaluation ([RARC.5.8.10]) — precisely so that what an event did\ndownstream cannot decide whether it was emitted. [RFCS.6.7] reasons to this\nconclusion for one atom; it holds for all of them.\n\n",
+  "refs": [
+    "LFST.9.2.1",
+    "NCBK.2.1",
+    "RARC.5.8.10",
+    "RFCS.17.1",
+    "RFCS.6.7"
+  ]
+}

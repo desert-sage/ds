@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.5.8.6_rule_cache_string_over_limit_raises",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.6]: a value a rule makes past a limit is a ComputationError of kind NOT_REPRESENTABLE ([LERR.1.4]) that abandons the activation. Never a BoundsError, never a truncation. The rule caches a `String` slot holding 16,385 ASCII `a`s (the harness's `$repeat` form); `cache` wraps it as a `Json` string of 16,385 string bytes, one past the limit. Pin: exactly one `computation_error` event. Its sibling LGRA.5.8.6_rule_cache_string_over_limit_writes_nothing pins that no `action_cache_set` lands; LGRA.5.8.6_rule_cache_string_at_limit pins that one byte fewer is written. PATH PINNED: on libds, `adapter_ds_cache_set`'s `ds_json_parse_limited` of `adapter_ds_json_value`'s text answering DS_ERR_JSON_LIMIT, raised as DS_FAULT_NOT_REPRESENTABLE; on the Mercury runtime, `ds.exec.cache_set_verb` through `json_over_limit` (`rf_not_representable`).",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n    s: String mutable\n\nrule r:\n    T t\n->\n    cache key: \"k\" value: t.s\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "k": 1, "s": { "$repeat": "a", "count": 16385 } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

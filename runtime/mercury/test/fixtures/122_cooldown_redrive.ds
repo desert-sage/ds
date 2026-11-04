@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A cooldown rule re-driven by the tick. Each rule has a time-dependent
+# condition and a `cooldown`, so its fire guard is
+# BINOP_AND(condition, FN_RATE_ALLOW(...)) ([RDSC.4a.8.2.1]): `settled`'s
+# condition is the `dwell` test, `fresh`'s its moved `within` window. The
+# condition is read at selection and the gate once inside the firing
+# ([RDSC.4a.8.2.2], [RDSC.4a.8.2.3]).
+use default
+
+schema Motion scope logical:
+    zone: String key
+    ts: Time
+
+schema A scope logical:
+    k: String key
+
+rule settled cooldown 1_min:
+    Motion m where m.dwell >= 2_s
+->
+    log critical "settled {m.zone}"
+
+rule fresh cooldown 10_s:
+    A a within 5_s
+->
+    log critical "fresh {a.k}"

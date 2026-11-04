@@ -1,0 +1,11 @@
+{
+    "id": "LERR.1.1.5_string_slot_ordered_against_number",
+    "clauses": ["LEXP.7.12.5"],
+    "category": "compiler",
+    "scenario": "LERR.1.1.5 — the clause's own example: `s.state > 30` where `s.state` is declared `String` is a compile error (rung 1), not a runtime comparison. Operands of a comparison must share a class — numeric, String or Bool ([IRET.9.7]). Admitted, the compare reaches the evaluator ill-typed on an untainted operand, which [IRET.9.6] classifies as an EngineError and the tier halts. PATH PINNED: `dsc.typecheck.ltim_5_5_comparison`, whose `adjacent_mismatches` general arm answers DS_VALIDATE_TYPE_MISMATCH for a String operand against a numeric one.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: String mutable\n\nrule r:\n    Sensor s where s.state > 30\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

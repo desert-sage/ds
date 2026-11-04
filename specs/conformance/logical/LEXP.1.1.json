@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.1.1",
+  "category": "logical",
+  "scenario": "Arithmetic operators per LEXP.1 — addition, subtraction, multiplication, floor division, modulo, exponentiation. Rules fire exactly when their arithmetic where-clause is satisfied. `Int ** Int` (non-negative exponent) is exact repeated integer multiply and is Int-typed — `5 ** 2` is `25` (Int), not `25.0` (Float) — so the `power` rule pins the result against the Int literal `25`.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule add:\n    T t where t.v + 3 == 8\n->\n    log critical \"add\"\n\nrule mul:\n    T t where t.v * 3 == 15\n->\n    log critical \"mul\"\n\nrule floordiv:\n    T t where t.v // 2 == 2\n->\n    log critical \"floordiv\"\n\nrule modulo:\n    T t where t.v % 2 == 1\n->\n    log critical \"modulo\"\n\nrule power:\n    T t where t.v ** 2 == 25\n->\n    log critical \"power\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["add", "mul", "floordiv", "modulo", "power"]
+  }
+}

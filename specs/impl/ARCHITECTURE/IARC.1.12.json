@@ -1,0 +1,19 @@
+{
+  "id": "IARC.1.12",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 171,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.12] **Consistent `ds_result_t` at every call site.**\n  Every libds function that can fail — public API, internal\n  module-to-module, static helpers — returns\n  `ds_result_t`. No status as an `int`, no thread-local\n  errno, no \"success-return / call-again-for-detail\"\n  two-step. A function that cannot fail returns its value or\n  nothing: `ds_free`, `ds_build_capabilities`, and the visitor callbacks libds calls\n  for each node, edge, trace step or refraction entry\n  (`libds.h` declares each `void`), are such functions. One pattern to learn; one pattern to\n  review; nothing to translate at the public /\n  internal boundary.\n\n  Its shape is a status and a detail and nothing else\n  ([IERR.1.3]): 16 bytes, which fits in registers under SysV x86-64\n  (RAX:RDX) and AAPCS64. No status carries a source\n  location: libds parses no DS source, and an author's\n  source location comes from the artefact's `LineSpan`\n  atoms ([NDBG.3.1]). The status enum is [IERR.2],\n  detail-string stability [IERR.4]. Wire-error propagation is not part of it —\n  libds defines no wire encoding for error codes\n  ([IERR.6.1]).\n\n  The corollary that the engine's pending-error\n  slot preserves first-error-wins for sibling RHS\n  actions (where the later sibling succeeds — the\n  trampoline only overwrites pending on non-OK,\n  and `wm.c`'s save-and-restore around\n  `ds_engine_assert` keeps the prior error\n  intact across nested calls per IDSP.1.6) is\n  pinned in `spec/test_arch_invariants_spec`.\n\n  This decision fixes only the shape and the\n  one-everywhere discipline: a failure is never reported\n  any other way.\n\n",
+  "refs": [
+    "IDSP.1.6",
+    "IERR.1.3",
+    "IERR.2",
+    "IERR.4",
+    "IERR.6.1",
+    "NDBG.3.1"
+  ]
+}

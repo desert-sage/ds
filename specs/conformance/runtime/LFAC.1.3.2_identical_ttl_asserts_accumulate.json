@@ -1,0 +1,16 @@
+{
+    "id": "LFAC.1.3.2_identical_ttl_asserts_accumulate",
+    "clauses": ["LFAC.1.3.2", "RARC.5.2.3"],
+    "category": "runtime",
+    "scenario": "Two asserts of one `ttl` schema with the same slot values, before either expires, are two live facts: `ttl` facts accumulate with no per-identity uniqueness (LFAC.1.3.2), and the engine suppresses a no-op reassertion only for a `logical` schema (RARC.5.2.3). A runtime that suppressed the second as a no-op leaves 1. Both asserts happen at one clock reading and the `ttl` is an hour, so nothing expires before the count.",
+    "rules_ds": "schema Pulse scope ttl 1_h:\n    v: Int\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Pulse", "slots": { "v": 1 } },
+            { "schema": "Pulse", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

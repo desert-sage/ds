@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.9.6.1_bare_literal_member_parses",
+    "clauses": ["LGRA.9.6.1"],
+    "category": "compiler",
+    "scenario": "[LGRA.9.6.1] / [LGRA.9.7.1]: a literal is a primary, so a bare literal takes a member suffix with no parentheses. No literal's type has a member a program can call: DS reads no temporal text ([LTIM.14]), and a `String` has no member. So the suffix is shown parsed by the refusal it reaches: `\"abc\".to_time(\"iso8601\")` is DS_VALIDATE_UNKNOWN_MEMBER, which only a parsed member call can raise; a parser that gave a bare literal no suffix refuses with DS_PARSE_GENERIC at the `.`. The companion LGRA.9.6.1_literal_takes_a_suffix pins the two casts. PATH PINNED: `dsc.parse.lgra_9_6_1_postfix` building the member call on the string primary, and `dsc.typecheck.member_call_type`'s `unknown_member`.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n\nrule r:\n    S where now() > \"abc\".to_time(\"iso8601\")\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_MEMBER"
+    }
+}

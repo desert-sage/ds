@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.11.3_expr_nested_49_deep_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s fourth shape: an artefact carrying an `Expr` nested deeper than 48 is refused at load with DS_ERR_DSC_SEMANTIC (-504). The outermost `Expr` of an action is at depth 0 and each `Expr` inside another is one deeper. The compiler refuses a program that would lower past 48 (DS_VALIDATE_EXPRESSION_TOO_DEEP), so the harness compiles rule `r`, whose one action is `log info \"x\"`: an `ACTION_CALL` whose `expr` is a call (depth 0) of literal operands (depth 1). `runtime_error`'s `tamper: {nest_action_expr: {rule: r, levels: 48}}` wraps that `expr` 48 times as the operand of a `not` and re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]), so the call sits at 48 and its operands at 49, one past the limit. Break: a loader that admits 49 loads the artefact and fails as unrefused; one whose limit is lower refuses its pair, `RDSC.11.3_expr_nested_48_deep_loads`. Paths: libds's `decode_expr_msg` (`dsc/rete_loader.c`), whose depth guard refuses before it reads the kind; the Mercury runtime's `ds.dsc_expr`, which refuses with `lek_semantic` under RDSC.11.3.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"nest_action_expr": {"rule": "r", "levels": 48}},
+        "code": "-504",
+        "message_contains": "RDSC.11.3"
+    }
+}

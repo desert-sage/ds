@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.7.sqrt",
+    "clauses": ["LCON.2.7.1", "LEXP.12.6"],
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 float determinism — sqrt is the fifth IEEE 754 basic op (√). It is correctly-rounded, hence bit-exact across platforms (unlike transcendentals, which live under tolerance). `sqrt(2.0)` is the exact double 1.4142135623730951; the inline guard fires only on an exact bit match.",
+    "rules_ds": "from math import sqrt\n\nschema T scope logical:\n    x: Float key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where sqrt(t.x) == 1.4142135623730951\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 2.0 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

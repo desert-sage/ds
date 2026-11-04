@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.3.1.9_half_ns_not_whole",
+    "category": "compiler",
+    "scenario": "[LUNI.3.1.9]: `0.5_ns` is not a whole number of nanoseconds, so it is refused with DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE rather than truncated to zero. PATH PINNED: `luni_3_1_7_literal_type` in dsc.typecheck, the time arm of `dsc.quantity.luni_4_3_base_value` (`dsc.types.luni_3_1_9_exact_ns`, exact and not truncated), then `is_whole`. The time unit `ns` resolves with no import ([LUNI.4.1.2]).",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule r:\n    Ev e where e.d > 0.5_ns\n->\n    log info \"late\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE"
+    }
+}

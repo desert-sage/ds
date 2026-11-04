@@ -1,0 +1,19 @@
+# lowered from LCON.2.6.twos_complement_wrap.json (runtime_fact_count) by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against where.expected
+# (scripts/formal/check_idris.py). The first smoke input with a `where` record: the
+# guard `(t.x + 1) == t.y` over one fact with x = INT64_MAX and y = INT64_MIN fires
+# only because Int arithmetic wraps ([LEXP.7.13.1]); without the wrap the rule is
+# dead and one fact remains instead of two. The fact's key and payload are the
+# value codes of [INT64_MAX] and [INT64_MIN]: the sentinel 1, then the block
+# 8 * ZigZag + 2, which for the two extremes is 147573952589676412914 and
+# 147573952589676412922 (Fixture.idr, THE VALUE CODE).
+schema 0 entity T
+schema 1 relation Hit
+alpha 0 0
+alpha 1 1
+rule 0 r
+pattern 0 0 0
+where 0 0 eq add slot 0 key 0 lit i:1 slot 0 pay 0
+emit 0 1 1000000000000000000002 1
+step assert _0 0 1147573952589676412914 1147573952589676412922
+step pump

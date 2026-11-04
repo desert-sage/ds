@@ -1,0 +1,17 @@
+{
+  "id": "IARC.7.14",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.7",
+  "seq": 785,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IARC.7.14] **libds carries its own `fma` on every row.** The fused\nmultiply-add [LEXP.3.2.2] requires must be one correctly rounded\nimplementation compiled into libds: musl's `fma`, from one pinned\nrelease, compiled unmodified with the flags its pin records and\nrenamed, with every reference to it in libds's and CORE-MATH's objects, to a\nname private to libds. A fused multiply-add CORE-MATH's functions compute\n([IARC.7.10]) must be either that function or, on a row whose baseline ISA has\none, the fused multiply-add instruction. libds's objects must not reference\nthe C library's `fma`. This holds on every release row, with a hardware double\nFPU or without one.\n\nThe C library's `fma` is the integrator's, and not every one rounds once: on\na row without a hardware fused multiply-add instruction in its baseline ISA,\ncalling it would make a `Float` result depend on the libc the integrator links.\nThe instruction and the private function compute the one value IEEE 754\ndefines for the operation, so which of them CORE-MATH executes moves no\nresult. The Mercury runtime's `math.fma` must call the same compiled function,\nso both runtimes compute one value ([LDET.3.3a.8]). A change to the pin or the\nflags admits each release row again before it ships ([NDET.1.4]).\n\n",
+  "refs": [
+    "IARC.7.10",
+    "LDET.3.3a.8",
+    "LEXP.3.2.2",
+    "NDET.1.4"
+  ]
+}

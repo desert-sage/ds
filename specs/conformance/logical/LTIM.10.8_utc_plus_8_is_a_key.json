@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.10.8_utc_plus_8_is_a_key",
+    "clauses": ["LTIM.10.8", "LTIM.10.7"],
+    "category": "logical",
+    "dead_rules_expected": ["parsed"],
+    "scenario": "[LTIM.10.8]: no offset is read out of a designation. \"UTC+8\" is a zone name like any other, resolved only through rows asserted under exactly that string. The host asserts one row for \"UTC+8\" with `offset_s` 3600, deliberately not eight hours, valid over 2024. One Event at 2024-03-01T09:00Z: `e.seen.local(\"UTC+8\").hour` is 10, the row's answer, so `row` fires; `parsed`, which expects 17 (09:00 plus the eight hours the name spells), does not. Exactly ['row']. Its pair, LTIM.10.8_utc_plus_8_without_a_row_is_domain, asserts no row. PATH PINNED: the index lookup keyed on the designation's bytes, libds's `ds_rete_tz_resolve` and Mercury's `ds.wm` index.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule row:\n    Event e where e.seen.local(\"UTC+8\").hour == 10\n->\n    log critical \"row\"\n\nrule parsed:\n    Event e where e.seen.local(\"UTC+8\").hour == 17\n->\n    log critical \"parsed\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "UTC+8", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["row"]
+    }
+}

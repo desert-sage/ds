@@ -1,0 +1,696 @@
+{
+  "id": "IRET.12",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": null,
+  "seq": 974,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Truth maintenance",
+  "text": "## Truth maintenance [IRET.12]\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "iret_12__activation",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "iret_12__live",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "iret_12__logical_live_iff_justified",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12__show_idris",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TMS state as an Idris expression, for pasting a run's states back as literals."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "Iret_12__state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine state with truth maintenance: the core state and the dependency table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__tms_inv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The frame invariant on the engine with the dependency table: the plain invariant, unique ids, every row targeting an emitted kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12__net_state_eta",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine with truth maintenance is its core and its table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "Iret_12__net_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network engine and the dependency table: a row per (rule, token identity, logical fact), as on FireLoop's side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12__list_split",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A list is empty or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12__live_test_rot",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The token's liveness test, rearranged as the activation's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_12__maybe_split",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A value is absent or present."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_canonical",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CANONICAL TRANSFER: a canonical replay from FireLoopTms's empty state is a canonical replay from the loaded network, with the same fuel per input, and the states agree at its end."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM WITH TRUTH MAINTENANCE: run on one history from the loaded network and from FireLoopTms's empty state under the program the network lowers to, the two engines reach one working memory and one dependency table, and each table's unblocked tokens are the terminal's activations, in order and with their flags. Every theorem stated over FireLoopTms's run -- Rete/TmsRun.idr, Lcyc/TmsTermination.idr, Rete/PumpBoundary.idr -- is a theorem about the spec's network."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Iret_12__fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Facts are naturals; only identity is consulted."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Iret_12__sub",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Subset as a membership implication."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__all_in",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every antecedent live."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__all_in_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Every antecedent live gives each antecedent live."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__all_in_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Not every antecedent live exhibits one that is not."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__all_in_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Every antecedent live, from a proof per antecedent."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__all_in_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "All-live is monotone in the live set."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__bool_false_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A Bool that is not True is False."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__bool_split",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A Bool is True or False, decidably."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Bool membership, by structural recursion."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Bool membership gives `Elem`."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Membership survives a filter it passes."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_filter_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Membership in a filter is membership plus the test."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_head",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. The head is a member."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_tail",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A member of the tail is a member."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__elem_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`Elem` gives Bool membership."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A test true on every member filters nothing."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_full",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A filter as long as its input is its input."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_imp_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. And strictly fewer when the two filters differ."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_imp_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A stronger test keeps no more than a weaker one, on one list."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A filter is no longer than its input."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_neq_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE counting fact both fuel arguments rest on: a filter that changes something is strictly shorter than its input. Total, no holes."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__filter_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A filter is a subset of its input."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__imp_tail",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A pointwise implication on a list restricts to its tail."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__len_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Length zero is the empty list."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__nat_eq_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Bool equality on naturals is reflexive."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__nat_eq_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Boolean equality on naturals is propositional equality."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__nonempty",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A list with a member is nonempty."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__not_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. False means negation true."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__not_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. Negation true means false."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__or_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting or membership lemma of the fixpoint theorems, named under the clause it serves ([RFCS.19.1]'s `rfcs_19_1__take` is the precedent); total, no holes. A true disjunction has a true side."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__or_true_l",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Bool disjunction, left."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__or_true_r",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Bool disjunction, right."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__supported",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`justif_count > 0` counted against a live set: some justification targets the fact and has every antecedent live. The count itself is not kept, only whether it is positive, which is all retraction reads."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__supported_mono",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support is monotone in the live set."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__and_both",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Conjunction introduction on Bool."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__cons_not_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "List constructors are distinct."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__elem_filter_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member the filter lost failed the test."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__elem_nonempty",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A list with a member is not of length zero."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__filter_nil_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An empty filter rejected every member."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__head_of_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A list of positive length has a member."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12__lte_succ_self",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "n <= n + 1."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "Iret_12__fire_inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FIRING INVARIANT, between the actions of one firing: the run invariant, and the firing activation tracked -- its reading holds and it is live whenever its antecedents are, which is what the fresh id's avoid list buys."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "Iret_12__run_inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RUN INVARIANT, between actions: the core invariant, unique ids, every live row reads as a match, and every row is live -- the cascade that ended the last action ran to its fixpoint."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "Iret_12__run_inv_s",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run invariant of a state."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__all_in_back",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ids all live after a change that added no fact with one of them were all live before."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__all_in_not_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An id not live is not among ids that are all live."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__elem_set_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member survives `set_at`, itself or transformed."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__elem_singleton",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The member of a singleton."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__length_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Length of an append."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__lte_b",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The order on Nat as a Bool, for the fresh-id search."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__lte_b_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Reflexive."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__lte_b_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At least n + 1 is at least n."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__lte_b_succ_self",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "n + 1 is not at most n."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__lte_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At most zero is zero."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__not_of_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Negation of a true Bool."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__or_false_split",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A false disjunction has two false sides."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__run_inv_certified",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "And for a program certified at kind level, on any input with unique ids, with the certificate's domain: the core's initial invariant and its range supply the premises. `partial`: a program [LCYC.3.1.1] admits only through [LCYC.6.1]'s literal break has no kind-level certificate."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__run_inv_holds",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RUN INVARIANT HOLDS. From an invariant-satisfying start with unique ids, every state a run reaches satisfies it; so at every action of every firing `iret_12_2__action_cascade` applies, and the live facts after the action are Rete/Refcount.idr's cascade of the engine's table. Positive programs, emitted values in the domain."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__run_row_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Between actions every row is live with a live target."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__tms_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Constructor injectivity for the engine state."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_12__lt_lte_b_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The strict order refutes the Boolean order the other way."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_12__lte_b_false_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The Boolean order, refuted, is the strict order the other way."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_12__lte_b_true_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The Boolean order, affirmed, is the order."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Base",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Done",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__ENGINE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Fact",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__GRAPH",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Justif",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__RetractBase",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__live",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__supported",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12__vars",
+        "tag": "spec"
+      }
+    ]
+  }
+}

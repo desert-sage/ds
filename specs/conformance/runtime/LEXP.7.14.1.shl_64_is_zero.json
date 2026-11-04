@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.14.1.shl_64_is_zero",
+    "category": "runtime",
+    "scenario": "[LEXP.7.14.1]: `1 << 64` is 0 -- 2^64 wraps to 0 under the Int wrap of [LEXP.7.13.1]. Masked, it reads `1 << 0` = 1. Guard `(t.x << t.n) == 0`; fact_count 2 confirms it fired. Path: rete/eval.c's SHL arm into int_ops.h's ds_i64_shl (formal/saw/i64_shl.saw); Mercury ds.eval.bit_result.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    n: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x << t.n) == 0\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 1, "n": 64 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

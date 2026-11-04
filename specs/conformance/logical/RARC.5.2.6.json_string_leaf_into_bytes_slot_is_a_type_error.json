@@ -1,0 +1,15 @@
+{
+    "id": "RARC.5.2.6.json_string_leaf_into_bytes_slot_is_a_type_error",
+    "clauses": ["RARC.5.2.7"],
+    "category": "logical",
+    "scenario": "[RARC.5.2.6]: no fact enters working memory carrying a slot value whose kind differs from its declared type, and there is no implicit conversion, for a rule's `emit` as for a host assert. A Json leaf keeps the kind it was written with ([LFAC.2.5.1]), so `p.body.n`, written `\"aab\"`, is a String; `Out.v` is declared Bytes, which is not a String ([LREG.1.1]). Produced by a rule's activation, the violation is [RARC.5.2.7]'s TypeError, a stream event: the pump returns no error and `Out` does not enter. The leaf's kind is known only when the rule runs, so the compiler cannot refuse the program ([RLOW.1.4]). Break: a runtime that took the String's octets as Bytes admits the fact, and the stream carries no `type_error`. Path: libds rete/engine.c eval_actions (ds_rete_slot_refused, `rete_slot_kind_admissible`'s BYTES arm, then ds_rete_fault_slot_refused); Mercury ds.exec.m assert_verb's `invalid` arm (`sr_kind_mismatch`, rarc_5_2_7_type_error, then abandon).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema Out scope logical:\n    id: String key\n    v: Bytes mutable\n\nrule r:\n    Payload p\n->\n    emit Out logical id: \"o\" v: p.body.n\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "n": "aab" } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "type_error"]
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.16",
+    "clauses": ["LEXP.7.16.1"],
+    "category": "logical",
+    "scenario": "Modulo by zero is a runtime error (LEXP.7.16.1) that abandons the activation: `t.x % t.y == 0` with y=0 does not fire, and with x=8, y=4 it does, so `r` fires exactly once.",
+    "rules_ds": "schema Pair scope logical:\n    entity_id: String key\n    x: Int mutable\n    y: Int mutable\n\nrule r:\n    Pair t where t.x % t.y == 0\n->\n    log info \"even\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "zero", "x": 8, "y": 0 } },
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "ok",   "x": 8, "y": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

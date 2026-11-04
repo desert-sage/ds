@@ -1,0 +1,19 @@
+{
+    "id": "IRET.10.7_after_body_withdraws_matched",
+    "clauses": ["LGRA.10.1.4"],
+    "category": "adapter",
+    "scenario": "IRET.10.7 / LGRA.10.1.4: `withdraw j` in an `after` body removes the matched Job when the timer fires. The body logs \"timer\" and then withdraws `j`, and `gone` fires once no Job is left: [\"armed 1\", \"timer\", \"gone 1\"]. A withdraw at fire time gives [\"armed 1\", \"gone 1\", \"timer\"]. PATH PINNED: the `after` clause's capture fact carrying `j` as a reference (`dsc.rete` `action_captures`), and ACTION_WITHDRAW_BY_ID on the follow-up rule's terminal (`rete/engine.c`). Its by-identity form runs on both runtimes as the Mercury differential scenario 89_withdraw_nested.",
+    "rules_ds": "schema Anchor scope explicit:\n    v: Int\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    log info \"armed {j.id}\"\n    after 5_s:\n        log info \"timer\"\n        withdraw j\n\nrule gone:\n    Anchor a\n    no Job\n->\n    log info \"gone {a.v}\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [],
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Anchor", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["armed 1", "timer", "gone 1"]
+    }
+}

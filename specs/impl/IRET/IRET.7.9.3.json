@@ -1,0 +1,130 @@
+{
+  "id": "IRET.7.9.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7.9",
+  "seq": 656,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.9.3] **On right-retraction:**\n- For each left token the retracted fact blocks, as the index of\n  [IRET.7.9.4] records it: decrement its block count. No join test is\n  evaluated.\n- Each token whose block count drops to 0 propagates downstream (the\n  absence holds again). Its wave derives the pairs below it\n  ([LERR.1.4.12]).\n\n",
+  "refs": [
+    "IRET.7.9.4",
+    "LERR.1.4.12"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__right_retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "On right-retraction a NOT node uncounts the fact against each left token it joined and propagates downstream the tokens whose count drops to zero."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_9_3__unblock",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A blocking fact retracted: every left token it joined loses one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The tokens a NOT node releases activate downstream at the timetags they first completed with."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__right_retract_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT LEAVES ONE ALPHA MEMORY: every chain consistent with the old memories is, after right-retracting its nodes fed by that alpha deepest first, consistent with the new ones. A positive node's extensions by the fact leave the nodes below; a NOT node releases the tokens the fact alone was blocking. The clause's right-retraction, read as 'each left token that joins the retracted fact' since a left token has no facts[k]."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_3__pass_unblock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A NOT node's output after a right fact leaves: what it passed, plus the tokens the fact alone was blocking."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_3__pass_unblock_bwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What was passed, or blocked by the fact alone, is passed after it leaves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_3__pass_unblock_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a NOT node passes after a right fact leaves was passed, or was blocked by that fact alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_3__released_disjoint",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The released tokens were not passed before."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_3__unblock_ok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Uncounting a retracted fact against the tokens it joined gives the blockers of the shrunk memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_retract_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A NOT node's right-retraction releases matches as unfired: created, not kept."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_7__right_retract_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs a right-retraction evaluates that a record of evaluated pairs would carry: none it re-tests (those are the pairs it ends), only the wave of the tokens a `no` node releases."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_9_3__unblock_hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unblocking takes one from the count of each token hit, given the hits are distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_9_3__unblock_miss",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unblocking leaves the count of a token not among those hit."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_7_9_3__release",
+        "tag": "spec"
+      }
+    ]
+  }
+}

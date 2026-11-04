@@ -1,0 +1,48 @@
+{
+    "id": "LADP.8.5.3_data_slot_not_whole",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3], [RLOW.7.3.9]: a `data` quantity read from a slot is converted to the kwarg's unit when the call is evaluated, by FN_INT_DIV_EXACT, and a value that is not a whole number of the unit raises a ComputationError of kind NOT_REPRESENTABLE and issues no call. `store.put` declares `size: byte`; rule `put` passes `b.size` (a `bit` slot) and then logs. Blob 1 holds 16 bits and the integrator receives size=2, and the log runs. Blob 2 holds 12 bits: the activation is abandoned with a computation_error, so neither its call nor its log appears. A runtime converting `data` as a Float, `(base - 0) / 8`, sends 1.5 for Blob 2. PATH PINNED: `written_in_unit` in dsc.rete finds the argument a `data` quantity by its type, `dsc.quantity.rlow_7_3_9_conversion` gives `cv_div_exact(8)` because `whole_number_dimension` reads `data`'s `int64` storage, and `kwarg_pairs` wraps the read in `FN_INT_DIV_EXACT`; libds's `builtin_int_div_exact` answers it here.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nservice store.put:\n    kwarg size: byte required\n    no response\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule put:\n    Blob b\n->\n    call store.put size: b.size nocooldown\n    log info \"put {b.id}\"\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Blob",
+                "slots": {
+                    "id": 1,
+                    "size": 16
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Blob",
+                "slots": {
+                    "id": 2,
+                    "size": 12
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_stream_kind_counts": {
+            "action_call": 1,
+            "action_log": 1,
+            "computation_error": 1
+        },
+        "expected_calls": [
+            {
+                "service": "store.put",
+                "correlation": "$put_c0_g0",
+                "body": {
+                    "size": 2
+                }
+            }
+        ]
+    }
+}

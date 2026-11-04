@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.1.3_after_body_reads_withdrawn",
+    "category": "compiler",
+    "scenario": "LGRA.10.1.3: an `after` body reads `{t.v}` in a rule whose actions `withdraw t`. The `after` clauses follow every action, and the body's capture of `t` is taken at the firing ([LTAC.3.5], by [LCCO.5.2]), after the withdraw ran, so it reads a fact the withdraw removed. Refused with DS_VALIDATE_WITHDRAWN_BINDING_USED at the `after` clause. PATH PINNED: the check's walk into the `after` clauses, which a first version exempted; no action reads `t` after the withdraw, so only the `after` body can raise it. Twin: LGRA.10.1.3_after_body_without_withdrawn.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    withdraw t\n    after 5_min:\n        log info \"later {t.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHDRAWN_BINDING_USED"
+    }
+}

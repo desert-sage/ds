@@ -1,0 +1,22 @@
+{
+    "id": "LCCO.8.3.2_error_matches_at_segment_boundaries",
+    "category": "logical",
+    "scenario": "[LCCO.8.3.2]: an `error <pattern>:` continuation matches a CallError whose code's segments start with the pattern's, at segment boundaries, not by character prefix. Three Req facts a, b, c each issue one call, correlated `c-<id>`; each call is answered by a CallError with its own code: a `adapter` (the pattern itself), b `adapter.failed` (a longer code under it), c `adapterx` (a character prefix, not a segment). The rule's only continuation is `error adapter:`, and it logs the request's id. Each CallError is asserted and pumped on its own, so the order is the order of the answers: exactly [\"adapter a\", \"adapter b\"]. A runtime matching by character prefix also logs c; one matching only the exact code drops b. A code that differs after `_` (`adapter_failed`) is logical/LCCO.8.3.2_underscore_is_not_a_boundary's. The compile side is compiler/LCCO.8.3.2 and compiler/LECC.6.2a; this is the runtime half. [LECC.6.4] admits `adapter`.",
+    "rules_ds": "service svc.read:\n    kwarg entity_id: String\n    no response\n\nschema Req scope logical:\n    id: String key\n\nrule r:\n    Req q\n->\n    call svc.read entity_id: q.id nocooldown as \"c-{q.id}\"\n        error adapter:\n            log info \"adapter {q.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Req", "slots": { "id": "a" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "b" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "c" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c-a", "code": "adapter", "message": "x", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c-b", "code": "adapter.failed", "message": "x", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c-c", "code": "adapterx", "message": "x", "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["adapter a", "adapter b"]
+    }
+}

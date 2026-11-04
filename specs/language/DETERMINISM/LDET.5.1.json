@@ -1,0 +1,231 @@
+{
+  "id": "LDET.5.1",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 573,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.5.1] When more than one rule activation matches at the same clock\ninstant, the order in which they fire is determined by the\nfollowing total order:\n\n1. **[LDET.5.4]** — the terminal ordinal, which is source order.\n2. **[LDET.5.5]** — activation-creation order, within one rule.\n\n**Source order is the outer key**, and that is the whole of the author's\ncontrol: the rule written first fires first. `[LDET.5.5]` orders the\nactivations *of a single rule* against each other and never decides\nbetween two different rules.\n\nThe keys are total by construction and nothing has to assume it. The\nordinal is unique per rule, so two activations of **different** rules are\nseparated by the first key alone; and two activations of the **same**\nrule share an ordinal but cannot share a creation timetag, because a\ntimetag is assigned per token and a token reaches exactly one terminal.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_1__fires_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_1__firing_order_is_strict_total",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_1__keys_are_jointly_injective",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_1__match_has_the_rules_arity",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_1__rule",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "ldet_5_1__select_next_pending",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What is selected is eligible: not fired, not blocked."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_1__select_next",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's total order, as the selection function: the lowest terminal ordinal with an eligible activation, then that rule's earliest-created eligible activation. Ordinal = position in the program's rule list, creation = position in the rule's table."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_1__select",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Selection by the two keys: ordinal, then creation order within one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "ldet_5_1__select_next_none",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A head table with no pending token and nothing after it selects nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "ldet_5_1__select_next_skip",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A head table with no pending token is skipped: the selection after it, one ordinal later."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "ldet_5_1__select_next_yes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Selection, one table at a time: a head table with a pending token is selected at it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE FIRST PENDING TOKEN of a table is the first unfired activation among its unblocked tokens: both skip the blocked and the fired, so the selected positions name one match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_of_net",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection's activation is the terminal's first unfired one: the second key, within one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_of_select",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection's token is the table's first pending one: the second key, within one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__select_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SELECTION AGREES: with every table's unblocked tokens its terminal's activations, both engines pick nothing, or the same rule and the same activation -- the lowest ordinal with a pending activation, then its earliest."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__step_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES: both engines stop, or both fire the same activation of the same rule and agree afterwards."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Copies",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Done",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__ENGINE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__FireBoth",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Matches",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__PumpEnd",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__agenda",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__drains",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__fired",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__fires_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__live",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__pumping",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__unique_next",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_1__vars",
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LDET.5.4",
+    "LDET.5.5"
+  ]
+}

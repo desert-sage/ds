@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_skip_band_atom_before_the_header_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1]'s second row: an artefact whose first atom is not a `DscHeader`, whatever its field number and band, is refused with DS_ERR_DSC_BAD_MAGIC (-501). This vector is the skip band (256-2047, [RFCS.16.3]), where an unknown atom is otherwise passed over. The harness compiles the program and `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a03fa7f00\"}}` ([RCTS.1.2.21]) puts one complete frame before atom 0: outer tag `0x0A`, length 3, inner tag `fa 7f` (field 2047, wire type 2, which no atom is allocated) and an empty body. The header that follows is re-sealed where it now stands ([RDSC.3.6]), so the refusal is the frame's and not the hash's. What it discriminates: a loader that consults the band before it checks for the header skips the atom, finds the header second and loads. Its siblings are `RDSC.11.1_an_inject_band_atom_before_the_header_is_bad_magic` and `RDSC.11.1_a_reject_band_atom_before_the_header_is_bad_magic`. PATHS: libds's `ds_dsc_load`, which checks the first atom's field number before its walk, through pyds `load_dsc` (runner.py's `_tampered`, `dsc_seal.insert_bytes`); the Mercury runtime's `ds.dsc` `dispatch`, which refuses any first atom but a header ahead of the bands (`lek_bad_first_atom`), through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a03fa7f00"}},
+        "code": "-501"
+    }
+}

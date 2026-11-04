@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.core — the baked SI base dimensions (LUNI.4.1.2).
+#
+# The seven SI base dimensions and their canonical anchors are PRIMITIVE: the
+# coordinate axes of the dimensional algebra, always in scope and
+# non-redefinable. They are the basis every other unit is expressed over — not
+# standard-library content. The compiler pre-loads this module implicitly, so
+# base literals (5_kg / 30_s / 100_m) resolve with no `import`; `units.si` and
+# every other unit file build on these axes and MUST NOT redeclare a base axis
+# ([LUNI.4.1.2]).
+#
+# Only these seven are baked. Derived SI (watt, Hz, …) and every non-SI system
+# are earned by declaration in units.si and friends.
+#
+# Time is int64 nanoseconds; the other base dimensions are float64.
+
+unit dimension time                storage int64    base nanosecond
+unit dimension length              storage float64  base meter
+unit dimension mass                storage float64  base kilogram
+unit dimension temperature         storage float64  base kelvin
+unit dimension current             storage float64  base ampere
+unit dimension amount              storage float64  base mole
+unit dimension luminous_intensity  storage float64  base candela
+
+# The anchor unit of each base axis, with its canonical short alias, so base
+# literals (5_kg / 100_m / 5_kelvin …) resolve with no import. These are the
+# identity units (no conversion factor — they ARE the base). Scaled/prefixed
+# forms on the other six axes (gram, kilometer, …) and the derived SI units
+# live in units.si, which builds on these axes.
+
+unit nanosecond:  time                label "ns"   alias ns
+unit meter:       length              label "m"    alias m
+unit kilogram:    mass                label "kg"   alias kg
+unit kelvin:      temperature         label "K"    alias K
+unit ampere:      current             label "A"    alias A
+unit mole:        amount              label "mol"  alias mol
+unit candela:     luminous_intensity  label "cd"   alias cd
+
+# The `time` axis is baked IN FULL, not just at its anchor ([LUNI.4.1.2]).
+# Duration literals occupy core grammar positions — cooldown / debounce
+# ([LGRA.6.6]), after ([LTAC.2.1]), ttl, within, sliding, tumbling — so a file
+# that imports nothing must still be able to write one. minute / hour / day are
+# non-SI and are baked anyway, because the set an author reaches for is the set
+# that has to be in scope.
+#
+# The canonical symbol is μs with U+03BC GREEK SMALL LETTER MU, the
+# character Unicode prefers for the SI micro prefix. U+00B5 MICRO SIGN is the
+# Latin-1 compatibility duplicate most keyboards emit, and `us` is the ASCII
+# path; both are aliases so authors are not fighting their keyboard, but the
+# label — what diagnostics and rendered values show — is the SI form. NFC does
+# not fold the two mus (that is NFKC), so each is listed explicitly.
+
+unit microsecond: time  = x * 1_000                     label "μs"   alias μs, µs, us
+unit millisecond: time  = x * 1_000_000                 label "ms"   alias ms
+unit second:      time  = x * 1_000_000_000             label "s"    alias s
+unit minute:      time  = x * 60_000_000_000            label "min"  alias min
+unit hour:        time  = x * 3_600_000_000_000         label "h"    alias h
+unit day:         time  = x * 86_400_000_000_000        label "d"    alias d

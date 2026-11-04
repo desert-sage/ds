@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.4.6_encode_refused",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6]: `s.encode(\"utf-8\")` is refused with DS_VALIDATE_BYTES_CONVERSION_RETIRED at the call. The receiver is a declared `String` slot and the encoding is valid, so the refusal is the retirement's. PATH PINNED: the method-call arm of the validator, the `encode` name.",
+    "rules_ds": "schema Msg scope ttl 1_h:\n    text: String\n\nschema Out scope ttl 1_h:\n    blob: Bytes\n\nrule r:\n    Msg m\n->\n    emit Out blob: m.text.encode(\"utf-8\")\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BYTES_CONVERSION_RETIRED"
+    }
+}

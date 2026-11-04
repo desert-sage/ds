@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.11.5",
+    "category": "compiler",
+    "scenario": "[LCCO.11.5]: a binding referenced in a continuation body must be declared on the outer rule's LHS. The `on` body's log reads `u.entity_id`, and the LHS binds only `t`, so the program is refused with DS_VALIDATE_UNKNOWN_BINDING. PATH PINNED: `dsc.validate`'s `scoped_continuation`, which carries the rule's bindings into the body, then `action_strings` and `check_interpolation` on the body's log.",
+    "rules_ds": "schema WeatherGetForecastsReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice weather.get_forecasts:\n    kwarg entity_id: String\n    response WeatherGetForecastsReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.code == 200:\n            log info \"got forecast for {u.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

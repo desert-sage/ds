@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.5.3.1_3d_distances",
+    "clauses": ["LEXP.12.7"],
+    "category": "logical",
+    "scenario": "[LEXP.5.3.1] / [LEXP.5.5]: the 3D arities of `distance.euclidean`, `distance.manhattan`, `distance.chebyshev` (6 operands) and `distance.hypotenuse` (3 operands), which no live vector called (`logical/LEXP.5.1` runs the 2D forms only). One V(x: 2.0, y: 3.0, z: 6.0) is asserted and pumped once. Every operand that varies is a slot, so nothing folds at compile time and each value is the runtime builtin's. Each answer is exact: the vector from the origin to (2, 3, 6) has length sqrt(49) = 7. `euclid3` 7.0, `manhattan3` 2 + 3 + 6 = 11.0, `chebyshev3` max(2, 3, 6) = 6.0, `hypot3` 7.0. All four fire, in source order. A 6-operand call dispatched as 2D reads (0, 0) against (0, x), not the vector, and answers 2.0 for each of the first three, so none of them fires.",
+    "rules_ds": "import distance\n\nschema V scope logical:\n    k: Int key\n    x: Float mutable\n    y: Float mutable\n    z: Float mutable\n\nrule euclid3:\n    V v where distance.euclidean(0.0, 0.0, 0.0, v.x, v.y, v.z) == 7.0\n->\n    log info \"euclid3\"\n\nrule manhattan3:\n    V v where distance.manhattan(0.0, 0.0, 0.0, v.x, v.y, v.z) == 11.0\n->\n    log info \"manhattan3\"\n\nrule chebyshev3:\n    V v where distance.chebyshev(0.0, 0.0, 0.0, v.x, v.y, v.z) == 6.0\n->\n    log info \"chebyshev3\"\n\nrule hypot3:\n    V v where distance.hypotenuse(v.x, v.y, v.z) == 7.0\n->\n    log info \"hypot3\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "k": 1, "x": 2.0, "y": 3.0, "z": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["euclid3", "manhattan3", "chebyshev3", "hypot3"]
+    }
+}

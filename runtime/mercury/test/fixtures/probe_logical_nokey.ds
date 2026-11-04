@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A `scope logical` schema with no `key` slot: the whole schema is one
+# identity ([LFAC.1.7]).
+
+schema NoKey scope logical:
+    entity_id: String mutable
+    v: Int mutable
+
+schema Out scope ttl 1_h:
+    tag: String
+
+rule touch:
+    NoKey
+->
+    emit Out tag: "seen"

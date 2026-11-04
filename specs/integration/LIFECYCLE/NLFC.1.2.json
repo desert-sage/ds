@@ -1,0 +1,28 @@
+{
+  "id": "NLFC.1.2",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.1",
+  "seq": 44,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.1.2] `ds_engine_config_t` carries:\n\n- `run_id` — a string identifying the run this engine belongs to, or `NULL`.\n- `tier_id` — a string identifying this engine's tier, or `NULL`.\n\n`run_id` and `tier_id` are the integrator's. Either may be given without the\nother, and an empty string is the same as `NULL`. The engine copies them at\n`ds_engine_new` and reads them only to derive `event_id` ([LFST.5.6]) and to\nrecord them in the stream header ([RFCS.4.3], [RFCS.4.4]); what they mean, and\nwhether they are unique, is the integrator's to decide. With neither given, an\n`event_id` is distinguished by `seq` alone. `ds_engine_get_run_id` and\n`ds_engine_get_tier_id` return them, `NULL` when absent.\n\nEach **must** be well-formed UTF-8 ([LSTR.8.5]): the stream header\nwrites them as protobuf `string` fields, and `event_id` hashes their bytes.\n`ds_engine_new` **must** refuse a `run_id` or `tier_id` that is not with\n`DS_ERR_ENCODING`, and create no engine.\n\nThe struct is additive — new fields append; passing `NULL` selects all defaults.\n\n",
+  "refs": [
+    "LFST.5.6",
+    "LSTR.8.5",
+    "RFCS.4.3",
+    "RFCS.4.4"
+  ],
+  "errors": [
+    "DS_ERR_ENCODING"
+  ],
+  "atoms": [
+    "NULL"
+  ],
+  "symbols": [
+    "ds_engine_get_run_id",
+    "ds_engine_new",
+    "ds_engine_get_tier_id"
+  ]
+}

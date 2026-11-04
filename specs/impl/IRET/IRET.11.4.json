@@ -1,0 +1,1447 @@
+{
+  "id": "IRET.11.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11",
+  "seq": 954,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Firing loop",
+  "text": "### Firing loop [IRET.11.4]\n\n`ds_rete_run(engine, max_fires, fires_out)`:\n\n1. While the agenda is non-empty and `fires_out < max_fires`:\n   a. Pop the highest-priority non-refracted activation.\n   b. Call `before_fire` hook.\n   c. Evaluate the activation's RHS actions in order.\n   d. Call `after_fire` hook.\n   e. Mark the activation's token identity (hash + fact-id\n      tuple) as refracted in the terminal's refraction set.\n   f. Increment `fires_out`.\n2. Return `DS_OK` (agenda drained) or `DS_ERR_BUDGET_EXCEEDED`.\n\n",
+  "errors": [
+    "DS_ERR_BUDGET_EXCEEDED"
+  ],
+  "symbols": [
+    "ds_rete_run"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "Iret_11_4__halts_at_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Quiescent after exactly n firings, with truth maintenance."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_11_4__reach_engine_halts",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed and checked: the reach run is quiescent after exactly four firings."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_11_4__step_n_tms_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more firing at the front of a run."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_11_4__step_n_tms_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run that stops."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_11_4__trace_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The states of a run as literals -- how the witness's states were obtained, each then re-checked by `Refl`."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "iret_11_4__step_n_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more firing at the front of a run."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "iret_11_4__step_n_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run whose next firing does not exist stops."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "iret_11_4__step_n_plus",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Runs compose: m + n firings is m then n."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "iret_11_4__step_n_prefix",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every prefix of a possible run is possible."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "iret_11_4__report",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Executable view of a bounded run: halt reason, firings, final working memory, pending activations per rule."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "iret_11_4__summary",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Compact run report: halt reason, firings, counts per kind, pending per rule."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "iret_11_4__trace",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The states of a run as Idris literals -- how the witness proofs' states were obtained; each is then re-checked by `Refl`."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Iret_11_4__halt",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Why a bounded run stopped: `Quiescent` is the clause's `DS_OK` (agenda drained), `FuelOut` its `DS_ERR_BUDGET_EXCEEDED`."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_4__run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop with `max_fires` as fuel, returning the final state, the halt reason and the firing count (`fires_out`)."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_4__step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One iteration of the loop: select the highest-priority non-refracted activation (1a), run its RHS actions in order (1c), mark it refracted (1e). The `before_fire` / `after_fire` hooks (1b, 1d) observe and do not change the state, so they have no model. `Nothing` is the empty agenda."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_4__step_n",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "n iterations, `Nothing` if the agenda emptied first."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__just_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`Just` is injective."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__run_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded loop, returning state, halt reason and firing count."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__step_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE AGREEMENT THEOREM for one step: on an explicit-only program the step with truth maintenance is the core's step, table empty."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__step_n_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And for every run: everything proved about the core engine, `lcyc_1_1__certified_terminates` included, holds of this engine on those programs."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__step_n_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "n firings, `Nothing` if the agenda emptied first."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__step_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing with truth maintenance: the core's selection and pop, then the RHS with the table and the cascade in the loop. Hooks are observers, as for the core."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_4__run_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded firing loop, reporting how it halted and how many fired."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_4__step_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing: select, mark fired, run the RHS actions in order; nothing pending, nothing done."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__run_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The bounded run from the due state: one firing then quiescence."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__run_idle",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The bounded run with nothing to fire: quiescent at once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__step_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One firing of the follow-up: select, mark, the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_run_projects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO RULE SITED THE RUN PROJECTS: state, halt and trace, for any fuel. By induction on the fuel through the firing's projection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run, traced: Rete/RunFold.idr's traced fold over the called firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__run_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The called run keeps the invariant, for any fuel. By induction on the fuel through the firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__run_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__run_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__run_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A run keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__step_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__step_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__step_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One firing keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_11_4__run_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN keeps the view, however it halts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_11_4__step_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING keeps the view: marking, then each action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_acts_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an unfired activation lowers the terminal's unfired count by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_net_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And over the chains: marking the selected activation lowers the count by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__map_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A mapped option that is something was something."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__map_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A mapped option that is nothing was nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__plus_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sum is zero only when both parts are."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__succ_not_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A successor is not zero."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__unfired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The unfired activations of a terminal, counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_4__unfired_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The unfired activations over every chain: what a run has left to fire."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__run_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOOP, COUNTED: under an action-free program each iteration pops one unfired activation and marks it, so with fuel enough the loop runs once per unfired activation, returns with the agenda drained, and `fires_out` is that number."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__fire_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One iteration of the loop, naming the ordinal popped: steps 1a to 1e on the plain network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__fire_net_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What an iteration that fired did: the selection, the activation, the mark and the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__fire_net_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The named iteration is the loop's step."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop, traced: the ordinals popped, in order, with the engine and the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE TRACED RUN IS THE ONE TRACED FOLD at its named firing (Rete/RunFold.idr's `iret_11_4__trace_by`), by induction on the fuel. The bridge the trace-is-the-run goes through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The trace is the loop's: the same engine, the same halt, `fires_out` is its length."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__step_net_nothing_select",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An iteration that fired nothing selected nothing: the agenda was empty."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__trace_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop's observable: its trace and its halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__run_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RUN UNDER THE FRAME, on the traced plain run: over any fuel, from any state with the invariant, a framed chain's tuples never change, its firings in the trace are exactly its activations that went from unfired to fired, and if the run halts `Quiescent` every one of them fired. Whatever the other rules do, however the run halts: fuel is not assumed to suffice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__step_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING UNDER THE FRAME: the invariant is kept, and the framed chain is as it was unless it is the rule that fired, when exactly the activation selected, unfired before, is marked and nothing else of the chain moves. The firing rule's RHS, emits and withdraws alike, leaves the framed chain because none of its writes is a kind the chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__two_rules_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The loop on the two-rule fixture, traced: `[0, 0, 1, 1]`, quiescent. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__fire_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One iteration of the loop on the clocked network, naming the ordinal popped: steps 1a to 1e with the cascade of each action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__fire_ttl_net_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An iteration whose selection resolves fires it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__fire_ttl_net_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What an iteration that fired did: the selection, the activation, the mark and the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__fire_ttl_net_nothing_select",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An iteration that fired nothing selected nothing: the agenda was empty."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__fire_ttl_net_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The named iteration is the loop's step."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop on the clocked network, traced: the ordinals popped, in order, with the network and the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE TRACED CLOCKED RUN IS THE ONE TRACED FOLD at its named firing (Rete/RunFold.idr's `iret_11_4__trace_by`), by induction on the fuel. The bridge the trace-is-the-run and the two step-wise unfoldings go through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One iteration that fired, then the loop from the network it left: the loop unfolded one firing at a time, which is how an executed run is checked firing by firing. RunFold's `iret_11_4__trace_by_cons` through the bridge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The trace is the loop's: the same network, the same halt, `fires_out` is its length."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An iteration that fired nothing ends the loop on the empty agenda. RunFold's `iret_11_4__trace_by_end` through the bridge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__trace_of_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop's observable on the clocked network: its trace, its halt, the kinds left live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__trace_of_ttl_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The observable determines the loop's halt and trace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__run_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RUN UNDER THE FRAME on the clocked network: over any fuel, from any state between actions with the invariant, a framed chain's tuples never change, its firings in the trace are exactly its activations that went from unfired to fired, and if the run halts `Quiescent` every one of them fired. Whatever the other rules do and whatever their endings cascade, however the run halts: fuel is not assumed to suffice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__step_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING UNDER THE FRAME on the clocked network: the invariant is kept, and the framed chain is as it was unless it is the rule that fired, when exactly the activation selected, unfired before, is marked. The cascade of every action is inside: it retracts targets of rows, of emitted kinds, which the chain does not read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_fuel_out_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE RUN THAT RUNS OUT OF FUEL: the two-fact fixture with fuel 1 -- A fires for its first match and the fuel is spent, `FuelOut`, trace `[1]`, B's match made and unfired, A's second match unfired. One firing as a `Refl` from the literal, then the run with no fuel, chained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced run from the fact, with fuel 3, named so the tick after it is spelled once. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__observed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loop's observable: `fires_out`, the halt, and the agenda's tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__run_net_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run that fires is the firing then the rest, one more firing counted. RunFold's `iret_11_4__run_by_just` through the bridge."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__run_net_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOOP, COUNTED, on the plain network: each iteration pops one unfired activation and marks it, so with fuel enough the loop runs once per activation and returns with the agenda drained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__run_net_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run from a state with nothing selected: the state, quiescent, no firing. Rete/RunFold.idr's `iret_11_4__run_by_nothing` through Rete/NetworkRefraction.idr's bridge `iret_11_4__run_net_by`; Rete/NetworkTransfer.idr's `iret_11_4__run_net_quiet` is the same fact read on the engine alone, from the same two."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__unfired_count_is_act_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And over the chains: before any pump the unfired count is the agenda's size."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__unfired_is_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A terminal of unfired activations has as many unfired as activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_11_4__run_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN keeps the order, however it halts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_11_4__step_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING keeps the order: marking, then each action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__select_spec_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "STEP 1a IS THE MODEL'S SELECTION under a sound ghost: refraction refuses nothing the flag does not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__first_eligible",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1a within one rule: the first activation neither popped nor refracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__first_eligible_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Within a rule, step 1a picks the first unfired activation when every refracted identity is fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__map_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two maps over a selection agree when the functions agree on pairs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__mark_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1e: the fired activation's identity enters its terminal's set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__mark_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Step 1e keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded run with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_g_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE GHOST'S RUN IS THE STATE OF THE ONE FOLD at its step: it keeps no halt and no count. By induction on the fuel; with `iret_11_4__run_net_by` and RunFold's simulation, `iret_11_4__run_g_fst`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's run is the model's run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE NETWORK'S RUN IS THE ONE FOLD at its step, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN keeps the ghost sound, however it halts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1a from ordinal r on: the lowest ordinal with an eligible activation, then its first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_from_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "From any ordinal on, step 1a's selection is the model's when every refracted identity is fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_head",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The head rule's two selections agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_spec",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1a as the clause states it: the first non-refracted, unpopped activation in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__step_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing with the set beside it: 1a select, 1e mark, 1c the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__step_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's firing is the model's firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__step_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING keeps the ghost sound: marking, then each action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_2__run_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The firing loop over the gated stamped firing, the fuel its budget. LESS than the clause: no hooks, and refraction is the activation's flag, as every run tie of the lane."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_2__run_timed_projects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The firing loop with stamps is the firing loop, fuel for fuel, firing for firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__fire_idle_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No selection on a chain with no activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__run_fires_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One firing, then quiescence, through the traced fold's unfoldings."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__run_idle_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No activation, no firing, quiescent at once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A run with truth maintenance on the network, under fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE NETWORK'S RUN WITH TRUTH MAINTENANCE IS THE ONE FOLD at its step, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run on the network that fires continues from the fired state with one less fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run on the network that cannot fire returns the state, quiescent."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__step_tms_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of FireLoopTms with a token selected marks it and runs its rule's actions with the table in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__step_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing with truth maintenance on the network: selection and mark, then the RHS with the table and the cascade in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__step_tms_net_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of the network with an activation selected marks it and runs its chain's actions with the table in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__step_tms_net_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of the network with nothing selected is no firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__step_tms_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of FireLoopTms with nothing selected is no firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__run_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: the same firings, the same halt, the same count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__step_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES: both engines stop, or both fire the same activation of the same rule, record the same rows, cascade alike, and agree afterwards."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__fire_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing, naming what fired: the terminal ordinal and the fired match's fact ids, with the engine after it -- step 1a made visible."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__fire_tms_net_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The named firing is the firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__fire_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing on the clocked engine, naming what fired: the terminal ordinal and the fired match's facts, with the engine after it -- step 1a made visible, the facts themselves so a runner can evaluate what the firing's effects read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__fire_ttl_net_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The named firing is the clocked firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_tms_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pump, traced: the firings in order, the engine, and the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_tms_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRACE IS THE PUMP'S: the same engine, the same halt, and as many firings as the pump counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_ttl_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clocked pump, traced: the firings in order, each with its facts, the engine, and the halt. What Fixture.idr runs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_ttl_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRACE IS THE CLOCKED PUMP'S: the same engine, the same halt, and as many firings as the pump counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__map_S_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A successor-mapped position that is some position was some position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_by_fl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "FIRELOOP'S RUN IS THE ONE FOLD at its step, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run of FireLoop that fires continues from the fired state with one less fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_net_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run of the network that fires continues from the fired engine with one less fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_net_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run of the network that cannot fire returns the engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run of FireLoop that cannot fire returns the state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__step_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of FireLoop with a token selected marks it and runs its rule's actions on its facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__step_net_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of the network with an activation selected marks it and runs its chain's actions on its match: pop, evaluate the RHS, mark refracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__step_net_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of the network with nothing selected is no firing: the agenda is drained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__step_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing of FireLoop with nothing selected is no firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__run_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: both quiescent together, or the same firings in the same order, and the agreement after."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__step_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES: both engines stop, or both fire the same activation of the same rule and agree afterwards."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__step_fire",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A FIRING AGREES: with the same activation of the same rule selected on both sides, both mark it, both run the rule's actions on its facts against one working memory, and the results agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_11_4__run_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A run under any fuel keeps the state well-formed; `max_fires = 0` as unlimited is the same run with fuel enough."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_11_4__step_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One firing keeps the state well-formed: the mark, then the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "FIRELOOP'S RUN WITH THE DEADLINE TABLE IS THE ONE FOLD at its step, Rete/TtlSweep.idr's loop, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_just_fl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run that fires is the firing then the rest, on FireLoop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded run on the network, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE CLOCKED NETWORK'S RUN IS THE ONE FOLD at its step, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run that fires is the firing then the rest, on the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run from a quiescent state stops at once, on the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_nothing_fl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run from a quiescent state stops at once, on FireLoop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__step_ttl_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selected activation fires, on FireLoop with the deadline table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__step_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing on the network, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__step_ttl_net_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selected activation fires, on the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__step_ttl_net_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nothing selected, no firing, on the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__step_ttl_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nothing selected, no firing, on FireLoop with the deadline table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__run_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: the same firings, the same halt, the same count, the same deadlines; the clock is the pump's own."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__step_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES, the deadline table included."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_11_4__pump_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A pump keeps the run invariant and the target kinds, however it halts."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_11_4__run_halts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run that quiesces within n firings reports quiescence with fuel n."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE BOUNDED RUN over any step: fire while the step fires and the fuel lasts; the state, which halt, how many firings. The loop every engine of the lane writes out, once, with the step a parameter."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by_fst_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The state alone: a run that fires continues from the fired state with one less fuel."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by_fst_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The state alone: a run that cannot fire returns its state."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run from a state the step fires: the firing, then the run from the state it leaves, one more firing counted. Proved once of the fold; each engine's unfolding is this through its bridge."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A run from a state the step refuses: the state, `Quiescent`, no firing. Proved once of the fold; each engine's unfolding is this through its bridge."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by_sim",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SIMULATION: a step shadowed by another through a projection -- the projection of the one step's result is the other step at the projection -- runs shadowed by it, for any fuel: the projection of the one run's state is the other run's. Rete/NetworkRefraction.idr's ghost run shadows the engine's by this."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE BOUNDED RUN, TRACED, over any firing that names what fired: what fired, in order, with the state and the halt. The traced loops of Rete/NetworkFrame.idr and Rete/NetworkFrameClocked.idr, once; Rete/NetworkTraced.idr's, whose firing names two things, keeps its own."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The traced fold unfolds one named firing at a time: a firing that resolves prepends what it named to the trace of the run from the state it leaves."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRACE IS THE RUN'S, for any firing whose state is the step's: the traced fold and the fold reach one state with one halt, and the run counts as many firings as the trace names. The two bridged per-engine trace-is-the-run theorems are this through their bridges."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing that resolves to nothing ends the traced fold `Quiescent`, whatever fuel is left."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__fire_start",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "At the start of a firing, after the pop: the run invariant is kept and the popped activation is tracked -- its reading from the settled table, its liveness from the mark."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__run_tms_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE ENGINE'S RUN WITH TRUTH MAINTENANCE IS THE ONE FOLD at its step, by induction on the fuel. The bridge to Rete/RunFold.idr's `iret_11_4__run_by`; the module's unfoldings of the run are RunFold's through it."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__run_tms_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine's run, unfolded by one firing. Shared by Rete/TtlSweep.idr and Rete/NetworkTmsTransfer.idr, which each carried a copy."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__run_tms_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine's run on an empty agenda: quiescent, no firings, whatever the fuel."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__step_n_tms_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Every state of a run satisfies the run invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__step_tms_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One firing keeps the run invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__pump_ttl_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nor does a pump: the clock moves only at ticks."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__run_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded run, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__run_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A pump keeps the clocked invariant and the clock, however it halts."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__step_tms_unfold",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine's firing, given the selection, the rule and the token."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__step_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One firing, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__step_ttl_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing does not touch the clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__step_ttl_engine",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AGREEMENT: one firing with the deadline table is the engine's firing on the engine, so every theorem of Rete/TmsRun.idr and Lcyc/TmsTermination.idr about a firing holds here."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__step_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One firing keeps the clocked invariant and the clock: the run invariant and target kinds by agreement with the engine, the deadline table by the RHS's mints."
+      }
+    ]
+  }
+}

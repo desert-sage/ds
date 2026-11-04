@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The R1 fixture for the @ds-lang/ds suite (bindings/js/test). Compiled by the
+# branch's own Mercury dsc in the `js` gate, never committed as a .dsc: a
+# checked-in artefact stops loading at the next minor bump ([LDET.1.10]).
+#
+# Reading/Big: losing 64-bit exactness anywhere between JS and the engine
+# changes WHICH RULE FIRES. 2^53 + 1 = 9007199254740993 is the first integer a
+# JS Number cannot hold, so `past_2_53` fires only if the BigInt arrived intact,
+# and Big.n reads back as n + 1 only if it left intact too.
+
+use default
+
+schema Reading scope logical:
+    id: String key
+    n: Int mutable
+    x: Float mutable
+    ok: Bool mutable
+
+schema Big scope logical:
+    id: String key
+    n: Int mutable
+
+# Every value kind the binding converts, and a nullable slot for [LNUL.4.1]'s
+# null-by-omission.
+schema Blob scope logical:
+    id: String key
+    doc: Json mutable
+    raw: Bytes mutable
+    note: String? mutable
+
+# A TTL schema, for the sweep and for handles that die by expiry.
+schema Ping scope ttl 5_s:
+    seq: Int
+
+rule past_2_53:
+    Reading r where r.n > 9007199254740992 and r.ok == true
+->
+    emit Big logical id: r.id n: r.n + 1

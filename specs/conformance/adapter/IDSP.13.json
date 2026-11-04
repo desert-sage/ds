@@ -1,0 +1,28 @@
+{
+    "id": "IDSP.13",
+    "clauses": ["IDSP.13.4"],
+    "category": "adapter",
+    "scenario": "cache value of a string literal \u2014 pins the String row of IDSP.13.4's mapping, through FN_JSON_VALUE: the compiler wraps the cache value (dsc.rete), and libds's adapter_ds_json_value and the Mercury runtime's json_value_text render it. Pins no other row.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    cache key: \"label\" value: \"alpha\"\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_sets": [
+            {
+                "key": "label",
+                "value": "alpha"
+            }
+        ]
+    }
+}

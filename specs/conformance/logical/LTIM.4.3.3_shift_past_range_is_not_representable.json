@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.3.3_shift_past_range_is_not_representable",
+    "clauses": ["LTIM.1.1.5"],
+    "category": "logical",
+    "scenario": "LTIM.4.3.3 / LTIM.1.1.5: a calendar shift whose `Time` result falls outside the int64-nanosecond range raises a ComputationError of kind NOT_REPRESENTABLE; the activation is abandoned and the engine continues. One Event at 2024-03-31T10:20:30Z. `shifted` reads `e.stamp.add_years(1000)` (3024, past 2262) in a `let` and logs it; `later` logs. The pump raises the computation error from `shifted`'s action and then fires `later`, so the stream holds computation_error, action_log. The discriminator: a shift that raises DS_FAULT_RESOURCE, or returns DS_ERR_TIME_RANGE from the rule, records an EngineError and halts the tier, so neither the computation_error nor `later`'s action_log appears; one that wraps logs a date. Drives the compiler's FN_ADD_YEARS member lowering with the Time receiver through FN_UTC, libds's `calendar_shift` int64-ns overflow arm (rete/adapters.c) and Mercury's `ltim_4_3_shift` Time arm (ds.eval).",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    stamp: Time mutable\n\nrule shifted:\n    Event e\n->\n    let s = (e.stamp.add_years(1000))::String\n    log info \"shifted {s}\"\n\nrule later:\n    Event\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "stamp": 1711880430000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log"]
+    }
+}

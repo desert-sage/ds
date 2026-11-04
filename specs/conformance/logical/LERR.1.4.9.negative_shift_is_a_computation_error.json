@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.4.9.negative_shift_is_a_computation_error",
+    "category": "logical",
+    "scenario": "[LERR.1.4.9]'s DOMAIN row on a raiser IEEE 754 does not own: a shift count that is negative at run time ([LEXP.7.14.1], [LERR.1.4.10]). A ComputationError with TRAP_DOMAIN, not a TypeError: the operands are well-typed Ints and the operation is valid at the site — it simply has no answer ([LERR.1] rung 6). PATH PINNED: the bitwise arm of `ds_rete_eval` in rete/eval.c, the `rv.i < 0` test before `ds_i64_shl` / `ds_i64_shr`, and the Mercury shift arm. The count is a slot read, so the negative is a runtime value and the compiler cannot refuse it ([LEXP.7.8]).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    x: Int mutable\n    n: Int mutable\n\nrule r:\n    S s where (s.x << s.n) > 1\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "x": 1, "n": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

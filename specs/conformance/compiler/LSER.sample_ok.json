@@ -1,0 +1,10 @@
+{
+    "id": "LSER.sample_ok",
+    "clauses": ["LSMP.3.1", "LSER.18.1"],
+    "category": "compiler",
+    "scenario": "The `sample <n>` time model (uniform-random reservoir, SeriesBackendReservoir backing) admits the statistical aggregations over the bag per LSER.16 / LSMP.3: mean, stdev, pXX, min, max, sum, count compile cleanly and need no accuracy phrase (the reservoir is count-bounded exact over the sample). Pin: a single `sample 200` observation line carrying the full admitted set compiles to the SeriesBackendReservoir backend.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean, stdev, p95, min, max, sum, count sample 200\n\nrule trig:\n    Sensor t where t.mean > 50\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema TurnOnAck scope logical:
+    ok: Bool key
+
+schema SensorReading scope ttl 24_h:
+    entity_id: String
+    value: Float
+
+service light.turn_on:
+    "Turn on a light. Identifier kwarg fixes the entity at compile time."
+    kwarg brightness: Int default 255
+    kwarg entity_id: String literal required
+    kwarg transition: Float
+    response TurnOnAck
+
+service storage.hydrate_samples:
+    "Backfill SensorReading from the storage adapter."
+    kwarg entity_id: String literal required
+    hydration:
+        hydrates: SensorReading
+        max_window: 24_h
+        max_limit: 1000
+        filter_fields:
+            entity_id: ==, in
+            value: <, <=, >, >=

@@ -1,0 +1,11 @@
+# See fixtures/145_derived_traps.ds -- the transient pair ([LERR.1.4.12]).
+#
+#   pump 1  `a1` alone: it passes the NOT node and reaches the trapping join,
+#           which has no right fact yet.
+#   pump 2  `b1` with a1's key and `y = 0`. The NOT node blocks `(a1)`; the
+#           pair `((a1), b1)` at the trapping join is not live when the
+#           assert completes, so no trap is recorded in either runtime.
+assert A k=k1
+pump
+assert B k=k1 x=1 y=0
+pump

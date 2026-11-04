@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.2.9.6.8.as_repro_distinct",
+    "category": "adapter",
+    "scenario": "[LGRA.2.9.6.8]: the `call … as` correlation string is an interpolation position, so `as \"rsvp-{i.name}\"` on a multi-fact rule yields a per-fact-DISTINCT correlation, and the two calls do not collide under supersedure (LRST.2.1). A runtime that keeps the span as literal text gives every fact one correlation, and per-fact supersedure retracts all but the last. Pin: two Guests → two calls with distinct correlations `rsvp-alice` / `rsvp-bob`.",
+    "rules_ds": "service svc.rsvp:\n    kwarg line: String\n    no response\n\nschema Guest scope logical:\n    name: String key\n\nrule r:\n    Guest i\n->\n    call svc.rsvp line: \"invite {i.name}\" nocooldown as \"rsvp-{i.name}\"\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Guest", "slots": { "name": "alice" } },
+            { "op": "assert", "schema": "Guest", "slots": { "name": "bob" } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            { "service": "svc.rsvp", "correlation": "rsvp-alice", "body": { "line": "invite alice" } },
+            { "service": "svc.rsvp", "correlation": "rsvp-bob", "body": { "line": "invite bob" } }
+        ]
+    }
+}

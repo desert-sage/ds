@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.7.1_floor_bad_arg",
+    "clauses": ["LGRA.9.6.2"],
+    "category": "compiler",
+    "scenario": "LTIM.7.1: the `floor` member of `Time` takes a `Duration`. Passing a String rejects with DS_VALIDATE_BAD_OPERAND_TYPE. The receiver is a valid `Time`, so only the argument is wrong.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule r:\n    Event m where m.fired_at.floor(m.entity_id) == m.fired_at\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_OPERAND_TYPE"
+    }
+}

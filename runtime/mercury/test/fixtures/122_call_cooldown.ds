@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Dev scope logical:
+    id: String key
+    level: Int mutable
+
+service svc.slow:
+    kwarg id: String
+    no response
+
+service svc.fast:
+    kwarg id: String
+    no response
+
+rule notify:
+    Dev d
+->
+    call svc.slow id: d.id cooldown: 60_s
+    call svc.fast id: d.id cooldown: 10_s
+    log info "fired {d.id} {d.level}"

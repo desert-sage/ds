@@ -1,0 +1,11 @@
+{
+  "id": "IRET.28.6.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.6",
+  "seq": 2127,
+  "depth": 3,
+  "kind": "heading",
+  "heading": "Lifecycle",
+  "text": "#### Lifecycle [IRET.28.6.1]\n\nFour operations, and the distinction between the last two is the one that\nmatters.\n\n**Init** configures a table without allocating: key and value sizes, the\ngrowth threshold, the hash, equality and value-destructor callbacks, and\nthe context handed to all three. **Reserve** pre-allocates for an\nexpected count — the operation a real-time deployment performs before\nlocking, so that no later insert needs to grow.\n\n**Clear** empties the table: the value destructor runs on every live\nvalue, the length drops to zero, and **the capacity and arrays are\nkept**. **Free** does everything clear does, then releases the arrays and\nzeroes the table.\n\nSo clear is the reuse path and free is the teardown path. Clearing a\ntable that will be refilled costs no reallocation, which is why these are\ntwo operations rather than one with a flag.\n\n"
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LLOG.6.1",
+    "category": "logical",
+    "scenario": "`emit X logical` correctness depends on CLIPS no-op dedup per LLOG.6.1 — re-emitting the same logical fact (same slot values) is a no-op; the existing justification is extended, not duplicated. Pin: rule fires twice for two trigger asserts; Hit emitted twice but only one Hit fact exists (dedup). Strict: both firings carry an action_emit, and only the first carries a fact_assert. The second emit is the no-op, so the stream holds the two Triggers' fact_asserts and one Hit's. A subsequence match cannot see a second Hit fact_assert, which is the duplication the vector names.",
+    "rules_ds": "schema Trigger scope logical:\n    entity_id: String key\n    kind: String mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule r:\n    Trigger t where t.kind == \"motion\"\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            { "op": "assert", "schema": "Trigger", "slots": { "entity_id": "a", "kind": "motion" } },
+            { "op": "assert", "schema": "Trigger", "slots": { "entity_id": "b", "kind": "motion" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "tick", "fact_assert", "fact_assert", "pump",
+            "rule_lhs_facts", "rule_fire_begin", "fact_assert", "action_emit", "rule_fire_end",
+            "rule_lhs_facts", "rule_fire_begin", "action_emit", "rule_fire_end"
+        ]
+    }
+}

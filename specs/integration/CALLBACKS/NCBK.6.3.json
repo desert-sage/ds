@@ -1,0 +1,36 @@
+{
+  "id": "NCBK.6.3",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.6",
+  "seq": 344,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.6.3] **The correlation is opaque to the integrator, whoever wrote\nit.** Where the rule writer supplies `as:` that string is the correlation\n([LCRS.3.1]); where a `call` has no `as:`, the compiler and engine generate one\nper activation ([LCCO.3.4]). Either way it reaches the\ncall callback as `correlation` and must flow **verbatim** to the `corr` slot of\nthe response fact ([LCRS.4.3.1]) or the `CallError` the integrator asserts. An integrator must not\nparse it, derive anything from its shape, or substitute one of its own.\n\nThe engine does not track in-flight calls: it allocates the string and matches\nit back, and nothing else about the call's progress is engine state.\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LCRS.3.1",
+    "LCRS.4.3.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__refire_pending_out_of_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The engine does not know which request a reply answers: the one asserted last stays, computed. LESS than the clause: the request's identity is not modelled."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__owed",
+        "tag": "derives",
+        "note": "The in-flight requests are carried for the adapter, not the engine: no engine action reads them, and an answer is matched back by its correlation alone."
+      }
+    ]
+  }
+}

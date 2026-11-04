@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_chain_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] — \"every positive pattern after the first is anchored to an earlier one\", where the earlier one need not be the first. Three `logical` schemas keyed alike; the third pattern anchors to the SECOND, not the first. PATH PINNED: `dsc.validate.anchor_body` accumulates every judged `logical` pattern as a candidate anchor; checking only against the first pattern would raise DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C on `z`.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n\nschema Reading scope logical:\n    device_id: String key\n    amount: Int mutable\n\nschema Limit scope logical:\n    device_id: String key\n    ceiling: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.device_id == d.device_id\n    Limit z where z.device_id == x.device_id\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

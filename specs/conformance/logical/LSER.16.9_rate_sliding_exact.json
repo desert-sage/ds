@@ -1,0 +1,34 @@
+{
+    "id": "LSER.16.9_rate_sliding_exact",
+    "clauses": ["LSER.16.9", "LSER.18.1"],
+    "category": "logical",
+    "scenario": "Read by a rule: `rate sliding` is `(last - first) / elapsed_seconds` over the window's raw samples, exact, on the ring-buffer backing (SeriesBackendRingBuffer). A sliding `rate` on the Welford backing comes back weighted by exp(-dt/window_ns), a transcendental estimate [LDET.3.4] forbids in any value a rule reads. THE VALUE IS THE INSTRUMENT: group `g` (10.0 at 1 s, 30.0 at 3 s) is chosen so the exact answer, 10.0, and the EWMA answer differ. Groups `h` and `z` are the two no-elapsed-time cases: `h` has one sample, and `z` two absorbed at one nanosecond. Both are null rather than 0.0, which would claim a measured flat rate where there is no measurement, and a null interpolates as the empty string ([LGRA.2.9.6.2]), so `[]`. At 5 s one `Probe` per group arrives, each pumped, and `read` logs `k [rate]` for the `Flow` facts of the probe's group ([NSBK.6.3]). `Flow` is a `ttl` schema, so `read` fires once per fact: twice for `g`, once for `h`, twice for `z`. PATH PINNED: sbrb_query's DS_SERIES_AGG_RATE arm, ds_series_ring_buffer_rate.",
+    "rules_ds": "use default\n\nschema Flow scope ttl 1_h:\n    k: String\n    v: Float\n\nschema Probe scope explicit:\n    k: String\n\nseries Flow.v (by: k):\n    rate sliding 10_s\n\nrule read:\n    Probe q\n    Flow f where f.k == q.k\n->\n    log info \"{f.k} [{f.rate}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "k": "g", "v": 10.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "k": "h", "v": 5.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "k": "g", "v": 30.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "k": "z", "v": 1.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Flow", "slots": { "k": "z", "v": 2.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": "g" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": "h" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": "z" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["g [10.0]", "g [10.0]", "h []", "z []", "z []"]
+    }
+}

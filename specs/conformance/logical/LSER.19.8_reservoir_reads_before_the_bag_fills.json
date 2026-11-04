@@ -1,0 +1,19 @@
+{
+    "id": "LSER.19.8_reservoir_reads_before_the_bag_fills",
+    "clauses": ["LSMP.2.1"],
+    "category": "logical",
+    "scenario": "[LSER.19.8] with [LSMP.2.1]: a `sample n` reservoir has no warm-up of its own. Before its bag is full the bag holds every absorbed sample, and an aggregation is read over those; only a bag with no sample is cold. Three readings of one sensor, v = 1.0, 2.0 and 3.0, one per pump, into `mean sample 3`. A series absorbs at the end of the pump ([LSER.8.6]), so a firing reads the samples absorbed before its pump: none, then {1.0}, then {1.0, 2.0}. The rule logs the reading beside `r.mean ?? -1.0`, so a cold read shows as -1.0. Pin: the three messages \"1.0 -1.0\", \"2.0 1.0\" and \"3.0 1.5\", in order. A runtime that holds a reservoir cold until it has n samples logs -1.0 three times. One that divides by the capacity rather than the samples held logs 0.3333333333333333 and 1.0 for the last two. The bag never fills here, so which sample a full bag keeps is not pinned. PATH: the compiler lowers `sample 3` to a reservoir backing; libds and the Mercury runtime each read its `mean` in the rule's `let`, where `??` rescues the cold read ([LNUL.5.1]).",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nseries Reading.v:\n    mean sample 3\n\nrule read_mean:\n    Reading r\n->\n    let m = r.mean ?? -1.0\n    log info \"{r.v} {m}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 1.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 2.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 3.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1.0 -1.0", "2.0 1.0", "3.0 1.5"]
+    }
+}

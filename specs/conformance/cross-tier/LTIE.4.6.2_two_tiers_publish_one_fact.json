@@ -1,0 +1,35 @@
+{
+    "id": "LTIE.4.6.2_two_tiers_publish_one_fact",
+    "clauses": ["LLOG.11.7", "LTIE.9.5"],
+    "category": "cross-tier",
+    "scenario": "[LTIE.4.6.2]: a published fact reaches another tier as its schema name and slot values, asserted there ([NCBK.10.1]), so the receiving tier holds one fact per identity ([LFAC.1.7]): two tiers publishing a fact with the same key leave ONE fact in the tier both forward to, the second assert a no-op reassertion ([LFAC.2.5]). Tiers `a` and `b` each publish Sig(v: 7) for their Trig(v: 7) and hold their Trig alone ([LTIE.4.3]): 1 fact each. `hub` takes both forwards (the harness's `forward` step) and holds 1 Sig. A receiver keeping the two publications as independent facts holds 2. PATH: the forward bridge over DS_EV_ACTION_PUBLISH ([RCTS.1.2.29]) into `hub`'s working-memory door.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "b": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "schema Sig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            { "engine": "a", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "a", "op": "pump" },
+            { "engine": "b", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "b", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "a" },
+            { "engine": "hub", "op": "forward", "from": "b" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "a": 1,
+            "b": 1,
+            "hub": 1
+        }
+    }
+}

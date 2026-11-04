@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.24.3_initial_replays_clean",
+    "category": "runtime",
+    "scenario": "[LGRA.24.3]: applying the `initial` block records nothing in a fact stream; the artefact carries the block, and a replay against the same artefact applies it at the replay's first step, under the recorded sample. The run loads an artefact whose block places two `A` facts, records a session, sets the clock to 100 s and pumps: the pump is the first step, so the block enters under its sample and `seen` fires for both, each a fact `within 2_s` of its entry stamp ([LTIM.2.7.1]; `dwell` is `logical`-only and a block places `scope explicit` facts). The replaying engine loads the same artefact and applies the block at its first step, under the recorded sample, and re-derives both fires. Pins: the replay compares two rule fires and raises no divergence, and both engines end holding the same two facts. The window read pins the stamp, not only the absence of a `FactAssert`. A runtime that RECORDED the block's facts would assert them a second time on replay and end with four, and its replayer would re-derive four fires against two recorded. One that applied the block at load would stamp the facts 0 and fire nothing at the 100 s pump. One whose replay stamped them differently from the run would re-derive a different set of fires. PATH PINNED: the first step's application of IFCT atoms on each runtime (libds `ds_engine_clock_step`, the Mercury runtime's `clock_step`), libds's `ds_rfcs_record_to` / `ds_rfcs_replay_*` and the Mercury runtime's `ds.rfcs` / `ds.replay`.",
+    "rules_ds": "schema A scope explicit:\n    k: Int\n\ninitial:\n    A k: 1\n    A k: 2\n\nrule seen:\n    A a within 2_s\n->\n    log info \"a {a.k}\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 100000000000 },
+            { "op": "pump" }
+        ],
+        "min_events": 2,
+        "min_rule_fires": 2
+    }
+}

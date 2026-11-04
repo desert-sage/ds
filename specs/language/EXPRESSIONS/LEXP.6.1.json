@@ -1,0 +1,47 @@
+{
+  "id": "LEXP.6.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.6",
+  "seq": 382,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LEXP.6.1] Two built-ins specific to `Json`-typed slots (see [LGRA]):\n\n| Function | Meaning | Returns |\n|---|---|---|\n| `len(<Json>)` | array length at runtime | `Int` |\n| `has(<Json path>)` | whether the path resolves | `Bool` |\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_6_1__has",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`has(<Json path>)`: whether the path resolves, a Bool for every document ([LNUL.8.4]'s one absence test). A root that is not a document -- a `null` root included -- is a trap here, as both runtimes raise a type mismatch; no well-formed program reaches it, since `has` is a builtin that demands a value of a particular kind and an unnarrowed `Json?` receiver is [LNUL.5.1]'s compile error, `DS_VALIDATE_NULLABLE_UNNARROWED` (compiler/LNUL.5.1_has_on_unnarrowed_json_refused, and its narrowed twin compiles)."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_6_1__len",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`len(<Json>)`: the array's length, an Int; of anything else [LEXP.6.2]'s TypeError, a trap here."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_6_2__len_is_an_arrays_alone",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The table's `Int` row: an Int for every array, and nothing else answers."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__has_separates_the_missings",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The table's `Bool` row: `has` answers a Bool for every path and document, true of a present JSON null and false of an unresolved path, which the read alone cannot tell apart."
+      }
+    ]
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "id": "LNUL.4.9",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 134,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.9] **`x is <subject>` / `x is not <subject>` — the total tag test.**\nThe operator tests the value's **tag** ([LNUL.9.1]'s discriminant) against a\n**closed** set of subjects. It **must** answer `true` or `false` for a value of\nany kind: it **must not** yield `null` and **must not** raise. `is not` is one\noperator, not `not` applied to `is`.\n\n**The subject set is closed and is not the type namespace.** A schema has no\nrepresentation of its own, so it is neither spellable as a subject nor\nanswerable by one. The twelve subjects are six **distinguished constants** and\nsix **tag names**:\n\n| subject | `true` exactly when |\n|---|---|\n| `null` | the value is `null` |\n| `true` / `false` | the tag is `Bool` **and** the value is that boolean |\n| `inf` / `-inf` | the tag is `Float` **and** the value is that infinity |\n| `NaN` | the tag is `Float` **and** the value is NaN |\n| `Int` `Float` `Bool` `String` `Bytes` `Json` | the tag is that one, whatever the value |\n\n**`false` in every other case**, including when the value is `null` and the\nsubject is not `null`.\n\n**A constant tests tag and value; a tag name tests the tag alone.** So\n`is Float` is `true` of `inf`, `-inf` and `NaN` alike, and `is Bool` is `true`\nof `false`.\n\n**A tag names a representation, not a declared type**, and an annotation riding\non a representation does not change it. A unit-typed value is an `Int` or a\n`Float` carrying a compile-time dimension ([LUNI.4.1]); a `Time` is an `Int`\ncarrying an ingestion-fixed zone offset, and `[LTIM.1.1.1]` already orders,\ncompares and computes on its `utc_ns` alone. Each answers to the tag that\ncarries it:\n\n| type | answers `true` to |\n|---|---|\n| `Time`, `Date`, `Duration` | `Int` — an epoch, day or nanosecond count ([LTIM.1.3.1]) |\n| a unit-typed value | `Int` or `Float`, whichever its declared `storage` names |\n| `Ratio`, a fact reference | nothing — `false` to all six |\n\n**A value whose representation is none of the six answers `false` to all six.**\nThat is what makes the partition total without the subject set having to name\nevery type: a type reaches this operator only through the tag that carries it,\nand a type no tag carries is invisible to it rather than an error.\n\n**The answer is a function of the value alone.** An implementation **must**\nanswer alike for two values alike in representation, however each reached the\noperator: a `Time` written by a clock and an epoch `Int` asserted by an\nintegrator into the same slot are indistinguishable here, even where the\nimplementation separates them internally. Provenance is not a tag.\n\n**The tag is read before any value conversion.** This is what makes totality\nachievable for a `Json` string leaf: the tag is on the term, so `is String`\nanswers without interning anything.\n\n**Why totality is load-bearing.** A guard that could fail on the condition it\nguards is not a guard. `[LNUL.4.1]`'s propagation makes every ordinary operator\nyield `null` on a `null` operand, so absence cannot be branched on by\narithmetic or comparison; this operator is the one that can, and every stricter\ndisposition elsewhere rests on it never failing.\n\n",
+  "refs": [
+    "LNUL.4.1",
+    "LNUL.9.1",
+    "LTIM.1.1.1",
+    "LTIM.1.3.1",
+    "LUNI.4.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lnul_4_9__subject",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The twelve subjects as a closed type: the six distinguished constants and the six tag names, and no thirteenth."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_10__tag_test_of_a_trap_is_the_trap",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An operand that faults is the answer for every subject and either polarity: the operator itself never raises, and a fault in the operand has no value whose tag could be read."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_4__is_null_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The null subject: true or false on a value of any kind."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__constant_tests_the_value",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A constant tests tag AND value: is true is false of a Bool false and is false true of it; a constant of one tag is false of every value of another, quantified over that value."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__inf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The inf subject's value test: the Float above zero that equals its own double, which only the positive infinity does."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__is",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The operator: is and, by its flag, is not as one operator; true or false for a value of any kind, never null; a fault in the operand stands."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Total for every subject and either polarity: on a value of any kind the answer is a Bool, never null and never a trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__nan",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The NaN subject's value test: the one value unequal to itself."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__neg_inf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The -inf subject's value test: the Float below zero that equals its own double."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__null_answers_only_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "False in every other case, the null value included: a null answers true to the null subject and false to each of the other eleven."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__tag_and_value",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The clause's first table over the fragment's six kinds (Int, Float, String, Bool, Json, null): a constant tests tag and value, a tag name the tag alone, false in every other case. Bytes is a tag no value of the fragment carries and answers false to every value. The second table -- Time, Date and Duration as Int, a unit-typed value as its storage, Ratio and a fact reference as none -- names representations the fragment does not model."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__tag_name_tests_the_tag_alone",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A tag name tests the tag alone, quantified over the value: is Float of every Float, the infinities and a NaN alike; is Int, is String, is Bool and is Json of every value of their tag."
+      }
+    ]
+  }
+}

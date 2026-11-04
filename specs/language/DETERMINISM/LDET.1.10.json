@@ -1,0 +1,39 @@
+{
+  "id": "LDET.1.10",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.1",
+  "seq": 198,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.1.10] **One version, and it is the DS version.** No DS artefact carries a\nformat version of its own. A `.dsc` records the version that compiled it, in\n`proto/header.proto#DscHeader`'s `compiler_version`; a `.dstrace` records the\nversion that wrote it, in `proto/stream_header.proto#StreamHeader`'s\n`ds_version`. There is no second version axis, and a runtime **must not**\nintroduce one.\n\n**The acceptance rule is a string prefix on the minor series.** A runtime\n**must** accept an artefact whose recorded version begins with its own\n`<major>.<minor>.` and **must** reject every other — a `.dsc` with\n`DS_ERR_DSC_VERSION`, a `.dstrace` with `DS_ERR_FS_VERSION` ([NERR.13]). A `0.12.4` runtime therefore reads what `0.12.0` and\n`0.12.9` wrote and refuses everything from `0.11` and `0.13`. The comparison is\non the string, so it needs no parse and admits no ordering question: a version\neither shares the prefix or it does not.\n\n**[LDET.1.1]'s guarantee is scoped to that series.** One event trace replayed\nagainst one compiled rule set produces the same observable output for every\nrelease sharing a `<major>.<minor>.` prefix. Across a minor bump the guarantee\ndoes not hold, and nothing claims it does — replaying a historical recording\nrequires the release that wrote it ([RARC.4.2]).\n\n**Why one number is enough.** Protobuf is normative specification here, not an\nimplementation detail ([STYL.2.14]): the wire shapes **are** part of the\nlanguage definition, so they move when the language moves and at no other time.\nA version derived from the release therefore changes exactly when the wire can\nchange.\n\n**The cost, stated because it binds work rather than prose.** A change to what\nbytes mean **must not** land inside a minor series: recordings made earlier in\nthat series would stop replaying identically, which is the guarantee above. Wire\nchanges wait for the minor bump.\n\n⚠ **`proto/header.proto#DscHeader` and `proto/stream_header.proto#StreamHeader`\ncarry no format version.** The field numbers and names they reserve are out of\nuse: nothing may read them, and they are never reused ([STYL.2.8.7]).\n",
+  "errors": [
+    "DS_ERR_DSC_VERSION",
+    "DS_ERR_FS_VERSION"
+  ],
+  "refs": [
+    "LDET.1.1",
+    "NERR.13",
+    "RARC.4.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "ldet_1_10__accepts",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "ldet_1_10__reader",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "ldet_1_10__unknown",
+        "tag": "spec"
+      }
+    ]
+  }
+}

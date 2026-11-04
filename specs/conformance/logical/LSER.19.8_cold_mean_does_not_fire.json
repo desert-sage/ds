@@ -1,0 +1,28 @@
+{
+    "id": "LSER.19.8_cold_mean_does_not_fire",
+    "clauses": ["LNUL.7.2"],
+    "category": "logical",
+    "dead_rules_expected": ["cold_mean"],
+    "scenario": "LSER.19.8 — a cold `mean` is `null`, not `0.0`. One assert, one pump: the single-pattern `where r.mean < 5.0` is an alpha test evaluated at assert, before the end-of-pump absorber has taken any sample, so the read is cold. Under the clause `null < 5.0` is `null` and the rule does not fire ([LNUL.4.3]); under a typed-zero reading `0.0 < 5.0` is `true` and it fires — the predicate is chosen so the two readings disagree. Path: the runtime's series read dispatch answering the cold value for an aggregation with no backend instance yet (libds `series_read_dispatch` → `series_zero_default`; Mercury `cold_value`). The positive control proving the same rule shape does evaluate a cold read in a `where` is LSER.19.8_cold_count_fires; without it a rule that never evaluates series reads at all would pass this vector.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule cold_mean:\n    Reading r where r.mean < 5.0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "forbidden_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

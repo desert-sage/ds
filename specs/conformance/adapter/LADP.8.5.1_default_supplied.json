@@ -1,0 +1,49 @@
+{
+    "id": "LADP.8.5.1_default_supplied",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.1]: a `call` that omits a kwarg declared `default <literal>` lowers exactly as if it supplied the literal, so the service receives it. `light.turn_on` declares `brightness: Int default 255`; rule `dim` writes `brightness: 10`, rule `bright` omits it. The integrator receives 255 from `bright` and 10 from `dim`: a written kwarg wins. PATH PINNED: `ladp_8_5_1_with_defaults` in dsc.rete, which joins the declared defaults to the written kwargs before `rlow_7_3_1_plain_call` builds the body. Both runtimes render the body the compiler emits, so libds and the Mercury runtime take the same path. The break is dropping the join, which leaves `bright`'s body without `brightness`.",
+    "rules_ds": "service light.turn_on:\n    kwarg entity_id: String literal required\n    kwarg brightness: Int default 255\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule bright:\n    Trig t where t.v == 1\n->\n    call light.turn_on entity_id: \"light.foyer\" nocooldown\n\nrule dim:\n    Trig t where t.v == 2\n->\n    call light.turn_on entity_id: \"light.hall\" brightness: 10 nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "light.turn_on",
+                "correlation": "$bright_c0_g0",
+                "body": {
+                    "brightness": 255,
+                    "entity_id": "light.foyer"
+                }
+            },
+            {
+                "service": "light.turn_on",
+                "correlation": "$dim_c0_g1",
+                "body": {
+                    "brightness": 10,
+                    "entity_id": "light.hall"
+                }
+            }
+        ]
+    }
+}

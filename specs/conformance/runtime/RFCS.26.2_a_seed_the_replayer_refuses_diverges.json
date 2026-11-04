@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.26.2_a_seed_the_replayer_refuses_diverges",
+    "category": "runtime",
+    "scenario": "[RFCS.26.2]: \"A recorded `CacheSeed` was stored when it was recorded. So an engine that refuses one, as a cache bound the recording engine did not have refuses it ([LSTO.4.7.5]) ... [is] a replay that has not reproduced the run. The replayer must stop with `DS_ERR_FS_DIVERGENCE`.\" The host seeds `a` = 1 and `b` = 2 into an engine with no cache bound, then asserts Trig and pumps; rule `hit` reads both seeds and fires. The recording carries both `CacheSeed`s, `a` then `b`. It is replayed unaltered twice: the control into a fresh engine with no bound, which must replay it with no refusal, and the altered replay into one whose `replay_cache_cap` ([RCTS.1.2.18]) holds one live key. That engine stores `a` and refuses `b`, so the replay must stop with -725, DS_ERR_FS_DIVERGENCE. What it discriminates: a replayer that ignores a refused seed and goes on replays without refusal; one that reports the cache's own refusal instead of the divergence gives that code (DS_ERR_CONTRACT_BREACH); one that skips the bound for a replayed seed stores both. PATHS: libds's `ds_rfcs_replay` arm for `DS_ATOM_CACHE_SEED`, where `ds_engine_cache_seed_replay`'s refusal becomes the divergence (`rfcs/codec.c`), with the bound set through pyds's `cache.set_cap` before the load (runner.py's `_run_replay_refused`); the Mercury runtime's `ds.replay.rfcs_26_2_apply` on an engine bounded by `ds.engine.set_cache_cap` (test_behave.m's `with_cache_cap`).",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"a\") == \"1\" and cached(\"b\") == \"2\"\n->\n    log info \"hit {t.v}\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "cache_seed", "key": "a", "value": 1 },
+            { "op": "cache_seed", "key": "b", "value": 2 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "replay_cache_cap": { "keys": 1 },
+        "code": "-725"
+    }
+}

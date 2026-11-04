@@ -1,0 +1,46 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// DocString — atom body: a structured docstring for one declaration. Per
+// [RDSC.14.4]. Source-metadata tier alongside DsSource / LineSpan: the
+// engine never reads it (skip-don't-reject, [RDSC.9.4]) and `dsc strip`
+// drops it as a unit.
+//
+// DocString is the single home for ALL declaration docstrings (schema / slot /
+// rule / module): there is no inline Slot docstring field.
+//
+// `target` tags which kind of declaration the docstring documents; the
+// identifying name fields are populated per kind (a schema docstring sets
+// `schema_name`; a slot sets `schema_name` + `slot_name`; a rule sets
+// `rule_name`; a module sets neither). `module_id` attributes the doc to its
+// module — the same per-module key every module_id-bearing atom carries.
+//
+// The documented declaration's source location is carried inline as
+// `ds_line` / `ds_col` (1-based; 0 = unknown). DocString does NOT reference a
+// LineSpan atom by node_id: LineSpan atoms exist only for beta/terminal nodes
+// (rules), so schema / slot / module docstrings — three of the four target
+// kinds — have no LineSpan to reference. Inline coordinates keep every DocString
+// atom self-contained for tooling (IDE hovers, doc-gen, debugger node
+// annotations) without a second lookup.
+message DocString {
+  DocTarget target      = 1;
+  uint32    module_id   = 2;
+  string    schema_name = 3;  // schema and slot targets
+  string    slot_name   = 4;  // slot target only
+  string    rule_name   = 5;  // rule target only
+  string    text        = 6;  // the docstring (UTF-8)
+  uint32    ds_line     = 7;  // 1-based source line of the documented decl (0 = unknown)
+  uint32    ds_col      = 8;  // 1-based source column (0 = unknown)
+}
+
+// Which kind of declaration a DocString documents.
+enum DocTarget {
+  DOC_TARGET_UNSPECIFIED = 0;  // malformed / unset
+  DOC_TARGET_MODULE      = 1;  // whole module (module_id only)
+  DOC_TARGET_SCHEMA      = 2;  // a schema declaration (schema_name)
+  DOC_TARGET_SLOT        = 3;  // a slot (schema_name + slot_name)
+  DOC_TARGET_RULE        = 4;  // a rule (rule_name)
+}

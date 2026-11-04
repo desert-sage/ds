@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.8.6_nulls_zero_unit_typed_compiles",
+    "category": "compiler",
+    "scenario": "[LNUL.8.6]: `nulls: zero` is admitted on an `Int?` or `Float?` source, \"unit-typed or not\". A nullable `celsius` slot has leaf kind `Float` ([LUNI.8.7.3]) and its dimension is the unit's, so `nulls: zero` over it compiles. PATH PINNED: `dsc.series.lnul_8_6_nulls`'s third arm through `slot_leaf`, whose `luni_7_1_slot_type` gives a unit-typed slot `lk_float`; a check that read the type NAME (`celsius`) rather than the leaf kind refuses this with `DS_VALIDATE_SERIES_NULLS_ZERO_NON_NUMERIC` and the vector goes red. Companion to `LNUL.8.6_nulls_zero_non_numeric`.",
+    "rules_ds": "use default\n\nunit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    dev: String key\n    temp: celsius? mutable\n\nseries Reading.temp (by: dev, nulls: zero):\n    mean all_time\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

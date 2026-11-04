@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The FIFO deque (`SeriesBackendFifoDeque`): `first` and `last` over ascending
+# values, so swapped ends read the other end; and `bool_and` and `bool_or`, the
+# aggregations whose answer is a Bool, driven through all-true, mixed and
+# all-false, since they differ only on a mix.
+use default
+
+schema Reading scope logical:
+    entity_id: String key
+    level: Float mutable
+
+schema Health scope logical:
+    entity_id: String key
+    ok: Bool mutable
+
+schema Ends scope ttl 1_h:
+    label: String
+    oldest: Float
+    newest: Float
+
+schema Verdict scope ttl 1_h:
+    label: String
+    all_ok: Bool
+    any_ok: Bool
+
+series Reading.level (by: entity_id):
+    first, last sliding 10_min
+
+series Health.ok (by: entity_id):
+    bool_and, bool_or sliding 10_min
+
+# Every read is null while cold ([LSER.19.8]). `-1.0` is below every asserted
+# level; the Bools rescue to `false`, not `bool_and ?? true`, the vacuous
+# answer [LSER.19.8] refuses.
+rule ends:
+    Reading r
+->
+    emit Ends label: r.entity_id oldest: r.first ?? -1.0 newest: r.last ?? -1.0
+
+rule verdict:
+    Health h
+->
+    emit Verdict label: h.entity_id all_ok: h.bool_and ?? false
+        any_ok: h.bool_or ?? false

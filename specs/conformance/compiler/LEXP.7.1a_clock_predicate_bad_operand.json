@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.1a_clock_predicate_bad_operand",
+    "category": "compiler",
+    "scenario": "[LEXP.7.1a]: the arithmetic operators take `Int` or `Float`, and `Time + String` is neither a temporal pair ([LTIM.4.1.1]) nor numeric, so it is DS_VALIDATE_BAD_OPERAND_TYPE. The operand pair sits in a `where` predicate that reads the clock through `now()`, and `now()` and `ts` are both `Time`. Drives `typed_expr` from `rule_predicates`, and `lexp_7_1a_arithmetic`'s non-numeric arm in dsc.typecheck. A compiler that holds this code back from a clock-reading predicate compiles this program.",
+    "rules_ds": "schema Reading scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule r:\n    Reading e where now() + e.label > now()\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_OPERAND_TYPE"
+    }
+}

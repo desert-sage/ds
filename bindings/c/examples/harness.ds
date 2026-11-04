@@ -1,0 +1,147 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# harness.ds -- the program harness.c loads: one rule per integrator-facing
+# effect, so a run of the harness reaches each callback a v1 program can
+# reach (log, call, cache), resolves a zone through a row it asserts,
+# answers a service,
+# refuses one nobody hosts, hands the integrator a fact to forward, and
+# reports a fault. The c gate compiles it with the branch's own
+# Mercury dsc and hands the artefact to the run.
+#
+# No function reads a series: `counted` reads both series below, and
+# its log line is how the harness sees them.
+
+use default
+
+# Its arrival drives the log, the cache write and both calls.
+schema Ping scope logical:
+    id: String key
+    n: Int mutable
+
+# A reading, which a series absorbs per `id`, the one key slot. A series
+# absorbs once the agenda has drained, so a guard on a reading's first
+# arrival sees none of its sample; an update of the same key, after that
+# pump, sees the series hold it.
+schema Reading scope logical:
+    id: String key
+    x: Float mutable
+    tag: String mutable
+
+series Reading.x:
+    count sliding 10_s
+
+# An aggregation that takes a value, read by `counted`.
+series Reading.tag:
+    count_of sliding 10_s
+
+# A service's response: a fact of its own ttl schema, carrying the call's
+# correlation in `corr`, which the integrator asserts after the pump.
+schema Reply scope ttl 1_min:
+    corr: String
+    doubled: Int
+
+# `ping` carries the Ping as a fact argument: its encoded bytes, which the
+# harness forwards to another engine's ds_engine_assert_external. `n` is
+# required and `ping` optional, so the services view the harness reads
+# shows the flag both ways. `ping` is written first: the artefact holds a
+# service's kwargs in name order ([LGRA.23.2]), so the view's `n, ping` is
+# the compiler's sort and not this file's order.
+#
+# The three services are read back in the order they are written here
+# ([RDSC.8.4]): svc.echo, svc.absent, svc.notify.
+service svc.echo:
+    "Answered by the harness: Reply, with doubled twice n."
+    kwarg ping: Ping
+    kwarg n: Int required
+    response Reply
+
+service svc.absent:
+    "Hosted by nobody: the harness answers request.unsupported."
+    response Reply
+
+service svc.notify:
+    "Called by no rule: the services view shows its `no response`."
+    no response
+
+# Asserted to drop the cache entry `pinged` wrote.
+schema Forget scope logical:
+    id: String key
+
+# An instant late in a UTC day and the day after it. Its date in a zone an
+# hour ahead of UTC is that next day, so `zoned` fires only if the engine
+# used the offset of the `TimeZoneOffset` row the integrator asserted: a
+# zone's offsets are the integrator's facts, and libds carries no zone data.
+schema Stamp scope logical:
+    id: String key
+    instant: Time mutable
+    day: Date mutable
+
+# An Int division by zero traps when b is 0: the activation is abandoned and
+# a ComputationError fact enters working memory.
+schema Pair scope logical:
+    id: String key
+    a: Int mutable
+    b: Int mutable
+
+# Read by no rule: the integrator asserts one of each, Demo holding a value of
+# every kind and a reference to a Ref, and Ev expiring 1 s after its assert.
+# A schema reaches the engine from its artefact alone ([NFCT.1.1]).
+schema Ref scope logical:
+    id: Int key
+
+schema Demo scope explicit:
+    id: String
+    n: Int
+    x: Float
+    flag: Bool
+    blob: Bytes
+    doc: Json
+    link: Ref
+
+schema Ev scope ttl 1_s:
+    tag: String
+
+rule pinged:
+    Ping p
+->
+    log info "ping {p.id}"
+    cache key: "last" value: p.n ttl: 5_min
+    call svc.echo n: p.n ping: p nocooldown
+    call svc.absent nocooldown
+
+rule counted:
+    Reading r where count(r.x) > 0 and count_of(r.tag, "low") > 0
+->
+    log info "counted {r.id}"
+
+rule answered:
+    Reply r
+->
+    log info "answered {r.doubled}"
+
+rule unsupported:
+    CallError e where e.code == "request.unsupported"
+->
+    log warning "unsupported {e.corr}"
+
+rule forgot:
+    Forget
+->
+    cache_delete key: "last"
+
+rule zoned:
+    Stamp s where s.instant.date("Test/Ahead") == s.day
+->
+    log info "zoned {s.id}"
+
+rule divides:
+    Pair q
+->
+    let r = q.a / q.b
+    log info "quotient {r}"
+
+rule faulted:
+    ComputationError e where e.rule == "divides"
+->
+    log warning "fault {e.kind}"

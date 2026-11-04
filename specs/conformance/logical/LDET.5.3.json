@@ -1,0 +1,19 @@
+{
+  "id": "LDET.5.3",
+  "category": "logical",
+  "scenario": "Refraction per LDET.5.3, as SUPPRESSION rather than as an ordering key. Four things are pinned in one sequence. (1) `watched` fires once for Trig(v=1). (2) A second pump with an UNCHANGED LHS does not re-fire it — the whole claim, since without it a matching fact would fire on every pump for as long as it stayed in working memory. (3) An assert of an UNRELATED schema does not release the suppression: any assert bumps the generation and a stale refraction entry reads as absent, but nothing re-consults the entry, because the agenda is a pop loop. `other_rule` firing in that same pump is what proves the pump ran and the silence is refraction rather than a vacuously empty pump. (4) An identity update of the matched fact (v=1 is the key, n is mutable) IS a changed LHS and does release it, so `watched` fires a second time. Order is not asserted between the two rules and must not be: under the two-key model (creation timetag, terminal ordinal) their relative order is fixed by structure, and pinning it here would duplicate LDET.5.4/5.5 and make this fixture fail for a reason that has nothing to do with refraction.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n    n: Int mutable\n\nschema Other scope logical:\n    k: Int key\n\nrule watched:\n    Trig\n->\n    log critical \"watched\"\n\nrule other_rule:\n    Other\n->\n    log critical \"other\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1, "n": 1 } },
+      { "op": "pump" },
+      { "op": "pump" },
+      { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1, "n": 2 } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["watched", "other", "watched"]
+  }
+}

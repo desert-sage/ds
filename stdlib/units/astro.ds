@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.astro — astronomical units
+#
+from units.si import angle
+from math import pi
+# length is a baked units.core base axis (ambient via the implicit preload).
+# Recommended: import units.metric   # for astronomical_unit (AU)
+#
+# Intended scope: embedded and real-time systems that interact with
+# astronomical instruments or spacecraft — telescope mount controllers,
+# satellite ground stations, radio telescope data pipelines, spacecraft
+# telemetry decoders. Units are chosen for what appears in sensor output,
+# pointing models, and instrument calibration, not for cosmological
+# simulation or data analysis workflows.
+#
+# Mass values conform to IAU 2015 Resolution B3 (IAU XXIX General Assembly,
+# Honolulu, August 2015). The resolution defines "nominal solar and planetary
+# mass parameters" as exact defined values — not measurements — to decouple
+# astronomical computation from the measurement uncertainty of the gravitational
+# constant G. This module adopts those nominal values as the canonical unit
+# conversion factors. Stored as float64 — not exact Rationals.
+#
+# Parsec: derived from 1 pc = 648,000/π AU. Since π is irrational,
+# the meter value is irrational. Stored as float64.
+
+# ── Dimensions ────────────────────────────────────────────────────────────────
+
+unit dimension stellar_mass       storage float64  base solar_mass
+unit dimension spectral_flux      storage float64  base jansky
+
+# ── Length ────────────────────────────────────────────────────────────────────
+# light-year: exact (c = 299,792,458 m/s × Julian year = 365.25 × 86,400 s)
+# parsec: float64 (irrational in meters — see file header)
+
+unit light_year:  length  = x * 9_460_730_472_580_800       label "ly"   alias ly
+unit parsec:      length  = x * 3.085677581491367e16         label "pc"   alias pc
+unit kiloparsec:  length  = x * 3.085677581491367e19         label "kpc"  alias kpc
+
+# ── Angle ─────────────────────────────────────────────────────────────────────
+# Extends the angle scalar from units.si.
+# Milliarcsecond and microarcsecond are the standard resolution units for
+# astrometry (e.g. Gaia catalogue, VLBI baseline measurements).
+
+unit milliarcsecond: angle  = x * pi / 648_000_000           label "mas"  alias mas
+unit microarcsecond: angle  = x * pi / 648_000_000_000       label "µas"  alias µas, uas
+
+# ── Stellar mass ──────────────────────────────────────────────────────────────
+# IAU 2015 nominal values. All float64.
+
+unit solar_mass:    stellar_mass                              label "M☉"
+unit earth_mass:    stellar_mass  = x * 3.00274e-6           label "M⊕"
+unit jupiter_mass:  stellar_mass  = x * 9.54792e-4           label "MJ"
+unit lunar_mass:    stellar_mass  = x * 3.69396e-8           label "M☾"
+
+# ── Spectral flux density ─────────────────────────────────────────────────────
+# Jansky: the standard unit for radio and infrared source flux.
+# 1 Jy = 10⁻²⁶ W·m⁻²·Hz⁻¹
+# Jansky is the practical base; the SI form (W·m⁻²·Hz⁻¹) is the derived unit.
+# Common in radio telescope output and calibration tables.
+
+unit jansky:       spectral_flux                              label "Jy"   alias Jy
+unit millijansky:  spectral_flux  = x / 1000                 label "mJy"  alias mJy
+unit microjansky:  spectral_flux  = x / 1_000_000            label "µJy"  alias µJy, uJy
+unit kilojansky:   spectral_flux  = x * 1000                 label "kJy"  alias kJy
+unit watt_per_meter_squared_hz: spectral_flux  = x * 1e26   label "W·m⁻²·Hz⁻¹"

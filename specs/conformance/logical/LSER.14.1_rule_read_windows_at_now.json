@@ -1,0 +1,22 @@
+{
+    "id": "LSER.14.1_rule_read_windows_at_now",
+    "clauses": ["LSER.14.1"],
+    "category": "logical",
+    "scenario": "[LSER.14.1]: a read applies the window at the instant it is made, the half-open (t-W, t]. Samples 1.0 at 0 and 3.0 at 8 s on `mean` and `count` `sliding 10_s`, each pumped at its own instant, so the backing last trimmed at 8 s and still holds both. At 15 s a `Probe` arrives and `read` logs the binding's `mean` and `count`: the window then holds the 8 s sample alone, `3.0 1`. The window is partly stale, not emptied, so the coldness test (`logical/LSER.19.8_rule_read_cold_after_window`) does not decide it. `LSER.14.1_rule_read_windows_at_the_firing_mean` pins the same window for a read in a single-pattern `where`, evaluated at an assert; this one is the read in a firing's action, on a join, in a pump that absorbs nothing.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level (by: dev):\n    mean sliding 10_s\n    count sliding 10_s\n\nrule read:\n    Probe\n    Reading s\n->\n    log info \"{s.mean} {s.count}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 8000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 15000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["3.0 1"]
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "id": "LEXP.10.2.2_float_division_by_zero_compiles",
+    "category": "compiler",
+    "scenario": "[LEXP.10.2.2] refuses division or modulo by a literal zero only when every operand is `Int`; 'a `Float` division by a zero literal is not an error ([LDET.3.6.2])', because a Float operand makes the operation IEEE's, ±Inf or NaN. Two shapes, one per way a Float enters: a Float dividend over the Int literal `0` (`s.x / 0`), and an Int dividend over the Float literal `0.0` (`s.n / 0.0`). PATH PINNED: `lexp_10_2_2_zero_divisor` in dsc.validate; a walk that read only the divisor would refuse both; its sibling LEXP.10.2.2 keeps the all-Int refusal.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int mutable\n    x: Float mutable\n\nrule float_dividend:\n    S s where s.x / 0 > 5.0\n->\n    log info \"x\"\n\nrule float_divisor:\n    S s where s.n / 0.0 > 5.0\n->\n    log info \"n\"\n",
+    "expect": { "kind": "compile_ok" }
+}

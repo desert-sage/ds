@@ -1,0 +1,48 @@
+# lowered from the probe division_float.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# float.expected (scripts/formal/check_idris.py). The division rung's Float smoke pair:
+# `/` on two Ints yields a Float ([LEXP.7.4]) and the emit
+# codes the computed 3.5 (the Half's key: 8 * its bits 4615063718147915776 + 4,
+# the block 36920509745183326212); an Int beside a Float promotes ([LEXP.7.3]);
+# a Float zero divisor gives +Inf, -Inf or NaN and never traps ([LDET.3.6.2]),
+# while an all-Int one traps and rule 6 never fires ([LEXP.7.15.1]). A Float
+# literal is its bits (`f:<bits>`: 3.5, 0.5, 7.5, 0.0, 2.0 and 100.0 here), and
+# so is a Float slot in a payload, tag 4: f = 7.5 is the block 36961042141829660676,
+# z = 1.0 is 36857459350400139268, f = 100.0 is 37093898330837090308, z = 0.0
+# is 4 and f = -1.5 is 110662450043747827716, beside the Ints' 8 * ZigZag + 2.
+schema 0 entity T
+schema 1 relation Half
+alpha 0 0
+alpha 1 1
+rule 0 int_over_int_is_float
+pattern 0 0 0
+where 0 0 eq div slot 0 pay 0 slot 0 pay 1 lit f:4615063718147915776
+emitx 0 1 1 0 div slot 0 pay 0 slot 0 pay 1
+rule 1 promotion_in_arithmetic
+pattern 1 0 0
+where 1 0 eq add slot 0 pay 0 lit f:4602678819172646912 lit f:4620130267728707584
+log 1 0 0
+rule 2 promotion_in_comparison
+pattern 2 0 0
+where 2 0 and lt slot 0 pay 0 slot 0 pay 2 lt slot 0 pay 2 lit i:8
+log 2 0 0
+rule 3 float_zero_divisor_is_inf
+pattern 3 0 0
+where 3 0 and lt lit f:0 div slot 0 pay 2 slot 0 pay 3 eq div slot 0 pay 2 slot 0 pay 3 mul div slot 0 pay 2 slot 0 pay 3 lit f:4611686018427387904
+log 3 0 0
+rule 4 negative_dividend_gives_neg_inf
+pattern 4 0 0
+where 4 0 and lt div slot 0 pay 2 slot 0 pay 3 lit f:0 eq div slot 0 pay 2 slot 0 pay 3 mul div slot 0 pay 2 slot 0 pay 3 lit f:4611686018427387904
+log 4 0 0
+rule 5 zero_over_zero_is_nan
+pattern 5 0 0
+where 5 0 ne div slot 0 pay 3 slot 0 pay 3 div slot 0 pay 3 slot 0 pay 3
+log 5 0 0
+rule 6 int_zero_divisor_never_fires
+pattern 6 0 0
+where 6 0 gt div slot 0 pay 0 slot 0 pay 1 lit f:4636737291354636288
+log 6 0 0
+step assert _0 0 1000000000000000000003 1000000000000000000114000000000000000000034036961042141829660676036857459350400139268
+step assert _1 0 1000000000000000000011 1000000000000000000018000000000000000000002037093898330837090308000000000000000000004
+step assert _2 0 1000000000000000000019 1000000000000000000050000000000000000000066110662450043747827716000000000000000000004
+step pump

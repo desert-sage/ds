@@ -1,0 +1,9 @@
+{
+    "id": "LLEX.11.2.4_underflow_compiles",
+    "category": "compiler",
+    "scenario": "[LLEX.11.2.4]: \"A literal whose value rounds to zero is that zero.\" `1e-400` lies below the smallest subnormal and reads as 0.0; it is not out of range, and the program compiles. The literal sits in a rule's `where`, so the program is whole and the literal is lexed, parsed and lowered. What it discriminates: a range check that refused an underflow as it refuses an overflow (by the exponent's magnitude, say) refuses this program. PATH PINNED: `dsc.lex`'s `finish_float`, where `dsc.exact.llex_11_2_4_past_largest` fails on a value below 10^-400 and `ds.float_text.parse_json` reads 0.0.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    v: Float mutable\n\nrule r:\n    Trig t where t.v > 1e-400\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

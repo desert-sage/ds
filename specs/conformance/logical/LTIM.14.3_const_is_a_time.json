@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.14.3_const_is_a_time",
+    "clauses": ["LTIM.14.3"],
+    "category": "logical",
+    "scenario": "[LTIM.14.3]: a `calendar` call whose arguments all fold is foldable, so `const LAUNCH = calendar.time(2026, 1, 1)` declares a `Time` constant ([LEXP.8.8]), and a rule reads it as one. `after_launch` fires for an `Ev` whose `t` is at or after it; `launch` writes it. Fact 1's `t` is 2026-01-01T00:00:00Z, the constant itself: `after 1`, then `launch 2026-01-01T00:00:00Z`, in source order ([LDET.5.4]). Fact 2's is one second earlier: neither fires. A compiler that refused the `const`, or gave it a type other than `Time`, refuses the program; a runtime that built another instant fires `after_launch` for fact 2 or not for fact 1. PATH PINNED: `dsc.rete.lgra_13_3_const`, which inlines the constant's call, lowered to FN_CALENDAR_TIME, and `dsc.validate`'s `ltim_14_3_raising_calls`, which admits it; FN_CALENDAR_TIME in both runtimes.",
+    "rules_ds": "import calendar\n\nconst LAUNCH = calendar.time(2026, 1, 1)\n\nschema Ev scope logical:\n    id: Int key\n    t: Time mutable\n\nrule after_launch:\n    Ev e where e.t >= LAUNCH\n->\n    log info \"after {e.id}\"\n\nrule launch:\n    Ev e where e.id == 1\n->\n    let s = LAUNCH::String\n    log info \"launch {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "t": 1767225600000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "t": 1767225599000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["after 1", "launch 2026-01-01T00:00:00Z"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.3.5_cooldown_twice",
+    "category": "compiler",
+    "scenario": "LGRA.10.3.5: the rule covers language-defined kwargs as well as declared ones, so `cooldown:` written twice on one `call` is DS_VALIDATE_DUPLICATE_KWARG. Drives the same `lgra_10_3_5_duplicate_kwarg` walk as the service-kwarg case, reached through a name no service declares: `cooldown` is reserved for the call surface (LLEX.9.5), so it is not an undeclared kwarg, and each value alone is a legal cooldown.",
+    "rules_ds": "use default\n\nservice svc.body:\n    kwarg alpha: Int\n    no response\n\nschema In scope logical:\n    id: Int key\n\nrule out:\n    In i\n->\n    call svc.body alpha: i.id cooldown: 5_min cooldown: 1_h\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_KWARG"
+    }
+}

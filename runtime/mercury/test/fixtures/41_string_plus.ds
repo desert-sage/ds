@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema S scope logical:
+    a: String key
+    b: String mutable
+
+rule control_plain:
+    S s where s.a == "x"
+->
+    log info "control matched"
+
+rule concat_ne:
+    S s where s.a + s.b != "zz"
+->
+    log info "concat_ne matched"
+
+rule concat_self_eq:
+    S s where s.a + s.b == s.a + s.b
+->
+    log info "concat_self_eq matched"

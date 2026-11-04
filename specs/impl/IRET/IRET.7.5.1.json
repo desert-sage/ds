@@ -1,0 +1,172 @@
+{
+  "id": "IRET.7.5.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7.5",
+  "seq": 586,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.5.1] **`linear_scan: false` overlay — the equality anchor is\nextracted at load.** When the loaded DSC was compiled with\n`linear_scan: false`, every positive beta node's join-test list contains at\nleast one EQ test of the form `BINOP(EQ, VAR(left, i, j), VAR(right, k))`.\nFor a positive node, the beta node loader must:\n\n1. Extract `(fact_idx=i, left_slot=j, right_slot=k)` from this test\n   and store it in the beta node's `lmem_idx_*` and `ralpha_idx_*`\n   fields.\n2. Compile a specialized comparator over (token, fact) that performs\n   a direct typed comparison on slots `t->facts[i]->slots[j]` and\n   `f->slots[k]` without calling the expression evaluator.\n3. Use this comparator in place of `join_tests_pass` for the equality-\n   anchor check during index probe.  Remaining join tests still use\n   `join_tests_pass`.\n\nAn EQ join test of that form is a legal anchor, wherever it stands in the\nlist, when it is **decided**: both slots are non-nullable and the comparison\ncannot raise by their declared types. A decided anchor answers only `true` or\n`false`, and join tests combine as an absorbing `and` ([IRET.7.6], [LNUL.4.2]),\nso probing on it first changes neither whether the pair passes nor the fault\nthe pair yields. An anchor that could answer `null` or raise could change both —\nfor a negated join, whether it blocks — so the loader must not probe on one.\nThe guarantee is for an artefact that does not lie about a slot's type\n([LDET.1.11]).\n\nThe loader takes the first such test as the anchor. A negated node has no\nanchor and no index ([LNLS.5.8]).\n\nThis reduces the join-test hot-path cost from O(E) to O(1) for the\nequality anchor. [LNLS.5.1]'s both-directions O(1) bound needs more than\nthis: an index over a whole composite identity, and one on negated nodes.\n\nThis supplements, and does not replace, the base [IRET.7.5]\nbehaviour. It is a `must` on the reference engine's loader, naming\nthis engine's own fields, so the implementation tree is where it\nbelongs.\n\n",
+  "refs": [
+    "IRET.7.5",
+    "IRET.7.6",
+    "LDET.1.11",
+    "LNLS.5.1",
+    "LNLS.5.8",
+    "LNUL.4.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_7_5_1__v5_null_anchor_escapes",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "WHY THE ANCHOR MUST BE NON-NULL: a null anchor is in no bucket, where the whole `where` is null and blocks the `no` pattern ([LNUL.4.7])."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rlow_5_5__v5_hoist_sound",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND for an artefact that does not lie: filters on decided conjuncts leave the decision of a positive and of a `no` pattern, and the record, unchanged. Admitting a nullable filter breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "Iret_7_5_1__decided",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A decided answer, true or false: what the anchor must give every candidate at a `no` node."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__bool_decided",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Bool as an answer is decided."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__null_anchor_escapes_probe",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHY THE CONDITION: a candidate whose anchor answers null blocks under the whole test ([LNUL.4.7]) and is in no bucket -- one blocker against none. The clause is safe because a `linear_scan: false` anchor pins non-null `key` slots; an engine indexing a `no` join on a nullable slot outside `linear_scan: false` must still count the null-keyed candidates, and no clause says so because none specifies that index."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The index probe on an equality anchor: the bucket of candidates whose anchor holds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_negated",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PROBE IS TRANSPARENT AT A `no` NODE when the anchor is decided on every candidate: the blockers found in the bucket are exactly the whole list's. Under `linear_scan: false` the condition holds by construction (`iret_7_5_1__typed_anchor_decided`); without it the probe is not transparent (`iret_7_5_1__null_anchor_escapes_probe`)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_negated_count",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And so the block count, and whether the token passes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_positive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PROBE IS TRANSPARENT AT A POSITIVE NODE, for an anchor wherever it stands in the test list: the bucket, tested by the other tests, is exactly what the whole list admits, traps included. The clause's 'probing on one first cannot change whether the pair passes'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__typed_anchor_decided",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A NOLINSCAN ANCHOR IS DECIDED: an equality of two non-null values of one type answers true or false, never null and never a trap, so `iret_7_5_1__probe_negated`'s condition holds for every `no` node a `linear_scan: false` program can load."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__conj_pull",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A test WHEREVER IT STANDS in the list can be taken first: the combined answer is that test's `and` the rest's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnls_3_3__anchor_test",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnls_3_3__negated_anchor_probe",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A no node probes on its anchor without loss when both anchored slots are non-null and of one type on every candidate. The keyed form gives that premise, because a key slot is never null ([LNUL.8.10]). The singleton form pins a key slot to a singleton's payload slot, which may be nullable, so there the theorem proves less than the clause admits."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__filtered",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FILTERS FIRST -- an alpha test, an index probe -- as a `where` of their own under V5, then the rest: the clause's order. A false among the filters rejects wherever it stands, a faulting test beside it notwithstanding; otherwise a fault among them is raised, [LNUL.4.2]'s T2I picking between two (the tests being hoisted conjuncts of the `where`, RLOW.5.5, which is how the clause reaches [LNUL.4.2]); otherwise null rejects, the model's own extension on an input the clause never presents; otherwise every filter passed and the rest is evaluated. Source order never enters (`iret_6_4__filters_order_free`), and the short-circuit the clause's first paragraph allows over decided tests loses nothing (`iret_9_5__seq_v5`)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_5_1__v5_probe_negated",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And at a `no` node when the anchor is decided on every candidate -- hoisting's own condition, carried to `iret_7_5_1__probe_negated`'s by `rlow_5_5__decided_answer`."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_5_1__v5_probe_positive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ANCHOR PROBING AT THE NETWORK: `iret_7_5_1__probe_positive` applied to V5 wheres -- probing on any one conjunct, then joining the rest, joins what the whole `where` joins at a positive node."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__decided_answer",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A decided outcome is a decided answer in Rete/NetworkAnswer.idr's sense, so the hoisting condition is the anchor-probe condition."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__hoist_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND under V5 for decided filters taken from ANYWHERE in the source: the decision of a positive and of a `no` pattern, and the record, are the whole `where`'s -- RLOW.5.5's 'a conjunct may leave the join test only when it is decided', for an artefact that does not lie ([LDET.1.11]). Admitting a nullable filter breaks it (TEETH T3). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ]
+  }
+}

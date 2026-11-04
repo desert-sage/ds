@@ -1,0 +1,8 @@
+{
+    "id": "LSER.8.7",
+    "clauses": ["LSER.16.1"],
+    "category": "compiler",
+    "scenario": "The function form `count(t.state)` of a declared `count` aggregation (LSER.16.1: every aggregation is callable as a function in any expression position) compiles in a `where`. PINS ONLY THAT IT COMPILES. Named for the LSER.8.7 heading (multi-tier deployments), whose per-engine series state a compile cannot observe.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_ok" }
+}

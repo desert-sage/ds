@@ -1,0 +1,14 @@
+{
+    "id": "LIMP.6.1a",
+    "category": "compiler",
+    "scenario": "Self-import cycle per LIMP.6.1 / LIMP.9.11. The cycle-detection pass treats a library importing itself as a length-1 cycle and rejects with DS_VALIDATE_IMPORT_CYCLE; LIMP.9.11 covers the multi-step a → b → a case, this pin covers the trivial self-edge. Pin: rules-file imports `a`; `a.ds` contains `import a`; loader's recursion guard fires on the inner re-entry.",
+    "rules_ds": "import a\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "a": "import a\n\nschema A_only scope logical:\n    x: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_CYCLE",
+        "message_contains": "a -> a"
+    }
+}

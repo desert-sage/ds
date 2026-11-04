@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: services. `ask` calls a service that answers with a
+# fact; `hot` reads the answer and calls one declared `no response`; `failed`
+# reads every `CallError`, so a failure is visible as a `Failed` fact.
+# `weather.alerts` is declared and never called: it carries a kwarg of each
+# shape a declaration reads back, required and literal, and two defaults.
+#
+# Every `ask` call has the correlation "fc", so when two Asks fire in one
+# pump, both calls are answered and the answer asserted second replaces the
+# first.
+
+use default
+
+schema ForecastReply scope ttl 1_h:
+    corr: String
+    zone: String
+    high_c: Int
+
+service weather.forecast:
+    kwarg zone: String
+    response ForecastReply
+
+service light.turn_on:
+    kwarg entity_id: String
+    no response
+
+service weather.alerts:
+    kwarg region: String literal required
+    kwarg days: Int default 3
+    kwarg severe: Bool default true
+    no response
+
+schema Ask scope logical:
+    zone: String key
+
+schema Hot scope ttl 1_h:
+    zone: String
+
+schema Failed scope ttl 1_h:
+    code: String
+
+rule ask:
+    Ask a
+->
+    call weather.forecast zone: a.zone nocooldown as "fc"
+
+rule hot:
+    ForecastReply r where r.high_c > 30
+->
+    emit Hot zone: r.zone
+    call light.turn_on entity_id: "light.fan" nocooldown as "fan"
+
+rule failed:
+    CallError e
+->
+    emit Failed code: e.code

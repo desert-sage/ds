@@ -1,0 +1,31 @@
+{
+  "id": "LLOG.3.11.1_series_where_retracts_its_logical_fact",
+  "clauses": ["LLOG.3.11.1", "LTIM.2.4.1", "LSER.8.1.1"],
+  "category": "logical",
+  "scenario": "[LLOG.3.11.1] for a series read ([LTIM.2.4.1]): a `logical` fact justified by a `where` that reads a series is retracted at the pump whose snapshot refuses the match, although its matched fact never changes. `count sliding 10_s` over `Reading`. Pump 1 (t=0): `a` arrives and reads count 0, false; its sample absorbs. Pump 2 (t=1 s): count 1, true; `Busy` is emitted. Pump 3 (t=2 s): still 1, still true; `Busy` stays. Pump 4 (t=21 s): the sample is out of the window, count 0, false, and `Busy` is retracted. A `Mark` is asserted before pumps 3 and 4, so the stream places the retraction: it must follow the second `Mark`, at pump 4, and not the first. PATH: the `where` is the terminal's fire guard behind the `$ClockTick` re-driver (`dsc.rete`'s `ltim_2_4_1_time_dependent`), read under each pump's snapshot ([RDSC.4a.8.2.2]).",
+  "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    v: Float mutable\n\nschema Mark scope logical:\n    n: Int key\n\nschema Busy scope logical:\n    dummy: Int key\n\nseries Reading.v (by: dev):\n    count sliding 10_s\n\nrule busy:\n    Reading r where count(r.v) >= 1\n->\n    emit Busy logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "set",     "now_ns": 0 },
+      { "op": "assert",  "schema": "Reading", "slots": { "dev": "a", "v": 1.0 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "assert",  "schema": "Mark", "slots": { "n": 1 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 19000000000 },
+      { "op": "assert",  "schema": "Mark", "slots": { "n": 2 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "fact_assert",
+      "action_emit",
+      "fact_assert",
+      "fact_assert",
+      "fact_retract"
+    ]
+  }
+}

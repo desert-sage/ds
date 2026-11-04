@@ -1,0 +1,19 @@
+{
+  "id": "LCAP.2.1",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": "LCAP.2",
+  "seq": 52,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`realtime`",
+  "text": "### `realtime` [LCAP.2.1]\n\nA strategy capability. `realtime: true` imposes a two-phase lifecycle: **INIT** (schema load, pool allocation,\npresz, intern lock) and **LIVE** (pump only; zero allocation; bounded\nexecution).  Entry via `go_live`.\n\nIn LIVE mode every hash table, pool, and scratch buffer is pre-sized;\nno `malloc`/`realloc` call may occur.  Every alpha test, join, TMS\noperation, and TTL tick must complete within the T_wcet budget.\n\n`realtime: true` requires `constspace: true` ([LCAP.3.7]), and the compiler\nruns every `constspace` check under it ([LCAP.2.6]).\n\nIt leaves every other setting to the program. With `linear_scan: true` a\njoin may scan, and its cost is bounded by the working-memory capacity\nrather than constant; with `logical: true` the TMS is present but\n`rt_locked`; with `dynamic_ttl: false` the TTL queue is the per-schema FIFO.\n\n",
+  "deferred": true,
+  "refs": [
+    "LCAP.2.6",
+    "LCAP.3.7"
+  ],
+  "symbols": [
+    "ds_rete_go_live"
+  ]
+}

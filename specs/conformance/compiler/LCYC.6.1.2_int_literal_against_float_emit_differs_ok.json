@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.6.1.2_int_literal_against_float_emit_differs_ok",
+    "category": "compiler",
+    "scenario": "LCYC.6.1.2: an Int and a Float that are unequal under DS's `==` are different literals, so the literal break (LCYC.6.1) drops the edge across the pair. `A` matches `S a where a.kind == 1` on a Float slot and emits `S kind: 2.0`, which cannot satisfy its own pattern, since `1 == 2.0` is false with the Int promoted (LEXP.7.3). The self-edge drops and the program compiles. PATH PINNED: `dsc.cycle.lcyc_6_1_2_differ`. A break that kept every mixed Int/Float pair, as not comparable, refuses this. Twin: LCYC.6.1.2_int_literal_against_float_emit_refused, the same rule emitting `kind: 1.0`, which must be refused. A break stuck in either position fails one of the two.",
+    "rules_ds": "schema S scope explicit:\n    kind: Float\n\nrule A:\n    S a where a.kind == 1\n->\n    emit S kind: 2.0\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

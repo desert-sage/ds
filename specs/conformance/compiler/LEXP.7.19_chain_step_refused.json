@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.19_chain_step_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.19 with [LEXP.2.1]: a comparison chain is judged step by step. In `p.a == p.b < p.c` over three `Bytes` slots the first step is an equality and is admitted; the second is an ordering and is refused with DS_VALIDATE_UNORDERED_TYPE. A check that looked only at the chain's first operator would accept this source. PATH PINNED: the per-step walk of the validator (Mercury: `dsc.typecheck` `adjacent_mismatches`, which reports each step at its own operator).",
+    "rules_ds": "schema Pkt scope ttl 1_h:\n    a: Bytes\n    b: Bytes\n    c: Bytes\n\nrule r:\n    Pkt p where p.a == p.b < p.c\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LFAC.1.7.singleton",
+    "clauses": ["LFAC.1.7.2"],
+    "category": "logical",
+    "scenario": "LFAC.1.7 key=∅ singleton (latest wins). An all-`mutable` logical schema has an empty identity key, so it holds exactly one live fact: re-asserting an identical reading coalesces (no re-fire, LLOG.2.7.1); a changed reading supersedes the prior one (one live fact, re-fires). Pin: assert reading=1, assert reading=1 (identical → coalesce), assert reading=2 (supersede) → two `warm` firings (not three — an accumulating schema would fire on the identical re-assert). The changing slot is `reading` and not `ts`: `ts` is outside the no-op test ([LFAC.9.1]), so a change to it alone would coalesce.",
+    "rules_ds": "schema AmbientTemp scope logical:\n    reading: Float mutable\n    celsius: Float mutable\n\nrule warm:\n    AmbientTemp a where a.celsius > 20.0\n->\n    log info \"warm\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "AmbientTemp", "slots": { "reading": 1.0, "celsius": 25.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "AmbientTemp", "slots": { "reading": 1.0, "celsius": 25.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "AmbientTemp", "slots": { "reading": 2.0, "celsius": 25.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["warm", "warm"]
+    }
+}

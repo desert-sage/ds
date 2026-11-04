@@ -1,0 +1,26 @@
+{
+  "id": "IRET.7.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7",
+  "seq": 532,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Token",
+  "text": "### Token [IRET.7.1]\n\nA token is one partial match travelling the beta network: the facts\nbound so far, one per LHS pattern position, in pattern order.\n\n| Field | Holds |\n|---|---|\n| fact_count | how many pattern positions are bound |\n| facts | the bound facts, indexed by pattern position |\n| creation_timetag | a monotonic stamp; this is what orders the agenda ([LDET.5.5]) |\n| hash | a cached hash of the fact-id tuple |\n| next | links the token into a beta memory |\n\nThree of these are performance decisions with observable consequences.\nThe **timetag** is not a timestamp — it is a stamp monotone in completion\norder, compared as [LDET.5.5] defines, so agenda order is deterministic and\nindependent of the clock. The **hash\nis cached** because a token is hashed far more often than it is built,\nand it is over the fact-id *tuple*, so two tokens binding the same facts\nin the same positions hash alike. The **list link is intrusive**, so\nadding a token to a beta memory allocates nothing.\n\n",
+  "refs": [
+    "LDET.5.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_7_1__token",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A token: the facts bound so far, one per positive pattern, in pattern order. Its identity is the tuple [IRET.11.3]; its timetag is a function of the tuple (`ldet_5_5__before`), so it is not stored -- the reading of [LDET.5.5] in which a timetag is derived from the matched facts, not assigned. The hash pre-filter and the intrusive link are representation."
+      }
+    ]
+  }
+}

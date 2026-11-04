@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.5.5",
+    "category": "compiler",
+    "scenario": "Cross-type temporal comparison rejection per LTIM.5.5. Comparing `Time` to `Date`, `Date` to `Duration`, etc., is a compile error. Authors convert explicitly via `t.date(tz)` or similar. Pin: `Time < Date` comparison rejects with DS_VALIDATE_TYPE_MISMATCH.",
+    "rules_ds": "schema Cmp scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n    target: Date mutable\n\nrule trig:\n    Cmp c where c.fired_at < c.target\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

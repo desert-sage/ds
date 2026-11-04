@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.2.runtime",
+    "category": "runtime",
+    "scenario": "Arithmetic operators work at runtime per LEXP.3.2. A rule gated on `a.v + b.v > 100` fires only when the sum exceeds 100.",
+    "rules_ds": "schema A scope logical:\n    entity_id: String key\n    v: Int mutable\n\nschema B scope logical:\n    entity_id: String key\n    v: Int mutable\n\nschema Sum scope logical:\n    dummy: Int key\n\nrule big_sum:\n    A a\n    B b where a.v + b.v > 100\n->\n    emit Sum logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "A", "slots": { "entity_id": "a1", "v": 60 } },
+            { "schema": "B", "slots": { "entity_id": "b1", "v": 50 } },
+            { "schema": "B", "slots": { "entity_id": "b2", "v": 30 } }
+        ],
+        "pump": true,
+        "fact_count_after": 4
+    }
+}

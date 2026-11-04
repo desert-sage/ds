@@ -1,0 +1,21 @@
+{
+    "id": "RTIM.3.2.6_one_move_does_everything_due",
+    "category": "logical",
+    "scenario": "[RTIM.3.2.6]: \"A move does not visit the instants it skips. Everything due at or before the new instant is done at the new instant\". Two TTL deadlines and one timer fall inside one clock move. At 0 the harness asserts Go, a Short (ttl 2 s) and a Long (ttl 4 s), and pumps: `wait` arms `after 3_s`. One `advance` of 5 s and one pump: both TTL facts expire, and the timer's follow-up emits a Fired (ttl 1 h). Live after it: Go and Fired, so 2. A move that left the 2 s or 4 s deadline undone leaves 3 or 4; one that left the timer for a later pump leaves 1. The compiler's timer and capture facts are discharged when the follow-up runs ([LTAC.3.1]), so they are not counted. PATH PINNED: the deadline drain at a pump after a clock move, libds's deadline heap (`rete/` sweep and timer dispatch) and the Mercury runtime's one deadline structure (`ds.engine`), each run once for the new instant.",
+    "rules_ds": "schema Go scope logical:\n    v: Int key\n\nschema Short scope ttl 2_s:\n    v: Int\n\nschema Long scope ttl 4_s:\n    v: Int\n\nschema Fired scope ttl 1_h:\n    v: Int\n\nrule wait:\n    Go g\n->\n    after 3_s:\n        emit Fired v: g.v\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Go", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Short", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Long", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 2 }
+        ]
+    }
+}

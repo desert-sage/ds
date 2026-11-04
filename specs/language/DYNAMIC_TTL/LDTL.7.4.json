@@ -1,0 +1,15 @@
+{
+  "id": "LDTL.7.4",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.7",
+  "seq": 343,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Combined T_wcet under `linear_scan: false`, default TTL",
+  "text": "### Combined T_wcet under `linear_scan: false`, default TTL [LDTL.7.4]\n\n```\nT_wcet(linear_scan=false, dynamic_ttl=false) =\n    c_alpha × Σ_s(α_s × T_s)                 ← DSC constants\n  + c_join  × F_max                           ← O(1) per firing, F_max = DSC constant\n  + c_agenda × F_max                          ← O(1) 3-bucket queue\n  + c_fire  × F_max × A_max × E_rhs          ← DSC constants\n  + c_ttl   × (max_expired_per_tick × log n_ttl_schemas\n               + n_ttl_schemas)               ← derived constant\n```\n\n**All parameters are compile-time constants.**  T_wcet is a single\nfixed number determined by the DSC, N_max, and tick_interval.  There\nare no log factors in N_max or N_ttl (the TTL term's is in\n`n_ttl_schemas`, fixed at load, [LDTL.6.1]), no N_max-growth terms, and\nno remaining variables.\nThis is the theoretical floor for a Rete engine with expression\nevaluation — the only remaining non-constant factor is E_rhs, the RHS\nexpression depth, which is eliminated only by AoT specialization.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "LDTL.6.1"
+  ]
+}

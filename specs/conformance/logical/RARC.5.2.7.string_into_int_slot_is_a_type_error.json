@@ -1,0 +1,14 @@
+{
+    "id": "RARC.5.2.7.string_into_int_slot_is_a_type_error",
+    "category": "logical",
+    "scenario": "[RARC.5.2.7]: a rule's `emit` of a value whose kind its slot does not accept raises a TypeError, which is a stream event ([NCBK.2.8]); the pump does not return an error, and the fact does not enter. `p.body.name` is a Json leaf holding the String \"alice\"; `Out.v` is declared Int. The value is runtime-typed, so the compiler cannot refuse it (RARC.5.2.7's second paragraph). Path: the terminal's ASSERT action -- libds rete/engine.c eval_actions (ds_rete_slot_refused, then ds_rete_fault_slot_refused), Mercury ds.exec.m assert_verb's `invalid` arm (rarc_5_2_7_type_error, then abandon).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Payload p\n->\n    emit Out logical v: p.body.name\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "type_error"]
+    }
+}

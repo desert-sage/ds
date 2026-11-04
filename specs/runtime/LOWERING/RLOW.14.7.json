@@ -1,0 +1,18 @@
+{
+  "id": "RLOW.14.7",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.14",
+  "seq": 1647,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "7. [RLOW.14.7] **A synthesized terminal takes the position of the\n   rule that induced it.** Some terminals have no rule of their own in\n   source: the follow-up rule an `after` clause lowers to ([LTAC.3.1]),\n   the sibling rules a `call` continuation lowers to ([LCCO.10.1]), and the\n   `_answered` and `_failed` rules each `timeout` clause lowers to\n   ([LCCO.7.6]). The compiler must emit each such terminal **after the\n   terminal of the rule that induced it, and before any later author\n   rule's**, in this order:\n\n   - the inducing rule's own terminal;\n   - then the follow-up of each of its `after` clauses, in source order;\n   - then the sibling of each of its `call` continuations, in source\n     order. A `timeout` clause's sibling is followed, after every terminal\n     it induces, by that clause's `_answered` rule and then its `_failed`\n     rule, and only then by the next continuation's sibling.\n\n   The order applies at every level. Each synthesized terminal is\n   followed at once by the terminals it induces in turn, a nested\n   `after`'s follow-up ([LTAC.6.2.2]) or the sibling of a continuation in\n   its body, ordered the same way, and only then by the next terminal at\n   its own level.\n\n   So the emitted sequence is a depth-first walk: each author rule, then\n   everything it induced, then the next author rule. A synthesized terminal's ordinal is therefore determined\n   by the source that induced it, exactly as an author rule's is, and\n   [RLOW.14.3]'s \"canonical source order\" is total over every terminal\n   rather than only over the ones a reader can point at.\n\n",
+  "refs": [
+    "LCCO.10.1",
+    "LCCO.7.6",
+    "LTAC.3.1",
+    "LTAC.6.2.2",
+    "RLOW.14.3"
+  ]
+}

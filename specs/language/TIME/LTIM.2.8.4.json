@@ -1,0 +1,581 @@
+{
+  "id": "LTIM.2.8.4",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.8",
+  "seq": 246,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.8.4] **One sample per step.** The engine **must** sample both clocks\ntogether when it consumes an input and when a pump begins, and **must not** read\neither clock at any other time. Every read between two samples — in a `where`\ncondition, a re-evaluation, a `let`, an action — returns the most recent\nsample. Two reads of `now()`, or of `monotonic_ns()`, between the same two\nsamples therefore return the same value, whatever order the engine evaluates\nthe expressions containing them in and however many times it evaluates each.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/CheckpointClocks.idr",
+        "name": "rfcs_9_4__seek_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PREMISE THE THEOREM DERIVES FROM THIS CLAUSE: a conforming writer reads no clock but at a sample point, so the only clock value it has to put in a checkpoint is the sample it holds, and a seek from that checkpoint holds what the recording held. `rfcs_9_4__fresh_checkpoint_breaks` is a writer that reads afresh instead."
+      },
+      {
+        "path": "formal/idris/ClockStep.idr",
+        "name": "rarc_5_6_3__sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'The engine must sample both clocks together when it consumes an input': the consumption loop's clock after step 2 is that sample's monotonic component, and nothing the input carries."
+      },
+      {
+        "path": "formal/idris/Rete/FireClock.idr",
+        "name": "iret_25_4_1__per_fire_reads_twice",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An engine that reads the clock source at each firing's first encounter reads it between two samples, which the clause forbids ('must not read either clock at any other time'); two firings of one pump then see two values. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/FireClock.idr",
+        "name": "ltim_2_1_3__activation_atomic",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Every read between two samples returns the most recent sample', for the reads of one activation: TwoClocks.idr's theorem applied."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__tick_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A tick: Rete/NetworkTimed.idr's; the call trackers stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__tick_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tick keeps the invariant: the clock advances and the TTL sweep runs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "Ltim_2_8_4__step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's step: one sample as the engine consumes an input, and the input."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_sampled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Once per match when every input is sampled, under the frame: the samples re-evaluate the timed conditions and the matches they make fire once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An input consumed at a sample. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The sample taken before the input: the condition re-evaluated at 1, then the fact joins under it. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_clock",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clock holds the step's sample. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "One sampled arrival, one firing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at a sampled arrival: one match, one firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state after one sampled input, no pump yet. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The pump after the sampled input: every read in it returns the step's sample; one firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__expand",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sample first, then the input: what the clause's 'when it consumes an input' does on this engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__expand_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every step samples; the samples are in the steps' order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__fact_then_tick_is_steps",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A bare tick is a step with no input; part D's state is two steps' state, the sample at 0 taken first. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consume",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One input consumed at its sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consume_is_prepared",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The sample is taken before the input is applied, and everything between two samples reads the one taken."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Inputs consumed each at its sample, no pump between."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After a step the clock holds the step's sample: every read until the next step returns it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Each step's sample is taken from the state the step before left."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "Ltim_2_4_1__ttest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A test of the held sample: its arguments are the sample and the stamps, never a clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__at_sample",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SUBSTITUTION: every clock leaf replaced by its literal under the sample and the stamps, the rest of the expression as it is, so that the plain evaluator reads no clock. The sample a read sees is the one the state holds: 'every read between two samples returns the most recent sample'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__clock_free_unchanged",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `where` with no clock read reads no sample: substituting the held sample into it is the identity, for every sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tests_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tests at the held wall sample: what a pump's re-evaluation reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__tick_then_pump_is_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The sample a pump's re-evaluation reads is the tick's: one sample from the tick through the pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_4__tick_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A TICK: the clock takes the sample and the sweep runs; the wall sample, the stamps and the trackers stand. LESS than the clause: the tick is the Idris model's sample point and the monotonic half alone moves (the wall is R4b's); the data inputs and the pump that follow read the sample it took."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_4__tick_timed_projects",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A TICK PROJECTS to Rete/NetworkCooldown.idr's prepared tick: the stamps and the wall ride beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_6__input_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A data input runs at the held sample. LESS than the clause: it samples nothing new -- a data input moves no clock in this model, the Idris model's cadence sampling at the tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__stamp_is_fire_at",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`monotonic_ns()` read in the firing is the sample the pump holds, which is the stamp: one sample per pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__tick_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tick takes the sample and stamps nothing: the stamp table stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_8_4__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A time-dependent join test over the sample: `now()` reads the wall sample, `monotonic_ns()`, `dwell` and `within` the monotonic one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__apply_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A DATA INPUT at the held sample: Rete/NetworkTtl.idr's apply on the engine, and the stamps as Rete/EntryStamp.idr's assert has them, at the held monotonic sample, on the engine's working memory. A retraction stamps nothing. A data input moves no clock in this model."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__at_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A two-clock test at a fixed wall sample is a test on the monotonic clock alone: what Rete/NetworkClocked.idr's engine takes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__counts_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firings of a history of samples, one count per pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__counts_sampled_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One pump of a sample history, unfolded."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__counts_sampled_held_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The held wall sample is read by nothing on this engine: a history's counts from two states that differ in it alone are one list, since the tests read the sample a pump is given. A TRANSCRIPTION of `pump_sampled`'s definition, `Refl`; it fails if the pump is made to read the state's wall and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__pump_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE PUMP AT A SAMPLE: Rete/NetworkClocked.idr's pump at `Tick m` with the tests fixed at `w`; the wall sample kept; the stamps untouched, since a tick asserts nothing. With the halt and the count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__pump_sampled_parts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The pump at a sample, as the composed pump: its three parts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__run_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RECORDING ENGINE, generic in what a step does: the source is called once as each step begins, and the step runs under that sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__step_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state after the pump at a sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__tests_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tests of an engine, each read from the stamp table it holds, each fixed at a wall sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__triple",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A triple is its three parts: how a proof names a pump's result without abstracting the pump from its goal."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "Ltim_2_8_4__expr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An expression that may read the clocks: `now()`, `monotonic_ns()`, a value that reads neither, and any binary operation over two of these. The operator is a parameter, so what is proved of `Bin` holds of every operator."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "Ltim_2_8_4__reader",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "How a clock read is served: from the count of source calls made so far, the sample the read sees and the count afterwards."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__eval",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "EVALUATION AS AN ENGINE DOES IT: operand by operand in an order (left operand first, or right), each clock read served by the reader, the count of source calls threaded through."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__fresh",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE REFUSED READER: a read calls the clock source, a reading the clause refuses."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__fresh_calls_twice",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND IT CALLS THE SOURCE: two reads, two calls, by computation."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__fresh_differs_by_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE REFUSED READER IS ORDER-DEPENDENT: reading the source at every read, `now() - now()` is 0 with the left operand first and 1 with the right. The engine's evaluation order has become an observable, which one sample per step rules out. A refutation of the refused reading, not of the clause."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__held",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S READER: a read returns the held sample and calls the source not at all -- 'returns the most recent sample'."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__held_calls_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AND THE SOURCE IS NOT CALLED: the count after evaluation is the count before it, for an expression of any size. 'Must not read either clock at any other time'."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__held_orders_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "HOWEVER MANY TIMES: the two orders agree with each other from any two call counts, so an engine that evaluates one expression twice, in two orders, at two points of a step, reads one value."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__held_value",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE VALUE, WHATEVER THE ORDER: under a held sample, evaluation in either order and from any call count yields what the expression is worth under that sample -- for every expression, every operator, every sample. 'Whatever order the engine evaluates the expressions containing them in'."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__now_minus_now",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`now() - now()`. A fixture."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__samples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The samples a run holds, one per step: the source is called once as each step begins. A step is a sample point of either kind the clause names -- an input consumed or a pump begun -- and the model does not distinguish the two nor say anything of what a step does between its sample and the next; only that it samples once."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_4__worth",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What an expression is worth under one sample: the clause's definition, in which no evaluation order and no read count appears."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__Begin",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__End",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__Idle",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__MAXREAD",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__MAXSTEP",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__SAMPLING",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__held",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__in_step",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__mono_values",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__one_value_per_step",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__read_from",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__reads",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__sample",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__step",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__vars",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_4__wall_values",
+        "tag": "spec"
+      }
+    ]
+  }
+}

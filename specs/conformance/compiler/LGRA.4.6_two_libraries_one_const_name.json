@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.4.6_two_libraries_one_const_name",
+    "category": "compiler",
+    "scenario": "[LGRA.4.6]: the compiler must reject, with `DS_VALIDATE_IMPORT_NAME_COLLISION`, \"two selective imports that bind one name to constants of different libraries\". Pin: libraries `ha` and `hb` each declare `const LIMIT`, with different values; the importer does `from ha import LIMIT` and `from hb import LIMIT`, and a rule reads `LIMIT`. They are two constants under one bare name, so the file is refused at the second import line. A loader that lets the second import replace the first compiles it. PATH PINNED: `dsc.imports.limp_7_7_take_item`'s constant arm, which refuses a binding `im_const_origin` already holds for another library.",
+    "rules_ds": "from ha import LIMIT\nfrom hb import LIMIT\n\nschema Reading scope logical:\n    id: Int key\n    v: Int mutable\n\nrule high:\n    Reading t where t.v > LIMIT\n->\n    log info \"high\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 5\n",
+        "hb": "const LIMIT = 7\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_NAME_COLLISION"
+    }
+}

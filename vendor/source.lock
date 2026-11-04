@@ -1,0 +1,304 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# SOURCE PINS — dependencies whose FILES a DS build compiles itself, pinned at
+# a commit and checked file by file: CORE-MATH and musl's libm, which libds
+# compiles, and SoftFloat and TestFloat, which the double-backend check of
+# [NDET.1.4] compiles beside a row's libds.
+#
+# CORE-MATH'S FILES ARE COMMITTED under vendor/core-math/; no build fetches them.
+# This section is their provenance (the commit, each file's digest, the flags),
+# and `url` is where a refresh is taken from. gitlab.inria.fr refuses
+# some automated GETs with a bot-proxy page, so a build-time fetch failed at
+# random; do not reintroduce one.
+#
+# WHY NOT deps.lock. deps.lock's rows are packages: a release tarball, one
+# digest, a cmake or autotools build that installs a prefix into the store.
+# CORE-MATH has no release, no tarball and no build libds can use — libds takes
+# fifteen of its functions as C files and compiles them with its own pinned
+# flags. And deps.lock is in the build context of the ds-deps and ds-check
+# images, so every edit to it rebuilds both.
+# [IARC.7.10] asks for the pin and its flags together, "in deps.lock or beside
+# it"; this file is beside it.
+#
+# WHY FILE DIGESTS AND NOT AN ARCHIVE DIGEST. GitLab synthesises a commit's
+# archive on demand and does not promise its bytes — the same reason deps.lock
+# refuses GitHub's /archive/ URLs. A file's bytes at a commit are the blob, and
+# the blob does not move. So the pin is the commit, and the check is every file
+# we use, each against its sha256. A file the list does not name is not fetched,
+# and a file whose digest differs fails the build.
+#
+# The files stay unmodified: CORE-MATH is vendored unpatched, the `exit(1)`
+# branches in pow and atan2 included.
+
+# ── CORE-MATH ───────────────────────────────────────────────────────────────
+#
+# The commit the eligibility probe measured, so the archive ships the code the evidence is about.
+#
+# `files` is the set the fifteen builtins of [LEXP.3.9.1] and `**` need: each
+# function's one `.c`, the local headers those include (`dint.h`, `tint.h`,
+# `pow.h`, `qint.h`), and the license. Nothing else is compiled: the `.wc`
+# worst-case tables, the MPFR references and the generators (`buildSC.c`,
+# `buildu.c`, `log1_template.g`) are upstream's test and build material.
+#
+# `cflags` are part of the function ([IARC.7.10]): `-ffp-contract=off` because
+# a fused multiply-add rounds once where the code expects twice, `-std=gnu11`
+# because the 128-bit integer type needs it, and `-O2` because that is what the
+# probe measured. FLT_EVAL_METHOD must be 0, which excludes x87; the build
+# checks it rather than this file stating it. libds adds only flags that do
+# not change a result: -fPIC, -g, a lane's instrumentation, and
+# `-include core_math_fenv.h`, which defines the C11 7.6 exception macros a
+# soft-float target leaves undefined (the header says why no result reads one).
+#
+# `corroborated`: the probe's copies of two unmodified files under
+# dev/probes/core-math-u128/ have the same git blob ids as this commit's.
+[core-math]
+commit       = 6b84457310ad90b644b3335af2faa8c7301e1c47
+url          = https://gitlab.inria.fr/core-math/core-math/-/raw/6b84457310ad90b644b3335af2faa8c7301e1c47
+license      = MIT
+corroborated = dev/probes/core-math-u128 binary64/log/log.c e66f7241, binary64/log10/log10.c 5a6ebe6d (2026-10-07)
+cflags       = -O2 -std=gnu11 -ffp-contract=off
+files        =
+    LICENSE                        81830875362f4d477637de58eecd6d458db108cc90c40904fca3694807b86de3
+    src/binary64/acos/acos.c       ecd6173837214367f0140c038c615a4f37d27795c0cc74e16bdaa59f7df8cff1
+    src/binary64/asin/asin.c       08c4d31ad429e4aac3cc1adf9dbc6e31d59b6ff997626fbfcd3b60ebe2cbffe8
+    src/binary64/atan/atan.c       2d62a4d780f233fd0460b8e6076880fcb9d2f55280ead5799180983b6b77c863
+    src/binary64/atan2/atan2.c     404b0db90e536f8248101544d0fcad9141fd76b2a6cc3d189dd80dbfc865bd91
+    src/binary64/atan2/tint.h      41264d54812a8ce2b3f8ca4c8c033094df7cbf2d214da1c7555783328171b921
+    src/binary64/cos/cos.c         04bffbc8b483c886f78f2c9ab3f2a1ca318dda78ab637a2983a4a9d82374e9d9
+    src/binary64/cosh/cosh.c       1a3394bc59cfc8aa6b684ad363cfa9d645576e70e5db106775513bff35524c1c
+    src/binary64/exp/exp.c         024b63b3433b455be57a6523f3acf3c82e7db1edf2cee414dc03d01be4359c63
+    src/binary64/log/dint.h        0da80a15d311bb1e550035f98edc2266ef31828cd423aec3a2e4507d2dad5e0e
+    src/binary64/log/log.c         5f923601d1d0aab2e42136f5432794ecfcf4c23568f273ad8d32921bd1832bcf
+    src/binary64/log10/dint.h      3bdfe6175e6d107506badbaf3f6cd1005165bee4e601827d1f1da2560f84d264
+    src/binary64/log10/log10.c     a83f2e651a55ee707876b0ba60094475c77028d785de30cb304b8d8a446e5ef0
+    src/binary64/log2/log2.c       b06b3c6ce071ad4298bc584f8087cbf9970b774bdab222ee05a08bbfc9a6f4a2
+    src/binary64/pow/dint.h        c62a9788d872c314c743a821602d6819e5c13113b70f6d4a5d0076695dc413ef
+    src/binary64/pow/pow.c         abec16a142154d9de8ea9e14f333c335ecc69f7b3106d66dc573a84e1a15a95c
+    src/binary64/pow/pow.h         b7c21d4cf273c09e5d0d347907832de6013d18199bdf67f532132567dd9fcb0c
+    src/binary64/pow/qint.h        32de9c10388056e2294339e3302c3695cdf4abc87ca790ad48917d9794bfb6e4
+    src/binary64/sin/sin.c         c39d4665126ba054cf86936b1a0eacbd3f7be81cd8578e073361cef91c24ebf3
+    src/binary64/sinh/sinh.c       08ab3e040ba23221db02fe19652191958f5b025fba2c93659dcda112fc3d5bf4
+    src/binary64/tan/tan.c         dd662b7af88a86d85e01b88c57f9df4b6019ddfd02120ca381b5ba42283987ae
+    src/binary64/tanh/tanh.c       e89441340424ea7d137269ce4626b9c1426c37fade09c0853c0ffcca606fb111
+
+# ── musl's libm ([IARC.7.11], [IARC.7.14]) ──────────────────────────────────
+#
+# WHO COMPILES WHAT. Every libds build compiles `src/math/fma.c` and
+# `src/math/scalbn.c` (libds.build's Libm rows, and the Mercury trees' copies in
+# mercury.build and release.build): [IARC.7.14] makes libds's `fma` its own on
+# every row, and musl's `fma` calls `scalbn`. `fmin.c`, `fmax.c` and
+# `round.c` are kept for the microcontroller rows, which are post-v1 and have
+# no build yet: the rest of what their C library would otherwise decide. One
+# section, not two: all five files are one upstream commit, and two pins of one
+# commit are a second copy to drift.
+#
+# musl's `fma` is correctly rounded. picolibc's and
+# newlib's generic `fma` is `x*y + z`, two roundings.
+#
+# Like CORE-MATH's, the files are COMMITTED, under vendor/musl/: no
+# build fetches them, and this section is their provenance and the refresh
+# source. `{path}` because musl's cgit takes the commit
+# as a query. The files are unmodified; runtime/src/libds/mcu_libm/ supplies
+# the two headers of musl's internal tree they include (`atomic.h` for
+# `fma.c`, `libm.h` for `round.c`) with exactly what they use. `fma` and
+# `scalbn` are renamed `ds_libm_<fn>` at compile time on every row;
+# runtime/src/libds/mcu_libm/mcu_libm.redefine-syms holds the private names of
+# all five.
+#
+# `cflags`: `-ffp-contract=off` so a software fma is not compiled into the
+# fused operation it replaces, and `-fno-builtin` so the compiler lowers none
+# of these functions' own calls to a builtin the C library would supply.
+#
+# `corroborated`: the git blob id of each file served, against the same paths
+# in a clone of git.musl-libc.org/git/musl at the commit (2026-10-08).
+[musl]
+commit       = c4e1bb3994c14ed5112c894d15a451bf00f0d501
+url          = https://git.musl-libc.org/cgit/musl/plain/{path}?id=c4e1bb3994c14ed5112c894d15a451bf00f0d501
+license      = MIT
+corroborated = git.musl-libc.org/git/musl COPYRIGHT 2f15edc7, src/math/fma.c adfadca8, src/math/fmin.c 08a8fd17, src/math/fmax.c 94f0caa1, src/math/round.c 130d58d2, src/math/scalbn.c 182f5610 (2026-10-08)
+cflags       = -O2 -std=gnu11 -ffp-contract=off -fno-builtin
+files        =
+    COPYRIGHT                      b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b
+    src/math/fma.c                 f3e328da492e4818f83737bab2b8b7d8cf281c4ce3730773c99ab8c7efc41dc7
+    src/math/fmin.c                8f174565b041802c3ee1b141caf2c7240b4ed5f45e920caec11c1585682199a4
+    src/math/fmax.c                70d8ee2a5c78bf10a45a5e39ab346a9527867cfc16246d162e07c39d29e77c1f
+    src/math/round.c               2349e599e99052603794087193725d28180b5d3466d43d6e6e1b254627bf37ae
+    src/math/scalbn.c              a2e766283ed30c2b30c71e01dbdabef58faf92cc9aa84a01c1ce1069b6625696
+
+# ── SoftFloat and TestFloat ([NDET.1.4]) ─────────────────────────────────────
+#
+# WHAT THEY ARE FOR. [NDET.1.4] admits a row's double arithmetic only once it
+# has been shown correct against the archive the row ships, and part 1 of
+# "shown" is Berkeley TestFloat, level 2, round to nearest even, against its own
+# SoftFloat reference. This binds the hosted 1.0.0 rows. Neither tree reaches libds.a or anything a release ships:
+# the check compiles them into upstream's testfloat_gen and testfloat_ver, and
+# pipes the one into the other through DS's own subject (the operations as
+# libds compiles them, linked against the row's libds.a).
+#
+# John Hauser's releases are 3e (SoftFloat) and 3e (TestFloat); upstream's git
+# is ucb-bar's, with no release tags, so each is pinned at the commit its
+# default branch carried on 2026-10-27, and fetched as raw blobs, which do not
+# move, as CORE-MATH's are.
+#
+# `files` is what those two programs compile and nothing else, derived from
+# their links, and never hand-picked: f64, f32 (which
+# the generator and verifier always carry) and the integer conversions, and no
+# f16, bf16, extF80 or f128 code. SoftFloat's specialisation is 8086-SSE, the one its
+# Linux-x86_64-GCC build takes. It decides NaN payloads and invalid integer
+# results, and the check checks neither (TestFloat's defaults, `-checkNaNs` and
+# `-checkInvInts` off), so it fixes no verdict on another row. Upstream's
+# in-process `testfloat`, its `subj-C` subject and each build directory's
+# `platform.h` are not taken: DS supplies its own subject and `platform.h`.
+#
+# `cflags` are the upstream Makefiles' for each tree: SoftFloat's
+# Linux-x86_64-GCC options, and TestFloat's with only FLOAT64 enabled.
+#
+# Committed under vendor/softfloat/ and vendor/testfloat/, unmodified, as
+# CORE-MATH's and musl's are; DIGESTS repeats the digests.
+#
+# `corroborated`: each file was taken twice. Once from a clone at the commit,
+# where the set and its digests were derived, and once as raw blobs, each
+# checked against these digests (2026-10-27).
+[softfloat]
+commit       = 497c81c1f5016dc6ef5b3219ece2f3c261d4d8f1
+url          = https://raw.githubusercontent.com/ucb-bar/berkeley-softfloat-3/497c81c1f5016dc6ef5b3219ece2f3c261d4d8f1
+license      = BSD-3-Clause
+corroborated = github.com/ucb-bar/berkeley-softfloat-3 clone and raw blobs (2026-10-27)
+cflags       = -O2 -DSOFTFLOAT_FAST_INT64 -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32
+files        =
+    COPYING.txt                             145ea96b4a4a04a1a7738d2a2bf9e830f861971e69606187b018d9e8fc0b95c7
+    source/8086-SSE/s_commonNaNToF32UI.c    190c04615aec8b828bfa1c46e8ebc31cc669a4e6f41ae273d09f16708cafbfe6
+    source/8086-SSE/s_commonNaNToF64UI.c    c9abe3713181963175bf95324103a9a7fa022488eba9264b1b97ef7cd9adae1a
+    source/8086-SSE/s_f32UIToCommonNaN.c    a2a2aa1f4198c1c522ccba123388912dbb37699bd504bbf61014b43834a88a8c
+    source/8086-SSE/s_f64UIToCommonNaN.c    0af1257c9928b3c5692ca53975b7d9fb9af389a08e2d264469db328a894c949c
+    source/8086-SSE/s_propagateNaNF32UI.c   83215e4528ffaee4e5bf4975e42acc65eb349dbdf33a408857c707790ed356e7
+    source/8086-SSE/s_propagateNaNF64UI.c   e3584b53c927e73a18457654125a558c58501ad7cc1de9bd3c6db75e06c190aa
+    source/8086-SSE/softfloat_raiseFlags.c  fe7a5684bc9f72a52e603dbfa0ad23897eb2983df1cb3ea440023308ca14d8bb
+    source/8086-SSE/specialize.h            8447d57528b20f8b5d61c49ad6d4b4e4fdfdbdc3cf2c2328ffd423c022832105
+    source/f32_add.c                        540c8f2d95b30bc846fe5b747aa6aae1bb70c687b9429278678bb0a000f65dcc
+    source/f32_div.c                        ec341d5028f63f19230729ed8d8aca424b08f221adfdce4ebce3caa6d54ba0d8
+    source/f32_eq.c                         2bb5a867872c4489c9d1363efeccc1d09af4f8c74914c4821b38171a3ad7acb2
+    source/f32_eq_signaling.c               68ecb33672ad5d3476886c8962866fac41a69a5e5d42cd7b4e31f18888da36b5
+    source/f32_isSignalingNaN.c             db08b8448054f0d3562470b454e6e505568a8c6b112b8fe884ca2041aeb75e76
+    source/f32_le.c                         84d3e3211b5ad2870602fd00bbc43b14bd9caec33292b433b8537b132bce5ce9
+    source/f32_le_quiet.c                   514c406d9c0ed80d7a1041b0064ee0b8304a1ab3d6a2fac9ab61a30351af82e5
+    source/f32_lt.c                         b992a2f1f5a678b12865e50f836ab499993009566d491c82ef521dedee5218ce
+    source/f32_lt_quiet.c                   bbca34ae9346d9d612382b19b29183f7f59c6e34e204415a8bc33ce82b8959c4
+    source/f32_mul.c                        bca46360750b343f24aafcfa7c36f24e3fc4fb6465d0c49f60de7980a86bc37b
+    source/f32_mulAdd.c                     867914dd6c8dc3a03e1369b7a65fb1cf2975ef2d1a1b5bbf3eeb1b8758cb3e2b
+    source/f32_rem.c                        61d04b11cc6768f5ca286e6ab2b48444646401c836ccf40c75b0f0f244724911
+    source/f32_roundToInt.c                 8bd60926124351237faf0a4365d9848edc8ad09371807e801c3ff4c1702c94a9
+    source/f32_sqrt.c                       2eb2d1a5a35d2e839aa69e18bda3868ef5f86c214df6adad3ae50cb8a6195dc8
+    source/f32_sub.c                        c4020ba5c2d5f10e647711bd7287c574ca498b0e469ee99f1f9c68c930d43311
+    source/f32_to_f64.c                     d25caefe4a26b9e9e1fa1cc53c683d8a22468122b2d09c16deb0e833702ada10
+    source/f32_to_i32.c                     f955cfbb69c337d4546c2cf5353654432fb3170cc9f4fb0f416e306fdb4ea73c
+    source/f32_to_i64.c                     d7a1083de841e474736b8357f2342879b23c155a1591475f95020c48228bcefc
+    source/f32_to_ui32.c                    03a452164220429d7736964380b3515709b01aa4e9aa10817a0ef17bb8ed868f
+    source/f32_to_ui64.c                    5ba4fd45bf7a7eb9f2a14d8670cacf84861be547f713f95294927f568658b88b
+    source/f64_add.c                        edb05c732053d1107456c95b7f9b18e58a25546925d3ffafac27b5f263db0b2e
+    source/f64_div.c                        c44985b8084d6407fd3cd4043dbe02c2651721ac03d1c3920798fc1b75ea2f3e
+    source/f64_eq.c                         70f18d1accbd596ff4be01882ec05b2006aedc96d0e5bde63f8c95851eedccd8
+    source/f64_eq_signaling.c               f7984eeacd74ed6df0ca61b8f82afafc3bfe3fcf4a3b3010c9852cd8064609b9
+    source/f64_isSignalingNaN.c             bd16d0dfb80583cd40be7821b4b0ff787553a30def853b6dad7464e2f55cddc7
+    source/f64_le.c                         a5ebbcf9314360ef9ce8e064856129d0665db2371de4069ed2d16ecc79e4042b
+    source/f64_le_quiet.c                   22a6809f619c770ed15130ce31eebe776a9f1f45a4cd5bdfb6e5c6de04ba657d
+    source/f64_lt.c                         f3bd638772b93335cb693ccaa149e482c38135634e50217fd6b1f925db20df45
+    source/f64_lt_quiet.c                   a187cacea311a0b8996ed7cf4163c348a15c1b2b1642ef87e53f8655766de24d
+    source/f64_mul.c                        335137bca17d29eddb451f562869ca7327c5fe472f347d2e36c55e4c2219e79b
+    source/f64_mulAdd.c                     1d16eff3acdec91e3aee893c4f389cf23df998e2bd199344d0574c01a9b09bcc
+    source/f64_rem.c                        089c2701c85e6a4ee5d779de903471ff8093d2ffdad164ebf31392d97165fc81
+    source/f64_roundToInt.c                 5463f765aeb7766b2a456305b723e1a205a9f9a6f85c918a466b482a89e67033
+    source/f64_sqrt.c                       643a9abb4d30aff2cac9be281687055a1a677ae7555ca782fc3fb1932d000908
+    source/f64_sub.c                        6b581000e70e679e057d2ce17e0839aa5a7da6982685b9718b6540069441e689
+    source/f64_to_f32.c                     48e998019d76613444c6f20e5d272464abd2657795830905dcf629bb18d90529
+    source/f64_to_i32.c                     8cb6390959e1800514601ceab2a2010bfc6189729357d212c377208951a3b286
+    source/f64_to_i64.c                     1502fb0ef9d22983b8f5040284f3a69a8479326109a7b82f14c7217687b90900
+    source/f64_to_ui32.c                    230b94a3fc3fc9dd5aeebfa8f2b6f62ab5795a03c4d899985494a8ccfc7e1846
+    source/f64_to_ui64.c                    b1b9879f9bddbcf5caa79b3e3bd78f8e3a1758852dfbe1c0444e5be6ea0dcfe1
+    source/i32_to_f32.c                     e6ccd7ec5ca8ea2b64435e94ecb0962be000f31d36abb88e68f6e90b44c0c290
+    source/i32_to_f64.c                     de334caa22edfcfc2a35572a2e858f0c500ad5018fc4335b46dfb003e0076183
+    source/i64_to_f32.c                     15c028b6e784138754cd7af1e6c360416ea26d71e97f52fe2a5cb452eb6048c4
+    source/i64_to_f64.c                     905170a7a36d108afa5fc43596cd4a29a5a6a8f82264ad890b45feeb5bad021c
+    source/include/internals.h              a267ba2cba747cb5217853742bcb01be412156c19ba5608de9d1acedb3938333
+    source/include/opts-GCC.h               5cbb99836df55f9c654752c060548c9b27dfd5657ba05a15aecb5082808ea120
+    source/include/primitiveTypes.h         6b0841b1aa4a9c3a1c0a89e868d5d69592e54360dc8e4ba947f7853243a55dcc
+    source/include/primitives.h             f416c1a7a3f84d863ddc089665147b3ea51c62451a49b849c5176cfce402cd1d
+    source/include/softfloat.h              b44c22759ad67b9c2f6e22d62b2d4a5952ce99a30cf0eadb00515b0bc642f82e
+    source/include/softfloat_types.h        554233f87179dd7ef6c0d8f3b0f00d39a0cd452d8c4e22cc1b3adca2d8dc2d0a
+    source/s_addMagsF32.c                   5b2d7992841c17e42a96e5aec865b4386cdc7e9030ac6f4d25ad74e4e73fb59b
+    source/s_addMagsF64.c                   2b4f69206b4e8d3fc26bc64ca147663530b68b53b0b0e7817c724e2d99376ec5
+    source/s_approxRecipSqrt32_1.c          dae5502facf520d0915403967e3436e1c2d2f5b848527accdb3b1d2a3654a47f
+    source/s_approxRecipSqrt_1Ks.c          d7c4b4833ce9f42e86d9933a550ad0d6e4b8bc4df4bb30518c8a747b12699bf8
+    source/s_mulAddF32.c                    fdfa3a9d52c8e8406d5121ed3c11838c0f643c37dadecb408ff1842a05a7dcd1
+    source/s_mulAddF64.c                    1761bdb8cc07d782f17a59ae62f931bf7a238fdabf8f3dc7190d0f40237469f7
+    source/s_normRoundPackToF32.c           2e473ba709740808cfd59931034be7c67c80c87ddb76a4765dceb23c9bb518d2
+    source/s_normRoundPackToF64.c           4e65ccecf8ee96e2c5815575df3a0e4495ac82987a841868cb1d130556a3dd0a
+    source/s_normSubnormalF32Sig.c          6063e5c0ee98527c1a5d728195d11ef5ccd9077515812b0380a2f1953244c861
+    source/s_normSubnormalF64Sig.c          be1efe0196eacce551f117e58f5d2bc053a4a2897f37fa5805b23e7d4e00de95
+    source/s_roundPackToF32.c               aac61a425bed4e973c9e0e1fb254f74cb7c04602131509ed98513269da83e45a
+    source/s_roundPackToF64.c               e549468a71417c8fefd927d582ec8481e2d6f595c406a4db5efff9b462f8e2c8
+    source/s_roundToI32.c                   9a64993647fe9cd9031d5a34d0caf86f48ba4b86b6c9bdecf3602d318fbc6401
+    source/s_roundToI64.c                   19008822ceff3ef5e46a770e5ffccb1953a8377c588001ca5da9dc82d1c44d2a
+    source/s_roundToUI32.c                  95b33259cffdc80a07ead51a4bf92344263f0da19880c1a663ed6a739edd4d73
+    source/s_roundToUI64.c                  616db10a9679eb984d27aaaea76e7d96c76bc0c6f2e1b894e99aa05b2fddefc6
+    source/s_shiftRightJam128.c             ffb26555c1aba397392ca7f3f3edd0d470203767fd819977b078a29fcc649823
+    source/s_subMagsF32.c                   53ca2e9f6f1edc7095133e7c98018d69d1e6cd0d5f5b5c0393c4e656ee9a965c
+    source/s_subMagsF64.c                   733f17b90486602ff6c67fa3d99166a841b03276c0fcc7da66751d1e8631f01f
+    source/softfloat_state.c                5f7a70c4c5823cdde0518db77a74a6549dba62b21d910f6dadb9115b1d478301
+    source/ui32_to_f32.c                    c839bd6a1ab7aa173b1f03fee8f883f1e08b8c93d04aa2e9b4e16d70163a7ccc
+    source/ui32_to_f64.c                    71049d86023d9753f43218e93d7be5c281c2ea02e8162e5a524d50e4bd2ccdae
+    source/ui64_to_f32.c                    7136247b87af7ee7f1d1941c705d75836b728c0b305374243a86f0ed13e7f33e
+    source/ui64_to_f64.c                    034a91f9fdeb4281760c06f3f97f51decc09257eef2b0a16028f52103b6bb530
+
+[testfloat]
+commit       = a9c849f1b0eb0264b626d9686ffae167d996e3be
+url          = https://raw.githubusercontent.com/ucb-bar/berkeley-testfloat-3/a9c849f1b0eb0264b626d9686ffae167d996e3be
+license      = BSD-3-Clause
+corroborated = github.com/ucb-bar/berkeley-testfloat-3 clone and raw blobs (2026-10-27)
+cflags       = -O2 -DFLOAT64
+files        =
+    COPYING.txt                          862c7f1238c07addea5e7af00ae4a9b6e59150029091c4261c896bcdce02a059
+    source/fail.c                        28c06b109a510b1ccdef1ec5a549418f37afbf4269e8059c56cd2b234562174f
+    source/fail.h                        6cc8065a464ffa0fad60fe34f3b569e17927cfa019c5c2cb5c9ca25fb9f461b7
+    source/functionInfos.c               e6384676820a0a16973307fe0e9e57ba836a2616997d14e7b15f1bf15ea0d72b
+    source/functions.h                   99143b2d2430215025617ba79fc6a6f81c0bff800c55f0f5a86602f3851f3676
+    source/functions_common.c            9ac0c18a6ad50dc9f39d88dc2c18fd0d1c2e105f7ca5943891dc1d72ed774e81
+    source/genCases.h                    e027f3ec0ca24b4043432d9cf10615194776a2f153f86a9f2ff8351108534c6e
+    source/genCases_common.c             acfd8d7f58a5c2763e3d5b4fa9a9d09a43cc7ddb34401bf5d7d8a324bdc6858b
+    source/genCases_f32.c                fb034573caf2be06ae68cfbea0c94a2992b4b0d6abb84162284e547971cba9ca
+    source/genCases_f64.c                a695cab2cefc0700f016bf6ceb5ef8382b15fe2b43e4a80338b15a57e353ac6e
+    source/genCases_i32.c                6ac1da9e21c1e9752ba5da7159995050832cc5da4743a9f08dcebb4664a312cc
+    source/genCases_i64.c                cbc0b5b72ac53dab0462ab7b321f04e0f834a25bc8fcbc6bd2c9e549601a0ef1
+    source/genCases_ui32.c               a9827abc72ec32a5225f38ad1575b3c4ce4c159758018e129142765c65df5a65
+    source/genCases_ui64.c               244362d5741a2dfa0b57f7131137580805c8a1fb2a4e0edc251af5c8c3505f32
+    source/genLoops.c                    d8e236d9bba7dafa1eae7f6931cd4d199328fb2a67da087e68703b8f825e7b43
+    source/genLoops.h                    26f6167efb5885450809a5bbf6d33025d0bbc5cf0d3977ef0dacf4aff76e1600
+    source/random.c                      017a628de554a32eadc87dd23629527fefa8202169467543acf63e7de05c14a0
+    source/random.h                      9ae01f11f82e7ba83d64925693b958e1c0ab3c19b33f4a49d853251d8072149b
+    source/readHex.c                     df5d07ef4cd0c31147806893db04cc46d09b954af4e7a8c567421f3f6bdde707
+    source/readHex.h                     480676dadff76307df4851d0e104f3fdb1f641c75cacc20151fb8ed8f9c2b0a6
+    source/testfloat_gen.c               1362c85bde2172612ef4ba4302edd20e2654b3e2a9cc9e6820127b149c891aa8
+    source/testfloat_ver.c               f88017148e8a991173f97f9917e06b3bad1ed1295f853fea40548dbbaea8734a
+    source/uint128.h                     6e66b2b673e7dd190794b94f1677e46b7282e568c424211cf1647156adaca975
+    source/verCases.h                    f71f5c626ff5187553424249a754e48cd7c690c867ede59cf1e8696a474addc0
+    source/verCases_common.c             bfee7180d55e5b18bcdd06751ccd6f303b1dfe0f22eef21e160c9943e18704f3
+    source/verCases_writeFunctionName.c  8840ee398f21fee9bea1d5e739ed8913d0d909311bfba2a28b35c994df5e7c2c
+    source/verLoops.c                    a86a3fb538960979a4f9949f84db3f60f91fd09673c5706f5363bbc2e7c32031
+    source/verLoops.h                    a9846c3da8187d3f77188f936ede3a2724c0da5bbc4e3a64737f0d68346a944b
+    source/writeCase.h                   171d5d98cfc5a9326e3fce4f144ce670039398c655a96429e9200a49dba0f4d4
+    source/writeCase_a_f32.c             175281449b76f9b64839a7471757d944fe6bd59986ae34c75baf4c1629b3e9f1
+    source/writeCase_a_f64.c             8c97d13f85436daae5672f178d73acf5f9cf1b94470dcb18b6c3041f7f8a2d85
+    source/writeCase_a_ui32.c            88126df3b4c4b47b312ded3d379fa39ec0728eadb8f02771c2d0d3b9d1d8fb9f
+    source/writeCase_a_ui64.c            d7e2faee010482017b6a3f7800cece1caa2a2b06d3f3330de07330048e08ba64
+    source/writeCase_ab_f32.c            3792334664c3034fd6dccbac07dc946d0e2265f42a8cf57941baee00863cf761
+    source/writeCase_ab_f64.c            862ee05220a2955ffbf3eec81bbc0d291850fa39b5374af2a75451209f642c09
+    source/writeCase_abc_f32.c           af9afffe0fefcb51de9e95e932a587cdd13a00ea2130772bcdc3426553622f7c
+    source/writeCase_abc_f64.c           68ed9a5341a6323b03cbb7b017bf03c6e99ecbb0a79bf57ff7d3263ef8ee2c71
+    source/writeCase_z_bool.c            d00853d29fcef5c412530cc329de9369ac4bfe7af2ccbcffbd671f12cab981b4
+    source/writeCase_z_f32.c             c617d42262acc0df34826b734440566eafe2e35ea9c3c645fc3217f7b58313f7
+    source/writeCase_z_f64.c             1dd2ca3a56b791607541e1dbe4ff5aaf705db3b064a216849a3160ddb1f5aaa1
+    source/writeCase_z_ui32.c            9cb4d572ad6549bb22974f3c7eb0918cfe8aa34db7d9edb31c08bd7f05bb637b
+    source/writeCase_z_ui64.c            ba4a087f2b5797587aecbd4a8729a16302699890265a11bacf1b6fa436041859
+    source/writeHex.c                    009be4054b94c9e2ae710420702c15ca9750051aaebe6b6860fd220735644539
+    source/writeHex.h                    5220d4cbcfea6ae06d504fe04bda6ab5dcee701452f6bd5118f3bc5dcea8e6f9

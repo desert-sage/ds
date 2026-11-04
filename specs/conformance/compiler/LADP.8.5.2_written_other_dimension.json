@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.2_written_other_dimension",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.2]: the compiler rejects a written quantity whose dimension is not the kwarg's, on a unit-typed kwarg, unless exactly one `implicit` formula bridges the two. `call hvac.set t: 5_meter` gives a length to a `celsius` kwarg, no formula bridges length to temperature, and it is refused with DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `ladp_8_5_2_written_dimension` in dsc.validate, called from `call_kwarg_value`, its `bridge_none` arm. The break is dropping the call, which lets the program compile: `call_kwarg_value` checks no other property of a non-opaque kwarg.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nservice hvac.set:\n    kwarg t: celsius\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set t: 5_meter nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

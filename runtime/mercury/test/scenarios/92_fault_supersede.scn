@@ -1,0 +1,22 @@
+# A fault fact's replacement records the withdrawal first.
+#
+# `ratio`'s join test on Q runs against P whenever a Q arrives
+# (fixtures/125_fault_supersede.ds).
+#
+#   input 2  Q zero: `7 // 0` traps DIVIDE_BY_ZERO; the drain asserts a
+#            ComputationError fault fact for the beta's site
+#   input 4  Q huge: `floor(1e300)` traps NOT_REPRESENTABLE at the SAME site,
+#            in a later input, so [LERR.9.7] does not coalesce the two; the
+#            drain replaces the live fault fact ([LERR.9.5])
+#
+# [RFCS.6a.4] orders the replacement: the live fault fact's FactWithdraw
+# (cause SUPERSEDED), then the replacement's FactEmit ([LERR.9.8]). So input 4
+# shows the fault, `retract`, then `assert ComputationError`, on the
+# fault-fact drain's path, not a rule's emit. The vector
+# RFCS.6a.4_fault_fact_replacement_withdraws_first pins the order against
+# the clause.
+assert P entity_id=p n=7
+assert Q entity_id=zero d=0 f=1.0
+pump
+assert Q entity_id=huge d=1 f=1e300
+pump

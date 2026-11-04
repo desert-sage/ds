@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_valid_interval_fires",
+    "clauses": ["RLOW.6.1.7"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "The control for LINT.7.2_inverted_in_raises_domain, so that one cannot pass by a check that faults on every interval. The same program, and one S with `t` 4, `a` 3 and `b` 5, a valid interval ([LINT.7.2]: `3 <= 5`) that contains 4: rule `inside` fires and logs `inside 1`, and rule `handler` never fires. PATH PINNED: FN_INTERVAL_CHECK(s, e, v) yielding `v` when every pair is valid ([RLOW.6.1.7] step 1), in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    t: Int mutable\n    a: Int mutable\n    b: Int mutable\n\nrule inside:\n    S s where s.t in (s.a .. s.b)\n->\n    log info \"inside {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "t": 4, "a": 3, "b": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["inside 1"]
+    }
+}

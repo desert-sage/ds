@@ -1,0 +1,15 @@
+{
+  "id": "LUNI.13.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.13",
+  "seq": 1273,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "13.2 Per-currency dimensions and storage",
+  "text": "### 13.2 Per-currency dimensions and storage [LUNI.13.2]\n\nEach currency is a separate `unit dimension`. The base unit is the ISO 4217\nminor unit; storage is always `int64`. Minor-unit storage gives exact\ninteger representation for every routine balance.\n\n| Family | Base unit | dp | Notes |\n|---|---|---|---|\n| USD / EUR / GBP / CAD / AUD / CHF / etc. | cent / pence / rappen / … | 2 | Bulk of ISO 4217 |\n| JPY / HUF / KRW / IDR / etc. | yen / forint / won / rupiah | 0 | No minor unit in ISO 4217 |\n| KWD / JOD / BHD / LYD / etc. | fils / qirsh / … | 3 | Gulf dinars |\n| Sub-currency precision (pip, equity 4dp) | `<ccy>_pip`, `<ccy>_4dp` | 4–8 | Each precision is its own dimension |\n\nSub-minor precision is a *separate* `unit dimension` per currency — `currency_usd_4dp`\n(pip-precision USD) is distinct from `currency_usd`. Conversion within a single\ncurrency (`USD_dollar` ↔ `USD_cent` ↔ `USD_pip`) is exact tier-1 affine\n(`unit <sym>: ... = <power_of_10>`). Cross-currency conversion always goes\nthrough `unit fx_pair`.\n\nPer-currency dimensions are never interchangeable for arithmetic — `currency_usd +\ncurrency_eur` is a compile error ([LUNI.8.2] cross-dimension). To add them, the\nauthor explicitly converts one side via `unit fx_pair` and `.round(\"<mode>\")`.\n\n",
+  "deferred": true,
+  "refs": [
+    "LUNI.8.2"
+  ]
+}

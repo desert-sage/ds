@@ -1,0 +1,10 @@
+{
+    "id": "RFCS.19.5_the_dsc_writes_every_field_in_order",
+    "category": "compiler",
+    "scenario": "[RFCS.19.5] binds a writer of either container ([RFCS.19.1]), and the `.dsc` is the compiler's: every message's fields in ascending field-number order, a field that is not repeated at most once, in each atom body and every message nested in one. The program gives the artefact a schema group of each lifecycle, `logical` and `ttl` ([RDSC.8.1]), a service, a two-pattern rule whose join needs a `BetaNode`, and a rule with a `call`, its `on response` continuation and an `after` follow-up, so expressions, continuations and synthesized terminals are nested in the bodies walked. `atoms` requires the artefact to hold each of those atoms. The harness ([RCTS.1.2.19], `dsc_field_order`) walks the `.dsc` from its `Dsc` message by `proto/`'s field types, after showing the walk refuses the same artefact with two fields of one atom body swapped. Path: the compiler's encoder, `dsc.encode`, through `ds.wire`'s writer. An encoder that writes a nullable slot's `nullable` (11) before its `module_id` (10) fails on `Reading.x`. The element order of a repeated field no clause orders is not pinned ([RFCS.19.5]).",
+    "rules_ds": "use default\n\nschema SvcMethodReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Reading scope logical:\n    id: String key\n    n: Int mutable\n    x: Float? mutable\n\nschema Sensor scope logical:\n    id: String key\n\nschema Alert scope logical:\n    id: String key\n    n: Int mutable\n\nrule pair:\n    Reading r where r.n > 0\n    Sensor s where s.id == r.id\n->\n    emit Alert logical id: r.id n: r.n\n\nrule ask:\n    Sensor\n->\n    call svc.method nocooldown\n        on response.code == 200:\n            log info \"ok\"\n    after 5_s:\n        log info \"later\"\n",
+    "expect": {
+        "kind": "dsc_field_order",
+        "atoms": ["DscHeader", "SchemaDef", "Slot", "SchemaLogical", "SchemaTtl", "AlphaNode", "BetaNode", "TerminalNode"]
+    }
+}

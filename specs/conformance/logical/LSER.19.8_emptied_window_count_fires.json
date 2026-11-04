@@ -1,0 +1,41 @@
+{
+    "id": "LSER.19.8_emptied_window_count_fires",
+    "category": "logical",
+    "scenario": "LSER.19.8 — positive control for LSER.19.8_emptied_window_mean_does_not_fire, same steps. `count` keeps a concrete type, so an emptied window's count is `0`. The rule `where r.v > 1.5 and count(r.v) == 0` cannot fire at t=0 (v is 1.0) and fires at t=15 min only if the upsert's read is evaluated AND sees the window as empty — the one sample is 15 min old against a 10 min window. It proves the negative vector's silence at t=15 min is the cold `null`, not a read that never ran; and a runtime answering `null` for every emptied read, ignoring the concrete partition, fails here. Path: libds `series_read_dispatch` → `series_window_emptied` → `series_zero_default` for COUNT; Mercury `query` → `cold_value(agg_count)`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    count sliding 10_min\n\nrule emptied_count:\n    Reading r where r.v > 1.5 and count(r.v) == 0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 900000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

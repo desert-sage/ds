@@ -1,0 +1,13 @@
+{
+  "id": "LCYC.8.4_chain_across_modules_compiles",
+  "clauses": ["LCYC.3.1", "LCYC.3.2.2"],
+  "category": "compiler",
+  "scenario": "[LCYC.3.1] / [LCYC.3.2.2] (LCYC.8.4, the id, is a tombstone). The control for `LCYC.8.4_cycle_across_modules`: the same two modules, except the importer's rule emits a schema of its own (Z) instead of the library's X. The unit-wide graph has the edge `pack:a` -> `b` and nothing back, so the program compiles. Pins that the unit-wide pass does not invent an edge -- in particular that the importer's Z and the library's X, declared in different modules, are different nodes.",
+  "rules_ds": "from pack import Y\n\nschema Z scope logical:\n    v: Int key\n\nrule b:\n    Y\n->\n    emit Z logical v: 1\n",
+  "libraries": {
+    "pack": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nrule a:\n    X\n->\n    emit Y logical v: 1\n"
+  },
+  "expect": {
+    "kind": "compile_ok"
+  }
+}

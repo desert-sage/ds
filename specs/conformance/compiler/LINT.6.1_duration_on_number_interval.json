@@ -1,0 +1,10 @@
+{
+    "id": "LINT.6.1_duration_on_number_interval",
+    "category": "compiler",
+    "scenario": "[LINT.6.1]: `duration` is a component only of an interval over `Time` or `Date`, so `(w.a .. w.b).duration` on two `Int` slots is refused with DS_VALIDATE_BAD_INTERVAL_COMPONENT. An `Int` interval is itself legal ([LINT.1.1]), so the refusal is the component's alone. A component reader that types `duration` as `Duration` for every interval compiles this. `compiler/LINT.6.2_duration` is the `Time` control. PATH PINNED: `dsc.typecheck`'s `lint_6_1_component`, the `duration` arm keyed on the element type.",
+    "rules_ds": "schema W scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    W w where (w.a .. w.b).duration > 1_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_INTERVAL_COMPONENT"
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "id": "LTIM.14.2_calendar_domain",
+    "clauses": ["LTIM.14.2"],
+    "category": "logical",
+    "dead_rules_expected": ["month_13", "not_a_day", "hour_24", "minute_60", "second_60", "nanosecond_1e9", "date_not_a_day"],
+    "scenario": "[LTIM.14.2]: a field outside its range is a ComputationError of kind DOMAIN, and the activation is abandoned. One `F` fact per case, its fields in `Int` slots so nothing folds, each pumped on its own. Each case has its own rule, whose `where` is `f.id == N and <the call> != <a constant>`: for the other facts `f.id == N` is false and absorbs nothing to raise ([LNUL.4.2]), so each fact raises from one node, and each fault is its own fault fact ([LERR.9.2]). `trapped` logs each ComputationError's kind. The cases: `calendar.time` with month 13 (1), 2023-02-29, no day of 2023 (2), hour 24 (3), minute 60 (4), second 60 (5) and nanosecond 1 000 000 000 (6), and `calendar.date(2023, 2, 29)` (8), each `DOMAIN`, and their rules never fire. The control, 7, is 2024-02-29T23:59:59.999999999, every field at the top of its range in a leap year: `leap_day` fires and logs `built 7`. A runtime that wrapped a field into the next unit, skipped the calendar check, or raised another kind logs a `built` line or another kind. PATH PINNED: libds `adapter_ds_calendar_time` / `adapter_ds_calendar_date`'s range checks (`calendar_days`, rete/adapters.c) and Mercury `ds.chrono.ltim_14_2_time` / `ltim_14_2_date` (`ltim_14_2_day_in_range`).",
+    "rules_ds": "import calendar\n\nschema F scope logical:\n    id: Int key\n    y: Int mutable\n    mo: Int mutable\n    d: Int mutable\n    h: Int mutable\n    mi: Int mutable\n    s: Int mutable\n    ns: Int mutable\n\nrule month_13:\n    F f where f.id == 1 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 1\"\n\nrule not_a_day:\n    F f where f.id == 2 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 2\"\n\nrule hour_24:\n    F f where f.id == 3 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 3\"\n\nrule minute_60:\n    F f where f.id == 4 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 4\"\n\nrule second_60:\n    F f where f.id == 5 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 5\"\n\nrule nanosecond_1e9:\n    F f where f.id == 6 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 6\"\n\nrule leap_day:\n    F f where f.id == 7 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 7\"\n\nrule date_not_a_day:\n    F f where f.id == 8 and calendar.date(f.y, f.mo, f.d) != calendar.date(1970, 1, 1)\n->\n    log info \"built 8\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "F", "slots": { "id": 1, "y": 2024, "mo": 13, "d": 1, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 2, "y": 2023, "mo": 2, "d": 29, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 3, "y": 2024, "mo": 1, "d": 1, "h": 24, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 4, "y": 2024, "mo": 1, "d": 1, "h": 0, "mi": 60, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 5, "y": 2024, "mo": 1, "d": 1, "h": 0, "mi": 0, "s": 60, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 6, "y": 2024, "mo": 1, "d": 1, "h": 0, "mi": 0, "s": 0, "ns": 1000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 7, "y": 2024, "mo": 2, "d": 29, "h": 23, "mi": 59, "s": 59, "ns": 999999999 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 8, "y": 2023, "mo": 2, "d": 29, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN", "DOMAIN", "DOMAIN", "DOMAIN", "DOMAIN", "DOMAIN", "built 7", "DOMAIN"]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LGRA.5.2_const_ttl_reads_its_value",
+    "clauses": ["LGRA.2.8.11"],
+    "category": "logical",
+    "scenario": "[LGRA.5.2], [LGRA.2.8.11]: a schema's `ttl` written as a `Duration` constant is the TTL the constant's value names. `const WAIT = 5_s` and `schema Pulse scope ttl WAIT`; rule `seen` joins a `Probe` to a live `Pulse` and logs the Probe's `k`. Pin: set 0; assert Pulse; pump; advance 4 s; assert Probe k=4; pump (the Pulse is live: `4`); advance 2 s; assert Probe k=6; pump (+6 s, past the Pulse's deadline at 5 s: nothing). Messages are exactly ['4']. A TTL lowered from anything but the constant's value moves the answer: one of 4 s or less logs nothing, and one of more than 6 s logs ['4', '6']. PATH PINNED: `dsc.lower.ttl_ns` through `dsc.dstest.lgra_2_8_1_time_expr_ns` into `SchemaTtl.ttl_ns`, then the schema TTL's expiry in both runtimes.",
+    "rules_ds": "const WAIT = 5_s\n\nschema Pulse scope ttl WAIT:\n    v: Int\n\nschema Probe scope explicit:\n    k: Int\n\nrule seen:\n    Probe p\n    Pulse\n->\n    log info \"{p.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert",  "schema": "Probe", "slots": { "k": 4 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert",  "schema": "Probe", "slots": { "k": 6 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["4"]
+    }
+}

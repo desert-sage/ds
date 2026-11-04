@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A fact emitted in the pump, handed on in the same pump ([RFCS.23.1],
+# [RFCS.23.5], [NCBK.10.1]). `make` emits a Made; `send`, a later firing of
+# the same pump, passes it to a call as a FactExternal whose `asserted_at` is
+# the Made's entry stamp. `ship` publishes a Shipped, which enters no working
+# memory here ([LTIE.4.3]); its FactExternal is built from the values, with
+# `asserted_at` the instant of the publish. Each Seed derives its own key, so
+# a second Seed adds a Made rather than replacing one.
+
+schema Seed scope explicit:
+    tag: String
+    n: Int
+
+schema Made scope logical:
+    id: String key
+    n: Int mutable
+
+schema Shipped scope logical:
+    id: String key
+    n: Int mutable
+
+service svc.send:
+    kwarg made: Made
+    no response
+
+rule make:
+    Seed s
+->
+    emit Made logical id: s.tag n: s.n
+
+rule send:
+    Made m
+->
+    call svc.send made: m nocooldown
+
+rule ship:
+    Made m
+->
+    publish Shipped id: m.id n: m.n

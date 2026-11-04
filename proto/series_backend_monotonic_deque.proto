@@ -1,0 +1,26 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "series_backend_ring_buffer.proto";  // SeriesNullPolicy
+
+// SeriesBackendMonotonicDeque atom body. Per [RDSC.5a]. Monotonic-deque backend for
+// exact sliding min / max aggregations (Tangwongsan-Hirzel et al.).
+// O(k) worst-case state, O(1) amortised per update.
+message SeriesBackendMonotonicDeque {
+  string schema_name        = 1;
+  string slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string identity_slot_name = 3;
+  // Required (> 0); the deque evicts samples older than window_ns.
+  uint64 window_ns          = 4;
+  // 0 = live-only; non-zero forwards samples to the samples plane.
+  uint64 persist_ns         = 5;
+  // 0 = window is the only bound; non-zero caps in-memory entry count
+  // even within the window, enabling RT pre-allocation.
+  uint32 max_samples        = 6;
+  uint32 module_id          = 10;
+  SeriesNullPolicy null_policy = 11;  // [LNUL.8.6]
+}

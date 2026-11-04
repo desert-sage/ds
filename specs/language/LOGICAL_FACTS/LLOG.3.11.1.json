@@ -1,0 +1,61 @@
+{
+  "id": "LLOG.3.11.1",
+  "prefix": "LLOG",
+  "doc": "LOGICAL_FACTS.md",
+  "parent": "LLOG.3.11",
+  "seq": 170,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LLOG.3.11.1] The engine **must** re-evaluate every time-dependent test at\neach pump, under that pump's clock sample ([LLOG.11.2], [LTIM.2.4.2]). A match\nthe new sample refuses ends, and the `logical` facts it justified are retracted\nat that pump ([LLOG.15.1]). The tick that drives this is engine-internal\n([LDET.5.8]), and an author writes nothing for it.\n\n",
+  "refs": [
+    "LDET.5.8",
+    "LLOG.11.2",
+    "LLOG.15.1",
+    "LTIM.2.4.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__alphas_three",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Three alphas, kinds 0 to 2. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__clock_where_retracts_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A `logical` FACT JUSTIFIED BY A `now()` MATCH IS RETRACTED AT THE FIRST PUMP WHOSE SAMPLE REFUSES THE MATCH, its matched fact unchanged: the Reading at (0, 0) fires `fresh` and Fresh is emitted; an advance to 1, a Mark and a pump leave Fresh standing, the match persisting; an advance to 3, a second Mark and a pump end the match and retract Fresh -- logical/LLOG.3.11.1_clock_where_retracts_its_logical_fact's shape. 'A match the new sample refuses ends, and the `logical` facts it justified are retracted at that pump.' Executed: `[[(0, True)], [], []]`, and working memory after the second pump the Reading, Fresh and the Mark, after the third the Reading and the two Marks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__fresh_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`now() < 2`: the `fresh` gate of the two logical fixtures. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__fresh_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`fresh`: a Reading under `now() < 2`, emitting Fresh logical, the node loaded with the test at the sample (0, 0). A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__relation_life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every kind a relation: Reading (0), Mark (1) and Fresh (2), each `logical` with one key slot. A fixture."
+      }
+    ]
+  }
+}

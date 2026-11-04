@@ -1,0 +1,21 @@
+# `after` READING A PARENT BINDING -- [LTAC.3.5]'s capture fact, run on both
+# runtimes.
+#
+# Two Motions arm two timers from two activations. Each parent firing binds
+# its own `ds_gensym()` correlation, so the timer and the
+# `$CaptureBindings_arm_after_0` fact it asserts share a `corr` no other
+# activation has, and each follow-up joins exactly its own capture. The trace
+# must show `off 1` and `off 2` once each, and `final facts=` the two Motions.
+# Both follow-ups complete on one tick, so [LDET.5.5] orders them by their
+# facts: the older timer's match takes the lower timetag and `off 1` fires
+# first, in both runtimes.
+#
+# `ds_gensym` is libds's `g<N>` per engine from 0 and Mercury's copy of it, so
+# the correlations -- and anything recorded with them -- agree digit for digit.
+#
+# 5_min is the deferral; 301_s clears it.
+assert Motion zone=1
+assert Motion zone=2
+pump
+advance 301000000000
+pump

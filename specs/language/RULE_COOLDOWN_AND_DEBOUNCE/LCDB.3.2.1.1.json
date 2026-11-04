@@ -1,0 +1,162 @@
+{
+  "id": "LCDB.3.2.1.1",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.2.1",
+  "seq": 93,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "  [LCDB.3.2.1.1] **Suppression level.** The\n  cooldown gate operates at the **RHS level**, not the\n  LHS activation level. The rule continues to activate\n  on every matching LHS (Rete propagation, refraction,\n  binding capture, all unchanged); the dispatcher's\n  `ds-rate-allow` builtin wraps the whole RHS as\n  `(if (ds-rate-allow \"<rule>\" <activation-key>) then\n  <body>)`. A within-cooldown activation has its RHS\n  short-circuited but still consumes the activation\n  budget — refraction tracks it as fired for the\n  purposes of LCRS / LCDB.5 interactions. This matters\n  for two observable behaviours: (a) `cooldown` does\n  not skip pattern-side side effects (capture-let\n  evaluation, slot reads) inside the LHS — the LHS\n  always runs; (b) the activation key is computed\n  every time the LHS matches, not lazily inside the\n  gate.\n",
+  "refs": [
+    "LCDB.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_run_if",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no site, the RHS under a verdict is Rete/NetworkTimed.idr's, over every verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rhs_gated_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls gated by the rule's cooldown: Rete/NetworkTimed.idr's gate, then the RHS with calls under its verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_if_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls under the rule's verdict: admitted, the actions and the sites run from position 0; refused, nothing runs and no call is issued."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__allowed_is_the_firing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ADMITTED FIRING IS THE FIRING: when the gate's verdict on the fired match's key at the clock is `true`, the firing's net is `iret_11_4__fire_ttl_net`'s -- the activation marked, the actions run -- and the trackers gain `(rule, key) -> clock` in front. Over every program, state, selection and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__rhs_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`(if (ds-rate-allow \"<rule>\" <activation-key>) then <body>)`: the gate over the fired match's key at the net's clock, then the body, or nothing. (a) and (b) are not observable in a pure model: the LHS has no side effects and the key, a function of the match, has no computation time -- the model computes it at the gate, which the clause forbids only as an observable."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__rhs_once",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RHS GATES ONCE: the trackers after it are the trackers before, or those with the rule's key stamped at the clock in front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__run_if",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS under a verdict: admitted, the actions run on the marked net; refused, the marked net stands and no action runs -- the RHS short-circuited, the activation marked all the same."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__run_if_trackers",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The trackers after the RHS under a verdict are the verdict's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__suppressed_leaves_memory",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an activation leaves working memory: the refused firing's net holds the facts it held. A transcription of `idat_6_2_2__mark_net`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__suppressed_runs_no_action",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A REFUSED FIRING RUNS NO ACTION: when the verdict is `false`, the firing's net is the net with that activation marked fired and nothing else -- working memory, the dependency rows, the deadlines and the clock as they were -- and the trackers are the ones before. Over every program, state, selection and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__fire_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule activates on every matching LHS and refraction marks it fired whether or not the gate admits the RHS: the selection and the marking are the plain firing's, and the gate decides the body alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rdsc_4a_8_2_3__suppressed_is_still_the_firing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Refraction tracks it as fired': after a within-cooldown activation's firing the activation carries `fired`, and the selection does not take it again."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__allowed_is_the_stamped_firing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An admitted gate: the actions run after the mark, the admission recorded, on the stamped engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__fire_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule activates on every matching LHS the sample admits and refraction marks it fired whether or not the gate admits the RHS."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__rhs_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`(if (ds-rate-allow \"<rule>\" <activation-key>) then <body>)` over the stamped RHS. (a) and (b) are not observable in a pure model, as Rete/NetworkCooldown.idr's `lcdb_3_2_1_1__rhs_gated` says."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__run_if",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS under the gate's verdict at the RHS level: refused, the RHS is short-circuited and the activation, marked before, stays marked."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__run_if_drops",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The RHS-level verdict is the one Rete/NetworkCooldown.idr applies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_4__suppressed_runs_no_action",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A within-cooldown activation has its RHS short-circuited': no action runs, the activation is marked, nothing else moves."
+      }
+    ]
+  }
+}

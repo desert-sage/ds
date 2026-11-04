@@ -1,0 +1,12 @@
+{
+    "id": "LADP.8.4.1",
+    "category": "compiler",
+    "scenario": "Service `response SchemaName` references a schema declared in the same library file per LADP.8.4.1. Pin: library `ha` declares `schema HALightResponse` (`ttl`, declaring `corr`, as LCRS.4.3.2 requires) plus `service light.turn_on` with `response HALightResponse`; the rules-file imports the library and calls the service. The validator accepts the response decl; compile_ok proves the response binding flows through parse + validate without a structural rejection. (Rule-side response-access type-checking against the referenced schema is CALL_RESPONSE / LCRS territory; this pin covers the service decl shape only.)",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "schema HALightResponse scope ttl 1_h:\n    corr: String\n    success: Bool\n    error_code: String\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response HALightResponse\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

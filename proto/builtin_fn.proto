@@ -1,0 +1,335 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The builtin dispatch id: the `op` of a native Rete call
+// (proto/rete_expr.proto#CallExpr). The runtime dispatches by this value
+// through a fixed table; no builtin name travels on the wire.
+//
+// A value is never reused ([STYL.2.8.7]): one out of use is `reserved`, by
+// number and by name. The transcendentals (8-11, 13-22) are correctly rounded
+// ([LEXP.3.9.2]).
+//
+// The number space is 1..154 with 38, 39, 42, 43, 53, 68, 71, 72, 73, 74, 77,
+// 80, 84, 85, 100, 109, 110, 121, 135 and 136 reserved (see below), so a value
+// above 154 or in
+// {38,39,42,43,53,68,71,72,73,74,77,80,84,85,100,109,110,121,135,136} is not an
+// op of this enum.
+// This range is stated because a dispatch table built from the comment rather
+// than from the members would otherwise be wrong without anyone noticing.
+//
+// TWO NAMES THAT LOOK LIKE EACH OTHER AND ARE NOT: FN_LN = 9 is `math.ln`, the
+// natural logarithm, and FN_LOG = 47 is the `log` RHS ACTION. There is no
+// `log()` function. Grepping for "log" finds both.
+enum BuiltinFn {
+  FN_UNSPECIFIED   = 0;
+
+  // Arithmetic / rounding — LEXP.3.2
+  FN_ABS           = 1;
+  FN_ROUND         = 2;
+  FN_FLOOR         = 3;
+  FN_CEIL          = 4;
+  FN_TRUNC         = 5;
+  FN_SIGN          = 6;
+  FN_SQRT          = 7;   // correctly-rounded IEEE-754, exact
+  // Exp / log — LEXP.3.9, correctly rounded
+  FN_EXP           = 8;
+  FN_LN            = 9;   // the `ln` builtin: natural logarithm
+  FN_LOG2          = 10;
+  FN_LOG10         = 11;
+  FN_POW           = 12;  // LEXP.3.2 / LEXP.7.3a; correctly rounded when Float
+  // Trigonometric — LEXP.3.9, correctly rounded
+  FN_SIN           = 13;
+  FN_COS           = 14;
+  FN_TAN           = 15;
+  FN_ASIN          = 16;
+  FN_ACOS          = 17;
+  FN_ATAN          = 18;
+  FN_ATAN2         = 19;
+  // Hyperbolic — LEXP.3.9, correctly rounded
+  FN_SINH          = 20;
+  FN_COSH          = 21;
+  FN_TANH          = 22;
+  // Angle conversion — LEXP.3.6 (exact, retained)
+  FN_DEGREES       = 23;
+  FN_RADIANS       = 24;
+  // Integer utility — LEXP.3.7
+  FN_BIT_COUNT     = 25;
+  FN_BIT_LENGTH    = 26;
+  // Geometric distances — LEXP.5
+  FN_EUCLIDEAN_2D  = 27;
+  FN_EUCLIDEAN_3D  = 28;
+  FN_MANHATTAN_2D  = 29;
+  FN_MANHATTAN_3D  = 30;
+  FN_CHEBYSHEV_2D  = 31;
+  FN_CHEBYSHEV_3D  = 32;
+  FN_HYPOTENUSE_2D = 33;
+  FN_HYPOTENUSE_3D = 34;
+  FN_GREAT_CIRCLE  = 35;
+  FN_COSINE_2D     = 36;
+  FN_COSINE_3D     = 37;
+  reserved 38, 39;        // the string distances: not in v1 ([LEXP.5.6]) — do NOT reuse
+  reserved "FN_HAMMING", "FN_LEVENSHTEIN";
+  FN_NOW           = 40;  // bound-once per fire (LGRA.9.8.3)
+  FN_FLOOR_TIME    = 41;  // the Time member t.floor(d) — LTIM.7.1
+  reserved 42, 43;        // the belief plane's candidate-set ops — do NOT reuse
+  reserved "FN_CANDSET_ONLY", "FN_CANDSET_ATTR_MASK";
+  FN_CACHE_GET     = 44;  // cached(<key>) — LSTO.4.3
+
+  // Actions (RHS verbs; adapter fns bridge to ds_dispatcher_<verb>)
+  FN_EMIT               = 45;
+  FN_PUBLISH            = 46;
+  FN_LOG                = 47;  // the `log` ACTION — not FN_LN = 9 (natural log)
+  FN_ALERT              = 48;
+  FN_CALL               = 49;
+  FN_RETRACT_CORR       = 50;
+  FN_RETRACT_TOKEN_FACT = 51;
+  FN_HYDRATION_CALL     = 52;
+  reserved 53;            // record_event action ([LGRA.10.1.5]) — do NOT reuse
+  reserved "FN_RECORD_EVENT";
+  FN_CACHE_SET          = 54;
+  FN_CACHE_DELETE       = 55;
+  FN_RATE_ALLOW         = 56;
+  // Scalar math
+  FN_MIN = 57;
+  FN_MAX = 58;
+  // Bitwise
+  FN_BIT_AND = 59;
+  FN_BIT_OR  = 60;
+  FN_BIT_XOR = 61;
+  FN_BIT_NOT = 62;
+  FN_BIT_SHL = 63;
+  FN_BIT_SHR = 64;
+  // String / bytes
+  FN_STR_LENGTH      = 65;
+  // String case mapping — TOMBSTONE, not in the language. Allocated,
+  // never reissued ([STYL.2.8.7]).
+  FN_UPPER           = 66;
+  FN_LOWER           = 67;
+  FN_TO_STRING       = 69;
+  FN_REGEX_MATCH     = 70;
+  // The byte/string conversions left the language ([LSTR.4.6]): tombstones,
+  // do NOT reuse.
+  reserved 68, 71, 72, 73, 74;
+  reserved "FN_STRING_ENCODE", "FN_BYTES_TO_UTF8", "FN_BYTES_TO_INT",
+           "FN_BYTES_TO_INT_LE", "FN_BYTES_DECODE";
+  // JSON
+  FN_JSON_HAS    = 75;
+  FN_JSON_PATH   = 76;
+  reserved 77;            // a cache value's encoder; FN_JSON_VALUE is ([IDSP.13]) — do NOT reuse
+  reserved "FN_JSON_ENCODE";
+  FN_JSON_BUILD  = 78;
+  FN_JSON_VALUE  = 79;
+  // Time
+  reserved 80;                // FN_MONOTONIC: process-relative, unreplayable;
+  reserved "FN_MONOTONIC";    // FN_MONOTONIC_NS is the clock read ([LTIM.2.2.1])
+  FN_UTC       = 81;
+  FN_LOCAL     = 82;
+  FN_TIME_DATE = 83;
+  reserved 84;                 // FN_TO_TIME: DS reads no temporal text ([LTIM.14])
+  reserved "FN_TO_TIME";       // — do NOT reuse
+  reserved 85;                 // FN_FMT_TIME: a time spec compiles to TimePrims
+  reserved "FN_FMT_TIME";      // in an InterpExpr (proto/rete_expr.proto)
+  // Series read
+  FN_SERIES_MEAN            = 86;
+  FN_SERIES_MEDIAN          = 87;
+  FN_SERIES_STDEV           = 88;
+  FN_SERIES_PSTDEV          = 89;
+  FN_SERIES_VARIANCE        = 90;
+  FN_SERIES_PVARIANCE       = 91;
+  FN_SERIES_RATE            = 92;
+  FN_SERIES_DIRECTION       = 93;
+  FN_SERIES_MIN             = 94;
+  FN_SERIES_MAX             = 95;
+  FN_SERIES_COUNT           = 96;
+  FN_SERIES_COUNT_DISTINCT  = 97;
+  FN_SERIES_COUNT_OF        = 98;
+  FN_SERIES_CONTAINS        = 99;
+  reserved 100;                // there is no warm-up predicate: a cold
+  reserved "FN_SERIES_WARMED_UP"; // read is null ([LSER.19.8]) — do NOT reuse
+  FN_SERIES_SUM             = 101;
+  FN_SERIES_FIRST           = 102;
+  FN_SERIES_LAST            = 103;
+  FN_SERIES_INTEGRAL        = 104;
+  FN_SERIES_ACTIVE_FRACTION = 105;
+  FN_SERIES_BOOL_AND        = 106;
+  FN_SERIES_BOOL_OR         = 107;
+  FN_SERIES_ONSET_RATE      = 108;
+  // Misc / reads. FN_LATEST is NOT emitted as a call (latest is async-special).
+  reserved 109;           // is_null(x): `x is null` is the null test ([LNUL.4.9]) — do NOT reuse
+  reserved "FN_IS_NULL";
+  reserved 110;           // the call body's JSON builder; a call's kwargs are typed operands ([RLOW.7.3.1]) — do NOT reuse
+  reserved "FN_ARGS";
+  FN_GENSYM             = 111;
+  FN_LATEST             = 112;
+  FN_ERROR_CODE_MATCHES = 113;
+  // Series percentile — ONE parameterized op, so the whole p1..p99 surface
+  // has a single runtime path. The percentile N (1..99) rides the call's 6th
+  // (value) argument through the runtime query_with_value path (like
+  // count_of / contains); the SeriesBackendRingBuffer backing computes the Nth
+  // percentile exactly over the raw samples (LSER.16.4).
+  FN_SERIES_PERCENTILE = 114;
+  // Numeric conversion casts (LCST.4.5). FLOAT_TO_INT is
+  // total-with-trap (truncate toward zero; non-finite → hard error like ÷0,
+  // LCST.4.5.4). FLOAT_TO_STRING renders the canonical ds_fmt_float form
+  // (±Inf → "inf"/"-inf", LCST.4.5.6). STRING_TO_FLOAT / STRING_TO_INT are
+  // fallible parses → NULL on failure (feed the LNUL stack). INT_TO_FLOAT is
+  // total widening.
+  FN_FLOAT_TO_INT    = 115;
+  FN_FLOAT_TO_STRING = 116;
+  FN_STRING_TO_FLOAT = 117;
+  FN_STRING_TO_INT   = 118;
+  FN_INT_TO_FLOAT    = 119;
+  // STRING_TO_BOOL (LCST.4.5.5): fallible parse of exactly the
+  // NFC strings "true"/"false" (case-sensitive) → Bool; any other value → NULL
+  // (feeds the LNUL stack). Requires ::Bool?.
+  FN_STRING_TO_BOOL  = 120;
+  reserved 121;                // FN_BINFMT: a `b` spec compiles to a ValuePrim
+  reserved "FN_BINFMT";        // in an InterpExpr (proto/rete_expr.proto)
+  // Currency methods (LUNI.13). All three take the round mode as
+  // an INTEGER, not a string: LUNI.13.6 requires a string LITERAL at the
+  // mode position and the validator checks it against the canonical six, so
+  // the mode is fully resolved at compile time and the runtime never parses
+  // a mode string. Mode codes are ds_currency_round_mode_t (builtin_fn.h).
+  //
+  // ROUND rounds a fractional-currency intermediate (a RATIO value) to its
+  // storage's minor unit, yielding exact Int [LUNI.13.5]. ROUND_TO rounds to
+  // a coarser unit in the same dimension, taking the target unit's power-of-
+  // ten scale as a resolved Int. CONVERT applies a `unit fx_pair` rate read
+  // from an FxRate fact at eval time [LUNI.13.3/13.4] and yields the RATIO
+  // that ROUND then consumes — it deliberately does NOT round, because
+  // LUNI.13.4 makes the intermediate `let`-bindable and the round mode is
+  // the author's explicit choice at the call site.
+  //   (ratio:Ratio, mode:Int)                      -> Int
+  //   (ratio:Ratio, scale:Int, mode:Int)           -> Int
+  //   (amount:Int, pair:Str, schema:Str, num_slot:Str, den_slot:Str,
+  //    [slot:Str, value:Str]...)                   -> Ratio
+  // Each op's operand count is its row of [RDSC.4a.9.5]; CONVERT's is 5 + 2n.
+  FN_CURRENCY_ROUND    = 122;
+  FN_CURRENCY_ROUND_TO = 123;
+  FN_CURRENCY_CONVERT  = 124;
+
+  // Regex capture extraction for capture-lets ([LREG.4.1]).
+  // Companion to FN_REGEX_MATCH = 70, which answers only yes/no; this
+  // returns one capture group's text.
+  //
+  // `group` is 1-based over the pattern's capturing groups, left to right —
+  // the order [LREG.4.1]'s binding list is bound in. Group 0 (the whole
+  // match) is deliberately unreachable: DS has no syntax that binds it.
+  // Result is String per [LREG.4.4], "regardless of pattern shape".
+  //
+  // Appended at the end rather than placed beside FN_REGEX_MATCH because
+  // 71-74 are allocated and an op number is a wire value — renumbering to
+  // keep the regex ops adjacent would invalidate every .dsc in existence.
+  //   (subject:String, pattern:String, flags:String, group:Int) -> String
+  FN_REGEX_CAPTURE     = 125;
+
+  // `len(<Json path>)` ([LEXP.6.1]). SEPARATE FROM FN_STR_LENGTH: a Json
+  // argument is PROJECTED before any builtin runs, so FN_STR_LENGTH would
+  // receive an array already serialised to its text and measure the text.
+  //
+  // Takes (root, path) like FN_JSON_PATH and FN_JSON_HAS rather than a
+  // projected value, so it walks to the node and reads the element count —
+  // which is also what makes [LEXP.6.2]'s non-array soft-fail expressible.
+  //   (json:String|Json, path:String) -> Int
+  FN_JSON_LEN          = 126;
+  // `monotonic_ns() -> Duration`: the monotonic clock's sample ([LTIM.2.2.1]).
+  //   () -> Duration
+  FN_MONOTONIC_NS      = 127;
+
+  // The components of an instant in a zone (LTIM.6.5): one builtin per
+  // component. The zone is "UTC" for `.utc` and the author's for `.local(tz)`.
+  // Ranges are LTIM.6.3's.
+  //   (instant:Time, zone:String) -> Int
+  FN_HOUR              = 128;
+  FN_MINUTE            = 129;
+  FN_SECOND            = 130;
+  FN_DAY               = 131;
+  FN_MONTH             = 132;
+  FN_YEAR              = 133;
+  FN_DAY_OF_WEEK       = 134;
+
+  // Temporal-to-string ([LTIM.8.1]). DS writes temporal values as text and
+  // reads none ([LTIM.14]): `to_string` with a format on a Time or a Date is
+  // FN_TO_STRING (69), the receiver's type choosing the arm.
+  //
+  // A receiver's type reaches the runtime as its value's tag. Both are
+  // Int-represented, so the compiler passes a Time receiver
+  // through FN_UTC, which yields a Time-tagged value; an untagged Int
+  // receiver of FN_TO_STRING, FN_ADD_MONTHS or FN_ADD_YEARS is a Date.
+  reserved 135, 136;           // DS reads no temporal text
+  reserved "FN_TO_DATE", "FN_TO_DURATION"; // ([LTIM.14]) — do NOT reuse
+  //   (d:Duration) -> String          ([LTIM.8.4]: the compact form)
+  FN_DURATION_TO_STRING = 137;
+
+  // Calendar arithmetic ([LTIM.4.3]): one builtin per operation, the
+  // receiver's type (Time or Date) choosing the arm. On a Time the shift is on
+  // the UTC calendar ([LTIM.4.3.3]).
+  //   (t:Time|Date, n:Int) -> Time|Date
+  FN_ADD_MONTHS        = 138;
+  FN_ADD_YEARS         = 139;
+
+  // Exact integer division, for a quantity argument on a kwarg whose unit stores
+  // whole numbers (RLOW.7.3.9). The compiler emits it; it has no author syntax.
+  // Not whole raises NOT_REPRESENTABLE; a zero divisor raises DIVIDE_BY_ZERO.
+  //   (n:Int, d:Int) -> Int
+  FN_INT_DIV_EXACT     = 140;
+
+  // `Int :: String` and `Bool :: String` ([LCST.4.5.6]): total renders, the
+  // exact decimal (a `-` before a negative value) and "true" / "false". Their
+  // own ops, beside FN_FLOAT_TO_STRING (116): FN_TO_STRING (69) reads an
+  // untagged Int as a Date, and the interpolation node renders a null as "",
+  // where a cast propagates it ([LCST.4.3.4]). A null source never reaches
+  // either.
+  //   (n:Int) -> String
+  FN_INT_TO_STRING     = 141;
+  //   (b:Bool) -> String
+  FN_BOOL_TO_STRING    = 142;
+
+  // `Date` arithmetic ([LTIM.4.2], RLOW.6.1.5). The compiler lowers the operators
+  // to these; they have no author syntax. A Date is its day count and a
+  // Duration its nanoseconds ([RDSC.5.5.8]).
+  //   (d:Date, dur:Duration) -> Date
+  FN_DATE_ADD_DURATION = 143;
+  FN_DATE_SUB_DURATION = 144;
+  //   (a:Date, b:Date) -> Duration
+  FN_DATE_DIFF         = 145;
+
+  // `Int` members over the 64-bit two's-complement pattern ([LEXP.3.7.3]).
+  // An argument outside the member's domain raises DOMAIN ([LEXP.3.7.4]).
+  //   (x:Int, lo:Int, width:Int) -> Int
+  FN_BITS              = 146;
+  //   (x:Int, width:Int) -> Int
+  FN_SIGN_EXTEND       = 147;
+  FN_SWAP_BYTES        = 148;
+  //   (x:Int) -> Int
+  FN_LEADING_ZEROS     = 149;
+  FN_TRAILING_ZEROS    = 150;
+
+  // `math.fma(x, y, z)` ([LEXP.3.2.2]): IEEE 754 fused multiply-add, x*y + z
+  // rounded once. Never a rounded multiply then a rounded add.
+  //   (x:Float, y:Float, z:Float) -> Float
+  FN_FMA               = 151;
+
+  // An operation on an interval, inside the check that its interval operands
+  // are valid ([RLOW.6.1.7], [LINT.7.2]). The compiler emits it; it has no
+  // author syntax. A pair whose endpoints are two non-null values that are not
+  // s <= e raises DOMAIN; otherwise it yields v, null included. One or two
+  // endpoint pairs, then the operation's lowered value.
+  //   (s1, e1, v) -> v
+  //   (s1, e1, s2, e2, v) -> v
+  FN_INTERVAL_CHECK    = 152;
+
+  // The `calendar` module's members ([LTIM.14.1]): a value from its fields
+  // in the proleptic Gregorian calendar. A field out of its range raises
+  // DOMAIN, and a value outside its type's range NOT_REPRESENTABLE
+  // ([LTIM.14.2]). `calendar.time` has three arities; the compiler fills the
+  // omitted hour, minute, second and nanosecond with 0, so FN_CALENDAR_TIME
+  // takes seven operands always.
+  //   (year, month, day, hour, minute, second, nanosecond:Int) -> Time
+  FN_CALENDAR_TIME     = 153;
+  //   (year, month, day:Int) -> Date
+  FN_CALENDAR_DATE     = 154;
+}

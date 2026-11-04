@@ -1,0 +1,34 @@
+{
+  "id": "LCDB.3.3.1",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.3",
+  "seq": 118,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCDB.3.3.1] Cooldown is keyed by the **declared `key` slots** of\neach `logical` fact the activation binds (per [LFAC.1.7]) — not\nby every bound slot. The same rule matching different entities\ncools independently — \"don't spam me about the\nsame sensor\" doesn't mean \"don't tell me about a different\nsensor.\" Keying on the declared key excludes volatile `mutable`\nslots (a churning `ts`) from the cooldown key, so a payload\nchange does not reset the cooldown.\n\n",
+  "refs": [
+    "LFAC.1.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_1__key_ignores_the_payload",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE KEY IGNORES THE PAYLOAD: for a single-pattern rule over a logical schema the key of the bound fact is the same for any payload, so a mutable churn resets no window. A TRANSCRIPTION of `lcdb_3_3_1__key_of_head`, `Refl` over every id, key and payload."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_1__key_of_head",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The key of a single-pattern rule over a logical schema: the bound fact's identity key -- the model's `fkey`, the code of the declared `key` slots -- and nothing of its payload."
+      }
+    ]
+  }
+}

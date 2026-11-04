@@ -1,0 +1,16 @@
+{
+  "id": "LERR.9.7",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.9",
+  "seq": 10000015,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LERR.9.7] **When the fact is asserted.** A fault is raised part-way through\nsomething — a `TypeError` during matching, in the middle of propagating another\nfact; a fault in an activation, part-way through its actions. The engine\n**must not** assert a fault fact at that point. It **must** queue fault facts in\nthe order the faults are recorded ([LERR.1.4.12] orders those raised while\nmatching) and assert them when the current propagation has\ncompleted, or when the abandoned activation has been unwound, and in any case\nbefore the next agenda selection. Each takes its timetag when asserted, like any\nfact, and a handler's activation is ordered by [LDET.5] with no special case.\n\n**At most one fault is pending per `(node, rule)` site between a raise and the\ndrain.** A later fault at a site whose fault is still pending replaces it in\nplace: the site keeps the queue position of its first pending fault. The\nstream carries the drained facts only, so the intermediate ones never\nappear. The queue is thereby bounded by the site count ([LERR.9.10]) in every\nmode: a pre-sized runtime holds it without growing, and a runtime that is not\npre-sized records the same stream.\n\n",
+  "refs": [
+    "LDET.5",
+    "LERR.1.4.12",
+    "LERR.9.10"
+  ]
+}

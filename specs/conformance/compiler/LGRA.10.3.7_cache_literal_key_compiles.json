@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.10.3.7_cache_literal_key_compiles",
+    "category": "compiler",
+    "scenario": "[LGRA.10.3.7]: a `cache` or `cache_delete` key that is a `STRING_LIT` with no interpolation site compiles, and `value:` keeps [LGRA.10.6]'s freedom. Rule `r` writes `cache key: \"k-{{id}}\" value: s.v` and `cache_delete key: \"old\"`. The first key's `{{` and `}}` escape literal braces ([LGRA.2.9.6.7]), so it has no site and is a literal; its value is a slot read. Twins: LGRA.10.3.7_cache_key_from_a_binding_is_refused, LGRA.10.3.7_cache_key_with_interpolation_is_refused and LGRA.10.3.7_cache_delete_key_from_a_binding_is_refused, which a check refusing every key would also pass. PATH PINNED: dsc.validate's `lgra_10_3_7_cache_key` on both verbs, where `lgra_10_3_7_string_lit` succeeds on an `ex_string` in which `has_site` finds no site; and `cache_key_arg` leaving `value:` alone.",
+    "rules_ds": "schema Src scope logical:\n    id: String key\n    v: Int mutable\n\nrule r:\n    Src s\n->\n    cache key: \"k-{{id}}\" value: s.v\n    cache_delete key: \"old\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

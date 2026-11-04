@@ -1,0 +1,17 @@
+# One sweep across two TTL schemas leaves by deadline, then entry
+# ([LDET.5.11], [LDTL.6.1]). Host asserts. Slow (`ttl 3_s`) is loaded before
+# Fast (`ttl 1_s`). Slow 1 enters at 0, deadline 3 s; Fast 2 enters at 1.5 s,
+# deadline 2.5 s. The sweep at 3 s expires Fast 2, then Slow 1, where load or
+# entry order would give Slow 1 first. Default TTL mode: the sweep merges the
+# per-schema FIFOs.
+#
+# The trace prints `retract` with no identity, so the recordings cross-read,
+# which compares the FactWithdraw records' fact ids, pins the order.
+# @spec [LDET.5.11]
+assert Slow id=1
+pump
+advance 1500000000
+assert Fast id=2
+pump
+advance 1500000000
+pump

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.5.8.6_host_string_bytes_at_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: a `Json` value holding exactly the string-bytes limit, 16,384 UTF-8 bytes, is admitted when the host asserts it into a `Json` slot. The value is one JSON string of 16,384 ASCII `a`s, written with the harness's `$repeat` form so its size is stated rather than typed. The fact lands (fact_count 1). Paired with LGRA.5.8.6_host_string_bytes_over_limit, one byte longer and refused, so a limit of 16,383 (this vector goes red) or 16,385 (the other goes red) is caught. PATH PINNED: on libds, `ds_json_new_string` as pyds's `pyds_py_to_json_tree_at` calls it; on the Mercury runtime, `ds.engine.host_assert` through `ds.fact`'s `sr_json_limit` check (`ds.json.limit_breach`).",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n    doc: Json mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Blob", "slots": { "id": 1, "doc": { "$repeat": "a", "count": 16384 } } }
+        ],
+        "fact_count_after": 1
+    }
+}

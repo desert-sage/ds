@@ -1,0 +1,90 @@
+{
+  "id": "LTIM.2.7.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.7",
+  "seq": 236,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.7.1] A positive pattern carrying a `within <dur>` recency window is\n**time-dependent** per [LTIM.2.4.1]: the fact matches only while the monotonic\nclock's sample is less than `<dur>` past the fact's entry stamp ([LTIM.2.8.6]),\nand that truth changes as the clock advances with no fact activity. It is\nre-evaluated on every tick under [LTIM.2.4].\n\n**A `within` takes a positive duration.** A\npattern's `within_clause` ([LGRA.8.1]) whose duration is not positive is a\ncompile error (`DS_VALIDATE_ZERO_WITHIN`), whether the duration is written as a\nduration literal or as a `time` const ([LGRA.2.8.1]), and whether the pattern\nis positive or negated. On a positive pattern a zero window admits no fact, since\nno fact is less than zero past its entry stamp, so the pattern never matches.\nUnder `no` it blocks on nothing, so the condition always holds. A `then` step's\nwindow is refused the same way ([LTHE.4.7]).\n\n",
+  "refs": [
+    "LGRA.2.8.1",
+    "LGRA.8.1",
+    "LTHE.4.7",
+    "LTIM.2.4",
+    "LTIM.2.4.1",
+    "LTIM.2.8.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_ZERO_WITHIN"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "ltim_2_7_1__within_falls",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `within` FALLS ONCE: for a fixed stamp, false at one monotonic sample, it is false at every later one, whatever the wall clock does -- the clause's 'that truth changes as the clock advances', and it changes once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_7_1__within_three",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A PATTERN'S `within 3` as the lowering writes it: `dwell < 3`, the fact matching while the sample is less than 3 past its entry stamp. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_7_2__occupy",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A positive pattern carrying a `within` window, as the one timed node of its chain. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_7_2__within_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'The fact matches only while the monotonic clock's sample is less than `<dur>` past the fact's entry stamp': matched at 0 and 1, not at 4. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_7_1__within_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'The fact matches only while the monotonic clock's sample is less than `<dur>` past the fact's entry stamp', at one sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_7_1__within_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`within` as the time-dependent test the clause names: a function of the monotonic sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_7_1__within_gate_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`within` is a function of the monotonic sample alone: a TRANSCRIPTION by construction."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_7_1__within",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`within <dur>`: the fact entered less than `dur` ago on the monotonic clock. Reduced to its clock dependence."
+      }
+    ]
+  }
+}

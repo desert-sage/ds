@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_anchor_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] — the positive control for the +nolinscan anchor check. Two `logical` schemas, each keyed on one slot, and the second pattern's `where` equates the two keys: the full declared key on both sides, so the join is J_max = 1 and the rule compiles. PATH PINNED: `dsc.validate.lnls_3_3_anchors`, through `full_key_anchor`. If that predicate stopped matching a correct anchor, this vector turns red with DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n    zone: String mutable\n\nschema Reading scope logical:\n    device_id: String key\n    amount: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.device_id == d.device_id\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

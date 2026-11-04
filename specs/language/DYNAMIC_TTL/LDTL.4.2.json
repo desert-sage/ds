@@ -1,0 +1,12 @@
+{
+  "id": "LDTL.4.2",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.4",
+  "seq": 177,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Deadline heap restored",
+  "text": "### Deadline heap restored [LDTL.4.2]\n\nWith `dynamic_ttl`, the deadline min-heap holds the deadline of every\n`ttl` fact, whether or not it carries a per-emit override.\nThis is necessary because, even without explicit overrides, the presence\nof the kwarg in the language means the engine cannot assume FIFO\nexpiry order across schemas.\n\n| Operation | Time | Notes |\n|---|---|---|\n| Fact assert (TTL) | O(log N_ttl) | heap insert |\n| Fact retract | O(log N_ttl) | heap remove |\n| TTL tick | O(expired × log N_ttl) | Drain the heap while its earliest deadline is at or before the tick's instant |\n\n---\n\n",
+  "deferred": true
+}

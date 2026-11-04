@@ -1,0 +1,18 @@
+{
+    "id": "LTHE.2.5.3_null_candidate_excludes",
+    "category": "logical",
+    "clauses": ["LNUL.4.7"],
+    "dead_rules_expected": ["entry"],
+    "scenario": "LTHE.2.5.3: \"An `A′` for which one of those `where`s answers `null` and none answers `false` excludes `A`.\" The `null` twin of LTHE.2.5.3_anchor_failing_trailing_where_does_not_exclude, with `DoorOpen.loc` declared `String?`. Rule `entry`: `latest DoorOpen d then Motion m within 30_s where d.loc == m.loc`. DoorOpen hall at ts 1, DoorOpen with `loc` null at ts 2, Motion hall at ts 3, one pump. With the ts-2 DoorOpen in the anchor's place, `d.loc == m.loc` answers `null` ([LNUL.4.1]) and no `where` answers `false`, so it excludes the hall anchor; its own `where` is not `true`, so it does not fire either. `entry` never fires. Control: `unpinned`, the same sequence without `latest`, fires once on the hall anchor, logging `unpinned 1`, so the hall DoorOpen does match the Motion under the nullable schema and `entry`'s silence is the exclusion's. Exactly [\"unpinned 1\"]. A reading where a candidate must SATISFY the `where` to exclude, or one that reads a `null` condition as `false`, lets `entry` fire on the hall anchor and log `1`. The `false` twin pins that a `false` answer excludes nothing. PATH PINNED: the NOT sub-node after the sequence's last join ([RLOW.5.6.5.2], [IRET.7.10.2]), blocked by a candidate whose condition is `null` ([LNUL.4.7]): libds's negative beta node and the Mercury runtime's. The log reads the anchor's `n`, which mirrors its `ts`, because `ts` is a `Time` ([LFAC.9.1]) and the vector should not depend on how a `Time` renders.",
+    "rules_ds": "schema DoorOpen scope ttl 1_h:\n    loc: String?\n    n: Int\n    ts: Time\n\nschema Motion scope ttl 1_h:\n    loc: String\n    ts: Time\n\nrule entry:\n    latest DoorOpen d\n    then Motion m within 30_s where d.loc == m.loc\n->\n    log info \"{d.n}\"\n\nrule unpinned:\n    DoorOpen d\n    then Motion m within 30_s where d.loc == m.loc\n->\n    log info \"unpinned {d.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": "hall", "n": 1, "ts": 1}},
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": null, "n": 2, "ts": 2}},
+            {"op": "assert", "schema": "Motion", "slots": {"loc": "hall", "ts": 3}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["unpinned 1"]
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_null_endpoint_raises_nothing",
+    "clauses": ["RLOW.6.1.7", "LNUL.4.1"],
+    "category": "logical",
+    "dead_rules_expected": ["inside", "handler"],
+    "scenario": "[LINT.7.2]: a `null` endpoint does not make an interval invalid, and [RLOW.6.1.7]: a pair with a `null` endpoint is valid. One N with `t` 1 and `b` 3 and no `a`: rule `inside` tests `n.t in (n.a .. n.b)`, whose comparison is `null` ([LNUL.4.1]), so it does not fire and nothing faults; rule `handler` never fires. Rule `seen` fires and logs `seen 1`, so the vector cannot pass with nothing run. A check that treated the `null` start as failing `s <= e` would raise DOMAIN and `handler` would log. PATH PINNED: FN_INTERVAL_CHECK skipping a pair with a `null` endpoint, in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema N scope logical:\n    id: Int key\n    t: Int mutable\n    a: Int? mutable\n    b: Int mutable\n\nrule inside:\n    N n where n.t in (n.a .. n.b)\n->\n    log info \"inside {n.id}\"\n\nrule seen:\n    N n\n->\n    log info \"seen {n.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "N", "slots": { "id": 1, "t": 1, "b": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen 1"]
+    }
+}

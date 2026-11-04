@@ -1,0 +1,18 @@
+{
+    "id": "LCON.2.2.1",
+    "category": "runtime",
+    "scenario": "LCON.2.2.1 byte-for-byte replay — recording a session and replaying its inputs into a fresh engine reproduces the output stream identically (LFST.9 strict mode). A rule that logs on each Trigger is driven across three clock ticks; the recorded stream (ticks, rule fires, logs) must match the replayed stream event-for-event after fact-handle pointers are normalized.",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nrule trig:\n    Trigger\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000 },
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 2
+    }
+}

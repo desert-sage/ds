@@ -1,0 +1,470 @@
+{
+  "id": "IDAT.6.2.2",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.6.2",
+  "seq": 621,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.6.2.2] The `fired` flag implements refraction per\n[LDET.5.3]: once an activation fires, it stays on\nthe agenda with `fired = true` until the LHS\nchanges, preventing re-fire on the same binding\ntuple.\n\n---\n\n",
+  "refs": [
+    "LDET.5.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "idat_6_2_2__mark_settled",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking a token fired keeps the table settled: `fired` is not part of what settledness looks at."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "idat_6_2_2__pending_count_mark",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Marking a pending token lowers the pending count by exactly one."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "idat_6_2_2__pending_mark_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking never raises the pending count."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "idat_6_2_2__pop_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The pop (mark fired) preserves the invariant, leaves working memory alone, drops the firing stratum's pending count and no other's."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Iret_11__tok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A token carries `fired` and `blocked`; `fired` IS the refraction state, as the clause says, and stays set while the token is kept across re-propagation ([IRET.8.1]'s kept set)."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "idat_6_2_2__mark_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on the j-th token of a table."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "idat_6_2_2__mark_fired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on entry j of rule r's table -- step 1e of [IRET.11.4], as a flag rather than a set insertion."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "idat_6_2_2__mark_t",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on one token."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_9__refresh_with",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The \"until the LHS changes\" half: a blocked -> unblocked transition is a re-propagation and clears `fired`; every other transition leaves it."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "idat_6_2_2__mark_act",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fired flag: set on firing, kept until the LHS changes."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "idat_6_2_2__mark_acts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on activation j of a terminal's list."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "idat_6_2_2__mark_chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on one activation of a chain."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "idat_6_2_2__mark_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Set `fired` on activation j of rule r."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_3_1__first_unfired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fired activation stays on the agenda and is skipped."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__mark_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an activation fired keeps the invariant: working memory untouched."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "idat_6_2_2__mark_chain_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "idat_6_2_2__mark_net_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__mark_atuple",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an activation fired leaves its tuple."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__mark_chain_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking keeps a chain consistent."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__mark_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SETTING `fired` keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__mark_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an activation fired leaves the tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__set_at_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Any change to one activation that leaves its tuple leaves the tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_acts_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an unfired activation lowers the terminal's unfired count by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every activation of every chain marked fired; nothing else touched. What a run to quiescence leaves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_all_acts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking everything after marking one is marking everything."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_all_fired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And so are chains with nothing unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_all_set_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And over the chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_fired_acts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A terminal with nothing unfired is unchanged by marking everything."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_net_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And over the chains: marking the selected activation lowers the count by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "idat_6_2_2__mark_twice",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking twice is marking once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "idat_6_2_2__mark_chain_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Setting the `fired` flag keeps a chain's nodes and actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "idat_6_2_2__mark_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Setting the flag keeps the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "idat_6_2_2__mark_net_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Setting the flag keeps the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__step_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A firing of the framed chain sets exactly the selected activation's flag, unfired before, and moves nothing else of the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__step_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A firing of the framed chain sets exactly the selected activation's flag, unfired before, and moves nothing else of the chain; the cascades inside the firing move nothing of it either."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "idat_6_2_2__mark_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Setting `fired` leaves every activation live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "idat_6_2_2__mark_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Setting `fired` on an activation keeps the terminal sorted: the flag is not a key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "idat_6_2_2__mark_chain_ordered",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking keeps a chain's terminal in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "idat_6_2_2__mark_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SETTING `fired` keeps the ordered view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__refracted_fired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The set is subsumed by the flag: every refracted identity's activation carries `fired`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "idat_6_2_2__mark_fired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A marked activation carries `fired`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "idat_6_2_2__marked_fired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After marking activation j every activation with its identity carries `fired`: identities distinct, there is only the one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's flag, kept until the LHS changes, is the whole of refraction in the tick-free fragment: the set of [IRET.11.3] never refuses beyond it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__mark_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Setting `fired` keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__tick_keeps_activation",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A TICK IS NOT A CHANGE TO THE LHS: an activation whose match the new test still admits is the same record after the tick, its `fired` flag included. A fired match stays refracted across every tick that leaves it matching -- Rete/NetworkRefraction.idr's theorem, restated under ticks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__mark_agree_state",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Both sides mark the selected activation fired, and the agreement holds of the marked state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__mark_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "MARKING THE SELECTED TOKEN marks the selected activation: the unblocked tokens after the mark are the terminal after its mark."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__mark_tables_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Marking the selected token of the selected table marks the selected activation of the selected terminal; every other table and terminal stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__transfer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM: run on one history from the loaded network and from FireLoop's empty state under the program the network lowers to, the two engines reach one working memory, and each table's unblocked tokens are its terminal's activations, in order and with their flags. Against the plain pipeline, inputs without Rete/PumpBoundary.idr's TMS phase and without the clock; Rete/NetworkTmsTransfer.idr carries the phase and Rete/NetworkTtl.idr the clock, on this agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__tables_agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each table's unblocked tokens are the corresponding terminal's activations, in order and with their `fired` flags."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__prop_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE UNBLOCKED TOKENS AFTER A PROPAGATION ARE THE NETWORK'S ACTIVATIONS after the same change: the tuples agree because both sides hold exactly the unblocked matches in the key's order and two sorted lists with the same members are one list; the flags agree because an activation whose match survives is kept on both sides, and a released or new match is unfired on both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "Iret_8_1__evolves",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What refraction needs of a terminal's evolution: an old activation whose match survives keeps its flag."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_1__insert_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- an assertion creates only matches holding the new fact, so no old match is created anew."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_2__retract_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- a retraction ends only matches holding the fact, and no surviving match holds it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "idat_6_2_2__mark_tables_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking one token of one table keeps every table well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "idat_6_2_2__mark_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking a token fired keeps a table well-formed: the flag moves no tuple."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "idat_6_2_2__mark_keeps_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking a token fired ends no activation."
+      }
+    ]
+  }
+}

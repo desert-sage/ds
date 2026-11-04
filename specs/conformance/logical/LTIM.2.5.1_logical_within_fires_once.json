@@ -1,0 +1,23 @@
+{
+    "id": "LTIM.2.5.1_logical_within_fires_once",
+    "clauses": ["LTIM.2.7.2", "IRET.19.5"],
+    "category": "logical",
+    "scenario": "[LTIM.2.5.1], [LTIM.2.7.2]: a `within` window that justifies a `logical` emit fires once when it opens, not on every tick while it holds, and its justification is withdrawn when it closes. The cooldown-free twin of `LTIM.2.7.2_cooldown_logical_within_retracts`. `occupy` on `Sensor within 3_s` emits Occupied `logical` and logs `fire`, with no rate modifier, so its terminal's guard has no condition. `present` logs `occ` for each Occupied that enters. `gone` logs `gone` when a Sensor has no Occupied. `mark` logs `mark` for a Mark asserted at +2 s, which shows that pump ran. Pin: set 0; assert Sensor; pump (`fire`, `occ`); advance 1 s, pump (nothing: the window holds, the match persists across the tick); advance 1 s; assert Mark; pump (`mark`: Occupied still stands); advance 2 s, pump (+4 s: the window has closed and Occupied retracts: `gone`). Messages are ['fire', 'occ', 'mark', 'gone']. `gone` is declared before `mark`, so if Occupied were lost by +2 s `gone` would come first. PATH PINNED: the tick's turnover carrying a fired match to the token the fresh tick re-forms ([IRET.19.5]) -- libds rete/terminal.c's `carry_across_tick` and `ds_rete_terminal_left_activate`, which marks the successor fired when the guard has no condition; the Mercury runtime's `ds.engine.settle_turnover` and `claim_carried`, with refraction left alone on a synthetic change.",
+    "rules_ds": "schema Sensor scope logical:\n    state: String key\n\nschema Occupied scope logical:\n    dummy: Int key\n\nschema Mark scope logical:\n    n: Int key\n\nrule occupy:\n    Sensor within 3_s\n->\n    emit Occupied logical dummy: 0\n    log critical \"fire\"\n\nrule present:\n    Occupied\n->\n    log critical \"occ\"\n\nrule gone:\n    Sensor\n    no Occupied\n->\n    log critical \"gone\"\n\nrule mark:\n    Mark\n->\n    log critical \"mark\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "state": "on" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert",  "schema": "Mark", "slots": { "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fire", "occ", "mark", "gone"]
+    }
+}

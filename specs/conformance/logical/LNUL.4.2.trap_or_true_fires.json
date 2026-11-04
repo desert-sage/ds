@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.4.2.trap_or_true_fires",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: `or`, the dual. `s.a / s.b > 1.0 or s.ok` with Int a, b and b = 0, and ok = true, is `true` (Int operands, because only an all-Int division traps [LEXP.7.15.1]; with a Float `1.0 / 0.0` is +Inf and the rule would fire with nothing absorbed): the right disjunct decides the `or` wherever it stands, the division's trap is dropped, and the rule fires.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    ok: Bool mutable\n\nrule r:\n    S s where s.a / s.b > 1.0 or s.ok\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

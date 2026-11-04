@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.23.2_opaque_default_refused",
+    "clauses": ["LGRA.23.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a kwarg may be declared with an opaque type ([LOPQ.3.2]), and \"a kwarg declared with an opaque type takes no `default`, because no literal has an opaque type ([LOPQ.3.3])\". Library `crypto` declares `opaque type Key over Bytes`; a service declares `kwarg k: Key default \"ab\"`. It is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE, though the kwarg type itself is legal (`compiler/LOPQ.3.2`) and a String literal is one the parser takes after `default`. PATH PINNED: `lgra_23_2_default_misfit`'s `te_opaque(_)` arm, in dsc.validate. Without it the program compiles and the encoder writes `has_default` with an empty `default_value`.",
+    "rules_ds": "from crypto import Key\n\nservice svc.sign:\n    kwarg k: Key default \"ab\"\n    no response\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

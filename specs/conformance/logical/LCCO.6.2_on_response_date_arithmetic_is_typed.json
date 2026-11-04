@@ -1,0 +1,17 @@
+{
+    "id": "LCCO.6.2_on_response_date_arithmetic_is_typed",
+    "clauses": ["LCCO.6.2", "RLOW.6.1.5", "LTIM.4.2.3"],
+    "category": "logical",
+    "scenario": "[LCCO.6.2]: an `on` predicate has a `where` clause's typing rules with `response` bound to the response fact, and the body sees the same fact. So `response.d + 1_d` is a `Date` plus a `Duration` in both, which [RLOW.6.1.5] lowers to FN_DATE_ADD_DURATION. Rule `plan` calls `svc.read` for a Visit; the host answers on the call's own correlation (`corr_from_call: 0`) with `d` 2024-02-29 (day 19782) and `e` 2024-03-01 (day 19783). The predicate `response.d + 1_d == response.e` holds, and the body emits a Shifted with `next: response.d + 1_d`; rule `show` logs it. The messages are exactly ['1 2024-03-01']. Each wrong reading fails: a predicate lowered with no typing environment is Int `+` on a day count and 86 400 · 10⁹ nanoseconds, which is not day 19783, so nothing fires; a body lowered so emits a Date far outside the range and logs no `2024-03-01`. PATH PINNED: `dsc.rete`'s `sibling_rules`, whose `on` arm lowers the predicate and the body with `response` bound (`cx_env`), read by `rlow_6_1_5_date_arith`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    d: Date\n    e: Date\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Visit scope logical:\n    id: Int key\n\nschema Shifted scope ttl 1_h:\n    id: Int\n    next: Date\n\nrule plan:\n    Visit v\n->\n    call svc.read n: v.id cooldown: 1_h\n        on response.d + 1_d == response.e:\n            emit Shifted id: v.id next: response.d + 1_d\n\nrule show:\n    Shifted s\n->\n    log info \"{s.id} {s.next}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "d": 19782, "e": 19783 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1 2024-03-01"]
+    }
+}

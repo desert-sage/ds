@@ -1,0 +1,120 @@
+{
+  "id": "IRET.11",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": null,
+  "seq": 879,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Agenda",
+  "text": "## Agenda [IRET.11]\n\nAn **activation** is a matched rule waiting to fire: which rule, which\ntoken satisfied it, when the match was made, and whether it has already\nfired.\n\n| Field | Holds |\n|---|---|\n| rule | the terminal whose LHS matched |\n| token | the match itself |\n| creation_timetag | when the match was made — the SECOND key, within one rule |\n| fired | whether this activation has already fired |\n\nOrdering comes from two places and never from arrival: the activation's\nterminal ordinal ([IRET.8]) is the first key, and the creation timetag\norders the activations of ONE rule against each other ([LDET.5.4], [LDET.5.5]).\n\n**Refraction is the flag on the activation.** A fired activation stays on its\nterminal's list, carrying the flag, and is not selected again while its match\nlasts ([IDAT.6.2.2]), so asking whether a match has fired cannot drift out of\nstep with the activation it describes. Two per-terminal structures back the\nflag where a match is formed again without having ended: the refraction table\n([IRET.11.3]) and the edge-once set for clock-driven matches ([IRET.11.3.5]).\nThe identity both key on is the (rule, token) pair — see [IRET.11.3.3] for why\nthe token's fact-id tuple, and not its hash, is what makes that identity safe.\n\n\n\n",
+  "refs": [
+    "IDAT.6.2.2",
+    "IRET.11.3",
+    "IRET.11.3.3",
+    "IRET.11.3.5",
+    "IRET.8",
+    "LDET.5.4",
+    "LDET.5.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Iret_11__tok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's activation: the rule is the table the token sits in, the token is the bound facts, the creation timetag is the position in that table (tokens are appended in creation order and never reordered), `refracted` is `fired`."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11__from_maybe",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Missing table reads as empty."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11__table_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The r-th rule's token table."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_8_1__act",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The activation of the agenda: the match, and refraction as a flag on it, as the clause's header has it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_11__acts_at_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The activations at an ordinal depend on the chains' activations alone: extensionality the quiet-tick proof needs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_11__chain_acts_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The activations of the chain at an ordinal; none past the chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__tables_agree_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Under the tables' agreement, the unblocked tokens of the table at an ordinal are the activations of the chain at it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__transfer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM: run on one history from the loaded network and from FireLoop's empty state under the program the network lowers to, the two engines reach one working memory, and each table's unblocked tokens are its terminal's activations, in order and with their flags. Against the plain pipeline, inputs without Rete/PumpBoundary.idr's TMS phase and without the clock; Rete/NetworkTmsTransfer.idr carries the phase and Rete/NetworkTtl.idr the clock, on this agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__tables_agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each table's unblocked tokens are the corresponding terminal's activations, in order and with their `fired` flags."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11__to_act",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A FireLoop token as the activation the network holds: the match and whether it fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11__to_acts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Tokens as activations; named so that no statement mentions the conversion unapplied."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_11__table_at_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The r-th table, when the rule and table lists line up."
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.4.div",
+    "category": "runtime",
+    "scenario": "`/` always produces Float, even Int / Int (LEXP.7.4 / LEXP.12.2 — Python 3 semantics): 7 / 2 == 3.5, not 3. The inline guard `(t.a / t.b) == 3.5` over two Int slots fires only if division yields the Float 3.5; an integer division (3) would not match. Pins the true-division result type at runtime (the compiler-side LEXP.7.4 fixture only checks lowering). Use `//` for floor division.",
+    "rules_ds": "schema T scope logical:\n    a: Int key\n    b: Int mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.a / t.b) == 3.5\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "a": 7, "b": 2 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

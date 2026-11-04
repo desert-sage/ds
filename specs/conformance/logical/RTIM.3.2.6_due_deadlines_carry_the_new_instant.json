@@ -1,0 +1,20 @@
+{
+    "id": "RTIM.3.2.6_due_deadlines_carry_the_new_instant",
+    "category": "logical",
+    "scenario": "[RTIM.3.2.6]: \"Everything due at or before the new instant is done at the new instant\". `RTIM.3.2.6_one_move_does_everything_due` pins that both TTL deadlines inside one move are done by the pump after it, by fact count; this vector pins WHEN, by the clock their events carry ([LFST.5.4]). At 0 the harness asserts a Short (ttl 2 s) and a Long (ttl 4 s) and pumps; then one `advance` of 5 s and one pump. The view is the stream's `fact_retract` events, so the asserts at 0 and the clock's own events are left out. Both expiries are done at the new instant, so both retractions carry `clock_ns` 5000000000. A runtime that visited the instants the move skipped, running each deadline at its own instant, stamps them 2000000000 and 4000000000. No rule is declared: the TTL sweep alone is under test. PATH PINNED: the deadline drain at the pump after a clock move, libds's TTL sweep and the Mercury runtime's one deadline structure (`ds.engine`), and the `clock_ns` each stamps on the retraction it streams.",
+    "rules_ds": "schema Short scope ttl 2_s:\n    v: Int\n\nschema Long scope ttl 4_s:\n    v: Int\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "filter_kind": "fact_retract",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Short", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Long", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "min_events": 2,
+        "expected_clocks": [5000000000, 5000000000]
+    }
+}

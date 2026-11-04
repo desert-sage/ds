@@ -1,0 +1,14 @@
+{
+    "id": "LADP.8.2",
+    "clauses": ["LADP.8.2.3"],
+    "category": "compiler",
+    "scenario": "`call mqtt.publish`, which nothing in the import closure declares (only `light.turn_on` is imported), is refused with DS_VALIDATE_UNKNOWN_SERVICE (LADP.8.2.3: no match).",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call mqtt.publish topic: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SERVICE"
+    }
+}

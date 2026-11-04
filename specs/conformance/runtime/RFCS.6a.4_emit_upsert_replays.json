@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.6a.4_emit_upsert_replays",
+    "clauses": ["LTES.12.5"],
+    "category": "runtime",
+    "scenario": "RFCS.6a.4 / [RFCS.7a.3]: a recording that holds a rule's emit-upsert -- FactEmit(Out 2) then FactWithdraw(Out 1, SUPERSEDED) -- verify-replays, with the FactWithdraw compare on. The program and inputs are RFCS.6a.4_emit_upsert_assert_before_withdraw's. Paths: libds records through rfcs/codec.c's recorder and replays through ds_rfcs_replay_* (pyds Engine.record / Engine.replay), which re-derives the emit and its withdrawal and byte-compares each against the recorded one; the Mercury runtime records through ds.rfcs and replays through ds.replay. ⚠ WHAT THIS DOES NOT PIN: the order. A runtime replaying its own recording re-derives the emit and the withdrawal in the order it recorded them, so this passes on either order; the order is the strict event-sequence sibling's, and a recording one runtime writes and the other reads is the lockstep gate's `recordings` check. What this pins is that the withdrawal is compared and matches.",
+    "rules_ds": "schema Reading scope logical:\n    src: Int key\n    v: Int mutable\n\nschema Out scope logical:\n    id: Int key\n    v: Int mutable\n\nrule copy:\n    Reading r\n->\n    emit Out logical id: 1 v: r.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "src": 1, "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "src": 2, "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 10,
+        "min_rule_fires": 2
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "id": "LCST.4.5.8_float_non_literals_are_null",
+    "category": "logical",
+    "scenario": "[LCST.4.5.8]: every other string parses to null. The rule logs each string whose `::Float?` is null. Covered: NaN spellings; `inf` spellings other than lowercase `inf` (`infinity`, `INF`); leading and trailing whitespace; a unit suffix with and without `_`; a trailing or leading bare point (`1.`, `.5`, which FLOAT_LIT refuses, [LLEX.11.2]); an exponent without digits; a C hex float (`0x1p3`, which [LLEX.11.2.3] excludes); a finite spelling that rounds to infinity (`1e400`); a separator beside the point; and the empty string. PATH PINNED: FN_STRING_TO_FLOAT's runtime adapter. libds's strtod today accepts `infinity`, `INF`, leading whitespace, `1.`, `.5`, `0x1p3` and `1e400`, so this vector fails on it.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule absent:\n    S s where (s.txt::Float?) is null\n->\n    log info \"[{s.txt}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "nan" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "NaN" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "infinity" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "INF" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": " 1.5" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "1.5 " } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "1500_s" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "1500s" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "i", "txt": "1." } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "j", "txt": ".5" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "k", "txt": "1.5e" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "l", "txt": "0x1p3" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "m", "txt": "1e400" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "n", "txt": "1_.5" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "o", "txt": "" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "[nan]", "[NaN]", "[infinity]", "[INF]", "[ 1.5]", "[1.5 ]", "[1500_s]", "[1500s]", "[1.]", "[.5]", "[1.5e]", "[0x1p3]", "[1e400]", "[1_.5]", "[]" ]
+    }
+}

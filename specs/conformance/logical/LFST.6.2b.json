@@ -1,0 +1,16 @@
+{
+  "id": "LFST.6.2b",
+  "clauses": ["LTIM.2.8.5", "RARC.5.8.11"],
+  "category": "logical",
+  "scenario": "A clock mutation is not a sample ([NTST.3.3]): clock_advance sets the mock clock and emits no event, and the next pump samples the clock and emits the one tick that sample records ([LTIM.2.8.5]), then the pump boundary ([RFCS.22]). Two advances between samples leave ONE tick. Strict, so a tick per mutation fails it, and so does a missing first-sample tick. Drives libds's ds_engine_clock_step from ds_engine_pump and the absence of any emit in ds_engine_clock_advance.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+  "expect": {
+    "kind": "event_sequence_strict",
+    "steps": [
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "pump" }
+    ],
+    "expected_kinds": ["tick", "pump"]
+  }
+}

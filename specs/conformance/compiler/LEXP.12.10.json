@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.12.10",
+    "category": "compiler",
+    "scenario": "Integer overflow wraps silently per LEXP.12.10 \u2014 64-bit signed; documented, no runtime guard. PINS ONLY THAT IT COMPILES: `t.v + 9223372036854775000` near `INT64_MAX` compiles. The wrap happens at runtime, and `compile_ok` does not observe it. The wrap is pinned by runtime/LCON.2.6.twos_complement_wrap.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v + 9223372036854775000 > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

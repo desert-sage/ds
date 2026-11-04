@@ -1,0 +1,15 @@
+{
+  "id": "LFCA.2.1",
+  "prefix": "LFCA",
+  "doc": "FORM_CATALOG.md",
+  "parent": "LFCA.2",
+  "seq": 80,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LFCA.2.1] The action-level construct capabilities. A construct whose\ncapability the program's resolved settings set `false` is refused ([LDIA.3.4.2]).\n\n| Name | Explanation | Refactor hint |\n|---|---|---|\n| `call` | `call <domain>.<method> ...` action — async invocation of a service hosted by an adapter or an integrator-registered call target, with a fact of the service's response schema arriving as the response | not generally avoidable. If disabled, rules cannot reach any service or adapter action. Move the rule to a tier where `call` is enabled. |\n| `publish` | `publish <Schema> ...` — cross-tier upward fact flow with TTL / overflow policy | move the rule to a non-topmost tier. |\n| `cache` | `cache key: <k> value: <v>` — write to the cache plane | keep the state in a `logical` fact instead. Reads are unaffected: `cached(...)` is not gateable ([LFCA.2.4]). |\n| `cache_delete` | `cache_delete key: <k>` | use `cache` with a short TTL. Loses explicit invalidation. |\n\n",
+  "refs": [
+    "LDIA.3.4.2",
+    "LFCA.2.4"
+  ]
+}

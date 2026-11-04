@@ -1,0 +1,103 @@
+{
+  "id": "IRET.1.7",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.1",
+  "seq": 173,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IRET.1.7] **Alpha dispatch by schema index.** Every\n  schema is assigned a compact integer ID at load time.\n  The alpha dispatch table is a flat array indexed by\n  schema ID; each entry is the list of alpha nodes\n  registered for that schema. Dispatch on a new/retracted\n  fact is O(1) index + O(alpha_count_for_schema)\n  iteration; no linear scan of all patterns.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_1_7__indices",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The alpha nodes in dispatch order: by position, the flat array's iteration."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_4__dispatch_assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Dispatch visits the alpha nodes in position order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_1_7__dispatch_start",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Before a dispatch: every alpha in the list shows the old working memory; an index beyond the list is the dangling node, which shows nothing under any working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_1_7__indices_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every index in range is in the dispatch list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_1_7__indices_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The dispatch list visits each alpha once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_1_7__indices_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every index in the dispatch list is in range."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_2__dispatch_retract_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Dispatch by schema index on retract, likewise."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_6_4__dispatch_assert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Dispatch by schema index on assert reaches the alphas registered for the fact's schema; a chain with no node on them is left."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_1_7__nth_some",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An index into one of two lists of one length is an index into the other."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_19_2__dispatch_retract_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Alpha dispatch on retract, as `iret_19_2__dispatch_retract` runs it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_6_4__dispatch_assert_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Alpha dispatch on assert, as `iret_6_4__dispatch_assert` runs it: per admitting alpha, every chain."
+      }
+    ]
+  }
+}

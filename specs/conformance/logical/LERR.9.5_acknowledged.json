@@ -1,0 +1,16 @@
+{
+    "id": "LERR.9.5_acknowledged",
+    "category": "logical",
+    "scenario": "A handler acknowledges a fault by withdrawing the fault fact it matched (LERR.9.5); the next fault at the same site is then asserted afresh and the handler fires again. Same program as LERR.9.5_latched except the handler withdraws `e` (Int slots: an Int division by zero traps and a Float one is IEEE). Drives the fault-fact queue and `withdraw` on the built-in internal schema. Pin: assert S(a, b=0); pump; assert S(b2, b=0); pump. Messages are ['DIVIDE_BY_ZERO', 'DIVIDE_BY_ZERO'].",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule divide:\n    S s\n->\n    let q = s.a / s.b\n    log critical \"q {q}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n    withdraw e\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "one", "a": 1, "b": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "two", "a": 2, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DIVIDE_BY_ZERO", "DIVIDE_BY_ZERO"]
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LTAC.2.2_named_duration_does_not_parse",
+    "category": "compiler",
+    "scenario": "[LTAC.2.2] with [LGRA.6.1]: an `after` duration is a `UNIT_LIT`, so a slot read naming a Duration does not parse. Rule `later` delays by `t.delay`, a `Duration` slot. Expected DS_PARSE_GENERIC. A compiler that parses the duration as an expression and lowers anything but a time-unit literal to a 0 ns timer compiles this. The refusal begins on line 9, the `after` line ([RCTS.1.2.34]). PATH: `dsc.parse.ltac_2_1_parse_after`, which takes one `unit_lit` token after `after`.",
+    "rules_ds": "schema Schedule scope logical:\n    entity_id: String key\n    delay: Duration mutable\n\nrule later:\n    Schedule t\n->\n    log info \"armed\"\n    after t.delay:\n        log info \"fired\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 9
+    }
+}

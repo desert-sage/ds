@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.3.6_body_byte_flipped_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.3.6] the hash covers the whole artefact, not only its header: an artefact whose stored `dsc_sha256` is exactly as the compiler sealed it, with ONE BYTE OF ITS LAST ATOM changed, is refused with DS_ERR_DSC_SEMANTIC (-504). The path: the harness (`runtime_error`'s `tamper: last_byte`) XORs the artefact's final byte with 0x01; libds's loader verifies the hash as it reads the header, before it reaches the atom the byte is in, so the refusal is the hash's and not a decode error the changed byte might otherwise cause. A loader that hashed the header alone would load this. Its twin, `RDSC.3.6_hash_byte_flipped_is_refused`, flips a byte of the stored hash instead; the Mercury runtime's suite (`test_ds`) pins both refusals for its loader.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": "last_byte",
+        "code": "-504",
+        "message_contains": "dsc_sha256"
+    }
+}

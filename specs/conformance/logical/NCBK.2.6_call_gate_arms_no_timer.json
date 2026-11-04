@@ -1,0 +1,31 @@
+{
+    "id": "NCBK.2.6_call_gate_arms_no_timer",
+    "clauses": ["LCRS.8.2"],
+    "category": "logical",
+    "scenario": "[NCBK.2.6]: TIMER_ARMED belongs to the rule-level cooldown alone, and the engine emits none for the gate of a `cooldown:` on a `call` ([LCRS.8.2]), whether it admits the call or not. `r`'s only cooldown is on its call. At 0 s Trig k=1 n=0 is asserted and pumped: the gate admits, so the stream has the call and RULE_FIRE_END with no TIMER_ARMED after it. At 2 s n becomes 1, a mutable-slot change under the same key, so the same activation key: the rule fires and brackets, the gate suppresses the call, and again no TIMER_ARMED. `twin cooldown 10_s` is the rule-level twin these differ from, as in NCBK.2.6_timer_armed_only_when_admitted: its admitted firing has TIMER_ARMED after its RULE_FIRE_END. It is also what lets this vector read the absence: an event_sequence judges only the kinds it names ([RCTS.1.2.10]), so timer_armed is named by the one event that has it, and any other TIMER_ARMED on the stream fails the vector. Kinds stated: rule_fire_begin, action_call, action_log, rule_fire_end, timer_armed. PATH PINNED: each runtime's emit site, reached through the stream callback. In libds, `_rete_after_fire` (engine_rete_adapters.c) emits only on `rm->has_cool`, the rule-level window. In the Mercury runtime, `ncbk_2_6_timer_armed` (ds.exec.m) reads the rule's `rc_cooldown` alone.",
+    "rules_ds": "service svc.read:\n    kwarg n: Int\n    no response\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nschema Twin scope logical:\n    k: Int key\n\nrule r:\n    Trig t\n->\n    call svc.read n: t.n cooldown: 10_s\n\nrule twin cooldown 10_s:\n    Twin w\n->\n    log info \"twin {w.k}\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Twin", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "timer_armed"
+        ]
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LDET.3.2.7.negzero",
+    "category": "logical",
+    "scenario": "[LDET.3.2.7] (display plane) — the serializer PRESERVES the sign of negative zero: -0.0 renders \"-0.0\" and +0.0 renders \"0.0\" (ds_fmt_float branches on signbit before the general path). This is the counterpart to the identity plane, which NORMALIZES -0.0 -> +0.0 for dedup (LFAC.2.negzero): the two zeros are one identity but keep their distinct display text. A rule interpolates each Float slot into a log message; the harness pins the rendered \"-0.0\" / \"0.0\" in assert order. Note both facts share the schema's String key `id` (not the Float), so no identity-key normalization is in play here — this isolates the display sign.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    v: Float mutable\n\nrule show:\n    Reading r\n->\n    log critical \"{r.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "neg", "v": -0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "pos", "v": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["-0.0", "0.0"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.5.1_has_on_unnarrowed_json_refused",
+    "category": "compiler",
+    "scenario": "[LNUL.5.1]: `has` is a builtin that demands a value of a particular kind, so its argument is a concrete-value position. `has(d.body.x)` in a `where`, with `body` a `Json?` slot and no narrowing, is refused with DS_VALIDATE_NULLABLE_UNNARROWED: the path's root may be null. `has` of an unresolved path is `false` ([LNUL.8.4]), but a null root is not an unresolved path. It is a missing value, and both runtimes raise a type mismatch if one reaches `has` (libds `builtin_json_has`, Mercury `ds.eval.absent_or_mismatch`), the backstop LNUL.5.1 makes unreachable. Its twin LNUL.5.1_has_on_narrowed_json_compiles narrows the root with `d.body is not null and` and compiles, so the refusal is the root's nullability and not `has`. PATH PINNED: `dsc.typecheck`'s `lnul_5_1_builtin_arguments`, which reports a nullable argument of a builtin through `lnul_5_1_concrete`.",
+    "rules_ds": "schema D scope logical:\n    entity_id: String key\n    body: Json? mutable\n\nrule r:\n    D d where has(d.body.x)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

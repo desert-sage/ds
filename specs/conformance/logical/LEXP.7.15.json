@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.15",
+    "clauses": ["LEXP.7.15.1"],
+    "category": "logical",
+    "scenario": "An `Int` division by zero is a runtime error (LEXP.7.15.1) that abandons the activation: `t.x / t.y > 5` with y=0 does not fire, and with x=20, y=2 it does, so `r` fires exactly once. The error's kind and record are other vectors' (LERR.1.4.3); this pins only that the activation does not fire.",
+    "rules_ds": "schema Pair scope logical:\n    entity_id: String key\n    x: Int mutable\n    y: Int mutable\n\nrule r:\n    Pair t where t.x / t.y > 5\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "zero", "x": 100, "y": 0 } },
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "ok",   "x": 20,  "y": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

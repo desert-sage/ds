@@ -1,0 +1,30 @@
+{
+    "id": "LGRA.2.9.6.10.render",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.10] — how a numeric or string spec renders, one log line per rule of the clause, pinned as text. The specs compile to ValuePrim primitives (RLOW.6.4) and the runtime renders them itself: libds's `render_value` on this lane, and Mercury's renderer through the conformance gate's runtime differential. Lines: (1) no type — each kind's canonical text; (2-6) one per type, with `f` on an Int rendering the Float of the same value and six places by default; (7) `+` on a non-negative and a negative number; (8) zero padding between the sign and the digits, Int and Float; (9) both alignments, on a number and on a String; (10) the default alignment — a number right, a String and a Bool left; (11) a negative `x` / `X` / `b` is `-` and the magnitude, no prefix; (12) a String precision cuts by code points, `é` being one, and the width counts code points; (13) text longer than its width is written whole; (14) a null renders empty, with no padding, whatever the spec.",
+    "rules_ds": "schema V scope logical:\n    id: Int key\n    i: Int mutable\n    n: Int mutable\n    f: Float mutable\n    s: String mutable\n    bl: Bool mutable\n    u: String? mutable\n\nrule show:\n    V v\n->\n    log critical \"none i={v.i} f={v.f} s={v.s} b={v.bl}\"\n    log critical \"d=[{v.i:d}]\"\n    log critical \"x=[{v.i:x}] X=[{v.i:X}]\"\n    log critical \"b=[{v.i:b}]\"\n    log critical \"f=[{v.f:f}] int_f=[{v.i:f}]\"\n    log critical \"s=[{v.s:s}]\"\n    log critical \"plus=[{v.i:+d}] [{v.n:+d}] [{v.f:+.2f}]\"\n    log critical \"zero=[{v.i:06d}] [{v.n:07d}] [{v.i:+06d}] [{v.f:08.3f}]\"\n    log critical \"align=[{v.i:<6d}] [{v.i:>6d}] [{v.s:>8}] [{v.s:<8}]\"\n    log critical \"default=[{v.i:6}] [{v.f:9}] [{v.s:8}] [{v.bl:6}]\"\n    log critical \"neg=[{v.n:x}] [{v.n:X}] [{v.n:b}]\"\n    log critical \"prec=[{v.s:.2s}] [{v.s:>4.2s}]\"\n    log critical \"wide=[{v.s:3}] [{v.i:1d}]\"\n    log critical \"null=[{v.u}] [{v.u:>6}] [{v.u:<6s}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "V",
+              "slots": { "id": 1, "i": 42, "n": -255, "f": 3.14159, "s": "héllo", "bl": true, "u": null } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "none i=42 f=3.14159 s=héllo b=true",
+            "d=[42]",
+            "x=[2a] X=[2A]",
+            "b=[101010]",
+            "f=[3.141590] int_f=[42.000000]",
+            "s=[héllo]",
+            "plus=[+42] [-255] [+3.14]",
+            "zero=[000042] [-000255] [+00042] [0003.142]",
+            "align=[42    ] [    42] [   héllo] [héllo   ]",
+            "default=[    42] [  3.14159] [héllo   ] [true  ]",
+            "neg=[-ff] [-FF] [-11111111]",
+            "prec=[hé] [  hé]",
+            "wide=[héllo] [42]",
+            "null=[] [] []"
+        ]
+    }
+}

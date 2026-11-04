@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.14.1.negative_count_traps",
+    "category": "logical",
+    "scenario": "[LEXP.7.14.1]: a shift count that is negative at run time is a ComputationError of kind DOMAIN. The count comes from a slot, because a negative LITERAL count is refused at compile time ([LEXP.7.8]). The trap is raised in the join test, before the shift helper (whose precondition is count >= 0), and the rule does not fire. A runtime that masks the count reads `1 >> -1` as `1 >> 63` = 0, and the guard holds.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    n: Int key\n\nrule r:\n    T t where (t.x >> t.n) == 0\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "x": 1, "n": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

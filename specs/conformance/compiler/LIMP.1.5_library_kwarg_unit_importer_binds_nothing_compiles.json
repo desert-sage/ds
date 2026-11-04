@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.1.5_library_kwarg_unit_importer_binds_nothing_compiles",
+    "category": "compiler",
+    "scenario": "[LIMP.1.5], [LADP.8.5.2]: `u`'s service has a kwarg typed by `u`'s unit `therm`, and the program does only `import u`, so it cannot spell `therm`. A slot of that dimension is a quantity of the kwarg's dimension, so it compiles. Its twin, `LIMP.1.5_library_kwarg_unit_importer_binds_nothing`, passes another dimension. PATH PINNED: `dsc.imports.limp_1_5_kwarg` recording `u`'s `therm`, and `dsc.rete.written_in_unit`, whose conversion reads it through `dsc.resolve.kwarg_scope`.",
+    "rules_ds": "import u\n\nrule r:\n    u.Temp x\n->\n    call svc.x t: x.t nocooldown\n",
+    "libraries": {
+        "u": "unit dimension warmth storage float64 base therm\nunit therm: warmth\n\nschema Temp scope logical:\n    k: Int key\n    t: therm mutable\n\nservice svc.x:\n    kwarg t: therm\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

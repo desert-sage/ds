@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A Time, a Date and a Duration slot leave the engine and come back
+# ([RFCS.23.2], [RFCS.23.3], [NCBK.10.4]). Each crosses as KIND_INT, the
+# integer [RDSC.5.5.8] gives it, and `schema_hash` carries each slot's
+# declared type (`SlotShape.temporal_kind`). `show` tells a value read back
+# as its declared type from one read as an Int: the timestamp spec is admitted
+# only on a Time ([LGRA.2.9.6.5]), and `90_s` compares only with a Duration.
+# `send_stamp` consumes its trigger, so `resend 0` is its one call.
+
+schema Stamp scope logical:
+    k: Int key
+    seen: Time mutable
+    day: Date mutable
+    span: Duration mutable
+
+schema SendStamp scope explicit:
+    n: Int
+
+service out.stamp:
+    kwarg fact: Stamp
+    no response
+
+rule show:
+    Stamp s where s.span >= 90_s
+->
+    log info "k={s.k} seen={s.seen:%Y-%m-%dT%H:%M:%S}"
+
+rule send_stamp:
+    SendStamp g
+    Stamp s
+->
+    withdraw g
+    call out.stamp fact: s nocooldown

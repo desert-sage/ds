@@ -1,0 +1,10 @@
+{
+    "id": "LECC.6.4_unknown_family_refused",
+    "category": "compiler",
+    "scenario": "[LECC.6.4]: an `error <pattern>:` clause's first segment must be `request`, `internal` or `adapter` ([LECC.2.2]), and the compiler refuses any other. `error transport:` names no family, so the program is refused with DS_VALIDATE_ERROR_PATTERN_UNKNOWN_FAMILY. It is compiler/LECC.9.1's program. PATH PINNED: dsc.validate `lecc_6_4_error_family`, from the rule's actions.",
+    "rules_ds": "service svc.connect:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.connect entity_id: t.entity_id cooldown: 30_s\n        error transport:\n            log info \"transport error\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ERROR_PATTERN_UNKNOWN_FAMILY"
+    }
+}

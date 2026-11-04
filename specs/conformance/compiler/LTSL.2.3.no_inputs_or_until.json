@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.2.3.no_inputs_or_until",
+    "category": "compiler",
+    "scenario": "[LTSL.2.3]: a test with no `inputs` asserts only over time passing and must supply `until` to advance the clock; one with neither is refused with DS_VALIDATE_TEST_NO_INPUTS_OR_UNTIL. The test has a `produces` section and nothing else. Path: `dsc.dstest.ltsl_2_3_block_shape`.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    log info \"cold\"\n\ntest \"no clock\":\n    produces:\n        never activated cold\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_NO_INPUTS_OR_UNTIL"
+    }
+}

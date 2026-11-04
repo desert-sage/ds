@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.8.6_nulls_on_non_nullable",
+    "category": "compiler",
+    "scenario": "[LNUL.8.6]: the compiler must refuse `nulls:` on a series whose source is not nullable, with `DS_VALIDATE_SERIES_NULLS_ON_NON_NULLABLE`: there is no `null` for the policy to absorb. `nulls: skip` over a plain `Float` slot. PATH PINNED: `dsc.series.lnul_8_6_nulls`'s second arm, reached after the option parsed (`dsc.parse.block_kwarg_value(\"nulls\", ...)` admits the word) and reported at the option's own position. A compiler that admitted the option on any source compiles this and the vector goes red.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nseries Reading.level (by: dev, nulls: skip):\n    mean all_time\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NULLS_ON_NON_NULLABLE"
+    }
+}

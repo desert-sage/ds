@@ -1,0 +1,18 @@
+{
+  "id": "LTSL.8.7",
+  "prefix": "LTSL",
+  "doc": "TEST_LANGUAGE.md",
+  "parent": "LTSL.8",
+  "seq": 332,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Occurrence count — `exactly N`",
+  "text": "### Occurrence count — `exactly N` [LTSL.8.7]\n\nA head may carry the modifier `exactly <N>`, asserting the observation occurred\n**exactly N times** over the run.\n\n`exactly` composes with matching ([LTSL.8.4]) and with `where` unchanged: the\ncount is of observations that match, not of all observations under the head.\n\n**`exactly` refines polarity, it does not replace it.** A bare head is `POS`\n(at least once) and `never` is zero times ([LTSL.8.3]); `exactly N` states the\nexact tally on that same axis. `never <head> exactly <N>` has no single reading\nand the compiler must reject it.\n\nThe count is an **equality**. The surface admits no `at least` or `at most`\nform: `at least 1` is a bare head, and no other comparison has been asked for.\n\n`N` is at least 1. `exactly 0` is not admitted — `never` is that assertion, and\nadmitting a second spelling for it would put two forms on one meaning. This\nalso keeps the wire encoding free of a presence flag: the atom carries a plain\ncount whose zero reads as \"no occurrence constraint\", which is the\n`proto3 zero = absent` convention the rest of the corpus uses.\n\n```{admonition} exactly N is a whole-run tally, not a per-trigger claim\n:class: warning\nIt cannot distinguish two rules firing on ONE trigger from one rule firing on\nTWO — both are two occurrences. So `published X exactly 1` constrains a\nsingle-trigger scenario and nothing wider; in a scenario that pumps more than\nonce it will fail on correct programs.\n\nTo assert that two rules never both fire, use `exclusive` ([LTSL.8.8]), which\nis scoped rather than tallied.\n```\n\n**The `wm` head does not admit `exactly`, and the compiler must reject it.**\n`wm has` / `wm count` / `wm empty` inspect working memory at the END of the run\n([LTSL.8.6]); they observe a state, not a stream of occurrences, so there is\nnothing for an occurrence tally to count. `wm count <Schema> == N` keeps its own\nspelling and is not an instance of this modifier: there `count` is the head and\nthe number is a final-state **cardinality**, while `exactly` is a modifier and\nthe number is an occurrence **tally**.\n\nThe exclusion is deliberate and costs a wart — the modifier reads as \"every\nhead except one\". The alternative is worse: one head carrying two different\nmeanings for a number, where `wm count == 2` and `wm has … exactly 2` would\nlook like the same assertion and be different ones, with nothing in the surface\nto tell them apart. A reader can look up an exclusion; a reader cannot see a\nconflated meaning.\n\n",
+  "deferred": true,
+  "refs": [
+    "LTSL.8.3",
+    "LTSL.8.4",
+    "LTSL.8.6",
+    "LTSL.8.8"
+  ]
+}

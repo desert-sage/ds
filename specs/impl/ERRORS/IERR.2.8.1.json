@@ -1,0 +1,30 @@
+{
+  "id": "IERR.2.8.1",
+  "prefix": "IERR",
+  "doc": "ERRORS.md",
+  "parent": "IERR.2.8",
+  "seq": 248,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IERR.2.8.1] Claimed beyond `-599`:\n\n| Range | Category |\n|---|---|\n| `-600..-610` | native Rete loader and realtime |\n| `-620..-625` | series-backend ABI |\n| `-700..-704` | dialect / artefact binding |\n| `-710..-714` | realtime contract |\n| `-720..-730` | event trace |\n\nGaps inside a claimed decade are headroom\nfor that decade's families, not free space for a new one.\n\nRegistering an allocation before the code exists is as much\nof this clause's job as recording one that already exists.\n\nThe reservation is also why this table is read when a\n`-6xx` / `-7xx` code is allocated and not only when one is\ndefined. This clause is named authoritative beyond `-599`\n([NERR.3.1]) while the register's **gated** rendering is\n`[NERR.13]`, which the error-code gate reconciles against\n`libds.h` by NAME. A range row carries no name, so it sits\noutside that gate's population entirely: the two\nrenderings here and in [NERR.3.1] are kept current by\nbeing read, not by being checked.\n\nCompiler diagnostics are **not** in this space and claim\nno range here ([RTCT.9.1]). `DS_ERR_` is\nthe runtime `ds_status_t` prefix; a diagnostic wearing it\nis a naming defect, not a band that needs allocating.\n\n`-800` through `-9999` remain reserved for future\ncategories (debug protocol, observability, TBD). A new\ncategory claims its range by an explicit amendment here, and\nthis clause is the register that makes the claim real.\n\n",
+  "refs": [
+    "NERR.13",
+    "NERR.3.1",
+    "RTCT.9.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "ierr_2_8_1__claim_never_crosses_a_band",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "ierr_2_8_1__row_inside_its_band",
+        "tag": "spec"
+      }
+    ]
+  }
+}

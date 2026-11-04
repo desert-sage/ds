@@ -1,0 +1,10 @@
+{
+    "id": "LINT.3.2.2",
+    "category": "compiler",
+    "scenario": "Mixed-type interval `contains` per LINT.3.2.2 — both intervals must have matching element types. `Int`-interval `contains` `Date`-interval rejects with DS_VALIDATE_TYPE_MISMATCH.",
+    "rules_ds": "schema Check scope logical:\n    entity_id: String key\n    i_start: Int mutable\n    i_end: Int mutable\n    date_val: Date mutable\n\nrule r:\n    Check c where (c.i_start..c.i_end) contains (c.date_val..c.date_val)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

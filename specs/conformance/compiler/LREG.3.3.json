@@ -1,0 +1,7 @@
+{
+    "id": "LREG.3.3",
+    "category": "compiler",
+    "scenario": "Named-capture name mismatch per LREG.3.3 — the compiler must reject a `(?<name>...)` capture whose name does not match the binding-form name at the same position. Pin: `where (code) = s ~ /(?<device>\\w+)/` has named capture `device` at position 0 but binding name `code` at position 0 — rejects with DS_VALIDATE_REGEX_NAME_MISMATCH. Path: `dsc.validate.lreg_4_1_where_capture` then `lreg_3_3_names`, over the `where` capture form ([LREG.4.1]).",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nrule r:\n    Log e where (code) = e.msg ~ /(?<device>\\w+)/\n->\n    log info \"got: {code}\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_REGEX_NAME_MISMATCH" }
+}

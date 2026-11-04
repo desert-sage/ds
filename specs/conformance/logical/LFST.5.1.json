@@ -1,0 +1,16 @@
+{
+    "id": "LFST.5.1",
+    "category": "logical",
+    "scenario": "Every stream event carries a clock_ns field per LFST.5.1. Mock clock is set to 1000000000 ns (1 s) before asserting a fact and pumping. All captured events must have clock_ns >= 1000000000.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"tick\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "expected_clocks": [1000000000, 1000000000, 1000000000]
+    }
+}

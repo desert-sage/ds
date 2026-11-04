@@ -1,0 +1,16 @@
+{
+    "id": "LDET.3.1",
+    "category": "logical",
+    "scenario": "Same fact set produces same rule firing order on every run per LDET.3.1. Three rules on three distinct trigger values fire in source-declaration order (deterministic): ra fires first, rb second, rc third. NOTE: the three asserts ARRIVE in the same order the rules are declared, so completion order and source order coincide and either model passes — this fixture cannot tell them apart. What it does pin is its own clause, [LDET.3.1]: the same fact set gives the same order on every run, which holds under either. LDET.5.4.completion.json is the one that discriminates.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nrule ra:\n    A a where a.v == 1\n->\n    log info \"ra\"\n\nrule rb:\n    A a where a.v == 2\n->\n    log info \"rb\"\n\nrule rc:\n    A a where a.v == 3\n->\n    log info \"rc\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "A", "slots": { "v": 2 } },
+            { "op": "assert", "schema": "A", "slots": { "v": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["ra", "rb", "rc"]
+    }
+}

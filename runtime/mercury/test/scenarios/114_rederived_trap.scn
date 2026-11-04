@@ -1,0 +1,16 @@
+# See fixtures/145_derived_traps.ds -- a pair derived twice ([LERR.1.4.12]).
+#
+#   pump 1  `a1` alone.
+#   pump 2  `c1` (key k2, `y = 0`) derives `((a1), c1)`: one trap.
+#   pump 3  `b1` (key k1, `y = 1`) blocks `(a1)` and ends `((a1), c1)`. Its own
+#           pair `((a1), b1)` answers `false` and records nothing.
+#   pump 4  `b1` is retracted. `(a1)` is released and `((a1), c1)` is derived
+#           again: a second trap, after the retraction.
+assert A k=k1
+pump
+assert B k=k2 x=1 y=0
+pump
+assert B k=k1 x=1 y=1
+pump
+retract 2
+pump

@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.20",
+    "category": "compiler",
+    "scenario": "Series and activation-scoped facts per LSER.10.20. Series declarations are independent of the activation-scoped mechanisms of LSCP and LRST — a series tracks slot history across all activations and is not bound to any single activation's lifetime. Pin: a rule with a series-driven `where` predicate that emits a `scope activation` fact compiles cleanly.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nschema Lock scope activation:\n    entity_id: String\n\nseries Sensor.state:\n    mean sliding 10_s\n\nrule guarded:\n    Sensor t where t.state > t.mean\n->\n    emit Lock entity_id: t.entity_id\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

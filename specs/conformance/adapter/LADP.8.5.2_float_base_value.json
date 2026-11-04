@@ -1,0 +1,30 @@
+{
+    "id": "LADP.8.5.2_float_base_value",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.2]: on a `Float` kwarg the service receives a quantity in its dimension's base unit and storage type. `hvac.set` declares `t: Float`; rule `go` writes `t: 68_fahrenheit`, and the integrator receives 293.15 (kelvin). PATH PINNED: `ladp_8_5_2_written_dimension` in dsc.validate, which admits a quantity on a dimensionless kwarg because only a unit- or dimension-typed kwarg has a dimension to compare, and the literal's own lowering, `luni_4_3_unit_literal` in dsc.rete. The break is refusing a quantity on a scalar kwarg, which refuses the program with DS_VALIDATE_DIM_MISMATCH.",
+    "rules_ds": "unit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg t: Float required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set t: 68_fahrenheit nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "t": 293.15
+                }
+            }
+        ]
+    }
+}

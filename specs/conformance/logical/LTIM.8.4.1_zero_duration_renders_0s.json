@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.8.4.1_zero_duration_renders_0s",
+    "category": "logical",
+    "scenario": "LTIM.8.4.1: `dur::String` ([LCST.4.5.9]) renders the zero `Duration` as `0s`, and a non-zero one by its components alone. The `Duration` comes from a slot. Three facts, `d` = 0, 1 and -1 ns, logged through `e.d::String`: `0s`, `1ns`, `0s`. The -1 ns a host asserts is stored as `0` ([NFCT.2.3]: a `Duration` is never negative), so it renders as the zero `Duration` does, and the text form carries no sign ([LTIM.8.4.2]). Drives the compiler's `Duration -> String` cast lowering (FN_DURATION_TO_STRING), libds's `fmt_duration` (rete/adapters.c) and Mercury's `ltim_8_4_render_duration` (ds.eval). A writer with no zero case gives an empty first line or `0ns`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule r:\n    Ev e\n->\n    let s = e.d::String\n    log critical \"{e.id} {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "d": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "d": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 3, "d": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1 0s", "2 1ns", "3 0s"]
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "id": "LSER.7.6.3_ttl_series_absorbs_every_assert",
+    "category": "logical",
+    "scenario": "LSER.7.6.3: on a `ttl` schema every fact assertion absorbs as a sample. Drives the rule-side companion read `s.mean` on a `ttl` schema: each assert is a new fact, its activation reads the series PRE-SAMPLE (LSER.8.6.1), and the end-of-pump absorber adds it. Four asserts of 10, 20, 30, 40, one per pump: the first read is cold and does not log; the next three read the mean of what was absorbed before them -- 10.0, 15.0, 20.0. A runtime that absorbs nothing on `ttl` logs nothing, and one that absorbs only some logs other means. THE `where` READS A SERIES, SO IT IS RE-READ EVERY PUMP ([LTIM.2.4.1]) and each live fact fires once, on the pump its condition first holds ([LTIM.2.5.1]): the first fact, cold when it arrived, reads 10.0 at the second pump with the second fact, so `mean 10.0` logs twice.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Int\n\nseries Sample.level (by: dev):\n    mean all_time\n\nrule r:\n    Sample s where s.mean is not null\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level":10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level":20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level":30 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level":40 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 10.0", "mean 10.0", "mean 15.0", "mean 20.0"]
+    }
+}

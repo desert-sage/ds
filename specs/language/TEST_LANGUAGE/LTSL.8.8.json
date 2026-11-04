@@ -1,0 +1,15 @@
+{
+  "id": "LTSL.8.8",
+  "prefix": "LTSL",
+  "doc": "TEST_LANGUAGE.md",
+  "parent": "LTSL.8",
+  "seq": 334,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`exclusive` — rules that must not both fire",
+  "text": "### `exclusive` — rules that must not both fire [LTSL.8.8]\n\n`exclusive <rule>, <rule>[, …]` asserts that **no two of the named rules fire\nwithin the same pump**, for every pump in the scenario.\n\nIt names at least two rules; one is a compile error. Rule names are bound\nagainst the program's rule inventory as `activated` binds them ([LTSL.8.2]), so\na misspelled rule fails to compile rather than passing vacuously. With more\nthan two names the assertion is **pairwise**: no two of the set may share a\npump.\n\n**The scope is the pump.** A pump runs to quiescence, so rules that fire in one\npump are treated as responding to the same input regardless of which fact\ntriggered each. Scoping co-firing to rules that matched a common fact instead\nwould make two rules that both match a long-lived configuration fact never\nexclusive, which is a silent false pass. A pump that batches unrelated inputs produces a false FAILURE\ninstead, and a test that wrongly fails is investigated.\n\nThe surface carries no scope selector. If a narrower one is ever needed it is a\nnew form, not a modifier on this one.\n\n```{admonition} This is an observation, not a proof\n:class: warning\n`exclusive` holds when no co-firing was OBSERVED in the scenarios that ran. It\nis not a statement that the rules are mutually exclusive by construction — a\ndynamic test can only sample. An author who means \"these can never both fire\"\nis making a claim about the rules' conditions, which this assertion does not\ncheck and does not attempt to.\n```\n\n`never exclusive …` is not admitted. The inverse — asserting that two rules DO\nco-fire — has not been asked for, and reserving the spelling costs nothing.\n\n",
+  "deferred": true,
+  "refs": [
+    "LTSL.8.2"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "LGRA.21.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.21",
+  "seq": 1844,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.21.1] **Production.** A `test` is a top-level declaration ([LGRA.3.1]); its\nsurface semantics are specified in [LTSL],\nand it compiles to the `Test*` / `Oracle*` test atoms ([RDSC.7.1]).\n\n```\ntest_decl        ::= 'test' STRING_LIT ':' INDENT test_section+ DEDENT\ntest_section     ::= test_inputs | test_initial | test_responses | test_produces | test_until\ntest_until       ::= 'until' time_coord NEWLINE\ntest_inputs      ::= 'inputs' ':' INDENT test_at_block+ DEDENT\ntest_at_block    ::= 'at' time_coord ':' INDENT test_fact+ DEDENT\ntime_coord       ::= UNIT_LIT | postfix   ;; UNIT_LIT = relative offset; postfix = absolute, a calendar.time call (LTSL.3.2)\ntest_fact        ::= type_ref action_arg* NEWLINE\ntest_initial     ::= 'initial' ':' INDENT test_initial_item+ DEDENT\ntest_initial_item ::= test_fact | test_cache_seed | test_cache_block\ntest_cache_seed  ::= 'cache' STRING_LIT ':' expression NEWLINE\ntest_cache_block ::= 'cache' ':' INDENT test_cache_entry+ DEDENT\ntest_cache_entry ::= STRING_LIT ':' expression NEWLINE\ntest_responses   ::= 'responses' ':' INDENT response_stub+ DEDENT\nresponse_stub    ::= 'for' 'call' service_ref kwarg* ('as' STRING_LIT)? ('after' UNIT_LIT)? ':' INDENT response_body+ DEDENT\nresponse_body    ::= reply_fact | no_response_line\nreply_fact       ::= type_ref action_arg* NEWLINE\nno_response_line ::= 'no' 'response' NEWLINE\ntest_produces    ::= 'produces' ':' INDENT test_assertion+ DEDENT\ntest_assertion   ::= 'never'? test_head NEWLINE\ntest_head        ::= 'activated' NAME\n                   | 'emitted' type_ref test_match\n                   | 'published' type_ref test_match\n                   | 'retracted' type_ref action_arg*\n                   | 'called' service_ref ('as' STRING_LIT)?\n                   | 'cached' STRING_LIT (':' expression)?\n                   | 'cache_deleted' STRING_LIT\n                   | 'logged' log_level STRING_LIT?\n                   | 'wm' test_wm\ntest_match       ::= where_binding | kwarg*   ;; one or the other, never both (LTSL.8.4)\nwhere_binding    ::= NAME where_clause   ;; <binding> where <pred> (LTSL.8.4)\ntest_wm          ::= 'has' type_ref kwarg* | 'count' type_ref '==' INT_LIT | 'empty'\n```\n\n`type_ref` is a rule pattern's schema reference, `Name` or `lib.Name`\n([LGRA.8.1]): a test names a schema as a rule does ([LTSL.4.4]).\n\n",
+  "refs": [
+    "LGRA.3.1",
+    "LGRA.8.1",
+    "LTSL.3.2",
+    "LTSL.4.4",
+    "LTSL.8.4",
+    "RDSC.7.1"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.8.6_nulls_required",
+    "category": "compiler",
+    "scenario": "[LNUL.8.6]: a series over a `T?` source is a compile error unless it declares a null-absorption policy -- `nulls: skip`, `hold` or `zero` -- and there is no default. `mean all_time` over a `Float?` slot with no `nulls:` is refused with `DS_VALIDATE_SERIES_NULLS_REQUIRED`. PATH PINNED: `dsc.series.lnul_8_6_nulls`, which reads the slot's nullability off the schema's field (`slot_nullability`) and finds no `abk_nulls` in the block options. A compiler that defaulted the policy, as [LSER.13.5.1]'s `gap` phrase defaults, compiles this and the vector goes red.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev):\n    mean all_time\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NULLS_REQUIRED"
+    }
+}

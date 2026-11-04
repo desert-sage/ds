@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.2.8.10_signed_ttl_refused_at_parse",
+    "category": "compiler",
+    "scenario": "A `scope ttl` duration is a `time_expr` (LGRA.5.2, LGRA.2.8.1): a bare UNIT_LIT or a NAME, with no sign. Per LGRA.2.8.10, `scope ttl -5_s` is refused by the parser, before validation, as `within -5_s` is (compiler/LGRA.2.8.10). A compiler that takes the span whole and refuses it later, in lowering, raises a DS_VALIDATE_* code instead, and fails this. PATH PINNED: `dsc.parse.lgra_2_8_10_parse_ttl`, which admits a `ttl` span only through `lgra_2_8_1_time_expr`.",
+    "rules_ds": "schema Pulse scope ttl -5_s:\n    v: Int\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 1
+    }
+}

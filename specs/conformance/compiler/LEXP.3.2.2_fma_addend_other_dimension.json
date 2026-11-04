@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.3.2.2_fma_addend_other_dimension",
+    "clauses": ["LEXP.3.2.2", "LUNI.8.2"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.2.2]: `math.fma(x, y, z)` takes the operands `x * y + z` admits, under that expression's unit rules ([LUNI.8]). `r.t` is a `kelvin` and `r.k` a plain `Float` (`kelvin` and `kilogram` are `units.core`'s, in scope in every file, [LUNI.4.1.2]), so `r.t * r.k` is a temperature, and adding `5_kilogram` to it is [LUNI.8.2]'s cross-dimension addition, DS_VALIDATE_DIM_MISMATCH. The same call with a `kelvin` addend compiles (`LEXP.3.2.2_fma_addend_same_dimension`). A compiler that typed the call as an opaque builtin would accept this. PATH PINNED: `dsc.typecheck`'s `math.fma` arm, which types the call as `x * y + z`.",
+    "rules_ds": "import math\n\nschema Reading scope logical:\n    id: String key\n    t: kelvin mutable\n    k: Float mutable\n\nrule bad:\n    Reading r where math.fma(r.t, r.k, 5_kilogram) > 100_kelvin\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

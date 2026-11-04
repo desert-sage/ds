@@ -1,0 +1,10 @@
+{
+    "id": "LCAP.2.9_unit_slot_disabled",
+    "category": "compiler",
+    "scenario": "LCAP.2.9 / LDIA.3.4.2 — negative: the program sets `float: false` and declares a slot typed with a unit, whose leaf kind is `Float` ([LUNI.8.7.3]). Rejected with DS_VALIDATE_CAPABILITY_DISABLED. Drives dsc.dialect's float_type_name through a unit, not `Float` itself.",
+    "rules_ds": "use default:\n    float: false\n\nunit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nschema Trig scope logical:\n    v: Int key\n    freq: Hz mutable\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Arithmetic on a null operand propagates null ([LNUL.4.1]). The null test
+# comes after an operand's fault is forwarded and before any type or zero
+# check. Each guard makes a wrong disposition visible:
+#
+#   a null read as 0          `add`, `neg` and `mul` fire on r1
+#   a null as a type mismatch a `fault` line, and libds halts the tier
+#   the zero check first      `div` and `idiv_is_null` trap on r1
+#   no propagation at all     `add_is_null` / `idiv_is_null` stay quiet on r1
+#
+# r2 carries values, so the same guards fire or short-circuit on it: a rule
+# that never evaluates reads the same on r1 as a correct one, and r2 is what
+# tells them apart.
+
+use default
+
+schema Reading scope logical:
+    entity_id: String key
+    state: Float? mutable
+    qty: Int? mutable
+    divisor: Int mutable
+
+# Fires on r2 (11.0 > 5.0). On r1, `null + 10.0` is null and does not fire; a
+# null read as 0 would give 10.0 > 5.0 and fire.
+rule add:
+    Reading r where r.state + 10.0 > 5.0
+->
+    log info "add fired"
+
+# Unary minus: fires on r2 (-1.0 < 1.0), not on r1.
+rule neg:
+    Reading r where -r.state < 1.0
+->
+    log info "neg fired"
+
+# The Int arm: fires on r2 (6 > -1), not on r1.
+rule mul:
+    Reading r where r.qty * 2 > -1
+->
+    log info "mul fired"
+
+# The positive pin: the arithmetic RESULT is null, so the total test answers
+# true. Fires on r1 only.
+rule add_is_null:
+    Reading r where r.state + 1.0 is null
+->
+    log info "add_is_null fired"
+
+# `null / 0` is null, not DIVIDE_BY_ZERO: the null test precedes the zero test.
+# r1 reaches the division and does not fire; r2's present `qty` makes the
+# guard false first, so the division never runs on a value.
+rule div:
+    Reading r where r.qty is null and r.state / r.divisor < 1.0
+->
+    log info "div fired"
+
+# The same ordering on the integer floor-division arm, as a positive pin.
+# Fires on r1 only; r2's present `state` short-circuits it.
+rule idiv_is_null:
+    Reading r where r.state is null and r.qty // r.divisor is null
+->
+    log info "idiv_is_null fired"

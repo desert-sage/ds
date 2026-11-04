@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.2.1.7_an_opaque_type_under_as_is_that_type",
+    "category": "compiler",
+    "scenario": "[LIMP.2.1.7]: \"Either form may rename an imported name\", and an opaque type is one name, so `from crypto import Key as K` binds `K`, and a slot typed `K` compiles. Its twin, `LIMP.2.1.7_an_opaque_type_under_as_leaves_its_name_unbound`, types the slot by the declared name. The break is the import bound under the declaration's own name, which refuses `K` with DS_VALIDATE_UNKNOWN_TYPE. PATH PINNED: `dsc.imports.limp_7_7_take_item` keeping the binding in `im_opaques`, and `dsc.resolve.imported_types` reading it.",
+    "rules_ds": "from crypto import Key as K\n\nschema Mine scope logical:\n    k: Int key\n    pubkey: K mutable\n\nrule r:\n    Mine\n->\n    log info \"m\"\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

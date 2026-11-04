@@ -1,0 +1,17 @@
+{
+  "id": "IRET.1.4c",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.1",
+  "seq": 130,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "  - [IRET.1.4c] **Enforcement.** Two guards. (1) The\n    refcount-**underflow assertion** in `release` (double-free /\n    lifecycle imbalance) — load-bearing. (2) The pinned-set\n    **freeze**: after setup a new PINNED insert is a hard error.\n    It is **armed** at the setup→runtime boundary (first pump).\n    The freeze's trigger (\"zero runtime pinned inserts\") is exact\n    once the small, program-structure-bounded **first-pump\n    sentinel set** — `\"\"` (a live fact's `corr` on a hydration target) and\n    `$ClockTick` (`ds_rete_engine_tick_clock`), which the\n    engine interns pinned lazily at first pump rather than at\n    load — is **pre-pinned before the freeze arms**. That set is\n    verified complete by enumeration across the asserts-on\n    surfaces. Boundedness is additionally observable via the SI3\n    **pinned watermark** (`ds.intern.pinned_entries`, [NMET.4]),\n    which stays flat under value churn.\n\n",
+  "refs": [
+    "NMET.4"
+  ],
+  "metrics": [
+    "ds.intern.pinned_entries"
+  ]
+}

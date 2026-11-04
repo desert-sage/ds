@@ -1,0 +1,16 @@
+{
+    "id": "RARC.7.15_an_advance_past_the_deadline_retracts_nothing",
+    "clauses": ["RARC.7.15", "RARC.5.6.3"],
+    "category": "temporal",
+    "scenario": "[RARC.7.15], [RARC.5.6.3]: a clock move retracts nothing; an expired fact stays in working memory until the next pump. On the mock clock, a `Pulse` (`scope ttl 50_ms`) is asserted at 1 s and the clock advanced by 100 ms, past its deadline at 1.05 s, and nothing pumps. `temporal_sequence` reads working memory after the last step ([RCTS.1.2.31]), which here is the advance, so the expired `Pulse` is still there: `fact_count_after: 1`. What it discriminates: a runtime that sweeps expired facts when the clock moves counts 0. RTIM.3b's steps end with a pump, so it cannot see this. PATHS: libds's `ds_engine_clock_advance` (clock.c), which moves the mock clock and sweeps nothing; the Mercury runtime's `ds.engine.advance`, which does not call `sweep_expired`.",
+    "rules_ds": "schema Pulse scope ttl 50_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 100000000 }
+        ],
+        "fact_count_after": 1
+    }
+}

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Reading scope logical:
+    id: Int key
+    zone: String mutable
+    level: Int mutable
+
+schema Tagged scope logical:
+    label: String key
+    note: String mutable
+
+rule tag_it:
+    Reading r
+->
+    emit Tagged logical label: "{r.zone}-{r.level:03d}" note: "level {r.level} in {r.zone}"
+    log info "tagged {r.zone}"

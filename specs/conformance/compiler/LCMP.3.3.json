@@ -1,0 +1,7 @@
+{
+    "id": "LCMP.3.3",
+    "category": "compiler",
+    "scenario": "Cross-references in report entries use the spec's paragraph citation IDs per LCMP.3.3. This is a structural contract on the report format; the test pins that the compiler runs (and thus produces cross-referenced entries) on a multi-rule source.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n\nschema Alert scope logical:\n    entity_id: String key\n    level: String mutable\n\nrule high_value:\n    Sensor s where s.val > 90.0\n->\n    emit Alert logical entity_id: s.entity_id level: \"high\"\n\nrule medium_value:\n    Sensor s where s.val > 50.0 and s.val <= 90.0\n->\n    emit Alert logical entity_id: s.entity_id level: \"medium\"\n",
+    "expect": { "kind": "compile_ok" }
+}

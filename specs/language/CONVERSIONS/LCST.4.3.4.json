@@ -1,0 +1,38 @@
+{
+  "id": "LCST.4.3.4",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.3",
+  "seq": 125,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.3.4] **A `null` source converts to `null`, and the conversion is\nnot attempted.** Where the source value of a `::T?` is `null`, the result is\n`null`: the runtime must not hand the absent value to the conversion, and must\nnot raise. This holds for every defined conversion ([LCST.4.5.2]), whatever its\nfallibility, and it is what makes [LCST.4.3.1]'s nullable rows mean anything —\nthe `?` on `S? … ::T?` exists to carry exactly this case, and a runtime that\nrefused it would make a legal program unrunnable the first time the slot was\nabsent.\n\nThe result feeds `??`, Kleene logic and narrowing as any other `T?` does\n([LCST.4.3.3]), so a cast propagates absence the way an operator does\n([LNUL.4.1]) rather than ending the activation.\n\n**This is not [LCST.4.5.4]'s trap.** That carve-out is for a source **value**\nthe target cannot represent — a `Float` with no `Int`, to `Int` — which is a value\nthe conversion was handed and could not convert. `null` is the absence of a\nvalue, so there is nothing to represent and nothing to trap.\n\n",
+  "refs": [
+    "LCST.4.3.1",
+    "LCST.4.3.3",
+    "LCST.4.5.2",
+    "LCST.4.5.4",
+    "LNUL.4.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_2__cast",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null operand under ::T? is null and reaches no conversion: `lcst_4_5_2__convert` is not applied to it, whatever the target."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_3_4__null_source_converts_to_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every target, a null source converts to null and nothing is raised."
+      }
+    ]
+  }
+}

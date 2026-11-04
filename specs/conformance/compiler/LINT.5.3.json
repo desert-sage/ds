@@ -1,0 +1,10 @@
+{
+    "id": "LINT.5.3",
+    "category": "compiler",
+    "scenario": "No interval ordering operators per LINT.5.3. `<`, `>`, `<=`, `>=` are not defined on intervals; intervals do not admit a canonical total order. Authors needing to order intervals write `a.start < b.start`. Pin: `i1 < i2` for two intervals rejects with DS_VALIDATE_INTERVAL_NO_ORDERING.",
+    "rules_ds": "schema Pair scope logical:\n    entity_id: String key\n    a_start: Time mutable\n    a_end: Time mutable\n    b_start: Time mutable\n    b_end: Time mutable\n\nrule trig:\n    Pair p where (p.a_start .. p.a_end) < (p.b_start .. p.b_end)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERVAL_NO_ORDERING"
+    }
+}

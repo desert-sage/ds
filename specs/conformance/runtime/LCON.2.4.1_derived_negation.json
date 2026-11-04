@@ -1,0 +1,14 @@
+{
+    "id": "LCON.2.4.1_derived_negation",
+    "category": "runtime",
+    "scenario": "[LCON.2.4.1] where a negation is decided by facts the same pump derives. A ids 1, 2, 3, 5 in three insertion orders. `derive` emits B(a.id) for every A; `orphan` fires for an A whose predecessor id has no B. While the asserts are queued every `orphan` activation is live (no B exists yet); `derive` is declared first, so all four of its activations fire before any `orphan` ([LDET.5.4]), and each B withdraws the `orphan` activation it negates. Only A(5) has no B(4): four `derive`, one `orphan`, and 4 A + 4 B + 1 C = 9 facts, in every order. A runtime that let insertion order decide when a negated activation is withdrawn fires `orphan` for 2 or 3 in some order and not others.",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n\nschema B scope logical:\n    id: Int key\n\nschema C scope logical:\n    id: Int key\n\nrule derive:\n    A a\n->\n    emit B logical id: a.id\n\nrule orphan:\n    A a where a.id > 1\n    no B b where b.id == a.id - 1\n->\n    emit C logical id: a.id\n",
+    "expect": {
+        "kind": "hash_order_independence",
+        "schema": "A",
+        "slot": "id",
+        "orders": [[1, 2, 3, 5], [5, 3, 2, 1], [2, 5, 1, 3]],
+        "pump": true,
+        "expected_fire_order": ["derive", "derive", "derive", "derive", "orphan"]
+    }
+}

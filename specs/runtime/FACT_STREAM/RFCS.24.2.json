@@ -1,0 +1,25 @@
+{
+  "id": "RFCS.24.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.24",
+  "seq": 962,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.24.2] **Replay delivers the input through the receiving rules.** A\nreplayer meeting an `ExternalAssert` must assert its `fact` as [RFCS.23.7]\nreceives a `FactExternal`, apply `ttl_ns` to the received fact as\n[RFCS.6.2] applies a `FactAssert`'s, and bind the handles in `fact_ids`, in\norder, to the facts that delivery asserts.\n\nReplay starts each input from the working memory the original run had at that\npoint ([LFST.9.2.1]). So [RFCS.23.7]'s first rule, that a live fact equal to an\ninlined copy is the same fact, resolves every reference to the fact it named\nwhen recorded, whether that fact was an input or derived.\n\nA recorded `ExternalAssert` was admitted when it was recorded ([RFCS.24.1]). So\na delivery that refuses, or that asserts a different number of facts than\n`fact_ids` lists, is a replay that has not reproduced the run. The replayer must\nstop with `DS_ERR_FS_DIVERGENCE`.\n\nA halt that stops a delivery part-way ([NCBK.10.4]) is no refusal. `fact_ids`\nlists the facts asserted before the delivery stopped, and a replay that stops at\nthe same fact has re-derived the recorded run's halt: the replayer **must** treat\nit as an outcome ([RFCS.6.7]). A delivery a failed allocation stopped is not a\nfunction of its input, so a replay that does not meet the failure asserts more\nfacts than `fact_ids` lists, and diverges.\n\n",
+  "refs": [
+    "LFST.9.2.1",
+    "NCBK.10.4",
+    "RFCS.23.7",
+    "RFCS.24.1",
+    "RFCS.6.2",
+    "RFCS.6.7"
+  ],
+  "atoms": [
+    "ExternalAssert"
+  ],
+  "errors": [
+    "DS_ERR_FS_DIVERGENCE"
+  ]
+}

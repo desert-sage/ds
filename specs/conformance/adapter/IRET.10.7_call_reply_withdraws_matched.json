@@ -1,0 +1,23 @@
+{
+    "id": "IRET.10.7_call_reply_withdraws_matched",
+    "clauses": ["LGRA.10.1.4"],
+    "category": "adapter",
+    "scenario": "IRET.10.7 / LGRA.10.1.4: `withdraw j` in a call's `on response` body removes the Job the outer rule matched when the reply is processed, not when the call fires. The body logs \"reply\" and then withdraws `j`, and `gone` fires once no Job is left. So the log order is the observable: [\"reply\", \"gone 1\"]. A withdraw at fire time gives [\"gone 1\", \"reply\"], and a withdraw that misses the Job gives [\"reply\"]. PATH PINNED: the compiler captures `j` as a fact reference in the call's capture fact (`dsc.rete` `action_captures`) and lowers the nested withdraw to ACTION_WITHDRAW_BY_ID reading it (`dsc.encode`). libds's action loop resolves the reference with `ds_rete_wm_find_by_id` and retracts it as AUTHOR_WITHDRAWN (`rete/engine.c`).",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg n: Int\n    response SvcReadReply\n\nschema Anchor scope explicit:\n    v: Int\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id cooldown: 1_min as \"c1\"\n        on response.ok == true:\n            log info \"reply\"\n            withdraw j\n\nrule gone:\n    Anchor a\n    no Job\n->\n    log info \"gone {a.v}\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [
+            {
+                "service": "svc.read",
+                "respond_schema": "SvcReadReply",
+                "respond_slots": { "ok": true }
+            }
+        ],
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Anchor", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["reply", "gone 1"]
+    }
+}

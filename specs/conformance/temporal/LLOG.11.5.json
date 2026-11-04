@@ -1,0 +1,15 @@
+{
+    "id": "LLOG.11.5",
+    "category": "temporal",
+    "scenario": "Negation under `logical` is supported per LLOG.11.5 — a rule with a `no Foo` LHS that emits `Bar logical` produces an absence-justified Bar. Asserting Foo makes the negation pattern fail; truth maintenance retracts Bar automatically. After pump (no Trig → Quiet asserted), then assert-Trig + pump: WM has Trig only (1 fact); Quiet auto-retracted via the `(logical (not Trig)) (assert Quiet)` shape.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Quiet scope logical:\n    marker: Int key\n\nrule q:\n    no Trig\n->\n    emit Quiet logical marker: 1\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

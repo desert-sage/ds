@@ -1,0 +1,9 @@
+{
+    "id": "LSER.6.1",
+    "category": "compiler",
+    "scenario": "Companion-slot access per LSER.6.1 \u2014 authors reference maintained statistics on a schema binding via `t.mean`, `t.stdev`, etc. Pin: `where s.mean > 5.0` on a schema with a declared `mean, stdev` series compiles. PINS ONLY THAT IT COMPILES: no value is read.",
+    "rules_ds": "use default\n\nschema SensorData scope ttl 1_min:\n    entity_id: String\n    state: Float\n\nseries SensorData.state (by: entity_id):\n    mean, stdev sliding 10_min\n\nrule high_mean:\n    SensorData s where s.mean > 5.0\n->\n    log info \"high mean\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

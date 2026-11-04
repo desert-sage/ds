@@ -1,0 +1,10 @@
+{
+    "id": "LSMP.3.2a_rate_refused",
+    "category": "compiler",
+    "scenario": "[LSMP.3.2a]: the compiler rejects every aggregation [LSMP.3.2] lists under `sample` with DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH; each is a ✗ with no footnote in [LSER.18.1]. A uniform bag keeps no time span to divide by, so `rate` has no meaning over it. Pin: `rate sample 200` on a Float slot is refused with that code, and nothing else in the program can be refused. PATH PINNED: `dsc.series.undefined_combination(\"rate\", \"sample\")`, reached through `lser_18_1_support`'s `no_semantics` arm.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    reading: Float mutable\n\nseries Sensor.reading:\n    rate sample 200\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH"
+    }
+}

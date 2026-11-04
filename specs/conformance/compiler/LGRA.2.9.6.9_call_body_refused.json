@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.9_call_body_refused",
+    "category": "compiler",
+    "scenario": "LGRA.2.9.6.2 / LGRA.2.9.6.9 — an interpolation body is a name or path; `{len(t.entity_id)}` is an inline call, so the span is not a valid interp_body and is DS_VALIDATE_INTERP_BAD_PATH, never literal text. Drives the Mercury compiler's single site scanner (dsc.strlit) on a body whose leading NAME is followed by `(`, and must not reach a call lowering in dsc.rete.site. The `let n = len(t.entity_id)` then `{n}` form is the admitted spelling.",
+    "rules_ds": "schema T scope logical:\n    entity_id: String key\n\nrule r_len:\n    T t\n->\n    log info \"payload has {len(t.entity_id)} chars\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_PATH"
+    }
+}

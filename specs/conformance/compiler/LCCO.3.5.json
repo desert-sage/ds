@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.3.5",
+    "category": "compiler",
+    "scenario": "A bare `call`, with no continuation clauses and no `as:`, to a `no response` service compiles. PINS ONLY THAT IT COMPILES: LCCO.3.5 says such a call lowers unchanged, with no capture fact and no sibling rule, and `compile_ok` cannot observe that absence.",
+    "rules_ds": "service weather.get_forecasts:\n    kwarg entity_id: String\n    no response\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

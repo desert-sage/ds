@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.17.2_on_refused",
+    "category": "compiler",
+    "scenario": "LCRS.17.2: a call to a `no response` service may not open a response continuation -- nothing comes back to continue on -- and the compiler must reject one (DS_VALIDATE_NO_RESPONSE_CONTINUATION). Pin: `call svc.put ... as \"p\"` with an `on response.ok:` clause, where `svc.put` declares `no response`. Path: the validator's continuation check reads the called service's response line.",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown as \"p\"\n        on response.ok:\n            log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NO_RESPONSE_CONTINUATION"
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.1.1.5_cache_deadline_out_of_range",
+    "category": "logical",
+    "dead_rules_expected": ["reader"],
+    "scenario": "[LTIM.1.1.5]: a rule's `cache ... ttl: 1_h` at a clock of INT64_MAX - 1 s would give the entry a deadline past the `Time` range, so the deadline has no value: one ComputationError of kind NOT_REPRESENTABLE, named for the writing rule, and the activation abandoned at the `cache` action by [LNUL.11.1]'s prefix rule. The action before it stands, the write does not happen, and the action after it does not run. Never wrapped. Steps: `set` the mock clock to INT64_MAX - 1 s; assert Trig 1 (a `logical` schema, so its own assert has no deadline) and pump, so `writer` logs `before`, faults at its `cache`, and `handler` matches the ComputationError fault fact ([LERR.9.1]) and logs its kind and rule; then assert Trig 2 and pump, where `reader` would log if `cached(\"k\")` read the value. Messages: `before`, `NOT_REPRESENTABLE writer`, and nothing else. A runtime that computed the deadline unchecked holds the entry (INT64_MAX - 1 s + 1 h still fits an unsigned 64-bit count), so `writer` logs `after` and `reader` logs `hit`; one that refused the write with a status rather than a fault logs nothing from `handler`. PATH PINNED: libds's `adapter_ds_cache_set` (`rete/adapters.c`), its deadline check after the value's limits; the Mercury runtime's `ds.exec.cache_set_verb`, `cache_deadline_past_range` over `ltim_1_1_5_deadline_past_range`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule writer:\n    Trig t where t.k == 1\n->\n    log info \"before\"\n    cache key: \"k\" value: 1 ttl: 1_h\n    log info \"after\"\n\nrule handler:\n    ComputationError e\n->\n    log info \"{e.kind} {e.rule}\"\n\nrule reader:\n    Trig t where t.k == 2 and cached(\"k\") == \"1\"\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before", "NOT_REPRESENTABLE writer"]
+    }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "RDSC.4a.9.1",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.9",
+  "seq": 510,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.9.1] **A slot or pattern index is a byte, and 255 is a marker or\nnothing.** A schema has at most 255 slots ([LGRA.5.11]) and\na rule at most 255 patterns ([LGRA.8.7]), so an index runs from 0 to 254. Each\nfield is `uint32` on the wire.\n\n**Two fields read 255 as a marker, and the two compose:**\n\n- **a pattern index of 255** — `VarExpr.pattern_index` and `Expr.entry_stamp`\n  — reads the beta's right-side candidate fact rather than a fact of the\n  activation token ([RDSC.4a.7], [IRET.9.3]);\n- **`VarExpr.slot_index = 255`** yields **the fact itself**, as a\n  fact-reference value, rather than one of its slots. The compiler emits it for\n  a bare binding reference (`contributing_track: b`) and for the parent-binding\n  fact address in a capture fact.\n\n`VarExpr(pattern_index = 255, slot_index = 255)` is a legal encoding meaning\n\"the candidate right fact, as a reference\", and is emitted whenever a bare\nbinding names the right-side pattern.\n\n**The other three fields have no marker:** `AlphaTest.slot_index`,\n`SlotAssign.slot_index` and `Action.withdraw_pattern_index`, which names a\npattern of the terminal's own token, where there is no candidate fact.\n\n**A loader must refuse, with `DS_ERR_DSC_SEMANTIC`, an atom holding an index\nits field cannot hold:** above 255 in a field with a marker, or above 254 in one\nwithout. Truncating it would change which fact or slot is read, and a silent\nreinterpretation is the failure mode this format rejects everywhere else. This\nis a cheap structural need of the loader under [RDSC.9.9], not a defence against\na hostile artefact.\n\n**An index within its field's range that names nothing faults where the engine\nuses it.** Such an index, one naming no slot of the\nfact's schema or no pattern of the rule, is not refused at load. Wherever the\nengine uses it, the engine **must** raise an `EngineError`\n(`proto/engine_fault.proto#EngineFault`) naming the node or rule that used it\n([LERR.9.11]), and halt the tier ([LERR.1.4.7]):\n\n- `ENGINE_FAULT_PATTERN_INDEX` for a pattern index, read in an expression or\n  named by a `withdraw` ([RARC.5.3.3]);\n- `ENGINE_FAULT_ARTEFACT_LIED` for a slot index, read by an `AlphaTest` or a\n  `VarExpr` or written by a `SlotAssign`.\n\nThe engine **must not** answer the test `false`, skip the write or drop the\n`withdraw` instead. Each would be a silent reinterpretation.\n\n**An `AlphaTest` that faults is one conjunct of its node's tests.** A test of the\nnode that answers `false` decides the fact wherever it stands, and the engine\nraises the fault only when none does ([LNUL.4.2]). So every conforming runtime\nmeets the fault at the same facts, in whatever order it evaluates the tests.\n\n",
+  "refs": [
+    "IRET.9.3",
+    "LERR.1.4.7",
+    "LERR.9.11",
+    "LGRA.5.11",
+    "LGRA.8.7",
+    "LNUL.4.2",
+    "RARC.5.3.3",
+    "RDSC.4a.7",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_DSC_SEMANTIC"
+  ],
+  "atoms": [
+    "BetaNode",
+    "TerminalNode"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/rete_expr.proto",
+        "name": "VarExpr",
+        "tag": "spec"
+      }
+    ]
+  }
+}

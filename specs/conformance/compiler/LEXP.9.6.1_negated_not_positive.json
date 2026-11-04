@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.9.6.1_negated_not_positive",
+    "category": "compiler",
+    "scenario": "[LEXP.9.6.1] counts POSITIVE patterns, so a rule with one positive pattern and one `no` pattern has no join to retain and keeps its `cached()` read. PATH PINNED: `dsc.validate`'s `lexp_9_6_1_nonfact_where`, whose `positive_count` leaves out a `no` pattern. A version counting patterns rather than positive patterns would refuse this program, and no other vector here would notice.",
+    "rules_ds": "schema Reading scope logical:\n    entity_id: String key\n    state: Float mutable\n\nschema Ack scope ttl 5_min:\n    entity_id: String\n    ts: Time\n\nrule gated:\n    Reading r where cached(\"threshold\") == r.state\n    no Ack within 5_min\n->\n    log warning \"gated\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

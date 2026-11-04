@@ -1,0 +1,16 @@
+{
+  "id": "LUNI.13.10",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.13",
+  "seq": 1420,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.13.10] **The exact-money path refuses rather than wraps, and this is\nthe one arithmetic surface where it does.** An operation on a currency-typed\nvalue whose exact result has no `Int64` representation — a product, a rounding\nat the boundary, or an FX conversion — **must not** produce a wrapped value. It\nraises `NOT_REPRESENTABLE` ([LERR.1.4.9]).\n\n**This is a deliberate exception to [LEXP.7.13.1]**, which makes two's-complement\nwraparound the defined behaviour of `Int` arithmetic and declines to guard it.\nThat rule is right for ordinary integers and wrong here, and the difference is\nthe one [LERR.1.4.9] already draws: wrapping is admissible when the wrapped\nvalue still means something an author can reason about. `INT64_MAX + 1` is an\nalgebra, closed and predictable. A monetary amount that wraps bears no relation\nto the amount it came from, so there is nothing left to reason about — it is the\nsame loss of meaning that puts a failed conversion in `NOT_REPRESENTABLE`\nrather than in the wrapping rule.\n\n",
+  "deferred": true,
+  "refs": [
+    "LERR.1.4.9",
+    "LEXP.7.13.1"
+  ]
+}

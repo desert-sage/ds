@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.14.3_const_fold_raises",
+    "clauses": ["LTIM.14.3"],
+    "category": "compiler",
+    "scenario": "[LTIM.14.3]: the compiler refuses a `const` whose fold would raise [LTIM.14.2]'s fault, with DS_VALIDATE_CONST_NOT_FOLDABLE: `const BAD = calendar.date(2026, 2, 30)` names no day, so the call has no value to fold to. The rest of the program is valid, so the refusal is the `const`'s. PATH PINNED: `dsc.validate`'s `ltim_14_3_raising_calls` over the `const`'s expression, through `dsc.dstest.ltim_14_3_calendar_fold`, which folds the call with `ds.chrono.ltim_14_2_date`, the function the engine evaluates it with.",
+    "rules_ds": "import calendar\n\nconst BAD = calendar.date(2026, 2, 30)\n\nschema Ev scope logical:\n    id: Int key\n\nrule seen:\n    Ev e\n->\n    log info \"seen {e.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.3.1",
+  "category": "logical",
+  "scenario": "Math builtins per LEXP.3 — abs, sqrt, floor, ceil, trunc, sign. `abs` is global; the other five are `math`'s, imported bare ([LIMP.3.3.4]). v=4.0 is a perfect square and exact integer-valued float so all six comparisons are exact.",
+  "rules_ds": "from math import sqrt, floor, ceil, trunc, sign\n\nschema T scope logical:\n    v: Float key\n\nrule r_abs:\n    T t where abs(t.v) == 4.0\n->\n    log critical \"abs\"\n\nrule r_sqrt:\n    T t where sqrt(t.v) == 2.0\n->\n    log critical \"sqrt\"\n\nrule r_floor:\n    T t where floor(t.v) == 4\n->\n    log critical \"floor\"\n\nrule r_ceil:\n    T t where ceil(t.v) == 4\n->\n    log critical \"ceil\"\n\nrule r_trunc:\n    T t where trunc(t.v) == 4\n->\n    log critical \"trunc\"\n\nrule r_sign:\n    T t where sign(t.v) == 1\n->\n    log critical \"sign\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 4.0 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_abs", "r_sqrt", "r_floor", "r_ceil", "r_trunc", "r_sign"]
+  }
+}

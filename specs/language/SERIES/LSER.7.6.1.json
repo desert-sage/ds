@@ -1,0 +1,21 @@
+{
+  "id": "LSER.7.6.1",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.7.6",
+  "seq": 819,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.7.6.1] Every series carries state per identity. That\nidentity is **declared, never inferred from a slot's name or\nfrom an absence**: it is named explicitly with `by: <slot>` in\nthe block-options on the declaration, or follows the schema's\ndeclared identity when `by:` is omitted:\n\n- on a **`logical`** schema whose key is exactly one slot, an\n  omitted `by:` groups by that slot ([LFAC.1.7]). A schema whose\n  key is ∅ (every slot `mutable`) has no declared identity to\n  follow, and the compiler must reject the declaration with\n  `DS_VALIDATE_SERIES_NO_IDENTITY_SLOT` ([LSER.10.13]).\n  `by: none` ([LSER.7.6.2]) is the explicit way to ask for a\n  single global allocation.\n- on a **`logical`** schema whose key is several slots, there is\n  no default either: a composite key is not an identity a series\n  can follow ([LSER.10.13] binds one slot), and the compiler must\n  reject an omitted `by:` with the same code. The author names the\n  one slot to group by, or `by: none`.\n- on a schema of any other lifecycle (**`ttl`**, **`explicit`**,\n  **`activation`**), which carries no identity markers\n  ([LFAC.1.7.6]), there is no default: the declaration must\n  name `by: <slot>` (or `by: none`) explicitly, and the compiler\n  must reject an omitted `by:` with the same code.\n\nThe compiler errors on any `by:` naming a slot the schema does not\nhave. `entity_id` is an ordinary slot name with no\nseries-grouping privilege.\n\n**One slot, and a composite key does not widen it.** A series row\nis keyed on one identity value; grouping by a tuple would put\ntuple construction and comparison on the absorb path of every\nseries, for a schema shape an author can express instead by\ncarrying the composite value in a slot of its own. Taking the\nfirst `key` slot of a composite instead would silently merge entities\nthat differ only in the slots it drops, and that is the reading this\nclause refuses.\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LFAC.1.7.6",
+    "LSER.10.13",
+    "LSER.7.6.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_SERIES_BAD_IDENTITY_SLOT",
+    "DS_VALIDATE_SERIES_NO_IDENTITY_SLOT"
+  ]
+}

@@ -1,0 +1,17 @@
+# A cooldown against the control `plain`. Three changes 10 s apart, inside
+# `cooled`'s 30 s, fire it once. The pump at t=90 with nothing new fires
+# neither: a cooldown suppresses, it does not defer. The change at t=150 is
+# past the window and fires `cooled` again.
+assert Sensor entity_id=s reading=1
+pump
+advance 10000000000
+assert Sensor entity_id=s reading=2
+pump
+advance 10000000000
+assert Sensor entity_id=s reading=3
+pump
+advance 70000000000
+pump
+advance 60000000000
+assert Sensor entity_id=s reading=4
+pump

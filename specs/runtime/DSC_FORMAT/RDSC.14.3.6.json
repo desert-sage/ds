@@ -1,0 +1,21 @@
+{
+  "id": "RDSC.14.3.6",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.14.3",
+  "seq": 1505,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.14.3.6] **`LineSpan`-emission scope.** The compiler must emit one\n`LineSpan` atom per **beta** and **terminal** node it attributes to a source\nconstruct ([RDSC.14.3.4]) — the rule-authored-construct nodes — and **none per\nalpha** node. A beta node carries its introducing pattern's join tests and maps\nto that pattern's source span; a terminal carries the rule's RHS and maps to\nthe rule's source span.\n\nA node the compiler makes for itself carries none, and the compiler must not\ninvent a position for one: a capture view, a continuation's response pattern, a\ntimer's beta, and the terminal of an `after` follow-up or of a call's sibling\nrule. Such a node is the compiler's, and a position given to it would point a\nruntime diagnostic at source that does not contain the node.\n\nAn alpha node carries no `LineSpan` atom because it **belongs to no single\nrule**. Its identity is `(schema_name, tests)` ([IRET.6.6]), so every\npattern in the bundle whose schema and tests coincide shares one node,\nand a shared node has no single source span to name. Its source is the\nschema declaration, attributed by `SchemaSource` ([RDSC.5.7]).\n\nThat reason is deliberately **independent of what an alpha carries**.\nAn alpha node may carry tests — [RDSC.4a.6] is the normative statement\nof the test list, and a `where`-predicate over one fact and a constant\ndoes lower onto one — so this rule must not be derived from an alpha\nhaving no tests, nor from a rule-authored predicate never reaching one.\nSharing is the property that holds either way, so it is the one the rule\nrests on.\n\nA predicate hoisted onto a shared alpha therefore has no `LineSpan` of its\nown. It is not thereby unattributable: the pattern that introduced it\nis named by that pattern's own beta `LineSpan`, and the schema by `SchemaSource`. A\ndiagnostic naming a predicate's source reads the beta, never the alpha.\n\nThe `node_id` namespace remains `AlphaNode` / `BetaNode` / `TerminalNode`-global\n([RDSC.14.3.3]); only the `LineSpan`-bearing subset is beta + terminal.\n\n",
+  "refs": [
+    "IRET.6.6",
+    "RDSC.14.3.3",
+    "RDSC.14.3.4",
+    "RDSC.4a.6",
+    "RDSC.5.7"
+  ],
+  "atoms": [
+    "SchemaSource"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LCST.4.5.2_cast_to_unit_alias_ok",
+    "category": "compiler",
+    "scenario": "LCST.4.5.2 / LUNI.8.7.1 — a unit ALIAS is a valid `::<unit>` cast target: aliases are registered as unit symbols, so `s.raw::degC` (degC aliases celsius) is a legal Float→unit cast and carries the temperature dimension, admitting the same-dim compare against 30_celsius. Alias targets resolve through the unit symbol table.",
+    "rules_ds": "unit celsius: temperature = x + 273.15 alias degC\n\nschema Sensor scope logical:\n    raw: Float key\n\nrule warm:\n    Sensor s where s.raw::degC > 30_celsius\n->\n    log info \"warm via alias cast\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

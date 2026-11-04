@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.4.2.2",
+    "category": "compiler",
+    "scenario": "Sub-day duration on Date per LTIM.4.2.2 — adding a `Duration` to a `Date` requires the duration to be a whole multiple of 24 hours. Sub-day additions reject. Pin: `some_date + 12_h` rejects with DS_VALIDATE_DATE_SUBDAY_ARITHMETIC; the diagnostic should point at `Date` having no time-of-day.",
+    "rules_ds": "schema Sched scope logical:\n    entity_id: String key\n    d: Date mutable\n    target: Date mutable\n\nrule trig:\n    Sched s where s.target == s.d + 12_h\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DATE_SUBDAY_ARITHMETIC"
+    }
+}

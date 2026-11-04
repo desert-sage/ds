@@ -1,0 +1,21 @@
+{
+    "id": "RFCS.6.7_host_retract_fault_follows_retract",
+    "category": "logical",
+    "scenario": "[RFCS.6.7]: a host retract is recorded on arrival, before the faults it raises and the withdrawals it cascades into. The program is a released trap: `a1` passes the NOT node, `b1` with the same key blocks it, and `c1` with y = 0 arrives while the C node holds no left token, so nothing is evaluated. Retracting `b1` releases `(a1)`, the pair `((a1), c1)` is derived for the first time, and `c1.x / c1.y` traps (an all-Int division [LEXP.7.15.1]); `r` does not fire. So the only computation_error in the run is the retraction's, and it must follow the retraction's fact_retract. PATH PINNED: libds's retract bridge (wm_rete_bridge.c ds_rete_wm_retract_bridge), whose recorder holds a fault raised while the retraction propagates (ds_recorder_hold_faults) until the FACT_RETRACT is out; Mercury's ds.engine host_retract, held to the same order by test_ds's check_released_trap_order and by the runtime differential (74_released_trap).",
+    "rules_ds": "schema A scope logical:\n    k: String key\n\nschema B scope logical:\n    k: String key\n\nschema C scope logical:\n    id: String key\n    x: Int mutable\n    y: Int mutable\n\nrule r:\n    A a\n    no B b where b.k == a.k\n    C c where c.x / c.y > 1.0\n->\n    log info \"r fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "k": "k1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "B", "slots": { "k": "k1" }, "as": "b1" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "C", "slots": { "id": "c1", "x": 1, "y": 0 } },
+            { "op": "pump" },
+            { "op": "retract", "label": "b1" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["fact_retract", "computation_error"]
+    }
+}

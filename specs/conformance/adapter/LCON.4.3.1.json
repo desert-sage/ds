@@ -1,0 +1,22 @@
+{
+    "id": "LCON.4.3.1",
+    "clauses": ["LTES.12.4"],
+    "category": "adapter",
+    "scenario": "LCON.4.3.1 adapter-mock contract — the harness supplies a mocked `call` response for the (svc.read) service. A rule calls svc.read with correlation \"corr1\" and an `on response.ok == true` continuation; the catalogue mock asserts the service's own response fact, SvcReadReply(corr=\"corr1\", ok=true) ([LCRS.4.3.2]), when the call fires, so the continuation runs and logs. Pins that adapter calls return the mocked response (LCON.4.3.2) with no real adapter traffic.",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg entity_id: String\n    response SvcReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 1_min as \"corr1\"\n        on response.ok == true:\n            log info \"got response\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [
+            {
+                "service": "svc.read",
+                "respond_schema": "SvcReadReply",
+                "respond_slots": { "ok": true }
+            }
+        ],
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "dev1" } },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["got response"]
+    }
+}

@@ -1,0 +1,177 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.computer — computer engineering units
+#
+# length is a baked units.core base axis (ambient via the implicit preload,
+# [LUNI.4.1.2]); no si import needed.
+#
+# Intended scope: embedded systems, firmware, and real-time rules that reason
+# about data sizes, link throughput, signal propagation, and compute/comms
+# energy budgets. Not intended for OS-level storage accounting or benchmarking
+# frameworks — those belong in host-side tooling, not embedded rule engines.
+#
+# Binary vs decimal prefixes: this module follows IEC 80000-13 (2008).
+#   kilobyte  = 1000 bytes  (SI decimal, as used in storage capacity specs)
+#   kibibyte  = 1024 bytes  (IEC binary, as used in addressing and RAM sizing)
+# The alias `KB` is intentionally not declared — it is ambiguous across
+# vendors and contexts. Authors who need it declare it locally with an
+# explicit value.
+#
+# Separate dimensions for physically distinct quantities that share a
+# dimensional formula (same policy as Hz ≠ Bq, Gy ≠ Sv):
+#   energy_per_bit         — communication cost (J per transmitted bit)
+#   energy_per_flop        — floating-point compute cost (J per FLOP)
+#   energy_per_mac         — multiply-accumulate cost (J per MAC, edge ML)
+#   energy_per_instruction — ISA instruction cost (J per instruction, MCUs)
+#   request_rate           — RPS; 1/s but ≠ Hz, ≠ Bq
+#   transaction_rate       — TPS; 1/s, ≠ RPS, ≠ QPS
+#   query_rate             — QPS; 1/s, ≠ RPS, ≠ TPS
+# Adding a signal frequency to a transaction rate is a compile error.
+
+# ── Dimensions ────────────────────────────────────────────────────────────────
+
+unit dimension data                  storage int64    base bit
+unit dimension data_rate             storage float64  base bit_per_second
+unit dimension symbol_rate           storage float64  base baud
+unit dimension energy_per_bit        storage float64  base joule_per_bit
+unit dimension energy_per_flop       storage float64  base joule_per_flop
+unit dimension energy_per_mac        storage float64  base joule_per_mac
+unit dimension energy_per_instruction  storage float64  base joule_per_instruction
+unit dimension compute_efficiency    storage float64  base operations_per_joule
+unit dimension request_rate          storage float64  base requests_per_second
+unit dimension transaction_rate      storage float64  base transactions_per_second
+unit dimension query_rate            storage float64  base queries_per_second
+
+# ── Data (information quantity) ───────────────────────────────────────────────
+# Base: bit. Storage: int64 (data sizes are always integers in practice).
+# int64 max ≈ 9.2×10¹⁸ bits; pebibyte = 9×10¹⁵ bits fits; exbibyte overflows.
+
+unit bit:      data                          label "bit"  alias b
+unit nibble:   data  = x * 4                label "nibble"
+unit byte:     data  = x * 8               label "byte"  alias B
+
+# IEC 80000-13 binary prefixes (powers of 1024)
+unit kibibyte: data  = x * 8_192                     label "KiB"  alias KiB
+unit mebibyte: data  = x * 8_388_608                 label "MiB"  alias MiB
+unit gibibyte: data  = x * 8_589_934_592             label "GiB"  alias GiB
+unit tebibyte: data  = x * 8_796_093_022_208         label "TiB"  alias TiB
+unit pebibyte: data  = x * 9_007_199_254_740_992     label "PiB"  alias PiB
+
+unit kibibit:  data  = x * 1_024                     label "Kib"  alias Kib
+unit mebibit:  data  = x * 1_048_576                 label "Mib"  alias Mib
+unit gibibit:  data  = x * 1_073_741_824             label "Gib"  alias Gib
+unit tebibit:  data  = x * 1_099_511_627_776         label "Tib"  alias Tib
+
+# SI decimal prefixes (powers of 1000) — used in storage capacity, network specs
+unit kilobyte:  data  = x * 8_000                    label "kB"   alias kB
+unit megabyte:  data  = x * 8_000_000                label "MB"   alias MB
+unit gigabyte:  data  = x * 8_000_000_000            label "GB"   alias GB
+unit terabyte:  data  = x * 8_000_000_000_000        label "TB"   alias TB
+unit petabyte:  data  = x * 8_000_000_000_000_000    label "PB"   alias PB
+
+unit kilobit:   data  = x * 1_000                    label "kb"   alias kb
+unit megabit:   data  = x * 1_000_000                label "Mb"   alias Mb
+unit gigabit:   data  = x * 1_000_000_000            label "Gb"   alias Gb
+unit terabit:   data  = x * 1_000_000_000_000        label "Tb"   alias Tb
+
+# ── Data rate ─────────────────────────────────────────────────────────────────
+# Base: bit_per_second. Network speeds always use SI decimal prefixes.
+# Baud (symbols/second) is a separate dimension — see symbol_rate below.
+
+unit bit_per_second:      data_rate                          label "bps"   alias bps
+unit kilobit_per_second:  data_rate  = x * 1_000            label "kbps"  alias kbps
+unit megabit_per_second:  data_rate  = x * 1_000_000        label "Mbps"  alias Mbps
+unit gigabit_per_second:  data_rate  = x * 1_000_000_000    label "Gbps"  alias Gbps
+unit terabit_per_second:  data_rate  = x * 1_000_000_000_000  label "Tbps"  alias Tbps
+
+unit byte_per_second:      data_rate  = x * 8               label "Bps"   alias Bps
+unit kilobyte_per_second:  data_rate  = x * 8_000           label "kBps"  alias kBps
+unit megabyte_per_second:  data_rate  = x * 8_000_000       label "MBps"  alias MBps
+unit gigabyte_per_second:  data_rate  = x * 8_000_000_000   label "GBps"  alias GBps
+
+# ── Symbol rate ───────────────────────────────────────────────────────────────
+# Baud = symbols per second. Separate dimension from data_rate.
+# A QPSK link at 1 MBaud carries 2 Mbps — baud and bps are not interchangeable.
+
+unit baud:      symbol_rate                         label "Bd"   alias Bd
+unit kilobaud:  symbol_rate  = x * 1_000           label "kBd"  alias kBd
+unit megabaud:  symbol_rate  = x * 1_000_000       label "MBd"  alias MBd
+unit gigabaud:  symbol_rate  = x * 1_000_000_000   label "GBd"  alias GBd
+
+# ── Length extensions — signal propagation ────────────────────────────────────
+# Light travels ~29.98 cm in 1 ns (c = 299,792,458 m/s, exact).
+# Used to reason about PCB trace lengths, memory bus timing, cable delays.
+# 1 DRAM DIMM ≈ 1 light-nanosecond; a 30 cm trace ≈ 1 light-nanosecond.
+
+unit light_nanosecond: length  = x * 0.299792458    label "lt-ns"
+unit light_picosecond: length  = x * 0.000299792458 label "lt-ps"
+
+# ── Energy per bit (communication) ───────────────────────────────────────────
+# Typical ranges: LoRa ~50 nJ/bit, BLE ~5 nJ/bit, 802.15.4 ~1 nJ/bit.
+
+unit joule_per_bit:      energy_per_bit                         label "J/bit"
+unit millijoule_per_bit: energy_per_bit  = x / 1_000           label "mJ/bit"
+unit microjoule_per_bit: energy_per_bit  = x / 1_000_000       label "µJ/bit"  alias µJ_per_bit, uJ_per_bit
+unit nanojoule_per_bit:  energy_per_bit  = x / 1_000_000_000   label "nJ/bit"  alias nJ_per_bit
+unit picojoule_per_bit:  energy_per_bit  = x / 1_000_000_000_000  label "pJ/bit"  alias pJ_per_bit
+
+# ── Energy per FLOP (floating-point compute) ──────────────────────────────────
+# Typical ranges: embedded FPU ~100 pJ/FLOP, mobile GPU ~1 pJ/FLOP,
+# data-centre GPU ~0.1–1 pJ/FLOP, leading-edge NPU approaching fJ/FLOP.
+
+unit joule_per_flop:        energy_per_flop                              label "J/FLOP"
+unit millijoule_per_flop:   energy_per_flop  = x / 1_000                label "mJ/FLOP"
+unit microjoule_per_flop:   energy_per_flop  = x / 1_000_000            label "µJ/FLOP"  alias µJ_per_flop, uJ_per_flop
+unit nanojoule_per_flop:    energy_per_flop  = x / 1_000_000_000        label "nJ/FLOP"  alias nJ_per_flop
+unit picojoule_per_flop:    energy_per_flop  = x / 1_000_000_000_000    label "pJ/FLOP"  alias pJ_per_flop
+unit femtojoule_per_flop:   energy_per_flop  = x / 1_000_000_000_000_000  label "fJ/FLOP"  alias fJ_per_flop
+
+# ── Energy per MAC (multiply-accumulate, edge ML) ─────────────────────────────
+# MAC is the key operation for neural network inference on edge accelerators.
+# Typical ranges: microcontroller SW ~1 nJ/MAC, dedicated NPU ~0.1–10 pJ/MAC.
+
+unit joule_per_mac:       energy_per_mac                                  label "J/MAC"
+unit microjoule_per_mac:  energy_per_mac  = x / 1_000_000                label "µJ/MAC"  alias µJ_per_mac, uJ_per_mac
+unit nanojoule_per_mac:   energy_per_mac  = x / 1_000_000_000            label "nJ/MAC"  alias nJ_per_mac
+unit picojoule_per_mac:   energy_per_mac  = x / 1_000_000_000_000        label "pJ/MAC"  alias pJ_per_mac
+unit femtojoule_per_mac:  energy_per_mac  = x / 1_000_000_000_000_000    label "fJ/MAC"  alias fJ_per_mac
+
+# ── Energy per instruction (MCU / ISA level) ──────────────────────────────────
+# Typical ranges: high-performance MCU ~100 pJ/insn, ultra-low-power ~10 nJ/insn.
+
+unit joule_per_instruction:       energy_per_instruction                           label "J/insn"
+unit millijoule_per_instruction:  energy_per_instruction  = x / 1_000             label "mJ/insn"
+unit microjoule_per_instruction:  energy_per_instruction  = x / 1_000_000         label "µJ/insn"  alias µJ_per_insn, uJ_per_insn
+unit nanojoule_per_instruction:   energy_per_instruction  = x / 1_000_000_000     label "nJ/insn"  alias nJ_per_insn
+unit picojoule_per_instruction:   energy_per_instruction  = x / 1_000_000_000_000 label "pJ/insn"  alias pJ_per_insn
+
+# ── Compute efficiency (ops per joule) ────────────────────────────────────────
+# Inverse of energy_per_flop. Published by vendors as TOPS/W (AI accelerators)
+# or DMIPS/mW (MCUs). Higher is better.
+#   1 TOPS/W = 10¹² ops/J
+#   1 GOPS/W = 10⁹ ops/J
+#   MIPS/mW  = 10⁹ ops/J (≡ GOPS/W)
+
+unit operations_per_joule:       compute_efficiency                              label "ops/J"
+unit kilo_operations_per_joule:  compute_efficiency  = x * 1_000                label "kops/J"
+unit mega_operations_per_joule:  compute_efficiency  = x * 1_000_000            label "Mops/J"
+unit giga_operations_per_joule:  compute_efficiency  = x * 1_000_000_000        label "Gops/J"  alias GOPS_per_watt
+unit tera_operations_per_joule:  compute_efficiency  = x * 1_000_000_000_000    label "Tops/J"  alias TOPS_per_watt
+
+# Inverting formula pair: energy_per_flop ↔ compute_efficiency.
+# More efficient chips have lower J/FLOP and higher ops/J — monotone decreasing.
+
+# ── Request rate ─────────────────────────────────────────────────────────────
+# Dimensionally 1/s like Hz and becquerel, but physically distinct.
+# Adding a signal frequency to a transaction rate is a compile error, and so is
+# adding a transaction rate to a query rate: each counts a different thing.
+
+unit requests_per_second:      request_rate                         label "req/s"  alias rps, RPS
+unit transactions_per_second:  transaction_rate                     label "txn/s"  alias tps, TPS
+unit queries_per_second:       query_rate                           label "qps"    alias qps, QPS
+unit kilorequest_per_second:   request_rate  = x * 1_000           label "kreq/s" alias krps
+unit megarequest_per_second:   request_rate  = x * 1_000_000       label "Mreq/s" alias Mrps
+
+unit formula flop_efficiency  inverting implicit:
+    energy_to_efficiency(x: joule_per_flop): operations_per_joule  = 1.0 / x
+    efficiency_to_energy(x: operations_per_joule): joule_per_flop  = 1.0 / x

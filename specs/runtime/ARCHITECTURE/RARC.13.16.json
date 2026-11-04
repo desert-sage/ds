@@ -1,0 +1,115 @@
+{
+  "id": "RARC.13.16",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.13",
+  "seq": 1296,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RARC.13.16] **The engine is not re-entrant.** Under synchronous\n  delivery ([RARC.5.8.7]) a callback runs on the pump's own stack holding\n  a live engine handle, so re-entry is invited by the design rather than\n  merely possible. Any `ds_engine_*` call on the engine that invoked the\n  callback returns `DS_ERR_STATE`. **Every call, not only the\n  mutating ones:** a read taken from\n  inside a callback observes a pump in progress — some activations\n  fired and some not, the agenda part-drained — and a torn snapshot\n  is worse than a refusal, because nothing about it announces that\n  it is torn.\n\n  Re-entering a **different** engine is the intended pattern and is\n  unaffected. It is what [RARC.13.6]'s same-tier emit-and-match and\n  [RARC.2.4.2]'s co-located tiers are built on, and it is why the\n  rule has to be stated: an integrator writing the obvious cross-tier\n  bridge eventually points it at the same engine, by configuration\n  error or in a single-tier deployment.\n\n  [NLFC.8.2]'s refusal of `ds_engine_clone` mid-pump is this rule applied\n  to one call: the reason clone refuses is the reason every call refuses.\n\n  Detection is an obligation, not a courtesy. Without it the failure\n  is memory corruption — working memory mutated while the network\n  propagates, `seq` allocated from inside an event that has not\n  finished being recorded — and the integrator gets no diagnostic at\n  the point of the mistake. This is the invariant that protects the\n  engine core's being a pure function of its inputs.\n\n  **That purity claim is bounded rather than bare, and the bound is the\n  point.** It quantifies over exactly four observables — the return value,\n  the effect list, the event stream delivered to callbacks, and any\n  `ds_engine_*` read — and says the mutation is **unobservable through\n  those**. It does not say the engine does not mutate; it mutates heavily.\n\n  ⚠ **Timing is excluded, and must be.** A declared `pump_wcet` cap\n  ([RTCT.7.1]) makes wall-clock a caller-visible quantity, so a purity claim\n  quantifying over timing would simply be false.\n\n  **Its load-bearing lemma is refinement.** The pump's cycle, with the\n  integrator's callbacks run between its steps, reaches the working memory\n  and delivers the event sequence of a single step computed from the engine\n  state and the queued inputs, in every interleaving. The refusal above is\n  what carries it: with every mid-pump call refused, a callback's only\n  observation of the pump is the events it is handed, in their order, so no\n  intermediate state that no single step has can reach the caller. That\n  nothing **leaks** — no caller-reachable handle aliases engine state, the\n  queue is the only channel — is less than this: the two part exactly where\n  an implementation has intermediate states with no atomic counterpart.\n\n  ⚠ **And two of its premises are not the engine's to keep.** Single-writer\n  exclusion is the integrator's duty: [NLFC.3.3] makes a concurrent pump and\n  assert undefined behaviour, so the refinement **assumes the exclusion it\n  reasons about**, and nothing in C enforces it. [NLFC.2.2]'s eventual return is\n  conditional on weak fairness in the scheduler, which is an assumption about\n  the host rather than a property of the engine.\n\n",
+  "refs": [
+    "NLFC.2.2",
+    "NLFC.3.3",
+    "NLFC.8.2",
+    "RARC.13.6",
+    "RARC.2.4.2",
+    "RARC.5.8.7",
+    "RTCT.7.1"
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__Drain",
+        "tag": "spec",
+        "note": "THE ATOMIC STEP: the pump as a pure function of working memory and the agenda -- the firing iterated to an empty agenda -- returning the working memory it leaves and the events it delivers, in order. What the fine-grained pump is held to."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__ENGINE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__PumpBegin",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__PumpReturn",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__ReentrantAssert",
+        "tag": "spec",
+        "note": "A callback's assert into the engine that called it: refused with DS_ERR_STATE in the clause's engine; accepted by the engine the `.teeth.reentrant_assert.` config runs, which breaks the refinement."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__ReentrantRead",
+        "tag": "spec",
+        "note": "A callback's read of the engine that called it: refused with DS_ERR_STATE in the clause's engine, every call and not only the mutating ones; served by the engine the `.teeth.torn_reads.` config runs, which breaks the refinement."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__expected",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__observed",
+        "tag": "spec",
+        "note": "The caller's observations of a pump: the events its stream callback received, in delivery order, and the result of any read the engine served. The effect list and the event stream are one channel here; a refused call adds nothing, a constant refusal being a function of no engine state."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__pump_refines_step",
+        "tag": "derives",
+        "verdict": "partial",
+        "note": "THE REFINEMENT, on the fragment the model draws: one rule (a fact f emits f + STEP), no fault, cap, clock, TTL, retraction or truth maintenance, the integrator's asserts serialised between pumps ([NLFC.3.3] assumed, as the clause says), one read and one assert attempt per pump at any point of it. In every interleaving the pump's return hands the caller the atomic step's event sequence and working memory, and the return value is DS_OK throughout; the engines that serve a mid-pump read, accept a mid-pump assert or deliver an action's event off its site each break it (the `.teeth.` configs, run on every run of the lane), and the `.scope.two_chains.` config runs it with two cascades interleaving. `partial`: the clause's claim is over the whole engine and every call's callbacks; this is a pump's, on that fragment."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__pumping",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__refused",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__tried",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_13_16__vars",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LIMP.13.1_a_re_export_keeps_the_declaring_librarys_name",
+    "category": "logical",
+    "scenario": "[LIMP.13.1]: \"A schema reached through a re-export ([LIMP.4.4.1]) has the own name the library that declares it gives it.\" Library `a` declares `X`, library `b` does `from a import X`, and the program does `from b import X`. The host asserts `a.X`, and the rule fires once: exactly [\"x 1\"]. A compiler that named the schema for the library it was reached through writes `b.X`, and the assert is refused as an unknown schema. PATH PINNED: `dsc.imports.limp_13_1_own_names`, set on `a`'s tree, which `b`'s surface carries unchanged.",
+    "rules_ds": "from b import X\n\nrule r:\n    X x\n->\n    log info \"x {x.v}\"\n",
+    "libraries": {
+        "a": "schema X scope ttl 1_h:\n    v: Int\n",
+        "b": "from a import X\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.X", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["x 1"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.2_unannotated_integral_refused",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: `integral` changes dimension, so a `let` whose value reads it over a slot that carries a unit must carry a type annotation naming a unit. `q` is a `meter` slot, so `let x = f.integral` names a value of dimension length × time that DS cannot spell, and carries no annotation: refused with DS_VALIDATE_DIM_AGG_UNANNOTATED. PATH: dsc.validate's `luni_9_2_unannotated`, called from `luni_8_4_let_binding` for an unannotated `let`, which finds the read through dsc.typecheck's `luni_9_2_unit_changing_read` (the companion-slot form) on a value the walk types `ty_unknown`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f\n->\n    let x = f.integral\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "LGRA.9.8.4",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.9.8",
+  "seq": 1277,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.9.8.4] **Let purity tiers.** Every expression that may appear\nin a `let` RHS belongs to one of two tiers\ndistinguishing its evaluation cost / observability:\n\n- **Pure** — slot access, arithmetic, comparison,\n  logical operators, Json introspection (`len`, `has`).\n  Inlined at every reference site at compile time;\n  no runtime artefact corresponds to the `let`.\n- **Sync-impure** — `now()`, `monotonic_ns()` and\n  `cached(key)`. Bound once per rule activation at the\n  start of the RHS so subsequent references see the same\n  value; cheap to evaluate (no I/O), but the bind-once\n  semantics are author-visible.\n\nThe tier of a let's expression determines the lowering\nstrategy. Pure expressions inline; sync-impure expressions\nare bound once at RHS entry and referenced at use sites.\n\nA construct in the action block\nthat decides whether the rule fires, and how often, belongs\non the left-hand side where the pattern and its `no` twin\nare written openly.\n\n"
+}

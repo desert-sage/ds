@@ -1,0 +1,13 @@
+{
+    "id": "LTHE.4.5_qualified_no_ts",
+    "category": "compiler",
+    "scenario": "LTHE.4.5 — every schema in a `then` sequence must declare a `ts` slot, and the schemas may be a library's: the anchor `plant.Door` declares none, the follower `plant.Motion` does, both reached by qualified heads. DS_VALIDATE_WITHIN_NO_TS_SLOT, naming `Door`. A check that finds no fields on a qualified head compiles the sequence. PATH PINNED: `dsc.validate.lthe_4_5_body_ts` through `dsc.resolve.lgra_22_4_schema_of` (LTHE.4.5 is the local case).",
+    "rules_ds": "import plant\n\nrule entry:\n    plant.Door\n    then plant.Motion within 30_s\n->\n    log info \"entry\"\n",
+    "libraries": {
+        "plant": "schema Door scope logical:\n    entity_id: String key\n\nschema Motion scope logical:\n    entity_id: String key\n    ts: Time\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHIN_NO_TS_SLOT"
+    }
+}

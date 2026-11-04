@@ -1,0 +1,25 @@
+{
+    "id": "RFCS.15.3_one_call_issued_per_call",
+    "clauses": ["RFCS.15.1", "RFCS.11.3"],
+    "category": "runtime",
+    "scenario": "[RFCS.15.3]: the recorder writes exactly one `CallIssued` per call the engine issues, inside the firing that issued it ([RFCS.11.3]). One host assert fires `r`, whose RHS calls `svc.put` twice; the integrator's callback accepts both. The firing is RuleFireAnnotation, CallIssued, CallIssued, RuleFireAnnotation. Break: a recorder that wrote one atom for both calls, or none, or outside the bracket, changes the list. The stream's head announces five schemas: `CallError` (four slots), which every program with a `call` carries ([LIMP.12.2]); the two fault schemas; `TimeZoneOffset` (four slots), which every program carries ([LIMP.12.2]); and `Trig`, in the artefact's order. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown\n    call svc.put id: 2 nocooldown\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "CallIssued", "CallIssued", "RuleFireAnnotation"
+        ]
+    }
+}

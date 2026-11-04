@@ -1,0 +1,119 @@
+{
+  "id": "NTST.3.3",
+  "prefix": "NTST",
+  "doc": "TESTING.md",
+  "parent": "NTST.3",
+  "seq": 163,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NTST.3.3] A mock-clock mutation sets the mock clock and is not itself a\nsample ([LTIM.2.8.4]): it emits no event and records nothing. The next input\nor pump samples the clock source, reads the value the mutation left, and\nrecords it as a `ClockAdvance` carrying both clocks when it differs from the\nprevious sample ([LTIM.2.8.5], [RFCS.10.1]), with the `DS_EV_TICK` stream\nevent that sample drives. So a test writes the trace a live run through the\nsame clock values writes, and two mutations between samples leave one record.\n\n",
+  "refs": [
+    "LTIM.2.8.4",
+    "LTIM.2.8.5",
+    "RFCS.10.1"
+  ],
+  "symbols": [
+    "DS_EV_TICK"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "Ntst_3_3__event",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A step of a mock run: a clock move, or an input."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ltim_2_8_5__record_at_samples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RECORDED AT SAMPLES, the clauses' reading: a move writes nothing; at an input the sample is recorded if it differs from the one recorded before, by TwoClocks.idr's step. The tick's `DS_EV_TICK` event and `seq` are not modelled."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__consume",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Consuming an input: the clocks stand, and the engine has consumed one."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__cur",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sample the mock holds: its own clocks. In mock mode the engine's clocks are the mock's."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__held",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SAMPLES HELD AT THE INPUTS of a run: one per input, the mock's clocks as they then stand."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__live_at_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A live clock source whose sample at the one input is (2, 2): the values the mock run reaches. A fixture."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__live_trace_is_at_samples",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE RECORDED AT SAMPLES IS THE LIVE ENGINE'S through the same values: TwoClocks.idr's recorder on that source, one input, writes the same two atoms. 'A test writes the trace a live run through the same clock values writes', computed."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__mock_replay_at_mutations",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RECORDED AT MUTATIONS, A REPLAY FROM ANY STARTING CLOCKS HOLDS AT EVERY INPUT WHAT THE RECORDING HELD, for every mock run. Both readings replay exactly; which trace a mock run leaves is not a question of soundness."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__mock_replay_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Recorded at mutations, a replay whose clocks are the mock's holds what the run held: every move is written as it is made, so the replay's clocks are the mock's at every input."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__mock_traces_differ",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACES DIFFER: three atoms recorded at mutations, two at samples -- 'two mutations between samples leave one record' under the clause's recorder, and two under the refused one. Computed."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__record_at_mutations",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "RECORDED AT MUTATIONS, the reading the clause refuses ('emits no event and records nothing'): a move writes a `ClockAdvance` carrying both clocks as it is made; an input writes its record, and before it the first sample if nothing has been recorded yet. Partial because it models a reading the clause rules out; kept so that what is ruled out is computed beside what is required."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__two_moves_then_input",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two advances by 1 and then an input, from clocks at (0, 0) before any input: two mutations between samples. A fixture."
+      }
+    ]
+  }
+}

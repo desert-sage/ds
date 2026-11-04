@@ -1,0 +1,38 @@
+{
+  "id": "LGRA.5.8.5",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5.8",
+  "seq": 657,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.5.8.5] **Only a `Json` slot chains.** Access that continues past a slot —\na bracket index or a further dotted segment — addresses a part of the slot's\nvalue only where that slot is `Json`. Past a slot of any other builtin type the\ncompiler must refuse a bracket index, with `DS_VALIDATE_BAD_PATH`: the slot's\nvalue has no parts to address. A dotted segment past such a slot is a member\nread, which [LGRA.9.6.2] resolves and refuses. A schema-typed slot is\n[LGRA.5.7a.3]'s case.\n\n",
+  "refs": [
+    "LGRA.5.7a.3",
+    "LGRA.9.6.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_BAD_PATH"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lgra_5_8_5__seg",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A segment of access that continues past a slot: a dotted member or a bracket index. The model reads one past a `Json` value alone (`lnul_8_4__path`); the compiler's refusal of a chain past any other slot is not modelled, and the fixture lowering admits no such chain."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__resolve",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a segment addresses in the slot's value: a key the object's member, an index the array's element, segment by segment."
+      }
+    ]
+  }
+}

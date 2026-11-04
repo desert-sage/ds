@@ -1,0 +1,234 @@
+%-----------------------------------------------------------------------------%
+% SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+% SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+% ds.atom -- the unified atom registry, band geometry, and the frame walk.
+%
+% Generated in part: edit ds.atom.m.in, not ds.atom.m. Constructors, wire numbers
+% and message names come from `proto/atom.proto`, written in by the atom
+% extractor.
+%
+% A band decides only the unknown case [RFCS.16.2]. A known atom dispatches
+% without it: DscHeader and the network nodes sit in the skip band.
+%-----------------------------------------------------------------------------%
+
+:- module ds.atom.
+:- interface.
+
+:- import_module ds.wire.
+
+%-----------------------------------------------------------------------------%
+% The registry
+%-----------------------------------------------------------------------------%
+
+    % `at_` and the body message in snake case.
+    %
+:- type atom_id
+% BEGIN GENERATED constructors
+% END GENERATED constructors
+
+:- pred atom_of_field(uint32::in, atom_id::out) is semidet.
+:- func atom_field(atom_id) = uint32.
+
+:- func atom_message(atom_id) = string.
+
+%-----------------------------------------------------------------------------%
+% Bands
+%-----------------------------------------------------------------------------%
+
+:- type band
+    --->    band_inject             % 1..127
+    ;       band_reject             % 128..255
+    ;       band_skip               % 256..2047
+    ;       band_none.              % 0, or >= 2048: malformed [RFCS.16.3]
+
+:- func band_of(uint32) = band.
+
+    % What a reader does with an atom it has no entry for [RFCS.16.3].
+    %
+:- type disposition
+    --->    disp_skip
+    ;       disp_reject_inject      % DS_ERR_FS_UNKNOWN_INJECT
+    ;       disp_reject_version     % DS_ERR_DSC_VERSION
+    ;       disp_malformed.
+
+:- func disposition_of_unknown(uint32) = disposition.
+
+%-----------------------------------------------------------------------------%
+% Framing
+%-----------------------------------------------------------------------------%
+
+    % Decided by the first atom's field number [RFCS.19.4]. A self-contained
+    % bundle opens with `DscHeader` like a lean `.dsc`: telling those apart takes
+    % a walk of the frames to `StreamHeader`.
+    %
+:- type container
+    --->    container_dsc           % opens with DscHeader = 263
+    ;       container_stream.       % opens with StreamHeader = 258
+
+:- pred container_of(atom_id::in, container::out) is semidet.
+
+:- type frame
+    --->    frame(
+                fr_atom   :: atom_ref,
+                fr_body   :: reader,
+                fr_offset :: int        % where the outer frame began
+            ).
+
+:- type atom_ref
+    --->    known(atom_id)
+    ;       unknown(uint32).
+
+:- type frame_result
+    --->    fr_ok(frame)
+    ;       fr_eof
+    ;       fr_error(atom_error, int).      % the byte offset ([RDSC.11.2])
+
+:- type atom_error
+    --->    ae_wire(wire_error)
+            % The outer frame: `we_truncated` is the bytes running out, which a
+            % stream reader takes as a tail still arriving.
+
+    ;       ae_body(wire_error)
+            % Inside a frame whose length was satisfied ([RDSC.11.1]): more bytes
+            % cannot repair it.
+
+    ;       ae_bad_outer_tag(uint32)
+    ;       ae_bad_inner_type
+    ;       ae_empty_atom.
+            % [RFCS.19.3]: valid protobuf with no `oneof` member set.
+
+:- pred next_frame(frame_result::out, reader::in, reader::out) is det.
+
+%-----------------------------------------------------------------------------%
+:- implementation.
+
+:- import_module int.
+:- import_module uint32.
+:- import_module uint8.
+
+%-----------------------------------------------------------------------------%
+
+atom_of_field(N, A) :- wire(A, N).
+
+atom_field(A) = N :- wire(A, N).
+
+:- pred wire(atom_id, uint32).
+:- mode wire(in, out) is det.
+:- mode wire(out, in) is semidet.
+:- mode wire(out, out) is multi.
+
+% BEGIN GENERATED wire
+% END GENERATED wire
+
+% BEGIN GENERATED message
+% END GENERATED message
+
+%-----------------------------------------------------------------------------%
+
+band_of(N) =
+    ( if N = 0u32 then
+        band_none
+    else if N =< 127u32 then
+        band_inject
+    else if N =< 255u32 then
+        band_reject
+    else if N =< 2047u32 then
+        band_skip
+    else
+        band_none
+    ).
+
+disposition_of_unknown(N) = D :-
+    B = band_of(N),
+    (
+        B = band_inject,
+        D = disp_reject_inject
+    ;
+        B = band_reject,
+        D = disp_reject_version
+    ;
+        B = band_skip,
+        D = disp_skip
+    ;
+        B = band_none,
+        D = disp_malformed
+    ).
+
+container_of(at_dsc_header, container_dsc).
+container_of(at_stream_header, container_stream).
+
+%-----------------------------------------------------------------------------%
+
+:- func outer_field = uint32.
+
+outer_field = 1u32.
+
+next_frame(Result, !R) :-
+    Offset = position(!.R),
+    ( if at_end(!.R) then
+        Result = fr_eof
+    else if
+        % Judged before the tag is read as a varint [RDSC.11.1], so a trailing
+        % 0xFF is malformed rather than a varint still arriving.
+        peek_byte(!.R, First),
+        First \= 0x0Au8
+    then
+        Result = fr_error(ae_bad_outer_tag(uint32.cast_from_int(
+            uint8.cast_to_int(First) >> 3)), Offset)
+    else
+        read_tag(TagResult, !R),
+        (
+            TagResult = error(E),
+            Result = fr_error(ae_wire(E), Offset)
+        ;
+            TagResult = ok({Field, Type}),
+            ( if Field \= outer_field then
+                Result = fr_error(ae_bad_outer_tag(Field), Offset)
+            else if Type \= wt_len then
+                Result = fr_error(ae_bad_outer_tag(Field), Offset)
+            else
+                read_delimited(OuterResult, !R),
+                (
+                    OuterResult = error(E2),
+                    Result = fr_error(ae_wire(E2), Offset)
+                ;
+                    OuterResult = ok(Atom),
+                    Result = decode_atom(Atom, Offset)
+                )
+            )
+        )
+    ).
+
+:- func decode_atom(reader, int) = frame_result.
+
+decode_atom(Atom0, Offset) = Result :-
+    ( if at_end(Atom0) then
+        Result = fr_error(ae_empty_atom, Offset)
+    else
+        read_tag(TagResult, Atom0, Atom1),
+        (
+            TagResult = error(E),
+            Result = fr_error(ae_body(E), Offset)
+        ;
+            TagResult = ok({Field, Type}),
+            ( if Type \= wt_len then
+                Result = fr_error(ae_bad_inner_type, Offset)
+            else
+                read_delimited(BodyResult, Atom1, _Atom2),
+                (
+                    BodyResult = error(E2),
+                    Result = fr_error(ae_body(E2), Offset)
+                ;
+                    BodyResult = ok(Body),
+                    ( if atom_of_field(Field, A) then
+                        Result = fr_ok(frame(known(A), Body, Offset))
+                    else
+                        % The caller applies `disposition_of_unknown`.
+                        Result = fr_ok(frame(unknown(Field), Body, Offset))
+                    )
+                )
+            )
+        )
+    ).
+
+%-----------------------------------------------------------------------------%

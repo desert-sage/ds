@@ -1,0 +1,36 @@
+{
+  "id": "LTAC.3.6",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.3",
+  "seq": 152,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.3.6] If the `after` body references no LHS bindings, the\ncompiler must skip the capture-fact emission. Empty captures are\nnot emitted.\n\nThis differs from a correlated call, which emits the capture fact even with\nnothing to capture ([LCCO.5.2], [LCCO.5.6]). There the capture fact is what\ncarries a generated or computed correlation to the sibling rules. Here the\ntimer fact carries the correlation itself ([LTAC.3.5]), so an empty capture\nfact would carry nothing the follow-up rule needs.\n\n",
+  "refs": [
+    "LCCO.5.2",
+    "LCCO.5.6",
+    "LTAC.3.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__captured",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A body reading nothing is captured by the empty list: no capture is minted. VACUOUS for this clause: the model mints no capture fact for any body, the captures riding on the timer's payload, so 'the compiler must skip the capture-fact emission' holds of it with nothing to skip. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_6__no_capture",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE EMPTY CAPTURE: a body that reads nothing; the timer's key and payload both the empty tuple's code. 'Empty captures are not emitted': nothing rides on the timer. VACUOUS for this clause: the model has no capture fact at all, so none is emitted whether or not the body reads a binding. A fixture."
+      }
+    ]
+  }
+}

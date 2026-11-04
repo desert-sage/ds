@@ -1,0 +1,32 @@
+{
+  "id": "IDAT.3.1",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.3",
+  "seq": 232,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.3.1] The integrator-visible opaque types of [IDAT.1.2], and the stream\nevent, a borrowed callback payload: their owning module, their creation /\ndestruction APIs, and their lifetime class.\n\n| Type              | Owning module | New / free                               | Lifetime class             |\n|-------------------|---------------|------------------------------------------|----------------------------|\n| `ds_engine_t`     | `engine`      | `ds_engine_new()` or `ds_engine_clone()` / `ds_engine_free()` | Engine (integrator-owned)  |\n| `ds_fact_t`       | `wm`          | Library-owned; returned by `ds_engine_assert()`'s out-parameter and `ds_engine_fact_find()`, handed to a `ds_engine_for_each_fact()` visitor and in a stream event's payload, and read from a fact-reference slot with `ds_fact_get_slot()` | WM-bound; invalid once its fact leaves working memory ([NFCT.6.2]) |\n| `ds_schema_t`     | `schema`      | Library-owned; registered at load, returned by `ds_engine_schema_find()`, `ds_engine_schema_at()` and `ds_fact_get_schema()`, and read as a slot's `schema_ref` with `ds_schema_get_slot()` | Engine |\n| `ds_stream_ev_t`  | `recorder`    | Library-owned; borrowed by the stream callback | Valid during the stream callback only |\n| `ds_json_t`       | `json`        | Integrator: `ds_json_parse()` / `ds_json_clone()` / `ds_json_new_*()` → `ds_json_free()`; also delivered as library-owned callback-payload borrows | **Dual** — see [IDAT.3.3] |\n\n",
+  "refs": [
+    "IDAT.1.2",
+    "IDAT.3.3",
+    "NFCT.6.2"
+  ],
+  "symbols": [
+    "ds_engine_assert",
+    "ds_engine_clone",
+    "ds_engine_fact_find",
+    "ds_engine_for_each_fact",
+    "ds_engine_free",
+    "ds_engine_new",
+    "ds_engine_schema_at",
+    "ds_engine_schema_find",
+    "ds_fact_get_schema",
+    "ds_fact_get_slot",
+    "ds_schema_get_slot",
+    "ds_json_clone",
+    "ds_json_free",
+    "ds_json_parse"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LADP.8.4.3",
+    "category": "compiler",
+    "scenario": "Response schemas can be re-exported through `from B import HALightResponse` if a higher-level library composes on top per LADP.8.4.3, riding on the LIMP.4.4 re-export mechanism. Pin: library `hacore` declares `schema HALightResponse`; library `ha` does `from hacore import HALightResponse` and declares `service light.turn_on` with `response HALightResponse` (a `ttl` schema declaring `corr`, LCRS.4.3.2). The validator resolves the response schema name through ha's exported surface (its own decls plus its re-export entries); compile_ok proves the re-exported response schema is usable as a service-decl response binding.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "hacore": "schema HALightResponse scope ttl 1_h:\n    corr: String\n    success: Bool\n    error_code: String\n",
+        "ha": "from hacore import HALightResponse\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response HALightResponse\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

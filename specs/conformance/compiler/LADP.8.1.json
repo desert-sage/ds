@@ -1,0 +1,12 @@
+{
+    "id": "LADP.8.1",
+    "category": "compiler",
+    "scenario": "Call-site shape validation per LADP.8 \u2014 `call <svc>(...)` matches the imported service's kwarg shape. Pin: a call to `light.turn_on` with required `entity_id: \"...\"` literal (and the standard `cooldown:` rate-modifier) compiles cleanly when the library declares the matching service.",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"light.foyer\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "schema TurnOnAck scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response TurnOnAck\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LSER.16.7.1_absent.runtime",
+    "category": "logical",
+    "dead_rules_expected": ["never_fires"],
+    "scenario": "contains is EXACT — a value never observed is not contained (LSER.16.7.1). Asserting only \"info\" tags, `contains(e.tag, \"error\")` stays false (an approximate Bloom filter could false-positive; the exact SeriesBackendRingBuffer set cannot). Pin: the rule never fires — its action_log is forbidden. The companion LSER.16.7.1.runtime confirms the backend is loaded and does fire when the value is present.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    contains sliding 5_s\n\nrule never_fires:\n    Event e where contains(e.tag, \"error\")\n->\n    log info \"should not fire\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "info" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "info" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "info" } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["action_log"]
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSCP.1.5",
+    "category": "compiler",
+    "scenario": "All scope forms compile cleanly in a single file per LSCP.1.5 \u2014 the base values `explicit`, `logical`, `ttl <dur>`, `activation`, plus the `ambient` overlay modifier on a `logical` base (`scope logical ambient`). Each produces its schema lifecycle in the compiled output. Pin: five schemas with distinct scopes all declare without error.",
+    "rules_ds": "schema ExplicitFact scope explicit:\n    v: Int\n\nschema LogicalFact scope logical:\n    v: Int key\n\nschema TtlFact scope ttl 5_min:\n    v: Int\n\nschema ActivationFact scope activation:\n    v: Int\n\nschema AmbientFact scope logical ambient:\n    v: Int key\n\nschema Trigger scope ttl 1_min:\n    v: Int\n\nrule r:\n    Trigger t where t.v > 0\n->\n    emit LogicalFact logical v: t.v\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

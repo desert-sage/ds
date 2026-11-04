@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.10_nan_float_val_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.10]: an artefact whose `AlphaLiteral.float_val`, in an `AlphaNode`'s tests, holds a NaN, quiet or signalling, is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_t`, whose `T t where t.v > 1.5` puts one CMP test, op `ALPHA_CMP_GT`, literal `float_val` 1.5, on `T`'s `AlphaNode` (node 1). `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 4, 0, 2], value: {f64: \"7ff0000000000001\"}}}` ([RCTS.1.2.21]) writes that test's literal's field 2, `float_val`, as the signalling NaN 0x7FF0000000000001 (`tests` 0, `literal`, field 2), and re-seals `dsc_sha256` ([RDSC.3.6]). The test's shape is well formed, so the NaN is what is refused. What it discriminates: a loader that takes the bits as a Float, or reads a NaN as 0.0, loads, and the vector fails as unrefused. PATHS: libds's `ds_dsc_rete_body_decodes`, `decode_alfa`'s literal; the Mercury runtime's `ds.dsc_network` alpha-literal decode, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Float key\n\nrule on_t:\n    T t where t.v > 1.5\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 4, 0, 2], "value": {"f64": "7ff0000000000001"}}},
+        "code": "-504"
+    }
+}

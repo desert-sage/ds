@@ -1,0 +1,17 @@
+{
+    "id": "LLOG.11.4",
+    "category": "temporal",
+    "scenario": "Multi-justifier union semantics per LLOG.11.4 — two rules emitting the same logical fact with identical slots produce one fact with two justifications. Retracting one justifying trigger leaves the logical fact alive (other justifier still active). After Trig1+Trig2 asserted, retract Trig1: WM still has Trig2 + Occupied = 2 facts, pinning that the logical fact survives until the LAST justifier ends.",
+    "rules_ds": "schema Trig1 scope logical:\n    v: Int key\n\nschema Trig2 scope logical:\n    v: Int key\n\nschema Occupied scope logical:\n    source: String key\n\nrule from_trig1:\n    Trig1\n->\n    emit Occupied logical source: \"shared\"\n\nrule from_trig2:\n    Trig2\n->\n    emit Occupied logical source: \"shared\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig1", "slots": { "v": 1 }, "as": "t1" },
+            { "op": "assert", "schema": "Trig2", "slots": { "v": 2 }, "as": "t2" },
+            { "op": "pump" },
+            { "op": "retract", "label": "t1" },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 2
+    }
+}

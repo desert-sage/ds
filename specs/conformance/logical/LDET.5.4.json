@@ -1,0 +1,15 @@
+{
+  "id": "LDET.5.4",
+  "clauses": ["RARC.13.11"],
+  "category": "logical",
+  "scenario": "Source order per LDET.5.4 — when two rules both activate on the same fact, the rule appearing earlier in source fires first. first_rule is declared before second_rule. NOTE: both rules match on one propagation, so source order and completion order COINCIDE here and either model passes — this fixture cannot tell them apart. LDET.5.4.completion.json is the one that can.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule first_rule:\n    Trig\n->\n    log critical \"first\"\n\nrule second_rule:\n    Trig\n->\n    log critical \"second\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["first_rule", "second_rule"]
+  }
+}

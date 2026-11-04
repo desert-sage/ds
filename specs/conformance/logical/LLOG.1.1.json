@@ -1,0 +1,22 @@
+{
+  "id": "LLOG.1.1",
+  "category": "logical",
+  "scenario": "emit X logical per LLOG.1.1 — an emitted fact's lifetime is tied to its justifying LHS. Assert Trig, pump: Occupied is asserted. Retract Trig, pump: CLIPS truth maintenance retracts Occupied automatically.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Occupied scope logical:\n    dummy: Int key\n\nrule r:\n    Trig\n->\n    emit Occupied logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "trig" },
+      { "op": "pump" },
+      { "op": "retract", "label": "trig" },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "fact_assert",
+      "action_emit",
+      "fact_retract",
+      "fact_retract"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.2.3_null_literal_cast_to_int_is_null",
+    "category": "logical",
+    "scenario": "[LCST.4.2.3]: `null::T?` is `null`, written on the `null` literal; [LCST.4.3.4]: a null source converts to null and the conversion is not attempted. `(null::Int?) ?? s.n` is `s.n` only if the cast yields `null`, so with `n` 7 the rule fires; a cast that produced any Int, or trapped, would not fire it, and a cast left unlowered drops the rule. PATH PINNED: dsc.typecheck's and dsc.rete's handling of an `ex_null` cast operand, and the `null` literal through `??` in both runtimes.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule r:\n    S s where ((null::Int?) ?? s.n) == 7\n->\n    log info \"null\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "n": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

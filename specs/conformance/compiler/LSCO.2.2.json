@@ -1,0 +1,10 @@
+{
+    "id": "LSCO.2.2",
+    "clauses": ["LGRA.8.6"],
+    "category": "compiler",
+    "scenario": "A later pattern's `where` that reads an earlier pattern's binding (`pr.person_id == ps.person_id and pr.room != ps.room`) compiles: the reference counts as the binding's use (LGRA.8.6). PINS ONLY THAT IT COMPILES; that the rule matches the two facts together is logical/LSCO.2.2's. Named for the LSCO.2.2 heading (reactive decisions), which it does not test.",
+    "rules_ds": "schema PersonInRoom scope logical:\n    person_id: String key\n    room: String mutable\n\nschema PersonStatus scope logical:\n    person_id: String key\n    room: String mutable\n\nrule location_mismatch:\n    PersonInRoom pr\n    PersonStatus ps where pr.person_id == ps.person_id and pr.room != ps.room\n->\n    log info \"location mismatch\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "id": "LTIM.2.5.1_window_second_edge_refires",
+    "clauses": ["LTIM.2.8.3"],
+    "category": "logical",
+    "witnesses": [
+        "formal/idris/Rete/NetworkTick.idr#ltim_2_5_1__second_edge_refires",
+        "formal/idris/Rete/NetworkClocked.idr#ltim_2_5_1__second_edge_refires_clocked"
+    ],
+    "scenario": "[LTIM.2.5.1]: a condition that closes ends its match, and reopening it is a new edge that fires again. [LTIM.2.8.3]: a gate comparing `now()` with fixed instants can become false and then true again. The program is the witnesses' window, `(now() > 0 and now() < 2) or now() > 2`, in seconds, each instant built `calendar.time(1970, 1, 1, 0, 0, N)` ([LTIM.14.1]): open at 1 s, shut at 2 s, open again from 3 s. The harness's wall clock starts at the epoch. One Ping is asserted at 0 and never retracted. Steps: set 0; assert Ping; then four times, advance 1 s and pump. These are the witnesses' ticks 1, 2, 3 and 4, and both prove the counts `[1, 0, 1, 0]`. Pin: the stream's pumps and rule_fire_begin events are pump, rule_fire_begin, pump, pump, rule_fire_begin, pump. So `window` fires in the first and third pumps only. Break: a runtime that remembered the first firing past the activation fires once, and one that re-fired an open match every tick fires in all but the second pump.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    v: Int key\n\nrule window:\n    Ping where (now() > calendar.time(1970, 1, 1) and now() < calendar.time(1970, 1, 1, 0, 0, 2)) or now() > calendar.time(1970, 1, 1, 0, 0, 2)\n->\n    log info \"open\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["pump", "rule_fire_begin", "pump", "pump", "rule_fire_begin", "pump"]
+    }
+}

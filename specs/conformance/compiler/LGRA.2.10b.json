@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.2.10b",
+    "clauses": ["LGRA.2.9.1", "LLEX.15.2.1"],
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.1]: in a triple-quoted literal a `\\` takes the next character (`TRIPLE_CHAR ::= ... | '\\\\' ESCAPE_SEQ`), so in `\"\"\"trailing\\\"\"\"` the `\\\"` is an escaped quote and cannot begin the closing `\"\"\"`. Only `\"\"` and a newline follow it before the end of the source, so the literal never closes: [LLEX.15.2.1]'s \"unterminated string literal: EOF before closing `\"` or `\"\"\"`\", a lexer error, DS_LEX_GENERIC. A compiler that closes the literal at `\\\"\"\"` refuses the body's trailing `\\` as DS_PARSE_BAD_ESCAPE. PATH PINNED: the backslash arm of `dsc.lex.llex_6_7_1_take_triple`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    log info \"\"\"trailing\\\"\"\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_LEX_GENERIC"
+    }
+}

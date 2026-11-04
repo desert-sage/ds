@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.14_active_fraction_refuses_at_capacity",
+    "category": "runtime",
+    "scenario": "[LSER.13.14] / [LSIG.1.1]: `active_fraction` refuses at capacity, on its own backing (SeriesBackendIntervalPulse), counting the pump's admitted-and-unabsorbed samples. `active_fraction sliding 1_h` with `capacity: 2`; three asserts of one identity before any pump; the third is a bounds refusal naming CAP_SERIES_CAPACITY (-710) and is not asserted. PATH PINNED: the same pre-assert capacity check as LSER.13.14_integral_refuses_at_capacity, reached for the interval-pulse backing. `fault_at: 2` makes the refusal the third assert's.",
+    "rules_ds": "use default\n\nschema Door scope logical:\n    dev: String key\n    open: Bool mutable\n\nseries Door.open (by: dev, capacity: 2):\n    active_fraction sliding 1_h\n\nrule r:\n    Door s where s.active_fraction > 0.5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_at": 2,
+        "asserts": [
+            { "schema": "Door", "slots": { "dev": "k", "open": true } },
+            { "schema": "Door", "slots": { "dev": "k", "open": false } },
+            { "schema": "Door", "slots": { "dev": "k", "open": true } }
+        ]
+    }
+}

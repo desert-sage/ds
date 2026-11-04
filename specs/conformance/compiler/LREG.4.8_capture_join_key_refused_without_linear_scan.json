@@ -1,0 +1,10 @@
+{
+    "id": "LREG.4.8_capture_join_key_refused_without_linear_scan",
+    "category": "compiler",
+    "scenario": "[LREG.4.8]: under `linear_scan: false`, a capture used as a join key is refused with DS_VALIDATE_NOLINSCAN_CAPTURE_JOIN_KEY, the clause's own code, and not with [LNLS.3.3]'s DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C. `dev` is captured from `e.msg` in the first pattern's `where` and read by the second pattern's `d.id == dev`, which equates Device's `key` slot `id` to it. No slot equality anchors Device to Event, so the anchor is complete only because the capture stands in for that `key` slot: a join key in the clause's sense. A capture read beside a complete slot anchor is not one; LREG.4.8_capture_beside_a_complete_anchor_compiles pins that side. `Event.msg` declares `capacity 64`, so [LNLS.3.7]'s bound on a match over an unbounded string stays quiet and the only refusal is this one. Its twin, LREG.4.8_capture_join_key_compiles_with_linear_scan, is the same rule under plain `use default`, whose `linear_scan` is on, which compiles, so the refusal is the dialect's and not the rule's. PATH PINNED: `dsc.validate.lnls_3_3_anchors`, the capture-key arm.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Event scope logical:\n    entity_id: String key\n    msg: String capacity 64 mutable\n\nschema Device scope logical:\n    id: String key\n\nrule r:\n    Event e where (dev) = e.msg ~ /([a-z]+) failed/\n    Device d where d.id == dev\n->\n    log info \"{d.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_CAPTURE_JOIN_KEY"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.10",
+    "category": "compiler",
+    "scenario": "[LNLS.3.10]: a `String` slot operand of string ordering needs `capacity`, so a single-pattern `<` on a String slot with none is a compile error in a `linear_scan: false` file. PATH PINNED: `dsc.validate.lnls_compare` (ordering operator) through `unbounded_string`. `==` on the same slot would be O(1) on interned strings and is not refused, so the operator is what the check keys on.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Line scope logical:\n    k: Int key\n    text: String mutable\n\nrule r:\n    Line l where l.text < \"m\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_UNBOUNDED_STRING_OP"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.9.2.1.precedence_decides_which_rules_fire",
+    "category": "logical",
+    "scenario": "[LGRA.9.2.1]'s precedence, observed by which rules fire. A `compile_ok` vector compiles under any grouping, so each rule here is written so the table's grouping and the other one answer differently. One P fact holds a = 1, b = 2, c = 3, t = true and f = false. `or_looser_than_and`: `p.t or p.f and p.f` is `t or (f and f)`, true; grouped as `(t or f) and f` it is false. `and_tighter_than_or`: `p.f and p.f or p.t` is `(f and f) or t`, true; grouped as `f and (f or t)` it is false. `mul_tighter_than_add`: `p.a + p.b * p.c == 7` is `1 + 6`; grouped as `(1 + 2) * 3` it is 9. `sub_left_assoc`: `p.c - p.b - p.a == 0` is `(3 - 2) - 1`; grouped right it is 2. Each wrong grouping has a rule of its own, which `dead_rules_expected` requires never to fire: `mul_grouped_first` (`== 9`) and `sub_grouped_right` (`== 2`). The two Bool cases need no such rule, since their wrong grouping is false and the rule simply does not fire. Agenda order is source order ([LDET.5.4]). Path: the compiler's parser (`dsc.parse`) builds the expression tree, and both runtimes evaluate the tree they are given (libds rete/eval.c, Mercury ds.eval). So a wrong grouping in the compiler shows on both runtimes alike.",
+    "rules_ds": "schema P scope logical:\n    id: String key\n    a: Int mutable\n    b: Int mutable\n    c: Int mutable\n    t: Bool mutable\n    f: Bool mutable\n\nrule or_looser_than_and:\n    P p where p.t or p.f and p.f\n->\n    log info \"or_looser_than_and\"\n\nrule and_tighter_than_or:\n    P p where p.f and p.f or p.t\n->\n    log info \"and_tighter_than_or\"\n\nrule mul_tighter_than_add:\n    P p where p.a + p.b * p.c == 7\n->\n    log info \"mul_tighter_than_add\"\n\nrule mul_grouped_first:\n    P p where p.a + p.b * p.c == 9\n->\n    log info \"mul_grouped_first\"\n\nrule sub_left_assoc:\n    P p where p.c - p.b - p.a == 0\n->\n    log info \"sub_left_assoc\"\n\nrule sub_grouped_right:\n    P p where p.c - p.b - p.a == 2\n->\n    log info \"sub_grouped_right\"\n",
+    "dead_rules_expected": ["mul_grouped_first", "sub_grouped_right"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": "p", "a": 1, "b": 2, "c": 3, "t": true, "f": false } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["or_looser_than_and", "and_tighter_than_or", "mul_tighter_than_add", "sub_left_assoc"]
+    }
+}

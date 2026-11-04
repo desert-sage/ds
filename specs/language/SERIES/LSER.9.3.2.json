@@ -1,0 +1,19 @@
+{
+  "id": "LSER.9.3.2",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.9.3",
+  "seq": 1173,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.9.3.2] The eviction sweep runs once per pump (engine cycle),\nreading the engine clock once — the same `now_ns` and cadence as the\nTTL fact sweep ([LFAC.1.3.3], [LFST.6.1]), **not** a real OS timer.\nThe engine clock is a recorded input in replay ([LDET.1.8.2]) and\nevery event-trace event carries its clock, so the sweep reads the\nsame `now_ns` at the same logical points on replay; eviction — and\nthe cold-start re-warm it triggers — is reproduced identically, as\npart of the replay contract in [LDET.2.2a]. Evicted state means the\nallocation is freed and the next sample for that identity cold-starts\na fresh allocation. Because eviction advances only when a pump reads\nan advanced clock, a backing in a fully silent window is not freed\nuntil the next assertion or `$ClockTick` ([LFST.6.2]) — the same\ntrigger dependency the signal aggregations carry ([LSIG.7]).\n\n",
+  "refs": [
+    "LDET.1.8.2",
+    "LDET.2.2a",
+    "LFAC.1.3.3",
+    "LFST.6.1",
+    "LFST.6.2",
+    "LSIG.7"
+  ]
+}

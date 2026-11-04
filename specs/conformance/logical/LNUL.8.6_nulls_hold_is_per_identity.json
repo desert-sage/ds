@@ -1,0 +1,23 @@
+{
+    "id": "LNUL.8.6_nulls_hold_is_per_identity",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] `hold`'s \"last absorbed value\" is per identity (`by:`). Two devices under `nulls: hold`: `a` absorbs 1.0 and `b` absorbs 10.0, then `a` reads `null`, then `a` reads 2.0. Each read is pre-sample ([LSER.8.6.1]); the rule logs for `a` once its count reaches 2, over [1.0, 1.0 held]: `a mean 1.0`. Drives the per-row held value in both runtimes: libds keeps `last_value` on the (schema, slot, identity, window) row, Mercury keys its held map by the same `series_key`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev, nulls: hold):\n    count, mean all_time\n\nrule r:\n    Reading s where s.dev == \"a\" and s.count >= 2\n->\n    log info \"a mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "b", "level": 10.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a mean 1.0"]
+    }
+}

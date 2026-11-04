@@ -1,0 +1,10 @@
+{
+    "id": "LSER.16.4",
+    "clauses": ["LSER.16.4.1", "LSER.6.1"],
+    "category": "compiler",
+    "scenario": "A series declaring `median, p95 sliding 10_min` (LSER.16.4.1: `pXX` for any integer percentile in 1..99), with no accuracy phrase, and a rule reading the `p95` companion slot (LSER.6.1) compiles. PINS ONLY THAT IT COMPILES: no value is read. Named for the LSER.16.4 heading (quantiles).",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    median, p95 sliding 10_min\n\nrule r:\n    Sensor s where s.p95 > 50.0\n->\n    log critical \"{s.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

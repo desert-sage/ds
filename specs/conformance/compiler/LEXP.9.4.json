@@ -1,0 +1,8 @@
+{
+    "id": "LEXP.9.4",
+    "clauses": ["RLOW.1.6"],
+    "category": "compiler",
+    "scenario": "dsc.rete does not lower a `fact::Json` cast (it has no defined shape), so dsc.driver refuses the rule with DS_VALIDATE_RULE_NOT_LOWERED (RLOW.1.6) instead of writing an artefact without it. Pin: `body: a::Json` in a call action, on the schema-typed fact bound to `a` ([LEXP.9.4.1]), is refused with that code.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    val: Int mutable\n\nservice ext.api:\n    kwarg body: Json\n    no response\n\nrule r:\n    Event a\n->\n    call ext.api body: a::Json nocooldown\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_RULE_NOT_LOWERED" }
+}

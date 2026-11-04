@@ -1,0 +1,23 @@
+{
+    "id": "LIMP.1.5_a_library_slots_unit_keeps_its_scale",
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: \"A file that reads a slot takes the type the declaring file gave it\", and so its scale. `a` declares `mark` at `x * 2`, and `b`, on `a`'s `warmth`, declares its own `mark` at `x * 3` and types a slot with it, `tolerance 1`. The program binds `mark` to `a`'s and does `import b`. [LUNI.7.4] makes the deadband `|a| * 1` in the base unit, and the steps assert base-unit values ([LUNI.7.2]): 0.0 establishes the fact and `saw` fires; 2.5 is within `b`'s 3 and is suppressed ([LFAC.2.5.1]), where `a`'s 2 would let it through; 6.0 is outside either and fires, so a deadband that suppressed every reassertion gives one firing. Exactly two. It also shows a library's own slot with a `tolerance` passes [LGRA.5.9.4]'s check in that library. PATH PINNED: `dsc.lower`'s `tolerance_of` passing the slot's declaration, `dsc.quantity.declared_unit_body` and `luni_7_4_tolerance_base`, into both runtimes' tolerance compare.",
+    "rules_ds": "from a import mark\nimport b\n\nrule saw:\n    b.S\n->\n    log info \"fired\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2\n",
+        "b": "from a import warmth\n\nunit mark: warmth = x * 3\n\nschema S scope logical:\n    e: Int key\n    t: mark mutable tolerance 1\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "b.S", "slots": { "e": 1, "t": 0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "b.S", "slots": { "e": 1, "t": 2.5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "b.S", "slots": { "e": 1, "t": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "fired"]
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LTIM.2.5.2_now_edge_once_rearm",
+    "category": "logical",
+    "scenario": "[LTIM.2.5.2] edge-once RE-ARM after retract — a now()-gated rule fires once on the false->true edge (edge-once, [LTIM.2.5.1]), stays suppressed on later ticks while the matched fact lives, and then RE-ARMS once that fact retracts and a fresh one is asserted. Companion to LTIM.2.5 (which pins the single-fact suppression): this pins the full lifecycle across a retract. The persistent one-shot keys on the matched fact's fact_id and is cleared when that fact leaves WM; the re-asserted fact carries a fresh monotonic id absent from the one-shot, so it re-arms. Pin: mature+pump (fire 1), pump (suppressed), retract, re-assert, pump (fire 2 — re-armed), pump (suppressed). Exactly two fires; the naive fire-every-tick impl would fire four+ times and fail this exact match.",
+    "rules_ds": "import calendar\n\nschema Sensor scope logical:\n    entity_id: String key\n\nrule after_5_s:\n    Sensor where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"time passed\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1" }, "as": "s" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "pump" },
+            { "op": "retract", "label": "s" },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1" } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["after_5_s", "after_5_s"]
+    }
+}

@@ -1,0 +1,69 @@
+{
+  "id": "RDSC.9.10",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.9",
+  "seq": 2010,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.9.10] **No NaN in an artefact's doubles.** A loader **must** refuse with\n`DS_ERR_DSC_SEMANTIC` an artefact that holds a NaN, of any payload, quiet or\nsignalling, in a `double` field of an atom it decodes:\n\n- `proto/alfa.proto#AlphaLiteral`'s `float_val`, in an `AlphaNode`'s tests;\n- `proto/rete_expr.proto#Expr`'s `lit_float`;\n- `proto/slot.proto#Slot`'s `tolerance`;\n- `proto/test_scenario.proto#TestSlotLiteral`'s `f_val`, wherever it is carried:\n  an `InitialFact` or `InitialCacheSeed` ([RDSC.17]), or a `.dstest` atom.\n\nAn infinity is not refused.\n\nA loader **must** judge each field's value as the decoded atom holds it\n([RDSC.9.5]): a NaN that a later occurrence, or a later member of its oneof,\nreplaces is not held, and is not refused. A body that fails protobuf decode is\n`DS_ERR_DSC_DECODE`, whatever NaN it carries ([RDSC.11.4]).\n\nThis is a cheap structural need of the loader's ([RDSC.9.9]): one comparison per\nfield. A conforming compiler writes no NaN, since `nan` is\n`DS_VALIDATE_NAN_VALUE` in every value position ([LEXP.4.2]). These fields are\nthe one path by which a signalling NaN could reach a Float operand\n([NDET.1.4]), and a runtime that took the bits as they are would compute on a\nvalue no source the language admits could produce.\n\n",
+  "refs": [
+    "LEXP.4.2",
+    "NDET.1.4",
+    "RDSC.11.4",
+    "RDSC.17",
+    "RDSC.9.5",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DECODE",
+    "DS_ERR_DSC_SEMANTIC",
+    "DS_VALIDATE_NAN_VALUE"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "InitialCacheSeed",
+    "InitialFact",
+    "Slot"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "ndet_1_4__no_signalling_operand",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "What the refusal buys [NDET.1.4]: with a NaN of any payload refused in the four `double` fields, the artefact is a source of finite values and infinities like every other, and no Float operand either runtime computes on is a signalling NaN. Bounded at ten operands. The TEETH say what dropping this fact brings back."
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "rdsc_9_10__loader_refuses_nan",
+        "tag": "spec",
+        "note": "'A loader must refuse ... an artefact that holds a NaN, of any payload, quiet or signalling, in a double field': an operand from an artefact's `double` field is finite or an infinity, which the clause does not refuse. The four fields are one source, `ArtefactLiteral`; which field it was, and the loader's `DS_ERR_DSC_SEMANTIC`, are not modelled."
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/alfa.proto",
+        "name": "AlphaLiteral",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/rete_expr.proto",
+        "name": "Expr",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/slot.proto",
+        "name": "Slot",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/test_scenario.proto",
+        "name": "TestSlotLiteral",
+        "tag": "spec"
+      }
+    ]
+  }
+}

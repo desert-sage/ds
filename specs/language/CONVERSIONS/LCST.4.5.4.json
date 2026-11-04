@@ -1,0 +1,62 @@
+{
+  "id": "LCST.4.5.4",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.5",
+  "seq": 175,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.5.4] **Runtime totality, and the trap carve-out.** A total `::T` must not produce\n`null` at runtime; the runtime must guarantee a defined result for every source value (this\nis what makes [LCST.4.3.1] sound). A conversion whose failure mode yields a *recoverable*\nvalue must be classified fallible (`::T?`). **A total cast may, however, define a hard\nruntime *trap* for a genuinely unrepresentable input** — a trap, not a `null`, exactly as\nan `Int` `÷0` is (`Float → Int` on a value with no `Int`, [LCST.4.5.2]). The trap is not a fallible\nresult: it never feeds the `T?` / `??` / Kleene stack.\n\n**The trap is not fatal.** Recoverability is a property of the **occurrence**, not of the\nkind ([LERR.1.4.9]): the test is whether engine state is still trustworthy. A\n`Float → Int` on a value with no `Int` leaves working memory consistent, so the engine\nabandons the activation and continues — the same disposition an `Int` `÷0` gets, and the reason the\ntwo are named together here. The tier halts only where state is no longer trustworthy\n([LERR.1.4.7]).\n\n\n**A `null` source is not an unrepresentable input.** It reaches no\nconversion at all ([LCST.4.3.4]), so it neither traps nor feeds this\ncarve-out.\n\n",
+  "refs": [
+    "LCST.4.3.1",
+    "LCST.4.3.4",
+    "LCST.4.5.2",
+    "LERR.1.4.7",
+    "LERR.1.4.9"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_2__convert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The carve-out as the Float -> Int arm: a trap outside Int and never a null; the fragment's other rows convert. One trap kind: NOT_REPRESENTABLE is not told from a zero divisor here, and the activation's abandonment is the network's."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_2__guarded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The carve-out: outside Int the result is a trap, not a null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_4__float_to_int_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A total ::T does not produce null at runtime: for every Float, Float :: Int is a value or the trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_4__trap_never_feeds_the_stack",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every Float outside Int and every default, (x :: Int ?? d) is the trap, the test admits nothing and blocks a `no` pattern: the trap never feeds the T? / ?? / Kleene stack."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_4__yields_null",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether a result is the value null: what a total conversion must not produce."
+      }
+    ]
+  }
+}

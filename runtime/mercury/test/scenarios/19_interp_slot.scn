@@ -1,0 +1,15 @@
+# Interpolated String slots, one the schema's `key`, so dedup depends on the
+# rendered text:
+#
+#   id=1 kitchen 7  -> "kitchen-007"   a new Tagged
+#   id=2 kitchen 7  -> "kitchen-007"   same key, so no new fact
+#   id=3 kitchen 9  -> "kitchen-009"   a different key, a second Tagged
+#
+# `final facts=5` (three Readings, two Tagged). The `log` message carries the
+# zero-padded level too, so a dropped pad shows there.
+assert Reading id=1 zone=kitchen level=7
+pump
+assert Reading id=2 zone=kitchen level=7
+pump
+assert Reading id=3 zone=kitchen level=9
+pump

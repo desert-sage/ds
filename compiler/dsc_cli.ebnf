@@ -1,0 +1,205 @@
+(* dsc command-line grammar.
+ *
+ * SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+ * SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+ *
+ * A command line is a symbol stream, so EBNF states it ([STYL.2.15.2]). The invocation surface otherwise lives in fenced shell
+ * samples inside clause text, which [STYL.2.15.5.1] removes: a sample shows
+ * one accepted line and never says what the accepted SET is, so a flag no
+ * author happened to illustrate is specified nowhere.
+ *
+ * NOT UNDER specs/registry/, and the distinction is load-bearing. `specs/registry/*.ebnf`
+ * is [STYL.2.15.6]'s ENUMERATION registry — a set of names, their allocated
+ * numbers, and a closure claim — and `spec_db.py`'s loader requires every file
+ * there to carry a set production it can reconcile. This is a GRAMMAR, which
+ * is EBNF's other sanctioned use ([STYL.2.15.2]), so it sits in `compiler/`,
+ * beside the compiler it describes ([STYL.2.15.6.2]). A
+ * `checks.ebnf` entry resolves by the path as written, so citing it from a
+ * clause works from here; only the orphan sweep is scoped to `specs/registry/`.
+ *
+ * Cited by [RCLI.1.1]–[RCLI.1.5], [RCLI.1.9], [RCLI.1.10], [RCLI.1.12] and [RCLI.1.14] (the
+ * subcommands and their options), [RCLI.1.13] (`--help`), [RCLI.3.2] (`--diagnostics`),
+ * [IAOT.3.2] (the emit flags, not admitted in v1) and [NDLC.4.3] (the dialect flags). Each states the residue this notation
+ * cannot carry; see the bottom of this file for the list.
+ *)
+
+dsc_invocation   = "dsc" , ( subcommand | version | help | subcommand_help ) ;
+
+version          = "--version" ;
+
+help             = "--help" | "-h" ;
+
+(* `--help` directly after a subcommand; the subcommand's arguments do not
+   precede it. *)
+subcommand_help  = subcommand_name , help ;
+
+subcommand_name  = "compile"
+                 | "compile-project"
+                 | "dump-schemas"
+                 | "dump-ast"
+                 | "check" ;
+
+subcommand       = compile
+                 | compile_project
+                 | dump_schemas
+                 | dump_ast
+                 | check ;
+
+(* One module to one artefact. *)
+compile          = "compile" , compile_input , compile_option* ;
+
+(* A sketch directory: every module under its `rules/`, one artefact each. *)
+compile_project  = "compile-project" , sketch_dir , project_option* ;
+
+(* Proto3 source for the input's schemas, or with `--json` one JSON document
+   describing them; stdout unless `-o` names a file. *)
+dump_schemas     = "dump-schemas" , input_path , dump_option* ;
+
+(* The input's syntax tree, as one JSON document; stdout unless `-o` names a
+   file. Syntax only: it takes no dialect and no search path. *)
+dump_ast         = "dump-ast" , compile_input , dump_ast_option* ;
+
+(* `compile`'s verdict, writing no artefact. With `--dump-ast`, the tree and the
+   diagnostics as one JSON document on stdout. *)
+check            = "check" , compile_input , check_option* ;
+
+(* An artefact in, the same artefact less a class of atoms out. `-o` is the
+   only option and is required, so the grammar states it in either order.
+
+   NOT ADMITTED. Neither production is reachable from `subcommand`, and the
+   project option `--strip` that would apply `strip_debug` is not listed: the
+   clauses stating what a strip does are deferred past v1, and no compiler
+   implements them. They stay defined so those drafts can name the shape they will
+   admit. *)
+strip_tests      = "strip-tests" , ( dsc_path , output | output , dsc_path ) ;
+strip_debug      = "strip-debug" , ( dsc_path , output | output , dsc_path ) ;
+
+compile_input    = input_path
+                 | stdio ;
+
+compile_option   = output
+                 | search_path
+                 | dialect_file
+                 | input_label
+                 | contract_file
+                 | diagnostics ;
+
+project_option   = search_path
+                 | dialect_file
+                 | no_header ;
+
+dump_option      = output
+                 | search_path
+                 | dialect_file
+                 | json_form ;
+
+(* The schemas as one document `compiler/dsc_schemas.schema.json` defines, in
+   place of the proto3 file. *)
+json_form        = "--json" ;
+
+dump_ast_option  = output
+                 | input_label
+                 | diagnostics ;
+
+check_option     = search_path
+                 | dialect_file
+                 | input_label
+                 | check_dump_ast
+                 | diagnostics ;
+
+check_dump_ast   = "--dump-ast" ;
+
+output           = ( "-o" | "--output" ) , ( output_path | stdio ) ;
+search_path      = ( "-L" | "--search-path" ) , dir_path ;
+
+(* NOT ADMITTED IN v1. Ahead-of-time compilation is frozen and its clauses
+   are deferred, so neither flag is a `compile_option`. Both stay defined so
+   those clauses can name the shape they will admit. *)
+emit_aot         = "--emit-aot" , "=" , arch ;
+emit_rete        = "--emit-rete" ;
+
+dialect_file     = ( "-d" | "--dialect-file" ) , dialect_path ;
+
+no_header        = "--no-header" ;
+strip            = "--strip" ;
+
+input_label      = "--filename" , label ;
+contract_file    = "--dsrt" , contract_path ;
+
+(* How `compile`, `check` and `dump-ast` report their diagnostics on stderr: rendered
+   for a person, or as one document `compiler/dsc_diagnostics.schema.json`
+   defines. *)
+diagnostics      = "--diagnostics" , ( "text" | "json" ) ;
+
+(* Standard input where an input is expected, standard output after `-o`. *)
+stdio            = "-" ;
+
+input_path       = path ;
+contract_path    = path ;
+output_path      = path ;
+dialect_path     = path ;
+dir_path         = path ;
+sketch_dir       = path ;
+dsc_path         = path ;
+
+(* Terminals supplied by the host environment rather than by this grammar.
+   `path` is whatever the platform accepts as a filename, except `-`;
+   `label` is any string; `arch` is a target triple. *)
+path             = ? host filename ? ;
+label            = ? any string ? ;
+arch             = ? target architecture name ? ;
+
+(* RESIDUE — what this grammar does not say ([STYL.2.15.4]).
+ *
+ * 1. CARDINALITY PER OPTION. Each `*_option*` permits any option any number
+ *    of times. `-L` and `-d` accumulate, and for the rest the last occurrence
+ *    wins, which EBNF cannot express. [RCLI.1.3] states it.
+ *
+ * 2. `-o` IS REQUIRED FOR compile. It appears there as one alternative among
+ *    the options, which is what makes the option list order-free;
+ *    requiredness is therefore a separate claim. [RCLI.1.3].
+ *
+ * 3. WHAT THE EMIT FLAGS WOULD DO TO THE ARTEFACT — neither is admitted in
+ *    v1 (above), so this binds nothing yet. `--emit-aot` alone SUPPRESSES
+ *    the Rete network rather than adding to it, and `--emit-rete` puts the
+ *    network back and is a no-op without `--emit-aot`. That is a conditional
+ *    consequence, not a shape. [IAOT.3.1], [IAOT.3.2].
+ *
+ * 4. THE INPUT MUST BE A PROGRAM. `input_path` names a file with a `use`
+ *    directive; a library is refused. That is a property of the file's
+ *    content, not of the command line. [LDIA.2.10.8].
+ *
+ * 5. AN IMPLEMENTATION'S OWN OPTIONS AND SUBCOMMANDS. A compiler may accept
+ *    options this grammar does not list that configure how IT meets the
+ *    surface — `--cc`, `--objcopy` and `--cflags` would choose the toolchain
+ *    for `--emit-aot`, which is the emission target's business, not the
+ *    product's ([STYL.2.13.6]). It may also add subcommands, which sit
+ *    outside the surface entirely. Both belong to the implementation that adds
+ *    them. [RCLI.1.3].
+ *
+ * 6. WHAT THE STANDARD STREAMS, `--filename` AND `--dsrt` MEAN. That `-` is
+ *    standard input or output, what name a stdin source carries, and that
+ *    `--dsrt` parses and is refused in this edition, reading no contract.
+ *    [RCLI.1.9], [LCAP.2.1.5].
+ *
+ * 7. WHAT `--diagnostics` WRITES. The shape of the `json` document is
+ *    `compiler/dsc_diagnostics.schema.json`'s; that `text` is the default,
+ *    the order of the diagnostics, when the document is written, and that the
+ *    exit code does not move with the format are [RCLI.3.2].
+ *
+ * 8. WHAT `dump-ast` WRITES. The tree's nodes are `tools/ds_ast/ds.asdl`'s;
+ *    how a node becomes JSON, how its positions count, and that an input that
+ *    does not parse writes no tree are [RCLI.1.10].
+ *
+ * 9. WHAT `check` DOES AND WRITES. That its verdict is `compile`'s, and when
+ *    `--dump-ast`'s `tree` is `null`, are [RCLI.1.12]. The document's shape is
+ *    `compiler/dsc_check.schema.json`'s.
+ *
+ * 10. WHAT `--help` DOES. That it reads no input and exits `0`, and what the
+ *     usage may not list, are [RCLI.1.13].
+ *
+ * 11. WHAT `dump-schemas --json` WRITES. The document's shape is
+ *     `compiler/dsc_schemas.schema.json`'s; which slots carry a unit, what
+ *     `declared` and `label` name, that `conversion` is the baked one and how
+ *     its constants are written, are [RCLI.1.14].
+ *)

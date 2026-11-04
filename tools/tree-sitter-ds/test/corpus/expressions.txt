@@ -1,0 +1,89 @@
+================================================================================
+The precedence of [LGRA.9.2.1]: or, and, not, a comparison chain, ?? and ~
+================================================================================
+
+const X = not a or b and c < d <= e ?? f ~ /x+/i
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (const_declaration
+    name: (identifier)
+    value: (boolean_operator
+      left: (not_operator
+        argument: (identifier))
+      right: (boolean_operator
+        left: (identifier)
+        right: (comparison_operator
+          left: (comparison_operator
+            left: (identifier)
+            right: (identifier))
+          right: (binary_operator
+            left: (identifier)
+            right: (match_operator
+              left: (identifier)
+              pattern: (regex))))))))
+
+================================================================================
+Unary minus binds tighter than **, and postfix tighter than both (LGRA.9.5.1, LGRA.9.6.1)
+================================================================================
+
+const Y = -x ** 2 + y.z[0]::Int?
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (const_declaration
+    name: (identifier)
+    value: (binary_operator
+      left: (binary_operator
+        left: (unary_operator
+          argument: (identifier))
+        right: (integer))
+      right: (cast
+        value: (subscript
+          value: (attribute
+            object: (identifier)
+            attribute: (identifier))
+          index: (integer))
+        type: (type
+          (identifier))))))
+
+================================================================================
+is not, over the closed subject vocabulary (LGRA.9.3.3)
+================================================================================
+
+const Z = x is not null
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (const_declaration
+    name: (identifier)
+    value: (is_operator
+      left: (identifier)
+      subject: (is_subject
+        (null)))))
+
+================================================================================
+The number literals: a unit literal is not an integer, and 1e6 is a float (LLEX.11, LLEX.12)
+================================================================================
+
+const A = 0x1F + 1e6 + 1e6_s + 30s + 23_000_m + 45°
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (const_declaration
+    name: (identifier)
+    value: (binary_operator
+      left: (binary_operator
+        left: (binary_operator
+          left: (binary_operator
+            left: (binary_operator
+              left: (integer)
+              right: (float))
+            right: (unit_literal))
+          right: (unit_literal))
+        right: (unit_literal))
+      right: (unit_literal))))

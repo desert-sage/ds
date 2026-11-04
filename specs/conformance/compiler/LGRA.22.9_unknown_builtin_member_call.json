@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.22.9_unknown_builtin_member_call",
+    "clauses": ["LGRA.22.9", "LIMP.3.3.4"],
+    "category": "compiler",
+    "scenario": "[LGRA.22.9]: with `math` imported, `math.nope(t.v)` is step 2, the library `math` and its member `nope`, never access on a binding `math`. `math` carries no builtin `nope` ([LIMP.3.3.4], [LEXP.17.2]) and its source declares only `pi`, `e` and `tau`, so the member is unresolved, and an unresolved name that is called is DS_VALIDATE_UNKNOWN_FUNCTION ([LGRA.22.7]). A compiler that typed `math` as a binding answers DS_VALIDATE_UNKNOWN_BINDING instead. The same path as compiler/LEXP.17.2_string_distance_is_unknown, on a module whose members never left the language. PATH PINNED: `dsc.typecheck`'s `lgra_22_9_member_call`, reached through `dsc.resolve.lgra_22_9_library_member` before any receiver is typed.",
+    "rules_ds": "import math\n\nschema Trig scope logical:\n    id: Int key\n    v: Float mutable\n\nrule r:\n    Trig t where math.nope(t.v) > 0.0\n->\n    log info \"m\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

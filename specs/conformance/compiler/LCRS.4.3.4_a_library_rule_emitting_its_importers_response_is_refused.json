@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.4.3.4_a_library_rule_emitting_its_importers_response_is_refused",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: \"named in a `response_decl` of the program\" reaches past a library's own closure. `lib` declares `Reply` and a rule that emits it, and declares no service, so nothing in `lib`'s closure names `Reply` as an answer. Only its importer's `svc.read` does. PATH PINNED: `dsc.driver.library_rules`, which hands a library the program's response schemas as `rf_program_responses`, then the validator's emit-target check over that library, `dsc.validate`'s `lcrs_4_3_4_answer_schema`.",
+    "rules_ds": "from lib import Reply\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n",
+    "libraries": {
+        "lib": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit Reply corr: \"c\" v: 1\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ANSWER_EMIT_FORBIDDEN"
+    }
+}

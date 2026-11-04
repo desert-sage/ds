@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.14.1.shl_63_is_int64_min",
+    "category": "runtime",
+    "scenario": "[LEXP.7.14.1]: `1 << 63` is INT64_MIN -- the last in-range count, shifting a 1 into the sign bit under the Int wrap. The control for `shl_64_is_zero`: 63 must not saturate. Guard `(t.x << t.n) == -9223372036854775808` (admissible as a literal, [LGRA.2.7.3b]); fact_count 2 confirms it fired.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    n: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x << t.n) == -9223372036854775808\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 1, "n": 63 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

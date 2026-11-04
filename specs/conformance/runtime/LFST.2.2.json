@@ -1,0 +1,20 @@
+{
+    "id": "LFST.2.2",
+    "category": "runtime",
+    "scenario": "RFCS.6 fact-assert atom over [RFCS.19.1] framing, with [RFCS.5.1] the up-front announcement: a fact's typed slot values encode into a FactAssert atom whose `fact` body is the schema's proto payload, its fields numbered by slot position ([LFST.8.10]), and every registered schema is announced right after the StreamHeader, before any event atom -- one SchemaDef and one Slot per slot, in declaration order: ComputationError and TypeError ([LERR.9.2], [LERR.9.3]; five slots each), TimeZoneOffset ([LTIM.10.6], [LIMP.12.2]; four slots), then Reading (sensor, val, ok): the artefact's order. So the schema's SchemaDef precedes the first FactAssert that uses it ([RFCS.6.5]). A multi-slot Reading fact goes through the stream: record, splice an unknown skip-band atom after the StreamHeader ([RFCS.16.3]), decode. The assert takes the engine's first clock sample, which is recorded before its input ([LTIM.2.8.5]): ClockAdvance, then FactAssert; there is no pump, so no PumpBoundary. PATH PINNED: the stream each runtime's own recorder writes -- libds's `ds_rfcs_record_to` (rfcs/codec.c, recorder.c) through pyds `Engine.record` in runner.py, and the Mercury runtime's `ds.rfcs` writer in compiler/mercury/test/test_behave.m. The atom list names each atom by its body message, and is every atom the registry names, Slot included, in both harnesses.",
+    "rules_ds": "schema Reading scope logical:\n    sensor: String key\n    val: Float mutable\n    ok: Bool mutable\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "sensor": "dev1", "val": 21.5, "ok": true } }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot",
+            "ClockAdvance", "FactAssert"
+        ]
+    }
+}

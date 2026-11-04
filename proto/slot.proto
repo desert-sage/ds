@@ -1,0 +1,84 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// Slot atom body. Per [RDSC.5.5].
+message Slot {
+  string   schema_name = 1;
+  string   slot_name   = 2;
+  SlotKind kind        = 3;
+  string   schema_ref  = 4;
+  // Slot markers per LGRA.2.6.11 / LSTO.3.3.1 / LADP.4.6.6.
+  // `sampled` routes writes to the samples plane; `retained`
+  // marks slots whose last value persists across logical-fact
+  // retraction. Both default false (proto3 zero).
+  bool     sampled     = 5;
+  bool     retained    = 6;
+  // LFAC.2.5.1 tolerance-aware dedup. When non-zero (and the
+  // slot kind is INT or FLOAT), the engine treats two facts
+  // whose values differ by <= tolerance on this slot (and match
+  // exactly on the other slots) as the same fact for assertion-
+  // dedup. Zero (the proto3 default) means exact-equality dedup.
+  // Authors write `state: Float tolerance 0.5`.
+  double   tolerance   = 7;
+  // Per-slot identity role per [RDSC.5.5.7] / [LFAC.1.7]. On a `logical`
+  // schema the compiler emits KEY or MUTABLE for every slot (require-all,
+  // LGRA.5.10): the schema's identity key is the set of KEY slots (∅ ⇒
+  // singleton, all ⇒ relation), and `same KEY tuple ⇒ supersede`. On a
+  // non-`logical` schema every slot is UNSPECIFIED. The loader reads the
+  // KEY set into the Rete schema's identity-key tuple. Reject-don't-skip — a
+  // runtime that skipped this field would mis-key the fact.
+  IdentityRole identity_role = 9;
+  uint32   module_id   = 10;
+  // [LNUL.3.1] the slot was declared nullable (`T?`). The runtime admits a
+  // DS_SLOT_NULL value only in a nullable slot; a null in a non-nullable slot
+  // is rejected. The compiler's [LNUL.5.1] pass already gates null placement,
+  // so this is the runtime's defense-in-depth. Default false (proto3 zero) —
+  // an artifact without it reads as non-nullable ([RDSC.7.1]).
+  bool     nullable    = 11;
+  // [LSTR.11.1] the slot's declared `capacity`, in codepoints. `0` means none
+  // was declared and the slot is unbounded, which is also how an artifact
+  // without the field reads. The runtime refuses a longer value at assert and
+  // at emit ([LSTR.11.3]).
+  uint32   capacity    = 12;
+
+  reserved 8;
+  reserved "is_identity";
+}
+
+// LFAC.1.7 identity role for a logical-schema slot.
+enum IdentityRole {
+  IDENTITY_ROLE_UNSPECIFIED = 0;  // non-logical slot, or a pre-2.11 artifact
+  IDENTITY_ROLE_KEY         = 1;  // part of the schema's identity key
+  IDENTITY_ROLE_MUTABLE     = 2;  // payload
+  // The engine's `ts` on a logical schema ([LFAC.9.1], [RDSC.5.5.7]): filled
+  // by the engine, outside the identity key and outside the no-op comparison
+  // ([LFAC.2.5.1]). Never an author's marker.
+  IDENTITY_ROLE_ENGINE      = 3;
+}
+
+enum SlotKind {
+  SLOT_KIND_UNSPECIFIED = 0;
+  SLOT_KIND_INT         = 1;
+  SLOT_KIND_FLOAT       = 2;
+  SLOT_KIND_STRING      = 3;
+  SLOT_KIND_BOOL        = 4;
+  SLOT_KIND_JSON        = 5;
+  SLOT_KIND_SCHEMA      = 6;
+  // Bytes — raw binary blob. Adapter-asserted only (no source literal
+  // form).
+  SLOT_KIND_BYTES       = 7;
+  // The temporal types ([RDSC.5.5.8]). Each is REPRESENTED as a signed int64
+  // on the wire, exactly as an INT slot is, so fact bodies do not change; the
+  // kind is what lets a reader tell a timestamp from a count and rebuild the
+  // declared type.
+  //   TIME:     the instant's utc_ns ([LTIM.1.1.3]). No zone offset is
+  //             stored: a Time is its instant, and the zone applies when read.
+  //   DATE:     days since the epoch.
+  //   DURATION: nanoseconds.
+  SLOT_KIND_TIME        = 8;
+  SLOT_KIND_DATE        = 9;
+  SLOT_KIND_DURATION    = 10;
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LLEX.16.5_semicolon_refused",
+    "category": "compiler",
+    "scenario": "LLEX.16.5: \"`;` is not a token. The lexer must reject it as an unexpected character ([LLEX.15.2.1]).\" The old library-qualified spelling `ha;Trig t` in a pattern head, through `import ha`, which declares `Trig`. Everything else in the file is well formed, so the only refusal is the lexer's: DS_LEX_GENERIC. PATH PINNED: `dsc.lex`'s `llex_8_3_1_punct1`, which has no `;` row, so the character takes the unexpected-character path.",
+    "rules_ds": "import ha\n\nrule r:\n    ha;Trig t\n->\n    log info \"x {t.v}\"\n",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_LEX_GENERIC"
+    }
+}

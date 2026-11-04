@@ -1,0 +1,15 @@
+{
+    "id": "LNRE.6_string_ops_unaffected",
+    "category": "logical",
+    "scenario": "[LNRE.6] `regex: false` reaches only regex literals and their evaluation: ordering and interpolation are unaffected, and a runtime built with RE2 loads the artefact normally. A `regex: false` program gates on `i.label > \"M\"` and logs the label. \"Z\" passes (Z > M); \"A\" fails the ordering. One message, \"Z\". A compiler that refused the program, or a runtime that refused the artefact for its `regex` setting, logs nothing.",
+    "rules_ds": "use default:\n    regex: false\n\nschema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label > \"M\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "a", "label": "A" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "z", "label": "Z" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["Z"]
+    }
+}

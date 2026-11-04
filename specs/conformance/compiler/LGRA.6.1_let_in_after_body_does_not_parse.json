@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.6.1_let_in_after_body_does_not_parse",
+    "category": "compiler",
+    "scenario": "[LGRA.6.1]: an `after` clause's body is an `action_body` (`action+ after_clause* | after_clause+`), and `let_decl*` belongs to the rule body only, so a `let` line inside an `after` block does not parse. Expected DS_PARSE_GENERIC, beginning on line 10, the `let` inside the `after` block ([RCTS.1.2.34]). PATH: `dsc.parse.parse_after_block`, which reads the block with `parse_actions` and `parse_afters` and no `let` parser, then requires the block's DEDENT.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule later:\n    Motion m where m.state == true\n->\n    log info \"armed\"\n    after 30_s:\n        let x = 1\n        log info \"fired {x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 10
+    }
+}

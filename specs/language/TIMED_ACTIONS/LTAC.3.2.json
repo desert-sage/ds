@@ -1,0 +1,54 @@
+{
+  "id": "LTAC.3.2",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.3",
+  "seq": 114,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.3.2] The timer fact's schema is named\n`$Timer_<rule>_<key>`, where `<rule>` is the parent rule's name\nand `<key>` is the clause's key path: the source-order index for a\ntop-level `after`, and `<outer>_<inner>` for one nested inside\nanother ([LTAC.6.2.2]). The schema carries two slots, in this order:\n`fire_at`, a `Duration`, and `corr`, a `String`.\n\n`fire_at` is the monotonic-clock reading ([LTIM.2.8.2]) at or after\nwhich the follow-up rule may fire. It is a `Duration` because\n`monotonic_ns()` returns one ([LTIM.2.2.1]) and the follow-up's guard\ncompares against it. An `after` delay is relative time, so it runs on\nthe monotonic clock: a change to the wall clock neither hastens nor\ndelays it.\n\n`corr` carries the supersedure key from the clause's `as <expr>`\n([LRST.1.1]), and is empty when the clause declares none.\n\nThe schema declares no `scope` and no `key` / `mutable` markers\nbecause neither applies: the timer fact's lifecycle is explicit —\nthe follow-up rule retracts it — so it is not a `logical` schema,\nand [LFAC.1.7.1]'s declare-every-slot requirement is scoped to\nthose. An author cannot write this schema in any case.\n\n",
+  "refs": [
+    "LFAC.1.7.1",
+    "LRST.1.1",
+    "LTAC.6.2.2",
+    "LTIM.2.2.1",
+    "LTIM.2.8.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_2__timer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A TIMER FACT: kind 0 the timer schema, its payload `fire_at`. No `corr` slot, and the clause's `Duration` is a natural here; the fixtures say so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__alphas",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timer schema, as an alpha admitting every timer. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__loaded_is_state",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A timer fact asserted with its `fire_at` on the loaded network. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_2__capture_timer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A TIMER FACT ON THE IDRIS MODEL'S ENGINE: kind 0 in the witnesses' kind order, key 1 (the empty tuple's code), its payload the captured values coded, or 1 for a body that reads nothing. LESS than the clause: no `fire_at` slot -- the entry stamp is `fire_at` less the duration, the module's reading -- and no `corr`, no `as` key being lowered."
+      }
+    ]
+  }
+}

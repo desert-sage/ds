@@ -1,0 +1,23 @@
+{
+    "id": "LNUL.8.6_nulls_skip_drops_the_sample",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] `nulls: skip`: a sample that carries `null` is dropped. `count, mean all_time` over a `Float?` slot with `nulls: skip` takes 1.0, null, 3.0 then 4.0, one per pump, each read pre-sample ([LSER.8.6.1]); the guard `s.count >= 2` logs once, over [1.0, 3.0]: `mean 2.0`. Drives both runtimes' absorb path on a null reading under SKIP: libds `ds_series_absorb_one`'s null arm (`rete_val_to_sample` now passes the null through as DS_SLOT_NULL) and the Mercury `ds.engine.lnul_8_6_sample`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev, nulls: skip):\n    count, mean all_time\n\nrule r:\n    Reading s where s.count >= 2\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 2.0"]
+    }
+}

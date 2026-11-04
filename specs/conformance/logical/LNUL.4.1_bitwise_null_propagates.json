@@ -1,0 +1,17 @@
+{
+    "id": "LNUL.4.1_bitwise_null_propagates",
+    "category": "logical",
+    "scenario": "[LNUL.4.1]: a bitwise operator propagates `null`, as arithmetic does ([LEXP.7.7]). `state` is `Int?`. With `state` absent, `s.state & 1` and `~s.state` are `null`, so neither `odd` nor `complement` fires, and the operation raises no TypeError: `saw_type_error` matches any `TypeError` fault fact ([LERR.9.3]) and must never fire. With `state` 3 both fire, `3 & 1 == 1` and `~3 == -4`, in source order ([LDET.5.4]). A runtime that read the absent operand as 0 fires neither on 3 nor on null, and fails here; one that raised a TypeError logs `type error`. PATH PINNED: the non-connective BINOP and UNOP arms over a `null` operand -- libds rete/eval.c (the null test before the bitwise ops), Mercury `ds.eval` `apply_binop` / the unary arm.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    state: Int? mutable\n\nrule odd:\n    S s where s.state & 1 == 1\n->\n    log info \"odd\"\n\nrule complement:\n    S s where ~s.state == -4\n->\n    log info \"complement\"\n\nrule saw_type_error:\n    TypeError\n->\n    log critical \"type error\"\n",
+    "dead_rules_expected": ["saw_type_error"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "state": null } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "state": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["odd", "complement"]
+    }
+}

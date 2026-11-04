@@ -1,0 +1,22 @@
+{
+  "id": "LADP.8.5.3",
+  "prefix": "LADP",
+  "doc": "ADAPTER_CONTRACT.md",
+  "parent": "LADP.8.5",
+  "seq": 704,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LADP.8.5.3] **A quantity written at the `call` on a unit-typed kwarg is\nconverted to the kwarg's unit.** The compiler must lower it so that the service\nreceives the quantity expressed in the kwarg's unit ([LADP.8.5.2]), never the\nbase-unit value a quantity is stored as ([LUNI.4.3]). This holds for every\nquantity of the kwarg's dimension: a unit literal, a read of a unit-typed slot,\nand any other expression of that dimension.\n\nA value known at compile time is converted there, as the kwarg's `default` is.\nAny other value is converted when the call is evaluated, by the unit's\nconversion from the base unit, with the constants the compiler bakes\n([LUNI.2.7.1]).\n\nWhere the kwarg's dimension declares `storage int64` ([LUNI.7.2]), the converted\nquantity must be a whole number of the kwarg's unit. It is never truncated or\nrounded:\n\n- the compiler must refuse a value known at compile time that is not whole\n  (`DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE`), as it refuses such a `default`\n  ([LGRA.23.2]): `90_s` on a `min` kwarg is refused, and `120_s` is `2`;\n- for a value that is not whole when the call is evaluated, the engine must\n  raise a `ComputationError` of kind `NOT_REPRESENTABLE` ([LERR.1.4]) and must\n  not issue the call.\n\n",
+  "refs": [
+    "LADP.8.5.2",
+    "LERR.1.4",
+    "LGRA.23.2",
+    "LUNI.2.7.1",
+    "LUNI.4.3",
+    "LUNI.7.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE"
+  ]
+}

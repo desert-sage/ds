@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.14.7",
+    "clauses": ["LCRS.7.1"],
+    "category": "compiler",
+    "scenario": "Timeouts via the absence idiom per [LCRS.7.1] (LCRS.14.7, the id, is a tombstone) \u2014 a negated pattern over the response schema, constrained to the call's correlation and bounded by `within`. No new keyword. Pin: `no Reply r within 30_s where r.corr == \"X\"`, over the `ttl` schema a service declares as its response (LCRS.4.3.2), compiles cleanly: the absence idiom is just `no` + `within` on an ordinary fact.",
+    "rules_ds": "schema Reply scope ttl 1_min:\n    corr: String\n\nservice svc.get:\n    kwarg id: Int\n    response Reply\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n    no Reply r within 30_s where r.corr == \"X\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

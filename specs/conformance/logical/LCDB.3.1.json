@@ -1,0 +1,19 @@
+{
+    "id": "LCDB.3.1",
+    "category": "logical",
+    "scenario": "Cooldown suppresses same-key RHS execution within window per LCDB.3.1. Pin: rule `r cooldown 1_h`; assert Trig(v=1), pump → action_log fires. Retract, advance 30_min, re-assert, pump — the terminal's `fn_rate_allow` guard suppresses RHS actions (no second action_log). Cooldown is RHS-level suppression, not activation suppression.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r cooldown 1_h:\n    Trig\n->\n    log critical \"tick\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 1000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "v": 1 }, "as": "h" },
+            { "op": "pump" },
+            { "op": "retract", "label": "h" },
+            { "op": "advance", "delta_ns": 1800000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["tick"]
+    }
+}

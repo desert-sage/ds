@@ -1,0 +1,16 @@
+{
+    "id": "IDSP.13.4_duration_cache_value_is_an_integer",
+    "category": "adapter",
+    "scenario": "IDSP.13.4's `Duration` row: a cached `Duration` is a JSON integer, its nanoseconds. The rule caches a `Duration` slot read and the integrator's set callback receives exactly the text `5000000000`. Path: the compiler wraps the value in FN_JSON_VALUE (dsc.rete), and libds's rete/adapters.c `adapter_ds_json_value` renders it through `jt_value`. Pins this row only.",
+    "rules_ds": "schema Trig scope logical:\n    id: String key\n    v: Duration mutable\n\nrule keep:\n    Trig t\n->\n    cache key: \"duration\" value: t.v\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": "a", "v": 5000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_sets": [
+            { "key": "duration", "value_json": "5000000000" }
+        ]
+    }
+}

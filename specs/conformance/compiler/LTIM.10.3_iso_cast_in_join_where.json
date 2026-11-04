@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.10.3_iso_cast_in_join_where",
+    "clauses": ["LTIM.2.6.2"],
+    "category": "compiler",
+    "scenario": "[LTIM.10.3]: a conversion between a temporal value and text resolves no zone. The ISO-8601 cast ([LCST.4.5.9]) and the `to_string` member ([LTIM.8.1.2]) write the value's own offset ([LTIM.8.2.4]) and look up no `TimeZoneOffset` fact ([LTIM.10.7]), so neither is a zone read ([LTIM.2.4.1]). A `where` holding them on a rule with two positive patterns is not time-dependent, and [LTIM.2.6.2] does not refuse it. `Arm a` and `Event e where e.k == a.k and (e.fired::String) == \"2026-01-01T09:00:00Z\" and e.fired.to_string(\"iso8601\") == \"2026-01-01T09:00:00Z\"` compiles. `compile_ok`. PATH: `dsc.validate.ltim_2_6_2_clock_where`'s `time_read`, whose zone arm, `dsc.typecheck.ltim_2_4_1_zone_read`, matches `local` and `date` alone.",
+    "rules_ds": "use default\n\nschema Arm scope logical:\n    k: Int key\n\nschema Event scope logical:\n    k: Int key\n    fired: Time mutable\n\nrule at_nine:\n    Arm a\n    Event e where e.k == a.k and (e.fired::String) == \"2026-01-01T09:00:00Z\" and e.fired.to_string(\"iso8601\") == \"2026-01-01T09:00:00Z\"\n->\n    log info \"at nine\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

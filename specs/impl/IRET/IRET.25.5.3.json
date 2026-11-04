@@ -1,0 +1,188 @@
+{
+  "id": "IRET.25.5.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.25.5",
+  "seq": 1799,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.25.5.3] The rate-allow state is maintained\nper-engine.  The gate key is the rule name followed by\nthe activation key ([LCDB.3.3.3], [IRET.10.4]), compared with the identity\nRLOW.4.6.2.1 states: component by component, representation and value, exact\nand whole. libds must not render a key lossily — no rounding of a `Float`, no\ntruncation of a component or of the whole, no separator a component can\ncontain — and holds no key-length limit of its own.\n\n---\n\n",
+  "refs": [
+    "IRET.10.4",
+    "LCDB.3.3.3",
+    "RLOW.4.6.2.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__word",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "libds's word codec, `rk_feed_u64`'s eight little-endian bytes of a 64-bit count and a reader for them, as a parameter taken at its contract rather than modelled byte by byte."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__word_ok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The codec's contract -- a word written in front of anything reads back as that word and the rest -- which eight little-endian bytes have for every value a uint64 holds."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bool_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Bool's word read back: libds writes 1 or 0 (`rk_walk`, rete/adapters.c)."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bytes_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'No truncation of a component, no separator a component can contain': a length-prefixed component -- a String, Bytes or Json -- reads back whole from in front of any tail, whatever bytes it holds and however long it is."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bytes_then",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A length-prefixed component read back, `rk_feed_bytes` inverted: the word says how many bytes are the component's."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__cons_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A component read in front of the components read after it."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__decode",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The stored key read back: the count, then that many components, nothing left over. libds compares keys in place (`rk_walk` into a comparing sink) and has no reader; this one exists because a reader that inverts the writer is what makes the writer injective."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__decode_encode",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The stored key reads back as the key, on every key, under every codec with the contract."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__encode",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE KEY AS libds STORES IT, transcribed from `rk_walk` (rete/adapters.c): the component count, then per component a tag byte for its representation and a fixed-width word, or a length word and the bytes. The clause's 'compared with the identity RLOW.4.6.2.1 states' is what `rlow_4_6_2_1__encode_injective` establishes of it."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__encode_injective",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "libds DOES NOT RENDER A KEY LOSSILY: two keys stored as one byte string are one key under RLOW.4.6.2.1's identity, for every pair of keys. No rounding (a Float is its bits), no truncation and no in-band separator (the count, the tag bytes and the length words make the frame prefix-free), no key-length limit (the theorem is for every length). Under the one hypothesis that the word codec has its contract, which eight little-endian bytes do."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One component read back: the tag byte decides the shape, the word the value or the length."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A component written reads back, for every component of every representation and every tail."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_to",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One component's bytes, `rk_walk`'s arm for its kind: the tag (`RK_NULL` .. `RK_RATIO`), then a word or a length word and the bytes."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "So many components read back, in order."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The components written read back, as many as were written."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_to",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The components' bytes in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__ratio_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Ratio's second word read back after its first."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__ratio_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Ratio's two words read back."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__whole_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The components read back are the key when nothing is left over."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__word_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A scalar component -- an Int, a Time's count, a Float's bits, a Bool, a fact id -- reads back from in front of any tail."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__word_then",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A scalar component read back: one word, under the constructor its tag named."
+      }
+    ]
+  }
+}

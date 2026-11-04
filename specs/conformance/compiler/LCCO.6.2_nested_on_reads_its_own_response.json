@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.6.2_nested_on_reads_its_own_response",
+    "category": "compiler",
+    "scenario": "[LCCO.6.2]: each `response` is bound in the body of the clause that matched it, and a continuation of a call made inside that body sees its own. Rule `r` calls `svc.first` as `first`; its `on response.code == 200:` body calls `svc.second` as `second` ([LCCO.3.8]), whose `on response.code > 0:` body logs `{response.code}`, the inner answer. It compiles. Its run is `logical/LCCO.6.2_nested_on_reads_the_inner_answer`. PATH PINNED: `dsc.validate`'s `continuation_env`, which builds the inner scope from the rule's with the inner `response` bound, and `dsc.rete`'s `lcco_6_2_parents`, which leaves the outer `response` out of what the inner call captures. The break is an inner scope built from the outer body's, which still compiles here and reads the outer answer in the twin.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.first:\n    kwarg n: Int\n    response Reply\n\nservice svc.second:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.first n: j.id nocooldown as \"first\"\n        on response.code == 200:\n            call svc.second n: 2 nocooldown as \"second\"\n                on response.code > 0:\n                    log info \"inner {response.code}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

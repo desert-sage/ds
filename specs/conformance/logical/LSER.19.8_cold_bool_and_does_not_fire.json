@@ -1,0 +1,27 @@
+{
+    "id": "LSER.19.8_cold_bool_and_does_not_fire",
+    "category": "logical",
+    "dead_rules_expected": ["cold_bool_and"],
+    "scenario": "LSER.19.8 — a cold `bool_and` is `null`, neither vacuous answer. One assert, one pump, single-pattern `where not r.bool_and` evaluated at assert before any sample is absorbed. `not null` is `null` (Kleene, [LNUL.4.2]) and the rule does not fire. A runtime answering `false` fires (`not false`); one answering the vacuous `true` does not fire, so that case is pinned by the compiler side instead (LSER.19.8_nullable_agg_unnarrowed types the family `T?`). Path: the same cold-value dispatch as LSER.19.8_cold_mean_does_not_fire, on a `Bool` element type.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    active: Bool mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Sensor.active:\n    bool_and sliding 10_min\n\nrule cold_bool_and:\n    Sensor s where not s.bool_and\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "s1",
+                    "active": false
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "forbidden_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

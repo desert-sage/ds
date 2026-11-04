@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.8.5_seed_text_stray_continuation_refused",
+    "category": "runtime",
+    "scenario": "[LSTR.8.5]: JSON text a host hands the engine must be well-formed UTF-8, and text that is not is refused with `DS_ERR_ENCODING` (-222), changing nothing and recording no event. The site is a cache seed's text ([NLFC.9.1]), given as `text_bytes` ([RCTS.1.2.25]) because no JSON string can hold the octets: the JSON string `\"` 80 `\"`, a STRAY CONTINUATION octet with no lead octet before it. `message_contains` is the words both runtimes give this refusal and no other, and `no_fault_events` pins that a host refusal reaches no stream event. Break tests: a runtime that skips continuation octets it cannot place, or reads 80 as Latin-1, admits the seed, nothing is refused, and the vector fails; one that refuses it as malformed JSON (-100) fails on `code`. PATH PINNED: on libds, pyds's `cache.seed` -> `ds_json_parse`'s `ds_utf8_well_formed` check (`json.c`), before any of the text is parsed; on the Mercury runtime, `ds.engine.seed_cache_text` -> `seed_text`'s `utf8_well_formed` check, before `seed_text_parsed`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-222",
+        "message_contains": "not well-formed UTF-8",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text_bytes": "228022" }
+        ]
+    }
+}

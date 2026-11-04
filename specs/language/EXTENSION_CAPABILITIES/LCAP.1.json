@@ -1,0 +1,44 @@
+{
+  "id": "LCAP.1",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": null,
+  "seq": 25,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Registered capabilities",
+  "text": "## Registered capabilities [LCAP.1]\n\nA **capability** is a boolean setting with a stable name. Every program has\na setting for every capability: its dialect's, with its `use` block's\noverrides applied ([LDIA.1.3]). The registry is the enumeration\n`proto/capabilities.proto#Capability`; the stable name of a member is its\nenum name without the `CAPABILITY_` prefix, in lower case.\n\nCapabilities are of two kinds, in one namespace:\n\n- a **strategy** capability chooses how the engine executes a program, and\n  restricts constructs to those that strategy can run: `realtime`,\n  `constspace` and `linear_scan`;\n- a **construct** capability permits a construct, and `false` forbids it:\n  every other capability.\n\n| Capability | Kind | A build may omit its code | Specified at |\n|---|---|---|---|\n| `realtime` | strategy | yes | [LCAP.2.1] |\n| `constspace` | strategy | yes | [LCAP.2.6] |\n| `linear_scan` | strategy | no | [LCAP.2.2] |\n| `logical` | construct | no | [LCAP.2.3] |\n| `dynamic_ttl` | construct | no | [LCAP.2.4] |\n| `regex` | construct | yes | [LCAP.2.8] |\n| `float` | construct | yes | [LCAP.2.9] |\n| `call`, `publish`, `cache`, `cache_delete` | construct | no | [LFCA.2.1] |\n| `series` | construct | no | [LFCA.5.1] |\n| `nocooldown` | construct | no | [LFCA.6.1] |\n| `sampled_slots`, `persist_on_series`, `storage_hydrate_facts`, `storage_hydrate_samples` | construct | yes | [LCAP.2.10] |\n\nA runtime must contain the code for every capability marked \"no\". A\nruntime may be built without the code for a capability marked \"yes\"; it\nthen refuses an artefact that requires that capability ([RDSC.16.2.7]).\n\n`realtime` and `constspace` are deferred in this edition: the compiler\nrefuses a program that sets either `true` ([LCAP.2.1.5]). So are the four\nstorage and samples-plane capabilities ([LCAP.2.10]).\n\nWhich settings may be combined is constrained by [LCAP.3.8].\n\n---\n\n",
+  "refs": [
+    "LCAP.2.1",
+    "LCAP.2.1.5",
+    "LCAP.2.10",
+    "LCAP.2.2",
+    "LCAP.2.3",
+    "LCAP.2.4",
+    "LCAP.2.6",
+    "LCAP.2.8",
+    "LCAP.2.9",
+    "LCAP.3.8",
+    "LDIA.1.3",
+    "LFCA.2.1",
+    "LFCA.5.1",
+    "LFCA.6.1",
+    "RDSC.16.2.7"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/dialect_capability.als",
+        "name": "lcap_1__capability",
+        "tag": "spec"
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/capabilities.proto",
+        "name": "Capability",
+        "tag": "spec"
+      }
+    ]
+  }
+}

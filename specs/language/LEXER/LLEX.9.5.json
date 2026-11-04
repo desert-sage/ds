@@ -1,0 +1,45 @@
+{
+  "id": "LLEX.9.5",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.9",
+  "seq": 348,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LLEX.9.5] An author must not declare an identifier that is a\nreserved word, and the compiler must refuse such a declaration. The\nreserved words are the rows of [LLEX.9.6], the percentile family and `_`,\nbelow. The restriction binds at\nevery site an author names something — a slot, a binding, a schema, a\nrule, a `const`, a service kwarg, and an `opaque type` — and admits no\nposition, scope or class in which a reserved word becomes nameable.\n\nA word is reserved as one exact NFC string, so reservation is\ncase-sensitive on the terms [LNAM.2.1.1] already sets: `where` is\nrefused, and `Where` and `WHERE` are ordinary identifiers. An author\nwho meets a reserved word renames; DS supplies no quoted-identifier\nform.\n\n**The restriction binds an author's declarations, and nothing else.** A\nschema the compiler itself declares may name a slot with a reserved word.\nReading such a slot is a read, not a declaration, so it is admissible in any\nposition a slot read is.\n\nThe percentile aggregations are the one reserved vocabulary that is a\nfamily rather than a set of words. Every `p1` … `p99` is reserved, and\n[LLEX.9.6] carries no row for any of them.\n\nThe identifier `_` alone is reserved and has no meaning. It is a `NAME`\n([LLEX.10.4]), no construct gives it a meaning, and [LLEX.9.6] carries no row for\nit. Nothing declares it, so a read of it is a read of an undeclared name.\n\n---\n\n",
+  "refs": [
+    "LLEX.10.4",
+    "LLEX.9.6",
+    "LNAM.2.1.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_HARD_KEYWORD_NAME"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/names.als",
+        "name": "llex_9_5__author_ident_not_reserved",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "llex_9_5__reserved_never_author_names",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "llex_9_5__reserved_words",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "llex_9_5__schema_kind_never_an_author_name",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The kind Schema, reserved as type on LLEX.9.6, is spelled by no author identifier: the rule applied to that row. Fails if the kind's reservation is removed from names.als."
+      }
+    ]
+  }
+}

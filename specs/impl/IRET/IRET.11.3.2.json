@@ -1,0 +1,106 @@
+{
+  "id": "IRET.11.3.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11.3",
+  "seq": 923,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.11.3.2] A fired match stays refracted until its activation is\nre-created: its token re-asserted under a new wrapper, retracted, released\nby a negated condition of its rule, or ended by a time-dependent test that\nwent false and made again when the test goes true ([LTIM.2.5.1]). Nothing\nelse releases it — not an unrelated assert or retract, not a pump boundary,\nand not a clock tick under which its match persists ([LDET.5.8]). A match\nblocked and released within one pump is re-created and may fire again.\n\nThe flag carries this, not the table. A generation's turnover — every\nworking-memory assert and retract, and each pump — leaves every table entry\nstale, but releases no match: an activation the change did not reach keeps\nits flag and is not selected again, and one it did reach is re-created. The\ntable's entries matter only within one generation; a clock-driven match\nformed again on every tick is held by the edge-once set ([IRET.11.3.5]).\n\n",
+  "refs": [
+    "IRET.11.3.5",
+    "LDET.5.8",
+    "LTIM.2.5.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__tick_keeps_activation_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A tick clears no refraction: the fired activation whose match persists keeps its flag through the re-time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_2__insert_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact asserted begins a new cycle: the set is cleared."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_2__insert_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT ASSERTED keeps the ghost sound: the view is kept, and the cleared set refuses nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_2__retract_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact retracted begins a new cycle: the set is cleared."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_2__retract_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT RETRACTED keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's clearing is what makes the set unobservable: between two clearings the terminals change only by marking, so the set never holds an identity whose activation is unfired. The clearing is a safe over-approximation of [LDET.5.3]'s 'until its LHS changes'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_r",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What assert does to the set: cleared on every path that changes working memory, kept on a suppressed reassertion, which asserts no new fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "lscp_2_1_1__withdraw_r",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What withdraw does to the set: cleared when a live fact leaves, kept when there was nothing to withdraw."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__tick_keeps_activation",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A TICK IS NOT A CHANGE TO THE LHS: an activation whose match the new test still admits is the same record after the tick, its `fired` flag included. A fired match stays refracted across every tick that leaves it matching -- Rete/NetworkRefraction.idr's theorem, restated under ticks."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_2__chgC",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "An unrelated working-memory change. The clause says it clears no identity, and under the flag reading (column `own`) it clears nothing. The model also runs the refused reading `anywm`, which clears every identity on any assert or retract; this event is what separates the two (stream `tick_reeval`)."
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_2__gen",
+        "tag": "spec"
+      }
+    ]
+  }
+}

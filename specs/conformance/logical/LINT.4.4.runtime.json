@@ -1,0 +1,17 @@
+{
+    "id": "LINT.4.4.runtime",
+    "category": "logical",
+    "dead_rules_expected": ["empty_inside", "inside_empty"],
+    "scenario": "[LINT.4.4] an empty interval overlaps nothing, including a non-empty one that strictly contains it. empty = (5..5) lies strictly inside wide = (0..10), which is the degenerate case: both CROSS-INTERVAL comparisons (i1.start < i2.end and i2.start < i1.end) hold, while the intersection is empty and [LINT.7.1] admits no instant in common. Pins the four-conjunct lowering at `dsc.rete`'s `lint_3_1_1_relation`, its `overlaps` arm — specifically its two NON-EMPTINESS conjuncts; dropping either one turns this vector red. Both operand orders are driven (rules `empty_inside` and `inside_empty`) because the intersection form is symmetric ([LINT.4.1]'s lint_4_1__overlaps_symmetric) and a lowering can be wrong in one direction only. The control rule `wide_other` must fire: without it a lowering that answered FALSE for every `overlaps` would pass this vector, and the negative pair would pin nothing.",
+    "rules_ds": "schema Range scope logical:\n    entity_id: String key\n    start: Int mutable\n    end: Int mutable\n\nrule empty_inside:\n    Range e where e.entity_id == \"empty\"\n    Range w where w.entity_id == \"wide\" and (e.start..e.end) overlaps (w.start..w.end)\n->\n    log critical \"empty-inside\"\n\nrule inside_empty:\n    Range w2 where w2.entity_id == \"wide\"\n    Range e2 where e2.entity_id == \"empty\" and (w2.start..w2.end) overlaps (e2.start..e2.end)\n->\n    log critical \"inside-empty\"\n\nrule wide_other:\n    Range x where x.entity_id == \"wide\"\n    Range y where y.entity_id == \"other\" and (x.start..x.end) overlaps (y.start..y.end)\n->\n    log critical \"wide-other\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Range", "slots": { "entity_id": "empty", "start": 5, "end": 5 } },
+            { "op": "assert", "schema": "Range", "slots": { "entity_id": "wide", "start": 0, "end": 10 } },
+            { "op": "assert", "schema": "Range", "slots": { "entity_id": "other", "start": 5, "end": 15 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["wide-other"]
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "RFCS.23.3",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.23",
+  "seq": 953,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.23.3] **`schema_hash` fingerprints what decoding depends on.** It is the\nSHA-256 of the schema's `SchemaShape` (`proto/fact_external.proto#SchemaShape`):\nthe schema's own name ([LIMP.13.1]) and, for each slot in byte order of slot name, the slot's\nname, its `Kind`, whether it is nullable, for a fact-reference slot the\nreferenced schema's own name, and for a slot declared `Time`, `Date` or `Duration`\nits declared `SlotKind` (`proto/slot.proto#SlotKind`, [RDSC.5.5.8]). So a\n`Time` slot and an `Int` slot of the same name hash differently, though both\ncarry `KIND_INT` ([RFCS.23.2]). The shape is encoded with its fields in field-number\norder and default values omitted, so every writer produces the same bytes.\n\nLifecycle, identity keys, slot order and units are outside the hash: the\nreceiving program applies its own ([RFCS.23.6]).\n\nA `FactExternal`'s `schema` is the schema's own name. A program must refuse a\n`FactExternal` whose `schema_hash` differs from that of its own schema of the\nsame name, and must refuse one naming a schema it does not declare\n([LIMP.13.3]). A record written under a changed schema is read only after migration\n([RFCS.23.8]).\n\n",
+  "refs": [
+    "LIMP.13.1",
+    "LIMP.13.3",
+    "RDSC.5.5.8",
+    "RFCS.23.2",
+    "RFCS.23.6",
+    "RFCS.23.8"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/fact_external.proto",
+        "name": "SchemaShape",
+        "tag": "spec"
+      }
+    ]
+  }
+}

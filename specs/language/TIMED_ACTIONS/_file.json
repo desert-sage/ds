@@ -1,0 +1,17 @@
+{
+  "doc": "TIMED_ACTIONS.md",
+  "tree": "language",
+  "src": "docs/specs/language/TIMED_ACTIONS.md",
+  "prefixes": [
+    "LTAC"
+  ],
+  "title": "Timed actions",
+  "preamble": "# Timed actions\n\nThe `after` continuation clause on a rule's\nRHS. An `after <duration>: <actions>` clause schedules an action\nlist to run after a delay on the monotonic clock. The compiler lowers each\nclause to a synthetic timer fact plus a follow-up rule; the\ndeclarative core is preserved and no engine state changes are\nrequired beyond ordinary fact assertion and retraction.\n\nPaired with:\n- [LGRA] for action grammar.\n- [LLOG] for the `$ClockTick`\n  substrate that drives timer firing.\n- [LLEX.10.6] for the synthetic names\n  timer facts take.\n- [LCCO] for `on`,\n  `timeout`, and `error` continuations on `call` actions; `after`\n  composes with them per §7.\n\n## What this is not\n\n- Not a coroutine, yield, or await mechanism. `after` creates a\n  follow-up rule, not a paused execution frame.\n- Not a replacement for `timeout` per [LCCO.7], which fires when\n  a call's response does not arrive. `after` fires on a delay\n  regardless of any call state.\n- Not a cancellation primitive. A scheduled `after`\n  cannot be cancelled mid-flight. The supersedure\n  mechanism at [LRST] puts\n  `as <expr>` on `after` for per-fact supersedure on\n  author-named keys (re-fire replaces the prior timer).\n\n---\n\n",
+  "paired_with": [
+    "CALL_CONTINUATION.md",
+    "GRAMMAR.md",
+    "LEXER.md",
+    "LOGICAL_FACTS.md",
+    "RESTART.md"
+  ]
+}

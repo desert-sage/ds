@@ -1,0 +1,10 @@
+{
+    "id": "LINT.2.2_unordered_operand_bool",
+    "category": "compiler",
+    "scenario": "[LINT.2.2]: an interval's element type is one `<` orders ([LINT.1.1]), and `Bool` is not one, so `b.flag .. b.other` on two `Bool` slots is refused with DS_VALIDATE_UNORDERED_TYPE. Both endpoints have one type, so the refusal cannot be LINT.2.2's mixed-family check (DS_VALIDATE_INTERVAL_MIXED_OPERANDS). A compiler that refuses only that compiles `true .. false`. The interval stands under `in` so the program is otherwise well formed. PATH PINNED: `dsc.typecheck`'s `lint_2_2_interval`, which refuses an unordered operand before it compares the two families.",
+    "rules_ds": "schema B scope logical:\n    entity_id: String key\n    flag: Bool mutable\n    other: Bool mutable\n\nrule r:\n    B b where b.flag in (b.flag .. b.other)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

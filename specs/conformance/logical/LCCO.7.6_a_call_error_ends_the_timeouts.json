@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.7.6_a_call_error_ends_the_timeouts",
+    "clauses": ["LCCO.7.6", "LCCO.7.2"],
+    "category": "logical",
+    "scenario": "[LCCO.7.6]: a `CallError` on the call's correlation retracts every timer of the call, so no `timeout` body runs after it, including once it has expired. Rule `r` calls `svc.get` as `c1` (a literal `as`, no capture fact) with `error:` logging `failed` and `timeout 5_s:` logging `late`. A Job is asserted and pumped, so the call is issued and its timer armed; a `CallError` on `c1` is asserted and pumped, so `failed` is logged; then the clock moves 301 s, past the timer's deadline and the `CallError`'s 5 min TTL ([LCRS.4.2.1]), and is pumped. The messages are exactly ['failed']. The break: with no rule retracting the timer on the `CallError`, the timer outlives it, and once it expires the timeout sibling's NOT over `CallError` holds and logs `late`. PATH PINNED: `dsc.rete`'s `lcco_7_6_discharge`, the `$r_timeout_0_failed` rule joining `$Timer_r_timeout_0` with `CallError` on `corr` and retracting the timer.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        error:\n            log info \"failed\"\n        timeout 5_s:\n            log info \"late\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no route", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 301000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["failed"]
+    }
+}

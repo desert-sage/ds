@@ -1,0 +1,19 @@
+{
+    "id": "LUNI.4.1.5_two_libraries_one_symbol_name_convert",
+    "category": "logical",
+    "scenario": "[LUNI.4.1.5], [LUNI.8.1]: `b`'s `mark` and `a`'s are two units of one dimension, and a value of one meeting a value of the other converts. `x.t` is `b`'s, stored in base units, and `2_mark` is `a`'s, 4 in base units at `x * 2`. So the fact holding 4.0 matches and the one holding 6.0, the literal at `b`'s scale, does not: exactly [\"hit 1\"]. PATH PINNED: `dsc.quantity.luni_3_1_7_unit_of` and `declared_unit_body`, reading the literal's unit in the program, then `dsc.typecheck`'s comparison of one dimension.",
+    "rules_ds": "from a import mark\nimport b\n\nrule r:\n    b.S x where x.t == 2_mark\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2\n",
+        "b": "from a import warmth\n\nunit mark: warmth = x * 3\n\nschema S scope logical:\n    k: Int key\n    t: mark mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "b.S", "slots": { "k": 1, "t": 4.0 } },
+            { "op": "assert", "schema": "b.S", "slots": { "k": 2, "t": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

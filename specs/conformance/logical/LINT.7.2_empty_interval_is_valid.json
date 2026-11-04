@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_empty_interval_is_valid",
+    "clauses": ["RLOW.6.1.7", "LINT.7.1"],
+    "category": "logical",
+    "dead_rules_expected": ["inside", "handler"],
+    "scenario": "[LINT.7.2] makes an interval valid when `start <= end`, so an empty one, `start == end`, is valid ([LINT.7.1]) and contains nothing. One S with `t`, `a` and `b` all 5: rule `inside`, testing `s.t in (s.a .. s.b)`, does not fire, because the half-open `[5, 5)` holds no point, and raises no fault, so rule `handler` never fires. Rule `seen` fires on the fact and logs `seen 1`, so the vector cannot pass with nothing run. A check written `start < end` would raise DOMAIN here and `handler` would log. PATH PINNED: FN_INTERVAL_CHECK's pair test `s <= e` accepting equality, in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    t: Int mutable\n    a: Int mutable\n    b: Int mutable\n\nrule inside:\n    S s where s.t in (s.a .. s.b)\n->\n    log info \"inside {s.id}\"\n\nrule seen:\n    S s\n->\n    log info \"seen {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "t": 5, "a": 5, "b": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen 1"]
+    }
+}

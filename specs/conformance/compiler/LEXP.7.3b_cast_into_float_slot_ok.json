@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.7.3b_cast_into_float_slot_ok",
+    "category": "compiler",
+    "scenario": "LEXP.7.3b — the escape hatch. The same widening written explicitly with `:: Float` ([LCST.4.1]) compiles, so the rule costs the author one cast rather than forbidding the operation. This is the does-not-over-fire half: a slot-type check that rejected the cast form would leave no way to widen at all.",
+    "rules_ds": "schema Reading scope logical:\n    qty: Int key\n\nschema Result scope ttl 1_h:\n    val: Float\n\nrule widen:\n    Reading r\n->\n    emit Result val: r.qty :: Float\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

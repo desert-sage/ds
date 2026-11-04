@@ -1,0 +1,24 @@
+{
+  "id": "RCLI.1.5",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 15,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.5] **`dump-schemas` emits one proto3 file**, unless `--json` asks for\nthe schemas as data ([RCLI.1.14]). It declares\n`syntax = \"proto3\"` and `package ds.dsc.user.v1`, followed by one message per\n`schema` the input declares, named for its `NAME`, its fields numbered from `1`\nin declaration order. Each message is the proto source the artefact carries for\nthat schema ([RDSC.5.8.3]), so a descriptor built from this output matches the\none an engine reads from the `.dsc`. The compiler knows no import path for its\ninput, so the package is this one for a library's input too, where the artefact's\ntext adds the path; the message is the same.\n\nOnly schemas **declared** in the input are emitted. A schema reached by\n`import` is emitted by running `dump-schemas` on the module that declares it,\nso a module's output does not change when the import graph around it is\nreorganised.\n\nThe output is one combined file, so one `protoc` run generates bindings for\nthe whole set. It goes to standard output, or to the file `-o` names; `-o -`\nis standard output.\n\n",
+  "refs": [
+    "RCLI.1.14",
+    "RDSC.5.8.3"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "dump_schemas",
+        "tag": "spec"
+      }
+    ]
+  }
+}

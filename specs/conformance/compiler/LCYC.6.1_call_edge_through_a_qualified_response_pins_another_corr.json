@@ -1,0 +1,13 @@
+{
+    "id": "LCYC.6.1_call_edge_through_a_qualified_response_pins_another_corr",
+    "clauses": ["LCYC.3.2.2"],
+    "category": "compiler",
+    "scenario": "[LCYC.6.1]'s literal break on a call edge through a qualified name: the control of `LCYC.3.2.2_call_edge_through_a_qualified_response`. The same two rules, except that `fetch_b` pins `corr` to `other`, a literal `fetch_a`'s call does not set. So there is no edge fetch_a -> fetch_b, the rules are no cycle, and it compiles. The break is a graph that drew the edge with no regard to `corr`. PATH PINNED: `dsc.cycle.lcyc_3_2_2_call_outcomes`, whose qualified outcome carries the call's literal `as` as `corr`, through the literal break in `lcyc_6_3_unit_graph`.",
+    "rules_ds": "import lib\n\nrule fetch_a:\n    lib.BReply r where r.corr == \"b-response\"\n->\n    call service.a nocooldown as \"a-response\"\n\nrule fetch_b:\n    lib.AReply r where r.corr == \"other\"\n->\n    call service.b nocooldown as \"b-response\"\n",
+    "libraries": {
+        "lib": "schema AReply scope ttl 1_h:\n    corr: String\n\nschema BReply scope ttl 1_h:\n    corr: String\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    response AReply\n\nservice service.b:\n    \"\"\"stub\"\"\"\n    response BReply\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

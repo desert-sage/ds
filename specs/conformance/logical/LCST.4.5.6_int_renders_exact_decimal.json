@@ -1,0 +1,17 @@
+{
+    "id": "LCST.4.5.6_int_renders_exact_decimal",
+    "category": "logical",
+    "scenario": "[LCST.4.5.6]: `Int -> String` is the exact decimal ([LCST.4.5.2]: total). Rule `render` logs `s.n::String` for zero, a negative and both Int64 bounds; a render through `Float` gives `9.223372036854776e18` at the upper bound, and one that drops the sign or pads gives neither bound. Rule `round_trip` fires only where `(s.n::String)::Int?` parses back to `s.n` ([LCST.4.5.7]), at every value. The source is a slot read, so nothing is folded at compile time. `render` fires before `round_trip` by terminal ordinal ([LDET.5.4]), and within a rule in assertion order. PATH PINNED: FN_INT_TO_STRING in both runtimes and the compiler's `cast_fn` row for `ck_int -> ct_string`.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule render:\n    S s\n->\n    let t = s.n::String\n    log info \"{t}\"\n\nrule round_trip:\n    S s where (s.n::String)::Int? == s.n\n->\n    log info \"{s.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "n": 0 } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "n": -42 } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "n": 9223372036854775807 } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "n": -9223372036854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "0", "-42", "9223372036854775807", "-9223372036854775808", "a", "b", "c", "d" ]
+    }
+}

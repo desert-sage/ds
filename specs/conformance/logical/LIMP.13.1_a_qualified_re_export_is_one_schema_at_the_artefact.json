@@ -1,0 +1,21 @@
+{
+    "id": "LIMP.13.1_a_qualified_re_export_is_one_schema_at_the_artefact",
+    "category": "logical",
+    "scenario": "[LIMP.13.1], [LIMP.4.4.1]: `b.X` is no schema's name. Library `a` declares `X`, `b` re-exports it, and `c`'s `Held.r` is typed `X` by `c`'s own `from a import X`. The program's head is `b.X x`, and `emit c.Held` passes `r: x`, which compiles only if what `b.X` reaches is the schema that slot names. At the artefact the slot's `schema_ref` is `a.X`. The break is a schema of its own under `b.X`: the emit is then a schema mismatch. PATH PINNED: `dsc.imports.limp_4_4_1_qualified` for the head and `dsc.imports.limp_1_5_tree` for the slot, read back as `RDSC.5.5.5_schema_ref_is_the_declaring_files_resolution` reads it.",
+    "rules_ds": "import b\nimport c\n\nrule make:\n    b.X x\n->\n    emit c.Held logical k: x.v r: x\n",
+    "libraries": {
+        "a": "schema X scope logical:\n    v: Int key\n",
+        "b": "from a import X\n",
+        "c": "from a import X\n\nschema Held scope logical:\n    k: Int key\n    r: X mutable\n"
+    },
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "assert", "schema": "a.X", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "slot_schema_ref", "schema": "c.Held", "slot": "r", "equals": "a.X" }
+        ]
+    }
+}

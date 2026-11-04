@@ -1,0 +1,15 @@
+{
+    "id": "LFST.6.3b",
+    "clauses": ["RARC.5.8.11"],
+    "category": "logical",
+    "scenario": "rule_fire_begin and rule_fire_end bracket every rule firing (RARC.5.8.11). A single rule fire produces both events in order — rule_fire_begin appears before rule_fire_end in the stream.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"ok\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "rule_fire_end"]
+    }
+}

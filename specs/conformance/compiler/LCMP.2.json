@@ -1,0 +1,9 @@
+{
+    "id": "LCMP.2",
+    "category": "compiler",
+    "scenario": "One program with a construct behind each of LCMP.2's required events compiles: a series backing, a capture (the continuation reads `s`), an activation-scope emit, an `as` key and a cooldown. PINS ONLY THAT THEY COMPILE TOGETHER: no expectation kind reads the compiler report, so none of LCMP.2.1's events is observed, and the vector links no clause. Each construct's own vector pins it (LSER.10.18, LCCO.5.6, LRST.3.2, the LCDB family).",
+    "rules_ds": "use default\n\nschema SvcNotifyReply scope ttl 1_h:\n    corr: String\n    ack: Bool\n\nservice svc.notify:\n    kwarg entity_id: String\n    response SvcNotifyReply\n\nschema Lock scope activation:\n    entity_id: String\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean, stdev sliding 10_s\n\nrule guarded_action:\n    Sensor s where s.state > s.mean + 2 * s.stdev\n->\n    emit Lock entity_id: s.entity_id\n    call svc.notify entity_id: s.entity_id cooldown: 30_s as s.entity_id\n        on response.ack == true:\n            log info \"acked: {s.entity_id}\"\n        timeout 5_s:\n            log warning \"no ack: {s.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "id": "LCST.4.5.7_int_non_literals_are_null",
+    "category": "logical",
+    "scenario": "[LCST.4.5.7]: every string that is not a signed INT_LIT in the 64-bit range parses to null. The rule logs each string whose `::Int?` is null. Covered: a decimal point and an exponent (no float notation on Int); leading and trailing whitespace; a unit suffix with and without `_`; separators a source literal refuses (after a base prefix, leading, trailing, [LLEX.11.1]); an uppercase `0X` prefix; an out-of-range magnitude; an invalid hex digit; and the empty string. PATH PINNED: FN_STRING_TO_INT's runtime adapter. libds's strtoll today skips leading whitespace, so it parses ` 31` and fails this vector; that is the libc-defined behaviour this clause removes.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule absent:\n    S s where (s.txt::Int?) is null\n->\n    log info \"[{s.txt}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "31.0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "3e1" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": " 31" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "31 " } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "31_s" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "31s" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "0x_1F" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "_31" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "i", "txt": "31_" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "j", "txt": "0X1F" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "k", "txt": "9223372036854775808" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "l", "txt": "0x1G" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "m", "txt": "" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "[31.0]", "[3e1]", "[ 31]", "[31 ]", "[31_s]", "[31s]", "[0x_1F]", "[_31]", "[31_]", "[0X1F]", "[9223372036854775808]", "[0x1G]", "[]" ]
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.3.4",
+    "category": "compiler",
+    "scenario": "Generated correlation per LCCO.3.4 \u2014 when the author does not supply `as \"<corr>\"`, the compiler generates a correlation per activation, `$<outer>_c<N>_<u>` (here `$daily_forecast_c0_<u>`), not a constant per call site. Because the value differs per firing, the `on` sibling cannot carry it as a literal: it joins the call's capture fact, which carries `corr` alone when nothing else is captured (LCCO.5.2, LCCO.5.6), and matches the response fact's `corr` against that fact's `corr` (LCCO.3.3). The response is a fact of the service's declared response schema, `WeatherGetForecastsReply`, a `ttl` schema declaring `corr` (LCRS.4.3.2). Pin, and all a `compile_ok` fixture can pin: a continuation-bearing call with no `as` compiles. What it does NOT pin is the per-activation value itself; logical/LCCO.3.4_generated_correlation_is_per_activation observes that, with two activations of this call site in flight.",
+    "rules_ds": "schema WeatherGetForecastsReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice weather.get_forecasts:\n    kwarg entity_id: String\n    response WeatherGetForecastsReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.code == 200:\n            log info \"got forecast\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

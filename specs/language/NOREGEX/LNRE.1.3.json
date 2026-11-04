@@ -1,0 +1,23 @@
+{
+  "id": "LNRE.1.3",
+  "prefix": "LNRE",
+  "doc": "NOREGEX.md",
+  "parent": "LNRE.1",
+  "seq": 30,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What `regex: false` is not",
+  "text": "### What `regex: false` is not [LNRE.1.3]\n\n- Not a performance dial. Regex evaluation under RE2 is already\n  bounded-cost ([LREG.9.3]); `regex: false` removes no timing term and is\n  not a `linear_scan: false`-style algorithmic-shape constraint.\n- Not implied by `linear_scan: false` or `realtime`. `linear_scan: false` bounds a\n  regex match's cost ([LNLS.3.7]) but does not forbid regex;\n  `realtime` enforces that same bound automatically ([LNLS.2.3]) but\n  likewise does not forbid regex. Both may combine with `regex: false`,\n  which forbids it outright.\n- Not required for a regex-free program to run on a regex-less runtime.\n  The load-time check in [LNRE.4.2] follows the artefact's content, not\n  its settings, so a program that never writes a regex loads on such a\n  runtime whatever its `regex` setting. Setting it moves the same\n  guarantee earlier, to compile time, and turns a future regex addition\n  into an immediate compile error instead of a deploy-time surprise.\n- Not a special mechanism. It is one capability setting among the\n  others ([LCAP.1]), refused like any other with\n  `DS_VALIDATE_CAPABILITY_DISABLED`; it introduces no error code and no\n  runtime behavior of its own.\n\n---\n\n",
+  "refs": [
+    "LCAP.1",
+    "LREG.9.3",
+    "LNLS.3.7",
+    "LNLS.2.3",
+    "LNRE.4.2",
+    "LFCA.13.1",
+    "IRET.23.7"
+  ],
+  "errors": [
+    "DS_VALIDATE_CAPABILITY_DISABLED"
+  ]
+}

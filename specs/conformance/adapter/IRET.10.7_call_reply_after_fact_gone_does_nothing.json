@@ -1,0 +1,24 @@
+{
+    "id": "IRET.10.7_call_reply_after_fact_gone_does_nothing",
+    "clauses": ["LGRA.10.1.4"],
+    "category": "adapter",
+    "scenario": "IRET.10.7 / LGRA.10.1.4: if the matched fact has left working memory by the time the body runs, the nested withdraw does nothing, and it is not an error. `k` withdraws the Job before the reply arrives. The reply's body withdraws `j` first and logs \"reply\" after it, so a runtime that faulted on the dead reference and abandoned the activation would never log \"reply\". Logs: [\"killed 1\", \"reply\"]. PATH PINNED: the reference's lookup missing (`ds_rete_wm_find_by_id` returning NULL in `rete/engine.c`), which takes the no-op branch.",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg n: Int\n    response SvcReadReply\n\nschema Job scope explicit:\n    id: Int\n\nschema Kill scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id cooldown: 1_min as \"c1\"\n        on response.ok == true:\n            withdraw j\n            log info \"reply\"\n\nrule k:\n    Kill x\n    Job j where j.id == x.id\n->\n    log info \"killed {j.id}\"\n    withdraw x\n    withdraw j\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [
+            {
+                "service": "svc.read",
+                "respond_schema": "SvcReadReply",
+                "respond_slots": { "ok": true }
+            }
+        ],
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Kill", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["killed 1", "reply"]
+    }
+}

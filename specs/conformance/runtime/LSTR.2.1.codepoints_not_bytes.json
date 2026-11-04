@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.2.1.codepoints_not_bytes",
+    "category": "runtime",
+    "scenario": "[LSTR.2.1]: `len(s)` is the codepoint count, not the byte count, the grapheme-cluster count or the UTF-16 code-unit count. The clause's two examples, at run time: \"café\" is 4 codepoints in 5 bytes, and \"👋🏽\" (U+1F44B U+1F3FD) is 2 codepoints, 1 grapheme cluster, 4 UTF-16 code units and 8 bytes. `four` fires only where `len` is 4 and `two` only where it is 2, so the live count is 4 (two Msg, two Hit) under codepoints alone: bytes give 2, graphemes and UTF-16 units 3. PATH PINNED: libds's `builtin_str_length` (`DS_FN_STR_LENGTH`) and the Mercury runtime's `fn_str_length` arm in `ds.eval`. libds answered the byte count until this vector.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nschema Hit scope logical:\n    n: Int key\n\nrule four:\n    Msg m where len(m.text) == 4\n->\n    emit Hit logical n: 4\n\nrule two:\n    Msg m where len(m.text) == 2\n->\n    emit Hit logical n: 2\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Msg", "slots": { "entity_id": "cafe", "text": "café" } },
+            { "schema": "Msg", "slots": { "entity_id": "wave", "text": "👋🏽" } }
+        ],
+        "pump": true,
+        "fact_count_after": 4
+    }
+}

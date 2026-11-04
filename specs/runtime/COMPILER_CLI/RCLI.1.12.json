@@ -1,0 +1,33 @@
+{
+  "id": "RCLI.1.12",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 23,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.12] **`check` gives `compile`'s verdict and writes no artefact.** The\ncompiler must do everything `compile` does to the input short of writing the\nartefact, resolving its imports and dialects as `compile` does. Its exit code,\nand what it writes to standard error, are what `compile` gives for the same\ninput under the same `--diagnostics` ([RCLI.3.2]). The input is a path or `-`,\nand `--filename` names it, as [RCLI.1.9] says. It takes no `-o`, and an\ninvocation naming one is a usage error ([RCLI.3.1]).\n\nWith `--dump-ast`, the compiler must write one JSON document to standard output\nthat validates against `compiler/dsc_check.schema.json`, and nothing to standard\nerror. The exit code does not move. What the schema cannot carry:\n\n- **`tree` does not wait for the verdict.** It is the tree `dump-ast` writes for\n  the input ([RCLI.1.10]) whenever the input parses, a program a later phase\n  refuses included, and `null` only when the input does not parse.\n- **`diagnostics` is what `compile` would have written to standard error**, in\n  the form `--diagnostics` chooses.\n\n",
+  "refs": [
+    "RCLI.1.10",
+    "RCLI.1.9",
+    "RCLI.3.1",
+    "RCLI.3.2"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "check",
+        "tag": "spec"
+      }
+    ],
+    "jsonschema": [
+      {
+        "path": "compiler/dsc_check.schema.json",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

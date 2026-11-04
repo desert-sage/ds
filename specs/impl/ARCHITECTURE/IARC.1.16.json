@@ -1,0 +1,22 @@
+{
+  "id": "IARC.1.16",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 239,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.16] **libds links no function of the C `printf` family.**\n  No object libds itself compiles may define or reference `printf`, `fprintf`,\n  `sprintf`, `snprintf`, `dprintf`, `asprintf`, their `v`-prefixed and\n  wide-character forms, or a fortified `__*printf_chk` variant. The\n  `libprotobuf-c` archive shipped beside libds is held to the same rule. In a\n  libds archive built without RE2 the rule binds every member, because every\n  member is DS's. In one that carries RE2, the RE2 and Abseil objects folded\n  into it are linked as upstream built them and are not bound: nothing libds\n  renders is formatted by them.\n\n  Every text libds produces is rendered by libds's own formatting operations:\n  integers, the canonical `Float` form and its parse ([LDET.3.2.7],\n  [LDET.3.2.8]), and interpolation ([LGRA.2.9.6.10]). No format string reaches\n  the runtime: an interpolated string arrives as primitives, and the loader\n  refuses one whose alignment, type or time field is not a member of its\n  enumeration in `proto/rete_expr.proto` with `DS_ERR_DSC_SEMANTIC`\n  ([NERR.8.1]). It does not check a spec part against the type it formats:\n  the compiler refuses those ([LGRA.2.9.6.5]),\n  and a value rendered under a spec it does not take raises as [IRET.9.6]\n  states.\n\n  **A build whose archive violates this is invalid**, whatever its tests\n  report. The check is a symbol census of every shipped archive, over the\n  members the rule binds, and it fails on the first printf-family symbol.\n\n",
+  "refs": [
+    "IRET.9.6",
+    "LDET.3.2.7",
+    "LDET.3.2.8",
+    "LGRA.2.9.6.10",
+    "LGRA.2.9.6.5",
+    "NERR.8.1"
+  ],
+  "errors": [
+    "DS_ERR_DSC_SEMANTIC"
+  ]
+}

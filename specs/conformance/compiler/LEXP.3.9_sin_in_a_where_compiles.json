@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.3.9_sin_in_a_where_compiles",
+    "clauses": ["LDET.3.4.4"],
+    "category": "compiler",
+    "scenario": "A transcendental builtin in a `where` clause compiles: CORE-MATH makes `sin` correctly rounded, so EXACT ([LEXP.3.9.1], [LDET.3.3a.4]), and no builtin is refused as a transcendental (DS_VALIDATE_TRANSCENDENTAL is retired). `sin` is `math`'s, imported bare ([LIMP.3.3.4]). PATH PINNED: dsc.validate admits the call with no transcendental check at all; a compiler that refuses `sin` fails this. The value `sin` computes is logical/LEXP.3.9_sin_is_correctly_rounded's.",
+    "rules_ds": "from math import sin\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nrule trig:\n    Sensor s where sin(s.state) > 0.5\n->\n    log critical \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LFAC.1.5.emitted_json_outlives_its_source",
+    "clauses": ["LFAC.10.1"],
+    "category": "logical",
+    "scenario": "[LFAC.10.1]: a fact emitted with a value read from another fact holds the value itself, and the engine leaves it unchanged when the source is retracted. Here the value is a Json slot's. `pass_on` emits Out with Payload 1's body. Then Payload 1 is retracted, Payload 2 with another body of the same shape is asserted, and a Probe makes `read_back` read Out's `j`. It must still read the body Out was emitted with, 7. A runtime whose emitted fact holds the matched fact's own tree frees Out's value at the retract, and Payload 2's tree takes the freed blocks: Out then reads 9, or the engine aborts freeing one tree twice. Path: the terminal's ASSERT action. In libds that is rete/engine.c eval_actions, which clones a Json value before ds_rete_wm_assert. In Mercury it is ds.exec.m assert_verb, whose values are immutable terms.",
+    "rules_ds": "schema Payload scope logical:\n    id: Int key\n    body: Json mutable\n\nschema Out scope ttl 1_h:\n    j: Json\n\nschema Probe scope logical:\n    n: Int key\n\nrule pass_on:\n    Payload p where p.id == 1\n->\n    emit Out j: p.body\n\nrule read_back:\n    Probe\n    Out o\n->\n    log info \"x {o.j.x}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "id": 1, "body": { "x": 7 } }, "as": "p1" },
+            { "op": "pump" },
+            { "op": "retract", "label": "p1" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Payload", "slots": { "id": 2, "body": { "x": 9 } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["x 7"]
+    }
+}

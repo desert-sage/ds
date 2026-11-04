@@ -1,0 +1,92 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// ServiceDef atom body. Per [RDSC.6a] (service-dispatch manifest, LADP.8).
+//
+// The compiler emits one ServiceDef atom per service: a service is
+// identified by its name alone, so no two ServiceDefs share a `name`
+// ([RDSC.6a.2.6]). The runtime uses the manifest to bind integrator-
+// supplied callbacks by service name at engine init, and reads
+// `response` to supersede answers by correlation, when a call is
+// issued (RLOW.7.3.8) and when an answer arrives (LCRS.6.2.4). The
+// engine gives a host `name`, `response`, `no_response` and the
+// kwargs ([NDBG.2.4]).
+//
+// `module_id` attributes the service to its declaring module; it is not
+// part of the service's identity.
+message ServiceDef {
+  // Dotted service path, e.g. "light.turn_on" or "ping" (flat).
+  // The first segment of a dotted name is the domain; for flat-
+  // named services the whole name is the domain (LIMP.4.2.4).
+  string                  name      = 1;
+
+  // kwargs sorted by name, whatever order the author wrote them in
+  // ([LGRA.23.2]); the runtime joins by `name`.
+  repeated ServiceKwarg   kwargs    = 2;
+
+  // The declared response ([LADP.8.4.2]): the response schema's name for
+  // `response T`, empty for `no response`. Exactly one of `response`
+  // non-empty and `no_response` true holds.
+  string                  response  = 3;
+
+  // `no response` was declared.
+  bool                    no_response = 5;
+
+  // Optional hydration block. Absence means the service is not a
+  // hydration service. Presence (any non-default field) means the
+  // service hydrates the listed schemas under the listed caps.
+  ServiceHydration        hydration = 4;
+
+  uint32                  module_id = 10;
+}
+
+message ServiceKwarg {
+  // The kwarg's declared type ([RDSC.6a.2.7]): a schema's own name, or
+  // the name the declaration spells for a builtin type, a unit symbol,
+  // a dimension, the kind `Schema` or an opaque type ([LGRA.23.2],
+  // [NDBG.2.4]).
+  string ds_type       = 1;
+
+  // Kwarg identifier, lowercase IDENT.
+  string name          = 2;
+
+  // `required` modifier — call site must supply a value.
+  bool   required      = 3;
+
+  // `literal` modifier — value must be a literal at the call site,
+  // not a runtime expression (LGRA.10.7). Used
+  // for kwargs the engine resolves at compile time (call address).
+  bool   is_literal    = 4;
+
+  // `default` modifier presence, and the default as the canonical
+  // text of the value the service receives, for each declared type
+  // as [RDSC.6a.2.4] gives it. Empty `default_value` when
+  // `has_default = false`.
+  bool   has_default   = 5;
+  string default_value = 6;
+}
+
+message ServiceHydration {
+  // Schema names this service hydrates per LHYD.9.4.
+  repeated string             hydrates       = 1;
+
+  // Caps. Zero values mean unspecified (no cap).
+  uint64                      max_window_ns  = 2;
+  uint32                      max_limit      = 3;
+
+  // Per-field filter operator allow-list.
+  repeated ServiceFilterField filter_fields  = 4;
+}
+
+message ServiceFilterField {
+  // Slot name on the hydrated schema (or one of them).
+  string          name = 1;
+
+  // Allowed operators. Each is one of the seven canonical
+  // operators: ==, !=, <, <=, >, >=, in. Free-form strings so
+  // future additions don't break the proto schema.
+  repeated string ops  = 2;
+}

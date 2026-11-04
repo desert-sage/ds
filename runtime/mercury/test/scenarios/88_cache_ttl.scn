@@ -1,0 +1,18 @@
+# Cache expiry on the engine clock: an entry lives while `now < deadline`
+# ([NSTG.2.4.2]).
+#
+# Pump 1  `rw` writes "k" with a 10_s TTL.
+# Pump 2  `r1` reads at the write's instant: a hit.
+# Pump 3  one nanosecond before the deadline: still a hit.
+# Pump 4  exactly at the deadline: a miss; the pump-entry sweep removes it
+#         before `r3` reads.
+assert Trig tag=w
+pump
+assert Trig tag=r1
+pump
+advance 9999999999
+assert Trig tag=r2
+pump
+advance 1
+assert Trig tag=r3
+pump

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.1.3_call_body_reads_before_withdraw",
+    "clauses": ["LCYC.3.1.1"],
+    "category": "compiler",
+    "scenario": "LGRA.10.1.3's twin of LGRA.10.1.3_call_body_reads_after_withdraw: the same `call` and `on` body reading `{t.v}`, but the `call` comes before `withdraw t`. The capture is taken when the `call` runs ([LCCO.5.2]), while the fact is still there, so the body reads a value it captured legitimately. Compiles. It is also [LCYC.3.1.1]'s case of a `call` whose product the SCC does not consume: `withdraw t` makes `r` a one-rule SCC through its own withdraw edge ([LCYC.3.2.2]), and `r` carries a `call`, but no rule of the SCC matches the service's response schema `NotifySendReply` or `CallError`, so the SCC is admitted. PATH PINNED: the check's source order -- an action before the `withdraw` may refer to `t` freely, nested body included; and `dsc.cycle.lcyc_3_1_1_admitted`, where the call's outcomes (`emissions_of`) meet no match in the SCC.",
+    "rules_ds": "schema NotifySendReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice notify.send:\n    kwarg n: Int\n    response NotifySendReply\n\nschema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    call notify.send n: 1 cooldown: 30_s\n        on response.status == 200:\n            log info \"sent {t.v}\"\n    withdraw t\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

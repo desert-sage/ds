@@ -1,0 +1,42 @@
+{
+  "id": "IRET.14.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.14",
+  "seq": 1085,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.14.1] `NOW` expression nodes read the engine's held wall-clock\nsample directly, and `monotonic_ns()` nodes its held monotonic sample; neither\ncalls the clock function, which runs only at a sample point ([LTIM.2.8.4]).\nThis is not a builtin call (it would be hot path in time-bound rules); it is a\ndirect field read in the evaluator.\n\n",
+  "refs": [
+    "LTIM.2.8.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireClock.idr",
+        "name": "iret_25_4_1__fire_reads_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Neither calls the clock function': the count of source calls across a firing's encounters is what it was."
+      },
+      {
+        "path": "formal/idris/Rete/FireClock.idr",
+        "name": "iret_25_4_1__now_node",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'Read the engine's held wall-clock sample directly': a field read, as the clause has it, and not a builtin call."
+      },
+      {
+        "path": "formal/idris/Rete/FireClock.idr",
+        "name": "iret_25_4_1__one_value_per_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'The clock function runs only at a sample point': across every firing of a pump the count of source calls is unchanged."
+      }
+    ]
+  }
+}

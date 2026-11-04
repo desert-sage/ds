@@ -1,0 +1,48 @@
+{
+    "id": "LADP.8.5.3_time_known_whole",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3], [RLOW.7.3.9]: a `time` quantity known at compile time, on a kwarg of a unit that is a whole number of nanoseconds, is folded into that unit as a whole number. `timer.arm` declares `wait: minute` (`x * 60_000_000_000`). Rule `lit` writes `wait: 120_s` and the integrator receives 2; rule `named` writes `wait: WAIT`, a `const WAIT = 180_s`, and the integrator receives 3. PATH PINNED: `dsc.quantity.known_quantity` folds the literal and reads through the `const` to its value, and `written_in_unit` in dsc.rete lowers the exact base value with `in_unit_literal`, the lowering a kwarg's `default` takes, as an `Int`. Both runtimes send the literal the compiler emits. The break is the base value: 120000000000 and 180000000000.",
+    "rules_ds": "const WAIT = 180_s\n\nservice timer.arm:\n    kwarg wait: minute required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule lit:\n    Trig g where g.v == 1\n->\n    call timer.arm wait: 120_s nocooldown\n\nrule named:\n    Trig g where g.v == 2\n->\n    call timer.arm wait: WAIT nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "timer.arm",
+                "correlation": "$lit_c0_g0",
+                "body": {
+                    "wait": 2
+                }
+            },
+            {
+                "service": "timer.arm",
+                "correlation": "$named_c0_g1",
+                "body": {
+                    "wait": 3
+                }
+            }
+        ]
+    }
+}

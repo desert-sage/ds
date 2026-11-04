@@ -1,0 +1,18 @@
+{
+  "id": "LNLS.4.8",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.4",
+  "seq": 588,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Series — backend restrictions",
+  "text": "### Series — backend restrictions [LNLS.4.8]\n\nOverlays [LSER.13] (series declaration body) and [LSER.15] (accuracy\nphrases).\n\nUnder `linear_scan: false`:\n- Aggregations that resolve to sketch backends with O(n) worst-case\n  absorb cost are compile errors ([LNLS.3.5]). Every v1 series aggregation is exact and\n  non-sketch.\n- All series aggregations are otherwise unrestricted under `linear_scan: false`,\n  except the unbounded membership / frequency scans of [LNLS.3.11].\n\nThe set of always-allowed series backends in `linear_scan: false` (the v1 exact\nset):\n\n| Backend | Absorb | Notes |\n|---|---|---|\n| Ring buffer | O(1) | |\n| FIFO deque | O(1) amortized | Pre-allocated in `realtime`, capacity in `.dsrt` |\n| Welford (cumulative) | O(1) | cumulative only |\n| Monotonic deque | O(1) amortized | Pre-allocated in `realtime`, capacity in `.dsrt` |\n| Reservoir (`SeriesBackendReservoir`) | O(1) | `sample <n>` |\n| `SeriesBackendIntervalPulse` (interval pulse) | O(1) amortized | `active_fraction`; deque append/evict + running sum; pre-allocated in `realtime`, capacity in `.dsrt` |\n| `SeriesBackendNumericIntegral` (numeric integral) | O(1) amortized | `integral`; pre-allocated in `realtime`, capacity in `.dsrt` |\n\n**Series RT capacity source.** The\ndeque-family time-windowed backends — FIFO deque (`SeriesBackendFifoDeque`), monotonic deque (`SeriesBackendMonotonicDeque`),\n`SeriesBackendIntervalPulse`, `SeriesBackendNumericIntegral` — take their `realtime` pre-allocated buffer capacity from the\n**`.dsrt` contract** (`series[i].capacity`), sized per deployment.\nThe contract's capacity bounds a series' declared `capacity` and wins over it\n([LSER.13.14]). A count declared in **source** — a series' `capacity: N`, a\nreservoir's `sample <n>` — defines the buffer and lowers into the backing's\n`max_samples` in the DSC.\n\n",
+  "refs": [
+    "LNLS.3.11",
+    "LNLS.3.5",
+    "LSER.13",
+    "LSER.13.14",
+    "LSER.15"
+  ]
+}

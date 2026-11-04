@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.3.2.2_emit_in_call_timeout_closes_cycle",
+    "category": "compiler",
+    "scenario": "As LCYC.3.2.2_emit_in_call_response_closes_cycle, with the `emit B` in the call's `timeout` body rather than its `on` body: `ra` matches an `A` and emits a `B` when the call times out, and `rb` matches the `B` and emits an `A`. One SCC, `A` emitted and matched inside it (LCYC.3.1.1), refused with DS_VALIDATE_RULE_CYCLE. PATH PINNED: `dsc.cycle.continuation_actions`'s `timeout` arm; the `on` arm has its own vector, so dropping either arm turns exactly one of the two green-to-compiling.",
+    "rules_ds": "schema GoReply scope ttl 1_h:\n    corr: String\n\nservice s.go:\n    kwarg n: Int\n    response GoReply\n\nschema A scope explicit:\n    v: Int\n\nschema B scope explicit:\n    v: Int\n\nrule ra:\n    A a\n->\n    call s.go n: a.v cooldown: 30_s\n        timeout 5_s:\n            emit B v: a.v\n\nrule rb:\n    B b\n->\n    emit A v: b.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

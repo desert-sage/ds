@@ -1,0 +1,59 @@
+# lowered from the probe tag_test.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# tag_test.expected (scripts/formal/check_idris.py). The `is` rung's smoke pair:
+# [LNUL.4.9]'s total tag test, one rule per reading over
+# two facts. A tag name tests the tag alone (rules 0, 6, 7), a constant tests
+# tag and value (1, 2, 3, 5), `is not Int` over a null fires (4, the negated
+# form LNUL.4.9a rests on), `is null` is the null subject (8), and `is Float`
+# over the Int? slot never fires (9). The subject follows `is` / `isnot` as a
+# token. The keys are
+# the codes of the two entity ids (tokens 0 and 2: the blocks 3 and 19; "hello"
+# took token 1 between them) and the payloads the codes of (x, n, b, s): +Inf
+# is 8 * its bits 9218868437227405312 + 4, the block 73750947497819242500, 1.5
+# is 36875473748909621252; null is 0; false is 1, true 9; n = 3 is 50; token 1
+# is the block 11.
+schema 0 entity T
+alpha 0 0
+rule 0 float_tag
+pattern 0 0 0
+where 0 0 is float slot 0 pay 0
+log 0 0 0
+rule 1 inf_const
+pattern 1 0 0
+where 1 0 is inf slot 0 pay 0
+log 1 0 0
+rule 2 neg_inf_const
+pattern 2 0 0
+where 2 0 is neginf neg slot 0 pay 0
+log 2 0 0
+rule 3 nan_computed
+pattern 3 0 0
+where 3 0 is nan sub slot 0 pay 0 slot 0 pay 0
+log 3 0 0
+rule 4 null_is_not_int
+pattern 4 0 0
+where 4 0 isnot int slot 0 pay 1
+log 4 0 0
+rule 5 true_const
+pattern 5 0 0
+where 5 0 is true slot 0 pay 2
+log 5 0 0
+rule 6 bool_tag
+pattern 6 0 0
+where 6 0 is bool slot 0 pay 2
+log 6 0 0
+rule 7 string_tag
+pattern 7 0 0
+where 7 0 is string slot 0 pay 3
+log 7 0 0
+rule 8 null_subject
+pattern 8 0 0
+where 8 0 is null slot 0 pay 3
+log 8 0 0
+rule 9 int_is_not_float
+pattern 9 0 0
+where 9 0 is float slot 0 pay 1
+log 9 0 0
+step assert _0 0 1000000000000000000003 1073750947497819242500000000000000000000000000000000000000000001000000000000000000011
+step assert _1 0 1000000000000000000019 1036875473748909621252000000000000000000050000000000000000000009000000000000000000000
+step pump

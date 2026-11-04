@@ -1,0 +1,9 @@
+{
+    "id": "LSCP.6.6",
+    "category": "compiler",
+    "scenario": "Capture facts are engine-internal `scope activation` per LSCP.6.6 \u2014 the compiler generates them for a call continuation. Pin: a call with an `on response` clause whose body reads `{t.entity_id}` compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowered output, so the capture schema is not observed.",
+    "rules_ds": "schema SvcCheckReply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.check:\n    kwarg entity_id: String\n    response SvcCheckReply\n\nschema Trig scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Trig t\n->\n    call svc.check entity_id: t.entity_id cooldown: 30_s\n        on response.v > 0:\n            log info \"ok: {t.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

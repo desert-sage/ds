@@ -1,0 +1,75 @@
+{
+  "id": "LCRS.17.1",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.17",
+  "seq": 748,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.17.1] **Success is silence.** A call to a service that declares\n`no response` ([LADP.8.4.2]) asserts nothing when it succeeds: no\nresponse fact exists for it, so none is retained ([LCRS.6.6.1]). When it\nfails, the adapter asserts a `CallError` ([LCRS.4.2.1]) as for any call. An\nadapter that learns of the failure only after the call has returned asserts the\n`CallError` then.\n\nSilence is never mistaken for a timeout: the engine tracks no pending call\n([LCRS.10.6.1]), and a timeout is a continuation or an absence pattern the\nauthor writes ([LCRS.7.1]).\n\n",
+  "refs": [
+    "LADP.8.4.2",
+    "LCRS.10.6.1",
+    "LCRS.4.2.1",
+    "LCRS.6.6.1",
+    "LCRS.7.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_17_1__no_response_sweeps_error_alone",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `no response` service's call sweeps CallError alone: a transcription, said so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_17_1__no_response_sweeps_error_only",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The `no response` call's sweep of CallError alone, computed. LESS than the clause: the adapter's failure path is the host's assert."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__site_ping",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A fixture. Success is silence: the host asserts the CallError of the witness; the adapter is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__swept_by_call",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds a call sweeps: the site's response schema and CallError, or CallError alone for a `no response` service."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_17_1__silent",
+        "tag": "spec",
+        "note": "Whether a call is to a `no response` service, fixed at Init and explored both ways. Success is silence, which is no step of the model; failure asserts a CallError, the one answer such a call can have."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__Respond",
+        "tag": "derives",
+        "note": "The adapter's answer to a call of a `no response` service can only be a CallError."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__one_kind_when_live",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A live answer of a `no response` service is a CallError, at every reachable state. Bounded: two calls, every assignment of `no response`."
+      }
+    ]
+  }
+}

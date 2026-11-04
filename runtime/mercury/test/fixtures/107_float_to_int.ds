@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Float :: Int past the int64 range is NOT_REPRESENTABLE ([LERR.1.4.9]), a
+# trap that abandons the activation ([LCST.4.5.4]). `x::Int != 0` is true of
+# INT64_MIN and INT64_MAX alike, so a wrap would fire `nonzero`; the trap
+# fires nothing. The in-range control fires. The guard is in `where`
+# position, the channel the runtime differential compares.
+
+use default
+
+
+schema Reading scope logical:
+    entity_id: String key
+    x: Float mutable
+
+rule nonzero:
+    Reading r where r.x::Int != 0
+->
+    log info "nonzero"

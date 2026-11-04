@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.5.1a",
+    "category": "compiler",
+    "scenario": "CV-1 ([LNUL.5.1]) \u2014 a bare `T?` into a non-nullable emit slot value is a compile error.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Out scope logical:\n    k: String key\n    val: Float mutable\n\nschema OutN scope logical:\n    k: String key\n    maybe: Float? mutable\n\nrule r:\n    Sensor s\n->\n    emit Out logical k: \"x\" val: s.state\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

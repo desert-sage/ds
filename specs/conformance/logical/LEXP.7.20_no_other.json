@@ -1,0 +1,28 @@
+{
+    "id": "LEXP.7.20_no_other",
+    "category": "logical",
+    "scenario": "LEXP.7.20: inside a negated pattern's `where`, its binding is the candidate fact, so `Reading a, no Reading b where b != a` reads \"no other Reading\". `alone` emits `Alone` logically. Pump 1, with r1 the only Reading: r1 is the one candidate and `r1 != r1` is false, so nothing blocks, the rule fires and Alone(r1) is live. Then r2 is asserted: r2 is another Reading for r1 and r1 one for r2, so neither has a match, r1's activation is withdrawn and Alone(r1) loses its only justifier and is retracted. Pump 2 fires nothing. Exactly, strict: pump 1's input and firing (fact_assert of Alone, action_emit); then fact_assert (r2), fact_retract (Alone), and pump 2. PATH PINNED: the NOT node's join test, which libds never indexes (`ds_rete_beta_node_create` builds no EQ index for a negative join) and evaluates per candidate in `rete/eval.c` `val_eq_unordered`; Mercury answers in `ds.eval` `compare_outcome`. A runtime that raises a TypeError on the candidate in pump 1 carries the fault on the stream and no Alone. NOT PINNED HERE: the retraction's cause (JUSTIFIER_ENDED); the stream callback's kinds carry none.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nschema Alone scope logical:\n    id: String key\n\nrule alone:\n    Reading a\n    no Reading b where b != a\n->\n    emit Alone logical id: a.id\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r1"}},
+            {"op": "pump"},
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r2"}},
+            {"op": "pump"}
+        ],
+        "expected_kinds": [
+            "tick",
+            "fact_assert",
+            "pump",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end",
+            "fact_assert",
+            "fact_retract",
+            "pump"
+        ]
+    }
+}

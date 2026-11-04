@@ -1,0 +1,21 @@
+{
+    "id": "IRET.10.7_withdraw_in_a_timeout_body",
+    "clauses": ["IRET.10.7", "LCCO.7.2"],
+    "category": "logical",
+    "scenario": "[IRET.10.7]: a `withdraw` of an outer binding in a `timeout` body removes the fact the outer rule bound, by identity, reading its reference from the timer, which carries the reference slot ([LCCO.7.2]). Rule `r` binds the explicit `Job j` and calls `svc.get` as `c1` with `timeout 5_s:` logging `late {j.id}` and then `withdraw j`. Rule `live` matches a `Probe` and a `Job` with the probe's id, and logs `job {j.id} live`. A Job with id 7 is asserted and pumped; a Probe with n 7 is asserted and pumped, and `live` logs `job 7 live`, the control that the probe sees the Job; the clock moves 6 s, past the deadline, and is pumped, so the timeout logs `late 7` and withdraws the Job; a second Probe with n 7 is asserted and pumped. Expected: exactly ['job 7 live', 'late 7']. The break: a withdraw that reached no fact leaves the Job live, and the second probe logs `job 7 live` again. PATH PINNED: `dsc.rete`'s `timeout_sibling`, whose `ACTION_WITHDRAW_BY_ID` reads the Job's reference from the timer's `j_FACTREF` slot (`timer_views`), and each runtime's withdraw by id.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nschema Probe scope explicit:\n    n: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        timeout 5_s:\n            log info \"late {j.id}\"\n            withdraw j\n\nrule live:\n    Probe p\n    Job j where j.id == p.n\n->\n    log info \"job {j.id} live\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["job 7 live", "late 7"]
+    }
+}

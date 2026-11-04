@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.8.4_err_is_not_bound",
+    "category": "compiler",
+    "scenario": "LCCO.8.4 — `error` is the only name an `error:` body has for the matched CallError, so `{err.code}` is a read of an unbound name, DS_VALIDATE_UNKNOWN_BINDING. The outer rule binds only `t`, so nothing else could supply `err`. Drives the same continuation-scope resolution as LCCO.8.4_error_binding_reads, on the refusing side.",
+    "rules_ds": "service sensor.read:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call sensor.read entity_id: t.entity_id cooldown: 1_min\n        error:\n            log info \"call failed: {err.code}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

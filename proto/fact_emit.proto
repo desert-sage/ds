@@ -1,0 +1,35 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// FactEmit — atom body. A fact the ENGINE produced by firing a rule the
+// program author wrote ([RFCS.6a]).
+// It also carries the fault facts the engine asserts ([LERR.9.8]).
+//
+// THE VERB SAYS WHO DID IT. A fact injected by the integrator is ASSERTED and
+// rides FactAssert; a fact injected by rules is EMITTED and rides this. The
+// compare/inject split is therefore legible from the atom's name without
+// consulting the [RFCS.3.1] census.
+//
+// STREAM-CLASS: compare ([RFCS.3.4]). A replayer RE-DERIVES this by firing the
+// same rule and byte-compares against the record; it MUST NOT deliver it to
+// the engine as an input. Delivering it would feed the engine its own output
+// back, and the determinism check could not then cover facts.
+//
+// `fact` is encoded using the protobuf message type defined by the
+// proto_source field of the schema's SchemaDef atom, exactly as FactAssert.fact is.
+message FactEmit {
+  uint64 fact_id     = 1;  // withdrawal handle; echoed in FactWithdraw
+  string schema_name = 2;  // name of the DS schema
+  bytes  fact        = 3;  // proto-encoded fact body (typed per SchemaDef proto_source)
+  int64  ttl_ns      = 4;  // per-emit TTL override ([LDTL.4.1]); 0 = schema default
+  string rule_name   = 5;  // the emitting rule — never "" on this atom; for a
+                           // fault fact, the fault's rule name ([LERR.9.11])
+  uint64 clock_ns    = 6;  // engine clock at emission (ns)
+  uint64 seq         = 7;  // stream sequence number
+  string event_id    = 8;  // this engine's identity for the fact ([LFST.5.6])
+  reserved 9;
+  reserved "published";
+}

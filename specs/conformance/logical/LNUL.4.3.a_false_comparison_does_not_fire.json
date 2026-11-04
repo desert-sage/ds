@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.3.a_false_comparison_does_not_fire",
+    "category": "logical",
+    "scenario": "[LNUL.4.3]: a `where` fires only when it is true, so a present reading below the threshold does not fire `hot`. Two Sensors, a = 10.0 and b = 90.0, against `s.state > 85.0` on a `Float?` slot: `hot` fires once, for b. A runtime that fired on a false predicate fires `hot` twice. `logical/LNUL.4.5.not_of_a_null_comparison_does_not_fire` and `runtime/LNUL.4.3a` pin the null case. Path: one test (a nullable slot is never hoisted into an alpha test), evaluated by libds's rete/eval.c BINOP comparison arm and Mercury's ds.eval ev_node(e_binop(...)).",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nrule hot:\n    Sensor s where s.state > 85.0\n->\n    log info \"hot\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "a", "state": 10.0 } },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "b", "state": 90.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["hot"]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LIMP.3.3.4_qualified_and_bare_agree",
+    "clauses": ["LIMP.3.3.4", "LGRA.22.9"],
+    "category": "logical",
+    "scenario": "[LIMP.3.3.4]: a `math` member is reached qualified, `math.sqrt` after `import math`, or bare, `sqrt` after `from math import sqrt`, and the two are one builtin. The file imports `math` both ways. Rule `agree` fires where `math.sqrt(t.v) == sqrt(t.v)` and `sqrt(t.v) == 3.0`; rule `pi_is_math` fires where `t.v > math.pi`, `math.pi` the constant the module's source declares. One T with v 9.0: both fire, in source order. A compiler that resolved only one spelling refuses the other as an unknown function or name; one that gave them two different operations would not answer `==`. PATH PINNED: `dsc.resolve`'s rewrite of `math.sqrt(...)` (step 2 of [LGRA.22.9]) and of the bare-imported `sqrt(...)` to the one [LEXP.17.2] row `math.sqrt`, lowered by `dsc.rete`'s `scalar_fn` to FN_SQRT in both places; `math.pi` through `lgra_22_9_library_member` and `stdlib/math.ds`.",
+    "rules_ds": "import math\nfrom math import sqrt\n\nschema T scope logical:\n    id: String key\n    v: Float mutable\n\nrule agree:\n    T t where math.sqrt(t.v) == sqrt(t.v) and sqrt(t.v) == 3.0\n->\n    log info \"agree\"\n\nrule pi_is_math:\n    T t where t.v > math.pi\n->\n    log info \"above pi\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "a", "v": 9.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["agree", "above pi"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.11.2_no_U_type_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.11.2 — there is no `U`: `u` is the unit label alone, and a value with its label is written `{r.temp} {r.temp:u}`. `{r.temp:U}` on a unit-typed slot therefore fails [LGRA.2.9.6.1]'s grammar and the compiler refuses it with DS_VALIDATE_INTERP_BAD_FORMAT, in `dsc.validate.luni_11_2_format` from `dsc.strlit.lgra_2_9_6_1_format`'s reading.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    temp: celsius key\n\nrule warm:\n    Reading r where r.temp > 30_celsius\n->\n    log info \"temp = {r.temp:U}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_FORMAT"
+    }
+}

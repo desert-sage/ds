@@ -1,0 +1,14 @@
+{
+    "id": "RARC.5.2.7.refusal_abandons_the_rest_and_the_pump_goes_on",
+    "category": "logical",
+    "scenario": "[RARC.5.2.7]: the refused emit abandons the activation as every TypeError does -- the action before it stands and the one after it does not run ([LNUL.11.1]'s prefix rule) -- and the engine is intact: a later rule in the same pump fires, and the TypeError fault fact names the refused slot ([LERR.9.3]). `r` logs `before`, emits the Json leaf \"alice\" into the Int slot `Out.v`, and would log `after`; `later` logs `later`; `handler` matches the fault fact on its schema and slot. Exactly [\"before\", \"later\", \"refused Out.v String\"]: Mercury's old reject-only disposition logs `after`; libds's old -104 failed the pump before `later`; a refusal that named the expression's operand rather than the slot does not match `handler`. Path: libds rete/engine.c eval_actions (break on the latch), Mercury ds.exec.m assert_verb (abandon sets xs_capped).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Payload p\n->\n    log info \"before\"\n    emit Out logical v: p.body.name\n    log info \"after\"\n\nrule later:\n    Payload\n->\n    log info \"later\"\n\nrule handler:\n    TypeError e where e.schema == \"Out\" and e.slot == \"v\"\n->\n    log info \"refused Out.v {e.actual}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before", "later", "refused Out.v String"]
+    }
+}

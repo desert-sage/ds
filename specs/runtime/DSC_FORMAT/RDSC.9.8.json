@@ -1,0 +1,20 @@
+{
+  "id": "RDSC.9.8",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.9",
+  "seq": 2008,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.9.8] **A failed load spends the engine.** A\nload that fails once it has begun reading the artefact **must** return the\nerror that stopped it and set the engine's halt latch ([NCBK.2.9]): every later\ncall on that engine, but the few [NCBK.2.9] leaves valid, is refused with\n`DS_ERR_ENGINE_HALTED`. Nothing ran, so the failed load raises no `EngineError`\nand records no stream event. The engine's state after it is undefined, as a\nhalted engine's is ([LERR.1.4.7]), and nothing can read it.\n\nA load refused before it reads the artefact changes nothing: one on an engine\nthat already holds an artefact or has emitted a stream event ([NFCT.1.1]), and\none on an engine already halted.\n\n**An allocation that fails during a load fails the load, with one exception.**\nA runtime that observes an allocation failing while it loads **must**\nfail the load with `DS_ERR_OOM`, which spends the engine as above. It **may**\ninstead absorb the failure and go on only where the allocation reserves\ncapacity the engine also grows on demand. Then the loaded program and every\nvalue and event are what they would have been without the failure, and the\ncapacity is grown later, when it is needed. A load **must not** absorb a failure by dropping anything\nthe artefact carries. Nor may it absorb one by leaving the engine on a slower\npath for its life: an index whose absence a lookup survives by scanning is not\ncapacity grown on demand.\n\n",
+  "refs": [
+    "LERR.1.4.7",
+    "NCBK.2.9",
+    "NFCT.1.1"
+  ],
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_OOM"
+  ]
+}

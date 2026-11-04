@@ -1,0 +1,11 @@
+{
+    "id": "LLET.6.2",
+    "category": "compiler",
+    "scenario": "`let` has no parameter list per LLET.6.2 — the production is `'let' IDENT '=' expression`, not `'let' IDENT '(' args ')' '=' expression`. The grammar-level absence keeps `let` strictly smaller than 'function' and prevents gradual creep toward a UDF surface. Pin: `let f(x) = x + 1` rejects at parse — `(` after the NAME is unexpected per the let_decl production. The `let` stands after `->`, where a `let` may stand ([LLET.12.1]), so the refusal is the parameter list's: DS_PARSE_GENERIC, beginning on line 7 ([RCTS.1.2.34]).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    let f(x) = x + 1\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

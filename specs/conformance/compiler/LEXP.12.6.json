@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.12.6",
+    "category": "compiler",
+    "scenario": "v1 exact math built-in set per LEXP.12.6 \u2014 abs/min/max/sqrt/round + integer pow. ln/exp and non-integer pow are transcendental and reserved for v2. Pin: every wired exact arithmetic builtin (abs/sqrt/round/pow/min/max) lowers.",
+    "rules_ds": "from math import sqrt, pow\n\nschema Sample scope logical:\n    v: Float key\n\nrule r:\n    Sample s where abs(s.v) < sqrt(round(s.v)) + pow(s.v, 2) and max(s.v, 1.0) > min(s.v, 0.0)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

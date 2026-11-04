@@ -1,0 +1,17 @@
+{
+  "id": "LDTL.1.2",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.1",
+  "seq": 39,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "The opt-in: per-emit TTL override",
+  "text": "### The opt-in: per-emit TTL override [LDTL.1.2]\n\n`dynamic_ttl` enables the `retain: <expr>` kwarg on `emit`\nactions for `ttl`-lifecycle schemas. It overrides the\nschema-level TTL for that one emission: the fact's deadline is its entry\nstamp plus the evaluated duration ([LDTL.4.1]), not known until\nrule-firing time.  Because different facts of the same schema can now\nhave different expiry times, the FIFO order within a schema is broken:\na later-asserted fact may expire before an earlier one.\n\nThe engine falls back to the **deadline min-heap** to correctly order\narbitrary expiry deadlines.  Cost: O(log N_ttl) per insert/remove,\nO(expired × log N_ttl) per tick ([LDTL.4.2], [LDTL.6.3]). The engine's tick in\nthis edition costs [LDTL.6.4]'s.\n\n",
+  "refs": [
+    "LDTL.4.1",
+    "LDTL.4.2",
+    "LDTL.6.3",
+    "LDTL.6.4"
+  ]
+}

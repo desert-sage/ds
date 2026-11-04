@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.10.8_utc_needs_no_row",
+    "clauses": ["LTIM.10.8"],
+    "category": "logical",
+    "scenario": "[LTIM.10.8]: the designation that is exactly \"UTC\" is offset 0 at every instant, resolved without consulting any `TimeZoneOffset` fact. No row is asserted. Two rules match one Event: `zoned`, first in source order, reads `e.seen.local(\"UTC\") - e.seen` in a `let` and logs it; `later` logs. Both fire, so the stream holds two action_logs and no computation_error. The read is `local()` itself, not a component read in a zone (`time_component`). PATH PINNED: the \"UTC\" arm before the index lookup, libds's `adapter_ds_local` through `ds_rete_tz_resolve` (rete/adapters.c), and Mercury's `ds.eval.ltim_3_2_local`.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule zoned:\n    Event e\n->\n    let d = e.seen.local(\"UTC\") - e.seen\n    log info \"zoned {d}\"\n\nrule later:\n    Event\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log", "action_log"]
+    }
+}

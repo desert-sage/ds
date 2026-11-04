@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.3.2.2_fma_addend_same_dimension",
+    "clauses": ["LEXP.3.2.2", "LUNI.8.2"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.2.2]: the accepting twin of `LEXP.3.2.2_fma_addend_other_dimension`. `r.t * r.k` is a temperature, the addend `5_kelvin` is one too, and the result compares with `100_kelvin`, so `math.fma(r.t, r.k, 5_kelvin)` compiles exactly as `r.t * r.k + 5_kelvin` does. A compiler that refused every dimensioned `fma` operand, or typed the result dimensionless, would refuse it. PATH PINNED: `dsc.typecheck`'s `math.fma` arm, which types the call as `x * y + z`, as a `Float`.",
+    "rules_ds": "import math\n\nschema Reading scope logical:\n    id: String key\n    t: kelvin mutable\n    k: Float mutable\n\nrule warm:\n    Reading r where math.fma(r.t, r.k, 5_kelvin) > 100_kelvin\n->\n    log info \"warm\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

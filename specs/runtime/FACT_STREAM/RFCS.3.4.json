@@ -1,0 +1,64 @@
+{
+  "id": "RFCS.3.4",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.3",
+  "seq": 134,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.3.4] **Atom injection classification (the codec rule).** On\nreplay each atom is exactly one of three classes, and the class fixes\nwhat a reader may do with it. **Which atom is in which class is the\n`Stream-class` column of [RFCS.3.1]**, its single normative home; this\nclause states what each class obliges a reader to do.\n\n- **inject** — recorded external inputs; the replayer delivers them to\n  the engine as recorded ([LFST.9.2]).\n- **compare** — engine-produced annotations and outbound effects; the\n  replayer re-derives them and byte-compares to the record ([LFST.9.3])\n  and **must not** deliver them to the engine.\n- **structural / ignore** — framing, schema and seek atoms with no\n  replay-input meaning.\n\n**This clause binds replay** ([LFST.9.6]), which runs the engine and compares\nwhat it produces, so for it the three classes are three different obligations.\nThere is one operation for the rule to bind, and no mode within it reads an\natom differently.\n\nA re-deriving reader's inject path **MUST refuse** any atom outside the\ninject class — delivering a `CallIssued` (or `RuleFireAnnotation`) to the engine as an input would\ncorrupt determinism, and skipping an inject-class atom would drop a real\ninput. This makes the load-bearing invariant — **a `call` is never a\nreplay input** — a rule the codec enforces rather than a convention (it\nis the same invariant the stream-transducer unification carries verbatim\nacross live and recorded transports). The classification also fixes\nskip-safety for an *unknown* field number. A future atom is safely skippable\n([RFCS.2.3]) only if **both** hold: it is compare or structural, **and it\ncarries no positional precondition** — no claim about the state the stream\nbegins in, or about where in the stream it sits. A new inject-class atom is\nnot additive — an older reader cannot skip it without losing an input it was\nhanded — so it lands with a minor release ([LDET.1.10]).\n\n**The second condition is needed because the first alone is false.** A structural atom announcing that a stream *continues from*\nanother is skippable by class and catastrophic to skip in fact: a reader that\nignores it replays a mid-run segment as though it began at genesis, with an\nempty working memory it never had. That is silently wrong output rather than a\nrefusal, and no property of the atom's class predicts it — the hazard is\npositional. Such an atom is allocated in the reject-don't-skip band\n([RFCS.16.2]) even though its class would otherwise permit skipping.\n\n---\n\n## Stream header [RFCS.4]\n\n",
+  "refs": [
+    "LDET.1.10",
+    "LFST.9.2",
+    "LFST.9.3",
+    "LFST.9.6",
+    "RFCS.16.2",
+    "RFCS.2.3",
+    "RFCS.3.1",
+    "RFCS.4"
+  ],
+  "atoms": [
+    "CallIssued",
+    "RuleFireAnnotation"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_2_3__no_inject_silently_skipped",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_4__class_band_alignment",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_3_4__replay_class",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "rfcs_3_4__atom",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "rfcs_3_4__atom_class",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "rfcs_3_4__inject_never_skip_eligible",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/atom_skip_safety.als",
+        "name": "rfcs_3_4__no_inject_silently_dropped",
+        "tag": "derives"
+      }
+    ]
+  }
+}

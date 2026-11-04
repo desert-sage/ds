@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.8.5_dimension_strip_value",
+    "category": "logical",
+    "scenario": "[LUNI.8.5]: stripping a dimension-typed value with `::Float` yields the stored base-unit number. `temp: temperature` stores kelvin. Sensor `a` reads 293.15 K and sensor `b` 283.15 K, and the rule `Reading r where r.temp::Float > 290.0` logs `a` and not `b`: the comparison sees kelvin, not any other unit. PATH PINNED: `lcst_4_5_2_lower` in dsc.rete, whose `ck_dimension(_)` / `ct_float` arm lowers the strip to its operand, a runtime identity, and the slot read beneath it. A compiler without the cast row in dsc.cast refuses the program before it runs.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    temp: temperature mutable\n\nrule warm:\n    Reading r where r.temp::Float > 290.0\n->\n    log info \"{r.sensor}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "a", "temp": 293.15}},
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "b", "temp": 283.15}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a"]
+    }
+}

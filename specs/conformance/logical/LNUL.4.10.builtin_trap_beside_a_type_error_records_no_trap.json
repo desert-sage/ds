@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.10.builtin_trap_beside_a_type_error_records_no_trap",
+    "category": "logical",
+    "scenario": "[LNUL.4.10] / [LERR.1.4.11]: the twin of LNUL.4.10.builtin_trap_beside_a_type_error_yields_the_type_error. Each `max` call yields the TypeError its `len(p.body.obj)` argument raised, so the DIVIDE_BY_ZERO its `p.a // p.z` argument raised is not the call's fault and is NOT recorded -- in either argument position. In `trap_first` the trap is met first in a left-to-right evaluation, which is what makes this pin the selection rather than the order. Path: the CALL argument loop -- libds rete/eval.c eval_call (each argument evaluated with faults held), Mercury ds.eval.m eval_all (folded with ds.fault.lnul_4_2_yielded).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule trap_first:\n    Payload p where max(p.a // p.z, len(p.body.obj)) > 0\n->\n    log info \"first\"\n\nrule trap_second:\n    Payload p where max(len(p.body.obj), p.a // p.z) > 0\n->\n    log info \"second\"\n",
+    "dead_rules_expected": ["trap_first", "trap_second"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "obj": { "k": 1 } }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

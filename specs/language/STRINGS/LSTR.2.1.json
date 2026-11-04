@@ -1,0 +1,47 @@
+{
+  "id": "LSTR.2.1",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.2",
+  "seq": 64,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[LSTR.2.1] `len(s)` returns the number of Unicode codepoints\nin `s`, as `Int`. Not the byte count, not the grapheme-cluster\ncount, not the UTF-16 code-unit count. So `café` with a precomposed `é`\n(U+00E9) has length 4, and a waving-hand emoji followed by a skin-tone\nmodifier (U+1F44B U+1F3FD) has length 2, though it renders as one grapheme.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`len(s)`: the number of codepoints in the text, as an Int -- not the byte count, not the grapheme-cluster count, not the UTF-16 code-unit count, none of which a text of codepoints has."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len_counts_codepoints",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's two examples, executed: `café` is 4 and the waving hand with a skin-tone modifier is 2."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len_is_total_on_texts",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`len` of a String is the codepoint count, an Int, for every text. The second conjunct, `len` of `null` a trap, is [IRET.9.6]'s first arm: the clause says nothing of a null receiver."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`len(<String>)` over its evaluated operand: of a String the codepoint count; of `null` a trap, [IRET.9.6]'s first arm; of a fault the fault. Of a value of any other kind a trap here and not DS: the compiler types `len` by its argument, and a `Json` value's `len` is `lexp_6_1__len`'s. Partial because the null and the other kinds are outside what the clause states."
+      }
+    ]
+  }
+}

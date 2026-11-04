@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `scope activation`, emitted directly. An activation fact is retracted on
+# every completion path ([LSCP.2.4.1]) and, with no async tail, has zero
+# externally observable lifetime ([LSCP.3.2]), so `watch`, the rule that
+# would see it ([LSCP.2.4.4]), does not fire for it. `control` matches the same
+# Request; `work_b` emits the same Lock identity over another trigger, so it
+# meets whatever `work` left behind.
+
+schema Request:
+    who: String
+    n: Int
+
+schema Other:
+    who: String
+    n: Int
+
+schema Lock scope activation:
+    entity_id: String
+
+schema Done scope ttl 1_h:
+    who: String
+    n: Int
+
+schema Seen scope ttl 1_h:
+    entity_id: String
+
+rule control:
+    Request r
+->
+    emit Done who: "control" n: r.n
+
+rule watch:
+    Lock l
+->
+    log info "lock held"
+    emit Seen entity_id: l.entity_id
+
+rule work:
+    Request r
+->
+    emit Lock entity_id: r.who
+    log info "work start"
+
+rule work_b:
+    Other o
+->
+    emit Lock entity_id: o.who
+    log info "work_b start"

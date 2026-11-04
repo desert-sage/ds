@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.2.8.3.unset_wall_initial_fact_first_step_assert",
+    "category": "logical",
+    "scenario": "[LTIM.2.8.3]'s `initial` arm where the first step is a host assert, not a pump: the step applies the block before it consumes its input ([LGRA.24.3]). The wall clock is never set (`wall_clock: unset`), so the block's `Marker` (with `ts`) is a ComputationError of kind DOMAIN and is not placed, and its `Plain` is placed. The host then asserts a `Trig`, and a pump fires. The fault's fact is asserted as the assert returns ([LERR.9.7]), so it is in working memory when the pump selects. `plain` logs the `Plain`, `trig` the `Trig`, `faulted` the fault fact's rule and kind; `leaked` must never fire. Expected, in rule order: `plain 2`, `trig 3`, `$engine DOMAIN`. A runtime that drained the fault fact nowhere on a host call logs no `$engine DOMAIN`. PATH PINNED: as LTIM.2.8.3.unset_wall_initial_fact_is_a_domain_error, reached through the host assert's step (libds `wm.c`'s `ds_engine_clock_step`, Mercury `ds.engine.host_assert_core`) and its drain (libds `ds_api_leave`, Mercury `host_drain`).",
+    "rules_ds": "schema Marker scope explicit:\n    k: Int\n    ts: Time\n\nschema Plain scope explicit:\n    k: Int\n\nschema Trig scope explicit:\n    k: Int\n\ninitial:\n    Marker k: 1\n    Plain k: 2\n\nrule plain:\n    Plain p\n->\n    log info \"plain {p.k}\"\n\nrule trig:\n    Trig t\n->\n    log info \"trig {t.k}\"\n\nrule faulted:\n    ComputationError c where c.rule == \"$engine\"\n->\n    log info \"{c.rule} {c.kind}\"\n\nrule leaked:\n    Marker\n->\n    log info \"leaked\"\n",
+    "dead_rules_expected": ["leaked"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["plain 2", "trig 3", "$engine DOMAIN"]
+    }
+}

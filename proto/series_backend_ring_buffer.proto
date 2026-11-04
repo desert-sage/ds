@@ -1,0 +1,44 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// SeriesBackendRingBuffer atom body. Per [RDSC.5a.5]. Exact-samples ring-buffer
+// backend over a sliding window; element type restricts which
+// aggregations compile per LSER.3.
+message SeriesBackendRingBuffer {
+  string            schema_name        = 1;
+  string            slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string            identity_slot_name = 3;
+  SeriesElementType element_type       = 4;
+  // Required (> 0) per LGRA.13.5's ring_buffer constraint.
+  uint64            window_ns          = 5;
+  // 0 = live-only; non-zero forwards samples to the samples plane.
+  uint64            persist_ns         = 6;
+  // 0 = window is the only bound; non-zero caps in-memory sample
+  // count even within the window.
+  uint32            max_samples        = 7;
+  uint32            module_id          = 10;
+  SeriesNullPolicy  null_policy        = 11;  // [LNUL.8.6]
+}
+
+enum SeriesElementType {
+  SERIES_ELEMENT_UNSPECIFIED = 0;
+  SERIES_ELEMENT_FLOAT       = 1;
+  SERIES_ELEMENT_INT         = 2;
+  SERIES_ELEMENT_STRING      = 3;
+  SERIES_ELEMENT_BOOL        = 4;
+}
+
+// What a series does with an absorbed sample that carries null: the
+// declaration's `nulls:` option ([LNUL.8.6], [LSER.13.5]). UNSPECIFIED is a
+// series over a non-nullable source, and only that: a T? source always
+// declares one of the three.
+enum SeriesNullPolicy {
+  SERIES_NULL_POLICY_UNSPECIFIED = 0;
+  SERIES_NULL_POLICY_SKIP        = 1;
+  SERIES_NULL_POLICY_HOLD        = 2;
+  SERIES_NULL_POLICY_ZERO        = 3;
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.7",
+    "category": "compiler",
+    "scenario": "[LNLS.3.7]: a regex match whose left operand is a `String` slot without `max_length` is a compile error in a `+nolinscan` file. `max_length` has no syntax, so every such match is refused -- the clause's own case, and the only one the language can express. PATH PINNED: `dsc.validate.lnls_expr`'s `ex_match` arm through `string_slot`.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Line scope logical:\n    k: Int key\n    text: String mutable\n\nrule r:\n    Line l where l.text ~ /^ERR/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_UNBOUNDED_REGEX"
+    }
+}

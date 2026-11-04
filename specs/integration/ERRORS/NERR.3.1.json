@@ -1,0 +1,62 @@
+{
+  "id": "NERR.3.1",
+  "prefix": "NERR",
+  "doc": "ERRORS.md",
+  "parent": "NERR.3",
+  "seq": 77,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[NERR.3.1] Codes are grouped by numeric range; each range maps to a subsystem\nand a recovery disposition.\n\n| Range | Category | Disposition |\n|---|---|---|\n| `0`          | OK                         | continue |\n| `-1..-99`    | Generic                    | check args / state, fix and retry |\n| `-100..-199` | Input                      | fix the input: the fact, the text or the encoded body that does not fit |\n| `-200..-299` | Runtime                    | check fact / activation state |\n| `-400..-499` | Storage / callbacks        | check integrator-side wiring |\n| `-500..-599` | Artefact load              | rebuild the `.dsc`; check version. The DSC container's codes are `-500..-549` ([NERR.8.1]); the AOT code loader's band is `-550..-599`, and none of its codes is live ([NERR.9.1]); `-505`, `-508..-513`, `-520..-527` and `-550..-553` reserved |\n| `-600..-610` | Native Rete / realtime     | check the rule network / RT config |\n| `-620..-625` | Series-backend ABI         | at `ds_engine_cache_callbacks`, rebuild the host against this header; any other is a defect in libds's own backend registration ([NERR.10.2]); `-624..-625` reserved |\n| `-700..-704` | Dialect / artefact binding | rebuild artefacts from one consistent source; `-702` reserved ([NERR.11.1]) |\n| `-710..-714` | Realtime contract          | see NRTM |\n| `-720..-730` | Event-trace                | trace session header + replay refusals + unknown inject-band atom; `-721..-724` reserved ([NERR.13]) |\n\nThis table and the registers of [IERR.2] are one register in two places, and\nthe second is authoritative: [IERR.2.8a] and [IERR.2.8b] for `-500..-599`,\n[IERR.2.8.1] beyond it. Compiler diagnostics appear in\nneither: they are not `ds_status_t` values ([RTCT.9.1]).\n\nA category is the project's name for its family. A binding that exposes the\nfamilies as types must name each type for its category, in the binding\nlanguage's idiom, and must not name a family for what another category\nholds.\n\n",
+  "refs": [
+    "IERR.2",
+    "IERR.2.8.1",
+    "IERR.2.8a",
+    "IERR.2.8b",
+    "NERR.10.2",
+    "NERR.11.1",
+    "NERR.13",
+    "NERR.8.1",
+    "NERR.9.1",
+    "RTCT.9.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__band",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__disposition",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__error",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__resolve",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__rows_disjoint",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__subsystem",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/error_band_partition.als",
+        "name": "nerr_3_1__value_resolves_uniquely",
+        "tag": "spec"
+      }
+    ]
+  }
+}

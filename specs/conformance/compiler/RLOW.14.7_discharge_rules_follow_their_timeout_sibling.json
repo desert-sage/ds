@@ -1,0 +1,19 @@
+{
+    "id": "RLOW.14.7_discharge_rules_follow_their_timeout_sibling",
+    "clauses": ["RLOW.14.7"],
+    "category": "compiler",
+    "scenario": "[RLOW.14.7]: \"A `timeout` clause's sibling is followed, after every terminal it induces, by that clause's `_answered` rule and then its `_failed` rule, and only then by the next continuation's sibling\" ([LCCO.7.6]); the order applies at every level, so a terminal is followed at once by what it induces. Rule `r` calls `svc.method` as `a` with two continuations: first `timeout 5_s:`, whose body calls `svc.method` as `b` with an `on response.code == 200:` logging `inner`; then `on response.code == 200:` logging `outer`. Rule `next` follows `r` in source. The emitted order is `r`; the timeout's sibling `$r_timeout_0`; the sibling of the call in its body, named from it ([LCCO.4.1]), `$$r_timeout_0_response_0`; the timeout's `$r_timeout_0_answered`, then `$r_timeout_0_failed`; the outer call's `$r_response_0`; then `next`. What it discriminates: a compiler that pushes the discharge rules straight after the timeout's sibling puts `$r_timeout_0_answered` ahead of `$$r_timeout_0_response_0`; one that pushes them after every continuation puts them after `$r_response_0`; one that orders them `_failed` first swaps the two. PATH PINNED: `dsc.rete`'s `sibling_rules`, the `acont_timeout` arm: `timeout_sibling`, whose `siblings_of_calls` pushes the body's call siblings under the timeout sibling's name, then `lcco_7_6_discharge`, which pushes `_answered` and then `_failed`.",
+    "rules_ds": "schema SvcMethodReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown as \"a\"\n        timeout 5_s:\n            call svc.method nocooldown as \"b\"\n                on response.code == 200:\n                    log info \"inner\"\n        on response.code == 200:\n            log info \"outer\"\n\nrule next:\n    Trig\n->\n    log info \"next\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": [
+            "r",
+            "$r_timeout_0",
+            "$$r_timeout_0_response_0",
+            "$r_timeout_0_answered",
+            "$r_timeout_0_failed",
+            "$r_response_0",
+            "next"
+        ]
+    }
+}

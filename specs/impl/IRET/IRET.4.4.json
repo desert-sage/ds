@@ -1,0 +1,303 @@
+{
+  "id": "IRET.4.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.4",
+  "seq": 420,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.4.4] `id` is assigned by a monotonic counter in\nthe engine; it is never reused within a session. Fact\nIDs are used as stable keys in alpha memories, token\narrays, and the TMS dependency table.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__carried",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the history carries beside the answers: Rete/NetworkFrame.idr's frame invariant (the view, the shapes kept against the loaded network) and unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__retraction_keeps_non_victims",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "THE RETRACTION REMOVES THE VICTIMS AND NOTHING ELSE under unique ids. LESS than the clause: proved of the sweep's retraction alone; what the cascade then removes is IRET.12.2's, and a response fact, being `ttl`, has no justification row."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_sweep_keeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ARRIVAL ON A CORRELATION KEEPS ONE ANSWER PER CORRELATION: after its sweep and the TTL sweep every live fact was live before or is the answer minted, and the minted one against a survivor is `lcrs_6_2_4__new_against_survivor_at`'s case. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__loaded_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded called state has the invariant: the view and its own shapes, no fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_against_survivor",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ARRIVING ANSWER AGAINST A SURVIVOR: an answer live after the arrival's sweep on a non-empty correlation, carrying it, is of none of the swept kinds, so of another response schema, and neither is CallError. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_per_corr_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "ONE ANSWER PER CORRELATION OVER ANY HISTORY: from the loaded state, after any ticks, data inputs and pumps under any fuel, two distinct live answers carrying one non-empty correlation are of different response schemas and neither is CallError. Over every program, environment, kind table, site table, cooldown table and schedule. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation. LESS than the clause: THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it. The clause's sentence that each live answer is the last of its kind asserted with that correlation is not proved: the theorem gives at most one live answer per kind and not which one; the witnesses alone show the last asserted staying. The stream's record order (the answer's FactAssert first, the withdrawals after) is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__swept_not_live",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WHAT A SWEEP WAS ASKED TO REMOVE IS GONE: under unique ids a fact live after a sweep carries none of its ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "lfac_2_5_3__fresh_not_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The fact minted for an assert is not live: its id is fresh. What the clause's never-reused counter gives, on the model's smallest-free id."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions keep ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An assert keeps ids unique under any lifecycle."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__insert_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An insert of a fresh id keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_2__retract_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "lscp_2_1_1__withdraw_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A withdraw keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_record",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With ids unique within a session, the fact carrying a row's target id is the one the row was recorded for."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_action_net_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rdsc_4a_5__load_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No facts at load, so no two share an id."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__retract_ids_net_wm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unique ids are what make the id-by-id retraction the batch's: each id names at most one live fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_8_1__settled_unblocked_set",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Unique ids turn settledness -- stated on ids -- into a statement on facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Rarc_5_6_5__well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A WELL-FORMED FIRELOOP STATE: working memory distinct, ids unique, every table sorted, live and settled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_4_4__ids_identify",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Within one change of working memory a fact's id identifies it: two fact lists, one live before and one live after, with the same ids, are the same list -- every fact after is a fact before or carries an id that was not live. Why a kept token's ids name the facts it still holds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__kept_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A kept token's facts are live afterwards: its ids are a current match's, and ids identify facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_grow",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Unique ids are what let a kept token's facts be found live after the fact enters."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_shrink",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Unique ids are what let a kept token's facts be found live after the fact leaves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_12_2__retract_ids_net_wm_eng",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unique ids are the premise: without them retracting an id one fact at a time could remove a different fact carrying it. A wrapper of Rete/NetworkTms.idr's lemma for an engine given whole."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_4_4__fresh_ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FRESH IDS, decided: each fact's id is carried by no fact after it. A Bool over a working memory, so that a literal can be checked by computation where the clause's statement over every pair of memberships cannot."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_4_4__unique_of_fresh",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "FRESH IDS ARE UNIQUE IDS: a memory whose ids are fresh satisfies the clause's uniqueness. By induction on the memory; two members at different positions put the later one's id among the ids after the earlier, which fresh ids forbid."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_ids_unique",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's uniqueness on one literal working memory of three facts, by a decided check. A witness, not the clause: the invariant on every reachable state is Rete/NetworkFrameClocked.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "Iret_4_4__unique",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Fact ids are unique in working memory: what the monotonic counter guarantees, taken as a premise until the engine-level invariant proves it."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "Iret_4_4__keeps",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Ids identify facts across a change: a fact live before whose id is live after is itself live after. Every transition of a run has this shape, since a fresh id is never a live one."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__keeps_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact keeps ids identifying."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__keeps_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing facts keeps ids identifying, given unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__keeps_replace",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An entity replace keeps ids identifying: the fresh id is not the old one's, nor any live one."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__unique_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact with a fresh id keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__unique_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing facts keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_4_4__unique_replace",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An entity replace keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "lfac_2_5_3__fresh_id_free",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FRESH ID IS FREE: neither a live id nor a bound one. What this clause's monotonic counter provides in DS, proved for the model's smallest-free-id by the pigeonhole `lfac_2_5_3__fresh_from_free`."
+      }
+    ]
+  }
+}

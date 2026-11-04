@@ -1,0 +1,21 @@
+{
+  "id": "LFST.9.3.6",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.9.3",
+  "seq": 581,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.9.3.6] When the outbound call is persisted as a `CallIssued` atom\n([RFCS.15]), replay compares the re-derived call\nagainst the recorded atom rather than an in-memory event. The\nbyte-compare of [LFST.9.3.1] is **strict over every\nfield the recorded atom carries** — `service`, `correlation`,\n`args`, `clock_ns`, `seq`, `rule_name` (the\nwire-only `call_id` is absent on the recorded atom, [RFCS.15.2])\n— and any difference is the effect Divergence at that `seq`. The\nrecomputed call and its recorded atom are diffed once.\n\n**A `timetag` is compared as an identity, not as a value** ([RFCS.11.2]).\nAs the replayer compares atoms in `seq` order ([LFST.9.3.7]), it pairs each\nrecorded `timetag` with the re-derived atom's `timetag` the first time either\noccurs, on any compare-class atom that carries one. Every later atom **must**\nagree with that pairing in both directions: a recorded `timetag` met with a\nsecond re-derived one, or a re-derived `timetag` met with a second recorded\none, is the Divergence at that `seq`. On the engine that recorded the stream,\nreplay re-derives the recorded values, and the pairing is the identity.\n\n",
+  "refs": [
+    "LFST.9.3.1",
+    "LFST.9.3.7",
+    "RFCS.11.2",
+    "RFCS.15",
+    "RFCS.15.2"
+  ],
+  "atoms": [
+    "CallIssued"
+  ]
+}

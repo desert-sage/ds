@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.2.5.3_true_at_assert_false_at_pump",
+    "category": "logical",
+    "dead_rules_expected": ["young", "fresh"],
+    "scenario": "[LTIM.2.5.3]: a time-dependent condition already true when its fact is asserted fires on the next pump only if it still holds under that pump's sample; one the pump's sample finds false has ended its match, and nothing fires. Two rules on one Ping, both true at the assert (sample 0) and false at the pump (sample 3_s): `young` reads `dwell` in its `where` (the clock-driven fire guard), and `fresh` carries `within 2_s` and emits no logical fact, which takes the same path. `steady`, with no time condition, fires, so the pump is shown to have run. Pin: set 0; assert Ping; advance 3_s; pump. Messages are exactly ['steady']: a runtime that keeps the assert-time evaluation gives ['young', 'fresh', 'steady'] or a subset with 'steady'.",
+    "rules_ds": "schema Ping scope logical:\n    k: String key\n\nrule young:\n    Ping p where p.dwell < 2_s\n->\n    log critical \"young\"\n\nrule fresh:\n    Ping within 2s\n->\n    log critical \"fresh\"\n\nrule steady:\n    Ping\n->\n    log critical \"steady\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Ping", "slots": { "k": "p" } },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["steady"]
+    }
+}

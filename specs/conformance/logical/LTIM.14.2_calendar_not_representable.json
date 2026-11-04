@@ -1,0 +1,33 @@
+{
+    "id": "LTIM.14.2_calendar_not_representable",
+    "clauses": ["LTIM.14.2", "LTIM.1.1.5", "LTIM.1.2.2"],
+    "category": "logical",
+    "dead_rules_expected": ["time_before_the_range", "date_before_the_range", "time_after_the_range"],
+    "scenario": "[LTIM.14.2] with [LTIM.1.1.5] and [LTIM.1.2.2]: a call whose fields are in range and whose value is outside its type's range raises NOT_REPRESENTABLE and never wraps, and no step of computing a value in range overflows. The first `Time` is 1677-09-21T00:12:43.145224192Z, so that day's midnight is below the int64 minimum while its later instants are not; the last is 2262-04-11T23:47:16.854775807Z; the `Date` range is 1677-09-22 through 2262-04-11. One `F` fact per case, its fields in `Int` slots so nothing folds, each pumped on its own. A raising case has its own rule, `f.id == N and <the call> != <a constant>`, which never fires; `trapped` logs the fault's kind. A value in range is written by its own rule through `::String`. In order: `calendar.time(1677, 9, 21)` raises (1); `calendar.time(1677, 9, 21, 0, 12, 44)` is `1677-09-21T00:12:44Z` (2); `calendar.date(1677, 9, 21)` raises (3); `calendar.date(1677, 9, 22)` is `1677-09-22` (4); `calendar.time(2262, 4, 11, 23, 47, 16, 854775807)` is the last instant, `2262-04-11T23:47:16.854775807Z` (5); one nanosecond more raises (6). The discriminators: a runtime that formed the day's midnight first raises at 2, or wraps it; one that checked the calendar and not the range writes 1, 3 or 6. PATH PINNED: libds `adapter_ds_calendar_time` (the day before the epoch reached from the next midnight, under `__builtin_mul_overflow` / `__builtin_add_overflow`) and `adapter_ds_calendar_date` (`ds_date_days_in_range`), rete/adapters.c; Mercury `ds.chrono.ltim_14_2_time` (the instant in `integer`) and `ltim_14_2_date`.",
+    "rules_ds": "import calendar\n\nschema F scope logical:\n    id: Int key\n    y: Int mutable\n    mo: Int mutable\n    d: Int mutable\n    h: Int mutable\n    mi: Int mutable\n    s: Int mutable\n    ns: Int mutable\n\nrule time_before_the_range:\n    F f where f.id == 1 and calendar.time(f.y, f.mo, f.d) != calendar.time(1970, 1, 1)\n->\n    log info \"built 1\"\n\nrule first_day_late:\n    F f where f.id == 2\n->\n    let t = calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s)::String\n    log info \"{t}\"\n\nrule date_before_the_range:\n    F f where f.id == 3 and calendar.date(f.y, f.mo, f.d) != calendar.date(1970, 1, 1)\n->\n    log info \"built 3\"\n\nrule first_date:\n    F f where f.id == 4\n->\n    let t = calendar.date(f.y, f.mo, f.d)::String\n    log info \"{t}\"\n\nrule last_instant:\n    F f where f.id == 5\n->\n    let t = calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns)::String\n    log info \"{t}\"\n\nrule time_after_the_range:\n    F f where f.id == 6 and calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns) != calendar.time(1970, 1, 1)\n->\n    log info \"built 6\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "F", "slots": { "id": 1, "y": 1677, "mo": 9, "d": 21, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 2, "y": 1677, "mo": 9, "d": 21, "h": 0, "mi": 12, "s": 44, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 3, "y": 1677, "mo": 9, "d": 21, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 4, "y": 1677, "mo": 9, "d": 22, "h": 0, "mi": 0, "s": 0, "ns": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 5, "y": 2262, "mo": 4, "d": 11, "h": 23, "mi": 47, "s": 16, "ns": 854775807 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "F", "slots": { "id": 6, "y": 2262, "mo": 4, "d": 11, "h": 23, "mi": 47, "s": 16, "ns": 854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "NOT_REPRESENTABLE",
+            "1677-09-21T00:12:44Z",
+            "NOT_REPRESENTABLE",
+            "1677-09-22",
+            "2262-04-11T23:47:16.854775807Z",
+            "NOT_REPRESENTABLE"
+        ]
+    }
+}

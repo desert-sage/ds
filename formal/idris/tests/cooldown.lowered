@@ -1,0 +1,59 @@
+# lowered from the probe cooldown.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# cooldown.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment, rung R3: a rule's `cooldown T` is lowered as a `cool` record --
+# the window in clock units, then the activation key as slot reads over the
+# positive patterns' ranks -- which Rete/NetworkCooldown.idr's gate reads at
+# the net's clock with the key CODED from the fired match (RLOW.4.6.2.1's
+# identity). Three kinds: Trig (0, entity: k key, n mutable), Pair (1,
+# relation: p key), Hot (2, explicit, a ttl schema: name String, ts Time, no
+# identity). The time map's unit is 5 s, the gcd of the 1 h TTL, the two
+# 5 s advances and the 10 s windows: the TTL is 720 units, each window 2,
+# the ticks 1 and 2. Rule 0 `cool` keys on Trig's k (LCDB.3.3.3's
+# composition, `slot 0 key 0`); rule 1 `by_name` on the `by:` path h.name
+# (`slot 0 pay 0`, a String key, LCDB.3.3.4); rule 2 `composed` on Trig's k
+# then Pair's p (two bound facts); rule 3 `plain` has no `cool` record. Four
+# pumps: at clock 0 every rule fires; at 1 a mutable change of Trig k=1 (an
+# entity replace, a fresh match) and a second Hot a are fresh matches of the
+# same keys, so rules 0 to 2 are `gated` and rule 3 fires; at 2, the
+# window's boundary, all fire again, Hot b a new key; then Trig k=2, a new
+# key inside k=1's window. Keys are the codes of one Int (8 * zigzag(n) + 2)
+# or the empty tuple (1); Hot's payload codes a String by its token (a is
+# token 0, b token 1) then the ts; no text is read, so no `string` records.
+schema 0 entity Trig
+schema 1 relation Pair
+schema 2 explicit Hot
+ttl 2 720
+alpha 0 0
+alpha 1 1
+alpha 2 2
+rule 0 cool
+pattern 0 0 0
+cool 0 2 1 slot 0 key 0
+log 0 0 1 slot 0 key 0
+rule 1 by_name
+pattern 1 2 0
+cool 1 2 1 slot 0 pay 0
+log 1 0 1 slot 0 pay 0
+rule 2 composed
+pattern 2 0 0
+pattern 2 1 0
+cool 2 2 2 slot 0 key 0 slot 1 key 0
+log 2 0 2 slot 0 key 0 slot 1 key 0
+rule 3 plain
+pattern 3 0 0
+log 3 0 1 slot 0 key 0
+step assert _0 0 1000000000000000000018 1000000000000000000002
+step assert _1 1 1000000000000000000114 1
+step assert _2 2 1 1000000000000000000003000000000000000000018
+step pump
+step tick 1
+step assert _3 0 1000000000000000000018 1000000000000000000018
+step assert _4 2 1 1000000000000000000003000000000000000000034
+step pump
+step tick 2
+step assert _5 0 1000000000000000000018 1000000000000000000034
+step assert _6 2 1 1000000000000000000011000000000000000000050
+step pump
+step assert _7 0 1000000000000000000034 1000000000000000000002
+step pump

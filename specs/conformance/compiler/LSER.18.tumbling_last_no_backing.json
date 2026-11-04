@@ -1,0 +1,11 @@
+{
+    "id": "LSER.18.tumbling_last_no_backing",
+    "clauses": ["LSER.18.1", "LSER.14.4.5"],
+    "category": "compiler",
+    "scenario": "`last tumbling 10_min` is refused with DS_VALIDATE_SERIES_NO_EXACT_BACKING: no `tumbling` form is backed in this edition, and the compiler refuses every `tumbling` line (LSER.18.1's § footnote; LSER.14.4.5). Companion to LSER.18.2.tumbling_no_backing, which pins the descriptive/dispersion rows. Named for the LSER.18 heading.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state (by: entity_id):\n    last tumbling 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+    }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "LFST.6.3",
+  "clauses": ["LFST.6.3.2"],
+  "category": "logical",
+  "scenario": "CallIssued stream event per LFST.6.3 — when a rule fires a call action, an action_call event is emitted to the stream carrying the service target and correlation. Integrator callback receives the call; engine stays thin-verb (IDSP.6).",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nservice light.turn_on:\n    \"stub service for conformance\"\n    no response\n\nrule r:\n    Trig\n->\n    call light.turn_on nocooldown as \"c1\"\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": ["fact_assert", "rule_fire_begin", "action_call", "rule_fire_end"]
+  }
+}

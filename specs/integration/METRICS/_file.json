@@ -1,0 +1,10 @@
+{
+  "doc": "METRICS.md",
+  "tree": "integration",
+  "src": "docs/specs/integration/METRICS.md",
+  "prefixes": [
+    "NMET"
+  ],
+  "title": "Metrics surface",
+  "preamble": "# Metrics surface\n\nThe engine's observable counters, gauges, and\nhistograms, delivered through a **typed integrator\ncallback** the engine invokes at\nobservable-event sites. Each emission is a\n`ds_metric_t` value passed to the callback at emit\ntime; the integrator decides where it goes\n(Prometheus / StatsD / Loki / OpenTelemetry / a\ncustom control-plane message / nowhere) inside\ntheir callback body.\n\nThe engine's responsibility ends at calling the\ncallback with a well-formed `ds_metric_t`. No internal\nbuffering, no flush cadence, no transport choice, no\naggregation policy baked in. The integrator owns where\nthe data goes and at what cadence it arrives downstream.\n\n## What this is not\n\n- Not a transport spec. Prometheus format, StatsD,\n  OpenTelemetry — integrator choices made inside\n  the callback.\n- Not a flush-cadence spec. Each metric is emitted\n  once at its observable-event site; the integrator's\n  callback decides when (or whether) to push the\n  value onward.\n- Not a rate-calculation spec. Counters are emitted\n  monotonically; the integrator computes deltas /\n  rates as their backend requires.\n- Not a dashboards / alerting / SLO spec. Operator\n  territory.\n- Not a rule-author-visible surface. Rules don't\n  write custom metrics; they store facts in the facts\n  plane through the storage service.\n\n---\n\n"
+}

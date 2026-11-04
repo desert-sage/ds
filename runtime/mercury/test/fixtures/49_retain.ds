@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+use default:
+    dynamic_ttl: true
+
+schema Trig scope logical:
+    v: Int key
+
+schema Short scope ttl 1_h:
+    v: Int
+
+rule with_override:
+    Trig
+->
+    emit Short retain: 5_min v: 1
+
+rule without_override:
+    Trig
+->
+    emit Short v: 2

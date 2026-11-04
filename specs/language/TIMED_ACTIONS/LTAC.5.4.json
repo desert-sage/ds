@@ -1,0 +1,76 @@
+{
+  "id": "LTAC.5.4",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.5",
+  "seq": 229,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.5.4] If multiple timers' `fire_at` fall in the same tick,\nthe engine must fire all of them in that tick. Their follow-up\nactivations complete together, on that tick ([LTAC.5.1]), and are\nordered as any activations are: those of different rules by\n[LDET.5.4], and those of one rule by the order [LDET.5.5] gives\nmatches that complete together.\n\n---\n\n",
+  "refs": [
+    "LDET.5.4",
+    "LDET.5.5",
+    "LTAC.5.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__inputs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE INPUTS: two timers with `fire_at` 2 and 3, then one tick to 5. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__ready",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE NETWORK AS THE INPUTS LEFT IT: the tick to 5 has made both matches. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__same_tick_counts",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Counted per pump: nothing at either assertion, two at the tick, `[0, 0, 2]`. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__same_tick_ready",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "BOTH DUE ON ONE TICK: two activations, one per timer, unfired, in the order matches that complete together take. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__same_tick_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "BOTH FIRE IN THAT TICK: `[0, 0]`, each firing retracting its own timer, nothing live after. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_4__armed_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE STATE TWO TRIGGERS LEAVE after one pump: both timers armed, stamped 0, the first-asserted trigger's first. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_4__same_tick_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "TWO TIMERS DUE IN ONE TICK BOTH FIRE IN IT, THE EARLIER-MINTED FIRST: from the armed state the advance to 4 and a pump fire the follow-up twice, the timer minted for the first trigger before the one for the second -- [LDET.5.5]'s order on matches that complete together, logical/LTAC.5.4_same_tick_order's shape -- each firing retracting its own timer, and the triggers alone remain. Executed."
+      }
+    ]
+  }
+}

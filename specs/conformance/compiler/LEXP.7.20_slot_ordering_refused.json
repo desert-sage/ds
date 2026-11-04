@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.20_slot_ordering_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.20: a read of a schema-typed slot is a fact reference ([LGRA.5.7a.2]), so `Child c, Child d where c.parent < d.parent` is refused with DS_VALIDATE_UNORDERED_TYPE at the `<`. Neither operand is a pattern binding, so only the slot reads' type can refuse it. PATH PINNED: `dsc.typecheck` `adjacent_mismatches`, keyed on an operand typed `lk_fact` (`fact_operand`); a schema-typed slot types as `lk_fact` through `luni_7_1_slot_type`. A check keyed on an operand being a pattern binding compiles this source.",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent mutable\n\nrule r:\n    Child c\n    Child d where c.parent < d.parent\n->\n    log info \"{c.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

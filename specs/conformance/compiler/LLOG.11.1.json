@@ -1,0 +1,11 @@
+{
+    "id": "LLOG.11.1",
+    "category": "compiler",
+    "scenario": "Logical lifetime is a schema-level property per LLOG.11.1 — `emit X logical` requires X declared `logical`, and `emit X` without the `logical` keyword on a logical-declared schema is also a compile error. LFAC.1.2.5 covers the `logical-keyword on ttl-schema` direction; this pins the converse: missing the keyword on a logical schema is a DS_VALIDATE_BAD_LIFECYCLE_FLAG. Authors cannot accidentally mix lifecycle classes either way.",
+    "rules_ds": "schema Sig scope logical:\n    v: Int key\n\nrule r:\n    Sig s where s.v == 1\n->\n    emit Sig v: 99\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_LIFECYCLE_FLAG",
+        "message_contains": "use `emit Sig logical`"
+    }
+}

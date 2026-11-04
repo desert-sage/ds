@@ -1,0 +1,71 @@
+{
+  "id": "IRET.13.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.13",
+  "seq": 1048,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.13.2] **The op registry is `enum BuiltinFn`** (`proto/builtin_fn.proto`;\nC mirror `runtime/src/libds/builtin_fn.h` as `enum ds_builtin_fn` / `DS_FN_*`),\nreached through the native-rete `CallExpr.op`. Op values are\na **registry**: assigned once, never reused. A reserved\nnumber has no handler and is never emitted; `proto/builtin_fn.proto` lists them, among them the\nbelief candset (`42,43`), the\nbyte/string conversions (`68,71-74`, [LSTR.4.6]) and the string distances\n(`38,39`, [LEXP.5.6]). Representative op groups and\ntheir handlers:\n\n| Op group | Handlers (register site) |\n|---|---|\n| Actions `FN_EMIT` / `FN_LOG` / `FN_CALL` / `FN_PUBLISH` / `FN_CACHE_SET` / `FN_CACHE_GET` / `FN_CACHE_DELETE` / `FN_RATE_ALLOW` / `FN_RETRACT_CORR` / `FN_RETRACT_TOKEN_FACT` | `rete/adapters.c` (RT-safe) |\n| Math / rounding `FN_ABS` / `FN_ROUND` / `FN_FLOOR` / `FN_FLOOR_TIME` / `FN_CEIL` / `FN_TRUNC` / `FN_SIGN` / `FN_SQRT` / `FN_POW` / `FN_MIN` / `FN_MAX` / `FN_DEGREES` / `FN_RADIANS`; bitwise `FN_BIT_*`; distances `FN_EUCLIDEAN_2D` … `FN_COSINE_3D`; `FN_REGEX_MATCH` / `FN_JSON_PATH` / `FN_JSON_HAS` / `FN_STR_LENGTH` / `FN_NOW` | `builtins.c` |\n| Series reads `FN_SERIES_MEAN` … `FN_SERIES_ONSET_RATE`, `FN_SERIES_PERCENTILE` | `engine_rete_adapters.c` (op → agg-kind) |\n| String/time/json adapters `FN_TO_STRING` / `FN_CALENDAR_TIME` / `FN_CALENDAR_DATE` / `FN_TIME_DATE` / `FN_UTC` / `FN_LOCAL` / `FN_MONOTONIC_NS` / `FN_JSON_BUILD` / `FN_JSON_VALUE` / `FN_GENSYM` | `rete/adapters.c` |\n\n",
+  "refs": [
+    "LEXP.5.6",
+    "LSTR.4.6"
+  ],
+  "symbols": [
+    "FN_ABS",
+    "FN_BIT_",
+    "FN_CACHE_DELETE",
+    "FN_CACHE_GET",
+    "FN_CACHE_SET",
+    "FN_CALENDAR_DATE",
+    "FN_CALENDAR_TIME",
+    "FN_CALL",
+    "FN_CEIL",
+    "FN_COSINE_3D",
+    "FN_DEGREES",
+    "FN_EMIT",
+    "FN_EUCLIDEAN_2D",
+    "FN_FLOOR",
+    "FN_FLOOR_TIME",
+    "FN_GENSYM",
+    "FN_HYDRATION_CALL",
+    "FN_JSON_BUILD",
+    "FN_JSON_HAS",
+    "FN_JSON_PATH",
+    "FN_JSON_VALUE",
+    "FN_LOCAL",
+    "FN_LOG",
+    "FN_MAX",
+    "FN_MIN",
+    "FN_MONOTONIC_NS",
+    "FN_NOW",
+    "FN_POW",
+    "FN_PUBLISH",
+    "FN_RADIANS",
+    "FN_RATE_ALLOW",
+    "FN_REGEX_MATCH",
+    "FN_RETRACT_CORR",
+    "FN_RETRACT_TOKEN_FACT",
+    "FN_ROUND",
+    "FN_SERIES_MEAN",
+    "FN_SERIES_ONSET_RATE",
+    "FN_SERIES_PERCENTILE",
+    "FN_SIGN",
+    "FN_SQRT",
+    "FN_STR_LENGTH",
+    "FN_TIME_DATE",
+    "FN_TO_STRING",
+    "FN_TRUNC",
+    "FN_UTC"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/builtin_fn.proto",
+        "name": "BuiltinFn",
+        "tag": "spec"
+      }
+    ]
+  }
+}

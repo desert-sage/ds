@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.3.2.2_fma_needs_import",
+    "clauses": ["LIMP.3.3.4", "LEXP.3.2.2"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.2.2]: `fma` is a member of `math`, reached only through its import ([LIMP.3.3.4]). A file with no import calls `fma(s.a, s.b, s.c)` in a `where`, and the compiler rejects it as it rejects any call to a name nothing resolves, DS_VALIDATE_UNKNOWN_FUNCTION. PATH PINNED: `dsc.libcall`'s rewrite, which leaves a bare `fma` with no import as it is, then `dsc.typecheck`'s unknown-function arm, which finds no [LEXP.17.2] row named `fma`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    a: Float mutable\n    b: Float mutable\n    c: Float mutable\n\nrule r:\n    Sensor s where fma(s.a, s.b, s.c) > 2.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

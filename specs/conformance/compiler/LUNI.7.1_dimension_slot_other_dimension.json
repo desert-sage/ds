@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.7.1_dimension_slot_other_dimension",
+    "category": "compiler",
+    "scenario": "[LUNI.7.1]: a dimension-typed slot keeps its dimension, and [LUNI.8.2] refuses comparing it with a quantity of another dimension. `r.temp > 5_meter` on a `temp: temperature` slot is refused with DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `luni_7_1_slot_type` in dsc.types, which gives the slot `dim(\"temperature\", no)`, and `dsc.typecheck`'s comparison, which refuses `temperature` against `length`. The break is mapping a dimension-typed slot to `dimensionless`, which lets the program compile: a dimensionless operand is [LUNI.8.3]'s bare scalar.",
+    "rules_ds": "schema Reading scope logical:\n    sensor: String key\n    temp: temperature mutable\n\nrule odd:\n    Reading r where r.temp > 5_meter\n->\n    log info \"odd: {r.sensor}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

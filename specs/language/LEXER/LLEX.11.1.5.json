@@ -1,0 +1,31 @@
+{
+  "id": "LLEX.11.1.5",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.11.1",
+  "seq": 485,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LLEX.11.1.5] Integer overflow at parse time (literal exceeds 64-bit signed\nrange) is a lexer error: `\"integer literal out of range\"`.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__null_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "`99999999999999999999`, an integer spelling outside the 64-bit signed range, parses to `null` under `String :: Float?`, `Refl`: the clause's lexer error read as the parse's refusal."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__parse_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "An integer spelling is a Float only with its signed value in the 64-bit range, as a source literal is admitted only there. Partial because the clause names a lexer error and the parse makes the spelling `null`: [LCST.4.5.8]'s 'any spelling a source literal would not admit'."
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSER.16.6.1",
+    "category": "compiler",
+    "scenario": "v1 exact count_of (LSER.16.6.1). `count_of(cursor, value)` is the exact per-value frequency over a bounded `sliding` window's raw samples (the ring buffer, SeriesBackendRingBuffer) — so it compiles with no accuracy phrase. The window is inherited from the series decl. Pin: a series declaring `count_of sliding 10_min` and a rule calling `count_of(e.tag, \"error\") >= 2` compiles clean.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    count_of sliding 10_min\n\nrule r:\n    Event e where count_of(e.tag, \"error\") >= 2\n->\n    log critical \"{e.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

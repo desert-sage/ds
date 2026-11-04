@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.9.8g",
+    "category": "compiler",
+    "scenario": "Qualified namespace per LIMP.9.8 / LIMP.4.1.1 — const importing in expression position. `import ha` lets the importing file reference `ha`'s exported const as `ha.RETRY` in any expression position; the validator inlines its literal value at the use site, mirroring the bare-form behavior pinned by LIMP.9.8a. Pin: `import ha` followed by `let retry_after = ha.RETRY` resolves and inlines the const value (30_s → 30000000000 ns).",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    let retry_after = ha.RETRY\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "const RETRY = 30_s\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LNUL.4.10_fault_order_slot_context",
+    "clauses": ["LNUL.4.2"],
+    "category": "logical",
+    "dead_rules_expected": ["r1", "r2"],
+    "scenario": "[LNUL.4.10] with [LNUL.4.2]: when an operator's two operands both fault and the faults are of one kind, the expression yields the one whose record is lower at the first field that differs, and the offending operand's slot context ([LERR.9.12]) is among the fields compared; an operand's position never enters. Rule `r1` tests `s.a / s.b + s.c / s.d > 0` and rule `r2` the same sum with its operands swapped, `s.c / s.d + s.a / s.b > 0`. One S with id 1, a 1, b 0, c 1, d 0: both Int divisions trap DIVIDE_BY_ZERO, and each division's offending operand is its divisor, `b` and `d` ([LERR.9.12]). The two ComputationErrors agree on every field before `slot_name` (the rule, timetag and schema are the test's own), and \"b\" < \"d\", so both rules' `+` yield the fault over `b`. Each test is a join test on its rule's beta (IRET.6.4), so its fault fact names the node, `$beta_<id>` ([LERR.9.11]), and the two are separate facts. Handler `on_fault` logs every ComputationError's kind, schema and slot, so the log holds two identical lines and their order does not matter. Pin: assert S, pump. Messages: `DIVIDE_BY_ZERO S b` twice. Break: a selector that keeps the first fault on a tie of kind logs `DIVIDE_BY_ZERO S d` for `r2`; one that keeps the last logs it for `r1`. PATH PINNED: each runtime's within-kind selector, libds's `fault_before` through `ds_rete_held_select` and the holding branch of `fault_at` (rete/eval.c), and the Mercury runtime's `ds.eval.lnul_4_2_before` through `lnul_4_10_yielded`, with `fault_origin`'s descent naming the selected operand.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    a: Int mutable\n    b: Int mutable\n    c: Int mutable\n    d: Int mutable\n\nrule r1:\n    S s where s.a / s.b + s.c / s.d > 0\n->\n    log info \"r1 fired\"\n\nrule r2:\n    S s where s.c / s.d + s.a / s.b > 0\n->\n    log info \"r2 fired\"\n\nrule on_fault:\n    ComputationError e\n->\n    log info \"{e.kind} {e.schema} {e.slot}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "a": 1, "b": 0, "c": 1, "d": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "DIVIDE_BY_ZERO S b",
+            "DIVIDE_BY_ZERO S b"
+        ]
+    }
+}

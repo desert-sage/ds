@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# A trap becomes a fault fact. `divide` divides two Int slots, so
+# b = 0 traps: the activation is abandoned, the fault goes on the stream, and a
+# ComputationError fact keyed on (node, rule) enters working memory, where
+# `handler` matches it. An Int division traps; a Float one is IEEE.
+
+use default
+
+schema S scope logical:
+    entity_id: String key
+    a: Int mutable
+    b: Int mutable
+
+rule divide:
+    S s
+->
+    let q = s.a / s.b
+    log info "q {q}"
+
+rule handler:
+    ComputationError e where e.rule == "divide"
+->
+    log info "handled {e.kind}"

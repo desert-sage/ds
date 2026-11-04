@@ -1,0 +1,14 @@
+{
+    "id": "LCON.2.4.1_self_join_pairs",
+    "category": "runtime",
+    "scenario": "[LCON.2.4.1] under a self-join, where a matcher walks one alpha memory twice and the beta memory holds every partial match. Five A facts in three insertion orders; `pair` fires once per (x, y) with x.id < y.id, so ten firings and ten P facts: 15 facts in every order. Insertion order reorders both memories, so a runtime whose join walk leaked its memory or bucket order into the match set would disagree between orders on the count. LCON.2.4.1 itself has one rule per A and no join.",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n\nschema P scope logical:\n    lo: Int key\n    hi: Int key\n\nrule pair:\n    A x\n    A y where x.id < y.id\n->\n    emit P logical lo: x.id hi: y.id\n",
+    "expect": {
+        "kind": "hash_order_independence",
+        "schema": "A",
+        "slot": "id",
+        "orders": [[1, 2, 3, 4, 5], [5, 4, 3, 2, 1], [3, 1, 5, 2, 4]],
+        "pump": true,
+        "expected_fire_order": ["pair", "pair", "pair", "pair", "pair", "pair", "pair", "pair", "pair", "pair"]
+    }
+}

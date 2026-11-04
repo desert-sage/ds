@@ -1,0 +1,16 @@
+{
+    "id": "LCON.4.5.2",
+    "category": "logical",
+    "scenario": "LCON.4.5.1 introspection surface — Rete network shape. The engine exposes its compiled Rete network (nodes and edges) for inspection. The one-rule program `derive` compiles to at least an alpha node for the Trigger pattern plus a terminal, connected by edges. Pins that the rete_network introspection accessor returns a populated graph (NATIVE_RETE).",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nschema Derived scope logical:\n    v: Int key\n\nrule derive:\n    Trigger t\n->\n    emit Derived logical v: t.v\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 7 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "rete_network", "min_nodes": 1, "min_edges": 1 }
+        ]
+    }
+}

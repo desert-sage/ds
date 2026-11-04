@@ -1,0 +1,28 @@
+{
+    "id": "LCST.4.5.8_a_doubled_separator_is_null",
+    "category": "logical",
+    "scenario": "[LCST.4.5.8] parses a text as a source INT_LIT or FLOAT_LIT spells it, and [LLEX.11.1] / [LLEX.11.2] admit a `_` only between two digits, one at a time, in the integer part, the fraction and the exponent alike. So a doubled `_` is `null` in each: `1__5.5`, `15.5__0`, `1.55e0__1`. Each control, the same text with one `_`, parses to 15.5. Each text is asserted and pumped on its own, so the log order is the assert order. Rule `absent` logs a text whose `::Float?` is null, and rule `parsed` one that parses to 15.5. PATH PINNED: FN_STRING_TO_FLOAT's runtime adapter, through libds's `digit_run` (`float_text/float_parse.cc`, `ds_parse_float_text`), which the Mercury runtime calls for `String :: Float?` too. The breaks: a parser that skips a doubled `_` in any of the three digit runs logs `15.5 [...]` in place of that text's `null [...]`; one that refuses every `_` logs `null [...]` for a control.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule absent:\n    S s where (s.txt::Float?) is null\n->\n    log info \"null [{s.txt}]\"\n\nrule parsed:\n    S s where (s.txt::Float? ?? 0.0) == 15.5\n->\n    log info \"15.5 [{s.txt}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "1__5.5" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "1_5.5" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "15.5__0" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "15.5_0" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "1.55e0__1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "1.55e0_1" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "null [1__5.5]", "15.5 [1_5.5]",
+            "null [15.5__0]", "15.5 [15.5_0]",
+            "null [1.55e0__1]", "15.5 [1.55e0_1]"
+        ]
+    }
+}

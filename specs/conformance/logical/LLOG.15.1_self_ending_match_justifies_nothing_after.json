@@ -1,0 +1,19 @@
+{
+    "id": "LLOG.15.1_self_ending_match_justifies_nothing_after",
+    "category": "logical",
+    "clauses": ["LLOG.15.1", "IRET.12.2"],
+    "dead_rules_expected": ["a_live", "c_live"],
+    "scenario": "[LLOG.15.1]: \"A match that ends inside its own firing ends its justification there ... A `logical` fact the firing emits after that action gains no justification from it, and the engine must retract it as it is made unless another justification already holds it\"; [IRET.12.2]: \"The engine must not enter a logical fact the firing asserts after that action in the dependency table against the ended activation.\" Rule `flip` matches `A a where a.kind == \"enter\"` and `K k`, logs, then emits `A logical id: k.target kind: \"leave\"` and `C logical id: k.target`. With `k.target` equal to `a.id`, the first emit replaces the very `A` the activation matched ([LFAC.2.5.3]), so the match ends at that action. The compiler admits the rule because the key comes from `k` and only run-time values make it `a`'s, so [LLOG.11.9] does not refuse it. Neither the new `A(x, leave)` nor `C(x)` is justified, and both are retracted as they are made. `a_live` and `c_live` join them to a `Probe` asserted in the second pump and would log for a survivor. Expected: \"flip x\" and nothing else. A runtime that keeps `A(x, leave)` and `C(x)` live with no live justification logs from both rules. PATH PINNED: libds's `ds_rete_terminal_justify` (rete/terminal.c) on `firing_act_freed`, from `eval_actions`' logical assert; the Mercury runtime's `ds.tms.resolve_deferred` after the action settles (`ds.exec.llog_15_1_justify_settled`). The lockstep scenario 117_self_ending_match (fixture 149_self_ending_match) holds the two runtimes to each other with fact ids, and `verify tms` judges its state.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    kind: String mutable\n\nschema K scope explicit:\n    target: String\n\nschema C scope logical:\n    id: String key\n\nschema Probe scope explicit:\n    n: Int\n\nrule flip:\n    A a where a.kind == \"enter\"\n    K k\n->\n    log info \"flip {k.target}\"\n    emit A logical id: k.target kind: \"leave\"\n    emit C logical id: k.target\n\nrule a_live:\n    A a where a.kind == \"leave\"\n    Probe\n->\n    log info \"A {a.id} is live\"\n\nrule c_live:\n    C c\n    Probe\n->\n    log info \"C {c.id} is live\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "x", "kind": "enter" } },
+            { "op": "assert", "schema": "K", "slots": { "target": "x" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["flip x"]
+    }
+}

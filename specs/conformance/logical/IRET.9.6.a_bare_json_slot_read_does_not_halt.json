@@ -1,0 +1,16 @@
+{
+    "id": "IRET.9.6.a_bare_json_slot_read_does_not_halt",
+    "category": "logical",
+    "scenario": "[IRET.9.6]: the twin of IRET.9.6.a_bare_json_slot_read_is_a_type_error. `a.j == b.n` over a whole `Json` slot j = {\"x\": 1} and an Int n = 5 is a TypeError because the read of a `Json` slot is Json-derived, so NO EngineError is recorded and the tier does not halt; the rule does not fire. Paths: `iret_9_6_slot_read` (dsc.rete) taints the bare read; libds scans the pair (`eq_key_decided` refuses a `Json` key) and classifies the CMP_INCOMPAT at the tainted `==`; Mercury classifies ds.eval.compare_outcome's mismatch at the tainted node.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    j: Json mutable\n\nschema B scope logical:\n    id: String key\n    n: Int mutable\n\nrule r:\n    A a\n    B b where a.j == b.n\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "a", "j": { "x": 1 } } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b", "n": 5 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["engine_error", "rule_fire_begin"]
+    }
+}

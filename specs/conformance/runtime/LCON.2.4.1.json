@@ -1,0 +1,14 @@
+{
+    "id": "LCON.2.4.1",
+    "category": "runtime",
+    "scenario": "LCON.2.4.1 hash-order independence — the runtime's internal hash tables (e.g. the open-addressing intern table) place entries by insertion sequence, so re-running the same scenario with facts asserted in different orders exercises different internal hash layouts. The same three A facts asserted forward / reversed / shuffled produce identical rule-fire order and fact_count: output is determined by spec conflict-resolution ordering (LDET.5), not hash iteration. DS exposes no hash-reversal knob and hashes deterministically (FNV-1a), so this demonstrates the LCON.2.4.2 auto-pass rather than asserting it. The two rules carried priority bands until W2 (R14c); with the terminal ordinal as the outer key ([LDET.5.4]) the fire order groups BY RULE — every activation of the earlier-declared rule fires before any activation of the later one, because the ordinal is unique per rule and separates them before the creation timetag is ever reached ([LDET.5.1]).",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n\nschema Crit scope logical:\n    id: Int key\n\nrule r_alpha:\n    A a\n->\n    emit Crit logical id: a.id\n\nrule r_beta:\n    A a\n->\n    emit Crit logical id: a.id\n",
+    "expect": {
+        "kind": "hash_order_independence",
+        "schema": "A",
+        "slot": "id",
+        "orders": [[1, 2, 3], [3, 2, 1], [2, 3, 1]],
+        "pump": true,
+        "expected_fire_order": ["r_alpha", "r_alpha", "r_alpha", "r_beta", "r_beta", "r_beta"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSER.6.8.3b",
+    "category": "compiler",
+    "scenario": "Duplicate aggregation across lines under the same time model requires `as <label>` on every line per LSER.6.8.3. Two `mean sliding` declarations without labels are rejected with DS_VALIDATE_SERIES_DUPLICATE_AGG_NEEDS_LABEL. Authors who want both must label them (e.g. `mean sliding 10_min as short` / `mean sliding 1_h as long`).",
+    "rules_ds": "use default\n\nschema Sensor scope ttl 1_min:\n    entity_id: String\n    state: Float\n\nseries Sensor.state (by: entity_id):\n    mean sliding 10_min\n    mean sliding 1_h\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_DUPLICATE_AGG_NEEDS_LABEL"
+    }
+}

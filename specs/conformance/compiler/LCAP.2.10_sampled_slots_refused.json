@@ -1,0 +1,10 @@
+{
+    "id": "LCAP.2.10_sampled_slots_refused",
+    "category": "compiler",
+    "scenario": "[LCAP.2.10] / [LDIA.3.3.7]: the storage and samples-plane capabilities are deferred in this edition, and a `use` block line setting one `true` is refused with DS_VALIDATE_CAPABILITY_DEFERRED. `sampled_slots: true` needs nothing else ([LCAP.3.8] has no row for it), so no constraint check could refuse the block instead, and the program uses no construct it gates: a compiler without the refusal compiles it. PATH PINNED: the [LCAP.2.10] arm of the deferred-setting check in override resolution in `dsc.dialect` (`lcap_2_10_deferred_line`).",
+    "rules_ds": "use default:\n    sampled_slots: true\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DEFERRED"
+    }
+}

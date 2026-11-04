@@ -1,0 +1,29 @@
+{
+  "id": "LTAC.3.1.runtime",
+  "category": "temporal",
+  "scenario": "`after` timer fires after the clock advances past the delay per LTAC.3.1. Assert a Trig and advance the clock past 5_s: the follow-up rule fires and its plain emit leaves a ttl Delayed fact, so two facts live. The body emits a ttl fact rather than a logical one because a logical emit in an after body is refused (LLOG.11.9) — its justifying activation ends inside its own firing when the follow-up retracts the timer (LTAC.3.4).",
+  "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Delayed scope ttl 1_h:\n    dummy: Int\n\nrule delayed:\n    Trig\n->\n    log info \"trig\"\n    after 5_s:\n        emit Delayed dummy: 0\n",
+  "expect": {
+    "kind": "temporal_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Trig",
+        "slots": {
+          "entity_id": "t1"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "advance",
+        "delta_ns": 6000000000
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "fact_count_after": 2
+  }
+}

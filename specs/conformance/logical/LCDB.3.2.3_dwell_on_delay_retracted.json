@@ -1,0 +1,21 @@
+{
+    "id": "LCDB.3.2.3_dwell_on_delay_retracted",
+    "category": "logical",
+    "dead_rules_expected": ["settled"],
+    "scenario": "The negative half of LCDB.3.2.3_dwell_on_delay: a fact retracted before the on-delay has passed ends the match, and nothing fires (LCDB.3.2.3). Drives the same `dwell` test CE, with the retraction removing the token before any tick can satisfy it. Pin: set 0; assert Motion; pump; advance 1_s, pump; retract; advance 5_s, pump. No messages.",
+    "rules_ds": "schema Motion scope logical:\n    zone: String key\n    ts: Time\n\nrule settled:\n    Motion m where m.dwell >= 2_s\n->\n    log critical \"settled\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Motion", "slots": { "zone": "hall", "ts": 0 }, "as": "m" },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "retract", "label": "m" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": []
+    }
+}

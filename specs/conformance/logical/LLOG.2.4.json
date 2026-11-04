@@ -1,0 +1,31 @@
+{
+  "id": "LLOG.2.4",
+  "category": "logical",
+  "scenario": "Multi-justifier per LLOG.2.4 — a logical fact is retracted only when the last justification goes away. Two rules each justify Occupied. Retract the first justifier: Occupied stays (second rule still active). Retract the second: Occupied retracts. Observable: exactly one fact_retract for Occupied at the end, not after the first retract. Event kinds do not name the fact, so the `pump` boundaries are stated: a retract's justification change happens at the retract, before the next pump. So one fact_retract (t1's) before the second pump, and two (t2's, then Occupied's) before the third. Three fact_retracts with no boundary hold as well when Occupied goes with t1, which is why the boundaries are stated.",
+  "rules_ds": "schema Trig1 scope logical:\n    v: Int key\n\nschema Trig2 scope logical:\n    v: Int key\n\nschema Occupied scope logical:\n    dummy: Int key\n\nrule r1:\n    Trig1\n->\n    emit Occupied logical dummy: 0\n\nrule r2:\n    Trig2\n->\n    emit Occupied logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Trig1", "slots": { "v": 1 }, "as": "t1" },
+      { "op": "assert", "schema": "Trig2", "slots": { "v": 2 }, "as": "t2" },
+      { "op": "pump" },
+      { "op": "retract", "label": "t1" },
+      { "op": "pump" },
+      { "op": "retract", "label": "t2" },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "fact_assert",
+      "pump",
+      "fact_assert",
+      "action_emit",
+      "action_emit",
+      "fact_retract",
+      "pump",
+      "fact_retract",
+      "fact_retract",
+      "pump"
+    ]
+  }
+}

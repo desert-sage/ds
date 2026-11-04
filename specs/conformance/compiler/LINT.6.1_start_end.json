@@ -1,0 +1,9 @@
+{
+    "id": "LINT.6.1_start_end",
+    "category": "compiler",
+    "scenario": "LINT.6.1 \u2014 `i.start` and `i.end` desugar to the interval's start / end expressions respectively. Pin: `(m.window_start..m.window_end).start == m.window_start` over Time slots compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the desugaring is not observed. `.end` is not used.",
+    "rules_ds": "schema W scope logical:\n    entity_id: String key\n    window_start: Time mutable\n    window_end: Time mutable\n\nrule r:\n    W m where (m.window_start..m.window_end).start == m.window_start\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

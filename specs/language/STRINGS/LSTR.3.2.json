@@ -1,0 +1,143 @@
+{
+  "id": "LSTR.3.2",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.3",
+  "seq": 101,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSTR.3.2] String ordering is lexicographic by codepoint value.\nThis is not locale-aware ordering; it sorts by Unicode scalar\nvalue, which corresponds to UTF-8 byte ordering for any\nwell-formed pair.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_str",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A String compared with a String: the orderings by this clause's order, `==` and `!=` by [LSTR.3.1]'s equality; a `null` right operand propagates; anything else is ill-typed, a trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__str_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six comparisons on two texts: `<` and `>` this clause's order, `<=` and `>=` the order or [LSTR.3.1]'s equality, `==` and `!=` the equality."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two codepoints compared by scalar value, structurally, so the order's laws are proved by induction: the clause's 'by codepoint value', one codepoint at a time."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp_flip",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "LT one way is GT the other."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp_flip_gt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "GT one way is LT the other."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A codepoint compared with itself is EQ."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp_sym_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "EQ is symmetric."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__cp_cmp_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "LT is transitive on codepoints."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__fixture_claims",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The fixtures' claims executed on their texts: `a` above `Z` and `Y` not (codepoint order, not alphabetical), `é` above `z`, `ab` below `abc` while `abc` and `abd` are not, `Z` above `M` and `A` not. The astral codepoint above every BMP one is run in Main.idr."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`a < b` on texts: lexicographic by codepoint value, the empty text below every nonempty one so a proper prefix sorts first; not locale-aware. The clause's remark that this is UTF-8 byte order for a well-formed pair is not transcribed: the model has codepoints, not bytes."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_asym",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A text below another is not above it, for every pair."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One step of the order, the decision on the heads taken first: a smaller head decides true, a greater false, equal heads leave it to the tails."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_irrefl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "No text is below itself."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Two texts that are not equal ([LSTR.3.1]) are ordered one way or the other: a total order on distinct texts."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__lt_trans",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The order is transitive, for every three texts."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_3_2__prefix_sorts_first",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A proper prefix is below every text it is a prefix of, for every text, codepoint and continuation."
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.3.2.2_withdraw_into_no_closes_cycle",
+    "category": "compiler",
+    "scenario": "LCYC.3.2.2's fifth edge form: a `withdraw` of a `Q` in `ra` and a `no Q` pattern in `rb` is an edge ra -> rb, since removing the `Q` is what lets `rb` fire. `rb` emits a `P` that `ra` matches (an emit edge, rb -> ra), so the two form one SCC, and `P` is emitted and matched inside it (LCYC.3.1.1). Refused with DS_VALIDATE_RULE_CYCLE, not DS_VALIDATE_RULE_DEFEAT: a withdraw into `no` enables its target rather than defeating it (LCYC.3.4.1). PATH PINNED: the withdraw edge into a negated pattern. The positive-pattern form cannot close this cycle, because `rb` matches no `Q` positively, and the emit edge alone is acyclic.",
+    "rules_ds": "schema P scope explicit:\n    v: Int\n\nschema Q scope explicit:\n    v: Int\n\nschema S scope explicit:\n    v: Int\n\nrule ra:\n    P p\n    Q q where q.v == p.v\n->\n    withdraw q\n\nrule rb:\n    S s\n    no Q\n->\n    emit P v: s.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

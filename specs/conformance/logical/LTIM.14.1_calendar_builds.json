@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.14.1_calendar_builds",
+    "clauses": ["LTIM.14.1"],
+    "category": "logical",
+    "scenario": "[LTIM.14.1]: `calendar.time` at each of its three arities and `calendar.date` build their value from `Int` fields, and the `Time` is in UTC, at offset 0. One `F` fact carries 2024-02-29, 13:45:30 and 5 ns in `Int` slots, so no call folds and the engine builds each value. `show` writes, through `::String` ([LTIM.8.2.4]): `calendar.time(y, mo, d)`, midnight UTC, `2024-02-29T00:00:00Z`; `calendar.time(y, mo, d, h, mi, s)`, `2024-02-29T13:45:30Z`; `calendar.time(y, mo, d, h, mi, s, ns)`, the nanoseconds written whole, `2024-02-29T13:45:30.000000005Z`; and `calendar.date(y, mo, d)`, `2024-02-29`. Every `Time` ends in `Z`, its offset 0. A runtime that read the omitted fields as anything but 0, dropped the nanosecond, or gave the result an offset writes another text. PATH PINNED: `dsc.rete`'s `scalar_fn` rows for `calendar.time` / `calendar.date` and `ltim_14_1_operands`, which fills `/3` and `/6` to FN_CALENDAR_TIME's seven operands; libds `adapter_ds_calendar_time` / `adapter_ds_calendar_date` (rete/adapters.c) and Mercury `ds.chrono.ltim_14_2_time` / `ltim_14_2_date` through `ds.eval`.",
+    "rules_ds": "import calendar\n\nschema F scope logical:\n    id: Int key\n    y: Int mutable\n    mo: Int mutable\n    d: Int mutable\n    h: Int mutable\n    mi: Int mutable\n    s: Int mutable\n    ns: Int mutable\n\nrule show:\n    F f\n->\n    let t3 = calendar.time(f.y, f.mo, f.d)::String\n    let t6 = calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s)::String\n    let t7 = calendar.time(f.y, f.mo, f.d, f.h, f.mi, f.s, f.ns)::String\n    let dt = calendar.date(f.y, f.mo, f.d)::String\n    log info \"{t3} {t6} {t7} {dt}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "F", "slots": { "id": 1, "y": 2024, "mo": 2, "d": 29, "h": 13, "mi": 45, "s": 30, "ns": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "2024-02-29T00:00:00Z 2024-02-29T13:45:30Z 2024-02-29T13:45:30.000000005Z 2024-02-29"
+        ]
+    }
+}

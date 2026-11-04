@@ -1,0 +1,31 @@
+{
+  "id": "LSER.18.1",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.18",
+  "seq": 490,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.18.1] Normative cross-reference. Each row is one aggregation;\ncolumns are the four v1 time models. Every v1 cell is **exact** — there is\nno accuracy phrase. Cells contain:\n\n- **✓ exact** — exact answer at O(1) state or O(N) sample count.\n- **✓** — exact, nothing further to note.\n- **✗** — not available in v1: either the combination has no defined semantics,\n  or it has no exact backing (see the footnotes).\n\n| Aggregation | `all_time` | `sliding` | `tumbling` | `sample` | Backing | At capacity |\n|---|---|---|---|---|---|---|\n| `mean` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` / `SeriesBackendReservoir` | drop |\n| `sum` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` / `SeriesBackendReservoir` | drop |\n| `count` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` / `SeriesBackendReservoir` | drop |\n| `min` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendMonotonicDeque` / `SeriesBackendReservoir` | drop |\n| `max` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendMonotonicDeque` / `SeriesBackendReservoir` | drop |\n| `stdev`, `pstdev`, `variance`, `pvariance` | ✓ exact | ✓ exact | ✗ § | ✓ exact | `SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` / `SeriesBackendReservoir` | drop |\n| `rate`, `direction` | ✓ | ✓ | ✗ § | ✗ | `SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` | drop |\n| `first` | ✓ | ✓ exact | ✗ § | ✗ | `SeriesBackendWelfordEwma` / `SeriesBackendFifoDeque` | drop |\n| `last` | ✓ | ✓ exact | ✗ § | ✗ | `SeriesBackendWelfordEwma` / `SeriesBackendFifoDeque` | drop |\n| `bool_and`, `bool_or` | ✓ | ✓ exact | ✗ § | ✗ | `SeriesBackendWelfordEwma` / `SeriesBackendFifoDeque` | drop |\n| `median`, `pXX` | ✗ † | ✓ exact | ✗ † | ✓ exact | `SeriesBackendRingBuffer` / `SeriesBackendReservoir` | drop |\n| `count_distinct` | ✗ ‡ | ✓ exact | ✗ ‡ | ✗ | exact set (sliding) | drop |\n| `count_of` | ✗ ‡ | ✓ exact | ✗ ‡ | ✗ | exact table (sliding) | drop |\n| `contains` | ✗ ‡ | ✓ exact | ✗ ‡ | ✗ | exact set (sliding) | drop |\n\n**At capacity** is what a declared `capacity` ([LSER.13.14]) does when an\nidentity's backing is full: **drop** evicts that identity's oldest sample, and\nthe read then covers the samples retained. A constant-state backing (`SeriesBackendWelfordEwma`)\nretains no samples, so `capacity` never binds it. The time-normalised signal\naggregations refuse instead ([LSIG.1.1]).\n\n† `median` / `pXX` need a **bounded** window for an exact quantile; their\n`all_time` and `tumbling` forms are not available in v1.\n\n‡ `count_distinct` / `count_of` / `contains` are exact on a **bounded**\n(`sliding`) window only. Their `all_time` and `tumbling` forms have no exact\nunbounded backend atom in v1, so, like the unbounded percentiles, they are\n**not available in v1** ([LSER.18]).\n\n§ **No `tumbling` form is backed in this edition** ([LSER.14.4.5]). The\nper-bucket statistic over a completed bucket needs a backend that does not\nship; routing a `tumbling` line to the cumulative `SeriesBackendWelfordEwma` would return an\nexponentially-weighted estimate (and `exp()` is not even cross-platform\nbit-exact), and routing it to a windowed backing would read a sliding window,\nnot a bucket. The compiler refuses every `tumbling` line\n(`DS_VALIDATE_SERIES_NO_EXACT_BACKING`, [LSER.15.2]).\n\n",
+  "refs": [
+    "LSER.13.14",
+    "LSER.14.4.5",
+    "LSER.15.2",
+    "LSER.18",
+    "LSIG.1.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_SERIES_AGG_NOT_SUPPORTED",
+    "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/series_applicability.als",
+        "name": "lser_18_1__tm_matrix",
+        "tag": "spec"
+      }
+    ]
+  }
+}

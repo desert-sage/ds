@@ -1,0 +1,10 @@
+{
+    "id": "LSER.10.19",
+    "category": "compiler",
+    "scenario": "No exact backing → reject, per LSER.10.19 / LSER.15.2 (v1). In v1 `pXX` / `median` are exact over a bounded window's raw samples (SeriesBackendRingBuffer on `sliding`, SeriesBackendReservoir on `sample`); the `all_time` and `tumbling` forms have no exact backing. Pin: `p95 all_time` rejects with DS_VALIDATE_SERIES_NO_EXACT_BACKING; the diagnostic names the unreachable cell and points at the bounded form (`p95 sliding <dur>` / `p95 sample <n>`).",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    p95 all_time\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+    }
+}

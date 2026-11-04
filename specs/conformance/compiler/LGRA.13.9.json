@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.13.9",
+    "category": "compiler",
+    "scenario": "Required kwarg validation works for locally-declared services, not just imported ones per LGRA.13.9. Pin: a locally-declared service with `kwarg body: Int required` rejects a call site that omits the required kwarg with DS_VALIDATE_MISSING_KWARG.",
+    "rules_ds": "schema Event scope logical:\n    v: Int key\n\nservice ext.api:\n    kwarg body: Int required\n    no response\n\nrule r:\n    Event\n->\n    call ext.api nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_MISSING_KWARG"
+    }
+}

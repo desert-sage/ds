@@ -1,0 +1,52 @@
+{
+  "id": "RDSC.5.5.7",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.5.5",
+  "seq": 715,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.5.5.7] `identity_role` declares the slot's identity role\nper [LFAC.1.7]: `IDENTITY_ROLE_KEY` (the slot is part of the\nschema's identity key), `IDENTITY_ROLE_MUTABLE` (payload) or\n`IDENTITY_ROLE_ENGINE` (the engine's `ts`, [LFAC.9.1]: outside the key\nand outside the no-op comparison). On a `logical` schema the compiler\nemits `KEY` or `MUTABLE` for every author slot (require-all,\n[LFAC.1.7.4]) and `ENGINE` for `ts`; on a non-`logical` schema every\nslot is `IDENTITY_ROLE_UNSPECIFIED`. The runtime reads a `logical`\nschema's identity key from its `KEY` slots — it does not infer identity\nfrom slot 0 or from a slot named `entity_id` — and compares its `KEY`\nand `MUTABLE` slots for the no-op test ([LFAC.2.5.1]).\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LFAC.1.7.4",
+    "LFAC.2.5.1",
+    "LFAC.9.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "rdsc_5_5_7__engine_iff_logical_ts",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A slot carries ENGINE exactly when it is the ts of a logical schema: never an author's marker, and a non-logical ts is UNSPECIFIED. The partition said a second way. Bounded: six slots, six schemas; fails if the partition's ENGINE line is dropped."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "rdsc_5_5_7__marked_iff_logical",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A slot carries KEY or MUTABLE exactly when it is an author slot of a logical schema. The partition said a second way. Bounded: six slots, six schemas."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "rdsc_5_5_7__role",
+        "tag": "spec",
+        "note": "The four roles the clause and proto/slot.proto#IdentityRole name: KEY, MUTABLE, ENGINE, UNSPECIFIED."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "rdsc_5_5_7__role_partition",
+        "tag": "spec",
+        "note": "The clause's partition: on a logical schema every author slot is KEY or MUTABLE and ts is ENGINE; on any other schema every slot is UNSPECIFIED."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "rdsc_5_5_7__slot",
+        "tag": "spec"
+      }
+    ]
+  }
+}

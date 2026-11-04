@@ -1,0 +1,23 @@
+{
+    "id": "RLOW.4.6.6.1_keyed_per_entity",
+    "clauses": ["LCRS.8.2"],
+    "category": "adapter",
+    "scenario": "Per-call `cooldown:` is keyed per call site by the declared `key` slots of the `logical` fact the activation binds ([LCDB.3.3.1]). `Dev` is keyed on `id`; `a` fires the call, `a` again inside the 30 s window (a new `level`, so the rule fires again) is held back, and `b` inside the same window is issued. Expected: two calls, for `a` and for `b`. A tracker keyed on the call site alone would hold `b` back too; one keyed on every slot would let the second `a` through, its `level` having changed. PATH PINNED: the compiler's per-call gate (`dsc.rete.rlow_4_6_6_1_call_gates`), `IF(FN_RATE_ALLOW(\"r#call0\", d.id, 30_s), FN_CALL(...), null)`, evaluated in libds's action loop (`rete/engine.c`, ACTION_CALL) through `adapter_ds_rate_allow`.",
+    "rules_ds": "schema Dev scope logical:\n    id: String key\n    level: Int mutable\n\nservice svc.x:\n    kwarg id: String\n    no response\n\nrule r:\n    Dev d\n->\n    call svc.x id: d.id cooldown: 30_s\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 1}},
+            {"op": "pump"},
+            {"op": "advance", "delta_ns": 1000000000},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 2}},
+            {"op": "pump"},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "b", "level": 1}},
+            {"op": "pump"}
+        ],
+        "expected_calls": [
+            {"service": "svc.x", "correlation": "$r_c0_g0", "body": {"id": "a"}},
+            {"service": "svc.x", "correlation": "$r_c0_g2", "body": {"id": "b"}}
+        ]
+    }
+}

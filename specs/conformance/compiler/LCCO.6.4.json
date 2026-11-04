@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.6.4",
+    "category": "compiler",
+    "scenario": "Multiple `on` clauses on the same call per LCCO.6.4 \u2014 each generates a separate synthetic sibling rule sharing the same correlation. Pin: a call with two `on` clauses compiles cleanly and produces two `$..._response_N` sibling rules.",
+    "rules_ds": "schema SensorReadReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice sensor.read:\n    kwarg entity_id: String\n    response SensorReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Trig t\n->\n    call sensor.read entity_id: t.entity_id cooldown: 1_min\n        on response.code == 200:\n            log info \"ok\"\n        on response.code == 404:\n            log info \"not found\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,29 @@
+# (c) 2025, 2026 Dan Finster, All Rights Reserved
+#
+# A fact's lifetime in dsdb: three emits into one `ttl 10_s` schema,
+# one with a `retain:` longer than the schema's, one shorter, and one with the
+# schema's own ([LDTL.4.1]). Each leaves at its own recorded withdrawal.
+
+use default:
+    dynamic_ttl: true
+
+schema Go scope logical:
+    n: Int key
+
+schema Seen scope ttl 10_s:
+    n: Int
+
+rule long:
+    Go g where g.n == 1
+->
+    emit Seen retain: 30_s n: 1
+
+rule short:
+    Go g where g.n == 2
+->
+    emit Seen retain: 2_s n: 2
+
+rule plain:
+    Go g where g.n == 3
+->
+    emit Seen n: 3

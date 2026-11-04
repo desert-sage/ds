@@ -1,0 +1,69 @@
+{
+  "id": "LNUL.5.3",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.5",
+  "seq": 171,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.5.3] **Coalesce `??`.** `x ?? d` (with `d : T`) has type `T`: yields `x`\nwhen non-null, else `d`. Restores opt-in old behaviour explicitly, e.g.\n`cached(\"k\") ?? \"\"` when an author genuinely wants empty-string-on-miss.\n\nA fault is not `null` ([LNUL.4.2]). When evaluating `x` faults, the expression\nyields that fault, and the engine **must not** evaluate `d`: `??` stands in for\nan absent value, never for a failed computation.\n\n",
+  "refs": [
+    "LNUL.4.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_5_3__coalesce",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_5_3__coalesce_non_null",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_5_3__coalesce",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "x when it has a value that is not null, else d, over the fragment's values; d is passed unevaluated, so the type's own order is [LNUL.8.9]'s."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_5_3__null_takes_the_default",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A null takes the default for every default: its value, or its trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_5_3__trap_has_no_fallback",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A trap in x is the answer for every default, as the clause's last paragraph states; formal/k/dsexpr.k's `trap ?? _ => trap` is the same rule."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_9__default_not_looked_at",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every value that is not null and every default, a trapping one included, x ?? d is x."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

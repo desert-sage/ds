@@ -1,0 +1,11 @@
+{
+    "id": "LNLS.3.9",
+    "category": "compiler",
+    "scenario": "[LNLS.3.9]: an expression that traverses a `Json` value is a compile error in a `+nolinscan` file. The slot also trips [LNLS.3.1]; this fixture pins the traversal's own code. PATH PINNED: `dsc.validate.json_traversal`, which reports the outermost traversal of a path and does not walk its base.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Doc scope logical:\n    id: Int key\n    j: Json mutable\n\nrule r:\n    Doc d where d.j.level == 1\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JSON_PATH",
+        "also_raises": ["DS_VALIDATE_NOLINSCAN_JSON_SLOT"]
+    }
+}

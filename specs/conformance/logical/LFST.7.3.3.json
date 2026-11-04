@@ -1,0 +1,19 @@
+{
+    "id": "LFST.7.3.3",
+    "category": "logical",
+    "scenario": "LFST.7.3.3 — within a single rule's RHS, action events are recorded in source-text order. A rule with three sequential `log info` actions produces three `action_log` events on the stream, in that order. Kinds the expectation does not name, such as rule_fire_begin, may come between them. Pins source-order determinism for multi-action rule bodies.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"a\"\n    log info \"b\"\n    log info \"c\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "action_log",
+            "action_log",
+            "action_log"
+        ]
+    }
+}

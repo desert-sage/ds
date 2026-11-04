@@ -1,0 +1,34 @@
+{
+    "id": "ICOM.22.4b",
+    "clauses": ["NCBK.6.10", "NCBK.6.2"],
+    "category": "adapter",
+    "scenario": "A `call` with kwargs of four kinds \u2014 Int, Float, String, Bool \u2014 reaches the integrator's cb as four typed arguments, each of its own kind: name/value operand pairs on FN_CALL (RDSC.4a.9.4), bridged to `ds_arg_t` by libds. Pins [NCBK.6.10]: each argument is `{ name, kind, value }`, here for the Int, Float, String and Bool kinds, sorted by name ([NCBK.6.2]). The ICOM.22.4 in its id is no clause: no document carries the ICOM prefix.",
+    "rules_ds": "service svc.x:\n    kwarg i: Int\n    kwarg f: Float\n    kwarg s: String\n    kwarg b: Bool\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.x i: 1 f: 2.5 s: \"hi\" b: true nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {
+                    "i": 1,
+                    "f": 2.5,
+                    "s": "hi",
+                    "b": true
+                }
+            }
+        ]
+    }
+}

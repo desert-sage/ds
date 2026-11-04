@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.7.2",
+    "category": "compiler",
+    "scenario": "LCYC.7.2 — `cooldown` modifies firing rate but doesn't break a static rule-graph cycle. Even with a long cooldown (`cooldown 1h`), the emit-edge between two rules forms a cycle in the graph; the detector rejects. Pin: cooldown is a rate-shaping tool, not a cycle-breaker (LCYC.7 is the umbrella that LCYC doesn't close the door on TTL- or cooldown-paced cycles at runtime, but compile-time rejects regardless).",
+    "rules_ds": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nrule a cooldown 1h:\n    X\n->\n    emit Y logical v: 1\n\nrule b cooldown 1h:\n    Y\n->\n    emit X logical v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

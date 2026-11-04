@@ -1,0 +1,26 @@
+{
+    "id": "LSER.16.3.3_moments_nondyadic_all_time",
+    "category": "logical",
+    "scenario": "[LSER.16.3.3]: `all_time` (SeriesBackendWelfordEwma) computes `mean` and `variance` by Welford's update in arrival order, bootstrapped from the first sample, and no other way. Values 0.1, 0.2, 0.6, 0.9, then 0.0, one per pump; each read is pre-sample ([LSER.8.6.1]), so the fifth pump, the only one whose reading is 0.0, reads the four samples before it. None of the four is dyadic, so every step rounds, and the forms part in the last bit. Welford: mu = 0.1, then 0.15000000000000002, 0.30000000000000004, 0.45000000000000007, and M = 0.4099999999999999, so `mean` 0.45000000000000007 and `variance` = M / 3 = 0.13666666666666663. Each float is printed in its shortest round-trip form ([LDET.3.2.7]), so the text is the bits. PATH PINNED: libds `series/welford_ewma.c` `ds_series_welford_ewma_update` (alpha 1 at window 0) and `_variance`; Mercury `ds.series.moment`'s `mf_accumulator` form with `welford_step`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nseries Reading.level (by: dev):\n    count, mean, variance all_time\n\nrule r:\n    Reading s where s.level == 0.0 and s.count == 4\n->\n    log info \"mean {s.mean} var {s.variance}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 0.1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 0.2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 0.6 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 0.9 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 0.45000000000000007 var 0.13666666666666663"]
+    }
+}

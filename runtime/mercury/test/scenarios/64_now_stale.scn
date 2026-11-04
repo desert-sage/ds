@@ -1,0 +1,10 @@
+# A single-pattern rule's clock-dependent `where`. Pump 1: the clock reads 0
+# and `now() > 5e9` is false. Pump 2: only the clock has moved, past the
+# bound, and the guard joins the clock tick, so `late` fires. `65_now_pre` is
+# the control. The wall clock is set first, since `now()` read while it is
+# unset faults.
+wall 0
+assert Ping id=1
+pump
+advance 10000000000
+pump

@@ -1,0 +1,9 @@
+{
+    "id": "RLOW.13.9",
+    "category": "compiler",
+    "scenario": "A series on `Sensor.state` and a rule reading `count(t.state)` compile. PINS ONLY THAT IT COMPILES: RLOW.13.9 lowers them to backend atoms and an aggregation call, which `compile_ok` does not read. By RLOW.13.9 the compiler emits **no** rule for absorption, which is an engine step ([RLOW.8.1.3]).",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) >= 3\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

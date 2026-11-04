@@ -1,0 +1,35 @@
+{
+    "id": "NCBK.2.6_timer_armed_only_when_admitted",
+    "category": "logical",
+    "scenario": "[NCBK.2.6]: for a firing of a `cooldown` rule that the rate gate admits ([RDSC.4a.8.2.3]), the engine emits TIMER_ARMED immediately after RULE_FIRE_END. For a firing the gate suppresses it emits none, because the gate records only the firings it admits ([LCDB.3.2.1]), so no window was armed ([NCBK.2.3]). `r cooldown 10_s` logs on a Trig. At 0 s Trig k=1 n=0 is asserted and pumped: the gate admits, so the stream has the firing, its log, and TIMER_ARMED after the end. At 2 s n becomes 1, a mutable-slot change under the same key, so it is a new match with the same activation key (as in LCDB.3.2.1_rgate_cool_suppress). It is pumped inside the window: the rule still fires and brackets ([LCDB.3.2.1.1]), but there is no ACTION_LOG and no TIMER_ARMED. At 12 s n becomes 2, past the window: admitted, as the first. Kinds stated: rule_lhs_facts, rule_fire_begin, action_log, rule_fire_end, timer_armed; every event of these kinds is stated ([RCTS.1.2.10]). PATH PINNED: each runtime's emit site, reached through the stream callback. In libds, `_rete_after_fire` (engine_rete_adapters.c) reads `current_fire_gate_denied`, which `eval_actions` (rete/engine.c) sets where it reads the gate. In the Mercury runtime, `ds.exec.fire` appends `ncbk_2_6_timer_armed` on the `gv_admits` arm of `rhs_gate`'s verdict alone.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.n}\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 12000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "timer_armed",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "rule_fire_end",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "timer_armed"
+        ]
+    }
+}

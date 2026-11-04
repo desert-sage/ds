@@ -1,0 +1,18 @@
+{
+  "id": "NCBK.2.5",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 165,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.2.5] **Pointer lifetime:**\n\n- `p.fact_*.fact` and `p.action_emit.fact` are valid for the\n  callback's duration; on `FACT_ASSERT` / `EMIT` the wrapper\n  outlives the callback (treat it as valid until you observe its retract), but\n  on `FACT_RETRACT` it is freed right after the callback returns. A refused\n  assert's `FACT_ASSERT` is the exception: its fact never entered working\n  memory, and its payload is valid for the callback only ([NFCT.5.1]).\n- `p.action_publish.fact` is valid for the callback only. The fact is in no\n  working memory ([LTIE.4.3]), so no id or lookup reaches it.\n- `rule_lhs_facts.facts[]` is a borrowed array valid for the callback only.\n- All strings (`rule_name`, `category`, `message`, `service`, `key`, …) are\n  engine-interned; some are engine-lifetime-safe, but treat every payload\n  pointer as callback-duration unless you have copied it.\n- The recorder dispatches synchronously inside pump / assert / retract — your\n  callback runs before they return. Snapshot what you need, return quickly,\n  process later.\n\n",
+  "refs": [
+    "LTIE.4.3",
+    "NFCT.5.1"
+  ],
+  "atoms": [
+    "EMIT"
+  ]
+}

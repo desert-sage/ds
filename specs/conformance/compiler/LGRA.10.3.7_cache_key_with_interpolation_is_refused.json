@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.10.3.7_cache_key_with_interpolation_is_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.10.3.7]: a `cache` key is a `STRING_LIT` with no interpolation site ([LGRA.2.9.6]), so a key with one is refused with DS_VALIDATE_DYNAMIC_IDENT_KWARG. Rule `r` writes `cache key: \"k.{s.id}\" value: 1`. The same key is also refused as an inert interpolation, DS_VALIDATE_INTERP_INERT_POSITION, because `cache` is not a verb [LGRA.2.9.6.8] makes eligible (LGRA.2.9.6.8.inert_cache_key pins that code); this vector pins the second code. PATH PINNED: dsc.validate's `lgra_10_3_7_cache_key` on a `cache`, through `cache_key_arg`, whose `lgra_10_3_7_string_lit` fails on an `ex_string` in which `has_site` finds a site.",
+    "rules_ds": "schema Src scope logical:\n    id: String key\n\nrule r:\n    Src s\n->\n    cache key: \"k.{s.id}\" value: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DYNAMIC_IDENT_KWARG",
+        "also_raises": ["DS_VALIDATE_INTERP_INERT_POSITION"]
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "id": "LSER.10.10",
+    "category": "compiler",
+    "scenario": "Series memory caps per LSER.10.10 — engine warns and emits metric on budget cross; no hard cap. Runtime-only spec point: memory accounting is integrator-side observability via the metric callback; no compile-time check applies. Compile pins basic series declaration; per-key memory growth + warning is runtime work that lands when the memory-budget metric is wired.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_ok" }
+}

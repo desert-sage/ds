@@ -1,0 +1,19 @@
+{
+    "id": "LFAC.2.5.1_equal_infinities_are_unchanged",
+    "category": "logical",
+    "scenario": "[LFAC.2.5.1], [RLOW.3.7.4]: two values are equal iff they are exactly equal or `|delta| <= tolerance`, so two equal infinities are equal under any tolerance, though their delta, inf - inf, is NaN. `x: Float mutable tolerance 0.5`, then three asserts on one key: +inf establishes the fact and fires; +inf again is the same value, so the reassertion is a no-op and the rule does NOT re-fire; 1.0 is a delta of +inf from the live value, which the tolerance does not cover, so it goes through and fires (the control: a runtime that suppressed every reassertion would give one firing). Two firings, not three. What it discriminates: a runtime that compares `abs(new - old) =< T` alone, which is false for a NaN delta, reads the second assert as a change and fires three times. As the inclusive-bound vector does, this pins the working-memory discipline (no new activation), not emission: a suppressed reassertion still records a FactAssert ([RFCS.6.7]). PATHS: libds's `slots_equal` (rete/wm_rete.c), exact equality first; the Mercury runtime's `ds.fact.slot_unchanged`, exact equality first.",
+    "rules_ds": "schema Tol scope logical:\n    e: Int key\n    x: Float mutable tolerance 0.5\n\nrule saw:\n    Tol\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": Infinity } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": Infinity } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": 1.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "fired"]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.2.9.6.11_null_leaf_renders_empty",
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "A null leaf is not refused: `[{p.body.x:>8}]` where `x` is JSON `null` renders as LGRA.2.9.6.10's null does, as the empty string with no padding, so the message is `[]` and no TypeError is raised. PATH PINNED: the null arm ahead of the run-time spec check (libds `render_value`'s first line, Mercury `render_prim`'s `null` arm). A check placed ahead of the null arm would log `type error`, and padding the null would log `[        ]`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"[{p.body.x:>8}]\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": null } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[]"]
+    }
+}

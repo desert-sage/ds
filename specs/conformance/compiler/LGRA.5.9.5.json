@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.5.9.5",
+    "category": "compiler",
+    "scenario": "Tolerance is logical-only ([LGRA.5.9.5] / [LFAC.2.6.4]; DS has no ttl tolerance): a `tolerance`-annotated slot on a `ttl`-scoped schema is a compile error. TTL/event facts are deadline-driven and carry no identity, so they do not dedup — there is no within-tolerance reassertion to suppress. Pin: a `ttl`-scoped schema with a `tolerance`-annotated Float slot is rejected with DS_VALIDATE_TOLERANCE_TTL_SCHEMA.",
+    "rules_ds": "schema Measurement scope ttl 5_min:\n    entity_id: String\n    temp: Float tolerance 0.5\n\nrule warm:\n    Measurement m where m.temp > 20.0\n->\n    log info \"warm\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TOLERANCE_TTL_SCHEMA"
+    }
+}

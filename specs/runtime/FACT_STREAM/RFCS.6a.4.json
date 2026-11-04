@@ -1,0 +1,27 @@
+{
+  "id": "RFCS.6a.4",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.6a",
+  "seq": 395,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.6a.4] **An emit that supersedes a live fact records the successor first.** When a rule's `emit` replaces a live fact under the same identity ([LFAC.2.5.3]), the engine **must** record the `FactEmit` for the new fact and then the `FactWithdraw` for the superseded one, with cause `SUPERSEDED` ([RFCS.7a.2]). This is the order [RFCS.6.7] gives a host upsert: a supersedure under one identity records the successor before the withdrawal it causes.\n\nThe order of changes inside working memory is unaffected: the superseded fact leaves before its successor enters, so exactly one live fact per key holds at every point ([LFAC.2.5.3]). A replayer re-derives both atoms and compares them in this order ([RFCS.6a.3], [RFCS.7a.3]).\n\nThe clause covers supersedure under one identity only. A rule's `as`\ncorrelation sweep ([LRST.2.2]) is a different case: it withdraws a fact of a\ndifferent identity as the rule's own action, which runs before the `emit` it\nmakes room for ([LCRS.6.2.1]). The engine records that `FactWithdraw` where the\naction runs, ahead of the `FactEmit`. The firing causes both, and neither\ncauses the other.\n\nA fault fact's replacement ([LERR.9.5]) is not a supersedure under\n[LFAC.2.5.3] either. Fault schemas carry no identity roles in the artefact\n([LERR.9.2]). The engine replaces a live fault fact by its own latching rule,\nretracting it and then asserting the new one. The engine **must** record the\n`FactWithdraw` for the live fault fact, with cause `SUPERSEDED`, and then the\n`FactEmit` for its replacement ([LERR.9.8]).\n\n",
+  "refs": [
+    "LCRS.6.2.1",
+    "LERR.9.2",
+    "LERR.9.5",
+    "LERR.9.8",
+    "LFAC.2.5.3",
+    "LRST.2.2",
+    "RFCS.6.7",
+    "RFCS.6a.3",
+    "RFCS.7a.2",
+    "RFCS.7a.3"
+  ],
+  "atoms": [
+    "FactEmit",
+    "FactWithdraw"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LCST.4.5.8_signed_zero_in_every_base",
+    "category": "logical",
+    "scenario": "[LCST.4.5.8]: `String :: Float?` gives a zero the sign it is spelt with, whether the spelling is an INT_LIT in any base or a FLOAT_LIT. `-0`, `-0x0`, `-0b0`, `-0o0` and `-0.0` each read `-0.0`; the controls `0`, `0x0` and `0.0` read `0.0`. `==` does not tell the zeros apart, so each value is read through its text: the rule logs the input beside the parsed value, and [LDET.3.2.7] renders `-0.0` as \"-0.0\" and `+0.0` as \"0.0\". Each `S` is asserted before the one pump, so the rule fires in assert order. Pin: the eight messages in order. A scanner that drops the sign of an INT_LIT zero logs \"0.0\" for `-0`, `-0x0`, `-0b0` or `-0o0`; one that negates every zero logs \"-0.0\" for a control. PATH PINNED: `FN_STRING_TO_FLOAT`'s runtime adapter, libds `adapter_ds_string_to_float` and Mercury `ds.eval`'s `cast_builtin(fn_string_to_float)`, both through `ds_parse_float_text` (`float_text/float_parse.cc`). The decimal zeros take `decimal_to_double`'s `neg ? -0.0 : 0.0`; the prefixed ones take `radix2_to_double`, which gives `+0.0`, and then the sign step `neg ? -v : v` in `ds_parse_float_text`.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule render:\n    S s\n->\n    let v = s.txt::Float? ?? 1.0\n    log info \"{s.txt} {v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "-0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "-0x0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "-0b0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "-0o0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "-0.0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "0x0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "0.0" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["-0 -0.0", "-0x0 -0.0", "-0b0 -0.0", "-0o0 -0.0", "-0.0 -0.0", "0 0.0", "0x0 0.0", "0.0 0.0"]
+    }
+}

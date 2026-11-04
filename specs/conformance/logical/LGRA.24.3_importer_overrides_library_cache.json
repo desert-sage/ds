@@ -1,0 +1,17 @@
+{
+    "id": "LGRA.24.3_importer_overrides_library_cache",
+    "category": "logical",
+    "dead_rules_expected": ["rw"],
+    "scenario": "[LGRA.24.3]: across files a file's block applies after the blocks of the files it imports, leaf libraries first ([LDET.5.4]), so an importer's cache item overwrites a library's for the same key. Library `base` declares `Trig`, places one `Trig v: 7` and seeds `level` with 1; the importer seeds `level` with 2 and its rule logs every `Trig` with what `level` holds. The steps assert nothing, so the one `Trig` is the library's. Pin: `v=7 level=2` and nothing else. A runtime that applied the importer's block first logs `level=1`; one that dropped the library's block logs nothing. PATH PINNED: the compiler's per-module IFCT / ICAC groups, ordered by `module_id`, and each runtime's application of them in that order at the first step, here the pump.",
+    "rules_ds": "from base import Trig\n\ninitial:\n    cache \"level\": 2\n\nrule rd:\n    Trig t\n->\n    let v = cached(\"level\")\n    log info \"v={t.v} level={v}\"\n\nrule rw:\n    Trig t where t.v < 0\n->\n    cache key: \"other\" value: 1\n",
+    "libraries": {
+        "base": "schema Trig scope explicit:\n    v: Int\n\ninitial:\n    Trig v: 7\n    cache \"level\": 1\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["v=7 level=2"]
+    }
+}

@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.physics — physics dimensions and units beyond SI base
+#
+from units.si import radioactivity, energy, force, absorbed_dose
+from math import pi
+#
+# This module declares compound physical dimensions that require explicit
+# naming in DS's no-unit-algebra system. Where dimensional analysis would
+# collapse distinct quantities (torque vs energy, angular velocity vs
+# frequency), this module follows the same separation policy as units.si
+# (Hz ≠ Bq, Gy ≠ Sv): physically distinct quantities get distinct dimensions.
+
+# ── Dimensions ────────────────────────────────────────────────────────────────
+
+unit dimension torque               storage float64  base newton_meter
+unit dimension angular_velocity     storage float64  base radian_per_second
+unit dimension dynamic_viscosity    storage float64  base pascal_second
+unit dimension kinematic_viscosity  storage float64  base meter_squared_per_second
+unit dimension heat_capacity        storage float64  base joule_per_kelvin
+unit dimension specific_heat        storage float64  base joule_per_kilogram_kelvin
+unit dimension thermal_conductivity storage float64  base watt_per_meter_kelvin
+unit dimension electric_field       storage float64  base volt_per_meter
+unit dimension surface_charge       storage float64  base coulomb_per_meter_squared
+
+# ── Torque ────────────────────────────────────────────────────────────────────
+# Separate dimension from energy (both are N·m dimensionally).
+# Adding a torque to an energy value is a compile error.
+
+unit newton_meter:       torque                           label "N·m"
+unit newton_centimeter:  torque  = x / 100               label "N·cm"
+unit newton_millimeter:  torque  = x / 1000              label "N·mm"
+unit kilonewton_meter:   torque  = x * 1000              label "kN·m"
+unit meganewton_meter:   torque  = x * 1_000_000         label "MN·m"
+unit millinewton_meter:  torque  = x / 1000              label "mN·m"
+
+# ── Angular velocity ──────────────────────────────────────────────────────────
+# Separate dimension from frequency (both are 1/s dimensionally).
+# A gyroscope output in rad/s is not a frequency; an IMU angular rate
+# in deg/s is not a signal frequency.
+
+unit radian_per_second:    angular_velocity                        label "rad/s"
+unit degree_per_second:    angular_velocity  = x * pi / 180       label "deg/s"
+unit radian_per_minute:    angular_velocity  = x / 60             label "rad/min"
+unit revolution_per_second: angular_velocity  = x * 2 * pi        label "rps"   alias rev_per_s
+unit rpm:                  angular_velocity  = x * pi / 30        label "rpm"   alias rpm
+
+# ── Dynamic viscosity ─────────────────────────────────────────────────────────
+# Pa·s (SI). CGS unit poise = 0.1 Pa·s.
+# Centipoise is the most common practical unit (water ≈ 1 cP at 20 °C).
+
+unit pascal_second:    dynamic_viscosity                     label "Pa·s"
+unit millipascal_second: dynamic_viscosity  = x / 1000      label "mPa·s"
+unit poise:            dynamic_viscosity  = x / 10           label "P"
+unit centipoise:       dynamic_viscosity  = x / 1000         label "cP"    alias cP
+unit millipoise:       dynamic_viscosity  = x / 10_000       label "mP"
+
+# ── Kinematic viscosity ───────────────────────────────────────────────────────
+# m²/s (SI). CGS unit stokes = 10⁻⁴ m²/s.
+# Centistokes is the most common practical unit (water ≈ 1 cSt at 20 °C).
+
+unit meter_squared_per_second:       kinematic_viscosity                    label "m²/s"
+unit centimeter_squared_per_second:  kinematic_viscosity  = x * 1e-4       label "cm²/s"
+unit millimeter_squared_per_second:  kinematic_viscosity  = x * 1e-6       label "mm²/s"
+unit stokes:                         kinematic_viscosity  = x * 1e-4       label "St"
+unit centistokes:                    kinematic_viscosity  = x * 1e-6       label "cSt"   alias cSt
+
+# ── Heat capacity ─────────────────────────────────────────────────────────────
+# J/K — total heat capacity of an object or system.
+
+unit joule_per_kelvin:      heat_capacity                        label "J/K"
+unit kilojoule_per_kelvin:  heat_capacity  = x * 1000           label "kJ/K"
+unit calorie_per_kelvin:    heat_capacity  = x * 4.1868         label "cal/K"
+
+# ── Specific heat capacity ────────────────────────────────────────────────────
+# J/(kg·K) — heat capacity per unit mass.
+
+unit joule_per_kilogram_kelvin:      specific_heat                       label "J/(kg·K)"
+unit kilojoule_per_kilogram_kelvin:  specific_heat  = x * 1000          label "kJ/(kg·K)"
+unit calorie_per_gram_kelvin:        specific_heat  = x * 4186.8        label "cal/(g·K)"
+
+# ── Thermal conductivity ──────────────────────────────────────────────────────
+# W/(m·K) — appears in heatsink, material, and PCB thermal specs.
+
+unit watt_per_meter_kelvin:       thermal_conductivity                   label "W/(m·K)"
+unit milliwatt_per_meter_kelvin:  thermal_conductivity  = x / 1000      label "mW/(m·K)"
+
+# ── Electric field strength ───────────────────────────────────────────────────
+# V/m — field sensors, dielectric breakdown specs.
+
+unit volt_per_meter:        electric_field                         label "V/m"
+unit kilovolt_per_meter:    electric_field  = x * 1000            label "kV/m"
+unit volt_per_centimeter:   electric_field  = x * 100             label "V/cm"
+unit millivolt_per_meter:   electric_field  = x / 1000            label "mV/m"
+
+# ── Surface charge density ────────────────────────────────────────────────────
+# C/m² — electrostatic sensors, piezoelectric devices.
+
+unit coulomb_per_meter_squared:       surface_charge                       label "C/m²"
+unit microcoulomb_per_meter_squared:  surface_charge  = x * 1e-6          label "µC/m²"
+unit nanocoulomb_per_meter_squared:   surface_charge  = x * 1e-9          label "nC/m²"
+
+# ── CGS and legacy units ──────────────────────────────────────────────────────
+
+# Radioactivity: curie still appears on detector datasheets.
+unit curie:      radioactivity  = x * 3.7e10   label "Ci"   alias Ci
+unit millicurie: radioactivity  = x * 3.7e7    label "mCi"  alias mCi
+unit microcurie: radioactivity  = x * 3.7e4    label "µCi"  alias µCi, uCi
+
+# Energy: erg (CGS). 1 erg = 10⁻⁷ J.
+unit erg:    energy  = x * 1e-7   label "erg"
+
+# Force: dyne (CGS). 1 dyne = 10⁻⁵ N.
+unit dyne:   force   = x * 1e-5   label "dyn"
+
+# Absorbed dose: CGS rad = 0.01 Gy.
+# Canonical name is rad_dose to avoid collision with radian alias `rad`
+# declared in units.si. No short alias is provided for this reason.
+unit rad_dose: absorbed_dose  = x * 0.01   label "rad"

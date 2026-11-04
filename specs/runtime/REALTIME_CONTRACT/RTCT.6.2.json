@@ -1,0 +1,34 @@
+{
+  "id": "RTCT.6.2",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.6",
+  "seq": 375,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[RTCT.6.2] **Body proto** (`proto/realtime_contract.proto`):\n\n```proto\nmessage RealtimeContract {\n  uint32 wm_max               = 1;\n  uint32 agenda_cap           = 2;\n  uint32 max_fires_per_pump   = 3;\n  uint32 token_pool_cap       = 4;\n  uint32 intern_cap           = 5;\n  uint32 intern_bytes_cap     = 6;\n  uint64 pump_wcet_ns         = 7;\n  repeated NodeCap   nodes    = 8;    // LEGACY per-node list; ascending node_id.\n                                      // Emitted only when a producer chooses the\n                                      // legacy encoding (see [RTCT.6.7.5]).\n  repeated SeriesCap series   = 9;    // ascending series_id\n  bytes  rt_config_sha256     = 10;   // 32 raw bytes, the canonical hash\n\n  // Compact node-cap encoding (gated on realtime; see [RTCT.6.7]).\n  uint32 node_count        = 11;      // covered network nodes (cross-check)\n  uint32 default_node_cap  = 12;      // capacity for every covered node not overridden\n  repeated NodeCapOverride node_overrides  = 13;   // sparse, ascending node_id\n  repeated uint32          node_caps_packed = 14 [packed = true];  // dense fallback\n\n  // Cache caps (gated on realtime; see [RTCT.6.8]).\n  uint32 cache_cap         = 15;      // max live cache keys (<= 2^31-1)\n  uint64 cache_bytes_cap   = 16;      // cache value byte capacity (<= 2^63-1)\n\n  // Json caps (see [RTCT.6.10]); 0 = the fixed maximum of [LGRA.5.8.6].\n  uint32 json_depth_cap        = 17;\n  uint32 json_node_cap         = 18;\n  uint32 json_string_bytes_cap = 19;\n  uint32 json_text_bytes_cap   = 20;\n}\n\nmessage NodeCap {\n  uint32 node_id   = 1;\n  string kind      = 2;                // \"alpha\"|\"beta\"|\"term\"\n  uint32 capacity  = 3;\n}\n\nmessage NodeCapOverride {\n  uint32 node_id   = 1;\n  uint32 capacity  = 2;\n}\n\nmessage SeriesCap {\n  uint32 series_id = 1;\n  uint32 capacity  = 2;\n}\n```\n\nThe `nodes` (field 8) legacy list and the compact fields (11–14) are two\nencodings of the same logical per-node capacity map; a contract uses **exactly\none** ([RTCT.6.7]). `node_count`/`default_node_cap`/`node_overrides`/\n`node_caps_packed` carry no `kind` — the runtime derives each node's kind from\nits `AlphaNode`/`BetaNode`/`TerminalNode` atom ([RBND.4b.8]).\n\n",
+  "deferred": true,
+  "refs": [
+    "LGRA.5.8.6",
+    "RBND.4b.8",
+    "RTCT.6.10",
+    "RTCT.6.7",
+    "RTCT.6.7.5",
+    "RTCT.6.8"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "BetaNode",
+    "TerminalNode"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/realtime_contract.proto",
+        "name": "RealtimeContract",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.7.1_bit_count_of_a_negative",
+    "clauses": ["LEXP.3.7.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.7.1]: `x.bit_count` counts the 1 bits of the 64-bit two's-complement pattern, so -1 has 64 and INT64_MIN has 1. It is not Python's `int.bit_count`, which counts the magnitude's bits and gives 1 for -1. Rule `counted` fires where `t.x.bit_count` equals the fact's `want`; the receiver is an `Int` slot. PATH PINNED: FN_BIT_COUNT in libds (`builtins.c`, `__builtin_popcountll` over the unsigned pattern) and Mercury (`ds.eval`, `u64_ones`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    want: Int mutable\n\nrule counted:\n    T t where t.x.bit_count == t.want\n->\n    log info \"counted {t.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "minus_one", "x": -1, "want": 64 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "min", "x": -9223372036854775808, "want": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["counted minus_one", "counted min"]
+    }
+}

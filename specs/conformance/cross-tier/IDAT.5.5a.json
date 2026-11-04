@@ -1,0 +1,39 @@
+{
+    "id": "IDAT.5.5a",
+    "category": "cross-tier",
+    "scenario": "Two engines have independent schema registries. A schema declared only in engine A is invisible to engine B; assert_ targeting B with that schema name fails (KeyError surfaces from pyds). Confirms no global schema state. Pins IDAT.5.5 \u2014 schema registry per-engine, no global state.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema OnlyInA scope logical:\n    v: Int key\n"
+            },
+            "b": {
+                "rules_ds": "schema OnlyInB scope logical:\n    s: String key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "OnlyInA",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "OnlyInB",
+                "slots": {
+                    "s": "hi"
+                }
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 1,
+            "b": 1
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LREG.1.3",
+    "category": "logical",
+    "scenario": "`s !~ /pattern/` fires when the string does NOT match per LREG.1.3. Pin: assert user `alice` (matches `/^admin/` → does not fire) and user `bob` (doesn't match → fires). One fire.",
+    "rules_ds": "schema User scope logical:\n    entity_id: String key\n    name: String mutable\n\nrule non_admin:\n    User u where u.name !~ /^admin/\n->\n    log info \"non-admin\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u1", "name": "admin_alice" } },
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u2", "name": "bob" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["non_admin"]
+    }
+}

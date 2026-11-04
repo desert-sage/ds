@@ -1,0 +1,16 @@
+{
+    "id": "RLOW.5.2.2_alpha_regex_flags",
+    "category": "logical",
+    "dead_rules_expected": ["c_i", "c_m", "c_s"],
+    "scenario": "RLOW.5.2.2: a decided `s.x ~ /p/f` is an alpha REGEX test whose pattern carries the flags as RE2's scoped group `(?f:p)`, because `proto/alfa.proto#AlphaTest` has no flags field. Each of `i`, `m` and `s` is exercised against an input where the flag alone changes the answer, beside a twin rule with the same pattern and no flag, which must not fire: `ri` (`/^error/i`) and `c_i` (`/^error/`) on \"ERROR: disk\"; `rm` (`/^b$/m`) and `c_m` (`/^b$/`) on \"a\\nb\"; `rs` (`/a.b/s`) and `c_s` (`/a.b/`) on \"a\\nb\".\n\nPATH PINNED: the alpha site, not `FN_REGEX_MATCH`. Every conjunct is on the pattern's own non-nullable `String` slot, so the compiler hoists all six onto alpha nodes (`dsc.rete.rlow_5_2_2_regex_test`; the compiler lowering test `RLOW.5.2.2: flags fold into the pattern as (?f:p)` in compiler/mercury/test/test_encode.m pins that the hoist happens). libds answers them in `ds_rete_alpha_test_fact`'s DS_RETE_ALPHA_REGEX arm (rete/alpha.c), on a pattern `rete/loader.c` compiles with no flags; the Mercury runtime answers them in `ds.match.test_regex`, which the differential scenario `90_alpha_regex_flags` runs. So a flag reaches the match only through the `(?f:p)` text.\n\nThe beta path's flag handling is pinned separately, by `runtime/LREG.5.2_re2_dotall_flag` and `runtime/LREG.5.2_re2_multiline_flag`, whose subjects are nullable so they stay join tests.\n\nPin: `ri`, `rm`, `rs`, in source order; no `c_*` rule fires.",
+    "rules_ds": "schema Log scope logical:\n    id: Int key\n    msg: String mutable\n\nrule ri:\n    Log a where a.msg ~ /^error/i\n->\n    log info \"i\"\n\nrule rm:\n    Log b where b.msg ~ /^b$/m\n->\n    log info \"m\"\n\nrule rs:\n    Log c where c.msg ~ /a.b/s\n->\n    log info \"s\"\n\nrule c_i:\n    Log d where d.msg ~ /^error/\n->\n    log info \"no i\"\n\nrule c_m:\n    Log e where e.msg ~ /^b$/\n->\n    log info \"no m\"\n\nrule c_s:\n    Log f where f.msg ~ /a.b/\n->\n    log info \"no s\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Log", "slots": { "id": 1, "msg": "ERROR: disk" } },
+            { "op": "assert", "schema": "Log", "slots": { "id": 2, "msg": "a\nb" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["ri", "rm", "rs"]
+    }
+}

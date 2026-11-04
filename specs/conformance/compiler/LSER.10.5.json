@@ -1,0 +1,10 @@
+{
+    "id": "LSER.10.5",
+    "category": "compiler",
+    "scenario": "No implicit declarations per LSER.10.5 — every series declared at file scope; referencing a companion slot like `t.mean` on a binding with no declared series for that schema is a compile error. Pin: a logical schema with `state: Float` plus a rule that uses `t.mean` but with NO `series` declaration covering `mean` on `state` rejects with DS_VALIDATE_NO_SERIES_FOR_COMPANION_SLOT.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nrule alert_high_avg:\n    Sensor t where t.mean > 50\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NO_SERIES_FOR_COMPANION_SLOT"
+    }
+}

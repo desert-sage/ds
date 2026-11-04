@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.8.7_alpha_schema_group_dropped_is_dangling",
+    "category": "runtime",
+    "scenario": "[RDSC.8.7] an artefact whose `AlphaNode` names a schema no `schema_group` in it registers is refused with DS_ERR_DSC_DANGLING (-506) ([RDSC.11.1]). The harness compiles the program, then `runtime_error`'s `tamper: {drop_schema_group: Reading}` removes `Reading`'s group, its `SchemaLogical` through its `SchemaDef` ([RDSC.8.1]), and re-seals `dsc_sha256`, so the hash check passes ([RDSC.3.6]) and the load reaches the cross-atom check. `touch`'s `AlphaNode` still names `Reading`. Paths: libds's loader (`dsc/loader.c`), which checks each `AlphaNode`'s schema against the artefact's own schema groups; the Mercury runtime's `ds.dsc`, which refuses with `lek_dangling`, mapped to -506. The engine holds no `Reading` from programmatic registration here; RDSC.8.7's rule that such a schema does not satisfy the `AlphaNode` is not pinned by this vector.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"drop_schema_group": "Reading"},
+        "code": "-506"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LFST.5.3",
+    "category": "logical",
+    "scenario": "LFST.5.3 — per-stream `seq` is monotonic and gap-free. The harness captures every event from the cb, and consecutive seq values differ by exactly 1. `expected_seq_step: 1` pins the gap-free invariant without baking in the absolute starting value (which depends on engine setup before the cb registers).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"tick\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "expected_seq_step": 1
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LUNI.3.1.9_us_literal_is_1500_ns",
+    "category": "logical",
+    "scenario": "[LUNI.3.1.9]: a fractional literal that is a whole number of the base unit is admitted and lowered exactly: `1.5_us` is 1500 nanoseconds. Rule `r` matches a `Duration` equal to it; Ev 1 holds 1500 ns and fires, Ev 2 holds 1499 ns and does not. Run by both runtimes. PATH PINNED: the time arm of `rlow_6_1_1_expr`'s `ex_unit` case in dsc.rete (`luni_10_2_time_unit`, `luni_3_1_5_magnitude_ns` over a whole product), after `luni_3_1_7_literal_type` in dsc.typecheck has admitted it as whole.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule r:\n    Ev e where e.d == 1.5_us\n->\n    log info \"matched {e.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "d": 1500 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "d": 1499 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "matched 1"
+        ]
+    }
+}

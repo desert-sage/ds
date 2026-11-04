@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.3.2_astral_above_bmp",
+    "category": "logical",
+    "scenario": "[LSTR.3.2] A codepoint above the Basic Multilingual Plane orders above every BMP codepoint. \"😀\" is U+1F600; \"～\" is U+FF5E. By codepoint, and by UTF-8 bytes (F0 against EF), \"😀\" > \"～\", so against `i.label > \"～\"` it fires and \"a\" does not. A comparison of UTF-16 code units reads \"😀\" as the surrogate D83D, below FF5E, and logs nothing: this is the vector that separates codepoint order from UTF-16 order.",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label > \"～\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "astral", "label": "😀" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "ascii", "label": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["😀"]
+    }
+}

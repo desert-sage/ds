@@ -1,0 +1,11 @@
+{
+    "id": "LCCO.3.8_nested_continued_call_without_as_refused",
+    "clauses": ["LCCO.3.8"],
+    "category": "compiler",
+    "scenario": "[LCCO.3.8]: \"A `call` that carries a continuation ([LCCO.2.1]) and is written in the body of an `after` clause or of another call's continuation ... must carry an `as` whose key is a string literal. The compiler must refuse such a call with no `as` or with a computed `as`, with `DS_VALIDATE_NESTED_CONTINUED_CALL_AS`.\" Rule `r`'s `after 5_s:` body holds `call svc.probe ... on response.code == 200:` with no `as`. PATH PINNED: `lcco_3_8_nested_continued_as` in dsc.validate, over the `after` body. Without it the rule is dropped with only a note on stderr, because the follow-up has nowhere to mint the call's correlation for its capture fact and timer.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.probe:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    log info \"armed {j.id}\"\n    after 5_s:\n        call svc.probe n: 1 nocooldown\n            on response.code == 200:\n                log info \"ok\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NESTED_CONTINUED_CALL_AS"
+    }
+}

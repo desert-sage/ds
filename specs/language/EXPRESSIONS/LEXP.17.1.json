@@ -1,0 +1,30 @@
+{
+  "id": "LEXP.17.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.17",
+  "seq": 10000022,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.17.1] **The builtin functions are a closed registry.** The names an author\nmay call as a function without declaring one are the rows of [LEXP.17.2], and no\nothers. A row named `math.<name>`, `distance.<name>` or `calendar.<name>` is a member of that module\n([LIMP.3.3.4]), called through the module's import by its qualified name or by the\nbare `<name>` a selective import binds; every other row is global. Each row states:\n\n- **Arities** — the argument counts the function accepts. It is a set, not a\n  range: a call with any other count is a compile error ([LEXP.5.8.1]). A series\n  aggregation takes its cursor and, for `count_of` and `contains`, the value, and\n  nothing more ([LSER.6.11.3]). `min` and `max` give their scalar form's count;\n  called with a cursor alone they are the aggregation.\n- **Tier** — the purity tier a call belongs to, `pure` or `sync-impure`\n  ([LGRA.9.8.4]).\n- **Signature** — each form's parameters and result, `?` marking a nullable\n  result and `;` separating the forms. A `Float` parameter takes an `Int`,\n  converted ([LEXP.7.3]). `cursor` is a series cursor ([LSER.6.10]), and `T` the\n  type of the slot it reads. A parameter is a value: a builtin demands one, so\n  the compiler refuses a `T?` argument ([LNUL.5.1]), and a null that reaches\n  one at runtime raises a `TypeError` ([IRET.9.6]). Two rows' defining clauses\n  say otherwise, and the column does not repeat them: `has`, whose argument is\n  a `Json` path it tests for resolution rather than a value ([LNUL.8.4]), and\n  `math.fma`, which takes its operands as `x * y + z` does, so that a null\n  operand yields null ([LEXP.3.2.2]).\n- **Summary** — one line saying what the call answers, for an author's tools.\n- **Defined by** — the clause that defines the function. Where the Signature or\n  Summary and that clause differ, the clause is right.\n\n`p1` … `p99` are the quantile aggregations ([LSER.17.6]), one row each.\n\nA spelling [LGRA.9.6.3] or [LSTR.4.6] refuses is not a row, and it names no\nbuiltin.\n\nEvery global row's name is a reserved word ([LLEX.9.6]): a binding or constant\nis resolved before a builtin, so a `const abs` left nameable would shadow the\nbuiltin it spells ([LGRA.22.7]). A module member's name is not reserved; [LGRA.22.9] keeps a binding from shadowing\none the file imports bare.\n\nThe registry is the single statement of the set, and every compiler's view of it\nmust agree with it, row for row ([STYL.2.15.6.1]). It does not travel, so it is a table\nand not a protobuf ([STYL.5.9.7]). The operation a call lowers to is a separate\nenumeration, `proto/builtin_fn.proto#BuiltinFn`; that one holds what the artefact\ncarries, this one the source spellings and the facts about them that never leave\nthe compiler.\n\n",
+  "refs": [
+    "LEXP.17.2",
+    "LEXP.5.8.1",
+    "LGRA.22.7",
+    "LGRA.22.9",
+    "LGRA.9.6.3",
+    "LIMP.3.3.4",
+    "LGRA.9.8.4",
+    "LLEX.9.6",
+    "LEXP.7.3",
+    "LEXP.3.2.2",
+    "IRET.9.6",
+    "LNUL.5.1",
+    "LNUL.8.4",
+    "LSER.17.6",
+    "LSER.6.10",
+    "LSER.6.11.3",
+    "LSTR.4.6"
+  ]
+}

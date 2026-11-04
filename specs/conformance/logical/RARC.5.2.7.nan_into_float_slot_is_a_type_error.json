@@ -1,0 +1,16 @@
+{
+    "id": "RARC.5.2.7.nan_into_float_slot_is_a_type_error",
+    "clauses": ["LEXP.4.2"],
+    "category": "logical",
+    "dead_rules_expected": ["got"],
+    "scenario": "[RARC.5.2.7] with [LEXP.4.2]: a NaN a rule's `emit` would put into a slot raises a TypeError naming the schema and the slot; the fact does not enter, the pump returns no error, and the engine goes on. The host asserts `Reading.a` = inf, and `r` emits `x.a - x.a` (inf - inf, NaN) into the Float slot `Out.v`. The NaN is computed from a slot value, so nothing folds it and the compiler cannot refuse it ([LDET.3.3a.10]). `later` fires after the refusal; `got` would log if `Out` had entered; `handler` matches the TypeError fault fact on `Out.v` and renders its tag. Exactly [\"later\", \"refused Out.v Float\"]: a runtime that lets the NaN enter logs `entered nan` or none of `handler`'s line; one that refuses it as an engine error and not a TypeError does not match `handler`. Path: libds rete/engine.c eval_actions (ds_rete_slot_refused's NaN pass, then ds_rete_fault_slot_refused), Mercury ds.exec.m assert_verb's `invalid` arm (`sr_nan_rejected`, rarc_5_2_7_type_error, then abandon).",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    a: Float mutable\n\nschema Out scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Reading x\n->\n    emit Out logical id: x.id v: (x.a - x.a)\n\nrule later:\n    Reading\n->\n    log info \"later\"\n\nrule got:\n    Out o\n->\n    log info \"entered {o.v}\"\n\nrule handler:\n    TypeError e where e.schema == \"Out\" and e.slot == \"v\"\n->\n    log info \"refused Out.v {e.actual}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "a": Infinity } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["later", "refused Out.v Float"]
+    }
+}

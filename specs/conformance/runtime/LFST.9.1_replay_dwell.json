@@ -1,0 +1,23 @@
+{
+    "id": "LFST.9.1_replay_dwell",
+    "category": "runtime",
+    "scenario": "A TIME-DEPENDENT CONDITION replayed ([LFST.9.1], [LTIM.2.5.1]). `held` fires once a Ping has been live 3_s, reading `dwell` on the monotonic clock and re-evaluated by the tick. Ping a at 0, Ping b at 2_s, pumps at 4_s and 6_s: a crosses at the 4_s pump and b at the 6_s one, with no input in either pump, so the only thing that makes them fire is the clock the replay was given. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Ping scope logical:\n    k: String key\n\nschema Held scope ttl 1_h:\n    k: String\n\nrule held:\n    Ping p where p.dwell >= 3_s\n->\n    emit Held k: p.k\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 2
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSER.7.6.1_composite_key_with_by_ok",
+    "category": "compiler",
+    "scenario": "LSER.7.6.1 positive control for LSER.7.6.1_composite_key_needs_by, on the same schema: naming `(by: sensor)` resolves the identity, so what the sibling refuses is the omission and not the composite key itself. Without the pair, a refusal caused by the schema's shape would read the same.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    site: String key\n    sensor: String key\n    state: Float mutable\n\nseries Reading.state (by: sensor):\n    mean sliding 10_min\n\nrule r:\n    Reading x where x.mean > 5.0\n->\n    log info \"high\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

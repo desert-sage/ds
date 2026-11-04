@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.6.2_on_body_unknown_slot_refused",
+    "category": "compiler",
+    "scenario": "[LCCO.6.2]: an `on` body sees the response fact as `response`, and `response.<slot>` is a slot access on the service's response schema ([LCRS.5.5]), checked as any slot access is. `Reply` declares `corr` and `code`; the body emits a Got with `code: response.missing`, a slot `Reply` does not declare, and is refused with DS_VALIDATE_UNKNOWN_SLOT, the code an unknown slot in the `on` predicate takes ([LCCO.11.1]). PATH PINNED: `dsc.validate`'s `continuation_env`, which types the body with `response` bound to `Reply`, then the typing of the `emit`'s slot value. The break is a body with `response` unbound, which refuses the read as an unknown binding instead.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nschema Got scope ttl 1_h:\n    id: Int\n    code: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        on response.code == 200:\n            emit Got id: j.id code: response.missing\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SLOT"
+    }
+}

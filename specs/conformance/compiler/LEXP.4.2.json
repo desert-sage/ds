@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.4.2",
+    "category": "compiler",
+    "scenario": "[LEXP.4.2] / [ICOM.9.4] — the `nan` constant in a value position (here a `let` binding, one of the enumerated positions) is a compile error (DS_VALIDATE_NAN_VALUE). NaN must never enter working memory: NaN != NaN breaks fact identity, joins, and refraction, so the compiler rejects `nan` at the door — the compile-plane counterpart of the runtime assert reject (runtime/LEXP.4.2, DS_ERR_NAN_REJECTED, -216). `inf` is NOT rejected (Inf == Inf is a permitted value); only `nan` is reserved. `nan` reaches expression position solely via this reserved math constant (there is no bare nan float literal), so every value position — slot value, let/const, `::` cast target — funnels through the same reject.",
+    "rules_ds": "schema T scope logical:\n    v: Float key\n\nrule r:\n    T\n->\n    let n = nan\n    log critical \"{n}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NAN_VALUE",
+        "message_contains": "nan"
+    }
+}

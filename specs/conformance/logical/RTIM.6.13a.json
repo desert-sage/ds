@@ -1,0 +1,23 @@
+{
+    "id": "RTIM.6.13a",
+    "clauses": ["RARC.13.9"],
+    "category": "logical",
+    "scenario": "Per-engine stream `seq` is strictly monotonic per RTIM contract \u2014 each event has a higher seq than the previous, with no gaps in the per-engine sequence the harness observes. Pins RTIM.6.13 \u2014 per-engine stream seq strictly monotonic.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n    log critical \"y\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "min_events": 3
+    }
+}

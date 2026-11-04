@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.17.2_timeout_refused",
+    "category": "compiler",
+    "scenario": "LCRS.17.2: a call to a `no response` service may not open a `timeout` continuation either -- with nothing ever coming back, the timeout would fire on every call that does not fail -- and the compiler must reject one (DS_VALIDATE_NO_RESPONSE_TIMEOUT). Pin: `call svc.put ... as \"p\"` with a `timeout 30_s:` clause, where `svc.put` declares `no response`. Path: the validator's continuation check. Its pair is LCRS.17.2_error_compiles.",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown as \"p\"\n        timeout 30_s:\n            log info \"no error yet\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NO_RESPONSE_TIMEOUT"
+    }
+}

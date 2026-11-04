@@ -1,0 +1,16 @@
+{
+    "id": "LLET.10.3_aggregation_let_interpolated",
+    "category": "logical",
+    "scenario": "[LLET.10.3] with [LEXP.9.2.2]: a `let` bound to a series aggregation called by name may be interpolated. Its value is read where it is used, as every pure `let` is, and never shared. `show` binds `let c = count(s.state)` and logs `{c} {s.attr}`. A series' samples are absorbed after the pump's firings ([LSER.8.6]), so the first firing reads no sample and the second reads the first: `S k:1 state:1.0 attr:a`, then pump, then the same key with `state:2.0 attr:b`, then pump. Expected `0 a`, then `1 b`. A compiler that guards it refuses the program with DS_VALIDATE_RULE_NOT_LOWERED; a read that answered the cold zero every time logs `0 b`. PATH PINNED: `dsc.rete.site_value`'s `let_inline` arm, which takes a call by name through `rlow_6_1_1_expr` to FN_SERIES_COUNT, read by libds `series_read_dispatch` and Mercury `ds.eval.series_read`.",
+    "rules_ds": "use default\n\nschema S scope logical:\n    k: Int key\n    state: Float mutable\n    attr: String mutable\n\nseries S.state:\n    count sliding 1_h\n\nrule show:\n    S s\n->\n    let c = count(s.state)\n    log info \"{c} {s.attr}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 1.0, "attr": "a" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 2.0, "attr": "b" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0 a", "1 b"]
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LSER.13.14_a_refused_emit_is_the_pump_s_contract_breach",
+    "category": "adapter",
+    "dead_rules_expected": ["watch"],
+    "scenario": "[LSER.13.14] / [LSIG.1.1]: a rule's `emit` refused by a series `capacity` is a bounds refusal, the firing stops at it, and the pump returns DS_ERR_CONTRACT_BREACH (-710) and goes on. `integral sliding 1_h` over `Reading.power` with `capacity: 1`. Pump 1 asserts a Trig, and `r` emits `Reading dev: \"a\"`, which is admitted: the identity now holds one sample, admitted this pump and not yet absorbed. `r` then calls `svc.op level: 1`, which is issued, and emits `Reading dev: \"a\"` again. At that emit the identity already holds `N` samples, so the assert is refused, `r`'s last call (`level: 2`) is never issued, and the pump's status is -710. Pump 2 has nothing to do and returns 0, so the status belongs to the pump that refused and does not carry over. `watch` reads the series so the block is live, and never fires. PATH PINNED: libds `ds_engine_series_capacity_check` on `ds_rete_wm_assert`'s path, whose DS_ERR_CONTRACT_BREACH `ds_rete_run` keeps as the pump's `refused` status; the Mercury runtime's `ds.exec.assert_verb` through `lser_13_14_over_capacity` to `rhs_cap_pump_status`, which `test_behave` reads as the pump's first `eff_pump_status`.",
+    "rules_ds": "use default\n\nservice svc.op:\n    kwarg level: Int\n    no response\n\nschema Trig scope logical:\n    k: Int key\n\nschema Reading scope logical:\n    dev: String key\n    power: Float mutable\n\nseries Reading.power (by: dev, capacity: 1):\n    integral sliding 1_h\n\nrule r:\n    Trig\n->\n    emit Reading logical dev: \"a\" power: 1.0\n    call svc.op level: 1 nocooldown\n    emit Reading logical dev: \"a\" power: 2.0\n    call svc.op level: 2 nocooldown\n\nrule watch:\n    Reading s where s.integral > 1000.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_pump_statuses": [-710, 0],
+        "expected_calls": [
+            { "service": "svc.op", "correlation": "$r_c0_g0", "body": { "level": 1 } }
+        ]
+    }
+}

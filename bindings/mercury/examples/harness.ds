@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The program harness.m drives: one rule per thing a pump hands its host,
+# each reached once. No application logic; the values are placeholders.
+#
+#   every_verb  a log, an emit, a publish, a call answered with a fact, a
+#               cache write with a TTL, a write and its delete, and local()
+#               through the TimeZoneOffset row the host asserts
+#   answered    a call to a service declared `no response`, once the first
+#               call's answer is in
+#   divides     a computation error (a divide by zero), reported as an event
+#   reads       a series, read by the rule: no public function reads one
+#
+# `Probe` is read by no rule: the host asserts one value of each kind a slot
+# holds. A schema reaches the engine from a compiled artefact, and in no
+# other way ([NFCT.1.1]).
+
+use default
+
+schema Go scope logical:
+    n: Int key
+    divisor: Int mutable
+
+schema Probe scope explicit:
+    id: Int
+    x: Float
+    label: String
+    flag: Bool
+    doc: Json
+    raw: Bytes
+    seen: Time
+    day: Date
+    wait: Duration
+    link: Go
+    opt: Int?
+
+schema Note scope ttl 1_h:
+    zone: String
+    stamp: Time
+
+schema Reply scope ttl 1_h:
+    corr: String
+    zone: String
+    high_c: Int
+
+schema Result scope ttl 1_h:
+    val: Float
+
+schema Reading scope logical:
+    sensor: String key
+    level: Float mutable
+
+series Reading.level:
+    count sliding 10_s
+
+service weather.forecast:
+    kwarg zone: String
+    response Reply
+
+service light.turn_on:
+    kwarg entity_id: String
+    no response
+
+rule every_verb:
+    Go g
+->
+    log info "go {g.n}"
+    emit Note zone: "hall" stamp: now().local("Europe/London")
+    publish Note zone: "yard" stamp: now()
+    call weather.forecast zone: "hall" nocooldown as "fc"
+    cache key: "kept" value: 1 ttl: 5_s
+    cache key: "dropped" value: 2
+    cache_delete key: "dropped"
+
+rule answered:
+    Reply
+->
+    call light.turn_on entity_id: "light.hall" nocooldown as "lamp"
+
+rule divides:
+    Go g
+->
+    emit Result val: 100 / g.divisor
+
+rule reads:
+    Reading t where count(t.level) > 0
+->
+    log info "reading"

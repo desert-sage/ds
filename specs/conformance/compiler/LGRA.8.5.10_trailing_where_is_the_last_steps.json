@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.8.5.10_trailing_where_is_the_last_steps",
+    "category": "compiler",
+    "scenario": "[LGRA.8.5.10] / [LTHE.4.1]: both `then` layouts are valid, and a `where` after a step's `within` is that step's, so a one-line sequence's trailing `where` belongs to its last step and there is no sequence-wide `where`. The one-line `A a then B b within 5_s where b.v > a.v` and the same sequence written line-leading must therefore emit the SAME artefact. Drives `dsc_equivalent`: both sources are compiled through to the `.dsc` and compared with the source-position tier dropped, the one thing two layouts may differ in. PATH PINNED: `dsc.parse`'s one-line sequence attaching its trailing `where` with `set_last_step_where`, the helper the `then` line uses, so `dsc.rete` lowers it as the step's join test. A compiler that reads the one-line `where` as the sequence's does not lower it.",
+    "rules_ds": "schema A scope ttl 1_h:\n    v: Int\n    ts: Time\n\nschema B scope ttl 1_h:\n    v: Int\n    ts: Time\n\nrule r:\n    A a then B b within 5_s where b.v > a.v\n->\n    log info \"{b.v}\"\n",
+    "expect": {
+        "kind": "dsc_equivalent",
+        "equivalent_ds": "schema A scope ttl 1_h:\n    v: Int\n    ts: Time\n\nschema B scope ttl 1_h:\n    v: Int\n    ts: Time\n\nrule r:\n    A a\n    then B b within 5_s where b.v > a.v\n->\n    log info \"{b.v}\"\n"
+    }
+}

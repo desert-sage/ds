@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3b",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3b] — a `ttl` schema in a multi-pattern rule is refused under +nolinscan whatever the `where` says: `ttl` facts accumulate, so no lifecycle bounds the match set. The second pattern equates `device_id` exactly as an anchor would. PATH PINNED: `dsc.validate.anchor_body`'s first arm, which tests the lifecycle before looking for equalities; testing equalities first would report this as DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n\nschema Ping scope ttl 1_min:\n    device_id: String\n    amount: Int\n\nrule joined:\n    Device d\n    Ping p where p.device_id == d.device_id\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_B"
+    }
+}

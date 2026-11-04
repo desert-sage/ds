@@ -1,0 +1,18 @@
+{
+    "id": "RARC.7.15_the_next_pump_retracts_the_expired_fact",
+    "clauses": ["RARC.7.15", "RARC.5.6.3"],
+    "category": "temporal",
+    "scenario": "[RARC.7.15], [RARC.5.6.3]: an expired fact stays in working memory until the next pump, and that pump retracts it. On the mock clock, a `Pulse` (`scope ttl 50_ms`) is asserted at 1 s, the clock advanced by 100 ms past its deadline, a `Probe` (`scope ttl 1_h`, not yet due) asserted, and then the engine pumps. `temporal_sequence` reads working memory after the pump ([RCTS.1.2.31]): the `Pulse` is gone and the `Probe` stays, `fact_count_after: 1`. The control for RARC.7.15_an_assert_after_the_deadline_retracts_nothing, whose steps stop before this pump and count 2: together they place the retraction at the pump. What it discriminates: a runtime that never sweeps counts 2; one that sweeps every fact, due or not, counts 0. PATHS: the pump-entry TTL sweep, libds's `engine_pump_body` (engine.c) and the Mercury runtime's `ds.engine.pump` through `sweep_expired`.",
+    "rules_ds": "schema Pulse scope ttl 50_ms:\n    v: Int\n\nschema Probe scope ttl 1_h:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 100000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.2.9.6.11_width_and_alignment_render_on_scalar_leaves",
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "A width and an alignment are taken by every scalar kind, so on an Int, a String, a Float and a Bool leaf each renders as LGRA.2.9.6.10 states, and no TypeError is raised: `[{p.body.n:>8}|{p.body.s:>8}|{p.body.f:<6}|{p.body.b:>6}]` gives `[       7|      ab|1.5   |  true]`. PATH PINNED: the run-time spec check admitting the kind-free parts on each scalar kind. A check that refused any spec on a Json leaf, or a width on a String or a Bool, would log `type error`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"[{p.body.n:>8}|{p.body.s:>8}|{p.body.f:<6}|{p.body.b:>6}]\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "n": 7, "s": "ab", "f": 1.5, "b": true } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[       7|      ab|1.5   |  true]"]
+    }
+}

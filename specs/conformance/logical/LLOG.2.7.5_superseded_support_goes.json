@@ -1,0 +1,18 @@
+{
+    "id": "LLOG.2.7.5_superseded_support_goes",
+    "category": "logical",
+    "scenario": "LLOG.2.7.5: a superseded logical fact's justifications leave with it; none is transferred to the replacement or kept for later, so the key can end up empty. `make` derives Made(id 1) from every Seed with `n` copied from it; `report` logs each live Made's `n`; `vacant` logs when a Seed is live and no Made is. Pump 1: Seed n=4 -> Made(1, 4), `report` logs `made n=4` (`make` outranks `vacant` by source order, so `vacant` is blocked before it can fire). Pump 2: Seed n=5 -> `make` emits Made(1, 5), which supersedes Made(1, 4) [LFAC.1.7.2]; `report` logs `made n=5`. Pump 3: retracting Seed n=5 ends the only activation that justified Made(1, 5), so Made(1, 5) is withdrawn and the key holds no fact although Seed n=4's activation of `make` still matches; `vacant` fires for Seed n=4 and logs `no made`. The three readings give three sequences: transferring Made(1, 4)'s justification to Made(1, 5) keeps it live and logs nothing at pump 3; re-arming Seed n=4's activation re-derives Made(1, 4) and logs `made n=4`; only the reading the clause states logs `no made`. PATH PINNED: truth maintenance on the superseded fact, not the supersede's record order (that is RFCS.6a.4's). libds: the supersede in `ds_rete_wm_assert_ex` (rete/wm_rete.c) retracts Made(1, 4) through `ds_engine_retract_rete_fact`, and the dependency table of rete/tms.c is keyed by activation and lists fact ids, so `make`(Seed n=4)'s row names the withdrawn Made(1, 4) and no row names Made(1, 5) but `make`(Seed n=5)'s. Mercury: `ds.engine`'s settle of the retracted Made(1, 4) calls `ds.tms.forget_fact`, which drops its count and justification set. The lockstep scenario 91_emit_supersede (fixture 124_emit_supersede) holds the two runtimes to each other on the same program; this vector holds them to the clause.",
+    "rules_ds": "schema Seed scope logical:\n    n: Int key\n\nschema Made scope logical:\n    id: Int key\n    n: Int mutable\n\nrule make:\n    Seed s\n->\n    emit Made logical id: 1 n: s.n\n\nrule report:\n    Made m\n->\n    log info \"made n={m.n}\"\n\nrule vacant:\n    Seed\n    no Made\n->\n    log info \"no made\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Seed", "slots": { "n": 4 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Seed", "slots": { "n": 5 }, "as": "s5" },
+            { "op": "pump" },
+            { "op": "retract", "label": "s5" },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["made n=4", "made n=5", "no made"]
+    }
+}

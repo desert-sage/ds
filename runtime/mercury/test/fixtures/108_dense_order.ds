@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# One rule's activations, ordered by their facts, not by a memory walk.
+# `joined` logs each Item's id, so the log order is the activations' creation
+# order: all complete when the Anchor arrives, and [LDET.5.5] orders them by
+# their facts' entry ranks. After a delete libds's Item memory is
+# last-into-hole ([IRET.28.10.1]) and Mercury's keeps insertion order; neither
+# layout reaches a timetag.
+
+use default
+
+
+schema Anchor scope logical:
+    id: Int key
+
+schema Item scope logical:
+    id: Int key
+
+rule joined:
+    Anchor
+    Item b
+->
+    log info "{b.id}"

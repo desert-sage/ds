@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Trig scope logical:
+    v: Int key
+
+schema Alert scope ttl 1_h:
+    severity: Int
+    zone: String
+
+service light.turn_on:
+    kwarg entity_id: String
+    no response
+
+rule fire_them_all:
+    Trig
+->
+    log info "trig fired"
+    log critical "operator alert"
+    emit Alert severity: 7 zone: "kitchen"
+    publish Alert severity: 7 zone: "kitchen"
+    call light.turn_on entity_id: "light.foyer" cooldown: 30_s
+    cache key: "last_alert" value: 1
+    cache_delete key: "stale_key"

@@ -1,0 +1,12 @@
+{
+  "id": "RDSC.10.9",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.2",
+  "seq": 226,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.10.9] **A decoder's field numbers must be verifiably the proto's.**\nWhere an atom body is defined by a `.proto`, any decoder of that body — in\nany language, in this repository or another — must have its field numbers\ntied to that proto by something that fails when the two disagree. Two ways\ndischarge it:\n\n1. **Generated bindings**, which satisfy it by construction; or\n2. **A pinning test** naming the proto and the decoder, which fails if a\n   field number, wire type or `oneof` membership diverges.\n\nA hand-written decoder with neither is a violation, not a preference.\n\n**This rules a property, not a mechanism.** Generated bindings are the\nordinary way to hold it and the one a new decoder should reach for first,\nbut a target that cannot absorb the generated code may hand-write, and\ndischarges the obligation with (2). What is forbidden is the third case:\na hand-written decoder that nothing reconciles with its proto.\n\n**The failure this exists to catch is silent by construction.**\nProtobuf's wire format lets a runtime skip an unknown field, and a correct\nforward-compatible skip is indistinguishable, at the wire, from a decoder\nthat has gone stale against a field number it should know. Both ignore the\nfield. So the drift does not surface as a decode error; it surfaces as an\nartefact that loads, verifies and runs with a field quietly dropped. No\nreader can tell the two apart at load time, which is why the tie has to\nexist ahead of it rather than be inferred from behaviour.\n\n",
+  "refs": []
+}

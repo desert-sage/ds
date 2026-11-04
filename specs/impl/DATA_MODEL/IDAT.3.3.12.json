@@ -1,0 +1,28 @@
+{
+  "id": "IDAT.3.3.12",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.3.3",
+  "seq": 306,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.3.3.12] **A tree across threads.** `ds_json_get_kind`, the typed getters,\n`ds_json_array_len`, `ds_json_array_at`, `ds_json_object_len`,\n`ds_json_object_get`, `ds_json_object_at` and `ds_json_get_path` **must not**\nwrite to the tree or to any state another call shares. So several threads may\nmake these calls on one integrator-owned tree at once, provided no thread is\nchanging or freeing it. libds takes no lock on a tree: the integrator **must**\nhold a tree exclusively across `ds_json_array_append`, `ds_json_object_set` and\n`ds_json_free`. A tree the engine lends is the engine's, and the rules\nfor the call that lent it bind ([IDAT.3.3.8]).\n\n",
+  "refs": [
+    "IDAT.3.3.8"
+  ],
+  "symbols": [
+    "ds_json_array_append",
+    "ds_json_array_at",
+    "ds_json_array_len",
+    "ds_json_free",
+    "ds_json_get_kind",
+    "ds_json_get_path",
+    "ds_json_object_at",
+    "ds_json_object_get",
+    "ds_json_object_len",
+    "ds_json_object_set"
+  ],
+  "verification": "gap",
+  "gap_reason": "An obligation of absence: no conformance vector can show that a read writes nothing and shares nothing. Reading json.c is the check."
+}

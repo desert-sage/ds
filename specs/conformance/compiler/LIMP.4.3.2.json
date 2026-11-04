@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.4.3.2",
+    "category": "compiler",
+    "scenario": "Underscore-prefixed identifiers do not enter the import-resolution lookup tables per LIMP.4.3.2; external references fall through to the same diagnostics that fire for any unknown imported name. Pin: library `ha` declares an internal const `_helper` (IDENT regex per LLEX.10.4 / LIMP.9.9 amendment permits leading underscore on IDENT-shape names; TYPE_NAME stays uppercase-only so `_Helper` schemas are grammatically impossible). Rules-file writes `from ha import _helper`. The selective-import precedence walk finds no entry under any kind (schema / const / rule / domain / flat-service) and rejects with DS_VALIDATE_UNKNOWN_IMPORT_NAME. The 'internal' status is enforced structurally — by absence from the lookup — rather than through a distinct error code.",
+    "rules_ds": "from ha import _helper\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "ha": "const _helper = 30_s\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_IMPORT_NAME"
+    }
+}

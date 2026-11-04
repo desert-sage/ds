@@ -1,0 +1,64 @@
+{
+  "id": "NRTM.5.2",
+  "prefix": "NRTM",
+  "doc": "REALTIME.md",
+  "parent": "NRTM.5",
+  "seq": 115,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NRTM.5.2] The INIT→LIVE transition is the public call **`ds_engine_go_live`**. It is **one-way** and MUST be called after `ds_engine_set_wm_max`\n(which sizes the pools and locks the intern table) and after the bundle is\nloaded and warmed — every string the workload uses must be interned before the\nlock. After it returns `DS_OK` the pump runs zero-alloc under the loaded\ncontract. The board runtimes (under `runtime/esp32*`, `runtime/rp2350`,\n`runtime/samd51`, …) call it as part of bring-up, so a board integration rarely\ninvokes it directly; a custom or bare-metal port calls it itself.\n\n",
+  "deferred": true,
+  "refs": [],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/rt_lifecycle.als",
+        "name": "nrtm_5_2__one_go_live",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rt_lifecycle.als",
+        "name": "nrtm_5_2__structural_before_go_live",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rt_lifecycle.als",
+        "name": "nrtm_5_2__the_go_live",
+        "tag": "spec"
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__GoLive",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__SetWmMax",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__live_implies_preconds",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__live_is_terminal",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__warmed",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_live_phase.tla",
+        "name": "nrtm_5_2__wm_max_set",
+        "tag": "spec"
+      }
+    ]
+  }
+}

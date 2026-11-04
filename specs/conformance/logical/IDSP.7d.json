@@ -1,0 +1,28 @@
+{
+    "id": "IDSP.7d",
+    "clauses": ["RARC.5.7.9"],
+    "category": "logical",
+    "scenario": "A rule firing `cache_delete` produces an action_cache_delete stream event per IDSP.7.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    cache_delete key: \"k\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "action_cache_delete",
+            "rule_fire_end"
+        ]
+    }
+}

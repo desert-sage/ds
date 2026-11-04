@@ -1,0 +1,22 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// founded_reach -- the `+recursive` proposal's transitive-closure shape
+// (formal/idris/Rete/Refcount.idr, llog_2_5__reach_js) with its seed PRESENT:
+// Seed(a, b), Edge(a, b), Edge(b, a). The least model derives Reach(a, b) from
+// the seed and Reach(a, a) from Reach(a, b) + Edge(b, a). Twin of
+// unfounded_reach.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl Edge(x: DsStr, y: DsStr)
+.decl Seed(x: DsStr, y: DsStr)
+.decl Reach(x: DsStr, y: DsStr)
+.input Edge(filename="founded_reach.Edge.facts")
+.input Seed(filename="founded_reach.Seed.facts")
+
+Reach(x, y) :- Seed(x, y).
+Reach(x, z) :- Reach(x, y), Edge(y, z).
+
+.output Reach

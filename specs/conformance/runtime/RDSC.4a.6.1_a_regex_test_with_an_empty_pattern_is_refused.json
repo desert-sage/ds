@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.6.1_a_regex_test_with_an_empty_pattern_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1]: an `AlphaTest` of kind `ALPHA_TEST_REGEX` whose `pattern` is empty is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_l`, whose `L l where l.s ~ /a+/` puts one REGEX test on `L`'s `AlphaNode` (node 1): `s` is a String that is not nullable and declares a `capacity`, so the compiler hoists the match onto the alpha whatever `linear_scan` is ([RLOW.5.2.2]). `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 5], value: \"\"}}` ([RCTS.1.2.21]) writes that test's field 5, `pattern`, as the empty string, and re-seals `dsc_sha256` ([RDSC.3.6]). What it discriminates: an empty pattern compiles and matches every string, so a loader that only compiles the pattern loads, and the vector fails as unrefused. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema L scope logical:\n    k: Int key\n    s: String capacity 16 mutable\n\nrule on_l:\n    L l where l.s ~ /a+/\n->\n    log info \"l\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 5], "value": ""}},
+        "code": "-504"
+    }
+}

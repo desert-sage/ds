@@ -1,0 +1,27 @@
+{
+    "id": "IDSP.1.4i",
+    "category": "logical",
+    "scenario": "A rule with two log actions emits two action_log events in source order. Pins per-action stream ordering within one rule firing. Pins IDSP.1.4 \u2014 per-action stream ordering within one rule firing (log variant).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"first\"\n    log warning \"second\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_log",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

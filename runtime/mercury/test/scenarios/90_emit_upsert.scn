@@ -1,0 +1,14 @@
+# See fixtures/123_emit_upsert.ds.
+#
+#   pump 1  `copy` emits Out(1, 1) for Reading src 1
+#   pump 2  `copy` fires for Reading src 2 and its emit replaces Out(1, 1):
+#           assert(Out), then retract(Out), then the emit marker
+#           (RFCS.6a.4)
+#
+# The trace compares the order in both runtimes; the recording checkers
+# compare the FactEmit / FactWithdraw pair, and Mercury's reading of libds's
+# recording meets them in the order it re-derives them.
+assert Reading src=1 v=1
+pump
+assert Reading src=2 v=2
+pump

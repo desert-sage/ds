@@ -1,0 +1,16 @@
+{
+    "id": "IRET.7.6.join_trap_absorbed_by_false",
+    "category": "logical",
+    "scenario": "[IRET.7.6]: a join's tests combine as the absorbing `and`. Two patterns, so the `where` is a join over S and T: `s.a / t.b > 1.0 and t.b != s.z` with Int slots, t.b = 0 and s.z = 0 (Int, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf and there would be no trap to absorb). The division traps and the guard is `false`, which rejects the pair without the trap being recorded. The guard compares two slots, so it cannot become an alpha test (the compiler hoists only a non-nullable slot compared with a literal) and the pair reaches the division. Path: nothing hoists, so the compiler emits the `where` as ONE join test, and libds evaluates it in rete/eval.c's AND arm with the left operand's trap held (ds_rete_eval_holding) and dropped; Mercury in ds.eval.lnul_4_2_absorbing. beta.c's multi-test arm of join_tests_eval is NOT driven: the compiler gives a beta several tests only as `within` ++ `then`-follows ++ the `where`, the `where` last, and the first two cannot trap, so no DS source puts a trap ahead of a `false` in that list. The rule does not fire.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    z: Int mutable\n\nschema T scope logical:\n    entity_id: String key\n    b: Int mutable\n\nrule r:\n    S s\n    T t where s.a / t.b > 1.0 and t.b != s.z\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "s", "a": 1, "z": 0 } },
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "t", "b": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

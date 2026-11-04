@@ -1,0 +1,9 @@
+{
+    "id": "LLOG.15.3_derived_state_admitted",
+    "category": "compiler",
+    "scenario": "[LLOG.15.3]'s first shape that compiles: a state that holds exactly while a condition holds is itself a logical fact. FireLogical's sprinkler. `sprinkler` matches a `Fire` in a room and emits `Sprinkler` for that room `logical`, and no rule turns it off: the `Sprinkler` is retracted when its `Fire` stops matching ([LLOG.15.1]). One rule, which matches nothing it emits, so the rule graph has no edge and the program compiles. PATH PINNED: the Mercury compiler's cycle check (`dsc.cycle`) over a graph with no edge. A check that refused any rule-triggered truth-maintenance cascade outright, rather than an SCC that closes one, would refuse this. Counts as a compiler-only vector because [LLOG.15.3] is `compiler_only` ([STYL.5.3.11]).",
+    "rules_ds": "schema Fire scope logical:\n    room: String key\n\nschema Sprinkler scope logical:\n    room: String key\n\nrule sprinkler:\n    Fire f\n->\n    emit Sprinkler logical room: f.room\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

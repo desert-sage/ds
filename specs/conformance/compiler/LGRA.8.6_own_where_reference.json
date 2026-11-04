@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.8.6_own_where_reference",
+    "category": "compiler",
+    "scenario": "LGRA.8.6's load-bearing exemption — *\"A reference in the pattern's own `where` counts\"*. Pin: `Graph g where g.root == \"/src\"` compiles. This is the case the work order singles out as the one that would demand the impossible if it regressed: a single-pattern filter rule references its binding only from its own where-clause, so a rule that counted only LATER references would reject the commonest shape in the language. Paired with LGRA.8.6_unreferenced_binding — that one shows the check fires, this one shows it discriminates, and a check that only ever fires is [STYL.5.10.5]'s failure in the other direction.",
+    "rules_ds": "schema Graph scope logical:\n    root: String key\n\nrule r:\n    Graph g where g.root == \"/src\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

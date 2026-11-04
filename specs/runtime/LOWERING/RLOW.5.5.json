@@ -1,0 +1,177 @@
+{
+  "id": "RLOW.5.5",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.5",
+  "seq": 662,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`where` clauses",
+  "text": "### `where` clauses [RLOW.5.5]\n\nA `where` clause compiles to a beta-node join test — a\nboolean expression tree over the pattern's bound slots\n([IRET.7.5]): the token passes only when\nthe expression evaluates true.\n\n**A conjunct may leave the join test only when it is decided.** The compiler\nmay compile a conjunct as an alpha test ([IRET.6.4]), and the loader may probe\non one as the join's index key ([IRET.7.5.1]), only when every slot it reads is\nnon-nullable and it cannot raise by the declared types of its operands, read\nwithout narrowing ([LNUL.5.2]). A decided conjunct answers only `true` or\n`false`, and a `false` decides the `where` wherever it is evaluated\n([LNUL.4.2]). Taking it first therefore changes neither the fault the `where`\nyields nor, for a negated pattern, whether it blocks. A conjunct that could\nanswer `null` or raise could change both, and stays in the join test.\n\n",
+  "refs": [
+    "IRET.6.4",
+    "IRET.7.5",
+    "IRET.7.5.1",
+    "LNUL.4.2",
+    "LNUL.5.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_6__v5_lie_breaks_hoisting",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "WHY THE ARTEFACT MUST NOT LIE: a hoisted conjunct over a value the artefact lied about raises its EngineError alone and blocks the `no` pattern, where the whole `where` is false."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rlow_5_5__decided",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A decided conjunct: it cannot raise by its declared types and its slot is not nullable -- what an alpha test or an index anchor may be."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rlow_5_5__v5_hoist_sound",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND for an artefact that does not lie: filters on decided conjuncts leave the decision of a positive and of a `no` pattern, and the record, unchanged. Admitting a nullable filter breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rlow_5_5__guard_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The guard at one positive node, on the fact looked up at its position: alpha tests on the fact, join tests against its prefix, and the rest of the guard. Its own function so that a proof can reduce it by rewriting the lookup alone."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rlow_5_5__guard_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The guard: every positive node's alpha tests on its fact and join tests on its prefix."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_5_5__fact_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The fact at a position of a token from a front: what the guard's lookup finds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_5_5__nth_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The fact at the position after a prefix."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_5_5__prefix_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The prefix of a token from a front is the front's token: what the guard's `take i` reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_5_5__take_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The prefix of its own length."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_5_5__guard_from_node",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One node's guard is the same under alphas of one shape, given the rest at every position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_5_5__guard_from_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The guard a chain lowers to decides alike under alphas of one shape."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Rlow_5_5__all_decided",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every filter of a list decided."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Rlow_5_5__decided",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A decided outcome, true or false: what a conjunct on a non-nullable slot that cannot raise by its declared types yields, for an artefact that did not lie."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__decided_answer",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A decided outcome is a decided answer in Rete/NetworkAnswer.idr's sense, so the hoisting condition is the anchor-probe condition."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__faulting_filter_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHY NO FAULT: a filter raising an EngineError -- an artefact that lied, [IRET.9.6] -- raises it alone and blocks a `no` pattern where the `where` is false. So two engines may differ on an artefact that lies, which is why [LDET.1.11] scopes the guarantee to one that does not."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__filtered_prefix",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Decided filters in front of the rest give the decision and the record of the whole. V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__hoist_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND under V5 for decided filters taken from ANYWHERE in the source: the decision of a positive and of a `no` pattern, and the record, are the whole `where`'s -- RLOW.5.5's 'a conjunct may leave the join test only when it is decided', for an artefact that does not lie ([LDET.1.11]). Admitting a nullable filter breaks it (TEETH T3). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__null_filter_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHY NON-NULL: a filter answering null rejects the candidate, where the `where` answers null and so blocks a `no` pattern ([LNUL.4.7])."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/k/rlow.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

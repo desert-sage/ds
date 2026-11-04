@@ -1,0 +1,16 @@
+{
+    "id": "LUNI.4.5.2_non_inverting_keeps_the_operator",
+    "category": "logical",
+    "scenario": "[LUNI.4.5.2]: at a `where` comparison between two dimensions one `implicit` formula bridges, the LEFT operand converts into the right's dimension, and a formula that is not `inverting` keeps the operator. `pace_hand` is increasing: `a.dist > b.h` with `a.dist` = 2 pace is `pace_to_hand(2) > b.h`, that is 8.0 > b.h. Against `b1` (h = 5) that holds and against `b2` (h = 10) it does not, so only `b1` matches. Unconverted (2 > h) neither would match; converted with a flip (8 < h) only `b2` would. PATH PINNED: `luni_4_5_2_step` in dsc.rete, called from `rlow_6_2_1_chain`, with `luni_4_5_implicit_formula` reporting the formula as not inverting.",
+    "rules_ds": "unit dimension span storage float64 base pace\nunit pace: span\nunit dimension reach storage float64 base hand\nunit hand: reach\n\nunit formula pace_hand implicit:\n    pace_to_hand(x: pace): hand  = x * 4.0\n    hand_to_pace(x: hand): pace  = x / 4.0\n\nschema A scope logical:\n    id: String key\n    dist: pace mutable\n\nschema B scope logical:\n    id: String key\n    h: hand mutable\n\nrule cmp:\n    A a\n    B b where a.dist > b.h\n->\n    log info \"match {b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "a", "dist": 2.0 } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b1", "h": 5.0 } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b2", "h": 10.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["match b1"]
+    }
+}

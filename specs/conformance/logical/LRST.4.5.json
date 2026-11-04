@@ -1,0 +1,45 @@
+{
+    "id": "LRST.4.5",
+    "category": "logical",
+    "scenario": "A new activation carrying an `after ... as <key>` retracts BOTH the prior timer and its prior capture fact before asserting its own pair, per LRST.4.5. Category is `logical` rather than `temporal` because the CATEGORY selects the runner and `log_message_sequence` is the logical runner's; the `advance` step works there (`_run_logical_test` takes the temporal_sequence step shape). Pin: two activations under one key produce ONE follow-up fire, so the expected message list carries `fired dev1` exactly once; `expected_messages` is compared for list EQUALITY (runner.py:2274), so a second fire fails the case rather than passing as a supersequence. Drives the double `FN_RETRACT_CORR` in dsc.rete.clause_corr -- without the CAPTURE sweep (keeping the timer sweep) the superseded activation's snapshot stays live, the surviving follow-up joins both snapshots, and the body logs twice. The `as` key must also win over the per-activation gensym (LTAC.3.5): if the capture's gensym is the correlation, the sweep on `e.entity_id` matches nothing, and both timers fire.",
+    "rules_ds": "schema Request scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule r:\n    Request e\n->\n    log info \"start\"\n    after 30_s as e.entity_id:\n        log info \"fired {e.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Request",
+                "slots": {
+                    "entity_id": "dev1",
+                    "n": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Request",
+                "slots": {
+                    "entity_id": "dev1",
+                    "n": 2
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 31000000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_messages": [
+            "start",
+            "start",
+            "fired dev1"
+        ]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSER.6.8.4_label_wrong_agg",
+    "category": "compiler",
+    "scenario": "LSER.6.8.4 — referencing a (label, agg) pair where the label exists but doesn't declare that aggregation is a compile error. Pin: `s.recent.p99` rejects when the `recent` line declares only `mean`. The diagnostic distinguishes 'unknown label' from 'label exists / agg not declared'.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n    ts: Time\n\nseries Sensor.val:\n    mean sliding 10_min as recent\n\nrule check:\n    Sensor s where s.recent.p99 > 0.0\n->\n    log info \"unreachable\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NO_SERIES_FOR_COMPANION_SLOT"
+    }
+}

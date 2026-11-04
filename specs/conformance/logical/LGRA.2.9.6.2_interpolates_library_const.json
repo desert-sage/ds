@@ -1,0 +1,27 @@
+{
+  "id": "LGRA.2.9.6.2_interpolates_library_const",
+  "category": "logical",
+  "scenario": "[LGRA.2.9.6.2]: \"A dotted body resolves as a dotted name in expression position does ([LGRA.22.9]), so `{lib.CONST}` formats the constant `CONST` of an imported library `lib`, a `const` like the file's own.\" Library `lib` declares `const LIMIT = 42`; the file imports it, and a rule logs `\"limit {lib.LIMIT}\"` on one Trig. The message is `limit 42`. A compiler that looked up the leading `lib` alone refuses it with DS_VALIDATE_UNKNOWN_BINDING; one that accepted the site but did not lower it leaves the rule unlowered (DS_VALIDATE_RULE_NOT_LOWERED). PATH PINNED: `dsc.validate`'s `lgra_2_9_6_2_library_member` (step 2 of [LGRA.22.9] over the site's chain) and `dsc.rete`'s `lgra_2_9_6_2_const_site`, which lowers the site through the expression path's library-member arm.",
+  "rules_ds": "import lib\n\nschema Trig scope logical:\n    id: Int key\n\nrule r:\n    Trig\n->\n    log info \"limit {lib.LIMIT}\"\n",
+  "libraries": {
+    "lib": "const LIMIT = 42\n"
+  },
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Trig",
+        "slots": {
+          "id": 1
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "limit 42"
+    ]
+  }
+}

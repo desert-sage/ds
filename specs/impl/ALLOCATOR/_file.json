@@ -1,0 +1,10 @@
+{
+  "doc": "ALLOCATOR.md",
+  "tree": "impl",
+  "src": "docs/specs/impl/ALLOCATOR.md",
+  "prefixes": [
+    "IALC"
+  ],
+  "title": "libds allocator routing",
+  "preamble": "# libds allocator routing\n\nHow libds routes heap allocation — its own C\ncode and every vendored C library that allocates — through a single layer that an\nintegrator may redirect to their own allocator with **no per-call\nfunction-pointer indirection**, bound either at compile time (a macro\nlayer) or at link time (weak symbols), selected by one build flag. It\nrealises the [IDAT.1] ownership model and binds the source, build,\nsymbol, and public-ABI shapes inside libds.\n\nPrefix `IALC`.\n\nTakes as fixed:\n- **[IDAT.1]** — `ds_result_t` at every call site, per-object `malloc`\n  with single ownership, per-engine state (no globals), caller-owned\n  `const char *`. This spec routes that allocation; it does not change\n  the ownership model.\n- **The public ABI** (`runtime/include/libds.h`) — this spec does not\n  change it; the one symbol it owns there is `ds_free` ([IALC.4]).\n- **The libc chokepoint** — every allocation in libds's C code and\n  protobuf-c bottoms out at libc `malloc`/`calloc`/`realloc`/`free`\n  (+ `strdup`/`strndup`); no aligned-alloc family is used. The regex\n  engine allocates through C++'s global `operator new` instead, and is\n  outside the layer ([IALC.3.5]).\n\n## What this is not\n\n- **Not a conforming-runtime contract.** Allocation routing is internal\n  to libds; another runtime is unaffected, and nothing here binds one.\n- **Not an error-number registry.** No new error code: an allocation\n  failure surfaces as the existing `DS_ERR_OOM`.\n- **Not the integrator memory-ownership contract** — that is the\n  callback contract ([NCBK]). This\n  spec is the *internal* routing that makes a custom allocator total.\n\n---\n\n"
+}

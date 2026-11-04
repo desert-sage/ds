@@ -1,0 +1,18 @@
+{
+    "id": "LDET.5.5_indexed_right",
+    "category": "logical",
+    "scenario": "[LDET.5.5]: matches that complete together are ordered by their facts' entry ranks, through an INDEXED equality join. The indexed twin of `LDET.5.5d`: A facts a1, a2 and a3 share `g`, a1 is retracted, and a B fact arrives with the same `g`, so it RIGHT-activates the join and finds the A tokens through the left-memory join-key index rather than the left-memory walk. The order must be a2, then a3. PATH PINNED: libds's `lmem_idx` bucket (`rete/beta.c` `ds_rete_beta_right_activate`, the `lmem_idx_enabled` branch), whose extensions are held at the completing join and stamped in key order at the end of the event (`ds_rete_beta_flush_completions`). Stamping in bucket order after the delete would put a3 first. It does NOT pin Mercury's sort: Mercury's memories stay in insertion order, so its walk already reaches a2 before a3 (a traversal-order sabotage left it green, e5627698b). `LDET.5.5_self_join` pins Mercury's.",
+    "rules_ds": "schema A scope logical:\n    name: String key\n    g: Int mutable\n\nschema B scope logical:\n    name: String key\n    g: Int mutable\n\nrule r:\n    A a\n    B b where b.g == a.g\n->\n    log critical \"{a.name}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "A", "slots": {"name": "a1", "g": 7}, "as": "a1"},
+            {"op": "assert", "schema": "A", "slots": {"name": "a2", "g": 7}},
+            {"op": "assert", "schema": "A", "slots": {"name": "a3", "g": 7}},
+            {"op": "retract", "label": "a1"},
+            {"op": "assert", "schema": "B", "slots": {"name": "b1", "g": 7}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a2", "a3"]
+    }
+}

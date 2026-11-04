@@ -1,0 +1,19 @@
+{
+  "id": "NCBK.10.1",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.10",
+  "seq": 512,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.10.1] **A published fact crosses as a `FactExternal`.** To propagate\n`publish`ed facts to sibling engines across processes or machines:\n\n1. Subscribe to the stream callback.\n2. On `DS_EV_ACTION_PUBLISH`, take the event's `FactExternal` encoding\n   ([RFCS.23.1]) — the bytes and their length — and copy them before the\n   callback returns.\n3. Ship them over any transport.\n4. On the receiving engine, call `ds_engine_assert_external` with them\n   ([NCBK.10.4]).\n\nThe bytes are self-describing; the integrator neither decodes nor re-encodes\nthem.\n\nWhere a failed allocation ([NERR.4]) kept the engine from building the encoding,\nthe event still arrives, with `external` null and `external_len` 0, and nothing\ncrosses.\n\n",
+  "refs": [
+    "NCBK.10.4",
+    "NERR.4",
+    "RFCS.23.1"
+  ],
+  "symbols": [
+    "DS_EV_ACTION_PUBLISH"
+  ]
+}

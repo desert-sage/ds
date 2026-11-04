@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.4_int_to_string_kwarg_refused",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.4]: a kwarg declared with a builtin type takes a value of that type, because each argument reaches the service as the kind its value has ([NCBK.6.10]). An `Int` slot read given to a `kwarg x: String` is refused with DS_VALIDATE_TYPE_MISMATCH; the author writes the cast. A compiler that admits it sends the service declared `String` a `DS_ARG_INT`. PATH PINNED: the compiler's `call`-kwarg value check in `dsc.validate` (`call_kwarg_value`), comparing the value's leaf kind ([LUNI.8.7.3]) with the declared builtin type, as `lexp_7_3b_kwarg_type` does for an `emit` slot. Its admitting half is compiler/LADP.8.5.4_matching_kinds_compile.",
+    "rules_ds": "service svc.method:\n    kwarg x: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.method x: t.v nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

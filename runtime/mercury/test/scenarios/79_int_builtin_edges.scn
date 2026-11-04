@@ -1,0 +1,24 @@
+# INTEGER BUILTINS AT THE INT64 EDGES, across both runtimes -- 110_int_builtin_edges.
+#
+#   r1  x = INT64_MIN, y = -1     abs_wraps, int_rounding, floordiv_wrap,
+#                                 floormod_zero, bit_length_min and
+#                                 bit_count_word fire. min(x, y) is x, not y, and
+#                                 max(y, x) is y, not x, so neither of those does.
+#   r2  x = 2^53 + 1, y = 2^53    min_exact, max_exact, int_rounding. Through
+#                                 double, x and y are both 2^53: min/max return
+#                                 the wrong operand and floor(x) returns y.
+#   r3  x = INT64_MAX, y = 0      mul_wraps and int_rounding. Through double, x
+#                                 is 2^63, which no int64 holds.
+#   r4  x = 5, y = 3              the control: min_exact, max_exact,
+#                                 int_rounding and bit_control fire under
+#                                 either reading, so a
+#                                 runtime that never matched the fact is
+#                                 separated from a correct one here.
+assert E entity_id=r1 x=-9223372036854775808 y=-1
+pump
+assert E entity_id=r2 x=9007199254740993 y=9007199254740992
+pump
+assert E entity_id=r3 x=9223372036854775807 y=0
+pump
+assert E entity_id=r4 x=5 y=3
+pump

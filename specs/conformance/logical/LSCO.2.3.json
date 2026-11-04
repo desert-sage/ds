@@ -1,0 +1,18 @@
+{
+    "id": "LSCO.2.3",
+    "clauses": ["LSCO.2.3.1"],
+    "category": "logical",
+    "scenario": "One rule matches facts from three independent sources (LSCO.2.3.1). Motion and Weather are asserted and pumped, then Schedule is asserted and pumped, and `smart_action` fires exactly once over the run. Only the Schedule-missing case is shown not to fire; the two others are not stepped.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    detected: Bool mutable\n\nschema Weather scope logical:\n    entity_id: String key\n    sunny: Bool mutable\n\nschema Schedule scope logical:\n    entity_id: String key\n    active: Bool mutable\n\nrule smart_action:\n    Motion m where m.detected == true\n    Weather w where w.sunny == true\n    Schedule s where s.active == true\n->\n    log info \"all conditions met\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Motion",   "slots": { "entity_id": "m1", "detected": true } },
+            { "op": "assert", "schema": "Weather",  "slots": { "entity_id": "w1", "sunny": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Schedule", "slots": { "entity_id": "s1", "active": true } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["smart_action"]
+    }
+}

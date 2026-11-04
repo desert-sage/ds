@@ -1,0 +1,15 @@
+{
+  "id": "LDTL.3.1",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.3",
+  "seq": 112,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Per-schema FIFO TTL queue",
+  "text": "### Per-schema FIFO TTL queue [LDTL.3.1]\n\nIn the default mode, each `ttl`-lifecycle schema maintains a\n**per-schema FIFO TTL queue** ordered by assertion time.  Because all\nfacts of the same schema share the same TTL duration, assertion order\nequals expiry order: the oldest-asserted fact always expires first.\n\n| Operation | Time | Notes |\n|---|---|---|\n| Fact assert (TTL) | O(1) — append to schema TTL tail | No heap sift |\n| Fact retract (explicit) | O(1) — intrusive doubly-linked splice | Must remove from queue |\n| TTL tick | O(expired × log n_ttl_schemas + n_ttl_schemas) | Merge the schemas' queue fronts by deadline, then entry ([LDTL.6.1]); expire each front while its deadline is at or before the tick's instant |\n\n`n_ttl_schemas` is the number of `ttl`-lifecycle schemas in the DSC — a\ncompile-time constant, not a function of WM population, so the merge's log\nfactor is a constant too: about 6 for 50 TTL schemas.\n\n",
+  "deferred": true,
+  "refs": [
+    "LDTL.6.1"
+  ]
+}

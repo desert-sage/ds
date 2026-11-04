@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.2.8.3.unset_wall_initial_fact_is_a_domain_error",
+    "category": "logical",
+    "scenario": "[LTIM.2.8.3]'s `initial` arm: an `initial` block's fact of a schema that declares `ts` has no wall sample to fill `ts` with ([LFAC.9.2], [LGRA.24.3]) while the wall clock has no value, so the engine raises a ComputationError of kind DOMAIN, does not place the fact, and goes on with the rest of the block. The engine is on the mock clock and the wall clock is never set (`wall_clock: unset`). The block places a `Marker` (with `ts`) and then a `Plain` (without). The first step is the pump, which applies the block. The fault has no activation and no node, so its rule is `$engine` ([LERR.9.11]); its fault fact ([LERR.9.2]) is asserted before the pump's first selection ([LERR.9.7]). `plain` logs the `Plain` the block placed; `faulted` logs the fault fact's rule and kind; `leaked` logs any `Marker` in working memory and must never fire. Expected, in one pump, in rule order: `plain 2`, then `$engine DOMAIN`; no `leaked`. A runtime that drops the item silently logs `plain 2` alone; one that filled `ts` with 0 or with the monotonic sample logs `leaked`; one that stopped the block at the fault logs no `plain 2`. PATH PINNED: libds `dsc/loader.c`'s `lgra_24_3_item` through `ltim_2_8_3_block_fault`, the Mercury runtime's `ds.engine.lgra_24_3_item` (`ltim_2_8_3_unset_wall_ts`, `rf_domain` at `no_site`).",
+    "rules_ds": "schema Marker scope explicit:\n    k: Int\n    ts: Time\n\nschema Plain scope explicit:\n    k: Int\n\ninitial:\n    Marker k: 1\n    Plain k: 2\n\nrule plain:\n    Plain p\n->\n    log info \"plain {p.k}\"\n\nrule faulted:\n    ComputationError c where c.rule == \"$engine\"\n->\n    log info \"{c.rule} {c.kind}\"\n\nrule leaked:\n    Marker\n->\n    log info \"leaked\"\n",
+    "dead_rules_expected": ["leaked"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["plain 2", "$engine DOMAIN"]
+    }
+}

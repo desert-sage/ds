@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_an_artefact_cut_inside_its_header_is_truncated",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1]'s first row: a file too short to contain a `DscHeader` atom is refused with DS_ERR_DSC_TRUNCATED (-500). Its **Framing** paragraph says why: where the bytes run out before a frame is complete, inside a varint or because a declared length is longer than the bytes that remain, the code is DS_ERR_DSC_TRUNCATED at any position, the first included. The harness compiles the program and `runtime_error`'s `tamper: {truncate_to: 1}` ([RCTS.1.2.21]) keeps only its first octet, the header frame's outer tag `0x0A`, so the frame's length varint is missing. The header's frame does not walk, so there is no `dsc_sha256` to recompute ([RDSC.3.6]). What it discriminates: a loader that reads a lone `0x0A` as no atom and loads an empty artefact, and one that refuses the cut first frame as not an atom container (DS_ERR_DSC_BAD_MAGIC, -501), which is for a frame that is complete and malformed. Its sibling `RDSC.11.1_an_empty_artefact_is_truncated` keeps no octet. PATHS: libds's `ds_dsc_load`, whose first `ds_pbf_next_atom` reports the short read (`DS_PBF_EOF`), through pyds `load_dsc` (runner.py's `_tampered`); the Mercury runtime's frame reader (`we_truncated`, `lek_truncated`), through test_behave.m's `structural_edit` and `libds_load_status`.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"truncate_to": 1},
+        "code": "-500"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.6.1.2_self_edge_same_literal",
+    "category": "compiler",
+    "scenario": "LCYC.6.1.2 — `different literals` means literal inequality by value, not just textual presence. A self-edge whose RHS emit pins the same literal the LHS where-clause matches is a real cycle and stays rejected with DS_VALIDATE_RULE_CYCLE. Pin: `A: kind == \"enter\" → emit A kind: \"enter\"` rejects; the literal-equality break only fires when the values differ.",
+    "rules_ds": "schema A scope logical:\n    kind: String key\n\nrule echo:\n    A a where a.kind == \"enter\"\n->\n    emit A logical kind: \"enter\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.6.1_let_only_rhs_does_not_parse",
+    "category": "compiler",
+    "scenario": "[LGRA.6.1]: a rule body is `let_decl* action_body`, and an `action_body` has at least one action or one `after` clause, so an RHS of `let` lines alone does not parse. Expected DS_PARSE_GENERIC. The compiler refuses it as a parse error of its own (`pe_empty_rhs`, \"rule `r` has an empty body\"), reported under DS_PARSE_GENERIC, beginning on line 5, the rule whose body is empty ([RCTS.1.2.34]). PATH: `dsc.parse`'s rule declaration, which refuses an `ltac_2_1_parse_rhs` result with neither actions nor `after` clauses.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule r:\n    Motion m where m.state == true\n->\n    let x = 1\n    let y = 2\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 5
+    }
+}

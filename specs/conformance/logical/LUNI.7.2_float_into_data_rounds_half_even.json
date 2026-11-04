@@ -1,0 +1,22 @@
+{
+    "id": "LUNI.7.2_float_into_data_rounds_half_even",
+    "category": "logical",
+    "scenario": "[LUNI.7.2]: a `Float` value landing in a field whose dimension stores `int64` is cast with roundTiesToEven. `b.size * 1.5` is a `Float` carrying `data` ([LEXP.7.3], [LUNI.8.3]); rule `grow` emits it into the `bit` slot `Scaled.size`, and rule `show` logs the stored `Int`. 3 * 1.5 = 4.5 stores 4, 5 * 1.5 = 7.5 stores 8, 1 * 1.5 = 1.5 stores 2: each a tie, each to the even neighbour. Run by both runtimes. PATH PINNED: `luni_7_2_storage_cast` in dsc.rete, called from `emit_kwargs`, wraps a dimensioned `Float` assigned to a `k_int` slot in `FN_ROUND` (ties to even, `Int` out); `ds.eval.round_half_even` and libds's `rounded_to_int` evaluate it. Without the cast the `Float` reaches the `Int` slot and the assert is a slot type mismatch.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nschema Scaled scope logical:\n    id: Int key\n    size: bit mutable\n\nrule grow:\n    Blob b\n->\n    emit Scaled logical id: b.id size: b.size * 1.5\n\nrule show:\n    Scaled s\n->\n    let n = s.size::Int\n    log critical \"{s.id} {n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": 1, "size": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Blob", "slots": { "id": 2, "size": 5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Blob", "slots": { "id": 3, "size": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1 4",
+            "2 8",
+            "3 2"
+        ]
+    }
+}

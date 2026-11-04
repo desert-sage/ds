@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.9.6.1_literal_cast_is_null",
+    "category": "logical",
+    "scenario": "[LGRA.9.6.1] with [LCST.4.5.2]: `\"abc\"::Int?` on a BARE literal parses and evaluates to `null`, so the `is null` rule fires. The twin of LNUL.8.4.a_failed_parse_is_null_not_a_fault, which reads the string from a slot so the parse happens at runtime; here the operand is the literal itself, the form that fixture's prose names. Whether the compiler folds it or the runtime parses it, the answer is `null` and the rule fires. PATH PINNED: the suffix on a literal primary through to the evaluated condition.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n\nrule r:\n    S where (\"abc\"::Int?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["absent"]
+    }
+}

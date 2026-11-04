@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.1.1.3_an_emitted_time_key_is_its_instant",
+    "clauses": ["LTIM.1.1.3", "LTIM.5.2"],
+    "category": "logical",
+    "dead_rules_expected": ["old"],
+    "scenario": "[LTIM.1.1.3] / [LTIM.5.2]: a `Time` written to a slot keeps its instant and not its offset, so a `Time` key is the same identity whichever value wrote it. One `Src` fact, whose `stamp` is 1000 ns. `plain` emits `K logical` keyed by the slot read `s.stamp`, with `v` = 1. `zoned` then emits `K logical` keyed by `s.stamp.local(\"Plus9\")`, the same instant as a `Time` an expression produced at `+09:00` (a `TimeZoneOffset` row gives `Plus9` that offset, [LTIM.10.7]), with `v` = 2. It is the same identity ([LFAC.1.7]), so it replaces the first `K`, `old`'s activation goes with it, and `new` logs the stored key, which renders in UTC because the offset did not persist. Rules fire `plain`, `zoned`, `old`, `new` in source order ([LDET.5.4]), so a `K` that was not replaced reaches `old` first. Expect `new 1970-01-01T00:00:00.000001Z` alone. The discriminator: a runtime that stores a key with its tag and compares a tagged key with an untagged one by kind keeps both facts and logs `old` first. The Mercury runtime stores every `Time` as its instant (`ds.value.stored_value`). PATH PINNED: libds's `ds_rete_wm_assert_ex` (the INT store and `time_slot_instants`, rete/wm_rete.c) and the Mercury runtime's `ds.wm.assert_fact`.",
+    "rules_ds": "schema Src scope logical:\n    id: Int key\n    stamp: Time mutable\n\nschema K scope logical:\n    k: Time key\n    v: Int mutable\n\nrule plain:\n    Src s\n->\n    emit K logical k: s.stamp v: 1\n\nrule zoned:\n    Src s\n->\n    emit K logical k: s.stamp.local(\"Plus9\") v: 2\n\nrule old:\n    K x where x.v == 1\n->\n    log info \"old\"\n\nrule new:\n    K x where x.v == 2\n->\n    log info \"new {x.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Plus9", "valid_from": 0, "valid_until": 1735689600000000000, "offset_s": 32400 } },
+            { "op": "assert", "schema": "Src", "slots": { "id": 1, "stamp": 1000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "new 1970-01-01T00:00:00.000001Z"
+        ]
+    }
+}

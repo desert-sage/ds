@@ -1,0 +1,12 @@
+{
+    "id": "LGRA.10.1.6_whole_library_import_bare_call",
+    "category": "compiler",
+    "scenario": "[LGRA.10.1.6] / [LIMP.4.2.6]: a service resolves by its own name whatever form imported the declaring library. `import ha` imports library `ha` whole and names none of its services; the rule calls `light.turn_on` bare and the program compiles. Before the global namespace, a whole-library import filed `ha`'s services under `ha.light.turn_on` and this call missed. PATH PINNED: dsc.imports' lgra_10_1_6_global_services, which fills the service table from the import closure under each service's own name; dsc.validate's ladp_8_2_3_service finds `light.turn_on` there.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,129 @@
+{
+  "id": "RLOW.4.6.6.1",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.4.6.6",
+  "seq": 539,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.4.6.6.1] `cooldown: <DUR>` on a `call` action lowers to a\n**per-call rate-allow gate** wrapping just the call site, realized inline\nat the call's `ACTION_CALL` as [IRET.25.5.1]'s `IF` over `FN_RATE_ALLOW`.\nIts arguments are the call site's tracker name `<rule>#call<N>`, the key\n[LCRS.8.2] names, and the window `<DUR>` in nanoseconds. `<N>` is the\n0-based index of the call action within the rule, counted only for calls\nwith a window above zero: a `nocooldown` call, and one with `cooldown: 0_s`,\nwhich is a no-op ([LCDB.5.6]), get no gate and don't increment it. A hydration call\ncarries `cooldown:` ([LHYD.9.3]), counts in `<N>`, and is gated the same\nway ([LHYD.11.2]).\n\nThe gate carries its own window, so a call site has no rule-metadata atoms\nof its own and `<rule>#call<N>` names nothing but the tracker. Two calls in\nthe same rule get independent trackers; other actions in the rule fire\nnormally.\n\n",
+  "refs": [
+    "IRET.25.5.1",
+    "LCDB.5.6",
+    "LCRS.8.2",
+    "LHYD.11.2",
+    "LHYD.9.3"
+  ],
+  "atoms": [
+    "TerminalNode"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A call site: its position among the rule's emits and withdraws, its gate, its response kind, its correlation and arguments as functions of the match. The site's tracker, keyed (rule, site, key). LESS than the clause: `<rule>#call<N>` is a site index here, and the key is the lowering's composition (the `logical` facts' key slots, the empty key where the activation binds none with a `key` slot, as [LCRS.8.2] has it)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Rlow_4_6_6_1__trackers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The site's tracker, keyed (rule, site, key). LESS than the clause: `<rule>#call<N>` is a site index here, and the key is the lowering's composition (the `logical` facts' key slots, the empty key where the activation binds none with a `key` slot, as [LCRS.8.2] has it)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The per-call rate-allow on the site's own tracker. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow_admits",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow_refuses",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__call_site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The gate wrapping just the call site. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__first_call_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A site that never issued is admitted. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__refires_at_the_boundary_call",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The inclusive boundary. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_refires_at_the_boundary",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "Computed. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__window_suppresses_call",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The window, in the model's clock units. LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_4_6_6_1__decide",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_4_6_6_1__lookup",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_4_6_6_1__same_key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "LESS than the clause: the tracker name is a site index here, and `<N>` counting only gated calls is the lowering's."
+      }
+    ]
+  }
+}

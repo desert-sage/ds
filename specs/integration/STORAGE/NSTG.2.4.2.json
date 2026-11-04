@@ -1,0 +1,18 @@
+{
+  "id": "NSTG.2.4.2",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.2.4",
+  "seq": 170,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NSTG.2.4.2] **Expiry happens at a defined instant: the sweep at pump\nentry.** A pass over the cache removes every entry past its deadline and\nfires `delete_cb` for each, alongside the fact-TTL sweep that runs at the\nsame point ([NTST.3.4]).\n\nThe alternative — expiring an entry only when something next reads it —\ncannot satisfy [NSTG.2.4], and the failure is in exactly the case the\ncallback exists for: a key written once, its TTL elapsing, nothing ever\nreading it again. Under lazy expiry that entry never leaves, its callback\nnever fires, and a persisting store holds the row for ever. Lazy expiry\ndoes not remove the drift; it makes the drift depend on read traffic.\n\nA read encountering an expired entry must still not return it, so the\nread path removes it as a backstop — **and fires the callback when it\ndoes**. Without that, whether an integrator hears about an entry depends\non whether a reader or the sweep reached it first, which is\nnon-determinism in an observable ([LDET.1.1]), not merely an\ninconsistency.\n\nTwo consequences worth stating rather than discovering:\n\n- **The order is: fact sweeps, then the cache sweep, then the run.**\n  Both sweeps fire callbacks at pump entry, so which goes first is part\n  of what an integrator sees, and it is fixed here rather than left to\n  an implementation. Facts go first because the fact sweep changes what\n  the rules about to run will match against; the cache sweep is\n  notification-only and alters nothing the agenda sees, so running it\n  first could only move callbacks earlier without changing any\n  decision. **Both sweeps read the same instant** — one clock value for\n  the whole of pump entry, so no entry can be live for one sweep and\n  expired for the other.\n- **The sweep costs pump time.** It walks up to the configured key cap\n  every pump ([RTCT.7.1]), which the WCET bound must account for rather\n  than absorb silently ([RTCT.12.1]).\n\nThe sweep is also what makes the behaviour testable: set a short TTL,\nadvance the clock past it, pump, observe the callback. Before it there\nwas no instant at which anything was obliged to happen.\n\n",
+  "refs": [
+    "LDET.1.1",
+    "NSTG.2.4",
+    "NTST.3.4",
+    "RTCT.12.1",
+    "RTCT.7.1"
+  ]
+}

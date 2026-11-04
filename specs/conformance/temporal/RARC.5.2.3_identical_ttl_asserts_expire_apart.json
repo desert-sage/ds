@@ -1,0 +1,18 @@
+{
+    "id": "RARC.5.2.3_identical_ttl_asserts_expire_apart",
+    "clauses": ["RARC.5.2.3", "LFAC.1.3.2"],
+    "category": "temporal",
+    "scenario": "Two equal asserts of a `ttl` schema are two live facts, each with its own expiry (RARC.5.2.3). A `ttl 100_ms` Pulse is asserted, the clock moves 50 ms, and an identical Pulse is asserted. The clock then moves 60 ms, to 110 ms after the first, and a pump runs. The first fact's deadline has passed and the second's has not, so 1 remains. A runtime that suppressed the second assert as a no-op leaves 0. One whose second assert renewed the first fact's deadline would also leave 1, which runtime/LFAC.1.3.2_identical_ttl_asserts_accumulate's count of 2 rules out.",
+    "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 50000000 },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 60000000 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

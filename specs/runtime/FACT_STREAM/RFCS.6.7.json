@@ -1,0 +1,42 @@
+{
+  "id": "RFCS.6.7",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.6",
+  "seq": 386,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.6.7] **A `FactAssert` records an assert ARRIVING, not a fact entering working\nmemory.** The two differ on a **no-op reassertion** — an assert whose identity\nand every slot compare equal to a fact already live ([RARC.5.2.3]) — and the\natom must be written anyway.\n\nThe no-op discipline is a **working-memory** discipline, not a recording one.\nSuppressing the WM change is load-bearing: series absorb and refraction depend\non a same-value re-assert being silent *to the network*. None of that reaches\nthe recorder, and [RARC.5.8.10] already puts the input hook at step (1) of the\nconsumption loop — **on arrival, before evaluation** — precisely so that what an\ninput did downstream cannot decide whether it was recorded.\n\n**Why it cannot be dropped.** A no-op reassertion is an input the host supplied\nand pumped for. Omit it and the recording holds neither the assert nor its pump,\nso a replayer pumps fewer times than the original did. The trace is then a\ncomplete-looking record of a run that did not happen: the `PumpBoundary`\n([RFCS.22]) for that pump is there and the input that provoked it is not, so\nthe replay drives a pump against a working memory the recording never had.\n\n**Replay is unaffected by the atom's presence.** A replayer injects the\nrecorded assert, the engine performs the identical no-op suppression, and the\nsame series-absorb and refraction outcomes follow. The atom restores the *input*\nwithout disturbing the discipline.\n\n⚠ **The volume cost is real and belongs to the input, not to this clause.** A\nsource re-reporting an unchanged value writes one `FactAssert` per report, each\nreport a suppressing recorder would drop included. That is the price [LFST.12.5] already named — *\"the cost\nof full fidelity\"* — and an encoder must not reintroduce suppression as a\ncompression: [LFST.12.8] forbids sampling within a kind.\n\n**The arriving assert precedes everything its evaluation produces.** An\n**identity update** (`replaced` — same identity, a changed slot) records the\n`FactAssert` first and then a `FactWithdraw` for the superseded fact with cause\n`SUPERSEDED` ([RFCS.7a.2]), never a modify-in-place. A replayer that delivers\nthe assert re-derives the withdrawal after it, and compares it ([RFCS.7a.3]).\n\n**A host retract is an input, and is ordered the same way.** The engine records\nthe `FactRetract` on arrival ([RARC.5.8.10]), before everything its evaluation\nproduces: the faults it raises and the withdrawals it cascades into follow it. A\nreplayer that delivers the retract re-derives them after it.\n\n**An assert the engine refuses is recorded too.** A bounds refusal ([LERR.1.5])\nof a host assert answers an input that arrived, so the engine records its\n`FactAssert` and then the `BoundsError` its evaluation produced. A replayer\ndelivers the assert, the engine refuses it again, and the replay compares the\nre-derived `BoundsError` with the recorded one. The engine's refusal of a\ndelivered input is not a replay failure. A host call refused because it is not\na well-formed input, such as an unknown schema or a slot value of the wrong kind\n(RARC.5.2.6), records nothing and produces nothing.\n\n**So does a host assert whose deadline would fall outside the `Time` range.**\nA fact's TTL deadline is its entry stamp ([LTIM.2.8.6]) plus its TTL. Where\nthat sum would fall outside the representable range, the engine **must** refuse\nthe assert with `DS_ERR_TIME_RANGE` ([LTIM.1.1.5]) and leave the engine as it\nwas before the call: neither clock moves, no sample is recorded, nothing enters\nworking memory, and a pending `initial` block stays pending ([LGRA.24.3]). The\ncall is not a step ([LTIM.2.8.4]), though the deadline it is refused for is\nreckoned from the sample that step would have taken. So a recording holds no\ntrace of it, and a replay has nothing to re-derive.\n\n**A refusal inside a pump ends the firing, not the pump.** A bounds refusal\n([LERR.1.5]) of a rule's action is recorded as a `BoundsError` in the firing\nthat attempted it. The firing stops at the refused action, by the prefix rule\nof [LNUL.11.1]: the actions before it stand, and the actions after it do not\nrun. The pump goes on, and returns `DS_ERR_CONTRACT_BREACH`. A replayer treats that status from a replayed pump as\nan outcome, not a failure: it continues past the pump, and compares the\nre-derived `BoundsError` with the recorded one when that atom arrives. A\nrefusal the recording holds and the replay does not re-derive, or the reverse,\nis a divergence.\n\n**A halt is the other outcome a replayed input reports.** An input during which\nthe engine raises an `EngineError` returns `DS_ERR_ENGINE_HALTED` ([NCBK.2.9]):\na pump whose firing faults, an assert or retract whose propagation does. Where\nthe engine was running when the replayer delivered that input, the status is\nthe recorded run's halt, re-derived, and a replayer **must** treat it as an\noutcome: it continues, and compares the re-derived `EngineError` with the\nrecorded one when that atom arrives. The `EngineError` is the tier's last\nrecord ([LERR.1.4.7]), so this is how the replay of a halted run reaches the\nend of its recording, which is filed as that run's evidence ([NDET.2.1]). An\n`EngineError` the recording holds and the replay does not re-derive, or the\nreverse, is a divergence.\n\n**So is a status the pump's own evaluation reports.** A refused call\nleaves `DS_ERR_NAN_REJECTED` as a pump's status ([NCBK.6.8]), and a read no\nbacking can answer leaves `DS_ERR_SERIES_NO_BACKING` ([NERR.6]). Each is a\none-shot report: the recorded run went on, and the recording holds what followed.\nA replayer **must** treat either as an outcome and continue. No atom records\neither, and the compare of what the firing did is what decides: a call the\nrecording holds and the replay refuses, or the reverse, is a divergence at that\n`CallIssued`. A pump refused before its step ([NLFC.9.5]) leaves no `PumpBoundary`,\nso a replay never delivers it.\n\nAny other failing status from a replayed pump ends the replay, and so does the\nrefusal of an input that met an engine already halted: that input did not\nreproduce the run.\n\n**A replay's own status says whether it reproduced the run, not whether the run\nhalted.** A replay that reaches the end of its recording with every\ncompare clean **must** return `DS_OK`, and it returns `DS_OK` for a run that\nhalted too, having compared the `EngineError`. The halt latch says the run halted\n([NCBK.2.11]), and a host that replays a recording reads both. So\n`DS_ERR_ENGINE_HALTED` from a replay means one thing: the replay did not reproduce\nthe run, or met an engine already halted.\n\n",
+  "refs": [
+    "LERR.1.4.7",
+    "LERR.1.5",
+    "LFST.12.5",
+    "LFST.12.8",
+    "LGRA.24.3",
+    "LNUL.11.1",
+    "LTIM.1.1.5",
+    "LTIM.2.8.4",
+    "LTIM.2.8.6",
+    "NCBK.2.11",
+    "NCBK.2.9",
+    "NCBK.6.8",
+    "NDET.2.1",
+    "NERR.6",
+    "NLFC.9.5",
+    "RARC.5.2.3",
+    "RARC.5.8.10",
+    "RFCS.22",
+    "RFCS.7a.2",
+    "RFCS.7a.3"
+  ],
+  "atoms": [
+    "FactAssert"
+  ],
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_NAN_REJECTED",
+    "DS_ERR_SERIES_NO_BACKING",
+    "DS_ERR_TIME_RANGE"
+  ]
+}

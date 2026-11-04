@@ -1,0 +1,15 @@
+{
+    "id": "LFAC.9.2_emitted_ts_is_the_step_sample",
+    "clauses": ["RLOW.7.1.2"],
+    "category": "logical",
+    "scenario": "[LFAC.9.2]: an emitted fact's `ts` is filled with the wall clock's sample for the step. Rule `mark` emits a Marker without supplying `ts`; rule `same` matches a Marker whose `ts` equals `now()`. Both clocks are sampled once per step ([LTIM.2.8.4]), so within the pump that emitted it the Marker's `ts` equals `now()` and `same` fires once. An engine that left `ts` unset, set it from a different sample, or truncated it would not fire `same`. PATH: the emit path's `ts` fill (RLOW.7.1.2) in both runtimes; the input path is not pinned here.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Marker scope logical:\n    k: Int key\n    ts: Time\n\nrule mark:\n    Trig t\n->\n    emit Marker logical k: t.k\n\nrule same:\n    Marker m where m.ts == now()\n->\n    log info \"same\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "same" ]
+    }
+}

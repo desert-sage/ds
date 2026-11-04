@@ -1,0 +1,11 @@
+{
+    "id": "ICOM.20.5.1_chain_on_non_json_rejects",
+    "clauses": ["LGRA.5.8.5", "LGRA.9.6.2"],
+    "category": "compiler",
+    "scenario": "[ICOM.20.5.1] — \"the validator rejects multi-segment access on non-`Json` slots\", exercised. `qty` is `Int`, so `t.qty.reading` continues one segment past a slot that has no sub-path. `Int` has members, so a dotted segment past it is a member read ([LGRA.5.8.5], [LGRA.9.6.2]), and `reading` names no member of `Int`: DS_VALIDATE_UNKNOWN_MEMBER. BAD_PATH is left to a bracket index (compiler/LGRA.5.8.5_bracket_past_scalar_slot); a dotted segment past a type with no members is UNKNOWN_MEMBER too. Either way the rule is refused rather than lowered: a single-segment reference becomes a VAR node and only a Json leaf lowers the remainder to an EJSP path, so there is no node shape for \"sub-path of an Int\". Path: dsc.typecheck `luni_7_1_access_type` -> `lgra_9_6_2_member_read` -> `unknown_member`.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n    qty: Int mutable\n\nrule r:\n    Trig t where t.qty.reading > 0\n->\n    log info \"chained\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_MEMBER"
+    }
+}

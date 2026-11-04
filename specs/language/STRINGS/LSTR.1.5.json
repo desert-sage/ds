@@ -1,0 +1,18 @@
+{
+  "id": "LSTR.1.5",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.1",
+  "seq": 44,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSTR.1.5] **A U+0000 is refused where it would enter, never cut.** A runtime\n**must** refuse a value that would put U+0000 into a `String`, or into a string\nor object key of a `Json` value, at each place such a value enters:\n\n- **From the host, as a string value:** a call that supplies such a string —\n  a `String` slot, a `Json` string, a `Json` object key — returns\n  `DS_ERR_INVAL` and changes nothing. A binding whose host strings can hold\n  U+0000 refuses it before the call, rather than passing a value the call\n  would cut short.\n- **From JSON text the runtime parses, whoever supplies it:** a `\\u0000`\n  escape, or a raw U+0000, makes the text malformed, and the parse refuses it\n  as it refuses any malformed text. JSON text a host hands to the parser takes\n  this arm, not the one above.\n- **From a recording read on replay:** a string holding U+0000 is a malformed\n  atom body, and the reader refuses the stream.\n- **From an artefact:** a string field holding U+0000 is a body that has not\n  decoded, and the loader refuses the artefact ([RDSC.9.12]).\n\nA value is never truncated at a U+0000, and a U+0000 is never silently dropped.\n\n",
+  "refs": [
+    "RDSC.9.12"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DECODE",
+    "DS_ERR_INVAL"
+  ]
+}

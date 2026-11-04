@@ -1,0 +1,29 @@
+{
+    "id": "ICOM.22.4c",
+    "clauses": ["NCBK.6.2"],
+    "category": "adapter",
+    "scenario": "A call with no kwargs \u2014 `call svc.x nocooldown` \u2014 lowers to FN_CALL with no name/value pairs (2 operands, RDSC.4a.9.4) and reaches the integrator's cb with no arguments. Pins the zero-argument case of [RDSC.4a.9.4] (2 + 2n operands, n = 0) and [NCBK.6.2] (one argument per kwarg the call supplies, so none). The ICOM.22.4 in its id is no clause: no document carries the ICOM prefix.",
+    "rules_ds": "service svc.x:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.x nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {}
+            }
+        ]
+    }
+}

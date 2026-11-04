@@ -1,0 +1,40 @@
+{
+  "id": "RDSC.4a.9.3",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.9",
+  "seq": 517,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.9.3] **A builtin call carries its op, and the compiler settles its\narity and where it stands.** `CallExpr` (`proto/rete_expr.proto#CallExpr`) names\na member of `BuiltinFn` in `op` and carries its operands in `args`: a built-in\nfunction of [LEXP.3], [LEXP.5] or [LGRA.9.8], or another op a clause has the\ncompiler emit into a `CallExpr`, such as a cast ([LCST.4.5]) or a lowering's own\nop ([RLOW.4.6.6.1], [RLOW.6.3.3]).\n\n**Arity and placement are the compiler's guarantees** ([RDSC.9.9]). The compiler must emit an op only at a site where a clause in\nforce has it emit that op, and with an operand count the op admits, as\n[RDSC.4a.9.5] states it. A runtime must not refuse an op it has a handler\nfor at the site where the op stands, and must not check at load how many\noperands a call carries. An artefact that did not come from a conforming\ncompiler carries neither guarantee.\n\n**A call whose operands its op does not admit is an `EngineError`.** When a call reaches evaluation with fewer operands than its\nop takes, with more than an op of fixed count takes, or in a shape its op does\nnot admit, the engine must raise an `EngineError` whose fault is\n`ENGINE_FAULT_ARTEFACT_LIED` (`proto/engine_fault.proto#EngineFault`) and halt\nthe tier ([LERR.1.4.7]). The artefact has broken a guarantee only the compiler\ngives, so nothing in it is trustworthy. This holds for every op: an expression\nbuiltin, a series read, a lowering's own op and an op standing as an action's\n`expr` alike.\n\n**Each op's operand count is stated once, in [RDSC.4a.9.5].** The table has one row per member of `BuiltinFn` but\n`FN_UNSPECIFIED`. A row's `Min` is the fewest operands the op takes and its\n`Max` the most; an empty `Max` sets no upper bound. Shape `range` admits every\ncount from `Min` to `Max`. Shape `pairs` admits `Min` operands and then any\nwhole number of pairs, `Min` + 2n, up to `Max` where it has one; `FN_CALL`'s\npairs are [RDSC.4a.9.4]'s. Shape `none` admits no count: no clause in force has\nthe compiler emit the op as a call. Past its schema name, a call of\n`FN_PUBLISH` carries one operand per slot of that schema, which no row can\nstate. A clause defining an op states the same count; where the two disagree,\nthe table is right. Every runtime's view of the counts must be generated from\nthe table ([STYL.2.15.6.1]), never written by hand.\n\n**The one op check a runtime makes is whether it can run the op where it\nstands.** A `CallExpr` stands at one of two sites: as an action's `expr`\n(`ACTION_CALL`, [RDSC.4a.8]), or inside an expression, a fire guard's included.\nA runtime holds a handler for an op at a site, and one handler may serve both.\nA runtime must have a handler for every op at every\nsite where a clause in force has the compiler emit it. At load, a runtime must\nrefuse with `DS_ERR_FN_NOT_FOUND` an artefact holding a `CallExpr` whose op it\nhas no handler for at the site where it stands. That is a compatibility refusal\n([RDSC.9.9]): the artefact needs a builtin this runtime does not implement\nthere, and loading it would leave a rule that silently never fires, which is\nindistinguishable from a false predicate. An op at a site where no clause has\nthe compiler emit it is therefore refused by a runtime that holds no handler\nfor it there, and run by one that does.\n\n",
+  "refs": [
+    "LCST.4.5",
+    "LEXP.3",
+    "LEXP.5",
+    "LERR.1.4.7",
+    "LGRA.9.8",
+    "RDSC.4a.8",
+    "RDSC.4a.9.4",
+    "RDSC.4a.9.5",
+    "RDSC.9.9",
+    "RLOW.4.6.6.1",
+    "RLOW.6.3.3"
+  ],
+  "errors": [
+    "DS_ERR_FN_NOT_FOUND"
+  ],
+  "symbols": [
+    "BuiltinFn",
+    "ENGINE_FAULT_ARTEFACT_LIED"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/rete_expr.proto",
+        "name": "CallExpr",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LGRA.5.9.6",
+    "category": "runtime",
+    "scenario": "Multiple schemas coexist in working memory and rules match each schema independently per LGRA.5. Assert facts of three different schemas; each rule fires exactly for its schema.",
+    "rules_ds": "schema Cat scope logical:\n    entity_id: String key\n\nschema Dog scope logical:\n    entity_id: String key\n\nschema Bird scope logical:\n    entity_id: String key\n\nschema CatResult scope logical:\n    dummy: Int key\n\nschema DogResult scope logical:\n    dummy: Int key\n\nrule cats:\n    Cat\n->\n    emit CatResult logical dummy: 0\n\nrule dogs:\n    Dog\n->\n    emit DogResult logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Cat", "slots": { "entity_id": "c1" } },
+            { "schema": "Cat", "slots": { "entity_id": "c2" } },
+            { "schema": "Dog", "slots": { "entity_id": "d1" } },
+            { "schema": "Bird", "slots": { "entity_id": "b1" } }
+        ],
+        "pump": true,
+        "fact_count_after": 6
+    }
+}

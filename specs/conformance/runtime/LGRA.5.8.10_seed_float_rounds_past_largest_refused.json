@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.10_seed_float_rounds_past_largest_refused",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.10]: the literal is read as the Float nearest its value, ties to even ([LDET.3.2.8]), and refused when that is an infinity. 1.7976931348623159e308 is below 1e309 but above the rounding threshold 2^1024 - 2^970 (1.797693134862315807937...e308), so it rounds to +infinity: malformed, `DS_ERR_PARSE` (-100), nothing changed. Its twin LGRA.5.8.10_seed_float_largest_admitted, one in the last digit lower and below the threshold, rounds to the largest finite Float and is admitted. What it discriminates: a parser that judges the literal by its digit count or its exponent (anything below e309 passes) admits it, and one that saturates an overflow to the largest Float admits it too. At the cache seed ([NSTG.9.1]), given as `text` ([RCTS.1.2.25]) so both harnesses hand the runtime these exact digits. PATH PINNED: on libds, `json.c` `parse_number`'s `isfinite` test on `ds_parse_float_json`'s correctly rounded result, under pyds's `cache_seed`; on the Mercury runtime, `ds.json_text`'s number arm testing `ds.float_text.parse_json`'s result, under `ds.engine.seed_cache_text`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-100",
+        "message_contains": "JSON float literal outside the double range",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text": "1.7976931348623159e308" }
+        ]
+    }
+}

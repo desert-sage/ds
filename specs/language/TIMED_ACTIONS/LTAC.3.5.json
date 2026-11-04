@@ -1,0 +1,94 @@
+{
+  "id": "LTAC.3.5",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.3",
+  "seq": 144,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.3.5] Captured bindings from the parent rule's LHS that the\n`after` body references must be carried into the follow-up rule\nthe same way [LCCO.5] carries captures across a call boundary:\nthe compiler emits a `$CaptureBindings_<rule>_after_<N>`\nfact alongside the timer assertion, and the follow-up rule joins\nit on a correlation per [LCCO.5.2]. Capture is\nsnapshot-always per [LCCO.5.4].\n\n**The correlation is the clause's `as` key where it has one, and a\nper-activation value otherwise.** With `after … as <expr>` the timer fact\nand its capture fact both carry the evaluated key, so the supersedure sweep\n[LTAC.2.2.1] requires finds the prior pair and the author's key is what\ndecides identity. Without `as` the compiler generates a value unique to the\nactivation, so independent timers do not collide.\n\n**Both facts are swept, not only the timer.** A new activation with a key\nalready in flight retracts the prior timer **and** the prior capture fact\nbefore asserting its own ([LRST.4.5]). Sweeping the timer alone would leave\ntwo capture facts on one correlation, and the surviving follow-up would join\nboth and run its body twice.\n\n",
+  "refs": [
+    "LCCO.5",
+    "LCCO.5.2",
+    "LCCO.5.4",
+    "LRST.4.5",
+    "LTAC.2.2.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "Ltac_3_5__captures",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE CAPTURES of a body: the parent's slot reads, each by (binding, key-or-payload, slot) over the parent's positive patterns, in the order the body first reads them; a read's index in the list is the timer's payload slot the lowering rewrites it to. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "Ltac_3_5__snapshot",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE SNAPSHOT HYPOTHESIS: the timer's payload slot at each capture's index reads, under the follow-up's environment over the timer, what the parent's read gave under the parent's environment over its match. What the parent's `emitx` computes at its firing and codes, and the runner decodes at the follow-up's: the value code's round trip, run and not proved as every code is. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__capture_key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE CAPTURE OF THE TRIGGER'S KEY: the body reads `t.entity_id`, so the timer's payload is the trigger's key, snapshot at the parent's firing. LESS than the clause: the key rides on the timer's payload, not in a capture fact joined on a correlation, the departure `ltac_3_5__rewrite` records. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__capture_snapshot",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "THE SNAPSHOT: for every body expression captured whole, its value over the timer at the follow-up's firing is its value over the parent's match at the parent's firing, under the snapshot hypothesis. By induction on the expression, through Rete/Eval.idr's evaluator, every constructor a clause. LESS than the clause: the captures ride on the timer's payload; the capture fact and the correlation join are not modelled. The two representations are one at every pump boundary, both facts being compiler-owned, on no stream ([RFCS.6a.5]) and outside iteration and the count ([NFCT.6.3]); they differ in [NDBG.4.1]'s per-node occupancy, which counts a capture fact's alpha, and the Idris model compares no occupancy."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__captured",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "WHETHER A BODY EXPRESSION IS CAPTURED WHOLE: every read it makes is among the captures, and it reads no clock. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__index",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A read's index among the captures, or none. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_5__rewrite",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE REWRITE of a body expression: every captured read becomes the timer's payload slot at the capture's index -- the timer is the follow-up's one bound fact, at rank 0 -- and the rest of the expression stands. What the lowering does to a body's log sites and emit slots. LESS than the clause: the captures ride on the timer's payload, not in a capture fact joined on a correlation. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_3__independent_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "Each timer's payload is its own trigger's key, snapshot at its parent firing: two captures, two timers. Executed. LESS than the clause: the captures ride on the timers' payloads, not in capture facts joined on a correlation, the departure `ltac_3_5__rewrite` records."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_3__rules_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The parent's timer emit carrying the body's one read, the trigger's key. LESS than the clause: the capture rides on the timer's payload, not in a capture fact joined on a correlation, the departure `ltac_3_5__rewrite` records. A fixture."
+      }
+    ]
+  }
+}

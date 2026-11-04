@@ -1,0 +1,21 @@
+{
+    "id": "LCCO.7.6_an_answer_no_clause_matches_ends_the_timeouts",
+    "clauses": ["LCCO.7.6", "LCCO.7.2"],
+    "category": "logical",
+    "scenario": "[LCCO.7.6]: an answer ends the call's timeouts \"whether or not an `on` or `error` clause matches it\". Rule `r` logs `called` and calls `svc.get` as `c1` (a literal `as`, no capture fact) with `on response.code == 200:` logging `ok` and `timeout 5_s:` logging `late`. `Reply` is `ttl 1_min`. A Job is asserted and pumped; an answer with code 500, which the `on` predicate fails, is asserted and pumped; the clock moves 6 s, past the timer's deadline with the answer still live, and is pumped; then 55 s more, past the answer's TTL, and is pumped. The messages are exactly ['called']: neither body runs, before or after the answer expires. `called` is the control that the rule ran. The break: with no rule retracting the timer on an answer no `on` clause matched, the timer outlives the answer, and the timeout logs `late` once the answer expires. PATH PINNED: `dsc.rete`'s `lcco_7_6_discharge`, the `$r_timeout_0_answered` rule, which joins any `Reply` on the timer's `corr` and tests nothing of its slots.",
+    "rules_ds": "schema Reply scope ttl 1_min:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    log info \"called\"\n    call svc.get n: j.id nocooldown as \"c1\"\n        on response.code == 200:\n            log info \"ok\"\n        timeout 5_s:\n            log info \"late\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "code": 500 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 55000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["called"]
+    }
+}

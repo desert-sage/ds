@@ -1,0 +1,16 @@
+{
+  "id": "RDSC.5a.1a",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.5a",
+  "seq": 842,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.5a.1a] **A read changes nothing a later read can see (all backends).**\nEvery backend's aggregation read computes its value from stored state as of the\nstep's clock, over the window at the firing ([LSER.14.1]). The number of reads\nis unfixed under any evaluation strategy, so a read must be idempotent:\notherwise the result would depend on how many rules reference the series and in\nwhat order they were tested ([LSER.8.8]).\n\nA read may evict: drop the samples that have left the window at the step's\nclock. Every read at that clock or later excludes those samples anyway, because\nthe clock does not go back, so whether a read evicts first changes no answer. A\nread must make no other change to the state: no lazy decay, sketch-buffer flush\nor compaction. The per-backend notes — the signal backings [LSIG.2.5] — are\ninstances of this rule.\n\n",
+  "refs": [
+    "LSER.14.1",
+    "LSER.8.8",
+    "LSIG.2.5"
+  ]
+}

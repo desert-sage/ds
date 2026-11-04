@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.4.1.5_an_imported_dimension_is_the_same_dimension",
+    "category": "logical",
+    "scenario": "[LUNI.4.1.5]: \"A file that imports a declaration holds that declaration: `units.customary`'s `psi` and `units.si`'s `pascal` share `pressure`, which `units.customary` imports.\" A `pascal` slot holding 7000.0, its dimension's base unit ([LUNI.7.2]), is compared with the literal `2_psi`, which converts: 2 psi is about 13790 Pa, so `<` holds and the rule fires, where comparing 7000 with a raw 2 would not. The control for `LUNI.4.1.5_two_libraries_one_dimension_name_are_two`. PATH PINNED: the shipped libraries, read in place (`stdlib`, [RCTS.1.2.14]), with `dsc.imports.limp_1_5_dimension_ref` resolving `psi`'s `pressure` to `units.si`'s one declaration, then the literal's conversion to the dimension's base and each runtime's comparison.",
+    "rules_ds": "from units.customary import psi\nfrom units.si import pascal\n\nschema Gauge scope logical:\n    k: Int key\n    p: pascal mutable\n\nrule r:\n    Gauge g where g.p < 2_psi\n->\n    log info \"over\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Gauge", "slots": { "k": 1, "p": 7000.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["over"]
+    }
+}

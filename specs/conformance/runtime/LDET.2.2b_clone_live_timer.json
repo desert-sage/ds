@@ -1,0 +1,28 @@
+{
+    "id": "LDET.2.2b_clone_live_timer",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1], [LTAC.3]: a clone carries an `after` timer that is armed and not yet due. `arm` defers `emit Late` by 30_s and captures `t.v` for it. Pin: set 0; assert Trig 1; pump (arm fires, the timer is armed for 30 s); advance 10 s; pump; CLONE; then on both: advance 25 s; pump (+35 s: the deferred body fires and emits Late 1); FREE the clone; on the source: assert Trig 2; pump (arm fires). The post-clone streams are compared event for event (runner.py `_run_clone_determinism`), so a clone that dropped the timer, or its capture, never emits Late 1, or emits it with another value, and its stream parts from the source's. Freeing the clone and driving the source pins the other direction of `freeing one leaves the other fully functional`. PATHS: libds `ds_engine_clone` / `ds_engine_free` through pyds `Engine.clone()` / `close()`; the Mercury runtime in test_behave.m's `run_clone_determinism`, which holds it to its counts.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Late scope ttl 1_h:\n    v: Int\n\nrule arm:\n    Trig t\n->\n    after 30_s:\n        emit Late v: t.v\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 10000000000 },
+            { "op": "pump" }
+        ],
+        "after_clone": [
+            { "op": "advance", "delta_ns": 25000000000 },
+            { "op": "pump" }
+        ],
+        "free": "clone",
+        "after_free": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 1,
+        "min_rule_fires_after_free": 1
+    }
+}

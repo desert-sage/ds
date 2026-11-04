@@ -1,0 +1,10 @@
+{
+    "id": "LSER.10.15",
+    "category": "compiler",
+    "scenario": "One series declaration per (slot path, file) per LSER.10.15. Two declarations targeting the same slot path within one file are a compile error. Authors who want both running stats and raw samples on the same logical concept either combine observations into one declaration or split into two slots. Pin: two `series Sensor.state:` decls in the same file reject with DS_VALIDATE_SERIES_DUPLICATE_DECL.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean sliding 10_s\n\nseries Sensor.state:\n    count sliding 5_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_DUPLICATE_DECL"
+    }
+}

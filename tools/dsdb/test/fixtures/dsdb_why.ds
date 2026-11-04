@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb's `why` (DSTRACE_INTERACTIVE §4.14): §4.14's example as a program. A
+# sensor makes motion unless suppressed; motion makes a room occupied; so does
+# a manual switch, whose Occupied coalesces with the first (§10.13 check 2);
+# an occupied room is asked about, and the reply confirms it; a room busy with
+# motion AND occupancy reaches the same Motion twice (a reference, not a
+# repeat); `manual_seen` matches its second pattern's fact first (§10.13
+# check 1).
+
+use default
+
+schema CheckReply scope ttl 1_min:
+    corr: String
+    ok: Bool
+
+service svc.check:
+    "test stub"
+    response CheckReply
+
+schema Sensor scope ttl 60_s:
+    entity_id: String
+    room: String
+
+schema Suppress scope logical:
+    room: String key
+
+schema Motion scope ttl 60_s:
+    room: String
+    state: String
+
+schema Occupied scope logical:
+    room: String key
+
+schema Manual scope logical:
+    room: String key
+
+schema Confirmed scope logical:
+    room: String key
+
+schema Busy scope logical:
+    room: String key
+
+rule motion_in:
+    Sensor s
+    no Suppress x where x.room == s.room
+->
+    emit Motion room: s.room state: "on"
+
+rule mark_occupied:
+    Motion m where m.state == "on"
+->
+    emit Occupied logical room: m.room
+
+rule manual_occupied:
+    Manual h
+->
+    let r = h.room
+    emit Occupied logical room: r
+
+rule ask:
+    Occupied o
+->
+    call svc.check nocooldown as o.room
+
+rule confirmed:
+    CheckReply c
+->
+    emit Confirmed logical room: c.corr
+
+rule busy:
+    Motion m
+    Occupied o where o.room == m.room
+->
+    emit Busy logical room: o.room
+
+rule manual_seen:
+    Manual h
+    Sensor s where s.room == h.room
+->
+    log info "manual {h.room}"

@@ -1,0 +1,14 @@
+{
+    "id": "LCON.2.4.1_string_keys_join",
+    "category": "runtime",
+    "scenario": "[LCON.2.4.1] over String keys: the case its own scenario names, the open-addressing intern table, places strings by insertion sequence, and Int keys never reach it. Four A facts keyed \"delta\", \"alpha\", \"charlie\", \"bravo\" in three insertion orders; `ordered` joins A to itself on `x.name < y.name` ([LSTR.3.2]), so six firings and six P facts: 10 facts in every order. A comparison or match that read the intern table's slot order instead of the strings would disagree between orders.",
+    "rules_ds": "schema A scope logical:\n    name: String key\n\nschema P scope logical:\n    lo: String key\n    hi: String key\n\nrule ordered:\n    A x\n    A y where x.name < y.name\n->\n    emit P logical lo: x.name hi: y.name\n",
+    "expect": {
+        "kind": "hash_order_independence",
+        "schema": "A",
+        "slot": "name",
+        "orders": [["delta", "alpha", "charlie", "bravo"], ["alpha", "bravo", "charlie", "delta"], ["charlie", "delta", "bravo", "alpha"]],
+        "pump": true,
+        "expected_fire_order": ["ordered", "ordered", "ordered", "ordered", "ordered", "ordered"]
+    }
+}

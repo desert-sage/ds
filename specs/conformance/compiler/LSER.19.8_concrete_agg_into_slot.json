@@ -1,0 +1,9 @@
+{
+    "id": "LSER.19.8_concrete_agg_into_slot",
+    "category": "compiler",
+    "scenario": "LSER.19.8 — `count` is in the concrete partition (cold value `0`), so `count(t.v)` into a non-nullable `n: Int` slot compiles with no rescue. Pins the other direction from LSER.19.8_nullable_agg_unnarrowed: a compiler that marks EVERY aggregation nullable passes that vector and fails this one. PATH PINNED: `dsc.typecheck`'s `lser_19_8_cold_nullability`, which gives `count` a non-null type.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Out scope logical:\n    k: String key\n    n: Int mutable\n\nseries Reading.v:\n    count sliding 10_min\n\nrule r:\n    Reading t\n->\n    emit Out logical k: \"x\" n: count(t.v)\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,15 @@
+# lowered from LFAC.1.3a.json (temporal_sequence) by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against ttl.expected
+# (scripts/formal/check_idris.py). The first smoke input with a `ttl` record and a `tick`
+# step: Pulse carries a 100 ms default
+# TTL, two Pulses are asserted at clock 0, and the tick to 200 ms sweeps both
+# before the pump ([IRET.19.3]): the count after the tick is 0. Times are in
+# the lowering's units (the time map: here 100 ms), not nanoseconds. A Pulse
+# has no key (the empty tuple, code 1) and the payload [1] (the block 18).
+schema 0 explicit Pulse
+ttl 0 1
+alpha 0 0
+step assert _0 0 1 1000000000000000000018
+step assert _1 0 1 1000000000000000000018
+step tick 2
+step pump

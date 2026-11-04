@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.6.float_special_operands",
+    "category": "logical",
+    "scenario": "At the special operands, CPython 3.12's answers: a zero remainder takes the DIVISOR's sign (`-0.0 % 2.0` is +0.0, `0.0 % -2.0` is -0.0, the sign read as the sign of `1.0 / r`, [LDET.3.6.2]); an infinite divisor leaves a finite dividend, moved to the divisor's sign (`-1.0 % inf` is +Inf, `-1.0 // inf` is -1.0, `1.0 % -inf` is -Inf); an infinite dividend is NaN (`inf % 2.0`, through `is NaN`, [LNUL.4.9]). +Inf is `t.big * t.big` (1e300 squared). PATH PINNED: the Float arm of DS_RETE_BINOP_IDIV / DS_RETE_BINOP_MOD in runtime/src/libds/rete/eval.c (float_divmod, exact_fmod's special operands, signed_zero) and ds.eval's lexp_7_5_float_floordiv / lexp_7_6_float_mod (float_divmod, exact_fmod, signed_zero). WHAT EACH VECTOR PINS against a runtime using the formula a - b*floor(a/b): `0.0 % -2.0` (it answers +0.0), and the three infinite-divisor vectors (it answers NaN, and -0.0 for `//`); `-0.0 % 2.0` and `inf % 2.0` it gets right. A runtime with no Float arm gives a type error on every vector. Pin: one fact, all six rules fire, in source order.",
+    "rules_ds": "schema T scope logical:\n    entity_id: String key\n    z: Float mutable\n    nz: Float mutable\n    one: Float mutable\n    neg_one: Float mutable\n    two: Float mutable\n    ntwo: Float mutable\n    big: Float mutable\n\nrule mod_neg_zero_by_2_is_pos_zero:\n    T t where ((t.nz % t.two) == 0.0) and ((1.0 / (t.nz % t.two)) is inf)\n->\n    log info \"a\"\n\nrule mod_zero_by_neg_2_is_neg_zero:\n    T t where ((t.z % t.ntwo) == 0.0) and ((1.0 / (t.z % t.ntwo)) is -inf)\n->\n    log info \"b\"\n\nrule mod_neg_1_by_inf_is_inf:\n    T t where (t.neg_one % (t.big * t.big)) is inf\n->\n    log info \"c\"\n\nrule floordiv_neg_1_by_inf_is_neg_1:\n    T t where (t.neg_one // (t.big * t.big)) == -1.0\n->\n    log info \"d\"\n\nrule mod_1_by_neg_inf_is_neg_inf:\n    T t where (t.one % (-(t.big * t.big))) is -inf\n->\n    log info \"e\"\n\nrule mod_inf_by_2_is_nan:\n    T t where ((t.big * t.big) % t.two) is NaN\n->\n    log info \"f\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": {
+                "entity_id": "t", "z": 0.0, "nz": -0.0, "one": 1.0, "neg_one": -1.0,
+                "two": 2.0, "ntwo": -2.0, "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["mod_neg_zero_by_2_is_pos_zero", "mod_zero_by_neg_2_is_neg_zero", "mod_neg_1_by_inf_is_inf", "floordiv_neg_1_by_inf_is_neg_1", "mod_1_by_neg_inf_is_neg_inf", "mod_inf_by_2_is_nan"]
+    }
+}

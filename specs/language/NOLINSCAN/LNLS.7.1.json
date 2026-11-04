@@ -1,0 +1,18 @@
+{
+  "id": "LNLS.7.1",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.7",
+  "seq": 853,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Simplified formula",
+  "text": "### Simplified formula [LNLS.7.1]\n\nThe T_wcet formula of [RTCT.12.1] / [RTCT.12.2] applies.  Under `linear_scan: false`,\nthe beta terms collapse to O(1) per join because LNLS.3.3 guarantees\nJ_max = 1 for every beta node:\n\n```\nT_wcet(linear_scan=false) =\n    c_alpha  × Σ_s(α_s × T_s)                      ← alpha dispatch\n  + c_join   × F_max × 1                             ← all joins O(1)\n  + c_agenda × F_max × log₂(F_max)                   ← agenda heap\n  + c_fire   × F_max × A_max × E_rhs                 ← RHS actions\n  + c_ttl    × expired_max × log₂(N_max)             ← TTL heap drain\n```\n\nWhere:\n- `α_s` = facts of schema s matching any alpha node (≤ N_max)\n- `T_s` = alpha tests per alpha node for schema s; each O(1) under linear_scan=false\n- `J_max = 1` — proven at compile time by LNLS.3.3; not a deployment parameter\n- `E_rhs` = max expression tree depth in RHS actions (join test expressions removed)\n- All string operation costs are O(capacity) per slot = O(1) under LNLS.3.10\n\n",
+  "deferred": true,
+  "refs": [
+    "LNLS.3.10",
+    "LNLS.3.3",
+    "RTCT.12.1",
+    "RTCT.12.2"
+  ]
+}

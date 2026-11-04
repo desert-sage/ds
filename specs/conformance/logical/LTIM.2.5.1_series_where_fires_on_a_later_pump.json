@@ -1,0 +1,25 @@
+{
+  "id": "LTIM.2.5.1_series_where_fires_on_a_later_pump",
+  "clauses": ["LTIM.2.5.1", "LTIM.2.4.1", "LSER.8.1.1"],
+  "category": "logical",
+  "scenario": "[LTIM.2.4.1]: a `where` that reads a series is time-dependent, and [LTIM.2.5.1] fires it once per false -> true edge for its matched fact, on the tick at which the edge occurs. `count` is over one `by: none` series, so another fact's sample moves the count `a` is tested against. Pump 1: `a` arrives and reads count 0 (the series as the pump began, [LTIM.2.4.3]), false; `a` absorbs. Pump 2: `b` arrives; `a` reads 1, false; `b` absorbs. Pump 3: nothing is asserted; `a` reads 2, true, and the rule fires with no new matched fact. Pumps 4 and 5: still true, and it does not fire again. `b` never matches (`r.dev == \"a\"`). PATH: `dsc.rete`'s `ltim_2_4_1_time_dependent` puts the `where` behind the `$ClockTick` re-driver as the terminal's fire guard ([RDSC.4a.8.2.1]), and both runtimes read the guard under the pump's snapshot ([RDSC.4a.8.2.2]). The stream, cut to its `pump` and `action_log` events, places the one log after the third pump and before the fourth ([RCTS.1.2.10]). The kinds are named rather than the log's text alone, because a text check cannot see which pump a log falls in.",
+  "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    v: Float mutable\n\nseries Reading.v (by: none):\n    count all_time\n\nrule crowded:\n    Reading r where r.dev == \"a\" and count(r.v) >= 2\n->\n    log info \"crowded {r.dev}\"\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "set",     "now_ns": 0 },
+      { "op": "assert",  "schema": "Reading", "slots": { "dev": "a", "v": 1.0 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "assert",  "schema": "Reading", "slots": { "dev": "b", "v": 1.0 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "pump" }
+    ],
+    "expected_kinds": ["pump", "pump", "pump", "action_log", "pump", "pump"]
+  }
+}

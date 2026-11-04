@@ -1,0 +1,992 @@
+{
+  "id": "LDET.5.5",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 592,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "2. [LDET.5.5] **Activation-creation order — the second key, within one\n   rule.** Among activations *of the same rule*, partial matches that\n   completed earlier fire before those completed later, by a monotonic\n   creation timetag assigned when the match completes. A match completes\n   when the last of its facts enters working memory; a fact that is\n   replaced ([LFAC.1.2.2]) enters anew.\n\n   **Matches that complete together are ordered by their facts.** One\n   assertion can complete several matches of one rule at once — the new\n   fact joining several partners. Among those, the engine **must** assign\n   timetags in the lexicographic order of the matches' facts, compared\n   pattern by pattern from the first pattern, each fact ranked by when it\n   entered working memory. The timetag is therefore a function of the\n   match and of working memory alone. The order in which the engine's\n   memories happen to be traversed **must not** affect it ([LDET.5.9]).\n\n   **It never decides between two different rules.** Those are separated\n   by `[LDET.5.4]` before this key is reached — which is what keeps the\n   order out of the hands of propagation internals.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__completed_at",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__created_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__created_before_is_transitive",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__fact",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__lex_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__match",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__match_is_its_tuple",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__one_activation_per_rule_per_timetag",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "DERIVED: two distinct matches of one rule are strictly ordered by the timetag, from facts about construction alone (assertion positions form a sequence, a match atom names a tuple, the agenda is a set of matches). The key it derives from is the clause's: the tuple of the matched facts' assertion positions, compared by latest position, which is when the match completed, then lexicographically in pattern order. TEETH: with the positions fact disabled this check fails."
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__position",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_5__positions_are_a_sequence",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "ldet_5_5__first_pending_ok",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What it returns is eligible."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_5__first_pending",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Within one rule, the earliest-created eligible activation: tokens are appended in creation order and never reordered."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__before",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CREATION TIMETAG as an order: earlier completion first, then pattern order among matches one event completes. A reading: the clause leaves the tiebreak unnamed."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__before_keys",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The order on keys: the earlier completion first, then pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__insert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A new activation takes its timetag's place among the rule's."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The key: the positions of the tuple's facts, in pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__latest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "When a match completed: the latest position of its key."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__lex_lt",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Lexicographic order on position lists."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__lt",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The strict order on positions, by structural recursion so a proof can unfold it."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__max",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The larger of two positions, structurally."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__pos",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The assertion position of a live fact: its index in the working-memory sequence, its id's rank under [IRET.4.4]."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_4__same_tick_ready",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two matches that complete together, ordered by their facts' positions: the earlier-asserted timer first. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_5__canonical_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The canonical key sorts each history's matches over the working memory both share to the same list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_5__canonical_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The key's order on the instance: (a1, b2) then (a1, b3) -- both completed by a1, the earlier B first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__network_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The model's terminals carry the key's order on both histories."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "Ldet_5_5__live",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A live match: every fact of the token is in working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "Ldet_5_5__live_acts",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every activation of a terminal is of live facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "Ldet_5_5__sorted",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A terminal in agenda order under a working memory: each activation before every later one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "iret_8_1__activate_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ACTIVATING distinct live new matches keeps the terminal sorted and live: each takes its timetag's place."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "iret_8_1__end_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Ending activations keeps the terminal sorted: a sublist of a sorted list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_append",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The order between two live matches is unchanged by an assertion."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_asym",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The timetag order on matches is asymmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_irrefl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The timetag order on matches is irreflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_keys_asym",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The key order is asymmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_keys_irrefl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The key order is irreflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_keys_total",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The key order orders any two distinct keys: earlier completion first, then pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_keys_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The key order is transitive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The nil token's key precedes every non-empty key: a rule of only NOT patterns is active first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TIMETAG IS A STRICT TOTAL ORDER ON LIVE MATCHES: two distinct live matches are ordered one way or the other. What [IRET.1.9]'s 'decides among activations of one rule' needs of the second key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_trans",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The timetag order on matches is transitive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__elem_tail",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of a list that is not its head field-wise is a member of its tail."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__eq_comm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Position equality is symmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__insert_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A property of every activation and of the inserted one holds of every activation after the insert."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__insert_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Inserting a live activation at its timetag's place keeps a sorted terminal of live activations sorted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__key_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live match's key is unchanged by an assertion: the timetag is fixed when the match completes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__key_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two live matches with one key are one match: over distinct working memory the key determines the match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__latest_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match's completion position is one of its facts' positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lex_asym",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The pattern-order tiebreak is asymmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lex_irrefl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The pattern-order tiebreak is irreflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lex_total",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The pattern-order tiebreak orders any two distinct keys."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lex_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The pattern-order tiebreak is transitive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lt_asym",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The position order is asymmetric."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lt_irrefl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The position order is irreflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lt_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ordered positions are unequal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lt_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The position order is transitive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__lt_tri",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two positions not ordered one way and unequal are ordered the other: trichotomy."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__map_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two maps agreeing pointwise on a list agree on it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__map_map",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A map of a map is the map of the composite."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__max_ge",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The larger of two positions not ordered the one way is the first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__max_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The larger of two ordered positions is the later."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__max_z",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Zero is the identity of the larger-of."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__nil_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nothing precedes the empty key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__pos_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact to working memory leaves every live fact's position: the assertion sequence only grows, [IRET.4.4]."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__pos_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two live facts at one position are one fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__sorted_append",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A sorted terminal of live activations is sorted under working memory grown by a fact: no live key changes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "Ldet_5_5__ordered_acts",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TERMINAL IN AGENDA ORDER: sorted by the timetag under the working memory given, every activation of live facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "Ldet_5_5__ordered_net",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every terminal of the network in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "Ldet_5_9__ordered",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ORDERED VIEW: the view, and every terminal in agenda order under the engine's working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_1__insert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT keeps the order: the survivors' keys are unchanged under the grown working memory, and the new matches take their places."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_6_4__dispatch_assert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT keeps the order over any distinct list of alphas to visit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_6_4__dispatch_assert_ordered_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON ASSERT, admitting the fact, keeps the order: every chain is right-activated from a memory grown by a live fact new to it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_activate_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-ACTIVATION KEEPS THE ORDER: the matches the fact completes are live and new to the terminal and take their timetags' places; the survivors keep theirs; what a NOT node newly blocks ends."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__wave_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-ACTIVATION KEEPS THE ORDER: the arrivals, live and new to the terminal, activate at their timetags' places."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_8__unwave_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-RETRACTION KEEPS THE ORDER: the activations that end leave a sublist."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_5__canonical",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CANONICAL ORDER of a set of matches: each at its key's place, from nothing. A function of the matches and of working memory alone -- what a from-scratch build produces."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_5__lmem_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token of a left memory showing a live front is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_5__view_live_acts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Under the view every activation is live: its match is in the recompute, which is built from memories that show working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__order_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ORDER THEOREM, closed at the top: after any history from a loaded network -- every input pumped, in order -- every terminal's activations are, in order, the canonical order over working memory of the chain's recompute."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__ordered_recompute",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "UNDER THE ORDERED VIEW every terminal is, in order, the canonical order over working memory of its chain's recompute: the agenda order is a function of the activation set and of working memory, never of how the set was reached. Batched equals incremental in order, and a released match fires where it first completed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_4__same_tick_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two activations of one rule completing together, ordered by their facts' assertion positions: the earlier-minted timer first. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "ldet_5_5__first_pending_no",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A head that is not pending is skipped: the first pending token is one position later."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "ldet_5_5__first_pending_yes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A pending head is the first pending token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "Ldet_5_5__lex_sorted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A tuple list in pattern order under a working memory: each tuple's key lexicographically before every later one's. FireLoop's enumeration order, facts outermost."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "Ldet_5_5__pos_sorted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Facts in working-memory order: each at an earlier position than every later one -- the positions the key reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "Ldet_5_5__sorted_tuples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A tuple list in agenda order under a working memory: each tuple's canonical key before every later one's. The clause's order stated on bare tuples, so that a FireLoop table and a network terminal compare as lists."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__extend_lex_sorted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Facts outermost: the blocks of a position-sorted fact list, each a sorted list of extensions, concatenate to a sorted list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "iret_7_4__tuples_lex_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ENUMERATION IS LEXICOGRAPHIC: the tuples of the positive kinds, facts outermost in working-memory order, are sorted by their keys in pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__before_keys_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key completed earlier comes first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__before_keys_same_latest",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two keys completed at the same position compare by pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__filter_pos_sorted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist of a distinct working memory, taken by a test, sits at increasing positions: the facts of a kind, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__latest_below",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key whose positions all lie below a bound completed below it, or is empty."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__latest_bounded",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The latest of a key bounded above is bounded above."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__latest_of_bound",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key holding a position no other exceeds completed at it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_cons_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key with the earlier first position comes first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_cons_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Keys with the same first position compare by their rests."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_sorted_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two lists in pattern order, every tuple of the first before every tuple of the second, append to one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_sorted_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Prefixing every tuple of a sorted list with one fact keeps it sorted: the first positions agree and the rest decide."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_sorted_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist of a list in pattern order, taken by a test, is in pattern order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lex_to_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE EVENT'S MATCHES, all completed at one position, are in the key's order when they are in pattern order: the latest positions tie, so the key falls through to the lexicographic comparison."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__lt_succ_not",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Below a successor is not above its predecessor: the strict order on positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__max_bounded",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The maximum with a bound the other does not exceed is the bound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__pos_cons_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fact other than the head sits one position later than in the tail."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__pos_head",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The head of working memory is at position zero."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__pos_last",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The position of the fact appended is the length: the latest."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__pos_lt_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live fact's position is below the length."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__pos_sorted_lift",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Positions read in a longer working memory: a list sorted under the tail, none of whose facts is the head, is sorted under the whole."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__sorted_tuples_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two sorted lists, every tuple of the first before every tuple of the second, append to a sorted list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__sorted_tuples_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sorted tuple list is distinct: the order is irreflexive."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__sorted_tuples_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist of a sorted tuple list, taken by a test, is sorted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__sorted_tuples_of_acts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sorted terminal's tuples are sorted: the activations' order is their matches'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_5__sorted_tuples_transport",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The order is carried by any working memory that orders the tuples the same way."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Iret_8_1__well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A WELL-FORMED TABLE of Rete/FireLoop.idr: every token's facts live, and the tuples in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__new_latest",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tuple holding the new fact, live in the grown memory, completed at the new fact's position: the last."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__nil_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The nil match comes before every match of a fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__old_before_new",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match live in the old memory comes before a match the new fact completes: the timetag of the clause, read off positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_grow",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER A FACT ENTERS keeps the table well-formed: the kept tokens keep their order under the grown memory; the added tokens, all completed at the new fact's position, follow them in pattern order, which is the key's order among them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "ldet_5_5__sorted_tuples_of_filter",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The tuples of a sublist of tokens, taken by a test, stay sorted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "ldet_5_5__sorted_tuples_sub_one",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sublist of a list of at most one tuple is sorted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "ldet_5_5__insert_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Inserting an activation not already held keeps the list distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "ldet_5_5__insert_elem_here",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The inserted activation is in the list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "ldet_5_5__insert_elem_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An activation of the list after an insert is the new one or an old one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "ldet_5_5__insert_elem_old",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An old activation is in the list after an insert."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_5__completed_at",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_5__created_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/determinism.tla",
+        "name": "ldet_5_5__lex_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_5__nextStamp",
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LDET.5.4",
+    "LDET.5.9",
+    "LFAC.1.2.2"
+  ]
+}

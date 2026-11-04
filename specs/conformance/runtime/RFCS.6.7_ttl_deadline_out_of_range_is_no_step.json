@@ -1,0 +1,21 @@
+{
+    "id": "RFCS.6.7_ttl_deadline_out_of_range_is_no_step",
+    "clauses": ["RFCS.6.7", "LTIM.1.1.5"],
+    "category": "runtime",
+    "scenario": "[RFCS.6.7] with [LTIM.1.1.5]: a host assert whose TTL deadline would fall outside the `Time` range is a refused call, not a refused input: DS_ERR_TIME_RANGE, and the engine is left as it was. Neither clock moves, no sample is recorded, nothing enters working memory, and a pending `initial` block stays pending; the call is not a step ([LTIM.2.8.4]). The program has a `ttl 1_h` schema, Tick, and an `initial` block holding one fact of an `explicit` schema, Marker, so the block's own deadline is not in play. Steps: `set` the mock clock to INT64_MAX - 1 s, assert a Tick, refused with -205 ([RCTS.1.2.27]); `set` the clock back to 0, which [NTST.3.1] admits only before the first sample, so the step succeeding is what shows the refused call took none (the harness fails the fixture on a refused step, [RCTS.1.2.28]); assert a Tick again, which is the first step: it applies the block, whose Marker takes fact id 1 and, being the artefact's, is not recorded ([RFCS.6.9]); then a pump, so `seen` fires. So the stream holds exactly one TICK, the second assert's ([LTIM.2.8.5]), and the recording's one FactAssert is the Tick's, id 2: the refused call took no id, unlike a bounds refusal ([RFCS.6.9]). A runtime that refused after its sample records a TICK for the refused call and applies the block there, so the stream holds two ticks, and the `set` back to 0 is refused. A runtime that checked only an override admits the first Tick with a deadline that wraps. PATH PINNED: libds's `engine_assert_canonical` (wm.c), the deadline check before `ds_engine_clock_step`; the Mercury runtime's `ds.engine.host_assert_core`, `rfcs_6_7_deadline_out_of_range` before `clock_step`.",
+    "rules_ds": "schema Marker scope explicit:\n    k: Int\n\nschema Tick scope ttl 1_h:\n    k: Int\n\ninitial:\n    Marker k: 1\n\nrule seen:\n    Tick t\n->\n    log info \"tick {t.k}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "assert", "schema": "Tick", "slots": { "k": 1 }, "refused": "-205" },
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tick", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_stream_kinds": ["tick"],
+        "expected_fact_ids": [
+            { "atom": "FactAssert", "fact_id": 2 }
+        ]
+    }
+}

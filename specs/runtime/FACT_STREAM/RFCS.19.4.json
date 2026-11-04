@@ -1,0 +1,34 @@
+{
+  "id": "RFCS.19.4",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.19",
+  "seq": 926,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.19.4] **A reader tells a stream from a DSC by its first atom.** A container is a\nbare length-delimited protobuf — `Dsc` / `Stream` field 1, so it begins with the `0x0A`\ntag — and carries no ASCII magic. A reader **must** distinguish a stream from a DSC by its\nfirst atom's oneof field number: `StreamHeader` (`258`) opens a stream, `DscHeader` (`263`)\nopens a DSC.\n\nA self-contained bundle ([RFCS.13]) opens with `DscHeader` and is a concatenation,\n`[Dsc][Stream]` ([RFCS.13.1]), so the first atom does not separate a lean `.dsc` from a\nbundle. A reader **must** find a bundle's stream by the atom-aware boundary walk\n([RFCS.13.2]), reading frames by length until a `StreamHeader` atom appears where the DSC\nwould otherwise have ended. A reader **must not** scan the bytes for a header's tag: an atom\npayload may contain those bytes, and `StreamHeader`'s two-byte tag collides with payload\nreadily.\n\nA reader **must not** classify a container by its leading byte. It parses the first atom\nand reports either no complete first atom ([RDSC.9.7]) or not a valid container\n([RFCS.19.1]). An ASCII byte is not excluded from a protobuf tag position, so a leading-byte\nsniff has false positives, and a false positive rejects a valid artefact while reporting it\nas something else.\n\n",
+  "refs": [
+    "RDSC.9.7",
+    "RFCS.13",
+    "RFCS.13.1",
+    "RFCS.13.2",
+    "RFCS.19.1"
+  ],
+  "atoms": [
+    "DscHeader",
+    "StreamHeader"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_4__container_type",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The container's type is the FIRST atom's field number, which [RFCS.19.1] states outright: \"the container's type is not in the grammar at all\". Returns Maybe rather than a default, because an empty container has no type and defaulting it would invent a Dsc out of zero bytes."
+      }
+    ]
+  }
+}

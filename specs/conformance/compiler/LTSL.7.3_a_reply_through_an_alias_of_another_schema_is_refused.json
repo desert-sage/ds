@@ -1,0 +1,13 @@
+{
+    "id": "LTSL.7.3_a_reply_through_an_alias_of_another_schema_is_refused",
+    "category": "compiler",
+    "scenario": "[LTSL.7.3]: \"the compiler must reject a reply of any other schema\". Library `lib` declares `HeaterAck`, which `heater.on` answers with, and `Other`, and this file binds `Other` under the name `HeaterAck`. A stub replying `HeaterAck` therefore replies a fact of `Other`, with the spelling of the response. Refused with DS_VALIDATE_TEST_STUB_REPLY_TYPE. A comparison of spellings admits it. PATH PINNED: `dsc.dstest.reply_of`, as its pair `LTSL.7.3_a_reply_through_an_alias_is_admitted`.",
+    "rules_ds": "from lib import Other as HeaterAck\n\nschema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    call heater.on zone: r.zone nocooldown as \"h1\"\n\ntest \"reply\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    responses:\n        for call heater.on as \"h1\":\n            HeaterAck ok: true\n    produces:\n        called heater.on as \"h1\"\n",
+    "libraries": {
+        "lib": "schema HeaterAck scope ttl 1_min:\n    corr: String\n    ok: Bool\n\nschema Other scope ttl 1_min:\n    corr: String\n    ok: Bool\n\nservice heater.on:\n    kwarg zone: String\n    response HeaterAck\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_STUB_REPLY_TYPE"
+    }
+}

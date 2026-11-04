@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb and an ExternalAssert ([RFCS.24]): a host input whose fact holds
+# a fact reference. `Main.r` is one ([LGRA.5.7a.1]). One program for both
+# tiers: a sender's `out` hands a Main to `svc.fwd`, whose argument is the
+# Main's FactExternal with its Ref inlined; the receiver is fed it, and its
+# `seen` fires on each Main it holds.
+
+use default
+
+schema Ref scope logical:
+    id: String key
+    note: String mutable
+
+schema Main scope logical:
+    k: Int key
+    r: Ref mutable
+
+schema Fwd scope logical:
+    k: Int key
+
+schema Seen scope logical:
+    k: Int key
+
+service svc.fwd:
+    kwarg m: Main
+    no response
+
+rule out:
+    Fwd f
+    Main m where m.k == f.k
+->
+    call svc.fwd m: m nocooldown
+
+rule seen:
+    Main m
+->
+    emit Seen logical k: m.k

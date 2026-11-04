@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.8.6_nulls_hold_before_any_value_stays_cold",
+    "category": "logical",
+    "scenario": "[LNUL.8.6]: \"Under `hold`, a `null` arriving before any value has been absorbed absorbs nothing. The read stays cold ([LSER.19.8]); the engine must not hold a `null`.\" `mean all_time` over a `Float?` slot with `nulls: hold` takes null, 5.0 then 6.0, one per pump, each read pre-sample ([LSER.8.6.1]): the first two reads are cold (`null`, no log) because the null absorbed nothing, and the third reads [5.0]: `mean 5.0`. Drives libds's `has_last_value` gate and the Mercury `held_value` failing on an empty held map.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n\nseries Reading.level (by: dev, nulls: hold):\n    mean all_time\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 5.0"]
+    }
+}

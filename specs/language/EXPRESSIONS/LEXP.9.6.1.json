@@ -1,0 +1,25 @@
+{
+  "id": "LEXP.9.6.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.9.6",
+  "seq": 667,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LEXP.9.6.1] **A `where` on a rule with more than one positive pattern must\nnot read state that is not a function of the matched facts.** Two kinds of\nread are excluded, each with its own code:\n\n- **A time-dependent read** ([LTIM.2.4.1]): a clock read (`now()`,\n  `monotonic_ns()`, `dwell`), a series read ([LEXP.9.2]) or a zone read.\n  [LTIM.2.6.2] refuses it with `DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED`.\n- **A cache read**, `cached(key)` ([LGRA.9.8.4]), which is not time-dependent.\n  The compiler must refuse it with `DS_VALIDATE_NONFACT_WHERE_MULTIPATTERN`,\n  naming the read and offering the two repairs: a `let` on the right-hand side,\n  or splitting the gated check into its own single-positive-pattern rule.\n\n**Why the restriction exists.** On a rule with more than one positive pattern the\n`where` clauses become join tests, and a join test's result is retained: that retention is what a Rete\nbeta memory *is*. Retention is sound exactly when the test is a function of the\nfacts, because then \"these facts are mutually consistent\" holds for as long as\nthose facts are present, and fact presence is the one thing the network\ntracks — the memo's validity condition and its invalidation mechanism are the\nsame event. A test that reads the clock, the cache or a series has a validity\ncondition the network does not track, so the memo can go stale with no fact\nchanging and nothing propagates to notice.\n\n**The scope is the RULE, not the individual `where`.** A `where` attached to one\npattern is refused just as a `where` naming bindings from two is, on a rule that\nhas more than one positive pattern. Which clause a test is written beside does\nnot decide where the compiler places it, so a per-`where` reading would let an\nauthor move an impure test onto a single pattern and keep the defect.\n\nThe effect is not a stale value but a rule that never fires. Write a cache key\nfrom one rule's RHS and gate a two-pattern rule on `cached(...)` in its\n`where`: if the key is set before the join is attempted the gated rule fires,\nand if it is set afterwards the gated rule never fires, through any number of\nfurther pumps, with the key set and nothing else changing.\n\n**One rule, two codes.** The reasoning — a single-positive-pattern rule has no\njoin, so its `where` never sits in a beta memory — is about the join and not\nabout the clock, and it applies to `cached()` unchanged. The code says which\nstate the read depends on: time, for [LTIM.2.6.2]'s, and the cache, for this\nclause's.\n\n**The restriction keeps work per pump bounded** ([LSCO.5.1]). Re-driving the\nnetwork on non-fact events would re-test broadly enough to give back most of\nwhat a beta memory holds.\n\n**Single-positive-pattern rules are unaffected.** They have no join, so these\nreads stay available where authors mostly write them, and the `let` surface\n([LGRA.9.8.4]) is outside this restriction: a binding made once per activation\non the RHS is held in no beta memory.\n",
+  "refs": [
+    "LEXP.9.2",
+    "LEXP.9.2.2",
+    "LGRA.9.8.4",
+    "LSCO.5.1",
+    "LTIM.2.4.1",
+    "LTIM.2.6.2",
+    "RDSC.5a.1a"
+  ],
+  "errors": [
+    "DS_VALIDATE_NONFACT_WHERE_MULTIPATTERN",
+    "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+  ]
+}

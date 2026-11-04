@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.4_nul_escape_refused",
+    "category": "compiler",
+    "scenario": "LSTR.1.1 / LGRA.2.9.4: `\\0` is not an escape, because a String holds no U+0000, so a literal carrying it is refused with DS_PARSE_BAD_ESCAPE as an unknown escape is. PATH PINNED: the Mercury compiler's `dsc.strlit.escape`, reached through `lgra_2_9_4_decode` from `dsc.validate.lgra_2_9_4_check_escapes`; `\\0` is in neither `simple_escape` nor the hex arms. A compiler whose `escape` has a `'0'` arm compiles the rule, or drops it unlowered.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"a\\0b\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_BAD_ESCAPE"
+    }
+}

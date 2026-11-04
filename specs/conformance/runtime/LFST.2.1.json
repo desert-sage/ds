@@ -1,0 +1,24 @@
+{
+    "id": "LFST.2.1",
+    "category": "runtime",
+    "scenario": "[RFCS.19.1] atom framing, [RFCS.4.1] StreamHeader first and [RFCS.5.1] the up-front announcement. A recorded session is a `Stream` container, every atom two nested length-delimited protobuf frames. It begins with the StreamHeader, then announces every registered schema before any event atom, in registration order, each as one SchemaDef and one Slot per slot in declaration order: the built-in fault-fact schemas ComputationError and TypeError ([LERR.9.2], [LERR.9.3]; five slots each), then the built-in TimeZoneOffset ([LTIM.10.6], [LIMP.12.2]; four slots), then Trig (one): the artefact's order. A rule logging on a trigger across a clock advance then produces one ClockAdvance -- the assert's clock sample, the first, recorded before its input ([LTIM.2.8.5]); the advance itself records nothing ([NTST.3.3]) and the pump's sample is unchanged -- the host assert's FactAssert, the pump's PumpBoundary ([RFCS.22]) and the rule fire's RuleFireAnnotation atoms. An unknown skip-band atom spliced in after the StreamHeader is skipped ([RFCS.16.3]) and the stream decodes with the header round-tripped. PATH PINNED: the stream each runtime's own recorder writes -- libds's `ds_rfcs_record_to` (rfcs/codec.c, recorder.c) through pyds `Engine.record` in runner.py, and the Mercury runtime's `ds.rfcs` writer in compiler/mercury/test/test_behave.m. The atom list names each atom by its body message, and is every atom the registry names, Slot included, in both harnesses.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule trig:\n    Trig\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "advance", "delta_ns": 1000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "RuleFireAnnotation"
+        ]
+    }
+}

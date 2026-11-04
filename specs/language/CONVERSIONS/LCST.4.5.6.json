@@ -1,0 +1,62 @@
+{
+  "id": "LCST.4.5.6",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.5",
+  "seq": 188,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.5.6] **`→ String` rendering.** `Float → String` renders the finite value in the\ncanonical shortest-round-trip form ([LDET.3.2.7]). It is total and **lossless** (round-trips through `String::Float?`),\nso [LCST.4.2.1]'s lossy-warn does not fire. **±`Inf` renders `\"inf\"` / `\"-inf\"`** —\nround-trips (`strtod(\"inf\") = Inf`), keeping `Float::String` total. NaN, which an\nexpression can produce ([LDET.3.6.2]), renders `\"nan\"` whatever its sign and payload\n([LEXP.4.3]). `Int → String` is the exact decimal; `Bool → String` is `\"true\"` /\n`\"false\"` (the inverse of [LCST.4.5.5]). *(The finite form is fixed by [LDET.3.2.7], not by\na cast-specific choice; the human-facing **display** default (`\"{x}\"`, `log`)\nresolves to the **same** shortest-round-trip form, with `Inf` displaying `\"inf\"` likewise —\nthe text plane renders non-finite, the JSON data plane rejects it.)*\n\n",
+  "refs": [
+    "LCST.4.2.1",
+    "LCST.4.5.5",
+    "LDET.3.2.7",
+    "LDET.3.6.2",
+    "LEXP.4.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__bool_round_trip",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`Bool :: String` then `String :: Bool?` is the identity for both Bools: the render is [LCST.4.5.5]'s inverse, as the clause says."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__decimal",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The decimal digits of a non-negative Integer, most significant first; twenty digits of fuel, a 64-bit value having at most nineteen."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__render_bool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`Bool :: String`: `true` / `false`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__render_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`Float :: String`: `nan` whatever the NaN's sign and payload, `inf` / `-inf`, `0.0` / `-0.0`, and for a finite nonzero value [LDET.3.2.7]'s shortest round-trip text in its shape. Total but for a search that finds no digits, a trap no finite double reaches. The digits are found and checked by the model's own parse (`ldet_3_2_8__nearest`): run, not proved; the round trip through `String :: Float?` is `ldet_3_2_7__found_round_trips` by construction."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__render_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`Int :: String`: the exact decimal, a `-` before a negative value; run at the Int64 bounds in Main.idr and parsed back. The Float row is `lcst_4_5_6__render_float`'s."
+      }
+    ]
+  }
+}

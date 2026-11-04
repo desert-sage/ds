@@ -1,0 +1,14 @@
+{
+  "id": "IRET.28.6.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.6",
+  "seq": 2146,
+  "depth": 3,
+  "kind": "heading",
+  "heading": "`oa_find` (internal)",
+  "text": "#### `oa_find` (internal) [IRET.28.6.2]\n\nLookup is **linear probing over the mixed hash**, returning the dense\nindex of the key or a not-found marker. Four properties define it:\n\n1. **The hash is mixed before use.** The caller supplies an already-mixed\n   value, so a caller-provided hash function with poor low bits cannot\n   degrade probing.\n2. **The start position is a mask, not a modulo**, which the power-of-two\n   capacity invariant ([IRET.28.3]) guarantees is legitimate.\n3. **An empty slot terminates the search as absent.** This is the load\n   invariant doing its work: because the table never reaches full, a\n   probe always meets an empty slot rather than looping. There are no\n   tombstones to skip — deletion repairs the probe chain instead.\n4. **The cached hash is compared before equality is called.** Only when\n   the 32-bit cached hashes match does the (possibly expensive)\n   caller-supplied equality run, so a probe collision costs one integer\n   comparison rather than a callback.\n\n",
+  "refs": [
+    "IRET.28.3"
+  ]
+}

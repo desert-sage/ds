@@ -1,0 +1,57 @@
+{
+  "id": "LNUL.4.4",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 81,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.4] **`is null` / `is not null` are the total null test** — they return\n`true` / `false`, never `null` ([LNUL.4.9]), and they are the only way to branch\non absence inside a predicate.\n\n**`== null` and `!= null` are a compile error**\n(`DS_VALIDATE_NULL_LITERAL_COMPARISON`). A `null` **literal** as either operand\nof `==` or `!=` is refused — `x == null`, `null == x` and `null == 5` alike.\nKeying on the operand rather than on one position is deliberate: a right-only\nrule is evaded with the space bar, and the check is syntactic, with no type\ninteraction.\n\n**What this does not reach.** Two non-literal operands that may both be `null` at\nruntime — `a.x == b.x` — is cross-pattern **join** equality, it stays legal, and\n[LNUL.8.2] is the clause that governs it.\n\n",
+  "errors": [
+    "DS_VALIDATE_NULL_LITERAL_COMPARISON"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_4__is_null",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_4__null_test_total",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_4__is_null_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Quantified over every value: the answer is true or false, never null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_9__is",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "is null and is not null are the null subject of the total tag test, one operator with its negation flag rather than not applied to is null: true or false for any value, never null; a trap in the operand stays a trap."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LNUL.4.9",
+    "LNUL.8.2"
+  ]
+}

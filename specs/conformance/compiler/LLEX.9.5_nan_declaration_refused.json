@@ -1,0 +1,10 @@
+{
+  "id": "LLEX.9.5_nan_declaration_refused",
+  "category": "compiler",
+  "scenario": "LLEX.9.5 — `nan` is an LLEX.9.6 reserved word, class constant, beside `inf` and `NaN` (LEXP.4.1 reserves it), so `let nan = 1` in a rule's action is refused with DS_VALIDATE_HARD_KEYWORD_NAME: a binding is a naming site, and a binding so named would hide LEXP.4.2's refusal of the constant in its scope. A compiler whose reserved-word table lacks the row compiles it. Path: dsc.validate's llex_9_5_reserved_words, through decl_name_sites' let bindings, to llex_9_5_name, reaching llex_9_6_reserved_word(\"nan\", rb_grammar) and keyword_name.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v > 0\n->\n    let nan = 1\n    log info \"x\"\n",
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_HARD_KEYWORD_NAME"
+  }
+}

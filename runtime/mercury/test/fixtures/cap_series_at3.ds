@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# THE CAP-MEASUREMENT FIXTURE — one artefact that touches every surface
+# `[RTCT.7]`'s caps bound, so that nine measurements need one compile each
+# rather than nine fixtures.
+#
+# Each cap gets its own `.dsrt` with that one value tightened; everything else
+# stays generous, so whatever libds does is attributable to the cap under test.
+# What is being measured is not only WHETHER the reference enforces a cap but
+# WHERE -- `wm_max` turned out to be checked at the assert and
+# `max_fires_per_pump` at the pump, and the placement is the part that cannot
+# be read off the clause.
+#
+# The surfaces, and which cap each is here for:
+#
+#   two schemas + a join      cap_node, cap_token_pool, cap_agenda
+#
+# THE JOIN IS AN EQUALITY AND THE THRESHOLD IS A LITERAL, because `+realtime`
+# refuses a cross-pattern ORDERING comparison: DS_VALIDATE_RT_STRING_ORDER,
+# "ordering operator `>` between cross-pattern bindings requires O(len)
+# strncmp; unbounded without `max_length`" (LNLS.3.8). A realtime dialect is a
+# smaller language, which is worth knowing before writing a realtime fixture.
+#   several distinct strings  cap_intern, cap_intern_bytes
+#   a cache write             cap_cache, cap_cache_bytes
+#   a series                  cap_series
+#   a rule that cascades      cap_max_fires_per_pump, cap_pump_wcet
+#
+# `Reading` is logical with a key so that distinct entities are distinct facts;
+# `Zone` is what the join binds against.
+
+use realtime
+
+schema Zone scope logical:
+    name: String key
+    threshold: Float mutable
+
+schema Reading scope logical:
+    entity_id: String key
+    zone: String mutable
+    state: Float mutable
+
+schema Alarm scope ttl 1_h:
+    entity_id: String
+    detail: String
+
+# THE SERIES, and the only thing that differs from `80_caps.ds`.
+#
+# `cap_series` is the one contract cap with NO MEASUREMENT AT ALL, and the
+# reason turned out to be circular: the cap-measurement source lists "a series
+# — cap_series" in its own header as a surface it covers, and never had one.
+# Nine caps were probed against a fixture that could not reach the tenth.
+#
+# Declared on `Reading.state` rather than on a schema of its own, so the
+# existing probe script drives it unchanged -- the scripts assert `Zone` and
+# `Reading` by name, and a series on a new schema would need a new script
+# before it could need a new contract.
+series Reading.state (by: entity_id):
+    mean sample 3
+
+# NO AGGREGATE IS READ HERE, and that is deliberate rather than an omission.
+#
+# `cap_series` is checked where the backing APPENDS a sample, not where a rule
+# reads one, so the series declaration above plus the probe's asserts are the
+# whole of what drives the cap. A read adds nothing to this measurement.
+#
+# Two earlier attempts read it anyway, to make accumulation visible in a trace,
+# and BOTH are dead:
+#
+#   log interpolation  `87_capseries_st.ds` -- reports 0.0 on every pump in
+#                      every configuration tried, `sample` and `sliding`, both
+#                      dialects, with and without `+realtime`.
+#   guard position     what stood here -- refused by
+#                      DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. `[LTIM.2.6.2]`:
+#                      a series read in a join test is retained in a beta
+#                      memory the engine cannot invalidate, so the rule NEVER
+#                      FIRES. The control could not have worked.
+#
+# The clause also explains the first result: both reads sat on a rule with two
+# positive patterns. Whether an aggregate is readable at all from a join is a
+# question about the series read, not about a cap, and it
+# needs a single-positive-pattern fixture of its own rather than a conjunct
+# bolted onto this one.
+
+rule warm:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 30.0
+->
+    log warning "warm {r.entity_id} in {z.name}"
+    cache key: "last-warm" value: r.zone
+    emit Alarm entity_id: r.entity_id detail: "over in {z.name}"

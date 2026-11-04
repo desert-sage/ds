@@ -1,0 +1,10 @@
+{
+    "id": "LCST.4.1.6_cast_to_schema_target_rejects",
+    "category": "compiler",
+    "scenario": "LCST.4.1.6 — a `::` cast target must be a scalar builtin, `Json`, or a declared unit symbol; a SCHEMA name (or any unknown name) is never a cast target and rejects with DS_VALIDATE_CAST_UNDEFINED via the invalid-target branch (distinct from the closed-table LCST.4.5.3 undefined-pair rejects, e.g. unit_to_int_reject). Re-homes the [LCST.4.1.6] coverage the deleted, mis-namespaced LUNI.8.5_unit_assert_alias_unknown gestured at — but for the genuinely-invalid case (a schema target), since a unit ALIAS is a *valid* cast target (see LCST.4.5.2_cast_to_unit_alias_ok).",
+    "rules_ds": "schema Foo scope logical:\n    v: Int key\nschema Bar scope logical:\n    b: Int key\n\nrule bad:\n    Foo f where f.v::Bar > 0\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_UNDEFINED"
+    }
+}

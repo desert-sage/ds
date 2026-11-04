@@ -1,0 +1,27 @@
+{
+    "id": "LNUL.4.7a",
+    "category": "runtime",
+    "dead_rules_expected": ["all_cool"],
+    "scenario": "N1 ([LNUL.4.7]) \u2014 a NULL reading BLOCKS `no Sensor where s.state > 85` (unknown \u21d2 cannot conclude none-hot): AllCool does NOT fire. Facts: Sensor + Tick = 2 (no AllCool).",
+    "rules_ds": "schema Tick scope logical:\n    id: Int key\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema AllCool scope logical:\n    id: Int key\n\nrule all_cool:\n    Tick t\n    no Sensor s where s.state > 85.0\n->\n    emit AllCool logical id: t.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": null
+                }
+            },
+            {
+                "schema": "Tick",
+                "slots": {
+                    "id": 1
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "LSER.9.3.1",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.9.3",
+  "seq": 1148,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.9.3.1] Series state eviction policy is backing-specific.\nAll-time backings (running-stats, all-time distinct-set, etc.)\nlive until engine shutdown — eviction would destroy cumulative\nsemantics. Sliding and tumbling backings evict when no\nsample for that identity has been absorbed for the declared\nwindow — after window-of-silence the backing holds zero\nin-window samples and the per-key allocation is pure overhead.\n\nThe state a signal aggregation ([LSIG.1.1]) reads is the exception: the engine\n**must not** evict it after a window of silence. `active_fraction`, `onset_rate`\nand `integral` read the slot as a step function, each absorbed value held until\nthe next ([LSIG.1.3.1], [LSIG.3.2]), so a silent window is not an empty one.\nThe last absorbed value, any open interval and `t_first` ([LSER.19.7]) persist\nfor the instance's life.\n\n",
+  "refs": [
+    "LSER.19.7",
+    "LSIG.1.1",
+    "LSIG.1.3.1",
+    "LSIG.3.2"
+  ]
+}

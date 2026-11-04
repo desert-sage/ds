@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.5.1_tolerance_unit_literal",
+    "category": "compiler",
+    "scenario": "[LGRA.5.1]: `field_tolerance ::= 'tolerance' (INT_LIT | FLOAT_LIT)`, unsigned and with no unit (a tolerance is read in the slot's declared unit, [LUNI.7.3]). `t: dbl mutable tolerance 1_dbl` gives it a `UNIT_LIT`, which the production does not admit, so the field does not parse. Expected DS_PARSE_GENERIC, on line 7, the field's line ([RCTS.1.2.34]). PATH: `dsc.parse.lgra_5_1_take_tolerance`, which takes only an `int_lit` or `float_lit` after `tolerance`, leaving the field's tokens unconsumed.",
+    "rules_ds": "unit dimension warmth storage float64 base therm\nunit therm: warmth\nunit dbl: warmth = 2 * x\n\nschema S scope logical:\n    e: Int key\n    t: dbl mutable tolerance 1_dbl\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

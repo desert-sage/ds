@@ -1,0 +1,29 @@
+{
+    "id": "RFCS.7a.2_every_cause_has_a_raiser",
+    "clauses": ["RFCS.6a.5"],
+    "category": "runtime",
+    "scenario": "[RFCS.7a.2]: every member of the closed `FactWithdraw.Cause` enum has a raiser, and 4 has none (it is reserved). One recording drives all six, one per pump so their order is fixed, and pins the cause of every `FactWithdraw` in stream order: five are recorded, and (5) says why the sixth is not. The clock is set to 0 first, as the `after` vectors set it, so both clocks are the harness's: `after`'s follow-up is guarded on `monotonic_ns()` ([LTAC.5.3]), and a `ttl` on the event clock. (1) Src(a, v 1) is asserted and pumped; `derive` emits a logical Derived. (2) Src(a, v 0) arrives under the same identity: the old Src is withdrawn SUPERSEDED (an identity upsert, [LFAC.2.5.1]), recorded after the arriving assert ([RFCS.6.7]); `derive` no longer matches, so Derived is withdrawn JUSTIFIER_ENDED, after the withdrawal that caused it ([RFCS.7a.4]). (3) Job(j) is asserted and pumped: `consume` emits a `scope activation` Scratch, then `withdraw j` takes the explicit Job back AUTHOR_WITHDRAWN, and at the synchronous end of the RHS the activation completes and Scratch is withdrawn ACTIVATION_COMPLETED ([LSCP.2.4.1]). (4) Tmp (ttl 1 s) is asserted and pumped, the clock advances 2 s and a pump's sweep withdraws it TTL_EXPIRED. (5) Ping(p) is asserted and pumped, arming `remind`'s `after 5_s` and its capture; the clock advances 6 s and the pump runs the follow-up, which discharges the timer and the capture fact SYNTHETIC_DISCHARGED inside the engine ([LTAC.3.1]). A compiler-owned fact is not recorded, neither its emit nor its withdrawal ([RFCS.6a.5]), so the sixth cause never reaches a recording. `expected_atoms` pins it: the last `RuleFireAnnotation` pair is the follow-up firing, and no `FactEmit` or `FactWithdraw` stands between the pairs of step 5. PATH PINNED: each origin's own cause, set where the withdrawal originates, as each runtime's recorder writes it: libds's (`expected_withdraw_causes` in runner.py, each FactWithdraw read through libds's reader, `pyds.atoms`) and the Mercury runtime's (test_behave's `withdraw_cause_names` over ds.rfcs). A cause computed on the shared retraction path, or one origin mislabelled, changes the list; a runtime that starts recording the synthetic withdrawal changes both lists.",
+    "rules_ds": "schema Src scope logical:\n    k: String key\n    v: Int mutable\n\nschema Derived scope logical:\n    k: String key\n\nschema Job scope explicit:\n    k: String\n\nschema Scratch scope activation:\n    k: String\n\nschema Tmp scope ttl 1_s:\n    k: String\n\nschema Ping scope explicit:\n    k: String\n\nrule derive:\n    Src s where s.v > 0\n->\n    emit Derived logical k: s.k\n\nrule consume:\n    Job j\n->\n    emit Scratch k: j.k\n    withdraw j\n\nrule remind:\n    Ping p\n->\n    after 5_s:\n        log info \"late {p.k}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Src", "slots": { "k": "a", "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Src", "slots": { "k": "a", "v": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Job", "slots": { "k": "j" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tmp", "slots": { "k": "t" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "p" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "expected_atoms": ["StreamHeader", "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot", "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot", "SchemaDef", "Slot", "Slot", "Slot", "Slot", "SchemaDef", "Slot", "Slot", "SchemaDef", "Slot", "SchemaDef", "Slot", "SchemaDef", "Slot", "SchemaDef", "Slot", "SchemaDef", "Slot", "ClockAdvance", "FactAssert", "PumpBoundary", "RuleFireAnnotation", "FactEmit", "RuleFireAnnotation", "FactAssert", "FactWithdraw", "FactWithdraw", "PumpBoundary", "FactAssert", "PumpBoundary", "RuleFireAnnotation", "FactEmit", "FactWithdraw", "FactWithdraw", "RuleFireAnnotation", "FactAssert", "PumpBoundary", "ClockAdvance", "PumpBoundary", "FactWithdraw", "FactAssert", "PumpBoundary", "RuleFireAnnotation", "RuleFireAnnotation", "ClockAdvance", "PumpBoundary", "RuleFireAnnotation", "RuleFireAnnotation"],
+        "expected_withdraw_causes": ["SUPERSEDED", "JUSTIFIER_ENDED", "AUTHOR_WITHDRAWN", "ACTIVATION_COMPLETED", "TTL_EXPIRED"]
+    }
+}

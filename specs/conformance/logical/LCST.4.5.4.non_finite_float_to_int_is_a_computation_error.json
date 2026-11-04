@@ -1,0 +1,15 @@
+{
+    "id": "LCST.4.5.4.non_finite_float_to_int_is_a_computation_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LCST.4.5.4]'s trap carve-out: `Float :: Int` is TOTAL, and a non-finite operand is a hard runtime TRAP rather than a null — 'exactly as ÷0 is'. So it classifies as a ComputationError (rung 6), not as a fallible conversion. The +Inf is produced by RUNTIME overflow (`s.big * s.big` on 1e300), not by a literal: a JSON fixture cannot spell `inf` in a slot value. (`1.0 / 0.0` would also give +Inf under IEEE `Float` [LDET.3.6.2]; the overflow keeps the fixture independent of division.) Path: FN_FLOAT_TO_INT's adapter, whose non-finite arm raises DS_FAULT_NOT_REPRESENTABLE.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    big: Float mutable\n\nrule r:\n    S s where (s.big * s.big)::Int > 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

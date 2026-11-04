@@ -1,0 +1,19 @@
+{
+  "id": "NCBK.1.5",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.1",
+  "seq": 53,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [NCBK.1.5] **Return `ds_result_t`.** A non-OK status propagates to whoever\n  invoked the libds call that fired the callback. Most callbacks log internally\n  and return `DS_OK_R`. A typed verb callback's non-OK status keeps the meaning\n  its verb's dispatcher contract gives it.\n\n  For the **stream callback** ([NCBK.2.1]):\n\n  - **The engine does not depend on it.** A non-OK status from the stream\n    callback must not change what the engine does. The call that fired it runs\n    to completion: every remaining event is delivered, every firing's RHS runs,\n    and a TTL sweep retracts every expired fact. The stream is an observer.\n  - **The first status is the call's.** The first non-OK status the stream\n    callback returns during a public libds call is that call's return value,\n    unless the call fails for its own reason, whose status takes precedence.\n    A later non-OK status in the same call is not reported, and none is carried\n    into the next call.\n  - **The outermost public call reports it.** A callback fired inside work an\n    outer public call started — a truth-maintenance cascade, a pump's firings —\n    is reported by that outer call.\n  - **Fault events are included.** A stream event reporting a fault\n    ([NCBK.2.8]) is delivered like any other, and a non-OK status from its\n    delivery is reported under the same rule; where the call returns a status\n    of its own for the fault, that status takes precedence.\n\n  So a stream-callback error during a pump surfaces as the pump's return value,\n  after the pump has done everything it would have done without it.\n\n  The **metric** and **log** callbacks are fire-and-forget. The engine must\n  drop a non-OK status from either: it changes nothing the engine does and is\n  not the return status of any call. For the log callback this holds whatever\n  produced the line, an author's `log` action or a message of the engine's\n  own. This is the samples callback's rule ([NSTG.5.3.2]) applied to both. An\n  integrator that must know its sink failed handles that inside its callback.\n\n",
+  "refs": [
+    "NCBK.2.1",
+    "NCBK.2.8",
+    "NSTG.5.3.2"
+  ],
+  "symbols": [
+    "DS_OK_R"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.4.4.1",
+    "category": "compiler",
+    "scenario": "Re-export through selective import per LIMP.4.4.1. When library A's source contains `from B import X`, the name X enters A's exported surface; an importer of A reaches X via either qualified `A.X` or selective `from A import X`. Pin: library `b` declares schema `Light`; library `a` does `from b import Light`; rules-file does `from a import Light` and matches `Light l` in a rule. The validator binds Light into the rules-file's bare scope through A's re-export entry, with no direct `from b import Light`; an unresolved `Light` would refuse the program, so compiling observes the re-export. `compile_ok` does not read the lowered output.",
+    "rules_ds": "from a import Light\n\nrule r:\n    Light l where l.is_on == true\n->\n    log info \"x\"\n",
+    "libraries": {
+        "a": "from b import Light\n",
+        "b": "schema Light scope logical:\n    is_on: Bool key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

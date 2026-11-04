@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_d_on_float_leaf_is_a_type_error",
+    "category": "logical",
+    "scenario": "`{p.body.x:d}` on a Float leaf: `d` takes an Int alone (LGRA.2.9.6.5), so the spec is a TypeError at run time (LGRA.2.9.6.11) and `handler` logs. PATH PINNED: the type-against-kind refusal in the interpolation renderer's integer-type arm (libds `render_value`, Mercury `ds.format.value_body`'s `ft_d`). It pins that the refusal is a TypeError on a Json leaf and not a rendering of the Float.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.x:d}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": 1.5 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

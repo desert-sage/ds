@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.14",
+    "category": "compiler",
+    "scenario": "Fire-then-sample ordering per LSER.10.14. The where-clause sees the pre-sample series snapshot; sample absorption fires after the firing decision lands. Pin: a series and a rule reading `count(t.state) >= 3` compile. PINS ONLY THAT IT COMPILES: the ordering is a runtime property. `compile_ok` has no `lowered_contains`.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) >= 3\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

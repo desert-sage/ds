@@ -1,0 +1,19 @@
+{
+    "id": "RDSC.4a.9.1_an_alpha_slot_past_the_schema_faults",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.1]: an `AlphaTest.slot_index` within its field's range that names no slot of the fact's schema is not refused at load; where the engine uses it, it raises an EngineError with fault ENGINE_FAULT_ARTEFACT_LIED, naming the alpha node, and halts the tier ([LERR.1.4.7]). The engine must not answer the test `false`. No compiler writes such an index, so the harness compiles rule `on_t`, whose `T t where t.v > 5` puts one CMP test on `T`'s `AlphaNode` (node 1), and `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 2], value: 1}}` ([RCTS.1.2.21]) writes that test's `slot_index` as 1: `T` has one slot, so 1 names nothing. The artefact must load. The harness asserts one `T` with `v` 1, which the unedited test would answer `false`: the alpha test runs during the assert, input 0, so that call returns DS_ERR_ENGINE_HALTED (-10) itself ([NCBK.2.9]); the stream's fault events are exactly one `engine_error`, its last event, and the halt latch holds ARTEFACT_LIED ([NCBK.2.11]). What it discriminates: a runtime that answers the test `false` rejects the fact and raises nothing; one that refuses the artefact at load fails the load; one that faults at the pump instead fails `fault_at`. The node the EngineError names (`$alpha_1`, [LERR.9.11]) is not observed by this kind; libds's `test_rdsc_4a_9_1__alpha_slot_past_the_schema` and test_ds's `test_rdsc_4a_9_1_index_faults` pin it. PATHS: libds's `ds_rete_alpha_test_fact`, from the assert's alpha dispatch, through pyds; the Mercury runtime's alpha test in `ds.engine`'s host assert, through test_behave.m's `field_set` and `run_runtime_error`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 5\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 2], "value": 1}},
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "v": 1 } }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 0,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

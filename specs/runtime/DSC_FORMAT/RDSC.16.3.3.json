@@ -1,0 +1,28 @@
+{
+  "id": "RDSC.16.3.3",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.16.3",
+  "seq": 1678,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.16.3.3] **Loader behaviour.** When the loader encounters a\n`RealtimeContract` atom, it takes these steps in this order. The refusals\nand their codes are [RTCT.6.5]'s, which wins where the two disagree; this\nclause orders them and adds what follows a contract that passes:\n\n  1. Decode the `RealtimeContract` proto body ([RTCT.6.2]) and\n     determine the encoding ([RTCT.6.7.1] — legacy `nodes` list\n     or compact `node_count`/`default_node_cap`/`node_overrides`/\n     `node_caps_packed`). Reject an invalid or ambiguous encoding\n     (both set, bad ordering, length mismatch) with\n     `DS_ERR_CONTRACT_INVALID`.\n  2. Cross-check the body's `rt_config_sha256` against the value\n     in `DscHeader.rt_config_sha256` ([RDSC.3.8]); disagreement is\n     `DS_ERR_BND_INCOMPLETE`.\n  3. **Materialize the logical contract** ([RBND.4b.8]) and\n     recompute the canonical-serialization hash ([RBND.4b]) over\n     it; disagreement with the stored hash is\n     `DS_ERR_CONTRACT_INVALID`. This step is the integrity\n     linchpin: it is what binds the contract to the network the\n     runtime actually loaded now that the compact encoding omits\n     per-node `kind`, and it is what makes a pre-compact runtime\n     reject a compact contract ([RTCT.6.7.6]). It MUST run for\n     **both** encodings and MUST precede step 4.\n  4. **Apply node caps to their destinations.** For each covered\n     node in ascending `node_id` order, resolve its capacity per\n     [RTCT.6.7.3] / [RTCT.6.7.4] and write it to that node's\n     `contract_capacity` ([RTCT.7.1]). The runtime MUST NOT\n     materialize a per-node intermediate structure beyond the\n     per-node destination field; for the compact encoding the\n     resolution is a single pass consuming `default_node_cap` /\n     `node_overrides` / `node_caps_packed` directly.\n  5. Store the scalar caps and series caps on the engine for cap\n     enforcement ([RTCT.7]).\n\n",
+  "refs": [
+    "RBND.4b",
+    "RBND.4b.8",
+    "RDSC.3.8",
+    "RTCT.6.2",
+    "RTCT.6.5",
+    "RTCT.6.7.1",
+    "RTCT.6.7.3",
+    "RTCT.6.7.4",
+    "RTCT.6.7.6",
+    "RTCT.7",
+    "RTCT.7.1"
+  ],
+  "errors": [
+    "DS_ERR_BND_INCOMPLETE",
+    "DS_ERR_CONTRACT_INVALID"
+  ]
+}

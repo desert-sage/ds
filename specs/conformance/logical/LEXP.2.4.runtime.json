@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.2.4.runtime",
+    "clauses": ["LNUL.4.2"],
+    "category": "logical",
+    "scenario": "`and` is `false` if any operand is `false` (LNUL.4.2): `x.a > 0 and x.b < 100` holds for (5, 50) only. (-1, 50) has a false left operand and (5, 200) a false right one, so `in_band` fires exactly once. Only `and` is stepped, over non-null operands. Named for the LEXP.2.4 heading (chain length), which it does not test.",
+    "rules_ds": "schema Val scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule in_band:\n    Val x where x.a > 0 and x.b < 100\n->\n    log info \"in band\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v1", "a": 5, "b": 50 } },
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v2", "a": -1, "b": 50 } },
+            { "op": "assert", "schema": "Val", "slots": { "entity_id": "v3", "a": 5, "b": 200 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["in_band"]
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "LTIM.10.7",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.10",
+  "seq": 572,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.10.7] **Resolving a zone.** To resolve a designation `Z` other than\n`\"UTC\"` ([LTIM.10.8]) at an instant `t`, in nanoseconds since the Unix epoch,\nthe engine must take, among the live `TimeZoneOffset` facts ([LTIM.10.6]) whose\n`zone` equals `Z` byte for byte, the one with the greatest `valid_from` not after\n`t`. If that fact's `valid_until` is after `t`, its `offset_s` is the answer.\nOtherwise, and when no such fact exists, `Z` has no answer at `t`\n([LTIM.10.5.3]). The facts of one zone may overlap: this rule decides which one\nanswers, whatever order they arrived in.\n\nA period is half-open, so no `valid_until` is after the last instant of the\n`Time` range ([LTIM.1.1.5]), and no zone but `\"UTC\"` has an answer there: a\nread in `Z` at that instant is [LTIM.10.5.3]'s failure, however the facts are\nwritten. The longest period a fact can state ends one nanosecond before it.\n\nA resolution must cost O(log r), where r is the number of live\n`TimeZoneOffset` facts whose `zone` is `Z`, and must not depend on any other\nfact ([LCNT.5.2]).\n\nA resolution sees every `TimeZoneOffset` fact the host has asserted, replaced\nor retracted before it. No host assert or retract runs during a pump\n([NLFC.3.3], [RARC.13.16]), so every resolution of one zone at one instant within a pump\nanswers alike. A replay delivers those facts where the trace records them\n([LFST.6.1.1]), so it resolves as the recorded run did.\n\nA change to a zone's facts re-evaluates a `where` that resolves the zone, as\nany time-dependent condition is re-evaluated ([LTIM.2.4.1], [LTIM.2.5.1]). It\ndoes not re-run an action that has already fired: a value an action computed\nfrom an earlier fact stands.\n\n",
+  "refs": [
+    "LCNT.5.2",
+    "LFST.6.1.1",
+    "LTIM.1.1.5",
+    "LTIM.10.5.3",
+    "LTIM.10.6",
+    "LTIM.10.8",
+    "LTIM.2.4.1",
+    "LTIM.2.5.1",
+    "NLFC.3.3",
+    "RARC.13.16"
+  ]
+}

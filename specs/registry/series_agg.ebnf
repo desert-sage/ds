@@ -1,0 +1,75 @@
+(* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors *)
+(* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later *)
+
+(* ds_series_agg_kind — an enumeration registry ([STYL.2.15.6]).
+
+   The series aggregations a read or a series backend names. libds's internal
+   `ds_series_agg_kind_t`, in its series header beside the backend vtable
+   ([ISBK.1.1]), mirrors it name for name and value for value, and a
+   value is also a bit position in a backend's `supported_aggs` mask, so no
+   allocation may exceed 63. It travels nowhere, so it is an EBNF registry
+   rather than a protobuf ([STYL.5.9.7]). Its consumers are generated from
+   it; never hand-write them ([STYL.5.9.6]).
+
+   The alternation below is the closure: these names and no others.
+   Each production is an allocation. A production that is NOT a member
+   of the alternation is out of use — the number stays allocated to that
+   name ([STYL.2.8.7]). *)
+
+ds_series_agg_kind = DS_SERIES_AGG_AVG
+                   | DS_SERIES_AGG_MEDIAN
+                   | DS_SERIES_AGG_STDEV
+                   | DS_SERIES_AGG_PSTDEV
+                   | DS_SERIES_AGG_VARIANCE
+                   | DS_SERIES_AGG_PVARIANCE
+                   | DS_SERIES_AGG_MIN
+                   | DS_SERIES_AGG_MAX
+                   | DS_SERIES_AGG_RATE
+                   | DS_SERIES_AGG_DIRECTION
+                   | DS_SERIES_AGG_COUNT
+                   | DS_SERIES_AGG_SUM
+                   | DS_SERIES_AGG_FIRST
+                   | DS_SERIES_AGG_LAST
+                   | DS_SERIES_AGG_BOOL_AND
+                   | DS_SERIES_AGG_BOOL_OR
+                   | DS_SERIES_AGG_COUNT_DISTINCT
+                   | DS_SERIES_AGG_COUNT_OF
+                   | DS_SERIES_AGG_CONTAINS
+                   | DS_SERIES_AGG_ACTIVE_FRACTION
+                   | DS_SERIES_AGG_ONSET_RATE
+                   | DS_SERIES_AGG_INTEGRAL
+                   | DS_SERIES_AGG_PERCENTILE ;
+
+(* allocations *)
+
+DS_SERIES_AGG_AVG             = "0" ;
+DS_SERIES_AGG_MEDIAN          = "1" ;
+DS_SERIES_AGG_STDEV           = "2" ;
+DS_SERIES_AGG_PSTDEV          = "3" ;
+DS_SERIES_AGG_VARIANCE        = "4" ;
+DS_SERIES_AGG_PVARIANCE       = "5" ;
+DS_SERIES_AGG_MIN             = "6" ;
+DS_SERIES_AGG_MAX             = "7" ;
+DS_SERIES_AGG_RATE            = "8" ;
+DS_SERIES_AGG_DIRECTION       = "9" ;
+DS_SERIES_AGG_COUNT           = "15" ;
+DS_SERIES_AGG_SUM             = "16" ;
+DS_SERIES_AGG_FIRST           = "17" ;
+DS_SERIES_AGG_LAST            = "18" ;
+DS_SERIES_AGG_BOOL_AND        = "19" ;
+DS_SERIES_AGG_BOOL_OR         = "20" ;
+DS_SERIES_AGG_COUNT_DISTINCT  = "21" ;
+DS_SERIES_AGG_COUNT_OF        = "22" ;
+DS_SERIES_AGG_CONTAINS        = "23" ;
+DS_SERIES_AGG_ACTIVE_FRACTION = "24" ;
+DS_SERIES_AGG_ONSET_RATE      = "25" ;
+DS_SERIES_AGG_INTEGRAL        = "26" ;
+DS_SERIES_AGG_PERCENTILE      = "27" ;
+
+(* out of use: allocated, not members *)
+
+DS_SERIES_AGG_P25 = "10" ;
+DS_SERIES_AGG_P50 = "11" ;
+DS_SERIES_AGG_P75 = "12" ;
+DS_SERIES_AGG_P95 = "13" ;
+DS_SERIES_AGG_P99 = "14" ;

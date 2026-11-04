@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.5_unit_assert_cross_dim_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.8.7.1 / LUNI.8.2 — the negative case: a `::<unit>` cast carries its dimension into the downstream cross-dim check. `s.raw::kilogram` (mass) compared against `30_celsius` (temperature) crosses dimensions and rejects with DS_VALIDATE_DIM_MISMATCH.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Sensor scope logical:\n    raw: Float key\n\nrule bad:\n    Sensor s where s.raw::kilogram > 30_celsius\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

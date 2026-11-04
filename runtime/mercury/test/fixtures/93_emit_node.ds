@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `80_caps.ds` with a second rule matching the emitted `Alarm`, so an emitted
+# fact enters a node memory and can breach a node cap as it can `wm_max`
+# ([RTCT.7]). Realtime-only: its MANIFEST row is commented out.
+
+use realtime
+
+schema Zone scope logical:
+    name: String key
+    threshold: Float mutable
+
+schema Reading scope logical:
+    entity_id: String key
+    zone: String mutable
+    state: Float mutable
+
+schema Alarm scope ttl 1_h:
+    entity_id: String
+    detail: String
+
+rule warm:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 30.0
+->
+    log warning "warm {r.entity_id} in {z.name}"
+    cache key: "last-warm" value: r.zone
+    emit Alarm entity_id: r.entity_id detail: "over in {z.name}"
+
+rule alarmed:
+    Alarm a
+->
+    log info "alarmed {a.entity_id}"

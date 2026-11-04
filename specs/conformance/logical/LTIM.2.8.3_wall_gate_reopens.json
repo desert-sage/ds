@@ -1,0 +1,27 @@
+{
+    "id": "LTIM.2.8.3_wall_gate_reopens",
+    "clauses": ["LTIM.2.5.1", "LTIM.2.4.3"],
+    "category": "logical",
+    "witnesses": [
+        "formal/idris/Rete/NetworkTwoClocks.idr#ltim_2_8_3__wall_gate_reopens"
+    ],
+    "scenario": "[LTIM.2.8.3]: a gate comparing `now()` with a fixed instant can become false again when the wall clock moves back across it, and true again when it moves forward. [LTIM.2.4.3]: re-evaluation reads both clocks as sampled when the pump began. The program is the witness's: one rule on a Ping under `now() == 1 s`, the instant built `calendar.time(1970, 1, 1, 0, 0, 1)` ([LTIM.14.1]). The witness's samples (monotonic, wall) are (1, 1), (2, 2), (3, 1) and (4, 2) seconds, from (0, 0): the harness's wall clock starts at the epoch. Steps: set 0; assert Ping; advance 1 s and pump; advance 1 s and pump; advance 1 s, then `wall_set` the wall back to 1 s, and pump; advance 1 s and pump. An advance moves both clocks, and `wall_set` moves the wall alone ([NTST.3.1]). The witness proves the counts `[1, 0, 1, 0]`. Pin: the stream's pumps and rule_fire_begin events are pump, rule_fire_begin, pump, pump, rule_fire_begin, pump. So the window reopens when the wall clock goes back, and the rule fires again. Break: a runtime that read `now()` from the monotonic clock fires once, at 1 s; one that refused a wall clock going backward fails the run.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    v: Int key\n\nrule at_one:\n    Ping where now() == calendar.time(1970, 1, 1, 0, 0, 1)\n->\n    log info \"at one\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "wall_set", "utc_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["pump", "rule_fire_begin", "pump", "pump", "rule_fire_begin", "pump"]
+    }
+}

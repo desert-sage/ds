@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.3.7.3_leading_and_trailing_zeros",
+    "clauses": ["LEXP.3.7.3", "LEXP.3.7.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.7.3]: `x.leading_zeros` is the 0 bits above the pattern's highest 1 bit, and `x.trailing_zeros` the 0 bits below its lowest; both are 64 for 0. Rule `lz` fires where `t.x.leading_zeros` equals the fact's `lz`, rule `tz` where `t.x.trailing_zeros` equals its `tz`; the receiver is an `Int` slot. `zero`: 64 and 64. `one`: 63 and 0. `minus_one`: 0 and 0. `min`: INT64_MIN, 0 and 63. `sixteen`: 0x10, 59 and 4. A builtin that counted on the magnitude would give `minus_one` 63 leading zeros, and a C `__builtin_clzll(0)` is undefined, which `zero` reaches. Messages: rule `lz` for each fact in assertion order, then `tz` ([LDET.5.4]). PATH PINNED: FN_LEADING_ZEROS and FN_TRAILING_ZEROS in libds (`builtins.c`, `int_ops.h`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    lz: Int mutable\n    tz: Int mutable\n\nrule lz:\n    T t where t.x.leading_zeros == t.lz\n->\n    log info \"lz {t.id}\"\n\nrule tz:\n    T t where t.x.trailing_zeros == t.tz\n->\n    log info \"tz {t.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "zero", "x": 0, "lz": 64, "tz": 64 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "one", "x": 1, "lz": 63, "tz": 0 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "minus_one", "x": -1, "lz": 0, "tz": 0 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "min", "x": -9223372036854775808, "lz": 0, "tz": 63 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "sixteen", "x": 16, "lz": 59, "tz": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["lz zero", "lz one", "lz minus_one", "lz min", "lz sixteen", "tz zero", "tz one", "tz minus_one", "tz min", "tz sixteen"]
+    }
+}

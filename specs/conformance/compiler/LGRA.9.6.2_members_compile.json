@@ -1,0 +1,7 @@
+{
+    "id": "LGRA.9.6.2_members_compile",
+    "category": "compiler",
+    "scenario": "[LGRA.9.6.2]: members of `Int` and `Time` resolve by the receiver's static type. Zero-argument members (`.bit_count`, `.utc`, `.hour`) have no argument list; members with arguments (`.local(tz)`, `.floor(1_h)`, `.add_months(1)`) keep theirs. Every receiver is a slot read (`r.flags`, `r.seen`), so the compiler must tell a member of the slot's value from a slot of the fact. `Bytes` has no members: its conversions left the language (LSTR.4.6). Pin: `compile_ok`.",
+    "rules_ds": "schema R scope logical:\n    k: Int key\n    flags: Int mutable\n    seen: Time mutable\n\nrule check:\n    R r where r.flags.bit_count > 1 and r.seen.utc.hour > 8 and r.seen.local(\"Europe/Paris\").hour < 22 and r.seen.floor(1_h) <= r.seen and r.seen.add_months(1) > r.seen\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_ok" }
+}

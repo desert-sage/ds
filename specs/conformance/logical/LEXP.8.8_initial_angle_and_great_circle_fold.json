@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.8.8_initial_angle_and_great_circle_fold",
+    "clauses": ["LEXP.3.6.1", "LEXP.5.11.2"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8] with [LEXP.3.6.1] and [LEXP.5.11.2]: `math.degrees`, `math.radians` and `distance.great_circle` over constant operands fold in a `const`, each by its composition and no other, and an `initial:` item may name one. Each `initial` fact carries one `const`'s folded value, and its rule compares that slot with the same `const` inlined and evaluated by the engine; the rule fires only if the two agree to the bit. `DEG = math.degrees(11.0)`, where one rounded multiply and the two rounded steps `(11.0 * 180.0) / math.pi` differ by an ulp; `DEGI = math.degrees(11)`, the `Int` converted first; `RAD = math.radians(3.0)`, which differs from `(3.0 * math.pi) / 180.0` the same way; `GC = distance.great_circle(0.0, 0.0, 0.45, 0.0)::Float`, about 50 km; and `GCW = distance.great_circle(10.0, -179.0, 20.0, 30.0)::Float`, a longitude near the -180 end of its range ([LEXP.5.11.1]). The `::Float` strips the `length` so each travels in a `Float` slot. Pin: all five rules log, in source order. A compiler that does not fold the three refuses the program with DS_VALIDATE_INITIAL_NOT_CONST. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `fold_builtin` through `lexp_3_6_1_factor` and `lexp_5_11_2_great_circle`, against the rule's inlined `const` evaluated by each runtime's FN_DEGREES, FN_RADIANS and FN_GREAT_CIRCLE (libds `builtins.c`, Mercury `ds.eval`).",
+    "rules_ds": "import math\nimport distance\n\nconst DEG = math.degrees(11.0)\nconst DEGI = math.degrees(11)\nconst RAD = math.radians(3.0)\nconst GC = distance.great_circle(0.0, 0.0, 0.45, 0.0)::Float\nconst GCW = distance.great_circle(10.0, -179.0, 20.0, 30.0)::Float\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VF k: \"deg\" f: DEG\n    VF k: \"degi\" f: DEGI\n    VF k: \"rad\" f: RAD\n    VF k: \"gc\" f: GC\n    VF k: \"gcw\" f: GCW\n\nrule r_deg:\n    VF v where v.k == \"deg\" and v.f == DEG\n->\n    log info \"deg\"\n\nrule r_degi:\n    VF v where v.k == \"degi\" and v.f == DEGI\n->\n    log info \"degi\"\n\nrule r_rad:\n    VF v where v.k == \"rad\" and v.f == RAD\n->\n    log info \"rad\"\n\nrule r_gc:\n    VF v where v.k == \"gc\" and v.f == GC\n->\n    log info \"gc\"\n\nrule r_gcw:\n    VF v where v.k == \"gcw\" and v.f == GCW\n->\n    log info \"gcw\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["deg", "degi", "rad", "gc", "gcw"]
+    }
+}

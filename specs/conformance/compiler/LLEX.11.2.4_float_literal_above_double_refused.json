@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.11.2.4_float_literal_above_double_refused",
+    "category": "compiler",
+    "scenario": "[LLEX.11.2.4]: a `FLOAT_LIT` whose value lies past the largest finite `Float`, so that it would round to an infinity, is a lexer error, \"float literal out of range\", with DS_PARSE_FLOAT_RANGE. `1e400` is one; the compiler must not read it as +inf and must not saturate it to the largest Float. PATH PINNED: `dsc.lex`'s `finish_float`, refusing on `dsc.exact.llex_11_2_4_past_largest` before the float parser is asked, mapped to DS_PARSE_FLOAT_RANGE by `dsc.driver.lex_front_code`.",
+    "rules_ds": "const X = 1e400\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_FLOAT_RANGE"
+    }
+}

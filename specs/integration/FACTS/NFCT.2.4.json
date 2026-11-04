@@ -1,0 +1,11 @@
+{
+  "id": "NFCT.2.4",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.2",
+  "seq": 140,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.2.4] **Value lifetimes — the engine copies.** All call-site value\nstorage is borrowed for the duration of the `ds_engine_assert` call only:\n\n- **String** (`v.s`): non-NULL; libds copies the content into the engine's\n  interned string table. Free your buffer after the call returns.\n- **JSON** (`v.json`): a tree from `ds_json_parse` (or the builder API); the\n  caller keeps ownership. libds **deep-clones** it (via `ds_json_clone`, into\n  independent engine-owned trees) and returns; free your tree afterward\n  (including when the assert errors before the clone step).\n- **Bytes** (`v.bytes`): the engine copies `len` bytes from `data`.\n- **Fact-ref** (`v.ref`): a non-owning borrow of a live fact; it must outlive\n  the assert and must match the slot's declared `schema_ref`.\n\n"
+}

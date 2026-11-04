@@ -1,0 +1,11 @@
+{
+    "id": "LADP.8.5.3_let_known_not_whole",
+    "clauses": ["LLET.12.5"],
+    "category": "compiler",
+    "scenario": "[LADP.8.5.3], [LLET.12.5]: a value known at compile time is known through a `let`, which is its right-hand side inlined, so one that is not a whole number of the kwarg's unit is refused at compile time and does not wait to raise at run time. `timer.arm` declares `wait: minute`; rule `go` binds `let w = 90_s` and writes `wait: w`, 1.5 minutes: DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE. PATH PINNED: `ladp_8_5_3_not_whole` in dsc.validate, reached from `call_kwarg_value`, folds the value with `dsc.quantity.known_quantity`, which reads `w` through `let_rhs_named` (the rule scope's `rsc_let_exprs`, from `dsc.resolve`). A fold that stops at the name compiles the call, and the run raises NOT_REPRESENTABLE where the clause asks for a compile-time refusal.",
+    "rules_ds": "service timer.arm:\n    kwarg wait: minute required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig\n->\n    let w = 90_s\n    call timer.arm wait: w nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE"
+    }
+}

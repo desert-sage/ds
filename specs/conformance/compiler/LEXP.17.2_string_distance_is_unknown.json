@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.17.2_string_distance_is_unknown",
+    "clauses": ["LEXP.17.2", "LIMP.3.3.4", "LGRA.22.9"],
+    "category": "compiler",
+    "scenario": "`distance.hamming` and `distance.levenshtein` are not in v1: neither is a row of [LEXP.17.2], so `distance` carries no such member. The file imports `distance` and calls `distance.levenshtein(r.name, r.canonical)` in a `where`. `distance` is an imported library, so [LGRA.22.9] reads the chain as the library's member (step 2), never as access on a binding (step 1); the member is unresolved, and an unresolved name that is called is DS_VALIDATE_UNKNOWN_FUNCTION ([LGRA.22.7], [LIMP.3.3.4]). A compiler that typed `distance` as a binding answers DS_VALIDATE_UNKNOWN_BINDING instead. PATH PINNED: `dsc.libcall`, which rewrites a `distance.` call only to a row the module carries, then `dsc.typecheck`'s `lgra_22_9_member_call`, reached through `dsc.resolve.lgra_22_9_library_member` before any receiver is typed.",
+    "rules_ds": "import distance\n\nschema Record scope logical:\n    name: String key\n    canonical: String mutable\n\nrule fuzzy_match:\n    Record r where distance.levenshtein(r.name, r.canonical) <= 2\n->\n    log info \"close match\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

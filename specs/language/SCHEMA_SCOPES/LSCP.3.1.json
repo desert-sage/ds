@@ -1,0 +1,11 @@
+{
+  "id": "LSCP.3.1",
+  "prefix": "LSCP",
+  "doc": "SCHEMA_SCOPES.md",
+  "parent": "LSCP.3",
+  "seq": 258,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSCP.3.1] `scope activation` ties a fact's lifetime to a\nrule's activation. The lifecycle:\n\n1. Rule's LHS matches; activation enters the agenda.\n2. Engine selects the activation per agenda priority.\n3. RHS begins executing.\n4. Each `emit` of a `scope activation` schema in the RHS asserts\n   its fact when the `emit` executes.\n5. RHS completes its synchronous actions.\n6. Async tail begins: any `after` timers asserted, any `call`\n   continuations awaiting responses.\n7. **As each completion path resolves** (timer fire, response\n   match, timeout fire, error fire), the engine retracts the\n   activation's `scope activation` facts.\n8. When the last completion path resolves, the activation is\n   \"done\" and any remaining `scope activation` facts are\n   retracted.\n\n"
+}

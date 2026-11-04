@@ -1,0 +1,23 @@
+{
+  "id": "LEXP.7.20",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 457,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.20] **Two fact references are equal exactly when they name the\n  same fact, and admit no ordering.** A fact reference is one of these:\n  - a pattern binding read as a value, with no slot, which is the whole fact\n    its pattern bound ([LGRA.8.6]);\n  - a `let` whose right-hand side is a fact reference, because a `let` is its\n    right-hand side inlined ([LLET.12.5]);\n  - a read of a schema-typed slot, whose value is the fact the slot was set to\n    ([LGRA.5.7a.2]).\n\n  The rules:\n  - The engine **must** answer `a == b`, where `a` and `b` are fact\n    references, `true` when the two name the same fact and `false` otherwise,\n    and `a != b` as its negation. Inside a negated pattern's `where`, that\n    pattern's binding is the candidate fact it is tested against. A `null`\n    operand, such as an unset nullable schema-typed slot, propagates\n    ([LNUL.4.1]).\n  - The same fact is one fact, not two facts with equal keys or equal slots.\n    A no-op reassertion leaves a fact the same fact ([LFAC.2.5.1]), and a\n    meaningful change replaces it with another ([LFAC.2.5.3]). Two references\n    to facts of different schemas are therefore never equal.\n  - The compiler **must** refuse `<`, `<=`, `>` and `>=` when either operand\n    is a fact reference, with `DS_VALIDATE_UNORDERED_TYPE`, at the operator,\n    as [LEXP.7.19] does for `Bytes`. In a comparison chain each step is judged\n    on its own two operands.\n\n  Two patterns may bind the same fact in one activation, so\n  `Reading a, Reading b where a != b` matches each ordered pair of two\n  different `Reading` facts and never a fact paired with itself, and\n  `Child c, Parent p where c.parent == p` matches each child with the parent\n  its slot names. The answer depends only on which facts the operands name.\n  Equality between a fact reference and an operand that is not one is outside\n  this clause.\n\n",
+  "refs": [
+    "LEXP.7.19",
+    "LFAC.2.5.1",
+    "LFAC.2.5.3",
+    "LGRA.5.7a.2",
+    "LGRA.8.6",
+    "LLET.12.5",
+    "LNUL.4.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_UNORDERED_TYPE"
+  ]
+}

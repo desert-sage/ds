@@ -1,0 +1,20 @@
+{
+    "id": "LDET.5.5_indexed_left",
+    "category": "logical",
+    "scenario": "[LDET.5.5]: matches that complete together are ordered by their facts' entry ranks, through an INDEXED equality join. The indexed twin of `LDET.5.9_dense_order_history`: Items 1, 2 and 3 share `g`, Item 1 is retracted, and the Anchor arrives with the same `g`, so the Anchor token LEFT-activates the join and finds its candidates through the right-alpha join-key index rather than the dense memory walk. The order must be 2, then 3. PATH PINNED: libds's `ralpha_idx` bucket (`rete/beta.c` `ds_rete_beta_left_activate`, the `ralpha_idx_enabled` branch), whose extensions are held at the completing join and stamped in key order at the end of the event (`ds_rete_beta_flush_completions`). Stamping in bucket order after the delete would log 3, 2. It does NOT pin Mercury's sort: Mercury's memories stay in insertion order, so its walk already reaches 2 before 3 (a traversal-order sabotage left it green, e5627698b). `LDET.5.5_self_join` pins Mercury's.",
+    "rules_ds": "schema Anchor scope logical:\n    id: Int key\n    g: Int mutable\n\nschema Item scope logical:\n    id: Int key\n    g: Int mutable\n\nrule joined:\n    Anchor a\n    Item b where b.g == a.g\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Item", "slots": {"id": 1, "g": 7}, "as": "first"},
+            {"op": "assert", "schema": "Item", "slots": {"id": 2, "g": 7}},
+            {"op": "assert", "schema": "Item", "slots": {"id": 3, "g": 7}},
+            {"op": "pump"},
+            {"op": "retract", "label": "first"},
+            {"op": "pump"},
+            {"op": "assert", "schema": "Anchor", "slots": {"id": 1, "g": 7}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["2", "3"]
+    }
+}

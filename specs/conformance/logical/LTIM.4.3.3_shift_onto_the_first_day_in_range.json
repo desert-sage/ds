@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.3.3_shift_onto_the_first_day_in_range",
+    "clauses": ["LTIM.1.1.5"],
+    "category": "logical",
+    "scenario": "[LTIM.4.3.3], [LTIM.1.1.5]: a calendar shift of a `Time` raises NOT_REPRESENTABLE only when its RESULT instant is outside the int64-nanosecond range, never for an intermediate. 1677-09-21 is UTC day -106752, whose midnight (-9223372800000000000 ns) is below INT64_MIN, while INT64_MIN itself is 1677-09-21T00:12:43.145224192Z, so the rest of that day is in range. One Event at 1677-10-21T15:00:00Z (-9220726800000000000 ns). `shifted` logs `(e.stamp.add_months(-1))::String`: the result is 1677-09-21T15:00:00Z (-9223318800000000000 ns), in range, with the UTC time-of-day kept ([LTIM.4.3.3]). Messages: exactly ['shifted 1677-09-21T15:00:00Z']. A shift that checks the target day's midnight before the instant raises NOT_REPRESENTABLE, abandons the activation, and logs nothing. Its sibling LTIM.4.3.3_shift_before_the_first_instant_is_not_representable pins the same day from the other side. PATH PINNED: the compiler's FN_ADD_MONTHS member lowering, the Time receiver through FN_UTC; libds's `calendar_shift` Time arm (rete/adapters.c), which reaches a day before the epoch from the next midnight; the Mercury runtime's `ds.eval.ltim_4_3_shift` Time arm, which computes the instant whole in `integer`.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    stamp: Time mutable\n\nrule shifted:\n    Event e\n->\n    let s = (e.stamp.add_months(-1))::String\n    log info \"shifted {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "stamp": -9220726800000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["shifted 1677-09-21T15:00:00Z"]
+    }
+}

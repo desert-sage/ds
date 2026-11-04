@@ -1,0 +1,29 @@
+{
+    "id": "LEXP.7.19_json_equal_in_one_fact",
+    "category": "runtime",
+    "scenario": "LEXP.7.19: `==` on two whole `Json` values answers by [LFAC.2.5.1]'s deep structural equality. Pair p1 holds the same object in both slots with its members in a different order, so `p.a == p.b` is true and the rule fires; pair p2 differs in one leaf and does not fire. Two Pairs plus one Found. PATH PINNED: a slot-versus-slot test inside one pattern, which no alpha test can carry (there is no `Json` literal), so the predicate evaluator answers it: libds `rete/eval.c` `val_cmp` through the BINOP comparison arm; Mercury `ds.eval` `compare_outcome`. The differing member order is what pins structural rather than byte equality.",
+    "rules_ds": "schema Pair scope logical:\n    id: String key\n    a: Json mutable\n    b: Json mutable\n\nschema Found scope logical:\n    id: String key\n\nrule r:\n    Pair p where p.a == p.b\n->\n    emit Found logical id: p.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p1",
+                    "a": { "x": 1, "y": [1, 2] },
+                    "b": { "y": [1, 2], "x": 1 }
+                }
+            },
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p2",
+                    "a": { "x": 1 },
+                    "b": { "x": 2 }
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

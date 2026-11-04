@@ -1,0 +1,13 @@
+{
+    "id": "LDIA.2.10.9_library_checked_against_program",
+    "category": "compiler",
+    "scenario": "LDIA.2.10.9 — a library's requirements are computed from its content and checked against the importing program's settings. The library `lib` matches a regex in one of its rules; the program sets `regex: false`; compiling the program is DS_VALIDATE_CAPABILITY_DISABLED at the library's `~`. Drives validation of an imported module against the root's resolved settings, not the program's own rules (the program has none that use regex).",
+    "rules_ds": "use default:\n    regex: false\n\nimport lib\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "lib": "schema Msg scope logical:\n    id: Int key\n    text: String mutable\n\nrule lib_match:\n    Msg m where m.text ~ /alarm/\n->\n    log info \"matched\"\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

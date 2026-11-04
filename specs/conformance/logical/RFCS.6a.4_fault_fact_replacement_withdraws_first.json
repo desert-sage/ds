@@ -1,0 +1,32 @@
+{
+  "id": "RFCS.6a.4_fault_fact_replacement_withdraws_first",
+  "category": "logical",
+  "dead_rules_expected": ["ratio"],
+  "scenario": "RFCS.6a.4's fault-fact paragraph: when the engine replaces a live fault fact ([LERR.9.5]), it records the FactWithdraw for the live one and then the FactEmit for its replacement ([LERR.9.8]) -- the reverse of a rule emit's supersedure, because a fault fact's replacement is the engine's latching rule, not a supersedure under [LFAC.2.5.3]. Two faults at ONE (node, rule) site that differ in a slot, in SEPARATE inputs so [LERR.9.7]'s coalescing does not merge them: rule `ratio`'s join test on Q is evaluated against P when each Q arrives. Q `zero` traps DIVIDE_BY_ZERO on the Int `//`, and the drain asserts its ComputationError fault fact; Q `huge` traps NOT_REPRESENTABLE in `floor` of 1e300 at the same beta under the same matching-time name, so the second fault fact differs from the first in `kind` alone and replaces it. Exactly, strict: the clock sample's tick; P's and Q(zero)'s asserts, the fault, its fact's fact_assert and action_emit (the FactEmit, [LERR.9.8]), the pump; Q(huge)'s assert, the fault, then fact_retract of the first fault fact BEFORE fact_assert of the second and its action_emit, then the pump. The drain runs after the input that raised the fault, so each fault's facts precede the pump event. PATH PINNED: the fault-fact drain's replacement -- libds rete/fault_fact.c assert_one (ds_engine_retract_rete_fact with DS_FWTH_CAUSE_SUPERSEDED, then ds_rete_wm_assert and emit_cb), Mercury ds.engine latched_assert -- not a rule's emit ([STYL.5.10.8]); the lockstep scenario 92_fault_supersede (fixture 125_fault_supersede) holds the two runtimes to each other. NOT PINNED HERE: the withdrawal's cause. The stream callback's kinds carry no cause; SUPERSEDED is fault_fact.c's literal argument.",
+  "rules_ds": "from math import floor\n\nschema P scope logical:\n    entity_id: String key\n    n: Int mutable\n\nschema Q scope logical:\n    entity_id: String key\n    d: Int mutable\n    f: Float mutable\n\nrule ratio:\n    P p\n    Q q where (p.n // q.d) > floor(q.f)\n->\n    log info \"ratio\"\n",
+  "expect": {
+    "kind": "event_sequence_strict",
+    "steps": [
+      { "op": "assert", "schema": "P", "slots": { "entity_id": "p", "n": 7 } },
+      { "op": "assert", "schema": "Q", "slots": { "entity_id": "zero", "d": 0, "f": 1.0 } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "Q", "slots": { "entity_id": "huge", "d": 1, "f": 1e300 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "tick",
+      "fact_assert",
+      "fact_assert",
+      "computation_error",
+      "fact_assert",
+      "action_emit",
+      "pump",
+      "fact_assert",
+      "computation_error",
+      "fact_retract",
+      "fact_assert",
+      "action_emit",
+      "pump"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "IRET.9.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.9",
+  "seq": 767,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Evaluation context",
+  "text": "### Evaluation context [IRET.9.2]\n\nEverything an expression evaluation may read, gathered into one value so\nevaluation itself is a pure function of its context:\n\n| Field | Holds |\n|---|---|\n| token | the current partial match — how a slot reference resolves |\n| right_fact | the fact arriving on the right, during join evaluation |\n| bind_frame | the `let` bindings in scope |\n| bind_count | how many are bound |\n| engine | reached only for builtin dispatch and the clock |\n\nTwo properties are load-bearing:\n\n**`right_fact` is absent when evaluating a RHS action.** That is what\ndistinguishes the two evaluation sites — a join test evaluates against a\ncandidate fact, an action evaluates after the match is settled and there\nis no candidate. Its absence is the signal, not an error.\n\n**The bind frame is stack-allocated.** `let` bindings live for exactly\none evaluation, so they cost no allocation and need no freeing — which is\nwhat lets `let` be used freely under `constspace` and in LIVE mode.\n\n"
+}

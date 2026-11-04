@@ -1,0 +1,16 @@
+{
+    "id": "LTHE.2.5.3_anchor_failing_trailing_where_does_not_exclude",
+    "category": "logical",
+    "scenario": "LTHE.2.5.3 — an excluding anchor must satisfy the sequence's trailing `where`. Rule: `latest DoorOpen d then Motion m within 30_s where d.loc == m.loc`. DoorOpen hall at ts 1, DoorOpen porch at ts 2, Motion hall at ts 3, one pump. The porch DoorOpen fails `d.loc == m.loc` with this Motion, so it does not exclude the hall anchor: the rule fires once, logging `1`. An exclusion that tests only the anchor's schema and ts blocks the hall anchor on the porch one and logs nothing. The log reads the anchor's `n`, which mirrors its `ts`, because `ts` is a `Time` ([LFAC.9.1]) and the vector should not depend on how a `Time` renders.",
+    "rules_ds": "schema DoorOpen scope ttl 1_h:\n    loc: String\n    n: Int\n    ts: Time\n\nschema Motion scope ttl 1_h:\n    loc: String\n    ts: Time\n\nrule entry:\n    latest DoorOpen d\n    then Motion m within 30_s where d.loc == m.loc\n->\n    log info \"{d.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": "hall", "n": 1, "ts": 1}},
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": "porch", "n": 2, "ts": 2}},
+            {"op": "assert", "schema": "Motion", "slots": {"loc": "hall", "ts": 3}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["1"]
+    }
+}

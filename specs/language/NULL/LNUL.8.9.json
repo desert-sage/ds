@@ -1,0 +1,49 @@
+{
+  "id": "LNUL.8.9",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.8",
+  "seq": 307,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.8.9] **`??` evaluation order — lazy, uniform (no mode-split).** `x ?? d`\nevaluates `d` **only when `x` is `null`** (lazy short-circuit), in **both**\n`realtime` and non-RT. The mode must not change it: `d` can fault where `x` is\npresent (`x ?? y / z`), so eager evaluation would raise a fault the lazy form\nnever meets, and a mode-dependent choice would make the **same program behave\ndifferently** under `realtime` than without it. Unlike the operands of `and` /\n`or` ([LNUL.4.2]), `x` and `d` are not interchangeable, so this order is part of\nthe meaning. WCET is unaffected — the worst case (`x` null → evaluate `d`) has the same bound\nas eager.\n\n",
+  "refs": [
+    "LNUL.4.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_5_3__coalesce",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "d is passed unevaluated and evaluated only when x is null: the lazy order, with no mode to split on in the model."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_5_3__null_takes_the_default",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The one case in which d is evaluated: x null, for every d."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_9__default_not_looked_at",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's x ?? y / z with x present and z zero, quantified: for every non-null x and every d, a faulting one included, the answer is x and the fault is never met."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

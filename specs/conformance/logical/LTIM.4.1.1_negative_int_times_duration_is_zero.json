@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_negative_int_times_duration_is_zero",
+    "category": "logical",
+    "dead_rules_expected": ["negative"],
+    "scenario": "[LTIM.4.1.1] / [LTIM.1.3.1]: a product or quotient of a `Duration` and a negative `Int` is `0_s`. One S, `n` -3 and `d` 2 s. Rules `left` (`s.n * s.d == 0_s`), `right` (`s.d * s.n == 0_s`) and `quotient` (`s.d / s.n == 0_s`) fire; rule `negative` (`s.n * s.d < 0_s`) would fire on the unsaturated -6 s and must not. Rule `third` logs `(s.d / 3)::String`: `Duration / Int` is integer division of nanoseconds ([LTIM.4.1.1]), so it is `666ms666us666ns`, where a `Float` quotient ([LEXP.7.4]) could not be cast. PATH PINNED: `dsc.rete`'s `rlow_6_1_6_saturating` lowering `n * dur` and `dur * n` to `FN_MAX(op_mul, 0)` and `dur / n` to `FN_MAX(op_floordiv, 0)` ([RLOW.6.1.6]).",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    n: Int mutable\n    d: Duration mutable\n\nrule left:\n    S s where s.n * s.d == 0_s\n->\n    log info \"left\"\n\nrule right:\n    S s where s.d * s.n == 0_s\n->\n    log info \"right\"\n\nrule quotient:\n    S s where s.d / s.n == 0_s\n->\n    log info \"quotient\"\n\nrule negative:\n    S s where s.n * s.d < 0_s\n->\n    log info \"negative\"\n\nrule third:\n    S s\n->\n    let t = (s.d / 3)::String\n    log info \"third {t}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": -3, "d": 2000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["left", "right", "quotient", "third 666ms666us666ns"]
+    }
+}

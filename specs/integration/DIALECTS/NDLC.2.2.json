@@ -1,0 +1,68 @@
+{
+  "id": "NDLC.2.2",
+  "prefix": "NDLC",
+  "doc": "DIALECTS.md",
+  "parent": "NDLC.2",
+  "seq": 113,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDLC.2.2] **`settings` must set every capability, and the loader\nderives nothing.** Its keys must be exactly the capabilities of\n[LCAP.1]: a capability left unset is an error, not a default\n(`DS_VALIDATE_DIALECT_INCOMPLETE`), and a key naming no capability is\n`DS_VALIDATE_DIALECT_UNKNOWN_CAPABILITY`. The settings must satisfy the\nfundamental constraints of [LCAP.3.8]\n(`DS_VALIDATE_DIALECT_DEPENDENCY`), and must set `realtime` and\n`constspace` `false`, which are deferred in this edition\n(`DS_VALIDATE_REALTIME_DEFERRED`, [LCAP.2.1.5]).\n\nDefaulting an unset capability would be the silent behaviour this rule\nexists to prevent, and the cost is concrete: when a capability is\n**added** to the registry, every existing dialect file would take a value\nfor it by omission, and compiles would keep succeeding while the tier\nsilently gained or lost a construct. Requiring every key converts that\ninto a loud failure when the definition is loaded, which is the point.\n\n",
+  "refs": [
+    "LCAP.1",
+    "LCAP.2.1.5",
+    "LCAP.3.8"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__a_definition_pins_its_registry",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__a_new_capability_refuses_every_old_definition",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__accepted",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "Models the three refusals the clause names first (incomplete, unknown capability, dependency) over any registry. The clause's fourth refusal, a definition setting `realtime` or `constspace` `true` (`DS_VALIDATE_REALTIME_DEFERRED`, [LCAP.2.1.5]), is not modelled: the registry here has no named keys, so the model accepts a definition this edition refuses. The derived checks hold with or without it."
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__accepted_sets_exactly_the_capabilities",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__definition",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__incomplete",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__key",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/dialect_completeness.als",
+        "name": "ndlc_2_2__unknown_capability",
+        "tag": "spec"
+      }
+    ]
+  },
+  "errors": [
+    "DS_VALIDATE_DIALECT_DEPENDENCY",
+    "DS_VALIDATE_DIALECT_INCOMPLETE",
+    "DS_VALIDATE_DIALECT_UNKNOWN_CAPABILITY",
+    "DS_VALIDATE_REALTIME_DEFERRED"
+  ]
+}

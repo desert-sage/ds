@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.8.6_typed_let_time_ok",
+    "category": "compiler",
+    "scenario": "LUNI.8.6: `Time` is an admitted `let` annotation, checked like the scalars. `now()` is a `Time` ([LTIM.2.1.1]; `dsc.builtins` returns `br_time`), so `let t: Time = now()` passes `dsc.validate.luni_8_6_annotation`'s `luni_8_6_checked_scalar` arm, and the binding has the annotated type: it is emitted into a `Time` slot. Twin of `LUNI.8.6_typed_let_time_on_duration_refused`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n\nschema Stamp scope ttl 5_min:\n    stamped: Time\n\nrule typed_let:\n    Ev e\n->\n    let t: Time = now()\n    emit Stamp stamped: t\n    log info \"id = {e.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

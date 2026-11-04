@@ -1,0 +1,25 @@
+# The refraction listing and the match trace (fixtures/131_introspection.ds). `refracted` prints [NDBG.4.3]'s listing and
+# `trace N` [NDBG.4.2]'s match trace of the N-th assert's fact; both are reads.
+#
+#   pump 1   `high` fires for Reading 2, `any` for Readings 1 and 2: three
+#            entries, `high`'s first (terminal ordinal, [LDET.5.4])
+#   trace    Reading 1 (level 10) is filtered by `high`'s alpha and passes
+#            `any`'s; Reading 2 (level 90) passes both. Node ids are the
+#            artefact's, so they are compared
+#   pump 2   after an unrelated Noise: still three entries -- an unrelated
+#            assert and a pump boundary remove nothing ([IRET.11.3.2])
+#   pump 3   after retracting Reading 2: its two entries went with its
+#            activations, and Reading 1's `any` entry is all that is left
+# @spec [NDBG.4.2] [NDBG.4.3]
+assert Reading id=1 level=10
+assert Reading id=2 level=90
+pump
+refracted
+trace 0
+trace 1
+assert Noise id=1
+pump
+refracted
+retract 1
+pump
+refracted

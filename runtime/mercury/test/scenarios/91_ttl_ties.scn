@@ -1,0 +1,17 @@
+# Equal deadlines leave in entry order ([LDET.5.11]). `Ev` is `scope ttl 1_s`
+# under `+dynamic_ttl`, so expiry runs off the deadline heap. Four Evs share
+# one deadline; Ev 1 is then retracted, which in libds moves Ev 4 into the
+# heap root's hole, and the sweep at +1s expires 2, 3, 4.
+#
+# The trace prints `retract` with no identity, so the recordings cross-read,
+# which compares the FactWithdraw records' fact ids, is what pins the order.
+# @spec [LDET.5.11]
+assert Ev id=1
+assert Ev id=2
+assert Ev id=3
+assert Ev id=4
+pump
+retract 0
+pump
+advance 1000000001
+pump

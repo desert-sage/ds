@@ -1,0 +1,9 @@
+{
+    "id": "LECC.6.2a",
+    "category": "compiler",
+    "scenario": "Leaf-level error matching per LECC.6.2 — `error adapter.throttled:` pins to the one leaf and does NOT match other `adapter.*` codes (per LCCO.8.3.2 segment-boundary matching). Pin: an `error adapter.throttled:` clause compiles. PINS ONLY THAT IT COMPILES: `compile_ok` observes neither the predicate the sibling rule is keyed on nor that other `adapter.*` codes are not caught.",
+    "rules_ds": "service weather.get_forecasts:\n    kwarg entity_id: String\n    no response\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        error adapter.throttled:\n            log info \"throttled\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

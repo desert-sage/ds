@@ -1,0 +1,37 @@
+{
+  "id": "RFCS.7a.4_expiry_withdraw_precedes_its_consequences",
+  "category": "logical",
+  "dead_rules_expected": ["ratio"],
+  "scenario": "RFCS.7a.4: when the engine withdraws a fact, whatever the cause ([RFCS.7a.2]), it records the FactWithdraw before every atom the withdrawal's evaluation produces -- the faults raised while the network re-evaluates without the fact, and the withdrawals it cascades into. The cause driven here is TTL_EXPIRED. `Gate` (ttl 1_h) blocks `ratio`'s `no Gate`, so in pump 1 `ratio`'s join on Q is never evaluated; `keep` emits `Held` logically from `Gate`. The clock is advanced past the hour and pumped: the sweep expires `Gate`. Its removal releases `ratio`'s negated pattern, the join `(p.n // q.d) > 0` runs against Q(d = 0) and traps DIVIDE_BY_ZERO, and `Held`'s only justifier is gone, so it is withdrawn with cause JUSTIFIER_ENDED. Exactly, strict: pump 1's inputs, its firing of `keep` (fact_assert of Held, action_emit); then the tick, the pump, fact_retract (Gate), computation_error, fact_retract (Held), and the drain's fault fact (fact_assert, action_emit). The first fact_retract is Gate's because nothing else can be withdrawn before Gate is: Held's cascade and the fault both follow from Gate's removal. WHICH ORDER OF THE TWO CONSEQUENCES THIS PINS: the fault, then the cascaded withdrawal -- the engine's order in both runtimes (the network re-evaluates during the removal; truth maintenance runs after it). RFCS.7a.4 admits either; this vector holds the runtimes to the one they share. PATH PINNED: libds's TTL sweep through ds_rete_wm_retract_bridge, whose recorder hold keeps a fault raised during the removal until after its FACT_RETRACT (wm_rete_bridge.c), and Mercury's sweep in ds.engine; the lockstep scenario 93_expiry_consequences (fixture 126_expiry_consequences) holds the two to each other. NOT PINNED HERE: the causes (TTL_EXPIRED, JUSTIFIER_ENDED); the stream callback's kinds carry none.",
+  "rules_ds": "schema Gate scope ttl 1_h:\n    g: Int\n\nschema Held scope logical:\n    id: Int key\n\nschema P scope logical:\n    entity_id: String key\n    n: Int mutable\n\nschema Q scope logical:\n    entity_id: String key\n    d: Int mutable\n\nrule keep:\n    Gate\n->\n    emit Held logical id: 1\n\nrule ratio:\n    P p\n    no Gate\n    Q q where (p.n // q.d) > 0\n->\n    log info \"ratio\"\n",
+  "expect": {
+    "kind": "event_sequence_strict",
+    "steps": [
+      { "op": "assert", "schema": "Gate", "slots": { "g": 1 } },
+      { "op": "assert", "schema": "P", "slots": { "entity_id": "p", "n": 7 } },
+      { "op": "assert", "schema": "Q", "slots": { "entity_id": "zero", "d": 0 } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 3600000000001 },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "tick",
+      "fact_assert",
+      "fact_assert",
+      "fact_assert",
+      "pump",
+      "rule_lhs_facts",
+      "rule_fire_begin",
+      "fact_assert",
+      "action_emit",
+      "rule_fire_end",
+      "tick",
+      "pump",
+      "fact_retract",
+      "computation_error",
+      "fact_retract",
+      "fact_assert",
+      "action_emit"
+    ]
+  }
+}

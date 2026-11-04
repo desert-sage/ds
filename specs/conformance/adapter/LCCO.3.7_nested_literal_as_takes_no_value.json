@@ -1,0 +1,22 @@
+{
+    "id": "LCCO.3.7_nested_literal_as_takes_no_value",
+    "clauses": ["LCCO.3.7", "LCCO.3.8"],
+    "category": "adapter",
+    "scenario": "[LCCO.3.7] item 2: \"When a synthesized terminal fires -- an `after` follow-up or a continuation sibling ([RLOW.14.7]) -- before any of its actions runs: one value for each `call` in its own body that has no `as` or a computed `as`, in source order. A `call` with a continuation in that body takes none: it carries a literal `as`, or the compiler refuses it ([LCCO.3.8]).\" Rule `r` calls `svc.first` with no `as`, which takes `g0` when `r` fires. Its `after 5_s:` body reads no binding of `r`, so the clause takes no value ([LCCO.3.7] item 1). When the follow-up fires it calls `svc.plain` with no `as` (call 0, `g1`), `svc.probe` with a continuation and `as \"probe\"` (call 1, no value, issued as `probe`), and `svc.plain` again (call 2, `g2`). PATH PINNED: `lcrs_3_1_generated_calls` in dsc.rete, which mints one `fn_gensym` bind in the follow-up's frame for each plain call and none for the continued one, evaluated in source order by each runtime when the follow-up fires. A continued call that took a value would make the last call `g3`. The plain calls' correlations are named from the follow-up, `$r_after_0`, so each is `$$r_after_0_c<N>_g<k>` ([LCCO.3.4], [LLEX.10.6.1]).",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.first:\n    kwarg n: Int\n    no response\n\nservice svc.plain:\n    kwarg n: Int\n    no response\n\nservice svc.probe:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.first n: j.id nocooldown\n    after 5_s:\n        call svc.plain n: 2 nocooldown\n        call svc.probe n: 3 nocooldown as \"probe\"\n            on response.code == 200:\n                log info \"ok\"\n        call svc.plain n: 4 nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            { "service": "svc.first", "correlation": "$r_c0_g0", "body": { "n": 1 } },
+            { "service": "svc.plain", "correlation": "$$r_after_0_c0_g1", "body": { "n": 2 } },
+            { "service": "svc.probe", "correlation": "probe", "body": { "n": 3 } },
+            { "service": "svc.plain", "correlation": "$$r_after_0_c2_g2", "body": { "n": 4 } }
+        ]
+    }
+}

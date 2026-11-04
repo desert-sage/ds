@@ -1,0 +1,34 @@
+{
+    "id": "LFAC.1.2g",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "Multiple TTL deadlines staggered across one pump cycle \u2014 both retract in the same pump if both have passed: a pump retracts every expired `ttl` fact at its entry (RARC.5.2.4; LFAC.1.3.3). Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema A scope ttl 50_ms:\n    v: Int\n\nschema B scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "A",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "assert",
+                "schema": "B",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "id": "LNUL.8.6_nulls_hold_counts_the_held_sample",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] `hold` absorbs a SAMPLE, not a repeat of the old one: `count all_time` over an `Int?` slot with `nulls: hold` takes 1, null, 2 then 3, one per pump, each read pre-sample ([LSER.8.6.1]); the guard `s.count >= 3` logs once, at the fourth pump, over [1, 1 held, 2]: `count 3`. Drives the HOLD arm on an Int slot (libds substitutes the row's typed `last_value`; Mercury the held `int`) and the count's absorb of it.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int? mutable\n\nseries Reading.level (by: dev, nulls: hold):\n    count all_time\n\nrule r:\n    Reading s where s.count >= 3\n->\n    log info \"count {s.count}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["count 3"]
+    }
+}

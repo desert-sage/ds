@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.5.2.runtime",
+    "category": "logical",
+    "scenario": "Time slot assertion per LTIM.5.2 — a fact with a Time-typed slot can be asserted with an integer nanosecond timestamp and matched by rules that compare Time values. Pin: assert two events with different timestamps, pump — the rule gating on timestamp ordering fires.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule newer_first:\n    Event a where a.entity_id == \"a\"\n    Event b where b.entity_id == \"b\" and a.fired_at > b.fired_at\n->\n    log info \"a is newer than b\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "b", "fired_at": 1000000000 } },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "a", "fired_at": 2000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["newer_first"]
+    }
+}

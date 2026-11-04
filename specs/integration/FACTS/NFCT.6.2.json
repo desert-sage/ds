@@ -1,0 +1,22 @@
+{
+  "id": "NFCT.6.2",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.6",
+  "seq": 265,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[NFCT.6.2] **Per-fact accessors.** A `ds_fact_t *` is opaque; read it through:\n\n| Accessor | Returns |\n|---|---|\n| `ds_fact_get_id`             | engine-assigned monotonic id (a new id after retract→reassert; identity is not preserved across retraction) |\n| `ds_fact_get_schema`         | the schema this fact instantiates (borrow, engine-lifetime) |\n| `ds_fact_get_asserted_ns`    | the fact's entry stamp, on the monotonic clock ([LTIM.2.8.6]) |\n| `ds_fact_get_ttl_deadline_ns`| TTL deadline (0 for LOGICAL / untracked) |\n| `ds_fact_get_slot_count`     | slot count |\n| `ds_fact_get_slot`           | the i-th slot's name (borrow) and tagged-union value |\n\nEach returns `DS_OK` with the out-pointer set, `DS_ERR_INVAL` on NULL,\n`DS_ERR_NOT_FOUND` on out-of-range index. `ds_fact_get_slot` takes `NULL` for\neither out-pointer, and `DS_ERR_INVAL` answers both being `NULL`. Pointers are\nvalid until the fact is retracted (TTL sweep, explicit retract, justifier-end);\nholding a `ds_fact_t *` across pumps risks use-after-free unless you subscribe\nto `DS_EV_FACT_RETRACT` and clear your reference there. A `v.json` read from a\nfact is the fact's own tree, a borrow the caller must not free or change\n([IDAT.3.3.8]).\n\n",
+  "refs": [
+    "IDAT.3.3.8",
+    "LTIM.2.8.6"
+  ],
+  "errors": [
+    "DS_ERR_INVAL",
+    "DS_ERR_NOT_FOUND"
+  ],
+  "symbols": [
+    "DS_EV_FACT_RETRACT"
+  ]
+}

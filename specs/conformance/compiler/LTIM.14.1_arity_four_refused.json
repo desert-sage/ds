@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.14.1_arity_four_refused",
+    "clauses": ["LTIM.14.1"],
+    "category": "compiler",
+    "scenario": "[LTIM.14.1] with [LEXP.17.1]: `calendar.time` takes 3, 6 or 7 fields, a set and not a range, so `calendar.time(2026, 1, 1, 12)` is DS_VALIDATE_BAD_ARITY. PATH PINNED: `dsc.typecheck.lgra_9_8_11_builtin_call` over [LEXP.17.2]'s `calendar.time` row, `[3, 6, 7]`, in `dsc.builtin_fns`.",
+    "rules_ds": "import calendar\n\nschema Ev scope logical:\n    id: Int key\n    t: Time mutable\n\nrule late:\n    Ev e where e.t > calendar.time(2026, 1, 1, 12)\n->\n    log info \"late {e.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_ARITY"
+    }
+}

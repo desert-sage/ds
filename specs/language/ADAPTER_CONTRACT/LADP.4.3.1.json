@@ -1,0 +1,18 @@
+{
+  "id": "LADP.4.3.1",
+  "prefix": "LADP",
+  "doc": "ADAPTER_CONTRACT.md",
+  "parent": "LADP.4.3",
+  "seq": 255,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[LADP.4.3.1] Required slots when the adapter is discovery-driven:\n\n| Slot | Type | Purpose |\n|---|---|---|\n| `entity_id` | STRING | The external system's entity identifier. Authors match it directly in `where` (`entity_id == …` / `~ /…/`, [LADP.3.1]). |\n| `state` | concrete type | The entity's primary state. The adapter picks a concrete type (`String`, `Int`, `Float`, `Bool`, or `Json`) per schema when it declares the schema; the choice is fixed in the declaration and carried in the artefact (RARC.9.4.2), never negotiated at connect time. When attributes vary across entities of the same domain, the adapter either stringifies (`state: String`), emits multiple narrow schemas per observed type, or — last resort — declares `state: Json`. See [LADP.5]. |\n| `last_changed` | FLOAT | Epoch when state last meaningfully changed, in source time. Usually equals `ts`; preserved across attribute-only updates, so `now()` minus `last_changed` is the time in the current state. `dwell` measures time since the fact last entered working memory instead ([LTIM.2.8.6]), which an attribute-only update resets. |\n| `context_id` | STRING | Causality chain identifier from the external system. See [LADP.10]. |\n| `friendly_name` | STRING | Human-readable label for operator logs. |\n\n",
+  "refs": [
+    "LTIM.2.8.6",
+    "LADP.10",
+    "LADP.3.1",
+    "LADP.5",
+    "RARC.9.4.2"
+  ]
+}

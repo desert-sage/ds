@@ -1,0 +1,27 @@
+{
+    "id": "LFAC.1.2b",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "TTL deadline boundary, the survival side \u2014 a fact with `ttl 1_s` survives a 999_ms advance + pump: a fact is expired only once its deadline is at or before the clock (RARC.5.2.4; LFAC.1.3.3). The expiry side is temporal/LFAC.1.2k; this vector has one count, at the end, so it checks survival only. Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema Pulse scope ttl 1_s:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 999000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 1
+    }
+}

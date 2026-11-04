@@ -1,0 +1,17 @@
+{
+    "id": "RARC.7.15_an_assert_after_the_deadline_retracts_nothing",
+    "clauses": ["RARC.7.15", "RARC.5.6.3"],
+    "category": "temporal",
+    "scenario": "[RARC.7.15]: an input does not retract; an assert made after a fact's deadline joins against that fact until the next pump retracts it. [RARC.5.6.3]: an assert retracts nothing. On the mock clock, a `Pulse` (`scope ttl 50_ms`) is asserted at 1 s, the clock advanced by 100 ms past its deadline, and a `Probe` asserted, with no pump. `temporal_sequence` reads working memory after the last step ([RCTS.1.2.31]), the `Probe` assert, so the expired `Pulse` is still there beside it: `fact_count_after: 2`. What it discriminates: a runtime whose host assert sweeps expired facts first counts 1. Twin: RARC.7.15_the_next_pump_retracts_the_expired_fact, the same steps and a pump. PATHS: libds's `ds_engine_assert` (wm.c), the host-assert path, which sweeps nothing; the Mercury runtime's `ds.engine.host_assert`, which does not call `sweep_expired`.",
+    "rules_ds": "schema Pulse scope ttl 50_ms:\n    v: Int\n\nschema Probe scope ttl 1_h:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 100000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "v": 2 } }
+        ],
+        "fact_count_after": 2
+    }
+}

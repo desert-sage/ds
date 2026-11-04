@@ -1,0 +1,15 @@
+{
+    "id": "LSCP.3.2",
+    "category": "runtime",
+    "dead_rules_expected": ["watch"],
+    "scenario": "LSCP.3.2 -- a synchronous rule's `scope activation` fact has zero externally-observable lifetime: asserted and retracted within the tick, at the end of the RHS that asserted it (LSCP.2.4.1). `watch` is the instrument (LSCP.2.4.4 makes the fact matchable): it fires only if the Lock survives its activation, and it emits a ttl Seen so the count shows whether it did. Pin: fact_count 1 -- the Trig alone. 2 would be the Lock surviving (watch silent but the Lock live); 3 would be the watcher firing on it.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Lock scope activation:\n    entity_id: String\n\nschema Seen scope ttl 1_h:\n    entity_id: String\n\nrule gated:\n    Trig t\n->\n    emit Lock entity_id: t.entity_id\n\nrule watch:\n    Lock l\n->\n    emit Seen entity_id: l.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Trig", "slots": { "entity_id": "t1" } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

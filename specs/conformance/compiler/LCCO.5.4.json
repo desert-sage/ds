@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.5.4",
+    "category": "compiler",
+    "scenario": "A `call` with an `on response` continuation reading the outer binding's mutable slot `{s.room}` compiles. PINS ONLY THAT IT COMPILES. LCCO.5.4's snapshot semantics needs a run: the continuation reads the value captured at activation, even after the fact has changed or gone. `compile_ok` observes neither that nor the `$CaptureBindings_<rule>_c<N>` pattern.",
+    "rules_ds": "schema SensorReadReply scope ttl 1_h:\n    corr: String\n    reading: Int\n\nservice sensor.read:\n    kwarg entity_id: String\n    response SensorReadReply\n\nschema Sensor scope logical:\n    entity_id: String key\n    room: String mutable\n\nrule read_sensor:\n    Sensor s\n->\n    call sensor.read entity_id: s.entity_id cooldown: 30_s\n        on response.reading > 0:\n            log info \"sensor {s.room} responded\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.6.5_local_components_cross_the_day",
+    "clauses": ["LTIM.10.7", "LTIM.6.3"],
+    "category": "logical",
+    "scenario": "[LTIM.6.5]: a component of `.local(tz)` is that component of the instant in the zone `tz` names, resolved through its `TimeZoneOffset` facts ([LTIM.10.7]). The case is a zone offset that moves the day. The host asserts one row, `Asia/Tokyo` at +32400 s for all of 2024, and one Event at 2024-02-29T23:30:00Z, a Thursday. In Tokyo that instant is 2024-03-01 08:30, a Friday, so the local read moves the day, the month and the weekday together. `tokyo` pins all six local components: year 2024, month 3, day 1, hour 8, minute 30, day_of_week 4 ([LTIM.6.3]: 0 is Monday). `utc` pins the same instant read through `.utc`: month 2, day 29, hour 23, day_of_week 3. Both match, so the messages are exactly ['tokyo', 'utc'], in source order. Each wrong reading fails: a runtime that reads no row faults DOMAIN in `tokyo`'s test, so only `utc` logs; one that applies the offset with the wrong sign (14:30 on the 29th), reads it as minutes or hours, takes the date from UTC and the time from the zone, or the weekday from UTC, does not fire `tokyo`; one that shifts `.utc` too does not fire `utc`. PATH PINNED: the component builtins FN_YEAR, FN_MONTH, FN_DAY, FN_HOUR, FN_MINUTE and FN_DAY_OF_WEEK with a zone name: libds's `time_component` (rete/adapters.c) through its per-zone index of `TimeZoneOffset` facts, and Mercury's `ds.eval` component read through `ds.wm`'s index.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule tokyo:\n    Event e where e.seen.local(\"Asia/Tokyo\").year == 2024 and e.seen.local(\"Asia/Tokyo\").month == 3 and e.seen.local(\"Asia/Tokyo\").day == 1 and e.seen.local(\"Asia/Tokyo\").hour == 8 and e.seen.local(\"Asia/Tokyo\").minute == 30 and e.seen.local(\"Asia/Tokyo\").day_of_week == 4\n->\n    log critical \"tokyo\"\n\nrule utc:\n    Event e where e.seen.utc.month == 2 and e.seen.utc.day == 29 and e.seen.utc.hour == 23 and e.seen.utc.day_of_week == 3\n->\n    log critical \"utc\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Asia/Tokyo", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 32400 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709249400000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["tokyo", "utc"]
+    }
+}

@@ -1,0 +1,36 @@
+{
+    "id": "LSER.17.2_int_min_max_exact_rule_read",
+    "category": "logical",
+    "scenario": "[LSER.17.2], read by a rule: `min` and `max` \"preserve the slot's type because they *do* select an observed value\", so over an `Int` slot they answer a sample exactly, and render as an Int. On each of the three backings that serve them: `all_time` (SeriesBackendWelfordEwma: libds's `min_i` / `max_i`), `sliding` (SeriesBackendMonotonicDeque: libds's int64 deque, `ds_series_mono_deque_update_int`), `sample` (SeriesBackendReservoir: libds's reservoir Int track); Mercury's `extreme` over int64. The samples are 2^53 + 1 and 2^53 + 3, which round to the doubles 2^53 and 2^53 + 4: a min or max taken through `double` reads 9007199254740992 / 9007199254740996, values no sample had. At 3 s a `Probe` arrives; `ra`, `rw` and `rs` log their binding's `min` and `max` ([NSBK.6.3]), each once per fact of its `ttl` schema (two), in source order ([LDET.5.4]).",
+    "rules_ds": "use default\n\nschema MA scope ttl 1_h:\n    k: String\n    v: Int\n\nschema MW scope ttl 1_h:\n    k: String\n    v: Int\n\nschema MS scope ttl 1_h:\n    k: String\n    v: Int\n\nschema Probe scope explicit:\n    k: Int\n\nseries MA.v (by: k):\n    min all_time\n    max all_time\n\nseries MW.v (by: k):\n    min sliding 1_h\n    max sliding 1_h\n\nseries MS.v (by: k):\n    min sample 8\n    max sample 8\n\nrule ra:\n    Probe\n    MA a\n->\n    log info \"a {a.min} {a.max}\"\n\nrule rw:\n    Probe\n    MW w\n->\n    log info \"w {w.min} {w.max}\"\n\nrule rs:\n    Probe\n    MS s\n->\n    log info \"s {s.min} {s.max}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "MA", "slots": { "k": "g", "v": 9007199254740993 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "MW", "slots": { "k": "g", "v": 9007199254740993 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "MS", "slots": { "k": "g", "v": 9007199254740993 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "MA", "slots": { "k": "g", "v": 9007199254740995 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "MW", "slots": { "k": "g", "v": 9007199254740995 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "MS", "slots": { "k": "g", "v": 9007199254740995 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "a 9007199254740993 9007199254740995",
+            "a 9007199254740993 9007199254740995",
+            "w 9007199254740993 9007199254740995",
+            "w 9007199254740993 9007199254740995",
+            "s 9007199254740993 9007199254740995",
+            "s 9007199254740993 9007199254740995"
+        ]
+    }
+}

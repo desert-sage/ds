@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.5.9.4_tolerance_dimension_slot",
+    "category": "compiler",
+    "scenario": "[LGRA.5.9.4]: a slot typed by a dimension name names no unit to read a tolerance literal in ([LUNI.7.1]), so the compiler refuses its tolerance with DS_VALIDATE_TOLERANCE_BAD_TYPE. `S`'s `t: warmth mutable tolerance 1` is typed by the dimension `warmth`, not by a unit of it, and is refused. Its twin LUNI.7.4_tolerance_scaled_by_a takes the same tolerance on a tier-1 unit of `warmth` and compiles, so a check refusing every unit-dimension slot would fail that one. PATH PINNED: `dsc.validate`'s `tolerance_refusal`, whose `lgra_5_9_4_typed` admits only `te_unit(uk_symbol(_), _)` among unit types, and `warmth` is `te_unit(uk_dimension, _)`.",
+    "rules_ds": "unit dimension warmth storage float64 base therm\nunit therm: warmth\n\nschema S scope logical:\n    e: Int key\n    t: warmth mutable tolerance 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TOLERANCE_BAD_TYPE"
+    }
+}

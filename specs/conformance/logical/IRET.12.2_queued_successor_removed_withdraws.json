@@ -1,0 +1,22 @@
+{
+  "id": "IRET.12.2_queued_successor_removed_withdraws",
+  "clauses": ["IRET.12.2", "IRET.19.5"],
+  "category": "logical",
+  "dead_rules_expected": ["live"],
+  "scenario": "[IRET.12.2] across the tick's turnover ([IRET.19.5]): a fired match's justification, carried by the tick to the activation the fresh tick re-forms, is withdrawn when that activation is removed before it pops. `fresh` reads `now()`, so its terminal's guard has a condition and the successor waits on the agenda unfired, holding the justification. Pump 1 (t=0): `Reading a` matches, `now() < 2 s` holds, `fresh` fires and emits `Fresh logical`. Pump 2 (t=1 s): a `Kill` was asserted before it; the tick turnover carries `fresh`'s match to its successor, and `kill`, earlier in source order and so first ([LDET.5.4]), withdraws the `Reading`. The successor's token is gone before it pops, its activation ends, and `Fresh` loses its one justification and is retracted. Pump 3: a `Probe` arrives, and `live`, which joins `Fresh` with `Probe`, finds no `Fresh` and must not fire. Expected logs: \"fresh\", then \"kill\". PATH: libds's `ds_rete_terminal_left_retract` (rete/terminal.c), whose branch for an activation not yet fired withdraws its justification, and the Mercury runtime's `ds.engine.settle_turnover`, which ends every removed activation, fired or not.",
+  "rules_ds": "use default\n\nimport calendar\n\nschema Reading scope explicit:\n    dev: String\n\nschema Kill scope explicit:\n    n: Int\n\nschema Probe scope explicit:\n    n: Int\n\nschema Fresh scope logical:\n    dummy: Int key\n\nrule kill:\n    Kill\n    Reading r\n->\n    log info \"kill\"\n    withdraw r\n\nrule fresh:\n    Reading where now() < calendar.time(1970, 1, 1, 0, 0, 2)\n->\n    log info \"fresh\"\n    emit Fresh logical dummy: 0\n\nrule live:\n    Fresh\n    Probe\n->\n    log info \"Fresh is live\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "set",     "now_ns": 0 },
+      { "op": "assert",  "schema": "Reading", "slots": { "dev": "a" } },
+      { "op": "pump" },
+      { "op": "advance", "delta_ns": 1000000000 },
+      { "op": "assert",  "schema": "Kill", "slots": { "n": 1 } },
+      { "op": "pump" },
+      { "op": "assert",  "schema": "Probe", "slots": { "n": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["fresh", "kill"]
+  }
+}

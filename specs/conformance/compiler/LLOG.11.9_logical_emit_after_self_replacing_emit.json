@@ -1,0 +1,11 @@
+{
+    "id": "LLOG.11.9_logical_emit_after_self_replacing_emit",
+    "category": "compiler",
+    "scenario": "LLOG.11.9: \"a `logical` emit that follows such an emit in the same RHS\" is refused too, \"at the emit, naming the one that replaced the fact\". `emit A logical id: a.id kind: \"leave\"` on line 11 replaces the `A` that `a` matched, so the match ends there, and `emit C logical id: a.id` on line 12 would be withdrawn as it is made. The vector pins line 12, the following emit, with `expected_line` (RCTS.1.2.34); line 11's own refusal is LLOG.11.9_self_replacing_emit's. `C` is `logical` with the flag on the emit, so LFAC.1.3.1 and LLOG.11.1 pass. Only a `logical` schema has an identity, so the replacing emit is always `logical` itself; a plain emit into a `ttl` `A` makes another fact and replaces nothing. PATH PINNED: `dsc.validate`'s `llog_11_9_self_replacing_step`, over the rule's top-level actions.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    kind: String mutable\n\nschema C scope logical:\n    id: String key\n\nrule flip:\n    A a where a.kind == \"enter\"\n->\n    emit A logical id: a.id kind: \"leave\"\n    emit C logical id: a.id\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING",
+        "expected_line": 12
+    }
+}

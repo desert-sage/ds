@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.16.2_hz_to_midi_at_zero",
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `hz_to_midi` at 0 Hz: 69.0 + 12.0 * log2(0.0 / 440.0) = 69.0 + 12.0 * log2(0.0), and `log2(0)` is -inf ([LEXP.3.9.3]), so the result is -inf, not a fault. The emit puts it into a `midi_note` slot, which keeps it ([LEXP.4.2]: ±Inf is admitted where NaN is not), and `no_pitch` matches it with `is -inf` ([LNUL.4.9]). If either runtime faulted on `log2(0)`, or refused -inf at the slot, the Note would not enter and nothing would log. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]), through an explicit formula call into an emit, then both runtimes' `log2` (CORE-MATH) and slot admission (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "from units.audio import midi_note, midi_hz\nfrom units.si import Hz\n\nschema Tone scope logical:\n    id: String key\n    freq: Hz mutable\n\nschema Note scope logical:\n    id: String key\n    note: midi_note mutable\n\nrule to_note:\n    Tone t\n->\n    emit Note logical id: t.id note: hz_to_midi(t.freq)\n\nrule no_pitch:\n    Note n where n.note is -inf\n->\n    log info \"no pitch\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Tone", "slots": { "id": "z", "freq": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["no pitch"]
+    }
+}

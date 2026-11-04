@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_action_before_stands_action_after_does_not_run",
+    "category": "logical",
+    "scenario": "The prefix rule (LNUL.11.1) for the run-time spec refusal: `r` logs `before`, then interpolates `{p.body.x:.3f}` on a String leaf, then logs `after`. The refusal abandons the activation at the second action (LGRA.2.9.6.11), so `before` stands, `after` does not run, and `handler` logs: `[\"before\", \"type error\"]`. PATH PINNED: the refusal raised as the activation's fault from inside the action list, not the message dropped. A runtime that renders the value instead logs `before`, `v abc` and `after`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"before\"\n    log info \"v {p.body.x:.3f}\"\n    log info \"after\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": "abc" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before", "type error"]
+    }
+}

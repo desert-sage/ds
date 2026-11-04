@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.7_unescaped_brace_rejects",
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.6.7] — \"Any other unescaped `{` or `}` not forming a valid site is a compile error\", exercised. `{t.a + t.b}` is a brace pair whose body is an operator expression: not a slot path and not a one-level call, so not a valid interpolation site. Reject-don't-skip matters here more than usual — the alternative is not a crash but silent literal text, so the log line would ship the characters `{t.a + t.b}` to an operator who asked for a value. Asserts DS_VALIDATE_INTERP_BAD_PATH specifically: `{{`/`}}` escaping is sentinel-substituted before this check, so a compiler that mishandled the escapes would also fail here, and only the code distinguishes the two causes.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    Trig t\n->\n    log critical \"total {t.a + t.b}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_PATH"
+    }
+}

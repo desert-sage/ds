@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.2.6.2_pattern_within_multipattern_rejects",
+    "category": "compiler",
+    "scenario": "[LTIM.2.7.1] makes a positive pattern carrying a `within <dur>` window time-dependent, re-evaluated on every tick, and [LTIM.2.6.2] refuses a time-dependent condition on a rule with more than one positive pattern. Pin: a rule with two positive patterns, the second carrying `within 5_s` and NO clock-reading `where`, rejects with DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. PATH: dsc.validate's ltim_2_6_2_clock_where, its pattern-`within` arm; a check that looked only at `where` clauses compiles this rule. LTIM.2.6.2_then_within_multipattern_compiles is the twin that keeps the arm from over-reaching.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nrule two_pat:\n    A\n    B within 5_s\n->\n    log info \"both\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+    }
+}

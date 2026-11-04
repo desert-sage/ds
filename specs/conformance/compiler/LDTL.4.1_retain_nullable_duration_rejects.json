@@ -1,0 +1,10 @@
+{
+    "id": "LDTL.4.1_retain_nullable_duration_rejects",
+    "category": "compiler",
+    "scenario": "[LDTL.4.1]: `retain:` demands a value, so it is a concrete-value position ([LNUL.5.1]), and the compiler must refuse an un-narrowed `Duration?` there with DS_VALIDATE_NULLABLE_UNNARROWED. `Trig.d` is `Duration?` and nothing narrows it: narrowing stops at the arrow ([LNUL.5.2]), and the rule has no `where`. The type is right, so this is not the TYPE_MISMATCH of LDTL.4.1_retain_not_duration_rejects; LDTL.4.1_retain_with_dynamic_ttl_ok is the control that compiles. A compiler that typed the leaf but ignored nullability compiles this one. PATH PINNED: `dsc.validate.ldtl_3_2_retain`, through `dsc.typecheck.lnul_5_1_concrete`.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\n    d: Duration? mutable\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: t.d\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

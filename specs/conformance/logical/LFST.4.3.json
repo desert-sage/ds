@@ -1,0 +1,14 @@
+{
+    "id": "LFST.4.3",
+    "clauses": ["LFST.4.4"],
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "LFST.4.4 / RFCS.4.3 — the session header's `session_id` is the run id the integrator gave the engine, or empty if it gave none; the engine generates no identifier of its own. A pyds engine is created with no run id, so get_session_header() reports session_id as the empty string. Pins that nothing is minted: an engine that generated a UUID at create would report a non-empty string and fail this. The clause it pins is LFST.4.4, not the one its id names.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hello\"\n",
+    "expect": {
+        "kind": "header_field_eq",
+        "checks": [
+            { "field": "session_id", "equals": "" }
+        ]
+    }
+}

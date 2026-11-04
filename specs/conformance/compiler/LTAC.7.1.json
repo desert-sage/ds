@@ -1,0 +1,10 @@
+{
+    "id": "LTAC.7.1",
+    "category": "compiler",
+    "scenario": "Invalid duration rejection per LTAC.7.1. The compiler must reject `after` clauses whose duration is non-positive (zero or negative). Pin: `after 0_s:` rejects with DS_VALIDATE_AFTER_NONPOSITIVE_DURATION.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule auto_off:\n    Motion m where m.state == true\n->\n    log info \"trig\"\n    after 0_s:\n        log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AFTER_NONPOSITIVE_DURATION"
+    }
+}

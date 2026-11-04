@@ -1,0 +1,19 @@
+{
+    "id": "LLOG.15.2_explicit_fact_survives_its_trigger",
+    "clauses": ["LLOG.15.2"],
+    "category": "logical",
+    "scenario": "A fact a rule emits into an `explicit` schema carries no TMS justification, and the engine must not retract it when what asserted it is withdrawn (LLOG.15.2). `make_result` emits Result from the logical Trig. Trig is retracted and pumped, then a Probe is asserted, and `read_back` must still see Result: the one message is `still trig1`. A runtime that truth-maintained the explicit fact retracts it with Trig, and `read_back` never fires.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Result:\n    entity_id: String\n\nschema Probe scope logical:\n    n: Int key\n\nrule make_result:\n    Trig t\n->\n    emit Result entity_id: t.entity_id\n\nrule read_back:\n    Probe\n    Result r\n->\n    log info \"still {r.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "trig1" }, "as": "trig" },
+            { "op": "pump" },
+            { "op": "retract", "label": "trig" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["still trig1"]
+    }
+}

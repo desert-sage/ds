@@ -1,0 +1,139 @@
+{
+  "id": "LCDB.3.3.3",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.3",
+  "seq": 127,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCDB.3.3.3] **Composition across bound facts.** When a rule\nbinds more than one fact, the activation key is the ordered\nconcatenation, per bound pattern in source order, of each\nfact's contributing slots:\n\n- a `logical` fact contributes its declared `key` slots. A\n  schema whose key is ∅ (every slot `mutable`) contributes\n  nothing, so a single-pattern rule on such a schema is\n  rule-global (the `AmbientTemp{ts mutable, celsius mutable}`\n  case);\n- a `ttl` / event fact carries no identity markers\n  ([LFAC.1.7.6]) and contributes nothing on its own. A rule that\n  binds one and carries a rate modifier must declare its key with\n  `by:` ([LCDB.3.3.4]);\n- when no bound fact contributes a slot, the key is empty and\n  the cooldown is rule-global.\n\n",
+  "refs": [
+    "LCDB.3.3.4",
+    "LFAC.1.7.6"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "Lcdb_3_3_3__fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One bound fact as role-value pairs, zipped rather than two lists so a role and its value cannot drift apart -- the failure this clause is about is a key that says less than the author thinks, and a model able to mis-pair them could reproduce it for the wrong reason. Restricted to the logical branch, as `Lcdb_3_3_3__slot` is."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "Lcdb_3_3_3__slot",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Two identity roles, not three, and that is the clause's logical-fact branch only. A ttl/event fact takes the other branch entirely -- it carries no identity markers ([LFAC.1.7.6]), contributes nothing on its own, and a rate-limited rule binding it keys on its `by:` paths ([LCDB.3.3.4]) -- which this type cannot express. `mutable` is what \"everything that is not `key`\" is called, not a third role."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__a_keyed_schema_separates",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FALSIFIABILITY CONTROL, without which the theorem above is worthless: a schema WITH a key slot separates activations that differ in it. Stated from an arbitrary inequality, so it is the general property rather than one pair that happens to differ."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__all_mutable_contributes_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A schema whose key is empty contributes nothing, quantified over the value list rather than shown on the two-slot example -- \"every slot `mutable`\" is a property of schemas of any width."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__ambient_temp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`AmbientTemp{ts mutable, celsius mutable}` -- the clause's own worked example, as a function of both values so a theorem about it covers every activation of that rule rather than one reading."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__ambient_temp_key_is_empty",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's example has the empty key whatever it binds."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__contributes",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "\"A `logical` fact contributes its declared `key` slots\", verbatim and complete for that branch: key slots in declaration order, mutable slots dropped."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__every_activation_shares_one_key",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Any two activations of that rule share one activation key, quantified over both readings of both. Suppression is keyed on (rule, activation_key), so one key for every activation IS one window for the whole rule. THIS IS EVIDENCE FOR REFUTING [LCDB.7.2](a) AND NOT THE VERDICT: `refuted` is asserted-only per clause.schema.json, and taking it is the coordinator's. It says nothing about [LCDB.7.2](b), the grammar claim, which holds."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The ordered concatenation per bound pattern in source order. Complete over logical facts and silent about ttl/event ones, so it is the clause's key composition restricted to the branch the two types above model."
+      },
+      {
+        "path": "formal/idris/Lcdb/RuleGlobal.idr",
+        "name": "lcdb_3_3_3__mutable_does_not_enter_the_key",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A mutable slot beside a key one does not weaken it, so a churning value cannot reset a window -- [LCDB.3.3.1]'s guarantee as a consequence of this clause's composition. A tuple of all LHS binding values would destroy exactly this."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Lcdb_3_2_1__cool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "LESS than the clause: the composition across bound facts -- per positive pattern in source order, a logical schema's declared key slots in declaration order -- is the fixture lowering's (scripts/idris_lower.py, as dsc.rete.m's `key_vars` composes it), and Lcdb/RuleGlobal.idr holds its theorems for the logical branch; here the key is a function of the match. The empty key, when no bound fact contributes, is `lcdb_3_3_3__empty_key`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_3__cool_perkey",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two activations of one rule with different keys cool independently: both fire in one pump. Executed, rgate.cool_perkey's schedule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_3__empty_key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'When no bound fact contributes a slot, the key is empty': the code of the empty tuple, one for every match -- the rule-global cooldown."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_3__empty_key_is_rule_global",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE EMPTY KEY IS RULE-GLOBAL: under it two facts in one pump share one window and the second is refused. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_3__key_separates",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A second key inside the first key's window fires: the window is the key's. Executed, rgate.key_separates's schedule."
+      }
+    ]
+  }
+}

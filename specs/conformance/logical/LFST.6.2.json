@@ -1,0 +1,17 @@
+{
+    "id": "LFST.6.2",
+    "clauses": ["LFST.6.1.1"],
+    "category": "logical",
+    "scenario": "fact_retract event fires when a fact is retracted from outside (LFST.6.1.1's FactRetract row). Assert a logical fact (pump), then retract it (pump again). Both fact_assert and fact_retract must appear in the stream, in order.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "h" },
+            { "op": "pump" },
+            { "op": "retract", "label": "h" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["fact_assert", "fact_retract"]
+    }
+}

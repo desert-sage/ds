@@ -1,0 +1,18 @@
+{
+  "id": "LEXP.7.3a",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 420,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.3a] **`**` with an integer exponent is an exception to [LEXP.7.2].**\n  `Int ** Int` is `Int` **only** when the exponent is a compile-time-known\n  **non-negative** integer (a literal, or a `const` that folds to ≥ 0); the\n  result is `xʸ` computed by **binary exponentiation**, which agrees bit-for-bit\n  with linear repeated multiplication because `ds_i64_mul`'s wrap contract makes\n  integer multiplication associative modulo 2⁶⁴ — the grouping is therefore not\n  observable and the spec does not have to pick one. When the exponent is a\n  **negative** integer, or an `Int` whose sign is not known at compile time, the\n  result is **`Float`**, computed by the **correctly-rounded `pow`**\n  ([LEXP.3.9.2]) — so `2 ** -3 == 0.125` ([LEXP.1.3]), and `0 ** negative` is\n  `+Inf`, `±Inf` for an odd exponent ([LEXP.3.9.3]). A non-integer exponent, or\n  a `Float` operand, gives `Float` by the same `pow`. Correct rounding\n  determines that result **uniquely**, and that is what makes every form EXACT\n  and cross-platform bit-identical ([LDET.3.3a.4]) rather than merely\n  reproducible. This keeps the static type sound: an integer power that can go\n  fractional is typed `Float`, never silently `Int`.\n\n",
+  "refs": [
+    "LDET.3.3a.4",
+    "LEXP.1.3",
+    "LEXP.7.2",
+    "LEXP.3.9.2",
+    "LEXP.3.9.3"
+  ]
+}

@@ -1,0 +1,59 @@
+# A FactExternal sent back ([NCBK.10.4], [RFCS.23.4], [RFCS.23.7]). Fixture
+# 127_resend.
+#
+# `resend K` asserts, through `assert_external`, the K-th fact this run sent
+# as a call argument: each runtime reads back the bytes it wrote, which the
+# `call` lines have already compared. What this compares is what each does
+# with them -- every fact the record adds is an ordinary assert on the trace,
+# and a refused record prints `external_refused` with its status.
+#
+# Handles: 0 the Ref, 1 the Seed, 2 N0, 3-6 the triggers, 7 the Ref replaced.
+# @spec [RFCS.24.1]
+assert Ref id="a" note="x"
+assert Seed k=1
+assert N0 n=0
+pump
+# The four calls, in rule order: sent fact 0 is the Main, 1 the Pair, 2 N16,
+# 3 N17.
+assert SendMain n=1
+assert SendPair n=1
+assert SendN16 n=1
+assert SendN17 n=1
+pump
+#
+# 1. SENT BACK WHILE LIVE. Every nested copy is equal to the live fact it was
+# made from (RFCS.23.7 step 1), and the record's own fact is a no-op
+# reassertion: nothing on the trace. A runtime that did not resolve the copy
+# to the live fact would meet the key taken and refuse with -220.
+resend 0
+resend 1
+resend 2
+#
+# 2. TOO DEEP. N17's record inlines N0 at depth 17; RFCS.23.4 admits 16, so
+# it is DS_ERR_PARSE (-100) whatever is live.
+resend 3
+#
+# 3. THE KEY TAKEN. The Ref is replaced with another note, and Main and Pair
+# re-derived from the new one. The sent Main still carries the old Ref: equal
+# to no live fact, and its key `a` is held, so the record is refused whole
+# with DS_ERR_FACT_REF_CONFLICT (-220) and nothing is asserted.
+assert Ref id="a" note="y"
+pump
+resend 0
+#
+# 4. ONE FACT INLINED TWICE, NOTHING LIVE. With the Ref retracted, Main and
+# Pair go with it. The sent Pair carries the old Ref in both slots: the first
+# copy is asserted (step 2), the second is equal to it and is the same fact,
+# so one Ref and one Pair arrive.
+retract 7
+pump
+resend 1
+pump
+#
+# 5. A CHAIN OF SEVENTEEN, ASSERTED. With N0 retracted the chain goes. The
+# sent N16 inlines N15 .. N0, none live: all seventeen arrive, the deepest
+# first, and the pump after re-derives N17 from the N16 that came back.
+retract 2
+pump
+resend 2
+pump

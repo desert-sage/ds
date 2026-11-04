@@ -1,0 +1,7 @@
+{
+    "id": "LREG.10.2",
+    "category": "compiler",
+    "scenario": "A capture-bearing match binds in `where` with the capture form ([LREG.4.1]), and an ordinary predicate may follow it on the same clause and read the captures. Pin: `where (device, code) = e.msg ~ /(?<device>\\w+) on (?<code>\\d+)/ and code == \"42\"` compiles. Path: `dsc.parse.lgra_8_3_4_take_where` keeps the whole `and` chain as the gating condition and takes its leftmost conjunct as the destructured match; `code` in the trailing conjunct lowers to FN_REGEX_CAPTURE group 2 (`dsc.rete.lreg_4_1_capture_expr`).",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nrule r:\n    Log e where (device, code) = e.msg ~ /(?<device>\\w+) on (?<code>\\d+)/ and code == \"42\"\n->\n    log info \"{device}\"\n",
+    "expect": { "kind": "compile_ok" }
+}

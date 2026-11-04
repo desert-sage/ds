@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.4_json_to_string_kwarg_refused",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.4]: a `Json` value given to a `kwarg x: String` is refused with DS_VALIDATE_TYPE_MISMATCH, as an `Int` is (compiler/LADP.8.5.4_int_to_string_kwarg_refused). A `Json` slot read is a whole document, whose leaf kind is `Json`, not `String`, so the service would receive a `Json` argument against a `String` declaration. PATH PINNED: the compiler's `call`-kwarg value check in `dsc.validate`, on a `Json` leaf.",
+    "rules_ds": "service svc.method:\n    kwarg x: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n    doc: Json mutable\n\nrule r:\n    Trig t\n->\n    call svc.method x: t.doc nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

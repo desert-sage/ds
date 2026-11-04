@@ -1,0 +1,17 @@
+{
+    "id": "LFST.9.3.1_a_recorded_type_error_differs",
+    "clauses": ["RFCS.3.1"],
+    "category": "runtime",
+    "scenario": "[LFST.9.3.1] byte-compares a re-derived `TypeError` with the recorded one ([RFCS.3.1]). `typed` reads `p.body.name`, a String, with `>`: a TypeError ([LERR.1.3.1]). `fault_node` raises that atom's `node_id` by one ([RCTS.1.2.18]), and has no site unless the recording holds one, so this vector also shows the run records it. The unaltered recording replays, so the refusal is the edit's. The altered one is refused with DS_ERR_FS_DIVERGENCE (-725). Break: a replay that compared no fault atom accepts the edit. PATH PINNED: libds's `verify_match` (rfcs/codec.c), through pyds `Engine.replay` in runner.py `_run_replay_refused`; the Mercury runtime's `ds.replay.lfst_9_3_1_match`, through test_behave.m `replay_refused_result`.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule typed:\n    Payload p where p.body.name > 5\n->\n    log info \"typed\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "fault_node", "atom": "TypeError" },
+        "code": "-725"
+    }
+}

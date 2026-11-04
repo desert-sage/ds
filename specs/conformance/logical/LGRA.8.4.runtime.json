@@ -1,0 +1,19 @@
+{
+    "id": "LGRA.8.4.runtime",
+    "clauses": ["LGRA.8.4.1"],
+    "category": "logical",
+    "scenario": "Negation pattern `no X` prevents rule firing when X is in working memory per LGRA.8.4. Rule fires only when no Lock fact exists.",
+    "rules_ds": "schema Lock scope logical:\n    entity_id: String key\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule unlocked:\n    Trig\n    no Lock\n->\n    log info \"no lock\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Lock", "slots": { "entity_id": "l1" }, "as": "lock" },
+            { "op": "pump" },
+            { "op": "retract", "label": "lock" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["unlocked", "unlocked"]
+    }
+}

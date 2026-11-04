@@ -1,0 +1,100 @@
+{
+  "id": "LEXP.7.15.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7.15",
+  "seq": 510,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.7.15.1] A division, floor-division or modulo whose operands are all\n`Int` is a runtime error when the divisor is zero ([LERR.1.4.3]). That includes\n`/`, though its result is `Float` ([LEXP.7.4]). Authors who can't rule out zero\ndenominators guard explicitly. With a `Float` operand, the `Int` one promotes\n([LEXP.7.3]) and the operation is IEEE 754's ([LDET.3.6.2]). `/` and `//` give\n`±Inf` for a nonzero dividend and NaN for a zero one, and `%` gives NaN.\n\n",
+  "refs": [
+    "LERR.1.4.3",
+    "LEXP.7.4",
+    "LEXP.7.3",
+    "LDET.3.6.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__float_divmod_never_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "With a Float operand `//` and `%` yield a Float for every pair of operands, a zero divisor included, and never a trap, an Int on either side promoted first: the all-Int zero divisor is the one runtime error of the three operators. Which Float the zero row gives (±Inf, NaN) is run in Main.idr."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__float_zero_divisor",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Float zero divisor, either zero: `//` by it is the IEEE quotient a / b (±Inf for a nonzero dividend, NaN for a zero one) and `%` by it NaN, taken inside `lexp_7_5__float_floordiv` and `lexp_7_6__float_mod` before the composition; run on 5.0 // 0.0, -5.0 // 0.0, 0.0 // 0.0, 5.0 % 0.0, 7 % 0.0 and 7.5 // 0 in Main.idr."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__int_zero_divisor_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every Int dividend, /, // and % by an Int zero are a trap, `/` included though its result would be a Float. The Float half of the clause is `lexp_7_3__float_op`'s for the three operators, never a trap (`lexp_7_15_1__float_divmod_never_traps`)."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__zero_divisor",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Which operators read a divisor, and an Int zero one: /, // and %, with every operand Int. A Float zero divisor is `lexp_7_15_1__float_zero_divisor`'s row."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_2__int_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A zero divisor under /, // or % is a trap, raised before any division; `/` on two Ints otherwise yields a Float. The evaluator has one trap kind, so [LERR.1.4.3]'s ComputationError is not told from a TypeError; Rete/WhereV5.idr is where kinds live."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Float half: with a Float operand the operation is IEEE 754's and a zero divisor gives ±Inf or NaN, never a trap -- `/` directly, `//` and `%` through the zero row inside their compositions -- run on 1.5 / 0.0, -1.5 / 0.0, 0.0 / 0.0 and the `//` and `%` cases in Main.idr."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_4__guarded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`/` on two Ints with the divisor test decided: the trap on a zero divisor, else the Float quotient."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_5__float_floordiv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`//` with a Float operand takes the zero row first: the IEEE quotient a / b on a zero divisor, else [LEXP.7.5]'s composition."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__float_mod",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`%` with a Float operand takes the zero row first: NaN on a zero divisor, else [LEXP.7.6]'s composition."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

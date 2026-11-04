@@ -1,0 +1,16 @@
+{
+    "id": "LINT.9.5.runtime",
+    "clauses": ["LINT.7.1"],
+    "category": "runtime",
+    "dead_rules_expected": ["in_range"],
+    "scenario": "Empty intervals (start == end) are legal but contain no points ([LINT.7.1]; LINT.9.5, the id, is a tombstone). A fact with probe=5 in the interval (5..5) does not satisfy `probe in (start..end)` since the half-open interval [5,5) is empty. The Hit schema is never emitted.",
+    "rules_ds": "schema Window scope logical:\n    start_t: Int key\n    end_t: Int mutable\n    probe: Int mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule in_range:\n    Window w where w.probe in (w.start_t..w.end_t)\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Window", "slots": { "start_t": 5, "end_t": 5, "probe": 5 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

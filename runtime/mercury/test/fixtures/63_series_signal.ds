@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The two signal backings. `SeriesBackendIntervalPulse` (active_fraction)
+# leaves field 4 a hole and keeps `window_ns` at 5. `SeriesBackendNumericIntegral`
+# (integral) is the only one carrying `time_model` (8) and `gap_policy` (9)
+# ([LSIG.2.3.6], [LSIG.3]). Both are reject-don't-skip ([LSIG.2.6]).
+use default
+
+schema Pump scope logical:
+    entity_id: String key
+    running: Bool mutable
+
+schema Flow scope logical:
+    entity_id: String key
+    lpm: Float mutable
+
+schema Duty scope ttl 1_h:
+    label: String
+    fraction: Float
+    total: Float
+
+series Pump.running (by: entity_id):
+    active_fraction sliding 10_min
+
+series Flow.lpm (by: entity_id):
+    integral sliding 10_min
+
+rule duty:
+    Pump p
+->
+    emit Duty label: p.entity_id
+        fraction: p.active_fraction
+        total: 0.0
+
+rule volume:
+    Flow f
+->
+    emit Duty label: f.entity_id
+        fraction: 0.0
+        total: f.integral

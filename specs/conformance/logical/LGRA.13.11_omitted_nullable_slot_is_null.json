@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.13.11_omitted_nullable_slot_is_null",
+    "category": "logical",
+    "scenario": "LGRA.13.11: a nullable slot an `emit` omits is `null`. Rule `make` emits Out giving only its key, so the `String?` slot `s` and the `Bool?` slot `b` are omitted; rule `seen` matches an Out `where o.s is null and o.b is null` and logs. Expect `seen`'s message. It does not fire under a zero fill, where an omitted `String?` reads as \"\" and an omitted `Bool?` as `false`: `is null` is a tag test ([LNUL.4.9]), false of both. PATH: the compiler writes the fill, `dsc.rete`'s `lgra_13_11_null_fills`, so both runtimes are handed the `null`; each runtime's slot read then answers `is null` (libds `rete/eval.c`, Mercury `ds.eval`).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    k: Int key\n    s: String? mutable\n    b: Bool? mutable\n\nrule make:\n    Trig t\n->\n    emit Out logical k: t.v\n\nrule seen:\n    Out o where o.s is null and o.b is null\n->\n    log info \"null\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["null"]
+    }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "LFAC.2.5.4",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.2.5",
+  "seq": 325,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LFAC.2.5.4] **Equality basis: `String` / `Bytes` by\n  content, not pointer.** The no-op vs meaningful-change\n  decision on `String` and `Bytes` slots — and the\n  identity-key match ([LFAC.1.7]) — is by **byte content**,\n  never by interned-pointer identity. Interning is a\n  non-observable runtime optimization ([IRET.1.4] /\n  [IDAT.4.7]): a conforming implementation MUST NOT depend\n  on two equal strings sharing a pointer, nor expose\n  interned-pointer identity across the wire or any\n  observable surface. Two facts with byte-equal\n  `String`/`Bytes` slots are equal regardless of how the\n  runtime stores those bytes (interned engine-lifetime,\n  refcounted, arena-copied, or duplicated), so the\n  intern-leak seal's refcount + arena machinery is invisible\n  to conforming programs.\n\n",
+  "refs": [
+    "IDAT.4.7",
+    "IRET.1.4",
+    "LFAC.1.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "lfac_2_5_4__same_fact_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Equal facts have equal kinds."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lfac_2_5_4__same_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Field-wise equality of facts: id, kind and values by content, never by identity of representation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "lfac_2_5_4__same_fact_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Distinct facts compare unequal field-wise."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "lfac_2_5_4__same_fact_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Field-wise equality is equality."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "lfac_2_5_4__same_fact_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fact is the same as itself: identity and slots compared by content."
+      }
+    ]
+  }
+}

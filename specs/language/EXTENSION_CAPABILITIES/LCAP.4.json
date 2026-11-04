@@ -1,0 +1,14 @@
+{
+  "id": "LCAP.4",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": null,
+  "seq": 323,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "T_wcet impact",
+  "text": "## T_wcet impact [LCAP.4]\n\nLet the base T_wcet formula be:\n\n```\nT_base = T_alpha + T_beta(N_max) + T_tms(n_ids) + T_agenda(log A)\n       + T_fire(F_max × A_max × E_rhs)\n       + T_ttl(expired × log n_ttl_schemas + n_ttl_schemas)\n```\n\nEach setting's effect on this formula:\n\n| Setting | Term affected | Change |\n|---|---|---|\n| `realtime: true` | All | Bounds every parameter; N_max, n_ids ≤ 16, A ≤ token_pool_cap. Formula becomes finite. |\n| `linear_scan: false` | T_beta | O(N_max × T_j) → O(1); J_max=1 proven. |\n| `linear_scan: false` | T_alpha string tests | O(len) → O(capacity) = O(1) via LNLS.3.10 |\n| `logical: false` | T_tms | c_tms × n_ids → 0 (TMS absent) |\n| `logical: false` | T_retract cascade | No cascade depth multiplier |\n| `dynamic_ttl: true` | T_ttl | FIFO, no term in N_ttl → heap O(expired × log N_ttl) |\n\nUnder `realtime: true, linear_scan: false` (with `dynamic_ttl: false`,\n`logical: true`):\n\n```\nT_wcet = c_alpha × Σ_s(α_s × T_s)        ← all O(1) per LNLS.3.10\n       + c_join  × F_max                  ← O(1) per join, J_max=1\n       + c_tms   × 16                     ← constant (rt_locked)\n       + c_agenda × F_max × log F_max     ← agenda heap\n       + c_fire  × F_max × A_max × E_rhs  ← RHS evaluation\n       + c_ttl   × (max_expired × log n_schemas + n_schemas)  ← FIFO constant\n```\n\n**All parameters are compile-time constants.**  T_wcet is a fixed number.\n\nAdding `logical: false`:\n— same formula, T_tms term = 0.  Retract has no cascade.\n\nAdding `dynamic_ttl: true` instead:\n— T_ttl = c_heap × expired × log N_ttl.  This term grows with N_max\n(via expired_max ∝ N_max / min_ttl).  T_wcet is no longer O(1) in N_max.\n\n---\n\n",
+  "refs": [
+    "LNLS.3.10"
+  ]
+}

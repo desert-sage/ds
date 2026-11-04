@@ -1,0 +1,11 @@
+{
+    "id": "LCYC.2.4",
+    "clauses": ["LCYC.2.4.2"],
+    "category": "compiler",
+    "scenario": "Call-mediated cycles are detected per LCYC.2.4.2 and LCYC.3.2.2: two rules, each of which calls a service whose response fact the other matches by correlation, form a cycle, and `cooldown` bounds the rate without preventing it. Pin: `fetch_a` matches `service.b`'s response `BReply` on corr \"b-response\" and calls `service.a as \"a-response\"`; `fetch_b` matches `AReply` on \"a-response\" and calls `service.b as \"b-response\"`. Path: the rule graph reads each call as producing its service's response schema and `CallError` with `corr` set to the literal `as`, and the literal break keeps both edges because each pattern's `corr` equals the other call's. Rejects with DS_VALIDATE_RULE_CYCLE.",
+    "rules_ds": "schema AReply scope ttl 1_h:\n    corr: String\n\nschema BReply scope ttl 1_h:\n    corr: String\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    response AReply\n\nservice service.b:\n    \"\"\"stub\"\"\"\n    response BReply\n\nrule fetch_a:\n    BReply r where r.corr == \"b-response\"\n->\n    call service.a nocooldown as \"a-response\"\n\nrule fetch_b:\n    AReply r where r.corr == \"a-response\"\n->\n    call service.b nocooldown as \"b-response\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

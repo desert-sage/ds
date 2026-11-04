@@ -1,0 +1,139 @@
+{
+  "id": "BLDU.3",
+  "category": "logical",
+  "scenario": "Build-unit multi-output: a protoc-like step P emits TWO Output facts (foo.c, foo.h); produce fires per output so both become Products. Downstream step C Consumes BOTH and dispatches only after both are produced (run logs each id → P,C). Pins multi-output + late-emit unblock.",
+  "rules_ds": "schema Product scope logical:\n    name: String key\n    pathname: String mutable\n    digest: String mutable\nschema Step scope logical:\n    id: String key\n    argv: String mutable\nschema Output scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\nschema Consumes scope logical:\n    step: String key\n    product: String key\nschema Blocked scope logical:\n    step: String key\nschema Ready scope logical:\n    step: String key\nschema ActionKey scope logical:\n    step: String key\n    action_key: String mutable\nschema Dispatched scope logical:\n    step: String key\nschema StepOutput scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\n    digest: String mutable\nservice cache.key:\n    kwarg step: String\n    no response\nservice exec.run:\n    kwarg step: String\n    kwarg argv: String\n    no response\nrule block_input:\n    Consumes c\n    no Product p where p.name == c.product\n->\n    emit Blocked logical step: c.step\nrule ready:\n    Step s\n    no Blocked b where b.step == s.id\n->\n    emit Ready logical step: s.id\nrule fetch_key:\n    Ready r\n    no ActionKey k where k.step == r.step\n->\n    call cache.key step: r.step nocooldown\nrule run:\n    ActionKey k\n    no Dispatched d where d.step == k.step\n    Step s where s.id == k.step\n->\n    call exec.run step: s.id argv: s.argv nocooldown\n    log critical \"{s.id}\"\nrule produce:\n    ActionKey k\n    StepOutput so where so.step == k.step\n->\n    emit Product logical name: so.name pathname: so.pathname digest: so.digest\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "foo.proto",
+          "pathname": "src/foo.proto",
+          "digest": "Hpr"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Step",
+        "slots": {
+          "id": "P",
+          "argv": "protoc foo.proto"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "foo.c",
+          "step": "P",
+          "pathname": "b/foo.c"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "foo.h",
+          "step": "P",
+          "pathname": "b/foo.h"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "P",
+          "product": "foo.proto"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Step",
+        "slots": {
+          "id": "C",
+          "argv": "cc foo.c"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Output",
+        "slots": {
+          "name": "bin",
+          "step": "C",
+          "pathname": "b/bin"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "C",
+          "product": "foo.c"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Consumes",
+        "slots": {
+          "step": "C",
+          "product": "foo.h"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "P",
+          "action_key": "kP"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "StepOutput",
+        "slots": {
+          "name": "foo.c",
+          "step": "P",
+          "pathname": "b/foo.c",
+          "digest": "Hc"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "StepOutput",
+        "slots": {
+          "name": "foo.h",
+          "step": "P",
+          "pathname": "b/foo.h",
+          "digest": "Hh"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "C",
+          "action_key": "kC"
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "P",
+      "C"
+    ]
+  }
+}

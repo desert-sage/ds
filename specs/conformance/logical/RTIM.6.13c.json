@@ -1,0 +1,28 @@
+{
+    "id": "RTIM.6.13c",
+    "clauses": ["RTIM.6.13.1"],
+    "category": "logical",
+    "scenario": "Stream event clock_ns matches the engine clock at emission. With mock clock pinned at a known value before assert, the resulting fact_assert event carries that exact clock_ns. Pins RTIM.6.13 \u2014 stream event clock_ns matches engine clock at emission. It reads the fact_assert's clock_ns, 9999.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "filter_kind": "fact_assert",
+        "expected_clocks": [
+            9999
+        ],
+        "steps": [
+            {
+                "op": "set",
+                "now_ns": 9999
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            }
+        ],
+        "min_events": 1
+    }
+}

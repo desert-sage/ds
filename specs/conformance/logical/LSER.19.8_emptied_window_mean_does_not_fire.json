@@ -1,0 +1,42 @@
+{
+    "id": "LSER.19.8_emptied_window_mean_does_not_fire",
+    "category": "logical",
+    "dead_rules_expected": ["emptied_mean"],
+    "scenario": "LSER.19.8 — a window every absorbed sample has LEFT is cold too, not only a window that never had one. One sample absorbed at t=0 into a `mean sliding 10_min`; the clock moves to t=15 min; then an upsert of the same identity re-evaluates the single-pattern `where r.mean < 5.0` at assert, before that pump's eviction sweep has run. The only sample is 15 min old, outside the 10 min window, so the read is cold and `null < 5.0` does not fire ([LNUL.4.3]). A runtime that answers an emptied window from the backing — a ring buffer's mean of nothing is 0.0, or the stale mean 1.0 of a sample not yet evicted — fires, because both are `< 5.0`. Path: libds `series_read_dispatch` → `series_window_emptied` (a backend instance EXISTS on this row, so `series_zero_default`'s no-instance branch alone does not reach it); Mercury `query` → `in_window_samples` = []. The t=0 assert is cold for the other reason (no instance yet) and must not fire either. Positive control: LSER.19.8_emptied_window_count_fires, same steps, proving the t=15 min read is evaluated.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule emptied_mean:\n    Reading r where r.mean < 5.0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 900000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "forbidden_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

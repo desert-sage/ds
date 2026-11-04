@@ -1,0 +1,15 @@
+{
+    "id": "LCDB.3.3.3_rgate_cool_perkey",
+    "category": "logical",
+    "scenario": "DS-source twin of the K vector formal/k/rgate.cool_perkey: two keys asserted in one pump both fire -- cooldown state is per activation key (LCDB.3.3.3, RLOW.4.6.2.3), and the key is the declared key slot (LCDB.3.3.1). Drives adapter_ds_rate_allow (rete/adapters.c) with two distinct entries (r, 1) and (r, 2), each on its no-prior-fire path. The order of the two messages is LDET.5.5 creation order, which the existing temporal/LCDB.7.1 fixture pins by count only; this one pins the sequence.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "n": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire 1", "fire 2" ]
+    }
+}

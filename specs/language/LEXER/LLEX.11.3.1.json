@@ -1,0 +1,18 @@
+{
+  "id": "LLEX.11.3.1",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.11.3",
+  "seq": 504,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LLEX.11.3.1] Resolution order for a numeric literal followed by a\nnon-space token: **`UNIT_LIT` (numeric prefix, an optional `_`, and a\nunit suffix — or a numeric prefix directly followed by an angle glyph\n`°`/`′`/`″`) → `FLOAT_LIT` scientific (`Ne…`) → error.**\n\n`COMPLEX_LIT` is **not** a rung in v1. It is the surface syntax of the\n`complex` type, which is deferred ([LUNI.14]), so a bare `i`/`j` suffix\nreaches no token class at all, and `5i` is refused ([LUNI.14.9]).\n\nA digit directly followed by an alphabetic character **is** a unit\nliteral: `30s`, `100km` and `30x` each lex as one token. The first two\nname known units; `30x` names an unknown one and is an unknown-unit\nerror, never `30 * x` ([LUNI.3.1.4]).\n\nSince the separator is optional it is not what separates these classes.\nWhat does is the suffix restriction of [LUNI.3.1.5]: a bare `i`/`j`, and\nan `e`/`E` followed by digits, are withheld from `UNIT_SUFFIX`. That\nwithholding is the only reason `1e6` reaches `FLOAT_LIT` at all, and —\nwith `COMPLEX_LIT` absent from v1 — it is why `5i` and `5_i` alike reach\nno token class. The separator changes neither: it is\noptional, so it cannot be what tells them apart.\n\n",
+  "refs": [
+    "LLEX.12.1",
+    "LUNI.14",
+    "LUNI.14.9",
+    "LUNI.3.1.4",
+    "LUNI.3.1.5"
+  ]
+}

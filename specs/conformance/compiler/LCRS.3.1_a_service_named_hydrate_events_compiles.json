@@ -1,0 +1,9 @@
+{
+    "id": "LCRS.3.1_a_service_named_hydrate_events_compiles",
+    "category": "compiler",
+    "scenario": "Hydration is not in v1, so a call to a declared service that happens to be named `storage.hydrate_events` is an ordinary call. It has no `retain:`, which no call honours ([LCRS.6.3.3]), and it compiles. A compiler that keys hydration checks on the name refuses this with DS_VALIDATE_HYDRATE_NO_RETAIN. PATH PINNED: `dsc.validate`'s rule checks, which do not ask a call's name.",
+    "rules_ds": "service storage.hydrate_events:\n    no response\n\nschema AlarmTriggered scope ttl 1_h:\n    zone: String\n\nrule r:\n    AlarmTriggered\n->\n    call storage.hydrate_events cooldown: 23_h as \"h\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

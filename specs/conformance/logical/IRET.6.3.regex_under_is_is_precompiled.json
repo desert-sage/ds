@@ -1,0 +1,15 @@
+{
+    "id": "IRET.6.3.regex_under_is_is_precompiled",
+    "category": "logical",
+    "scenario": "[IRET.6.3]: every regex pattern is compiled when the artefact loads, including one under an `is` test. Two rules, two patterns: `plain` matches `u.name ~ /^ali/` directly, `boxed` matches `(u.name ~ /x+$/) is true`. With the second pattern missing from libds's load-time cache, the first pattern makes the cache exist, the `is` operand's match misses it, and libds answers FAULT(DS_FAULT_ARTEFACT) -- an EngineError that halts the tier -- while the Mercury runtime, which compiles at match, fires. PATH PINNED: the DS_RETE_EXPR_IS_TEST arm of `regex_walk_expr` in runtime/src/libds/builtins.c, which `ds_rete_regex_precompile` walks every beta guard and terminal action with. `name` is `String?` so that `plain`'s match stays a beta join test, in the cache this pins: a decided match on a non-nullable slot is an alpha REGEX test (RLOW.5.2.2), which carries its own compiled pattern and is not in that cache. Pin: `alix` fires both rules, in source order; `bob` fires neither.",
+    "rules_ds": "schema User scope logical:\n    entity_id: String key\n    name: String? mutable\n\nrule plain:\n    User u where u.name ~ /^ali/\n->\n    log info \"plain\"\n\nrule boxed:\n    User u where (u.name ~ /x+$/) is true\n->\n    log info \"boxed\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "a", "name": "alix" } },
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "b", "name": "bob" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["plain", "boxed"]
+    }
+}

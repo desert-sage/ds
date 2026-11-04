@@ -1,0 +1,11 @@
+{
+    "id": "LTSL.8.4_never_published_where_refused",
+    "clauses": ["LTSL.8.4"],
+    "category": "compiler",
+    "scenario": "[LTSL.8.4]: a `where` on a `published` test head is refused with DS_VALIDATE_TEST_PUBLISHED_WHERE under `never` as without it: the predicate is a rule over working memory ([RTIM.14.11]), and a `publish` puts nothing there ([LTIE.4.3]), so `never` would hold of every run. The test's `produces` writes `never published Heater h where h.level > 100`. PATH PINNED: `dsc.dstest`'s `ltsl_8_2_assertion` on a negated `published` head carrying a binding and a predicate.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Heater scope logical:\n    zone: String key\n    level: Int mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    publish Heater zone: r.zone level: 2\n\ntest \"never published where\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        never published Heater h where h.level > 100\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_PUBLISHED_WHERE"
+    }
+}

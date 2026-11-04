@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# `seen` is asserted at 23:30 UTC on day 19000, so its date in a zone an hour
+# ahead is day 19001: `ahead` fires only if `date()` used the offset of the
+# zone's `TimeZoneOffset` row. A `local()` comparison could not show it: a Time
+# compares by its instant. `later` fires on a Q, to show the engine carries on
+# after a zone no row answers faults `ahead`.
+
+use default
+
+schema P scope logical:
+    id: Int key
+    seen: Time mutable
+    day: Date mutable
+
+rule ahead:
+    P p where p.seen.date("Test/Ahead") == p.day
+->
+    log critical "ahead"
+
+schema Q scope logical:
+    id: Int key
+
+rule later:
+    Q
+->
+    log critical "later"

@@ -1,0 +1,8 @@
+{
+    "id": "LGRA.12.6",
+    "clauses": ["LGRA.12.6.1"],
+    "category": "compiler",
+    "scenario": "`30_s` (no whitespace) is a duration literal per LGRA.12.6.1; `30` alone is an integer. Pin: both `30_s` and `30` are accepted in different positions without ambiguity — duration in `within` clause, integer in `where` clause.",
+    "rules_ds": "schema Ev scope logical:\n    entity_id: String key\n    ts: Time\n    v: Int mutable\n\nschema Out scope logical:\n    dummy: Int key\n\nrule r:\n    Ev\n    then Ev b within 30_s where b.v == 30\n->\n    emit Out logical dummy: 0\n",
+    "expect": { "kind": "compile_ok" }
+}

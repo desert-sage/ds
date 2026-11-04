@@ -1,0 +1,23 @@
+# A call sweeps its own service's answers, and no other service's
+# ([LCRS.6.2.1]).
+#
+# `svc.a` answers `ReplyA`, `svc.b` answers `ReplyB`; the rule calls `svc.a`
+# as "c1". Both replies arrive with corr "c1" and both stay live: an arriving
+# answer supersedes its own schema and `CallError` alone ([LCRS.6.2.4]). The
+# rule fires again and its call retracts the `ReplyA`; the `ReplyB` survives.
+#
+#   Early  logs "early a 1", "early b 2"
+#   Late   logs "late b 2"
+#
+# The vector LCRS.6.2.1_other_service_reply_survives pins the sweep against
+# the clause; this holds the runtimes to each other.
+assert Trig k=1 n=0
+pump
+assert ReplyA corr="c1" v=1
+assert ReplyB corr="c1" v=2
+assert Early k=1
+pump
+assert Trig k=1 n=1
+pump
+assert Late k=1
+pump

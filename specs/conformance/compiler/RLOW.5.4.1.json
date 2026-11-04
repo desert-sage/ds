@@ -1,0 +1,9 @@
+{
+    "id": "RLOW.5.4.1",
+    "category": "compiler",
+    "scenario": "`within <dur>` on a bound-less pattern, RLOW.5.4 / RLOW.5.4.1. PATH: the compiler's `rlow_5_4_1_within`, which puts `(monotonic_ns() - entry_stamp(candidate)) < 300000000000` first in the pattern's join test. WHAT IT PINS: acceptance only (`compile_ok`). It does not pin the join test's shape, the strict `<`, or that the clock read is `FN_MONOTONIC_NS` rather than `now()`; an encoder writing any of those differently stays green here.",
+    "rules_ds": "schema Alarm scope logical:\n    state: Int key\n    ts: Time\n\nrule r:\n    Alarm within 5_min\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

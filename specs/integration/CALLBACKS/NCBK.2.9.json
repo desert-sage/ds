@@ -1,0 +1,29 @@
+{
+  "id": "NCBK.2.9",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 155,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.2.9] **`DS_EV_ENGINE_ERROR` is the last gasp: the integrator **must\nnot** resume service on that engine.** After it, the integrator **must not**\nmake any `ds_engine_*` call on that engine but the ones this clause names as\nvalid below — not a pump, not an assert or retract, not a load or a\nregistration, not a configuration or callback setter, not `ds_engine_clone`,\nwhich would carry the halted state into an engine with no halt, and not a read\nof working memory, a schema or the introspection surface. The tier has halted\n([LERR.1.4.7]).\n\n**The engine must refuse each such call with `DS_ERR_ENGINE_HALTED`, and must\nnot act on it.** The halt is a latch: the engine sets it when it raises the\n`EngineError` and never clears it. The\nrefusal is the same code whatever caused the halt; the cause is the\n`EngineError`'s payload ([NCBK.2.10]). Refusing consults the latch and nothing\nelse, so it is a guarantee an engine whose state is untrustworthy can still\nhonour.\n\n**A failed load sets the latch too** ([RDSC.9.8]). A `ds_engine_load_dsc` that\nfails once it has begun reading the artefact returns the error that stopped\nit, delivers no event, and leaves the latch set: every later call is refused\nas above, but the four this clause names. A load refused with `DS_ERR_INVAL`\nor `DS_ERR_STATE`, or on an engine already halted, sets nothing.\n\n**The call that raises the `EngineError` stops at it** ([LERR.1.4.7]). It\nfires, propagates and records nothing after the `EngineError`, not even the\nclose of the activation that raised it (its end annotation and its\n`scope activation` retractions). So the `EngineError` is the last stream\nevent the integrator receives from that engine.\n\n**The call that raises the `EngineError` reports the halt too.** A public call during which the engine raises an\n`EngineError` — a pump whose firing faults, an assert or retract whose\npropagation does — **must** return `DS_ERR_ENGINE_HALTED`, ahead of any other\nstatus the call would have returned ([NCBK.1.5]). The one exception is a halt\nwhose clause gives it a code of its own, which that call returns instead, and\nthe only such clause is deferred ([RTCT.7.3], [NERR.18]). So a host that reads only statuses\nlearns of the halt from the call that caused it, and is never told `DS_OK` by\nit. A replay is outside this sentence: a halt it re-derives is the recording's\ncontent, and its status says whether it reproduced the run ([RFCS.6.7]).\n\n**A read of engine state is refused too.** After\nthe halt the engine's state is undefined ([LERR.1.4.7]), so a working-memory,\nschema or introspection read has no answer an integrator could rely on. The\nengine **must** refuse it with `DS_ERR_ENGINE_HALTED`, by consulting the latch,\nas it refuses a mutation. A fact lookup by id ([NFCT.6.4]) is such a read.\n\n**So is a read through a fact or schema handle, whenever the handle was taken.**\nIts one window is the call that raises the\n`EngineError`: the records that call delivers ahead of the `EngineError`\n([RFCS.6.7]) carry handles the integrator reads to make sense of them. The\nengine **must** answer a handle read until it has delivered the `EngineError`\nor the call that raised it has returned, and **must** refuse it with\n`DS_ERR_ENGINE_HALTED` from then on.\n\n**Four calls remain valid, because none of them reads that state.** The engine\n**must** answer each after the halt:\n\n- `ds_engine_halted`, which reads the latch and the fault that set it\n  ([NCBK.2.11]);\n- `ds_engine_get_platform_signature` and `ds_engine_get_session_header`, which\n  report what was fixed at load: the provenance a recording of the halted run\n  is filed under ([NDET.2.1]);\n- `ds_engine_free` (below).\n\n`[LERR.1.4.7]` says the **engine** halts the tier, which is a statement about\nwhat the engine does; this clause says what the integrator may no longer\ndo. An integrator reading only that clause would take \"halted\" to mean \"stops\nfiring rules\" and go on pumping, which is the reading the word invites.\n\n**The callback may still complete its own work.** The obligation is on calls\n**into** the engine, not on the callback body: an integrator may log the event,\nflush their own sink, signal a supervisor, and return. What they may not do is\nre-enter, and a read is re-entry too: inside the callback every call on that\nengine returns `DS_ERR_STATE` ([RARC.13.16]). The calls above that remain valid\nare valid once the callback has returned.\n\n**Teardown is not a call into a running engine.** `ds_engine_free` remains valid\nand remains the integrator's responsibility — otherwise a halted tier would leak\neverything it holds. It is valid once the callback has returned, as the others\nare: from inside a callback on that engine it returns `DS_ERR_STATE` and frees\nnothing, since freeing there would free the stack the callback returns into\n([RARC.13.16]). The engine **must** release everything it holds whatever\nstate the halt left it in.\n\n",
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INVAL",
+    "DS_ERR_STATE"
+  ],
+  "refs": [
+    "LERR.1.4.7",
+    "NCBK.1.5",
+    "NCBK.2.10",
+    "NCBK.2.11",
+    "NDET.2.1",
+    "NERR.18",
+    "NFCT.6.4",
+    "RARC.13.16",
+    "RDSC.9.8",
+    "RFCS.6.7",
+    "RTCT.7.3"
+  ]
+}

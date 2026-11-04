@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: one pump that sweeps an expired fact, expires a
+# cache entry and fires a rule, so the order of the three can be read
+# ([NSTG.2.4.2]).
+
+use default
+
+schema Brief scope ttl 2_s:
+    v: Int
+
+schema Seed scope logical:
+    v: Int key
+
+schema Go scope logical:
+    v: Int key
+
+rule seed_cache:
+    Seed
+->
+    cache key: "soon" value: 1 ttl: 2_s
+
+rule go:
+    Go
+->
+    log info "go"

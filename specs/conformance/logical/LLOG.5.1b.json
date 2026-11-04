@@ -1,0 +1,14 @@
+{
+    "id": "LLOG.5.1b",
+    "category": "logical",
+    "scenario": "`log warning` action emits an action_log event per LLOG.5.1. A rule with `log warning` fires and an action_log event appears in the stream.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log warning \"something wrong\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

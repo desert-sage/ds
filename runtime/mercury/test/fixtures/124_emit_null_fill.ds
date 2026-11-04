@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Seed scope logical:
+    go: Int key
+
+schema Knob scope logical:
+    name: String key
+    note: String? mutable
+    lit: Bool? mutable
+    level: Float? mutable
+
+rule make:
+    Seed
+->
+    emit Knob logical name: "cc"
+
+rule seen:
+    Knob k where k.note is null and k.lit is null and k.level is null
+->
+    log info "null"

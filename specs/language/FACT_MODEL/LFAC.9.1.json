@@ -1,0 +1,54 @@
+{
+  "id": "LFAC.9.1",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.9",
+  "seq": 610,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFAC.9.1] **A slot named `ts` is a `Time`.** A schema may declare a slot named\n`ts` and need not. If it does, the slot's type must be `Time`, not nullable. The\ncompiler must refuse a `ts` slot of any other type, `Time?` included, with\n`DS_VALIDATE_TS_NOT_TIME`.\n\nA construct that needs `ts` requires it of the schemas it reads: every adapter\nschema declares it ([LADP.4.2.1]), and so does every schema in a `then` sequence,\nthe anchor `latest` pins among them ([LTHE.4.5]). Any other schema may declare it,\nand there it is the slot this clause describes and nothing more.\n\n**`ts` is the engine's slot, outside identity and outside the no-op test.** It\ncarries no `key` or `mutable` marker on any schema; on a `logical` schema it is\nthe one slot [LFAC.1.7.4]'s require-all does not reach, and the compiler must\nrefuse a marker on it with `DS_VALIDATE_TS_MARKED`. It takes no part in the\nschema's identity key ([LFAC.1.7]) and no part in the no-op comparison\n([LFAC.2.5.1]): a reassertion that differs from the live fact only in `ts` is\na no-op, and the live fact keeps the `ts` it was given when it entered\n([LFAC.9.2]). In the artefact, on a `logical` schema, it carries the identity role\n`ENGINE` ([RDSC.5.5.7]). Only a `logical` schema has a no-op test or an identity\nkey; on any other schema `ts` is a slot like the rest wherever two facts are\ncompared ([RFCS.23.7]), since it is what tells two events of one schema apart.\n\n",
+  "refs": [
+    "LADP.4.2.1",
+    "LFAC.1.7",
+    "LFAC.1.7.4",
+    "LFAC.2.5.1",
+    "LFAC.9.2",
+    "LTHE.4.5",
+    "RDSC.5.5.7",
+    "RFCS.23.7"
+  ],
+  "errors": [
+    "DS_VALIDATE_TS_MARKED",
+    "DS_VALIDATE_TS_NOT_TIME"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "iret_19_1__ts_outside_key_and_payload",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ts takes no part in the identity key and no part in the compared payload, on every schema. Bounded: six slots, six schemas."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "lfac_9_1__one_ts_per_schema",
+        "tag": "spec",
+        "note": "A schema declares ts at most once. That it is a Time, and the refusals DS_VALIDATE_TS_NOT_TIME and DS_VALIDATE_TS_MARKED, are the validator's, not modelled."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "lfac_9_1__ts",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "lfac_9_1__ts_unmarked",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ts carries no key or mutable marker on any schema: ENGINE on a logical schema, UNSPECIFIED elsewhere. Bounded: six slots, six schemas."
+      }
+    ]
+  }
+}

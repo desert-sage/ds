@@ -1,0 +1,10 @@
+{
+    "id": "LFAC.9.3_test_input_writes_ts",
+    "category": "compiler",
+    "scenario": "[LFAC.9.3]: a test constructs an input fact that supplies `ts`. The test clock fills an input's `ts` ([LFAC.9.2]), and an author does not write it, so the compiler refuses the input with DS_VALIDATE_TS_READ_ONLY. The rule and the rest of the test are valid.",
+    "rules_ds": "schema Reading scope logical:\n    entity_id: String key\n    celsius: Float mutable\n    ts: Time\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    log info \"cold\"\n\ntest \"cold fires\":\n    inputs:\n        at 0_s:\n            Reading entity_id: \"a\" celsius: 1.0 ts: \"2026-09-27T00:00:00Z\"\n    produces:\n        activated cold\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TS_READ_ONLY"
+    }
+}

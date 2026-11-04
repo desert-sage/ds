@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.3.1.1_emit_and_withdraw_scc_refused",
+    "category": "compiler",
+    "scenario": "LCYC.3.1.1: an SCC that a `withdraw` edge closes is refused when a schema is both emitted and matched inside it. `ra` emits `Y` and `rb` matches it (an emit edge, ra -> rb). `rb` withdraws a `W` that `ra` matches (a withdraw edge, rb -> ra, LCYC.3.2.2). `Y` is emitted and matched inside the SCC, so the first condition fails and the program is refused with DS_VALIDATE_RULE_CYCLE. PATH PINNED: `dsc.cycle`'s withdraw edge is what closes the cycle. The emit edge alone is acyclic, so a cycle check that built no withdraw edge accepts this program. Twin: LCYC.3.1.1_withdraw_only_scc_admitted.",
+    "rules_ds": "schema A scope explicit:\n    v: Int\n\nschema W scope explicit:\n    v: Int\n\nschema Y scope explicit:\n    v: Int\n\nrule ra:\n    A a\n    W w where w.v == a.v\n->\n    emit Y v: a.v\n\nrule rb:\n    Y y\n    W w where w.v == y.v\n->\n    withdraw w\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

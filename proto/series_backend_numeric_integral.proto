@@ -1,0 +1,53 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "series_backend_ring_buffer.proto";  // SeriesElementType
+
+// SeriesBackendNumericIntegral atom body. Per [RDSC.5a] / [LSIG.2.3]. Numeric time-weighted integral
+// (∫x dt) backing for `integral` over Float / Int slots.
+//
+// Load-bearing (LSIG.2.6): a runtime that does not recognise this atom must
+// HARD-REJECT the .dsc, never skip. Registered in [RDSC.7.1].
+// Both time_model and gap_policy are recorded explicitly and
+// are load-bearing at runtime — neither can be inferred from the other
+// fields ([LSIG.2.3.6]).
+message SeriesBackendNumericIntegral {
+  string            schema_name        = 1;
+  string            slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string            identity_slot_name = 3;
+  SeriesElementType element_type       = 4;   // Float / Int
+  // Sliding / tumbling window; 0 for all_time.
+  uint64            window_ns          = 5;
+  // 0 = live-only; non-zero forwards samples to the samples plane.
+  uint64            persist_ns         = 6;
+  // Sample capacity under realtime: true (.dsrt); 0 = unbounded (default).
+  uint32            max_samples        = 7;
+  SeriesTimeModel   time_model         = 8;   // load-bearing (LSIG.2.3.6)
+  SeriesGapPolicy   gap_policy         = 9;   // load-bearing (LSIG.3)
+  uint32            module_id          = 10;
+  SeriesNullPolicy  null_policy        = 11;  // [LNUL.8.6]; not gap_policy
+}
+
+// Time model for windowed backings that need it on the wire (SeriesBackendNumericIntegral). The
+// SeriesBackendRingBuffer / SeriesBackendFifoDeque / SeriesBackendMonotonicDeque backings encode their model implicitly (window_ns == 0
+// ⇒ all_time), but integral's sliding / all_time / tumbling forms select
+// distinct eviction/reset behaviour, so SeriesBackendNumericIntegral carries it explicitly.
+enum SeriesTimeModel {
+  SERIES_TIME_MODEL_UNSPECIFIED = 0;
+  SERIES_TIME_MODEL_SLIDING     = 1;
+  SERIES_TIME_MODEL_ALL_TIME    = 2;
+  SERIES_TIME_MODEL_TUMBLING    = 3;
+}
+
+// Gap policy for `integral` (LSIG.3). UNSPECIFIED is treated as HOLD (the
+// default, LSIG.3.1).
+enum SeriesGapPolicy {
+  SERIES_GAP_POLICY_UNSPECIFIED = 0;
+  SERIES_GAP_POLICY_HOLD        = 1;
+  SERIES_GAP_POLICY_ZERO        = 2;
+  SERIES_GAP_POLICY_SKIP        = 3;
+}

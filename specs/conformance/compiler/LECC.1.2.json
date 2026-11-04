@@ -1,0 +1,10 @@
+{
+    "id": "LECC.1.2",
+    "clauses": ["LECC.3.7.2"],
+    "category": "compiler",
+    "scenario": "The compiler admits `internal.invariant` as an `error` continuation's pattern. It is a code in the standard catalogue ([LECC.3.7.2]), well-formed by [LECC.1.2]'s pattern, and the code a runtime puts in place of a host's malformed one ([LECC.1.5]), so an author can handle that case by name. Pin: a `call` with an `error internal.invariant:` continuation compiles with no diagnostic. NOT HERE: [LECC.1.2]'s pattern and [LECC.1.5]'s rewrite. The compiler never sees a `CallError`'s code, and this vector runs no engine; the rewrite, in both runtimes, is logical/LECC.1.5_malformed_code_is_rewritten.",
+    "rules_ds": "service weather.get_forecasts:\n    kwarg entity_id: String\n    no response\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        error internal.invariant:\n            log info \"adapter sent malformed code\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

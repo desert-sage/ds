@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.5.8.8_replay_json_zero",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.8] with [LFST.9]: the session of `logical/LGRA.5.8.8_parsed_zero_has_no_sign`, recorded and replayed. The Json slot's float zero is +0.0 from the moment the value comes into being, so the recording carries `0.0` and the replay, which reads the slot back through the parser (a recording read on replay is one of [LGRA.5.8.6]'s places), re-derives the same fire and log byte for byte. PATH PINNED: libds records through rfcs/codec.c and replays through ds_rfcs_replay_* (pyds Engine.record / Engine.replay), re-reading the slot's text through `json.c`'s parser; the Mercury runtime records the slot's canonical text (`ds.rfcs` `rfcs_6_3_json_field`) and replays it through `ds.json_text` (`ds.rfcs` `slot_value`), in the behaviour suite's `replay_determinism` driver. A runtime that folded on the live path and not on the replayed read, or the other way round, would differ in `zero_has_no_sign`'s fire and fail the compare.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule zero_has_no_sign:\n    Payload p where 1.0 / p.body.v > 0.0\n->\n    log info \"zero has no sign\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "v": -0.0 } } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "min_rule_fires": 1
+    }
+}

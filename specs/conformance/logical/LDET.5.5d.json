@@ -1,0 +1,18 @@
+{
+    "id": "LDET.5.5d",
+    "category": "logical",
+    "scenario": "Matches that complete together are ordered by their facts (LDET.5.5), not by memory traversal. Drives RIGHT-activation of the A,B join by the B fact, which walks the left memory of A tokens; the A memory has just lost its first entry to a delete, so a runtime that deletes last-into-hole (IRET.28.10.1) and stamps in traversal order holds [a3, a2] and fires a3 first. Pin: assert a1, a2, a3; retract a1; assert b1; pump; messages are ['a2', 'a3'], the order a replay rebuilding working memory by assertion also gives (LDET.5.9). Unconstrained join, so it pins the dense-memory walk and says nothing about an indexed equality-join site. It pins libds (`rete/alpha.c`'s `oa` vector); it does NOT pin Mercury's sort, whose memories stay in insertion order (a traversal-order sabotage left it green, e5627698b) -- `LDET.5.5_self_join` does.",
+    "rules_ds": "schema A scope logical:\n    name: String key\n\nschema B scope logical:\n    name: String key\n\nrule r:\n    A a\n    B\n->\n    log critical \"{a.name}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "name": "a1" }, "as": "a1" },
+            { "op": "assert", "schema": "A", "slots": { "name": "a2" } },
+            { "op": "assert", "schema": "A", "slots": { "name": "a3" } },
+            { "op": "retract", "label": "a1" },
+            { "op": "assert", "schema": "B", "slots": { "name": "b1" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a2", "a3"]
+    }
+}

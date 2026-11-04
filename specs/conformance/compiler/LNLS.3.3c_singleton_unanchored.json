@@ -1,0 +1,11 @@
+{
+    "id": "LNLS.3.3c_singleton_unanchored",
+    "clauses": ["LNLS.3.3"],
+    "category": "compiler",
+    "scenario": "[LNLS.3.3c]: a singleton beside a keyed schema still needs the keyed side's full key pinned. `Climate` is a singleton; `Reading` is keyed on `k`, and the only cross-pattern comparison is `>`, which pins nothing, so a new `Climate` token would scan every `Reading`. Refused as an unanchored pattern. PATH PINNED: `dsc.validate.anchor_body`'s last arm, reached after the singleton arm finds the keyed side unpinned.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Climate scope logical:\n    level: Int mutable\n\nschema Reading scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r:\n    Climate a\n    Reading s where s.n > a.level\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

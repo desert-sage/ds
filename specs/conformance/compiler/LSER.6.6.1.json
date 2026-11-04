@@ -1,0 +1,10 @@
+{
+    "id": "LSER.6.6.1",
+    "category": "compiler",
+    "scenario": "Companion-slot names (the agg vocabulary at LSER.16: `mean` / `stdev` / `variance` / `pvariance` / `pstdev` / `min` / `max` / `sum` / `count` / `count_distinct` / `median` / `pXX` / `bool_and` / `bool_or` / `first` / `last` / `rate` / `direction` / `dwell`) are reserved on bindings that resolve to a series-tracked entity per LSER.6.6.1. An author-declared slot of the same name would silently shadow the desugared form and create drift; the validator rejects at schema-decl time with DS_VALIDATE_COMPANION_SLOT_COLLISION when the slot has a series. Pin: a logical schema declaring a `dwell: Float` slot rejects (dwell is reserved unconditionally on logical schemas with a `ts` slot per LSER.10.4).",
+    "rules_ds": "schema Sensor scope logical:\n    state: Float key\n    ts: Time\n    dwell: Float mutable\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_COMPANION_SLOT_COLLISION"
+    }
+}

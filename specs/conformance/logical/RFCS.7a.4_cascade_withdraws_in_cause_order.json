@@ -1,0 +1,21 @@
+{
+    "id": "RFCS.7a.4_cascade_withdraws_in_cause_order",
+    "category": "logical",
+    "scenario": "RFCS.7a.4: each cascaded withdrawal is recorded before what its own evaluation produces, recursively -- a cause before its consequences at every depth. `make` derives Made from Seed and `ship` derives Shipped from Made, both logically; `watch` is blocked by `no Shipped` and has a join `c.x / c.y > 1.0` over C with y = 0 that has not run. Retracting the Seed ends `make`'s activation, so Made is withdrawn; Made's withdrawal ends `ship`'s, so Shipped is withdrawn; Shipped's withdrawal releases `watch`'s `(g)`, the pair `((g), c1)` is derived for the first time and the all-Int division traps [LEXP.7.15.1]. In cause order the stream reads fact_retract (Seed), fact_retract (Made), fact_retract (Shipped), computation_error. The kinds carry no fact, so the fault is what makes the order visible: a runtime that pushes a buffered cascade retract's record AFTER propagating it gives fact_retract (Seed), computation_error, fact_retract (Shipped), fact_retract (Made), deepest first, which puts the computation_error second. Nothing before the host retract retracts anything, so the stated three are every fact_retract in the run. PATH PINNED: libds's retract bridge at depth >= 2 (wm_rete_bridge.c ds_rete_wm_retract_bridge, the TMS cascade through rete/terminal.c withdraw_justification and ds_engine_retract_rete_fact), whose record takes its buffer slot before it propagates; Mercury's ds.engine retract_unsupported. The lockstep scenario 95_cascade_order (fixture 128_cascade_order) holds the two to each other with fact ids.",
+    "rules_ds": "schema Seed scope logical:\n    k: String key\n\nschema Made scope logical:\n    k: String key\n\nschema Shipped scope logical:\n    k: String key\n\nschema G scope logical:\n    k: String key\n\nschema C scope logical:\n    id: String key\n    x: Int mutable\n    y: Int mutable\n\nrule make:\n    Seed s\n->\n    emit Made logical k: s.k\n\nrule ship:\n    Made m\n->\n    emit Shipped logical k: m.k\n\nrule watch:\n    G g\n    no Shipped s where s.k == g.k\n    C c where c.x / c.y > 1.0\n->\n    log info \"watch fired\"\n",
+    "dead_rules_expected": ["watch"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Seed", "slots": { "k": "k1" }, "as": "s1" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "G", "slots": { "k": "k1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "C", "slots": { "id": "c1", "x": 1, "y": 0 } },
+            { "op": "pump" },
+            { "op": "retract", "label": "s1" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["fact_retract", "fact_retract", "fact_retract", "computation_error"]
+    }
+}

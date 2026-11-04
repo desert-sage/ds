@@ -1,0 +1,11 @@
+{
+    "id": "LCAP.2.1.5_realtime_dialect_refused",
+    "clauses": ["LDIA.3.2.3"],
+    "category": "compiler",
+    "scenario": "[LCAP.2.1.5] / [LDIA.3.2.3]: the built-in `realtime` dialect is deferred with the capability, so `use realtime` is refused with DS_VALIDATE_REALTIME_DEFERRED, at the dialect name. The name is known, so a compiler that dropped the dialect from its table reports DS_VALIDATE_UNKNOWN_DIALECT instead; one that still admits it reports DS_VALIDATE_COMPILE_MISSING_DSRT, since there is no sibling `.dsrt`. PATH PINNED: dialect-name resolution in `dsc.dialect`, the arm for the `realtime` name.",
+    "rules_ds": "use realtime\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REALTIME_DEFERRED"
+    }
+}

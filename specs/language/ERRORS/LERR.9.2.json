@@ -1,0 +1,23 @@
+{
+  "id": "LERR.9.2",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.9",
+  "seq": 10000010,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LERR.9.2] **The `ComputationError` schema.** `scope internal`\n([LSCP.2.6], [LERR.9.5]); identity is `(node, rule)`.\n\n| Slot | Type | Marker | Meaning |\n|---|---|---|---|\n| `kind` | `String` | | `\"DIVIDE_BY_ZERO\"`, `\"DOMAIN\"` or `\"NOT_REPRESENTABLE\"` — the [LERR.1.4.9] kinds, without the `TRAP_` prefix |\n| `rule` | `String` | key | the fault's rule name ([LERR.9.11]): the faulting activation's rule, or `$alpha_<id>` / `$beta_<id>` for a trap raised during matching |\n| `schema` | `String` | | the schema of the value the computation had no answer for, or `\"\"` when no slot supplied it ([LERR.9.12]) |\n| `slot` | `String` | | the slot of that value, or `\"\"` |\n| `node` | `Int` | key | the expression node that faulted; the artefact maps it to a source line (RDSC.14.3) |\n\n**`key` here marks the latching identity, not an identity role in the\nartefact.** The engine applies [LERR.9.5]'s latching rule by `(node, rule)`\nitself. The schema reaches the artefact as an `explicit` schema with no\nidentity roles, since a lifecycle atom whose slots carry one decodes as\n`logical` ([RDSC.5.5.7]). The two `key` slots are never null.\n\n`kind` is a closed set: the compiler **must** reject a comparison of `kind`\nagainst a string literal outside it as `DS_VALIDATE_CLOSED_SET_LITERAL`, naming\nthe three members.\n\n",
+  "refs": [
+    "LERR.9.12",
+    "LSCP.2.6",
+    "LERR.1.4.9",
+    "LERR.9.11",
+    "LERR.9.5",
+    "RDSC.14.3",
+    "RDSC.5.5.7"
+  ],
+  "errors": [
+    "DS_VALIDATE_CLOSED_SET_LITERAL"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "id": "RDSC.8.7",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.8",
+  "seq": 1969,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.8.7] **Side condition — cross-atom referential integrity.** [RDSC.8.1]\nadmits a well-formed atom sequence whose atoms name things no other atom\ndefines. Each of these is a well-formedness condition over the parsed stream,\nnot over the production set.\n\n- A `Hydration` atom names a slot that a `Slot` atom in the same file declares\n  ([RDSC.5.6.4]), and at most one `Hydration` exists per `(schema, slot)`\n  ([RDSC.5.6.5]).\n- A `rule_group`'s atoms name a rule that a `TerminalNode` atom realizes ([RDSC.8.3]).\n- An `AlphaNode` atom names a schema that some `schema_group` registers.\n- An `oracle_atom`, and every test atom but `TestCase` and `TestReply`, names\n  the `TestCase` test it belongs to; a `TestReply` names the `TestResponse`\n  stub it answers.\n\nNote that the first three of these are satisfied **across** the bundle-global\nboundary: a `rule_group` is emitted inside its `module_group`, while the `TerminalNode`\natom realizing its rule arrives later, in `rete_network`. The reference is by\nname, resolved once the whole artefact is read, never by position.\n\nA loader **must** refuse an artefact in which an atom it reads names something\nthat no atom in the artefact defines, as listed above, with `DS_ERR_DSC_DANGLING`\n([RDSC.11.1]). The artefact alone decides.\n\n**The stream is parsed when every atom body is decoded in full:** its protobuf decode ([RDSC.9.5]), and the shape a network\nnode's own clause gives it, which covers a node id ([RDSC.4a.3]), an `AlphaNode`'s\nschema name ([RDSC.4a.6.3]) and an expression's shape ([RDSC.11.3]). A loader\n**must** refuse a body that fails any of these before it checks a name this\nclause lists, so an artefact with both defects is refused for the body. A check\nthat needs the registered schemas is not part of decoding a body.\n\n**The last bullet binds the reader of test atoms, not a runtime's loader.**\nA runtime skips the test and oracle atoms ([RDSC.7.6], [RTIM.8.3.1]),\nand [RDSC.9.9] forbids it to analyse what its load does not use, so it does not\ncheck what they name. The `.dstest` interpreter reads them, and it **must**\nrefuse the run, running no case, over a test atom that names a test or a stub\nno atom declares ([RTIM.14.15]).\n",
+  "refs": [
+    "RDSC.11.1",
+    "RDSC.11.3",
+    "RDSC.4a.3",
+    "RDSC.4a.6.3",
+    "RDSC.5.6.4",
+    "RDSC.5.6.5",
+    "RDSC.7.6",
+    "RDSC.8.1",
+    "RDSC.8.3",
+    "RDSC.9.5",
+    "RDSC.9.9",
+    "RTIM.14.15",
+    "RTIM.8.3.1"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DANGLING"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "Hydration",
+    "Slot",
+    "TerminalNode",
+    "TestCase",
+    "TestFact",
+    "TestReply",
+    "TestResponse"
+  ]
+}

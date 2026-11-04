@@ -1,0 +1,47 @@
+# lowered from the probe division_int.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# division.expected (scripts/formal/check_idris.py). The division rung's smoke pair:
+# `//` and `%` on Int, one rule per reading and one fact per
+# rule -- floor toward negative infinity ([LEXP.7.5]), the divisor's sign on
+# the remainder ([LEXP.7.6]), INT64_MIN // -1 wrapping ([LEXP.7.13.1]), a zero
+# divisor trapping so that rules 3 and 4 never fire ([LEXP.7.15.1]), and a
+# null dividend over a zero divisor staying null ([LNUL.9.3]). The keys are the
+# value codes of the four entity ids (tokens 0 to 3: the blocks 3, 11, 19, 27)
+# and the payloads the codes of (x, y, n): one block of 8 * ZigZag + 2 per Int,
+# 0 for the null, so x = -7 is the block 106, y = 2 is 34, n = 1 is 18, y = -1
+# is 10, y = 0 is 2, x = 8 is 130 and INT64_MIN is 147573952589676412922.
+schema 0 entity T
+alpha 0 0
+rule 0 floor_toward_minus_inf
+pattern 0 0 0
+where 0 0 eq add floordiv slot 0 pay 0 slot 0 pay 1 lit i:4 lit i:0
+log 0 0 0
+rule 1 remainder_takes_the_divisors_sign
+pattern 1 0 0
+where 1 0 eq mod slot 0 pay 0 slot 0 pay 1 lit i:2
+log 1 0 0
+rule 2 int64_min_over_minus_one_wraps
+pattern 2 0 0
+where 2 0 and eq floordiv slot 0 pay 0 slot 0 pay 1 slot 0 pay 0 eq mod slot 0 pay 0 slot 0 pay 1 lit i:0
+log 2 0 0
+rule 3 floordiv_by_zero_never_fires
+pattern 3 0 0
+where 3 0 eq floordiv slot 0 pay 0 slot 0 pay 1 lit i:0
+log 3 0 0
+rule 4 mod_by_zero_never_fires
+pattern 4 0 0
+where 4 0 eq mod slot 0 pay 0 slot 0 pay 1 lit i:8
+log 4 0 0
+rule 5 null_over_zero_is_null
+pattern 5 0 0
+where 5 0 is null floordiv slot 0 pay 2 slot 0 pay 1
+log 5 0 0
+rule 6 zero_divisor_present
+pattern 6 0 0
+where 6 0 eq slot 0 pay 1 lit i:0
+log 6 0 0
+step assert _0 0 1000000000000000000003 1000000000000000000106000000000000000000034000000000000000000018
+step assert _1 0 1000000000000000000011 1000000000000000000106000000000000000000050000000000000000000018
+step assert _2 0 1000000000000000000019 1147573952589676412922000000000000000000010000000000000000000018
+step assert _3 0 1000000000000000000027 1000000000000000000130000000000000000000002000000000000000000000
+step pump

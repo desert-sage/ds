@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.23.1_parenthesised_default",
+    "category": "compiler",
+    "scenario": "LGRA.23.1: `kwarg_modifier ::= 'default' '-'? literal`, and nothing wider. `kwarg n: Int default (1 + 2)` is a parse error: a parenthesised or computed value is not a literal. PATH PINNED: `dsc.parse.lgra_23_1_default_value`, which takes `'-'? literal` and fails on `(`; `parse_service_kwarg` then reports that a literal was expected after `default`. A parser that reads a `primary` there lets the expression reach `dsc.validate`, which refuses it with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE, a different code. What this vector pins is the phase that refuses, not that the program is refused at all.",
+    "rules_ds": "service svc.set:\n    kwarg n: Int default (1 + 2)\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 2
+    }
+}

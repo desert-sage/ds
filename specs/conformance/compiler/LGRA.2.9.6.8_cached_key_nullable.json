@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.8_cached_key_nullable",
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.6.8] / [LSTO.4.3.1a]: every segment of an interpolated `cached(...)` key must be non-nullable. `{d.device_id}` reads a `String?` slot, so a null renders as the empty string ([LGRA.2.9.6.2]) and two devices would share one cache entry; the compiler refuses it with DS_VALIDATE_INTERP_NULLABLE_KEY. PATH PINNED: dsc.validate's lgra_2_9_6_8_cached_key over a `cached` key in a `where`, segment typed nullable. The non-null twin is LSTO.4.3.1_cached_interp, which differs only in the slot's `?`.",
+    "rules_ds": "schema DispatchCommand scope logical:\n    entity_id: String key\n    device_id: String? mutable\n    revision: Int mutable\n\nrule dispatch:\n    DispatchCommand d where d.revision != cached(\"last-cmd-{d.device_id}\")\n->\n    log info \"dispatch\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_NULLABLE_KEY"
+    }
+}

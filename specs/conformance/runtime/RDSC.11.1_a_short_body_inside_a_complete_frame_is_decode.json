@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_short_body_inside_a_complete_frame_is_decode",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a body that ends early inside a complete frame fails protobuf decode, and is DS_ERR_DSC_DECODE (-503) wherever its atom stands, the first included. `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a03ba1005\"}}` ([RCTS.1.2.21]) puts, before the compiled artefact's first atom, a frame of outer tag 0x0A and outer length 3 holding a DscHeader field (key 0xBA 0x10, field 263, wire type 2) that declares a 5-byte body with none inside the frame. The frame is complete, so this is no truncation, and its inner tag is length-delimited, so it is no malformed frame either: the `Atom` body ends inside its own field. The walk from the first byte stops at that frame and reaches no DscHeader, so nothing is re-sealed. What it discriminates: at the first position a malformed frame is BAD_MAGIC, so a loader that does not tell a short body from a malformed frame gives -501 here; one that reads the body past the frame into the next gives another code or loads. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom` MALFORMED with `short_body` set by `inner_runs_short`); the Mercury runtime's `ds.atom.next_frame` (`ae_body`) in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a03ba1005"}},
+        "code": "-503"
+    }
+}

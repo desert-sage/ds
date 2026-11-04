@@ -1,0 +1,9 @@
+{
+    "id": "LDIA.9.2_default_permits_surface",
+    "category": "compiler",
+    "scenario": "LDIA.9.2 \u2014 positive: `default` sets `call`, `nocooldown`, `cache` and `cache_delete` true, so a rule using all four compiles. (`record_event` is retired, [LGRA.10.1.5], so no rule can use it.) The `use default` line is written out so the pin does not rest on the harness supplying it.",
+    "rules_ds": "use default\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.method nocooldown\n    cache key: \"k\" value: t.v\n    cache_delete key: \"old\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

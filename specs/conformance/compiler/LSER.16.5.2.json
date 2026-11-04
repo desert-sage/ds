@@ -1,0 +1,9 @@
+{
+    "id": "LSER.16.5.2",
+    "category": "compiler",
+    "scenario": "v1 exact count_distinct (LSER.16.5.2). `count_distinct` is exact over a bounded `sliding` window's raw samples — the distinct-value set over the ring buffer (SeriesBackendRingBuffer). So it compiles with no accuracy phrase. Pin: a series declaring `count_distinct sliding 10_min` and a rule reading the `count_distinct` companion slot compiles clean.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Int mutable\n\nseries Sensor.state:\n    count_distinct sliding 10_min\n\nrule r:\n    Sensor s where s.count_distinct >= 3\n->\n    log critical \"{s.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

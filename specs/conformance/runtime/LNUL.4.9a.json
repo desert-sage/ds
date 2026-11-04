@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9a",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] totality. The NEGATED form is what separates a total answer from a propagated one; it is not the only fixture sensitive to this arm. Drives the IsTestExpr eval arm (rete/eval.c DS_RETE_EXPR_IS_TEST; ds.eval.m's is_test) with subject IS_SUBJECT_INT over a slot holding null, NEGATED. A total `is` answers false, so `is not Int` is true and the rule FIRES. An `is` that propagated null under Kleene would yield null, and [LNUL.4.3] does not fire a where-clause on null, so the rule would NOT fire. The un-negated form cannot distinguish the two: false and null both fail to fire, so `where s.state is Int` on a null passes whether or not the operator is total. Sabotaging the arm also reddens LNUL.4.4a and LNUL.4.9b, which are `is null`-shaped and share the code path without isolating totality — so this vector is the one that DISCRIMINATES, not the only one that breaks. fact_count 2.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state is not Int\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": null
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

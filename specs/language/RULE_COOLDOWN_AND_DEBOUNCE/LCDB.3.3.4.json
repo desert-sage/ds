@@ -1,0 +1,58 @@
+{
+  "id": "LCDB.3.3.4",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.3",
+  "seq": 128,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCDB.3.3.4] **`by:` declares the activation key, and where a\nnon-`logical` fact is bound it is required.** A rule header may carry one\n`by:` modifier ([LCDB.5.1]). When it is written, the activation key **is**\nwhat it names — an ordered tuple of `<binding>.<slot>` paths, or the single\nglobal key `by: none` — for the `cooldown`, in place of\n[LCDB.3.3.3]'s composition.\n\nA rule that carries a rate modifier and binds, in a positive pattern, a fact of\nany lifecycle other than `logical` must carry one, because no such fact has\nidentity slots ([LFAC.1.7.6]): omitting it is `DS_VALIDATE_RATE_KEY_REQUIRED`. A rule binding\nonly `logical` facts may omit it and takes [LCDB.3.3.3]'s key. A path naming\na binding the rule does not declare, or a slot the bound schema does not\nhave, is `DS_VALIDATE_RATE_KEY_BAD_PATH`.\n\n**Why it is required rather than defaulted.** A `ttl` fact has no declared\nidentity ([LFAC.1.7.6]), and both available defaults are wrong in a way the\nauthor cannot see. Every slot gives an event carrying a `ts`\nor any other per-event value a tracker of its own, so the cooldown never\nsuppresses anything; that is [LCDB.3.3.1]'s churn failure, moved from\n`mutable` slots to event payloads. No slots at all quietly makes the rule\nsingle-windowed across every entity, which is the opposite of what\n[LCDB.3.3.1] says rate control is for. The declaration is one line and it is\nthe only form that says which the author meant, which is the same reason a\nseries on a schema with no identity must name `by:` ([LSER.7.6.1]).\n\n",
+  "refs": [
+    "LCDB.3.3.1",
+    "LCDB.3.3.3",
+    "LCDB.5.1",
+    "LFAC.1.7.6",
+    "LSER.7.6.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_RATE_KEY_BAD_PATH",
+    "DS_VALIDATE_RATE_KEY_REQUIRED"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Lcdb_3_2_1__cool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "LESS than the clause: the `by:` paths are the fixture lowering's slot reads in the written order and `by: none` the empty key; the two validation errors are the compiler's. Here the key is a function of the match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_4__pay_of_head",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `by:` path to a payload slot of a ttl fact: the model's `fpay`, the code of the payload slots. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_4__ttl_by_suppresses",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The shape of logical/LCDB.3.3.4_ttl_by_suppresses: a ttl schema with no identity, the key a payload slot under `by:`; three facts pumped in turn at clock 0, the second carrying the first's key refused, the third its own key admitted. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_3_4__ttl_thirty",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The 5 min TTL of logical/LCDB.3.3.4_ttl_by_suppresses in units of its 10 s window. A fixture."
+      }
+    ]
+  }
+}

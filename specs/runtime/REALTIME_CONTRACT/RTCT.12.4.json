@@ -1,0 +1,23 @@
+{
+  "id": "RTCT.12.4",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.12",
+  "seq": 698,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Zero-allocation and intern-stability obligations",
+  "text": "### Zero-allocation and intern-stability obligations [RTCT.12.4]\n\nThe bound in [RTCT.12.1] holds only if the pump path allocates nothing. Two\nproperties must be verified on every build, not asserted:\n\n**Zero allocation.** A pump cycle must call `malloc` / `calloc` / `realloc`\nexactly zero times when RT mode is active, the pools are ready, and the RT\ntables were pre-sized after all schemas and rules were loaded. The engine\nverifies this by intercepting the allocator through the linker's `--wrap`\nmechanism, so the count is observed rather than reasoned about.\n\nFor two-pattern join rules the guarantee holds while the left-memory size per\nbeta node at right-activate time is at most `DS_RIDX_INLINE`. A configuration\nthat may exceed that bound must pre-allocate its heap tokens during INIT.\n\n**Intern stability.** The string-intern resize count must not change during a\npump cycle. This is structural rather than incidental: locking the intern table\nat pre-size time makes interning return `DS_ERR_OOM` instead of growing,\nand in LIVE the engine only looks up strings interned at load time. A cycle that\ninterns a new string has left the bound.\n\nBoth are enforced in CI against the `pump_wcet_ns` cap ([RTCT.3.2],\n[RTCT.7.1]); a pump exceeding it halts the tier with\n`DS_ERR_CONTRACT_WCET_HALT` ([RTCT.7.3]). There is no environment-variable override and no\nsoft mode — a different timing budget is a different `.dsrt`, and therefore a\ndifferent `.dsc` ([RARC.4]).\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_ERR_CONTRACT_WCET_HALT",
+    "DS_ERR_OOM"
+  ],
+  "refs": [
+    "RARC.4",
+    "RTCT.12.1",
+    "RTCT.3.2",
+    "RTCT.7.1",
+    "RTCT.7.3"
+  ]
+}

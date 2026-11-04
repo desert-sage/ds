@@ -1,0 +1,25 @@
+{
+  "id": "NFCT.1.4.1",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.1.4",
+  "seq": 91,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[NFCT.1.4.1] Each slot is a `ds_slot_desc_t`. Beyond `name` and `type`:\n\n| Field | Meaning |\n|---|---|\n| `identity_role`       | `DS_IDENTITY_KEY` / `DS_IDENTITY_MUTABLE` / `DS_IDENTITY_ENGINE` — the slot's identity role on a `logical` schema: `KEY` slots form the identity tuple (assert upserts on it), `MUTABLE` slots are payload ([LFAC.1.7] / [NFCT.4.4]), and `ENGINE` is `ts`'s alone ([LFAC.9.1]). **Required on every slot of a `logical` schema** (require-all, [LGRA.5.10]); omitted on TTL / event schemas. No slot is privileged by position, and none by name except `ts`. |\n| `schema_ref`          | Non-NULL **iff** `type == DS_SLOT_TYPE_SCHEMA`: the referenced schema (a borrow) for a fact-pointer slot. |\n| `has_tolerance` / `tolerance` | Numeric reassertion tolerance — widens the dedup comparison on this slot ([NFCT.4.4]). |\n| `sampled` / `retained` | Per-slot markers the artefact's `Slot` carries, read back for tooling. The compiler writes `sampled` false in this edition: the samples plane is deferred ([NSTG.5]). |\n| `hydration_eligible`  | True when a `Hydration` atom in the artefact names the slot, false otherwise. The compiler writes no `Hydration` atom in this edition: hydration is deferred ([NCBK.9]). |\n| `docstring`           | Optional human-readable string; may be NULL. |\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LFAC.9.1",
+    "LGRA.5.10",
+    "NCBK.9",
+    "NFCT.4.4",
+    "NSTG.5"
+  ],
+  "symbols": [
+    "DS_IDENTITY_ENGINE",
+    "DS_IDENTITY_KEY",
+    "DS_IDENTITY_MUTABLE",
+    "DS_SLOT_TYPE_SCHEMA"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.7_interpolated_string_is_not_a_literal",
+    "category": "compiler",
+    "scenario": "[LGRA.10.7]: a string with an interpolation site is rendered at the firing, so it is not a literal, and a `literal` kwarg given one is refused with DS_VALIDATE_DYNAMIC_IDENT_KWARG. `svc.set` declares `zone: String literal required`; rule `go` passes `zone: \"room-{t.v}\"`. PATH PINNED: `lgra_10_7_literal`'s `ex_string` arm in dsc.validate, which fails on a string `has_site` finds a site in.",
+    "rules_ds": "service svc.set:\n    kwarg zone: String literal required\n    no response\n\nschema Trig scope logical:\n    v: String key\n\nrule go:\n    Trig t\n->\n    call svc.set zone: \"room-{t.v}\" nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DYNAMIC_IDENT_KWARG"
+    }
+}

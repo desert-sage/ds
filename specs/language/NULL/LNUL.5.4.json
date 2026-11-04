@@ -1,0 +1,46 @@
+{
+  "id": "LNUL.5.4",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.5",
+  "seq": 175,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.5.4] **Narrowing is exactly two mechanical cases** — the flow-typing\nboundary that holds the \"small `dsc` lift, no inference engine\" promise.\nNarrowing of a `T?` to `T` occurs in **exactly two** cases: (a) the tail of a\n`where` conjunction after an `x is not null and` guard, where `x` is `T` in the\nremaining conjuncts ([LNUL.5.2]); and (b) the result of `x ?? d` (`d : T`), which\nis `T` ([LNUL.5.3]). **No other construct narrows** — not `or`, not\n`not (x is null)`, not a prior `let`, not nested or cross-rule flow. The\nconsequence of *not* narrowing is **position-dependent** ([LNUL.5.1]): a `T?`\noutside a narrowing site is a compile error in a concrete-value position, and\nKleene-evaluated (null-propagating) in a `where`-predicate. So `s.state is null or\ns.state > 85` **compiles**: `s.state` is still `T?` at `> 85`, but a comparison in\na `where` propagates `null` ([LNUL.4.1]), so with a `null` reading `s.state is\nnull` is `true` and `true or null` is `true` (Kleene) — the rule **fires**. That\nis a *semantic* gotcha, not a compile error: the `or` did not narrow, so the\nintended guard silently didn't apply. An author who wants \"hot, treating a missing\nreading as not-hot\" writes `(s.state ?? 0.0) > 85` or `s.state is not null and\ns.state > 85`. The cost is an occasional explicit guard a cleverer compiler would\ninfer — the deliberate price of a fully predictable, two-case narrowing model with\nno data-flow-analysis subsystem in `dsc`.\n\n**The guards are spelled with `is` throughout.** `!= null` and `== null` are\ncompile errors ([LNUL.4.4]). Narrowing is keyed on the **total** null test and\nnever on the propagating comparison.\n\n",
+  "refs": [
+    "LNUL.4.1",
+    "LNUL.4.4",
+    "LNUL.5.1",
+    "LNUL.5.2",
+    "LNUL.5.3"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "lnul_5_4__v5_false_decides",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "NARROWING: a false anywhere decides whatever the rest would raise, and nothing is recorded -- so folding a literal false operand is sound (RLOW.6.1.4). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "lnul_5_4__false_decides",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NARROWING: a false guard decides the `where` wherever it stands, whatever any other conjunct -- the guarded tail included -- would raise, and nothing is recorded: [IRET.9.6]'s narrowed tail evaluated before its guard meets a `false` guard that absorbs its TypeError. And folding a literal `false` operand is sound (RLOW.6.1.4). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ]
+  }
+}

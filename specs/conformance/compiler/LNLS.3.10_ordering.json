@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.10_ordering",
+    "category": "compiler",
+    "scenario": "[LNLS.3.10]'s table: `<` / `>` / `<=` / `>=` on a `String` slot within ONE pattern costs O(len) without `max_length`, and is a compile error in a `+nolinscan` file. PATH PINNED: `dsc.validate.lnls_compare`'s single-binding arm; across two bindings the same comparison is [LNLS.3.8] instead.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Line scope logical:\n    k: Int key\n    text: String mutable\n\nrule r:\n    Line l where l.text < \"m\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_UNBOUNDED_STRING_OP"
+    }
+}

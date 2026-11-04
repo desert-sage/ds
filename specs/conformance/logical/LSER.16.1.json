@@ -1,0 +1,20 @@
+{
+    "id": "LSER.16.1",
+    "category": "logical",
+    "scenario": "`count(r.val)` function-call aggregation (the window is the declaration's, LSER.6.11.3) fires rule when accumulated count >= 3 per LSER.16.1. Requires a series declaration for the backing. After 4 observations (one per pump cycle so accumulator absorbs before next check), count reaches 3 → rule fires. Pin: action_log appears in the event stream.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Reading.val:\n    count sliding 5_s\n\nrule check:\n    Reading r where count(r.val) >= 3\n->\n    log info \"count reached\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 40.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

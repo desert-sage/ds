@@ -1,0 +1,9 @@
+{
+    "id": "RDSC.5.5.8_temporal_kinds",
+    "category": "compiler",
+    "scenario": "RDSC.5.5.8: a schema with a `Time`, a `Date` and a `Duration` slot compiles, and its Slot atoms carry SLOT_KIND_TIME (8), SLOT_KIND_DATE (9) and SLOT_KIND_DURATION (10), never INT. This fixture pins acceptance: the compiler maps each declared type to its kind (`dsc.lower.builtin_slot_kind`, `dsc.encode.rdsc_5_5_4_slot_kind`), and libds's loader accepts all three (the conformance runtime lane loads every compiled artefact). The kinds themselves are pinned by `test_encode`'s round trip through the runtime's own decoder: break `rdsc_5_5_4_slot_kind(k_time)` to 1 and that trip fails, since the decoder answers `k_int`.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    seen: Time mutable\n    due: Date mutable\n    span: Duration mutable\n\nrule r:\n    Visit v where v.span > 1_s\n->\n    log info \"long\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

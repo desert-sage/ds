@@ -1,0 +1,32 @@
+{
+  "id": "RCLI.1.9",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 20,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.9] **Standard streams, the input's name, and the contract file.**\nEach of these belongs to `compile`.\n\n- An input of `-` is the source read from standard input, and `-o -` writes\n  the artefact to standard output. A `-` is never a filename.\n- `--filename` names the input wherever the compiler names it: in every\n  diagnostic, and as the source path the `DsSource` atom records ([RDSC.14.2.3]).\n  Without it, the name is the input path as given, or `<stdin>` for standard\n  input.\n- A diagnostic in any other file the compile reads names that file. A library\n  module is named as its `DsSource` names it ([RDSC.14.2.3]). A module's\n  companion `.dstest` ([LTSL.2.4]) is named as its module is, with the `.ds`\n  extension replaced by `.dstest`. In the JSON form, that name is the span's\n  `file` ([RCLI.3.2]).\n- `--dsrt`, which names a realtime contract file, is refused in this edition\n  with `DS_VALIDATE_REALTIME_DEFERRED` ([LCAP.2.1.5]). The grammar keeps the\n  option so the compiler can name what the invocation passed; the compiler\n  reads no file it names.\n\n",
+  "refs": [
+    "LCAP.2.1.5",
+    "LTSL.2.4",
+    "RCLI.3.2",
+    "RDSC.14.2.3"
+  ],
+  "errors": [
+    "DS_VALIDATE_REALTIME_DEFERRED"
+  ],
+  "atoms": [
+    "DsSource"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "compile_input",
+        "tag": "spec"
+      }
+    ]
+  }
+}

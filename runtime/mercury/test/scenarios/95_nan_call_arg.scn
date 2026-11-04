@@ -1,0 +1,18 @@
+# A NaN call argument refuses the call, and the firing goes on ([IDSP.6.5],
+# [LEXP.4.2]).
+#
+# `svc.diff v: t.a * 10.0 - t.a * 10.0` and `svc.big w: t.a * 10.0`, then a
+# log line. With a=1e308, `a * 10.0` overflows to +Inf:
+#
+#   k=1  a=1e308  svc.diff refused (v = Inf - Inf = NaN): no event, no request;
+#                 svc.big issued with w=+Inf; the log line runs
+#   k=2  a=2.0    both calls issued (v=0.0, w=20.0); the log line runs
+#
+# Inf and NaN come from arithmetic, so neither driver has to parse either.
+# The first pump's status is DS_ERR_NAN_REJECTED, which each driver prints as
+# `engine_error` after the pump's events. The vector
+# IDSP.6.5_nan_argument_refuses_the_call pins the number.
+assert Trig k=1 a=1e308
+pump
+assert Trig k=2 a=2.0
+pump

@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.19.5",
+    "category": "runtime",
+    "scenario": "[RFCS.19.5] a writer writes every message's fields in ascending field-number order, and a field that is not repeated at most once, in each atom body and every message nested in one, a fact body included. The harness ([RCTS.1.2.19]) records a session of two host asserts, the first carrying every `Reading` slot and the second a null `x` and a zero `n` (fields the body omits), a pump in which `raise` emits an `Alert`, a clock advance, and a host retract of the first `Reading` with the pump that withdraws its `Alert`. `atoms` requires the recording to hold each atom the session writes: the header, the schema announcements, the asserts, the emit, the retract and the withdrawal. It walks the recording by `proto/`'s field types, each fact body as one scalar field per slot, after showing the walk refuses the same recording with two fields of one atom body swapped. Paths: libds's recorder (`Engine.record`, `rfcs/codec.c`), whose atom bodies protobuf-c packs; the Mercury runtime's `ds.rfcs` `encode_stream`. The element order of a repeated field no clause orders is not pinned ([RFCS.19.5]).",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    n: Int mutable\n    x: Float? mutable\n    ok: Bool mutable\n    note: String mutable\n\nschema Alert scope logical:\n    id: String key\n    n: Int mutable\n    x: Float? mutable\n\nrule raise:\n    Reading r where r.n > 0\n->\n    emit Alert logical id: r.id n: r.n x: r.x\n",
+    "expect": {
+        "kind": "field_order",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "n": 3, "x": 1.5, "ok": true, "note": "first" }, "as": "a" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "b", "n": 0, "x": null, "ok": false, "note": "" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000 },
+            { "op": "retract", "label": "a" },
+            { "op": "pump" }
+        ],
+        "atoms": ["StreamHeader", "SchemaDef", "Slot", "FactAssert", "FactEmit", "FactRetract", "FactWithdraw"]
+    }
+}

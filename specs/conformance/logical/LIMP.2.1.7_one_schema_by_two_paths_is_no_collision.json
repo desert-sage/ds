@@ -1,0 +1,18 @@
+{
+    "id": "LIMP.2.1.7_one_schema_by_two_paths_is_no_collision",
+    "category": "logical",
+    "scenario": "[LIMP.2.1.7]: \"the same schema via two paths is not a collision\". `b` re-exports `a`'s `X`, and the program imports `X` from both, binding one name to one schema. It must compile, and the one rule fires once for the one fact: exactly [\"x 1\"]. The break is a collision judged by the library named on the import line, DS_VALIDATE_IMPORT_NAME_COLLISION. Its refusal twin, two distinct schemas under one name, is `compiler/LGRA.22.5`. PATH PINNED: `dsc.imports.limp_7_7_take_item`, comparing `im_schema_origin`'s declaring library from `limp_4_4_1_schema`.",
+    "rules_ds": "from a import X\nfrom b import X\n\nrule r:\n    X x\n->\n    log info \"x {x.v}\"\n",
+    "libraries": {
+        "a": "schema X scope ttl 1_h:\n    v: Int\n",
+        "b": "from a import X\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.X", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["x 1"]
+    }
+}

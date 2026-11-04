@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.8.6_negated_binding_own_where_ok",
+    "category": "compiler",
+    "scenario": "[LGRA.8.6]'s control for the three NEGATED_BINDING_OUT_OF_SCOPE vectors: a negated pattern's binding \"is in scope in its own `where`\", and a reference there counts. `Sensor s`, then `no Alarm a where a.id == s.id`, and the action reads only `s`. Compiles. PATH PINNED: `dsc.validate.lgra_8_6_negated_binding_scope` skips the negated pattern's own `where`; a check that walked every `where` would refuse this, and the three refusals alone could not tell the two apart ([STYL.5.10.5]).",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n\nschema Alarm scope logical:\n    id: String key\n\nrule r:\n    Sensor s\n    no Alarm a where a.id == s.id\n->\n    log info \"{s.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

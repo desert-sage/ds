@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.1.2",
+  "category": "logical",
+  "scenario": "Bitwise operators and shifts per LEXP.1 — AND, OR, XOR, left-shift, right-shift, bitwise NOT.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule band:\n    T t where t.v & 6 == 4\n->\n    log critical \"band\"\n\nrule bor:\n    T t where t.v | 1 == 5\n->\n    log critical \"bor\"\n\nrule bxor:\n    T t where t.v ^ 7 == 3\n->\n    log critical \"bxor\"\n\nrule lshift:\n    T t where t.v << 2 == 16\n->\n    log critical \"lshift\"\n\nrule rshift:\n    T t where t.v >> 1 == 2\n->\n    log critical \"rshift\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 4 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["band", "bor", "bxor", "lshift", "rshift"]
+  }
+}

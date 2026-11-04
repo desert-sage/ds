@@ -1,0 +1,59 @@
+{
+  "id": "IRET.8.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.8",
+  "seq": 723,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.8.2] **Refraction.** A terminal node maintains a\nrefraction table: the set of token *identities* for which\nan activation has already fired and not been re-created, keyed by\ntoken hash (pre-filter) plus the fact-id tuple (the key);\nsee `[IRET.11.3]` for the full contract and the\nidentity-tiebreak rationale. On activation fire, the\ntoken identity is added to the refraction table. On\nre-activation (same token, after the fact that caused it\nchanged), refraction state for that identity is cleared ([IRET.11.3.2]).\n\n",
+  "refs": [
+    "IRET.11.3",
+    "IRET.11.3.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's two rules -- reset when a run starts on an empty agenda, clear an identity on re-activation -- are the flag in the tick-free fragment: the reset clears identities of no live activation, and re-activation creates an unfired one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_8_2__activated_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ON RE-ACTIVATION THE IDENTITY IS NOT REFRACTED: every activation a terminal gains is unfired, which is the clause's 'refraction state for that identity is cleared'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_8_2__insert_act_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An activation of the list after an insert is the inserted one or an old one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rdsc_4a_5__load_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The table before any cycle: the loaded network with an empty set, the clause's reset on an empty agenda."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rdsc_4a_5__load_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded network with the empty set is sound."
+      }
+    ]
+  }
+}

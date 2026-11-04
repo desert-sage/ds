@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.9_seed_int_below_int64_refused",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.9]: JSON text holding the integer literal -9223372036854775809, one below the smallest int64, is malformed, and a host parse of it returns `DS_ERR_PARSE` (-100) and changes nothing. The negative edge of LGRA.5.8.9_seed_int_above_int64_refused, at the same site (the cache seed, [NSTG.9.1]), given as `text` ([RCTS.1.2.25]) for the same reason: as a Float, -9223372036854775809 rounds to -2^63, which is in range, so a `value` could not carry it to the Mercury runtime at all. `message_contains` is libds's text for this refusal, and `no_fault_events` pins that a host refusal reaches no stream event. Break tests: a runtime that saturates the literal to -9223372036854775808, or reads it as a Float, admits the seed and the vector fails. PATH PINNED: on libds, `json.c` `parse_number`'s ERANGE arm under pyds's `cache_seed`; on the Mercury runtime, `ds.json_text.parse`'s `jr_int_outside_int64` under `ds.engine.seed_cache_text`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-100",
+        "message_contains": "JSON integer literal outside int64",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text": "-9223372036854775809" }
+        ]
+    }
+}

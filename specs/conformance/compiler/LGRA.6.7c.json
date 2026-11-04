@@ -1,0 +1,12 @@
+{
+    "id": "LGRA.6.7c",
+    "clauses": ["LGRA.6.7.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.6.7.2]: a `let` binds `expression`, and an action is a statement, not an expression, so `let x = emit Foo logical a: 1` is a parse error. The `let` stands where a `let` may stand, after `->` ([LGRA.6.1], [LLET.12.1]), so the refusal is the action verb's: DS_PARSE_GENERIC, beginning on line 10 ([RCTS.1.2.34]).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Foo scope logical:\n    a: Int key\n\nrule r:\n    Trig t\n->\n    let x = emit Foo logical a: 1\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 10
+    }
+}

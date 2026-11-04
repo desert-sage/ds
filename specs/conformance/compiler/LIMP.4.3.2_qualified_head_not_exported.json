@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.4.3.2_qualified_head_not_exported",
+    "category": "compiler",
+    "scenario": "[LIMP.4.3.2]: \"`ha._Helper` in pattern position rejects with `DS_VALIDATE_UNKNOWN_SCHEMA`\". A pattern head `ha.Nope t` through `import ha`, where library `ha` loads and declares no schema `Nope`, is refused with that code. A compiler that passes the head on its qualifier alone reaches `dsc.rete`, which cannot lower it. PATH PINNED: `dsc.resolve`'s `lgra_22_4_pattern_head`, qualified arm, against the library's recorded surface -- the same test `emit ha.Nope` meets (LGRA.10.1_emit_qualified_not_exported).",
+    "rules_ds": "import ha\n\nrule r:\n    ha.Nope t\n->\n    log info \"x {t.v}\"\n",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SCHEMA"
+    }
+}

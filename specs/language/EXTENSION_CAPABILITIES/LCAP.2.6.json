@@ -1,0 +1,22 @@
+{
+  "id": "LCAP.2.6",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": "LCAP.2",
+  "seq": 190,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`constspace`",
+  "text": "### `constspace` [LCAP.2.6]\n\nA strategy capability. `constspace: true` makes the engine use\nconstant-footprint algorithms: the slab-pool / pre-sized-arena allocator,\nno allocation on the hot path (assert / pump / fire), bounded steady-state\nmemory. It makes **no WCET claim**, requires **no `.dsrt` contract**, runs\nno INIT/LIVE lifecycle, and permits AOT `CompiledCode` atoms.\n\n`realtime: true` requires `constspace: true` ([LCAP.3.7]): every `realtime`\nprogram is also constant-space, and the allocator mode is the same.\n\nThe compiler runs the constant-space gate, [LCAP.3.2] (no novel strings,\nno unbounded regex or string ordering, no JSON_PATH): each would\nviolate \"zero steady-state allocation.\" It does **not** require the\nidentity-slot join ([LNLS.3.3]) or ban JSON slots; joins are bounded by the\nmemory cap, which is finite.\n\nPool exhaustion is observable, not fatal: an `assert` returns a non-OK\nresult, and a pump-time exhaustion drops the affected firing and warns\nthrough the log callback ([LCSP.2.3]). A program with `realtime: false`\nmust not ship a `.dsrt` ([LCSP.4.2]). [LCSP] specifies `constspace` in\nfull.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "LCAP.3.2",
+    "LCAP.3.7",
+    "LCSP.2.3",
+    "LCSP.4.2",
+    "LNLS.3.3"
+  ],
+  "atoms": [
+    "CompiledCode"
+  ]
+}

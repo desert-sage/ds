@@ -1,0 +1,9 @@
+{
+    "id": "LSCP.2.4.2",
+    "category": "compiler",
+    "scenario": "An activation-scoped fact emitted by a rule whose RHS carries a `call` continuation compiles cleanly per LSCP.2.4.2: the activation fact and the capture fact share the completion-path bookkeeping, and the continuation generates its own synthetic response rules.",
+    "rules_ds": "schema RemoteActionReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice remote.action:\n    kwarg request_id: String\n    response RemoteActionReply\n\nschema Token scope activation:\n    request_id: String\n\nschema Event scope logical:\n    id: String key\n\nrule async_guard:\n    Event e\n->\n    emit Token request_id: e.id\n    call remote.action request_id: e.id cooldown: 30_s\n        on response.code == 200:\n            log info \"done\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LSER.8.5.1_attribute_only_update_samples",
+    "clauses": ["LFAC.2.5.3", "LFAC.2.5.1", "LSER.8.6"],
+    "category": "logical",
+    "scenario": "[LSER.8.5.1]: a series takes one sample of its tracked slot per fact that enters working memory. An update to another slot is a new fact ([LFAC.2.5.3]) and adds a sample of the unchanged tracked value; a no-op reassertion adds none ([LFAC.2.5.1]). `S` is keyed on `k`, tracks `state` with `count sliding 1_h`, and carries an untracked `attr`. Rule `show` fires once per S fact that enters and logs the companion `s.count` and `s.attr`, as logical/LSER.8.6_series_frozen_within_a_pump reads it; its guard `s.count >= 0` is always true, so it has no false-to-true edge and a `where` re-evaluated across pumps ([LTIM.2.4.1]) adds no firing; a pump reads the series as it stood when it began and absorbs after the agenda drains ([LSER.8.6]). Step 1 asserts k1 state 20.0 attr \"a\": \"0 a\" (cold), then one sample. Step 2 asserts state 20.0 attr \"b\", an attribute-only change and so a new fact: \"1 b\", then a second sample. Step 3 asserts the same values again, a no-op: no fact enters, nothing fires, and no sample. Step 4 asserts attr \"c\", a new fact: \"2 c\". Exactly [\"0 a\", \"1 b\", \"2 c\"]. A runtime that sampled only when the tracked value changed logs \"1 c\"; one that sampled the no-op logs \"3 c\". Every firing is a fact's entry. PATH PINNED: the series absorb walk over a host assert, after no-op detection -- libds `engine_rete_adapters.c`'s absorb step, Mercury `ds.engine`'s.",
+    "rules_ds": "use default\n\nschema S scope logical:\n    k: Int key\n    state: Float mutable\n    attr: String mutable\n\nseries S.state (by: k):\n    count sliding 1_h\n\nrule show:\n    S s where s.count >= 0\n->\n    log info \"{s.count} {s.attr}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 20.0, "attr": "a" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 20.0, "attr": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 20.0, "attr": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "state": 20.0, "attr": "c" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0 a", "1 b", "2 c"]
+    }
+}

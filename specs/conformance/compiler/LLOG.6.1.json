@@ -1,0 +1,9 @@
+{
+    "id": "LLOG.6.1",
+    "category": "compiler",
+    "scenario": "`emit X logical` correctness depends on the no-op reassertion discipline per LLOG.6.1. Logical schema slots may carry `tolerance` per LFAC.2.6.4 \u2014 within-tolerance reassertions are suppressed so derived logical facts don't flicker. Pin: a logical schema with a tolerance-annotated slot compiles cleanly.",
+    "rules_ds": "schema Temp scope logical:\n    id: Int key\n    ts: Time\n    celsius: Float mutable tolerance 0.5\n\nschema TempAlert scope logical:\n    source: String key\n\nrule alert_hot:\n    Temp t where t.celsius > 30.0\n->\n    emit TempAlert logical source: \"temp_sensor\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

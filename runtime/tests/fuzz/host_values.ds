@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# host_values.ds -- the program fuzz_host_values.c loads. A Host fact carries
+# one slot of every kind a host asserts, and each rule takes those values
+# through one family of operations: lengths and interpolation, a regex, the
+# casts, a Json path, the cache, a call's arguments, an emit and a publish. A
+# When fact carries a Time, a Date and a zone designation, which `zoned`
+# resolves through the TimeZoneOffset rows the host asserts ([LTIM.10.7]).
+# The two fault handlers log the faults those operations raise.
+
+use default
+
+service sink.take:
+    "Taken by the fuzz target, which answers nothing."
+    kwarg s: String
+    kwarg i: Int
+    kwarg f: Float
+    kwarg b: Bytes
+    kwarg j: Json
+    no response
+
+schema Host scope logical:
+    id: Int key
+    s: String mutable
+    u: String mutable
+    i: Int mutable
+    f: Float mutable
+    ok: Bool mutable
+    b: Bytes mutable
+    j: Json mutable
+
+schema Out scope logical:
+    id: Int key
+    s: String mutable
+    n: Int mutable
+
+schema Mark scope logical:
+    id: Int key
+    s: String mutable
+
+schema When scope logical:
+    id: Int key
+    t: Time mutable
+    d: Date mutable
+    z: String mutable
+
+rule text:
+    Host h
+->
+    let n = len(h.s)
+    let m = len(h.b)
+    log info "s={h.s} u={h.u} i={h.i} f={h.f} ok={h.ok} n={n} m={m}"
+
+# The program's one regex, and it stays the only one: fuzz-dsc's MSan replay
+# builds libds without RE2, which cannot load a regex, so it compiles this
+# program less `rule pattern` (scripts/private/gate/gate.py `_without_regex`, which refuses a
+# regex anywhere else).
+rule pattern:
+    Host h where h.s ~ /^[a-z0-9_]*$/
+->
+    log info "word {h.s}"
+
+rule casts:
+    Host h
+->
+    let a = h.s::Int? ?? 0
+    let c = h.s::Float? ?? 0.0
+    let t = h.i::String
+    let g = h.f::String
+    log info "a={a} c={c} t={t} g={g}"
+
+rule paths:
+    Host h where has(h.j.a)
+->
+    log info "a={h.j.a}"
+
+rule store:
+    Host h
+->
+    cache key: "s" value: h.s
+    cache key: "j" value: h.j
+
+rule load:
+    Out o
+->
+    let v = cached("s")
+    let w = cached("j")
+    log info "v={v} w={w} o={o.s}"
+
+rule calls:
+    Host h
+->
+    call sink.take s: h.s i: h.i f: h.f b: h.b j: h.j nocooldown
+
+rule emits:
+    Host h
+->
+    emit Out logical id: h.id s: h.u n: len(h.u)
+    publish Mark id: h.id s: h.s
+
+# The zone reads [LTIM.10.3] names, `local` and `date`, in the action, where
+# a zone with no row in force is a ComputationError of kind DOMAIN
+# ([LTIM.10.5.3]), and the Date's own components and text ([LTIM.6.6]).
+rule zoned:
+    When w
+->
+    let l = w.t.local(w.z)
+    let s = l::String
+    let e = w.t.date(w.z)::String
+    let g = w.d::String
+    let y = w.d.year + 0
+    let k = w.d.day_of_week + 0
+    log info "s={s} e={e} g={g} y={y} k={k} {l:%Y-%m-%dT%H:%M:%S%z}"
+
+rule computation:
+    ComputationError e
+->
+    log info "computation {e.kind}"
+
+rule typing:
+    TypeError
+->
+    log info "type"

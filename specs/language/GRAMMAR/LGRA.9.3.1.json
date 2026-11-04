@@ -1,0 +1,21 @@
+{
+  "id": "LGRA.9.3.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.9.3",
+  "seq": 1112,
+  "depth": 3,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.9.3.1] Expression / comparison productions:\n\n```\nexpression ::= or_expr\n\nor_expr  ::= and_expr ('or' and_expr)*\nand_expr ::= not_expr ('and' not_expr)*\nnot_expr ::= 'not' not_expr\n          |  comparison\n\ncomparison    ::= coalesce_expr (comparison_op coalesce_expr)*\n               |  coalesce_expr 'is' 'not'? is_subject          # LNUL.4.9\ncomparison_op ::= '==' | '!=' | '<' | '<=' | '>' | '>='\n\ncoalesce_expr ::= match_expr ('??' match_expr)*                 # LNUL.5.3\nmatch_expr    ::= interval_rel (('~' | '!~') REGEX_LIT)?        # LREG.2.1\ninterval_rel  ::= interval (('in' | 'contains' | 'overlaps') interval)?\n                                                                # LINT.4.1\ninterval      ::= bitwise_or ('..' bitwise_or)?                 # LINT.2.1\n```\n\n**Each level below `comparison` realises an operator specified elsewhere**, and\nthis production fixes only their precedence and associativity: `??` is\n[LNUL.5.3], `~` / `!~` are [LREG.2.1], `in` / `contains` / `overlaps` are\n[LINT.4.1], `..` is [LINT.2.1], and the `is` alternative is [LNUL.4.9].\n\n**Residue the grammar cannot carry ([STYL.2.15.4]):**\n\n- **`is not` is one operator**, not `not` applied to `is` ([LNUL.4.9]). The\n  production spells it `'is' 'not'?` for that reason: the `not` here is part\n  of the operator and is not the `not_expr` operator one level up.\n- **The `is` subject is a closed vocabulary, not an expression position**\n  ([LGRA.9.3.3]). This is the only operator in the chain whose right operand\n  is not a nonterminal of the expression grammar, and it is why `is` is an\n  alternative of `comparison` rather than a `comparison_op`.\n- **`??` chains; the three below it do not.** `coalesce_expr` repeats, so\n  `a ?? b ?? c` is legal and left-associative. `match_expr`, `interval_rel`\n  and `interval` each admit **at most one** operator, so `a ~ /x/ ~ /y/`,\n  `a in b in c` and `a .. b .. c` are parse errors rather than nested\n  applications.\n- **`is` does not chain either**, and for a different reason: its right\n  operand is a subject rather than an expression, so there is nothing for a\n  second `is` to apply to. [LGRA.9.3.2]'s pairwise-expansion rule governs\n  `comparison_op` only and does not reach the `is` alternative.\n- **A regex operand must be a literal** ([LREG.5.5]) — the production admits\n  only `REGEX_LIT` on the right of `~` / `!~`, never an expression, so there\n  is no interpolated or computed pattern to reject at a later phase.\n",
+  "refs": [
+    "LGRA.9.3.2",
+    "LGRA.9.3.3",
+    "LINT.2.1",
+    "LINT.4.1",
+    "LNUL.4.9",
+    "LNUL.5.3",
+    "LREG.2.1",
+    "LREG.5.5"
+  ]
+}

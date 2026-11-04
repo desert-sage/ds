@@ -1,0 +1,16 @@
+{
+    "id": "LFST.12.1",
+    "category": "logical",
+    "scenario": "LFST.12.1 — streams are gap-free by default (no sampling, no skipped events). The captured event sequence shows seq incrementing by exactly 1 across multiple events from a fact assertion + rule firing + multi-action body. Pins the v1 always-full recording mode (LFST.12 sampling is reserved for future, not active).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"a\"\n    log info \"b\"\n    log info \"c\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 5,
+        "expected_seq_step": 1
+    }
+}

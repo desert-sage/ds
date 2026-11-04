@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# ds-deps.pin — the ds-deps image's identity, pinned.
+#
+# ds-deps builds the vendored set (Abseil, RE2, protobuf, protobuf-c) from
+# source: an hour on amd64, far longer on the arm64 and riscv64 boards.
+#
+# The tag is `ds-deps:<arch>-<id>` and nothing else. No change to our code (the
+# Dockerfile, scripts/vendor/vendor.py, scripts/vendor/vendor_shared.py, a comment in
+# deps.lock, the sigstore trust root) moves it. A host that has the tag never
+# rebuilds it; a host that lacks it builds it once, from the tree it is asked
+# from.
+#
+# The only way to a new ds-deps is a new id, and that is a decision, not a side
+# effect. Change it when the image has to change:
+#
+#   * a dependency's pin moves (version or sha256 below) — the pins test
+#     (scripts/private/tests/pins/test_deps_image_pin.py) fails until the copies below match
+#     vendor/deps.lock again, and that is the moment to give the
+#     image a new id;
+#   * ds-base moves. `base` below is the ds-base key this id was built FROM, and
+#     dsdev refuses every image on ds-deps while ds-base's key differs from it
+#     (dev/dsdev/core/images.py, _check_pinned_parents). ds-base carries the
+#     gcc, Python and Mercury that ds-build and ds-test compile with, so a
+#     ds-base change must reach them: set `base` to the new key and give a new
+#     id, and ds-deps is rebuilt on it;
+#   * the Dockerfile or the vendor build changes in a way the image must carry.
+#
+# A new id is any 12 lowercase hex digits no host has used. Every image built
+# FROM ds-deps (ds-build, ds-test, ds-emsdk, ds-mcu, ds-bench) folds this id
+# into its own tag, so they follow it.
+
+[ds-deps]
+id   = c7f05244a431
+base = 26c95590e014
+
+# The source pins the image was built from: deps.lock's `kind = dep` rows,
+# version and sha256. A copy on purpose — the pins test compares them.
+
+[abseil]
+version = 20250127.0
+sha256  = 16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8
+
+[re2]
+version = 2024-07-02
+sha256  = eb2df807c781601c14a260a507a5bb4509be1ee626024cb45acbd57cb9d4032b
+
+[protobuf]
+version = 30.2
+sha256  = fb06709acc393cc36f87c251bb28a5500a2e12936d4346099f2c6240f6c7a941
+
+[protobuf-c]
+version = 1.5.2
+sha256  = e2c86271873a79c92b58fef7ebf8de1aa0df4738347a8bd5d4e65a80a16d0d24

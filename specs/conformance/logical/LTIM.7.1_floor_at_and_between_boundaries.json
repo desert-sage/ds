@@ -1,0 +1,28 @@
+{
+    "id": "LTIM.7.1_floor_at_and_between_boundaries",
+    "category": "logical",
+    "scenario": "[LTIM.7.1] / [LTIM.7.2]: `t.floor(d)` truncates `t` to the boundary of `d` at or before it, in the timezone `t` carries, and keeps `t`'s offset. The wall clock is set to 2024-03-31T10:20:30.5Z. `on_the_hour` fires when `e.stamp.floor(1_h) == e.stamp`, which drives `floor` in a `where`. `floors` logs three floors through the cast `::String` ([LCST.4.5.9]), which drives it in an action: `e.stamp.floor(1_h)` on a `Time` slot, which reads untagged; `e.stamp.utc.floor(1_d)` on a `.utc` receiver ([LTIM.7.2]), a Time-tagged value at offset 0; and `now().floor(1_h)` on a `now()` receiver ([LTIM.2.1.1]), also tagged. Four Events. Event 1 is 2024-03-31T10:00:00Z, on an hour boundary: `on_the_hour` fires, and its hour and day floors are 10:00:00Z and 00:00:00Z. Event 2 is 2024-03-31T10:20:30.5Z, between boundaries: it floors to the same two instants, and `on_the_hour` does not fire. Event 3 is -1 ns, the last nanosecond of 1969: it floors to 1969-12-31T23:00:00Z and 1969-12-31T00:00:00Z. A truncation toward zero gives 1970-01-01T00:00:00Z for both, which is the discriminator for a pre-epoch `Time`. Event 4 is 1969-12-31T23:00:00Z, a pre-epoch instant on an hour boundary: `on_the_hour` fires. `now().floor(1_h)` is 2024-03-31T10:00:00Z on every pump. Each pump fires `on_the_hour` before `floors`, by source order ([LDET.5.4]). A runtime that refuses a Time-tagged receiver faults in `floors` and logs no floors line. A runtime with no `floor` refuses the artefact at load. PATH PINNED: the compiler's `lgra_9_6_2_member_call_fn(lk_time, \"floor\", fn_floor_time)` (dsc.rete), libds's `builtin_floor_time` (builtins.c), and Mercury's `ds.eval.ltim_7_1_floor`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    stamp: Time mutable\n\nrule on_the_hour:\n    Ev e where e.stamp.floor(1_h) == e.stamp\n->\n    log info \"hour {e.id}\"\n\nrule floors:\n    Ev e\n->\n    let h = (e.stamp.floor(1_h))::String\n    let d = (e.stamp.utc.floor(1_d))::String\n    let n = (now().floor(1_h))::String\n    log info \"{e.id} {h} {d} {n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "wall_set", "utc_ns": 1711880430500000000 },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "stamp": 1711879200000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "stamp": 1711880430500000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 3, "stamp": -1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 4, "stamp": -3600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "hour 1",
+            "1 2024-03-31T10:00:00Z 2024-03-31T00:00:00Z 2024-03-31T10:00:00Z",
+            "2 2024-03-31T10:00:00Z 2024-03-31T00:00:00Z 2024-03-31T10:00:00Z",
+            "3 1969-12-31T23:00:00Z 1969-12-31T00:00:00Z 2024-03-31T10:00:00Z",
+            "hour 4",
+            "4 1969-12-31T23:00:00Z 1969-12-31T00:00:00Z 2024-03-31T10:00:00Z"
+        ]
+    }
+}

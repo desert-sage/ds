@@ -1,0 +1,21 @@
+{
+  "id": "LREG.4.8",
+  "prefix": "LREG",
+  "doc": "REGEX.md",
+  "parent": "LREG.4",
+  "seq": 163,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LREG.4.8] **Whether a capture may be a join key under `linear_scan: false` is not\nsettled here, and is not settled by analogy.** `linear_scan: false` buys O(1) joins by\nrequiring every join be anchored on a logical identity slot with `J_max = 1`\nprovable ([LNLS]). A capture is not a slot — it is derived from one — so the\nanchor argument does not reach it as written, and the shape that makes\n`linear_scan: false` sound is exactly the shape a captured join key sits outside.\n\n**The obvious ruling is that a capture-anchored join is inadmissible in that\ndialect, and it is deliberately not being made.** The two are not obviously\nequivalent to measurement: an anchor's job is to bound fan-out, and a capture\nover an identity-derived field may or may not bound it as tightly as the slot\nitself. That is an empirical question about the shapes real programs compile to,\nand answering it from the armchair would either forbid something the dialect can\nsupport or admit something it cannot bound — and `linear_scan: false`'s whole value is\nthat its guarantee is provable rather than hoped for.\n\nUntil it is measured, a `linear_scan: false` compiler **must** refuse a capture used as a\njoin key — a pattern whose anchor ([LNLS.3.3]) is complete only when a capture of an\nearlier pattern stands in for that pattern's `key` slot — with\n`DS_VALIDATE_NOLINSCAN_CAPTURE_JOIN_KEY`, and the refusal **must** name\nthis clause rather than [LNLS]'s anchor rule, whose refusals are the\n`DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_*` codes — so that a program refused by a conservative default is distinguishable\nfrom one refused by a settled prohibition. Every other use of a capture is\nunaffected in that dialect, including a capture referenced only within its own\npattern's `where` or in an action, neither of which is a join. A capture read in a\nfurther constraint on top of a complete anchor is not a join key either ([LNLS.3.3]).\n",
+  "verification": "gap",
+  "gap_reason": "The `linear_scan: false` admissibility of a capture-anchored join is an open measurement, not an untested claim. What has to be measured: compile a representative set of capture-anchored joins under `linear_scan: false` and determine whether J_max = 1 is provable for them by the same argument the dialect uses for identity-slot anchors, or whether fan-out is unbounded. This clause mandates the conservative refusal.",
+  "refs": [
+    "LNLS.3.3",
+    "LREG.4.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_NOLINSCAN_CAPTURE_JOIN_KEY"
+  ]
+}

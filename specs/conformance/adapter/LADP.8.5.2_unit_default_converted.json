@@ -1,0 +1,31 @@
+{
+    "id": "LADP.8.5.2_unit_default_converted",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.2]: a kwarg's declared type decides the number the service receives; on a unit-typed kwarg it is the quantity expressed in that unit, from a `default` as from a written argument. `hvac.set` declares `t: celsius default 68_fahrenheit`; rule `go` omits `t`, so the default is supplied ([LADP.8.5.1]) and the integrator receives 20, not the 293.15 K the literal is stored as. PATH PINNED: `ladp_8_5_2_default` in dsc.rete, which folds the default through `dsc.quantity.ladp_8_5_2_in_unit` when `ladp_8_5_1_with_defaults` joins it to the written kwargs. Both runtimes render the body the compiler emits, so libds and the Mercury runtime take the same path. The break is returning the default as declared, which sends 293.15.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\nunit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg zone: String literal required\n    kwarg t: celsius default 68_fahrenheit\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set zone: \"hall\" nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "t": 20.0,
+                    "zone": "hall"
+                }
+            }
+        ]
+    }
+}

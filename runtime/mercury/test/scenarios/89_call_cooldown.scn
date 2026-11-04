@@ -1,0 +1,27 @@
+# The per-call cooldown gate ([IRET.25.5.1]).
+#
+# Each `cooldown:` call is wrapped in IF(FN_RATE_ALLOW("notify#call<N>",
+# d.id, window), FN_CALL(...), null). Two call sites, `svc.slow` (60 s) and
+# `svc.fast` (10 s), keyed on `Dev.id`. Every firing also logs, so a call
+# held back is visible as a firing with its log line and without its call:
+#
+#   t=0   a/1  both calls, log
+#   t=0   a/2  neither call (same key, both windows open), log
+#   t=0   b/1  both calls (another key), log
+#   t=11s a/3  svc.fast only (its 10 s window has passed), log
+#   t=61s a/4  both calls, log
+#
+# The vectors RLOW.4.6.6.1_{keyed_per_entity,window_lapses,two_sites} pin the
+# gate against the clause; this holds the runtimes to each other.
+assert Dev id="a" level=1
+pump
+assert Dev id="a" level=2
+pump
+assert Dev id="b" level=1
+pump
+advance 11000000000
+assert Dev id="a" level=3
+pump
+advance 50000000000
+assert Dev id="a" level=4
+pump

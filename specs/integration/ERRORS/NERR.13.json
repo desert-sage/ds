@@ -1,0 +1,42 @@
+{
+  "id": "NERR.13",
+  "prefix": "NERR",
+  "doc": "ERRORS.md",
+  "parent": null,
+  "seq": 276,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Event-trace errors (-720..-730)",
+  "text": "## Event-trace errors (-720..-730) [NERR.13]\n\n| Code | Meaning |\n|---|---|\n| `DS_ERR_FS_VERSION`           | an event-trace session header reports a `ds_version` outside the reader's `<major>.<minor>.` series ([LDET.1.10]) |\n| `DS_ERR_FS_UNKNOWN_INJECT`    | an `Atom` carries an unknown field number in the inject band (`1-127`) — an input the writer recorded and this reader cannot deliver, reached whatever version either side is ([RFCS.18.8]) |\n| `DS_ERR_FS_DIVERGENCE`           | replay: a re-derived compare atom (`RuleFireAnnotation`/`CallIssued`) differs byte-for-byte from the recorded atom at that `seq`, or is missing/extra/reordered — a determinism failure ([LFST.9.3.7]). Distinct from the `EngineDivergence` stream event. |\n| `DS_ERR_FS_RECORDING_INCOMPLETE` (-729) | replay: the recording's first event has a `seq` other than `0` — its stream callback was attached after the engine's first input or sample, so the inputs before it are missing ([LTIM.2.8.5]) |\n| `DS_ERR_FS_UNKNOWN_FACT_ID` (-730) | replay: a `FactRetract` names a `fact_id` that no earlier `FactAssert`, `FactEmit` or `ExternalAssert` left in working memory, or that an earlier `FactRetract` already named ([RFCS.7.3]) |\n\nA replayed fact atom naming a schema the stream never announced, or one the\nengine does not hold, is `DS_ERR_SCHEMA_UNKNOWN` ([RFCS.5.4], [NERR.5]).\n\n`-721` to `-724` are reserved and never reused ([STYL.2.8.7]). A recording's\nheader is refused as [RFCS.4.7] states.\n\nSee the determinism / event-trace doc (NDET) for the session header\n(`ds_engine_get_session_header`).\n\n---\n\n",
+  "refs": [
+    "LDET.1.10",
+    "LFST.9.3.7",
+    "LTIM.2.8.5",
+    "NERR.5",
+    "RFCS.18.8",
+    "RFCS.4.7",
+    "RFCS.5.4",
+    "RFCS.7.3"
+  ],
+  "errors": [
+    "DS_ERR_FS_DIVERGENCE",
+    "DS_ERR_FS_RECORDING_INCOMPLETE",
+    "DS_ERR_FS_UNKNOWN_FACT_ID",
+    "DS_ERR_FS_UNKNOWN_INJECT",
+    "DS_ERR_FS_VERSION",
+    "DS_ERR_SCHEMA_UNKNOWN"
+  ],
+  "atoms": [
+    "CallIssued",
+    "RuleFireAnnotation"
+  ],
+  "defines": {
+    "errors": [
+      "DS_ERR_FS_DIVERGENCE",
+      "DS_ERR_FS_RECORDING_INCOMPLETE",
+      "DS_ERR_FS_UNKNOWN_FACT_ID",
+      "DS_ERR_FS_UNKNOWN_INJECT",
+      "DS_ERR_FS_VERSION"
+    ]
+  }
+}

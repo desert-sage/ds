@@ -1,0 +1,7 @@
+{
+    "id": "LLEX.11.1_doubled_separator_refused",
+    "category": "compiler",
+    "scenario": "[LLEX.11.1]: `DEC_LIT ::= DIGIT ('_'? DIGIT)*` admits a `_` only between two digits, one at a time, and the lexer must refuse any `_` the productions do not admit, one beside another `_` among them. `1__2` in source is refused with DS_PARSE_GENERIC, the code compiler/LLEX.11.1b pins for a trailing `_` (`42_`). A lexer that takes `1` as the number and `__2` as a unit suffix refuses the program only later, at unit resolution, and with another code.",
+    "rules_ds": "schema S scope logical:\n    v: Int key\n\nrule r:\n    S s where s.v == 1__2\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_PARSE_GENERIC", "expected_line": 5 }
+}

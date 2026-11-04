@@ -1,0 +1,11 @@
+{
+    "id": "LSIG.CC-3",
+    "clauses": ["LSIG.3.4"],
+    "category": "compiler",
+    "scenario": "LSIG.3.4 CC-3: `integral … gap skip` on a `scope logical` schema is a compile error — gap skip needs a bounded scope (`scope ttl` / `scope explicit`) so a fact can go dead between assertions.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Float mutable\n\nseries Flow.q:\n    integral sliding 5_min gap skip\n\nrule r:\n    Flow\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_GAP_SKIP_LOGICAL"
+    }
+}

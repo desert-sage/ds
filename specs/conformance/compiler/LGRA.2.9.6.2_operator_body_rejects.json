@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.2_operator_body_rejects",
+    "category": "compiler",
+    "scenario": "An interpolation body that is a general expression (here an operator body `{c.a + c.b}`) is NOT a valid interp_body: LGRA.2.9.6.1 admits only a slot path or a one-level function call, and LGRA.2.9.6.2 makes an unrecognised body an error. The compiler must reject it with DS_VALIDATE_INTERP_BAD_PATH rather than emitting the braces verbatim as literal text (reject-don't-skip). Pin: general-expression interpolation is reserved for v2; the let-bind is the v1 workaround.",
+    "rules_ds": "schema Coord scope logical:\n    a: Int key\n    b: Int key\n\nrule r:\n    Coord c\n->\n    log info \"sum is {c.a + c.b}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_PATH"
+    }
+}

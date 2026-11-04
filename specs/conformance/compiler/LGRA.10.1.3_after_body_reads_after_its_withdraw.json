@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.1.3_after_body_reads_after_its_withdraw",
+    "category": "compiler",
+    "scenario": "LGRA.10.1.3 with LGRA.10.1.4: the same rule inside an `after` body. The body withdraws `t` and then reads `{t.v}`. Refused with DS_VALIDATE_WITHDRAWN_BINDING_USED at the `log`. PATH PINNED: `dsc.validate`'s walk of an `after` clause's own actions from a count of its own (`withdrawn_after_body`). The outer walk's `withdrawn_after` cannot raise it: the outer RHS has no top-level `withdraw`.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    log info \"armed\"\n    after 5_s:\n        withdraw t\n        log info \"gone {t.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHDRAWN_BINDING_USED"
+    }
+}

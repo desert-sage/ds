@@ -1,0 +1,18 @@
+{
+    "id": "LCDB.3.3.4_ttl_by_suppresses",
+    "category": "logical",
+    "scenario": "[LCDB.3.3.4]: a `by:` is the activation key. An event schema carries a per-event `ts`; two events with the same `entity_id` and different `ts` arrive inside one 10s cooldown, and a third with another `entity_id`. Under `by: h.entity_id` the second is the same activation and is suppressed, and the third is its own key and fires: two log lines. PATH PINNED: `dsc.rete.lcdb_3_3_4_key_var` builds `FN_RATE_ALLOW`'s key arguments from the `by:` paths alone. Under the every-slot key this replaced, `ts` made each event its own tracker and all three fired.",
+    "rules_ds": "schema Hot scope ttl 5_min:\n    entity_id: String\n    ts: Time\n\nrule alert cooldown 10_s by: h.entity_id:\n    Hot h\n->\n    log info \"hot {h.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Hot", "slots": { "entity_id": "a", "ts": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Hot", "slots": { "entity_id": "a", "ts": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Hot", "slots": { "entity_id": "b", "ts": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "hot a", "hot b" ]
+    }
+}

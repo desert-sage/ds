@@ -1,0 +1,25 @@
+{
+    "id": "RFCS.26.1_seeds_by_key_bytes_as_the_cache_holds_them",
+    "category": "runtime",
+    "scenario": "[RFCS.26.1]: the recorder writes one `CacheSeed` for each key the host seeded that the cache holds when the `StreamHeader` is written, \"in ascending order of the key's UTF-8 bytes\". Each carries `key`; `value_json`, \"the value as the cache holds it, its canonical JSON text ([IARC.12.2])\"; and `deadline_ns`, \"the entry's deadline as the cache holds it ... or `0` where the entry does not expire. A seed's TTL is never recorded\", and the deadline is fixed at the engine's first sample ([NLFC.9.4]). \"Where the host seeded a key twice, the atom carries the entry the second seed left.\" Steps: `set` the clock to 1000 ns, then five host seeds before any input, in this order: `b` = {\"y\": 1, \"x\": [true, null, \"\\u00e9\"]} with a 5000 ns TTL, `a` = 7, `B` = \"s\", `ab` = [1, 2], and `a` again = 8. Then a host assert of Trig, the engine's first sample and first stream event, and a pump. `expected_cache_seeds` ([RCTS.1.2.23]) reads every `CacheSeed` back off the recording: `B`, `a`, `ab`, `b`, the byte order (0x42 < 0x61; a key before its own extension). `a`'s value is \"8\", the second seed's. `ab`'s is \"[1,2]\" and `b`'s is {\"x\":[true,null,\"\\u00e9\"],\"y\":1}: libds's `ds_json_serialize` writes no space, the object's members by their keys' bytes and the e-acute as its two UTF-8 bytes, where the harness handed the seed `json.dumps` text, with spaces, `y` first and `\\u00e9` escaped ([RCTS.1.2.25]). `b`'s deadline is 6000, the first sample at 1000 plus the 5000 TTL; the other three have none, 0. What it discriminates: a recorder that writes the seeds in seeding order (b, a, B, ab), by a case-folded key (a, ab, B, b) or shortest key first (B, a, b, ab); one that writes the host's text instead of the canonical; one that keeps the first seed of a key, or writes it twice; one that writes the TTL (5000) or the deadline from the clock's zero (5000) instead of from the first sample (6000). PATHS: libds's recorder prelude (`rfcs_announce_seeds` in `rfcs/codec.c`) through pyds's `Engine.record`, read back through libds's reader, each CacheSeed's message (`pyds.atoms`, runner.py's `_recorded_cache_seeds`); the Mercury runtime's `ds.engine.prelude_seeds` and `ds.rfcs.encode_recording`, read back field by field (test_behave.m's `recorded_cache_seeds`).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    log info \"t {t.v}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 1000 },
+            { "op": "cache_seed", "key": "b", "value": { "y": 1, "x": [true, null, "\u00e9"] }, "ttl_ns": 5000 },
+            { "op": "cache_seed", "key": "a", "value": 7 },
+            { "op": "cache_seed", "key": "B", "value": "s" },
+            { "op": "cache_seed", "key": "ab", "value": [1, 2] },
+            { "op": "cache_seed", "key": "a", "value": 8 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_cache_seeds": [
+            { "key": "B", "value_json": "\"s\"", "deadline_ns": 0 },
+            { "key": "a", "value_json": "8", "deadline_ns": 0 },
+            { "key": "ab", "value_json": "[1,2]", "deadline_ns": 0 },
+            { "key": "b", "value_json": "{\"x\":[true,null,\"\u00e9\"],\"y\":1}", "deadline_ns": 6000 }
+        ]
+    }
+}

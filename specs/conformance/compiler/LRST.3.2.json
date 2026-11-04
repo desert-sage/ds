@@ -1,0 +1,10 @@
+{
+    "id": "LRST.3.2",
+    "clauses": ["LRST.1.1", "LRST.1.4", "LRST.1.5"],
+    "category": "compiler",
+    "scenario": "LRST.3.2's per-entity restart compiles: `after 5_min as m.target_light:` (LRST.1.1) keys on a slot of the pattern binding, a non-nullable `String` key slot (LRST.1.4: an equatable scalar; LRST.1.5: non-nullable). PINS ONLY THAT IT COMPILES: no per-entity supersedure is run. LRST.3.2 is an example, so the vector links the clauses that make it legal.",
+    "rules_ds": "schema Motion scope logical:\n    target_light: String key\n    state: String mutable\n\nrule motion_light:\n    Motion m where m.state == \"on\"\n->\n    log info \"on\"\n    after 5_min as m.target_light:\n        log info \"timed out\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LSER.6.1",
+    "category": "logical",
+    "clauses": ["LSER.8.6"],
+    "scenario": "[LSER.6.1]: the companion slot `s.mean` reads the declared `mean` of `Sensor.state`. Absorption is a pump step after the agenda drains, not a rule ([LSER.8.6], [RLOW.8.1.3]), so a pump reads the series as it stood when the pump began. Pump 1 asserts state 50.0 and reads a cold series: `s.mean` is null, `trig` does not fire, and 50.0 is absorbed after it. Pump 2 asserts 60.0 and reads that snapshot, mean 50.0 > 40.0, so `trig` fires once; 60.0 is absorbed after. Pin: one action_emit, after the two Sensor asserts and the Hit's own fact_assert. A runtime that absorbed before firing would fire in pump 1, so its action_emit would come before the second Sensor assert.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean sliding 10_s\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule trig:\n    Sensor s where s.mean > 40.0\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "state": 50.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "state": 60.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["fact_assert", "fact_assert", "fact_assert", "action_emit"]
+    }
+}

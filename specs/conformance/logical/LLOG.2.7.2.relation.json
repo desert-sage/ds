@@ -1,0 +1,16 @@
+{
+    "id": "LLOG.2.7.2.relation",
+    "category": "logical",
+    "scenario": "LLOG.2.7.2 / LFAC.1.7 relation (key=all). Consumes{step key, product key} marks every slot `key`, so distinct (step, product) tuples are distinct facts that coexist — a multi-input step does not collapse to one input. Pin: assert (1,\"x\") and (1,\"y\") → both coexist → the rule fires for each → two firings; re-asserting (1,\"x\") coalesces (identical tuple, LLOG.2.7.1) → no third firing.",
+    "rules_ds": "schema Consumes scope logical:\n    step: Int key\n    product: String key\n\nrule c:\n    Consumes\n->\n    log info \"consumes\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Consumes", "slots": { "step": 1, "product": "x" } },
+            { "op": "assert", "schema": "Consumes", "slots": { "step": 1, "product": "y" } },
+            { "op": "assert", "schema": "Consumes", "slots": { "step": 1, "product": "x" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["c", "c"]
+    }
+}

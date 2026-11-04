@@ -1,0 +1,14 @@
+{
+    "id": "LADP.8.3",
+    "clauses": ["LADP.8.5.1"],
+    "category": "compiler",
+    "scenario": "`call light.turn_on cooldown: 30_s` omits `entity_id`, which the service declares `required`, and is refused with DS_VALIDATE_MISSING_KWARG (LADP.8.5.1's `required` row). Named for the LADP.8.3 heading (library identifier and service domains), which it does not test.",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    kwarg brightness: Int default 255\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_MISSING_KWARG"
+    }
+}

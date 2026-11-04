@@ -1,0 +1,10 @@
+{
+    "id": "LLET.12.3_self_reference",
+    "category": "compiler",
+    "scenario": "A `let` reading its own name is refused by LLET.12.3's ordering, as DS_VALIDATE_UNKNOWN_BINDING. This is the one-binding cycle. Ordered references cannot form a cycle, so this refusal and the forward-reference one (`LLET.12.3`) together are the acyclicity LCYC.6.6 requires of `let` bindings. Path: `dsc.validate.llet_12_3_forward_refs` counts the binding's own name among the not-yet-bound names ('itself included, so `let x = x + 1` is refused too').",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    let x = x + t.v\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

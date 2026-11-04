@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.16.2_ph_literal",
+    "clauses": ["LUNI.4.3"],
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `pH` in `units.chemistry`, tier-2 non-affine ([LUNI.4.3]): the literal `7_pH` converts to its base `molar_h` as 10.0 ** (-7.0), which correctly rounded is the double nearest 1e-7, the same double the slot's `1e-7` is. So `neutral` fires on `==`, and a `7_pH` that went through any other arithmetic (a reordered formula, a host libm `pow`) could miss by an ulp and not fire. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]); dsc.rete's `luni_4_3_tier2_literal`, which lowers the literal to the unit's `to_base` at its magnitude rather than folding it ([LDET.3.3a.7]); and both runtimes' evaluation of that expression through CORE-MATH, then their comparison of two equal doubles (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "from units.chemistry import molar_h, pH\n\nschema Sample scope logical:\n    id: String key\n    h: molar_h mutable\n\nrule neutral:\n    Sample s where s.h == 7_pH\n->\n    log info \"neutral\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "id": "w", "h": 1e-7 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["neutral"]
+    }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "LEXP.7.12.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7.12",
+  "seq": 460,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.7.12.1] The only slot type that carries runtime type variation is\n`Json` ([LEXP.7.12.5], [LADP.5.5.3]). When a leaf access on a `Json` path\nevaluates in an arithmetic or comparison operator and the runtime leaf type\ndoesn't match the operator's expectation, the operation raises a **TypeError**.\nUnless a deciding operand absorbs it ([LNUL.4.2]), the activation is abandoned\n([IRET.9.6]) and the fault reaches the fault surfaces, a `TypeError` fault fact\namong them ([LERR.9.1]). An absorbed TypeError reaches none ([LERR.1.4.11]).\n\n**The operation does not evaluate to `false`, and nothing propagates.** A\nwrong-typed leaf is data — expected in normal operation and attributable to a\nnode — which is why it is a `TypeError` and not an `EngineError`; the same\noperation on a value that was schema-committed means the artefact lied\n([IRET.9.6]).\n\nAbsence is a different question and is not this clause's: an unresolved path\nreads as `null` and propagates under Kleene ([LNUL.8.4]).\n\n",
+  "refs": [
+    "IRET.9.6",
+    "LADP.5.5.3",
+    "LERR.1.4.11",
+    "LERR.9.1",
+    "LEXP.7.12.5",
+    "LNUL.4.2",
+    "LNUL.8.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_12_1__container_under_an_operator_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "An array or an object a path reads, in arithmetic with an Int on either side or ordered against one, is a trap and never a value, for every operator, object, array and Int -- the clause's TypeError, absorbed by a deciding operand as any trap is ([LNUL.4.2]). A scalar leaf of the wrong kind traps by the same arms (the String and Bool rows of `lnul_4_1__arith` and `lnul_4_1__cmp`) and is not restated; the fault surfaces of [LERR.9] are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__read",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A leaf reads as a value of the kind it was written with -- an integer an Int, a float a Float, a string a String, a Bool a Bool -- and a container as a `Json` value, so the operator it meets judges the kind at run time."
+      }
+    ]
+  }
+}

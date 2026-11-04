@@ -1,0 +1,14 @@
+{
+  "id": "NDBG.14.1.1",
+  "prefix": "NDBG",
+  "doc": "INTROSPECTION.md",
+  "parent": "NDBG.14.1",
+  "seq": 821,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDBG.14.1.1] Changes the step granularity for the current session.\n\nRequest:\n```json\n{ \"granularity\": \"action\" | \"rule\" | \"pump\" | \"input\" }\n```\n\n- `\"action\"` — one RHS action. Replay only.\n- `\"rule\"` — one whole firing, every RHS action of it. Replay only.\n- `\"pump\"` — one pump, to its settled point. The engine asserts one clock\n  tick per pump ([IRET.19.5]), so this is also the clock-tick step.\n- `\"input\"` — to the next input the trace or the fact files feed the engine.\n\nThe adapter must refuse `\"action\"` and `\"rule\"` in a live session, with an\nerror saying they are replay only. The default is `\"action\"` in replay and\n`\"pump\"` live. When the session changes mode, the granularity becomes the new\nmode's default unless the client has set one the new mode admits.\n\nA live step with no input left to feed must leave the session paused, and the\nadapter says so in an `output` event.",
+  "refs": [
+    "IRET.19.5"
+  ]
+}

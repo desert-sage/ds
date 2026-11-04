@@ -1,0 +1,16 @@
+{
+  "id": "RTCT.12.3",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.12",
+  "seq": 696,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Establishing the coefficients for a platform",
+  "text": "### Establishing the coefficients for a platform [RTCT.12.3]\n\nThe `c_*` coefficients in [RTCT.12.1] and [RTCT.12.2] are hardware-dependent. A\ndeployment must measure them on its **target** hardware; a figure measured on a\ndevelopment host is not a bound for a device.\n\nThe method:\n\n1. Measure the pump on the target, under the gate's own thresholds, to obtain\n   that platform's numbers.\n2. Regenerate the latency and allocation evidence below from those\n   measurements.\n3. Drive the measurement with an **adversarial** workload, not a representative\n   one — several rules, several new facts per cycle, and a sweep over `N_max`.\n   A workload chosen to be typical measures the typical case, which is not what\n   `pump_wcet_ns` promises.\n\nWhat the charts must establish, and why each is a proof rather than a\nvisualisation:\n\n| Evidence | What it proves |\n|---|---|\n| Latency CCDF, log-log, all `N_max` | a hard cutoff at pmax with **no long tail**. A tail is the signature of allocation or GC on the pump path. |\n| Per-cycle latency trace | a fill phase followed by a flat plateau. Flatness proves no hidden state accumulation and no periodic spike. |\n| pmax vs `N_max` | for single-pattern rules pmax is approximately constant in `N_max` — WM size does not drive pump latency. Join rules add the beta term of [RTCT.12.1]. |\n| Allocation count per cycle | zero allocations across every config and cycle, **beside a non-RT control run showing non-zero**. Without the control the zero is indistinguishable from a dead counter. |\n\nThat last row is the one that carries the contract. A zero-allocation result with\nno positive control is not evidence ([STYL.5.10.5] states the same principle for\ngates).\n\n",
+  "deferred": true,
+  "refs": [
+    "RTCT.12.1",
+    "RTCT.12.2"
+  ]
+}

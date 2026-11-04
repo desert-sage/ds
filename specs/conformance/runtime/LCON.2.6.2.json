@@ -1,0 +1,12 @@
+{
+    "id": "LCON.2.6.2",
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 integer determinism — modulo sign. `-7 % 3` is 2 (result takes the divisor's sign, Python semantics per LEXP.7.6), not -1 (C remainder, dividend's sign). Guard `(t.x % 3) == 2` gates the emit; fact_count 2 confirms the bit-exact value.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x % 3) == 2\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -7 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

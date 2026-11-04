@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ds.spec/file.schema.json",
+  "title": "DS spec document manifest",
+  "description": "Per-document metadata (the ID-less preamble: Status / What this is / Paired with). Per STYL.5.4. `preamble` is the verbatim leading text for lossless render.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["doc", "tree", "prefixes", "title"],
+  "properties": {
+    "doc":     { "type": "string", "description": "Basename, e.g. DSC_FORMAT.md." },
+    "tree":    { "enum": ["language", "runtime", "impl", "integration"] },
+    "src":     { "type": "string", "description": "Repo-relative path of the source Markdown (for the round-trip gate check, STYL.5.5)." },
+    "prefixes":{ "type": "array", "items": { "type": "string", "pattern": "^[A-Z]{4,5}$" },
+                 "description": "Prefix(es) this document owns (STYL.2.2)." },
+    "title":   { "type": "string", "description": "Human title (the H1)." },
+    "paired_with":  { "type": "array", "items": { "type": "string" }, "description": "Sibling docs." },
+    "proto":        { "type": "array", "items": { "type": "string" }, "description": "Proto files the atoms/enums are defined in." },
+    "summary":      { "type": "string", "description": "One-line synopsis." },
+    "preamble": { "type": "string",
+                  "description": "Verbatim leading Markdown before the first clause (H1 + Status/What-this-is/Paired-with). Reproduced first on render; lossless round-trip (STYL.5.6)." }
+  }
+}

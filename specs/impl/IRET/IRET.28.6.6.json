@@ -1,0 +1,15 @@
+{
+  "id": "IRET.28.6.6",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.6",
+  "seq": 2275,
+  "depth": 3,
+  "kind": "heading",
+  "heading": "Iteration",
+  "text": "#### Iteration [IRET.28.6.6]\n\nIteration is **over the dense arrays by index**, not over probe slots: a\nlive count, and key and value accessors taking a position in `[0, len)`.\n\nBecause the payload is packed with no holes ([IRET.28.3]), a full walk\nvisits exactly `len` entries and skips nothing — an iteration costs the\nnumber of live entries, not the capacity. This is why working-memory\nwalks do not degrade after a table has been heavily deleted from.\n\n**Iteration order carries no meaning and must not be relied on.** It is\ndeterministic ([IRET.28.10.1]), but it reflects insertion and deletion\nhistory — a delete moves the last entry into the freed position — so it is\nneither insertion order nor stable across mutation. Anything requiring a\ndefined order sorts explicitly.\n\n**Mutating during iteration invalidates it**, for the same reason: an\ninsert may grow and a delete relocates an entry, so indices shift beneath\nthe walk.\n\n",
+  "refs": [
+    "IRET.28.10.1",
+    "IRET.28.3"
+  ]
+}

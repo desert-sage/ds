@@ -1,0 +1,206 @@
+{
+  "id": "LCYC.3.2.2",
+  "prefix": "LCYC",
+  "doc": "CYCLE_DETECTION.md",
+  "parent": "LCYC.3.2",
+  "seq": 168,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LCYC.3.2.2] **Edges:** an edge from rule A to rule B exists\n  when A's RHS produces something that could\n  trigger B's LHS, or removes something B's LHS relies on:\n  - `emit X ...` in A's RHS + an `X` pattern, positive or\n    under `no`, in B's LHS → edge A → B.\n  - `call domain.method as \"c\"` in A's RHS + a pattern,\n    positive or under `no`, over that service's response\n    schema ([LCRS.4.3.2]) or over `CallError` ([LCRS.4.2.1])\n    whose `corr` is `\"c\"` or could resolve to it, in B's\n    LHS → edge A → B. The call both produces such a fact\n    ([LCRS.4.2.2]) and retracts the prior one ([LCRS.6.2.1]).\n  - `cache key: k value: v` in A's RHS +\n    `let v = cached(\"k\")` in B's let-RHS that\n    references the same key → edge A → B.\n  - `withdraw <binding>` of a fact of schema `X` in A's RHS\n    + a positive `X` pattern in B's LHS → edge A → B.\n  - `withdraw <binding>` of a fact of schema `X` in A's RHS\n    + a `no X` pattern in B's LHS → edge A → B.\n\n",
+  "refs": [
+    "LCRS.4.3.2",
+    "LCRS.4.2.1",
+    "LCRS.4.2.2",
+    "LCRS.6.2.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/cycle_detection.als",
+        "name": "lcyc_3_2_2__fact_kind",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_2_2__edge",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The clause's first edge form: A -> B when A emits a kind B matches, positively or under `no`. The withdraw forms are `lcyc_3_2_2__withdraw_edge` beside it; the call and cache forms are not drawn, and each adds edges, so the full graph's SCCs are unions of the SCCs here, and a program admitted over the full graph is admitted here -- the direction the acyclicity check of [LCYC.3.1.1] needs."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_2_2__graph",
+        "tag": "derives",
+        "verdict": "partial",
+        "note": "The drawn forms together, the graph the compiler's SCCs are over: the emit edge and the withdraw edge. The call and cache forms are not drawn."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_2_2__kind",
+        "tag": "spec",
+        "note": "A fact schema: what `emit X` writes and an `X` pattern reads."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_2_2__kind_edge",
+        "tag": "derives",
+        "note": "The emit edge lifted to kinds: k1 -> k2 when some rule matches k1 and emits k2. What a support edge between two facts projects onto."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_2_2__withdraw_edge",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The clause's fourth and fifth forms, as one edge: A -> B when A withdraws a kind B matches, positively or under `no` -- a withdrawn kind being one the rule reads, since `withdraw <binding>` names a bound pattern. Never broken by [LCYC.6.1], as `dsc.cycle` draws it. `partial`: two of the clause's five forms, as `lcyc_3_2_2__edge` is the first; the call and cache forms are not drawn."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_2_2__emit_kinds_has",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An `Emit k` action puts k among the emitted kinds."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_2_2__withdraw_kinds_has",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A `Withdraw i` action puts the i-th pattern kind among the withdrawn kinds."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_2_2__withdraw_sub_pos",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A withdrawn kind is matched positively, hence read."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "lcyc_3_2_2__k_seed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The seed kind of the reach witness."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_edge",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `Edge` kind of the `+recursive` proposal's example."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_reach",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `Reach` kind of the `+recursive` proposal's example."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_v",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind name of the witness programs."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_w",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind name of the witness programs."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_x",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind name of the witness programs: the `X` of `emit X` / `X` pattern."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_y",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind name of the witness programs."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_2_2__k_z",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind name of the witness programs."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__emit_kind_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The kind an action emits, if it emits -- the `emit X` side of the first edge form; `call` and `cache` actions have no model."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__emit_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The kinds a rule's RHS emits; emit edges only, as above."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__kinds_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds of a fact tuple."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__read_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The kinds a rule's LHS matches, positive and `no` -- the `X pattern in B's LHS` side of the clause's first edge form. The response-fact and `cached(k)` sides of its second and third forms are not modelled: `call` and cache are outside the engine."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__withdraw_kind_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kind a `withdraw` action removes: the schema X of the clause's fourth and fifth forms (a withdraw into a positive X pattern, and into a `no X` pattern), computed from the same symbol table as the emit edges. The two forms are one kind set here; which pattern of the target reads it is `lcyc_3_2_2__read_kinds`' business."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__withdraw_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds a rule's RHS withdraws: the source side of the clause's fourth and fifth edge forms, drawn to every reader of the kind, positive or `no`, as the compiler draws them, and never broken by [LCYC.6.1], since a withdraw carries no slot value."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lcyc_3_2_2__write_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Emitted and withdrawn kinds together: the source sides of the clause's first, fourth and fifth forms. The call and cache forms are absent: `call` and cache are outside the engine."
+      }
+    ]
+  }
+}

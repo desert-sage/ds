@@ -1,0 +1,42 @@
+# lowered from the probe after.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# after.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment: an `after` clause lowered as the
+# compiler lowers it (LTAC.3.1) on Rete/NetworkTimer.idr's reading. The
+# timer kind 1, `$Timer_arm_0`, is synthetic (LTAC.3.2, RFCS.6a.5): the
+# runner prints neither its facts nor their ids. Rule 0 `arm` logs the
+# Trig's key and emits the timer with that key captured as its payload
+# (LTAC.3.3, LTAC.3.5: an `emitx` of the body's one read, `slot 0 key 0`);
+# rule 1 `$arm_after_0` (LTAC.8.1) is the follow-up: the timer's single
+# positive pattern under `dwell 0 >= 5 s` -- the timer's entry stamp being
+# the sample the parent's firing held, `monotonic_ns() >= fire_at` is the
+# `dwell` gate (LTAC.3.4, LTIM.2.8.6) -- the body's log with the read
+# rewritten to the timer's payload slot (`slot 0 pay 0`), then `withdraw 0`
+# (LTAC.4.2). The time map's unit is 3 s, the gcd of the two advances, so
+# the ticks are 1 and 2 and `dwell` is scaled by 3000000000 against the
+# delay in nanoseconds. Two Trigs (keys 1 and 2, the key codes of one Int)
+# asserted before one pump: `arm` fires twice and arms two timers stamped
+# 0; at 3 s nothing is due; at 6 s both are, and the follow-up fires twice,
+# the earlier-minted timer first (LTAC.5.4, LDET.5.5), each firing logging
+# the captured key and retracting its timer.
+schema 0 relation Trig
+alpha 0 0
+schema 1 explicit $Timer_arm_0
+alpha 1 1
+synthetic 1
+rule 0 arm
+pattern 0 0 0
+log 0 0 1 slot 0 key 0
+emitx 0 1 0 1 slot 0 key 0
+rule 1 $arm_after_0
+pattern 1 1 0
+where 1 0 ge mul lit i:3000000000 dwell 0 lit i:5000000000
+log 1 0 1 slot 0 pay 0
+withdraw 1 0
+step assert _0 0 1000000000000000000018 1
+step assert _1 0 1000000000000000000034 1
+step pump
+step tick 1
+step pump
+step tick 2
+step pump

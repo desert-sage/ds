@@ -1,0 +1,15 @@
+{
+    "id": "LIMP.1.5_library_slot_opaque_type_compared_with_the_importers",
+    "category": "compiler",
+    "scenario": "[LIMP.1.5], [LOPQ.2.3]: the program of `LIMP.1.5_library_slot_opaque_type_importer_binds_another`, with a rule comparing `vault.Box`'s `pubkey`, `crypto`'s `Key`, with a slot of the program's own `Key`, `other`'s. Two declarations are two, so it is refused. A slot read in the importer's scope compiles this. PATH PINNED: `dsc.imports.limp_1_5_field`, then `dsc.typecheck`'s comparison of the two `lk_opaque` leaves.",
+    "rules_ds": "from other import (Key)\nimport vault\n\nschema Mine scope logical:\n    k: Int key\n    token: Key mutable\n\nrule r:\n    vault.Box b\n    Mine m where b.pubkey == m.token\n->\n    log info \"x\"\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n",
+        "other": "opaque type Key over Bytes\n",
+        "vault": "from crypto import (Key)\n\nschema Box scope logical:\n    k: Int key\n    pubkey: Key mutable\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_OPAQUE_TYPE_MISMATCH"
+    }
+}

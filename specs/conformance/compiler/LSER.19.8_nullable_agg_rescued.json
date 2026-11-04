@@ -1,0 +1,9 @@
+{
+    "id": "LSER.19.8_nullable_agg_rescued",
+    "category": "compiler",
+    "scenario": "LSER.19.8 — the positive half of LSER.19.8_nullable_agg_unnarrowed. The same emit written `t.mean ?? 0.0` narrows `Float?` to `Float` ([LNUL.5.3], [LNUL.5.4] case b) and compiles. Together the pair shows the refusal is the nullability and not the series read or the slot: this one would fail too if the compiler refused every aggregation into a slot.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Out scope logical:\n    k: String key\n    avg: Float mutable\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule r:\n    Reading t\n->\n    emit Out logical k: \"x\" avg: t.mean ?? 0.0\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

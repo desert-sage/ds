@@ -1,0 +1,26 @@
+{
+    "id": "RFCS.7.4_ttl_expiry_is_a_withdraw",
+    "clauses": ["RFCS.7a.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.7.4]: TTL expiry is not recorded as a `FactRetract`; it is the engine taking back a fact it held, so it is a `FactWithdraw` ([RFCS.7a.1]). A ttl 1_s Ping is asserted at 0 and pumped, the clock is set past its deadline, and a second pump expires it. The stream holds one FactWithdraw and no FactRetract. Its ClockAdvance atoms are the assert's sample at 0 and the second pump's at 2_s; setting the mock clock records nothing until a sample reads it ([RFCS.10.3], [NTST.3.3]). The withdraw's `Cause`, TTL_EXPIRED ([RFCS.7a.2]), is not read: the atom list names atoms, not fields. Break: a recorder that wrote the expiry as a FactRetract changes the list. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema Ping scope ttl 1_s:\n    v: Int\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "ClockAdvance", "PumpBoundary", "FactWithdraw"
+        ]
+    }
+}

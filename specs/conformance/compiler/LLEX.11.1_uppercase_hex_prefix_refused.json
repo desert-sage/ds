@@ -1,0 +1,11 @@
+{
+    "id": "LLEX.11.1_uppercase_hex_prefix_refused",
+    "clauses": ["LLEX.11.3.1"],
+    "category": "compiler",
+    "scenario": "LLEX.11.1 spells the base prefixes `0x`, `0b` and `0o`, lowercase only. `0XFF` is therefore not a hex literal: by LLEX.11.3.1 a digit directly followed by a letter is a unit literal, so it is `0` of the unit `XFF`, which nothing declares. A compiler that takes an uppercase prefix as well reads `0XFF` as 255 and compiles this. The runtimes' `String::Int?` parse refuses `\"0X1F\"` (logical/LCST.4.5.7_int_non_literals_are_null).",
+    "rules_ds": "schema Flags scope logical:\n    mask: Int key\n\nrule r:\n    Flags f where f.mask == 0XFF\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_UNIT"
+    }
+}

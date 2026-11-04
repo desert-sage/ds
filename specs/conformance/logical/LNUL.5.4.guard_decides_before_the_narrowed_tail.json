@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.5.4.guard_decides_before_the_narrowed_tail",
+    "category": "logical",
+    "scenario": "[LNUL.5.4] / [IRET.9.6]: the canonical null guard. `s.name is not null and len(s.name) > 3` with name = null is `false`, records no fault, and does not fire. formal/k/dswhere.narrow.prog's program. The guard's `false` absorbs whatever the narrowed tail would raise (a null at a builtin receiver is a TypeError, [IRET.9.6]), so the answer holds in ANY evaluation order. WHAT THIS CANNOT PIN: both runtimes evaluate left first and stop at the deciding guard, so the tail is never evaluated here and the absorption of its TypeError is not exercised; LNUL.4.2.type_error_and_false_is_false pins that half. Path: one join test (a nullable slot is never hoisted); libds's rete/eval.c AND arm stopping at a deciding left operand, Mercury's ds.eval.lnul_4_2_absorbing likewise.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    name: String? mutable\n\nrule r:\n    S s where s.name is not null and len(s.name) > 3\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "name": null } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "computation_error", "engine_error", "rule_fire_begin"]
+    }
+}

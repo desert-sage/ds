@@ -1,0 +1,19 @@
+{
+    "id": "LSER.19.8_rule_read_warm_within_window",
+    "clauses": ["LSER.19.8", "LSER.14.1"],
+    "category": "logical",
+    "scenario": "The warm half of `logical/LSER.19.8_rule_read_cold_after_window`: the same sample, 4.0 at 0 on `mean sliding 10_s`, read by a rule at 5 s, is inside the half-open window (t-W, t], so `read` logs `[4.0]`. Pins that the coldness test is the WINDOW's and not an eviction of everything older than the read: a test that compared the sample's age to zero, or evicted on read, logs `[]`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level (by: dev):\n    mean sliding 10_s\n\nrule read:\n    Probe\n    Reading s\n->\n    log info \"[{s.mean}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[4.0]"]
+    }
+}

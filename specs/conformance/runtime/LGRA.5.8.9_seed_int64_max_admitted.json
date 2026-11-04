@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.5.8.9_seed_int64_max_admitted",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.9] at the cache-seed host site ([NSTG.9.1]): JSON text holding the integer literal `9223372036854775807`, the largest 64-bit signed integer, is an integer a `Json` value holds, so a host parse of it is admitted. `runner.py`'s `_cache_seeds` hands the runtime `json.dumps(value)`, the literal's own digits ([RCTS.1.2.25]). The seed raises nothing, and nothing is asserted (fact_count 0); a runtime that refused it would raise, and the driver fails on that. So a range check one too tight, or one that reads an edge as outside, fails here. The literal one greater is malformed text, which LGRA.5.8.9_seed_int_above_int64_refused pins. PATH PINNED: on libds, `ds_json_parse` of the seed's text in pyds's `cache_seed`, through `json.c`'s `parse_number`, whose `strtoll` sets no `ERANGE` here, then `ds_engine_cache_seed`; on the Mercury runtime, `test_behave.m`'s seed step hands `ds.engine.seed_cache_text` the same digits, and `ds.json_text`'s number arm reads them through `ds.i64.from_decimal` into an Int.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "k", "value": 9223372036854775807 }
+        ],
+        "fact_count_after": 0
+    }
+}

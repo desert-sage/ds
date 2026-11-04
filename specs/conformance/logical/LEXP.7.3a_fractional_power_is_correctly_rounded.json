@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.3a_fractional_power_is_correctly_rounded",
+    "category": "logical",
+    "scenario": "The runtime half of LEXP.7.3a_float_exponent_compiles: `**` with a non-integer exponent is the correctly rounded `pow` ([LEXP.7.3a], [LEXP.3.9.2]), compared with `==` to the last bit. RN(2^0.5) is 1.4142135623730951 (0x1.6a09e667f3bcdp+0). PATH PINNED: `builtin_pow`'s Float path in `runtime/src/libds/builtins.c` calling CORE-MATH's `ds_cm_pow`, and `power` in ds.eval.m (the `FN_POW` call) calling the same vendored C through `ds.core_math`. One point: substitution detection, not the correct-rounding proof. Pin: x=2.0 fires `r`, x=3.0 does not.",
+    "rules_ds": "schema T scope logical:\n    entity_id: String key\n    x: Float mutable\n\nrule r:\n    T t where t.x ** 0.5 == 1.4142135623730951\n->\n    log info \"root\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "two", "x": 2.0 } },
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "three", "x": 3.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

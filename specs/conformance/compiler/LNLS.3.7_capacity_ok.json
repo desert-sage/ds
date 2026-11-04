@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.7_capacity_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.7] / [LSTR.11.4]: a regex match whose left operand is a `String` slot that declares `capacity N` compiles with `linear_scan: false` -- the match costs O(N x P) with both compile-time constants. Companion to `LNLS.3.7.json`, the same program without the capacity, which is refused with `DS_VALIDATE_NOLINSCAN_UNBOUNDED_REGEX`. PATH PINNED: `dsc.validate.unbounded_string`'s `lstr_11_4_declares_capacity` arm, reached from `lnls_expr`'s `ex_match` arm. A validator that ignored the slot's capacity refuses this and the vector goes red.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Line scope logical:\n    k: Int key\n    text: String capacity 64 mutable\n\nrule r:\n    Line l where l.text ~ /^ERR/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

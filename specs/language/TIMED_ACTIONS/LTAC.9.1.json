@@ -1,0 +1,34 @@
+{
+  "id": "LTAC.9.1",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.9",
+  "seq": 316,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.9.1] **Declarative-only.** `after` lowers to a timer fact\nplus a follow-up rule; no engine state changes, no\ncancellation, no serialisation. Per-fact supersedure on\nauthor-named keys (`as <expr>`) is the mechanism at\n[LRST]; it preserves the declarative\ncore (the supersedure mechanism is the same as\n[LCRS.6.2]). Pending `after`s\nare not queued.\n\n",
+  "refs": [
+    "LCRS.6.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__survives_parent_retract_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "'No cancellation': the parent's retraction withdraws no timer; only an `as` key would, which is not lowered. Executed. LESS than the clause: the supersedure mechanism is outside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_9_1__nothing_before_the_delay_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "NOTHING BEFORE THE DELAY: the same program, the advance to 3 and a pump fire nothing, and the timer is live beside the trigger -- temporal/LTAC.9.3.runtime's shape (the runner prints no timer; the model holds it). Executed. LESS than the clause: no `as` key, so no supersedure is modelled; the declarative core alone."
+      }
+    ]
+  }
+}

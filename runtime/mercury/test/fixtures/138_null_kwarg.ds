@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A kwarg with no value prevents the call ([LNUL.11.1]'s `call` row) and
+# counts `ds.calls.arg_error_total{service}` ([NMET.4.1]). The value is a
+# Json leaf that is present and JSON `null` ([LNUL.8.4]), since a `T?` kwarg
+# is refused at compile time ([LNUL.5.1]). The log after the call shows the
+# firing goes on.
+
+service svc.n:
+    kwarg x: Float
+    no response
+
+schema E scope logical:
+    id: Int key
+    payload: Json mutable
+
+rule send:
+    E e
+->
+    call svc.n x: e.payload.x nocooldown
+    log info "sent {e.id}"

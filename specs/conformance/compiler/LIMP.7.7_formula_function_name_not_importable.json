@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.7.7_formula_function_name_not_importable",
+    "category": "compiler",
+    "scenario": "[LIMP.7.7]: a `unit formula` is imported by its formula name, which brings both of its functions; a function name alone is not an importable name. `pitch_lib` declares `unit formula midi_hz` with the functions `midi_to_hz` and `hz_to_midi`, and the importer names `midi_to_hz`, so the import is refused with DS_VALIDATE_UNKNOWN_IMPORT_NAME. PATH PINNED: dsc.imports limp_7_7_take_item's formula_of_function arm, whose hint names the formula to import instead.",
+    "rules_ds": "from pitch_lib import midi_note, midi_to_hz\n\nschema Tone scope logical:\n    id: String key\n    note: midi_note mutable\n\nrule r:\n    Tone\n->\n    log info \"tone\"\n",
+    "libraries": {
+        "pitch_lib": "from math import log2\n\nunit dimension frequency storage float64 base Hz\nunit Hz: frequency\nunit scalar pitch storage float64\nunit midi_note: pitch\n\nunit formula midi_hz:\n    midi_to_hz(x: midi_note): Hz   = 440.0 * 2.0 ** ((x - 69.0) / 12.0)\n    hz_to_midi(x: Hz): midi_note   = 69.0 + 12.0 * log2(x / 440.0)\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_IMPORT_NAME"
+    }
+}

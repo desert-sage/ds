@@ -1,0 +1,21 @@
+{
+    "id": "LTIM.2.7.2_cooldown_logical_within_retracts",
+    "clauses": ["IRET.12.2", "LLOG.11.2"],
+    "category": "logical",
+    "scenario": "[LTIM.2.7.2], [LTIM.2.4.2]: a `within` window that justifies a `logical` emit stays a join test on the pattern's beta, behind a head-inserted `$ClockTick`, under a cooldown as without one; the guard is the rate gate alone ([RDSC.4a.8.2.1]). `occupy cooldown 1_min` on `Sensor within 3_s` emits Occupied `logical` and logs `fire`. `present` logs `occ` for each Occupied that enters. `gone` logs `gone` when a Sensor has no Occupied. `mark` logs `mark` for a Mark fact asserted at +1 s, inside the window. Pin: set 0; assert Sensor; pump (`fire`, `occ`); advance 1 s; assert Mark; pump (`mark`: the window is open, Occupied stands, the rule fires no second time); advance 3 s, pump (+4 s: the window has closed and Occupied retracts: `gone`). Messages are ['fire', 'occ', 'mark', 'gone']. `gone` is declared before `mark`, so if Occupied were lost at +1 s `gone` would come first. PATH PINNED: dsc.rete.within_reeval_index under a cooldown, and truth maintenance retracting the logical fact when the token ages out ([IRET.12]).",
+    "rules_ds": "schema Sensor scope logical:\n    state: String key\n\nschema Occupied scope logical:\n    dummy: Int key\n\nschema Mark scope logical:\n    n: Int key\n\nrule occupy cooldown 1_min:\n    Sensor within 3_s\n->\n    emit Occupied logical dummy: 0\n    log critical \"fire\"\n\nrule present:\n    Occupied\n->\n    log critical \"occ\"\n\nrule gone:\n    Sensor\n    no Occupied\n->\n    log critical \"gone\"\n\nrule mark:\n    Mark\n->\n    log critical \"mark\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "state": "on" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert",  "schema": "Mark", "slots": { "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fire", "occ", "mark", "gone"]
+    }
+}

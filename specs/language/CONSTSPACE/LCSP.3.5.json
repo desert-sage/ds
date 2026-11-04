@@ -1,0 +1,21 @@
+{
+  "id": "LCSP.3.5",
+  "prefix": "LCSP",
+  "doc": "CONSTSPACE.md",
+  "parent": "LCSP.3",
+  "seq": 134,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCSP.3.5] **No intern-table lock.** `constspace` does not freeze the\nstring-intern table, and does not inherit the freeze `realtime` gets\n([RTCT.12.4]). The lock is not a policy `constspace` declines — it has\nnowhere to attach. Freezing needs a phase boundary after which no new\nstring may appear, and that boundary is `go_live`, which a\n`constspace`-only engine never calls ([LCSP.6.5]).\n\nWhat follows, stated plainly because it qualifies [LCSP.2.1]: a novel\nstring **arriving as a slot value on an asserted fact** interns at pump\ntime, and interning a string not already in the table may grow it. So\n\"no allocation on the hot path\" holds for the pools [LCSP.2.1] names,\nand does not hold for the intern table when the event trace carries\nstrings the DSC never saw.\n\nAn author who needs the stronger property takes `realtime`, where\n`go_live` supplies the boundary and interning returns\n`DS_ERR_OOM` rather than growing. A deployment that stays on\n`constspace` bounds its string vocabulary by what it asserts —\nwhich is an integrator obligation, not something the compiler checks.\n\n[LNLS.3.2] is unaffected and still applies: it is a compile-time check\non strings a **rule produces** (an interpolated string), which is a\ndifferent population from strings a fact carries in.\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_ERR_OOM"
+  ],
+  "refs": [
+    "LCSP.2.1",
+    "LCSP.6.5",
+    "LNLS.3.2",
+    "RTCT.12.4"
+  ]
+}

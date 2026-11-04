@@ -1,0 +1,32 @@
+{
+    "id": "LGRA.5.8.6_host_nodes_over_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: a `Json` value one node past the limit, 257, asserted by the host into a `Json` slot, is refused with `DS_ERR_JSON_LIMIT` (-221). Nothing changes, and NO fault event reaches the stream: the status is the whole host refusal, so `no_fault_events` fails a runtime that records a BoundsError. The value is LGRA.5.8.6_host_nodes_at_limit's 256 nodes (one array of fifteen arrays of sixteen Ints) with one more Int in the root. PATH PINNED: on libds, `ds_json_array_append` refuses the 257th value as pyds's `pyds_py_to_json_tree_at` builds the tree, so the engine is never called; on the Mercury runtime, `ds.engine.host_assert` refuses through `ds.fact`'s `sr_json_limit` and writes no effect. Every libds refusal of one names `DS_JSON_MAX_`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n    doc: Json mutable\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-221",
+        "message_contains": "DS_JSON_MAX_",
+        "no_fault_events": true,
+        "asserts": [
+            { "schema": "Blob", "slots": { "id": 1, "doc": [
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                0
+            ] } }
+        ]
+    }
+}

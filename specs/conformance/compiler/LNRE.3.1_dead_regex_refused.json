@@ -1,0 +1,10 @@
+{
+    "id": "LNRE.3.1_dead_regex_refused",
+    "category": "compiler",
+    "scenario": "[LNRE.3.1] Under `regex: false` a regex literal is refused \"regardless of whether the pattern is ever reached at runtime\", because the constraint is on the artefact's content. The match sits behind `false and`, so no evaluation can reach it and a compiler that folded the condition first would drop it silently; it must still be DS_VALIDATE_CAPABILITY_DISABLED. compiler/LDIA.3.4.2_capability_disabled pins a reachable match in `where`; this pins the unreachable one.",
+    "rules_ds": "use default:\n    regex: false\n\nschema Msg scope logical:\n    id: Int key\n    text: String mutable\n\nrule r:\n    Msg m where false and m.text ~ /alarm/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LSTR.11.3_over_capacity_assert_is_a_bounds_error",
+    "clauses": ["LERR.1.5"],
+    "category": "runtime",
+    "scenario": "[LSTR.11.3] with [LERR.1.5]: a host assert of a value longer than its slot's `capacity` is classified as a BoundsError and as nothing else. The slot has `capacity 8` and the host asserts nine codepoints: the assert returns `DS_ERR_CONTRACT_BREACH` (-710), and the stream's fault events are exactly one `bounds_error` -- no `type_error` (the value's kind is admitted; only its length is over), no `computation_error`, no `engine_error`. This is [LERR.1.5]'s BoundsError classification for a host assert, pinned as one vector because `fault_events` is an exact list: the kind that appears and the neighbours that do not. PATH PINNED: libds `rete_validate_slot_kinds` in `wm_rete.c`, which calls `ds_rete_emit_breach(DS_CAP_VALUE_CAPACITY, ...)` after `ds_rete_slot_refused` has passed the slot's kind; the Mercury runtime's `ds.engine.host_assert`, whose `rejected(cap_value_capacity)` writes `se_engine_error(ee_contract_breach(cap_value_capacity), _)`, classified `fc_bounds` by `ds.fault.fault_class`. A runtime that refused with the status and recorded nothing, or recorded the refusal as a TypeError, goes red here.",
+    "rules_ds": "schema Line scope logical:\n    k: Int key\n    text: String capacity 8 mutable\n\nrule r:\n    Line\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_events": ["bounds_error"],
+        "asserts": [
+            { "schema": "Line", "slots": { "k": 1, "text": "abcdefghi" } }
+        ]
+    }
+}

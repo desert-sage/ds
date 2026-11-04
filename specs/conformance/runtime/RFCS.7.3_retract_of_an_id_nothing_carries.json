@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.7.3_retract_of_an_id_nothing_carries",
+    "category": "runtime",
+    "scenario": "[RFCS.7.3] a replay stops with DS_ERR_FS_UNKNOWN_FACT_ID (-730) at a FactRetract whose fact_id no earlier FactAssert, FactEmit or ExternalAssert carries. The harness ([RCTS.1.2.18]) records a Parcel assert, a pump, the host's retract of that fact and a pump, then writes 127 over the FactRetract's one-byte fact_id (`retract_unknown_fact_id`): no atom in the recording carries 127. The unaltered recording must replay, so the refusal is the edit's. Paths: libds's `ds_rfcs_replay` FactRetract arm, whose id map holds only the ids of facts live when their atoms were read (`rfcs/codec.c`); the Mercury runtime's `ds.replay`, whose retract arm ends the replay with `unknown_fact_id` when the id is not in its known set. This pins an id never carried; a second retract of a carried id, which the clause also refuses, is not pinned here.",
+    "rules_ds": "use default\n\nschema Parcel scope logical:\n    id: String key\n    w: Int mutable\n\nrule weigh:\n    Parcel\n->\n    log info \"w\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Parcel", "slots": { "id": "a", "w": 1 }, "as": "p" },
+            { "op": "pump" },
+            { "op": "retract", "label": "p" },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "retract_unknown_fact_id" },
+        "code": "-730"
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "IRET.18.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.18",
+  "seq": 1250,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Engine create and destroy",
+  "text": "### Engine create and destroy [IRET.18.1]\n\n`ds_rete_engine_create` initialises subsystems in this order:\n\n1. String intern table — an open-addressing hash set with\n   tombstone deletion ([IRET.1.4]): pinned structural strings\n   interned at load and never freed, counted `String`/`Bytes`\n   slot values individually allocated and reclaimed on\n   last-holder retract. All subsequent intern calls land here.\n2. Schema registry — name→`ds_rete_schema_t *` map plus the\n   flat schema-ID → alpha-node-list array. Empty until\n   the load ([IRET.18.2]) populates it.\n3. Agenda — empty binary heap.\n4. TMS dependency table — empty map keyed by the justifying\n   activation's timetag ([IRET.12.4]).\n5. Builtin table — the global op-indexed table ([IRET.13.1]);\n   the module register functions populate it, idempotently,\n   before any load. See [IRET.13.2].\n6. Clock — two function pointers sharing one context, the\n   monotonic clock and the wall clock ([IRET.14]), defaulting\n   to `clock_gettime(CLOCK_MONOTONIC)` and\n   `clock_gettime(CLOCK_REALTIME)`.\n7. Fire hooks — `before_fire` and `after_fire` pointers,\n   initialised to NULL (no-op).\n\n`ds_rete_engine_destroy` runs teardown in reverse order.\nAny in-flight tokens and activations are freed; all\ninterned strings are released with the intern-table slab;\nschema descriptors, node graphs, and expression trees are\nfreed.\n\nOn mid-init failure, `ds_rete_engine_create` frees every\nsubsystem that successfully initialised before returning the\nerror — no partial engine is returned to the caller.\n\n",
+  "refs": [
+    "IRET.1.4",
+    "IRET.12.4",
+    "IRET.13.1",
+    "IRET.13.2",
+    "IRET.14",
+    "IRET.18.2"
+  ],
+  "symbols": [
+    "ds_rete_engine_create",
+    "ds_rete_engine_destroy"
+  ]
+}

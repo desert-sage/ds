@@ -1,0 +1,22 @@
+{
+    "id": "LSIG.1.5.1_golden_in_1",
+    "clauses": ["LSIG.1.5.1"],
+    "category": "logical",
+    "scenario": "Golden vector IN-1 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: `integral sliding 10s` (rectangle rule, gap hold) with q held at 2.0 over [0, 4 s) and then 5.0, read at 10 s, is 2*4 + 5*6 = 38.0: zero-order hold, with the open right edge held to the query time (LSIG.1.5.1). At 10 s a `Probe` arrives and `read` logs the binding's `integral` ([NSBK.6.3]).",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Flow.q:\n    integral sliding 10s\n\nrule read:\n    Probe\n    Flow f\n->\n    log info \"{f.integral}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 2.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 5.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["38.0"]
+    }
+}

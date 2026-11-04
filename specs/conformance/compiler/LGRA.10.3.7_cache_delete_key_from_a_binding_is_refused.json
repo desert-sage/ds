@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.3.7_cache_delete_key_from_a_binding_is_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.10.3.7]: a `cache_delete` key is a `STRING_LIT` as a `cache` key is, and the compiler refuses any other value with DS_VALIDATE_DYNAMIC_IDENT_KWARG, at the action, naming the kwarg and the verb. Rule `r` writes `cache_delete key: s.name`, a pattern binding's slot, so it is refused. A compiler without the check skips the rule in lowering and answers DS_VALIDATE_RULE_NOT_LOWERED instead. PATH PINNED: dsc.validate's `lgra_10_3_7_cache_key` on a `cache_delete`, through `cache_key_arg`, whose `lgra_10_3_7_string_lit` fails on a value that is not an `ex_string`.",
+    "rules_ds": "schema Src scope logical:\n    name: String key\n\nrule r:\n    Src s\n->\n    cache_delete key: s.name\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DYNAMIC_IDENT_KWARG"
+    }
+}

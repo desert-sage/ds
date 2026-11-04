@@ -1,0 +1,16 @@
+{
+  "id": "LLSU.3.1",
+  "prefix": "LLSU",
+  "doc": "LANGUAGE_SURFACE.md",
+  "parent": "LLSU.3",
+  "seq": 106,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LLSU.3.1] The full expression surface from [LEXP]. Dialects\ncan narrow this (disabling bitwise, disabling regex) without\nbreaking anything else.\n\n| Name | Explanation | Refactor hint |\n|---|---|---|\n| `expr_arithmetic` | `+ - * / // % **` | not generally avoidable |\n| `expr_comparison` | `= != < <= > >=` | not generally avoidable |\n| `expr_comparison_chain` | `a < b < c` comparison chains | rewrite as `a < b and b < c` |\n| `expr_logical` | `and or not` | not generally avoidable |\n| `expr_bitwise` | `& \\| ^ ~ << >>` | use an integrator call target for bit-twiddling |\n| `expr_unary` | unary `- + ~` | not generally avoidable |\n| `expr_parens` | `( <expression> )` grouping | not generally avoidable |\n| `expr_cast` | postfix `::` conversion cast — `x::Int`, `s::Float?`, `f::Json` ([LCST.4]) | not generally avoidable |\n| `expr_constants` | `inf` `nan` | use literal numeric values if inexact is OK |\n| `expr_math_rounding` | `abs` `round` | inline with comparison + arithmetic |\n| `expr_math` | the `math` module and its import ([LIMP.3.3.4]): `pi` `e` `tau`, `floor` `ceil` `trunc` `sign`, `fma`, `sqrt` `exp` `ln` `log2` `log10` `pow`, `sin` `cos` `tan` `asin` `acos` `atan` `atan2`, `sinh` `cosh` `tanh`, `degrees` `radians` | use an integrator call target |\n| `expr_bit_utility` | the `Int` members ([LEXP.3.7.1]) `.bit_count` `.bit_length` `.leading_zeros` `.trailing_zeros` `.bits` `.sign_extend` `.swap_bytes` | use an integrator call target |\n| `expr_aggregation_atom` | series aggregations (`mean(s)` etc.) usable as expression atoms | requires `series` category; fold into the enclosing condition |\n| `expr_distance` | the `distance` module and its import ([LIMP.3.3.4]): `euclidean` `manhattan` `chebyshev` `hypotenuse` `cosine` at 2D and 3D arities, `great_circle` | use an integrator call target |\n\n",
+  "refs": [
+    "LCST.4",
+    "LEXP.3.7.1",
+    "LIMP.3.3.4"
+  ]
+}

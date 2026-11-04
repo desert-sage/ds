@@ -1,0 +1,16 @@
+{
+    "id": "LERR.9.5_latched",
+    "category": "logical",
+    "scenario": "A ComputationError is asserted as a fault fact a rule can match (LERR.9.1), and it is latched per (node, rule) site (LERR.9.5): a second identical fault at the same site is a suppressed no-op and the handler does not fire again. Drives the Int division of the RHS `let` in rule `divide` (activation-time, so rule = \"divide\"; Int slots, because an Int division by zero traps and a Float one is IEEE), the fault-fact queue (LERR.9.7), and the engine's replacement rule. Both faults read the divisor from S.b, so every slot of the two fault facts is equal. Pin: assert S(a, b=0); pump; assert S(b2, b=0); pump. Messages are ['DIVIDE_BY_ZERO divide'] once; `divide` itself never logs.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule divide:\n    S s\n->\n    let q = s.a / s.b\n    log critical \"q {q}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "one", "a": 1, "b": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "two", "a": 2, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DIVIDE_BY_ZERO divide"]
+    }
+}

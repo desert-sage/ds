@@ -1,0 +1,20 @@
+{
+    "id": "RFCS.6.7_a_nan_refused_call_replays",
+    "clauses": ["NCBK.6.8"],
+    "category": "runtime",
+    "scenario": "[RFCS.6.7]: a refused call leaves DS_ERR_NAN_REJECTED as a pump's status, a one-shot report: the recorded run went on, and a replayer treats it as an outcome and continues. The rule and the first input are `IDSP.6.5_nan_argument_refuses_the_call`'s. a=1e308 makes `svc.diff`'s argument Inf - Inf, so that call is refused and the pump reports -216 ([RCTS.1.2.30]). Then Trig(2, 2.0) is asserted and pumped, and both its calls are issued. Each runtime replays its own recording into a fresh engine. The later work is what shows it went on: a replayer that stopped at the status returns -216 and never delivers Trig(2), so its working memory differs from the run's. PATH PINNED: libds's `ds_rfcs_replay` (rfcs/codec.c), the PumpBoundary arm, through pyds `Engine.replay` in runner.py `_replay_through_libds_rfcs`; the Mercury runtime's `ds.replay`, which reads no pump status, through test_behave.m `replay_determinism_result`.",
+    "rules_ds": "service svc.diff:\n    kwarg v: Float\n    no response\n\nservice svc.big:\n    kwarg w: Float\n    no response\n\nschema Trig scope logical:\n    k: Int key\n    a: Float mutable\n\nrule r:\n    Trig t\n->\n    call svc.diff v: t.a * 10.0 - t.a * 10.0 nocooldown\n    call svc.big w: t.a * 10.0 nocooldown\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "a": 1e308 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "a": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_pump_statuses": [-216, 0],
+        "min_events": 3,
+        "min_rule_fires": 1
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "id": "RFCS.6.9_fact_id_numbering",
+    "clauses": ["RFCS.6.7"],
+    "category": "runtime",
+    "scenario": "[RFCS.6.9]: the engine numbers its facts from one counter, starting at 1 and rising by 1 with each id taken, and the recording carries every id. One recording drives each case once, and `expected_fact_ids` pins the `fact_id` of every `FactAssert`, `FactEmit` and `FactWithdraw` in stream order. (1) A host assert of a new Src(a, v 1): FactAssert 1. (2) The same assert again, a no-op reassertion: its FactAssert carries the live fact's id, 1, and takes none ([RFCS.6.7]). (3) A host assert of a Line whose `text` is nine codepoints in a `capacity 8` slot, which the bound refuses with -710 ([LSTR.11.3], [RCTS.1.2.27]): its FactAssert is recorded and takes 2, though no fact enters, and the BoundsError follows it. A BoundsError asserts no fault fact ([LERR.9.1]), so it takes nothing more. (4) A pump: `remind`, first in source order, fires and arms its `after 5_s`, whose timer and capture facts are the compiler's and take no id ([RFCS.6a.5]); then `derive` emits an Out, FactEmit 3. (5) An identity update of Src a to v 2: the replacement's FactAssert takes 4, then the FactWithdraw of 1 ([RFCS.6.7]), cause SUPERSEDED. (6) A pump: `derive` emits again, FactEmit 5; `remind` arms another timer, which again takes no id. WHAT EACH STEP DISCRIMINATES: a counter starting at 0 shifts every id down by one; an id taken for the no-op, or not taken for the refused assert, shifts every id after it; a timer or capture fact drawn from the author counter makes the first emit 4 or 5, not 3. PATH PINNED: libds's `ds_wm_fact_new` and `recorder_emit_refused_input`, recorded by libds's own recorder (runner.py `_run_rfcs_roundtrip`); the Mercury runtime's `ds.wm.next_id_for` and `mint_unentered_id`, recorded by `ds.rfcs` (test_behave's `recorded_fact_ids`).",
+    "rules_ds": "schema Src scope logical:\n    k: String key\n    v: Int mutable\n\nschema Line scope logical:\n    k: Int key\n    text: String capacity 8 mutable\n\nschema Out scope ttl 1_h:\n    k: String\n\nrule remind:\n    Src s\n->\n    after 5_s:\n        log info \"late {s.k}\"\n\nrule derive:\n    Src s\n->\n    emit Out k: s.k\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Src", "slots": { "k": "a", "v": 1 } },
+            { "op": "assert", "schema": "Src", "slots": { "k": "a", "v": 1 } },
+            { "op": "assert", "schema": "Line", "slots": { "k": 1, "text": "abcdefghi" }, "refused": "-710" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Src", "slots": { "k": "a", "v": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_fact_ids": [
+            { "atom": "FactAssert", "fact_id": 1 },
+            { "atom": "FactAssert", "fact_id": 1 },
+            { "atom": "FactAssert", "fact_id": 2 },
+            { "atom": "FactEmit", "fact_id": 3 },
+            { "atom": "FactAssert", "fact_id": 4 },
+            { "atom": "FactWithdraw", "fact_id": 1 },
+            { "atom": "FactEmit", "fact_id": 5 }
+        ],
+        "expected_withdraw_causes": ["SUPERSEDED"]
+    }
+}

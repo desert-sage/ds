@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.4_x00_escape_refused",
+    "category": "compiler",
+    "scenario": "LSTR.1.1 / LGRA.2.9.4: `\\x00` names U+0000, which a String does not hold, so it is refused with DS_PARSE_BAD_ESCAPE. PATH PINNED: the `x` arm of the Mercury compiler's `dsc.strlit.escape`, which range-checks through `codepoint_ok` as `\\u` and `\\U` do, reached through `lgra_2_9_4_decode` from `dsc.validate.lgra_2_9_4_check_escapes`. Without `codepoint_ok` on the `x` arm, or the `Value >= 1` in `codepoint_ok`, the escape decodes as a character.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"a\\x00b\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_BAD_ESCAPE"
+    }
+}

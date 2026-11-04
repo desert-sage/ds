@@ -1,0 +1,18 @@
+{
+  "id": "NDBG.4.1",
+  "prefix": "NDBG",
+  "doc": "INTROSPECTION.md",
+  "parent": "NDBG.4",
+  "seq": 96,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[NDBG.4.1] `ds_engine_rete_network` enumerates the network as nodes and edges\nvia two callbacks, `ds_rete_node_cb_t` and `ds_rete_edge_cb_t`. All three are\ndeclared in `runtime/include/libds.h`, which is the authority on their shape;\nthis clause states what they mean and not how they are spelled.\n\n`rule_filter` (non-NULL) names one rule, and restricts the enumeration to the\nnodes the rule's terminal is reachable from: its terminal or terminals, and\nevery join and alpha upstream of them. It reports only the edges whose two ends\nare both reported nodes, so a filtered network names no node it does not\nreport. A name no rule carries enumerates nothing. `include_occupancy`\npopulates the live fact/token count per node, read between pumps, the only time\nthe call is answered ([NDBG.1.2]); without it, every node's occupancy is\n`UINT32_MAX`. A node's `id`, and\neach end of an edge, is the decimal text of the node's `node_id` in the artefact\n(`proto/alfa.proto#AlphaNode`, `proto/beta.proto#BetaNode`,\n`proto/term.proto#TerminalNode`), which the program fixes and every runtime\nreads alike; it is never a runtime's own internal label ([RARC.5.3.2]). `label` is an alpha's schema\nname or a terminal's rule name, and `filter` is an alpha's formatted test. A\nbeta's `label` is `join`, and its `filter` is `join` where it carries join tests\nand empty where it carries none. `is_negative` marks\nNOT-beta nodes. Every string argument is valid only for the callback's duration.\n\nThe engine must report every node before any edge: the alphas, then the betas,\nthen the terminals. The order within each kind and among the edges is\nunspecified. A `NULL` `edge_cb` enumerates the nodes alone.\n\nA debugger that cannot get a network (e.g. a non-Rete build) approximates a\nterminal-per-rule topology from `rule_meta` instead.\n\n",
+  "refs": [
+    "NDBG.1.2",
+    "RARC.5.3.2"
+  ],
+  "symbols": [
+    "ds_engine_rete_network"
+  ]
+}

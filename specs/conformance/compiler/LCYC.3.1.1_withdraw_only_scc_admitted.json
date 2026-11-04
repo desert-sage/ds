@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.3.1.1_withdraw_only_scc_admitted",
+    "category": "compiler",
+    "scenario": "LCYC.3.1.1: a two-rule SCC whose every internal edge is a `withdraw` edge (LCYC.3.2.2) is admitted. `ra` withdraws a `B` that `rb` matches, and `rb` withdraws an `A` that `ra` matches, so the two rules reach each other and form one SCC. No schema is emitted at all, so none is both emitted and matched inside it, and no rule carries `call`, `cache` or `cache_delete`. Compiles. PATH PINNED: `dsc.cycle`'s withdraw edges make the SCC, and `lcyc_3_1_1_admitted` lets it through. Without the admission, the cycle check would refuse it with DS_VALIDATE_RULE_CYCLE. Twin: LCYC.3.1.1_emit_and_withdraw_scc_refused.",
+    "rules_ds": "schema A scope explicit:\n    v: Int\n\nschema B scope explicit:\n    v: Int\n\nrule ra:\n    A a\n    B b where b.v == a.v\n->\n    withdraw b\n\nrule rb:\n    B b\n    A a where a.v == b.v\n->\n    withdraw a\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

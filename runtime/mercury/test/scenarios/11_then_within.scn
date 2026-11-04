@@ -1,0 +1,19 @@
+# `then Motion m within 30_s`: the temporal chain and its two boundaries.
+# `then` lowers to `Y.ts > X.ts` ([LTHE.5.2]), a test on the declared `ts`
+# slot, not the clock or the timetag. Every Motion arrives after the DoorOpen
+# in assert order, and they differ only in `ts`. DoorOpen is at ts=1s:
+#
+#   pump 2   Motion ts=2e9   -- 1s after the door, inside the window   -> FIRES
+#   pump 3   Motion ts=5e8   -- BEFORE the door, though asserted after -> silent
+#   pump 4   Motion ts=41e9  -- 40s after the door, outside the window -> silent
+#
+# `break_in_alert` fires at the first pump and not again: an unrelated
+# mutation leaves its refraction entry in place ([IRET.11.3.2]).
+assert DoorOpen ts=1000000000 zone=kitchen
+pump
+assert Motion ts=2000000000 location=kitchen
+pump
+assert Motion ts=500000000 location=kitchen
+pump
+assert Motion ts=41000000000 location=kitchen
+pump

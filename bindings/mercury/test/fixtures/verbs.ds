@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: every verb a rule has, from one firing, and a cache
+# entry that expires.
+
+use default
+
+schema Trig scope logical:
+    v: Int key
+
+schema Warm scope logical:
+    v: Int key
+
+schema Alert scope ttl 1_h:
+    severity: Int
+    zone: String
+
+service light.turn_on:
+    kwarg entity_id: String
+    no response
+
+rule fire_them_all:
+    Trig t
+->
+    log warning "trig {t.v}"
+    emit Alert severity: 7 zone: "kitchen"
+    publish Alert severity: 8 zone: "hall"
+    call light.turn_on entity_id: "light.foyer" nocooldown as "corr-{t.v}"
+    cache key: "last_alert" value: 1
+    cache_delete key: "last_alert"
+
+rule warm_cache:
+    Warm
+->
+    cache key: "warm" value: 2 ttl: 5_s

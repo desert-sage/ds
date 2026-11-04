@@ -1,0 +1,10 @@
+{
+    "id": "LTHE.4.7_then_within_zero_refused",
+    "category": "compiler",
+    "scenario": "[LTHE.4.7]: `within` on a `then` step takes a positive duration; `then ... within 0_s` is DS_VALIDATE_ZERO_WITHIN, because a zero window admits no pair of distinct instants. `Door` then `Motion within 0_s`, both schemas carrying the `ts` slot [LTHE.4.5] requires, so the zero window is the program's only defect. `compiler/RLOW.5.4.3` pins the same code on a single pattern's `within 0_s`, which LTHE.4.7 does not cover.",
+    "rules_ds": "schema Door scope logical:\n    entity_id: String key\n    ts: Time\n\nschema Motion scope logical:\n    entity_id: String key\n    ts: Time\n\nrule entry:\n    Door\n    then Motion within 0_s\n->\n    log info \"entry\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ZERO_WITHIN"
+    }
+}

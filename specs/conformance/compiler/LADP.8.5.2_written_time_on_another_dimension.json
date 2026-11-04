@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.2_written_time_on_another_dimension",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.2]: \"The compiler must reject a written quantity whose dimension is not the kwarg's\". A time literal is a quantity of `time`, though it types as a `Duration` with no dimension of its own ([LTIM.1.3.2]), so `5_s` on a `celsius` kwarg is refused as `5_meter` is. The break reads the `Duration` as a plain number, which [LADP.8.5.2] takes as already in the kwarg's unit. Its twin, `LADP.8.5.2_written_time_bridged_by_an_implicit_formula`, has a formula. PATH PINNED: `dsc.types.luni_8_2_quantity_dimension`, then `dsc.validate.ladp_8_5_2_written_dimension`.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nservice hvac.set:\n    kwarg t: celsius\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set t: 5_s nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

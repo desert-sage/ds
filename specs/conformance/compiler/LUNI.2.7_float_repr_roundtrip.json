@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.2.7_float_repr_roundtrip",
+    "clauses": ["LLEX.11.2", "LLEX.11.2.2"],
+    "category": "compiler",
+    "scenario": "Three `FLOAT_LIT` spellings (LLEX.11.2) compile in `where` comparisons: `0.1`, the bare-exponent `1e-6` (LLEX.11.2.2: the exponent is required on the form with no point), and the 16-digit `3.141592653589793`. PINS ONLY THAT THEY LEX AND COMPILE: no baked value is read, so LUNI.2.7.1's cross-host baking is not observed. Named for the LUNI.2.7 heading.",
+    "rules_ds": "schema Sensor scope logical:\n    temp: Float key\n\nrule alpha:\n    Sensor s where s.temp > 0.1\n->\n    log info \"a\"\n\nrule beta:\n    Sensor s where s.temp > 1e-6\n->\n    log info \"b\"\n\nrule gamma:\n    Sensor s where s.temp > 3.141592653589793\n->\n    log info \"g\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

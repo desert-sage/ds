@@ -1,0 +1,9 @@
+{
+    "id": "LSMP.3.1_statistics_admitted",
+    "category": "compiler",
+    "scenario": "[LSMP.3.1] admits over the reservoir bag `mean`, `median`, `pXX`, `variance`, `pvariance`, `stdev`, `pstdev`, `min`, `max`, `sum`, `count`. `compiler/LSER.sample_ok` compiles mean, stdev, p95, min, max, sum and count; this compiles the four it leaves out -- `median`, `variance`, `pvariance`, `pstdev` -- on one `sample 200` line, with no accuracy phrase, and a rule reading the `median` companion. A compiler that refused any of the four, or demanded a tolerance under `sample`, fails it.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    median, variance, pvariance, pstdev sample 200\n\nrule r:\n    Sensor s where s.median > 50.0\n->\n    log info \"{s.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

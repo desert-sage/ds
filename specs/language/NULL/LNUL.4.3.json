@@ -1,0 +1,158 @@
+{
+  "id": "LNUL.4.3",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 74,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.3] **A `where` clause fires iff it evaluates to `true`.** Both `false`\nand `null` (unknown) do **not** fire. Net effect: **a missing value never\ncauses a rule to fire** — neither positively (`s.state > 85`) nor through\nnegation (`not (s.state > 85)`) — unless the author handles absence explicitly\n([LNUL.5]). This is the safe, auditable default: *don't act on what you don't\nknow.*\n\n",
+  "refs": [
+    "LNUL.5"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_3__fires",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_3__null_never_fires",
+        "tag": "derives"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_3__admits_closed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The where site: a match test fires iff it evaluates to true, so the absent value does not match -- failing CLOSED, as the clause rules. Identical to the guard site everywhere the value evaluated."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_3__sites_agree_when_evaluable",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The two sites agree on EVERY evaluable value. This is the half that makes the disagreement dangerous rather than obvious: no test over evaluable inputs can tell the sites apart."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_8__sites_disagree_on_absent",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The witness that the two sites take OPPOSITE dispositions of the one absent value: `Not (True = False)` between the where site and the guard site -- the row this clause writes for the where test, against the row [LNUL.4.8] writes for the guard."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__admits_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A positive node's join relation over the extended token, the candidate last: admitted iff the evaluated test answers true."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_3__admits",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A positive node admits a pair iff its tests answer true: false, null and a trap all decline, which is the clause's 'fires iff it evaluates to true' over the four answers."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_3__admits_only_true",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Only true is admitted, over all four answers."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_3__null_comparison_never_fires",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's hot / cool pair quantified over every operator and every other operand: a comparison with a null operand fires neither positively nor under not."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_7__undecided_neither_admits_nor_passes",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The positive half of the clause's safety collapse: an answer that is neither true nor false (null, or a trap) is not admitted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_positive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PROBE IS TRANSPARENT AT A POSITIVE NODE, for an anchor wherever it stands in the test list: the bucket, tested by the other tests, is exactly what the whole list admits, traps included. The clause's 'probing on one first cannot change whether the pair passes'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__node_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The relation a node reads from its test: a positive node admits a pair answering true, a `no` node counts a candidate as a blocker unless it answers false. One test, two relations -- RLOW.5.3's 'the same join tests as the positive form'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnul_4_3__admits_and",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A positive node admits an `and` iff it admits both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnul_4_3__extends_iff_true",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A positive node extends a token by exactly the candidates answering true: every extension it passes is one, and every one is passed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__test_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `where` fires iff it evaluates to `true`: the timed test admits on `true` alone, and `false` and `null` do not -- `iret_7_6__admits_join`'s reading, which a `dwell` that reads `null` (no stamp) and a `null` slot it is compared with both reach."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rdsc_4a_8_2_2__null_condition_withholds",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A `where` that evaluates to `null` does not fire: `dwell >= null` admits nothing, at either pump. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "lnul_4_7__decide",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The decision: a positive pattern fires on true ([LNUL.4.3]); a `no` pattern is blocked unless false, a trap included -- [LNUL.4.7] blocks on true and on null and says nothing of a trap, as Rete/NetworkAnswer.idr's `iret_7_6__node_join` has it."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "lnul_4_7__decide_is_node_join",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The node's decision is NetworkAnswer's `iret_7_6__node_join` of the V5 test."
+      }
+    ]
+  }
+}

@@ -1,0 +1,740 @@
+{
+  "id": "RLOW.4.2.1",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.4.2",
+  "seq": 267,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.4.2.1] **A rule lowers to a chain of Rete nodes ending in one\nterminal.** The compiler lowers each pattern, in source order, to an\n`AlphaNode` over its schema, shared with every pattern of the same schema and\ntests ([IRET.6.6]), and a `BetaNode` joining it to the chain above it; a\nnegated pattern's beta is negative. The pattern's `where` becomes the alpha's\ntests and the beta's join test, split per [RLOW.5.5]. The rule lowers to one\n`TerminalNode` under the chain's last beta, carrying the RHS actions\n([RDSC.4a.8]) and, where the rule has one, a fire guard ([RDSC.4a.8.2.1]).\nHow the chain is built is [RLOW.5]'s; expressions lower per [RLOW.6] and\nactions per [RLOW.7].\n\n",
+  "refs": [
+    "IRET.6.6",
+    "RDSC.4a.8",
+    "RDSC.4a.8.2.1",
+    "RLOW.5",
+    "RLOW.5.5",
+    "RLOW.6",
+    "RLOW.7"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "TerminalNode"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Rlow_4_2_1__chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A rule's network: its chain in LHS order, its terminal's activations, its RHS; the ordinal is its position among the chains."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rlow_4_2_1__rule_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule Rete/FireLoop.idr's recompute reads for a chain: positive kinds, a guard of the alpha and join tests per position, the NOT nodes as blockers. Written for the transfer theorem, which is the next increment: nothing here yet relates this rule's matches to the chain's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "Rlow_4_2_1__from_front",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A token of Rete/FireLoop.idr's recompute from a front: a prefix of the front extended by a tuple of the remaining positive kinds, passing the guard from position i, blocked by no `no` pattern from position i. The induction hypothesis that walks the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__agree_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER OF CONTENT, closed at the top: after any history from a loaded network, every terminal holds exactly the unblocked matches FireLoop's recompute gives the rule its chain lowers to. Order and flags are part two."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__extend_lengths",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A front of prefixes of one length extends to prefixes one longer: the positions the guard reads stay aligned."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__from_front_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "EVERY TOKEN OF FIRELOOP'S RECOMPUTE from a front is a token of the network's: the guard's fact at each position is the join the node makes, and an unblocking `no` pattern is a NOT node with zero blockers."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__recompute_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TWO RECOMPUTES AGREE: the network's recompute of a chain over working memory is, as a set, FireLoop's match set of the rule the chain lowers to, less the matches a `no` pattern blocks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__terminal_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "UNDER THE VIEW every terminal holds, as a set, exactly the unblocked matches of the rule its chain lowers to -- what Rete/FireLoop.idr's table holds with `blocked` clear."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__view_from_front",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "EVERY TOKEN OF THE NETWORK'S RECOMPUTE from a front is a token of FireLoop's: at a positive node the joining fact is a fact of the kind passing the guard; at a NOT node zero blockers is the `no` pattern not blocking."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__carried",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the history carries beside the answers: Rete/NetworkFrame.idr's frame invariant (the view, the shapes kept against the loaded network) and unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "Rlow_4_2_1__same_kinds",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two lowerings of one rule, read node by node for the alpha and the flag alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "Rlow_4_2_1__shapes_kept",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The chain a rule lowers to keeps its kinds through a run: the same nodes' alphas and flags, the same actions, the same alphas' schemas and tests; a timed node's test may be re-timed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__same_kinds_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A chain is of its own kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__same_kinds_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Kinds compose."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__same_shape_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One shape is one kind: the shape compares the tests too."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__shapes_kept_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded network keeps its own shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__shapes_kept_through",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Shapes kept compose through a transformation that keeps the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rlow_4_2_1__shapes_kept_through_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Shapes kept compose through a transformation that keeps the kinds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chain_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule's lowering keeps its alphas and flags through a re-time; its one timed node's test moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chains_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every rule's lowering keeps its alphas, flags and actions through a re-time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The shapes the frame keeps, kept through a re-time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_7_8__activation_live_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ACTIVATION IS LIVE ON THE NETWORK exactly when it is live on FireLoop: under the tables' agreement the terminal's fired activation of the row's identity is the table's fired, unblocked token of it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CASCADE AGREES: with the same rows on both sides the fuel is the same, and every phase agrees."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_n_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Any number of phases agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_step_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE PHASE AGREES: the two sides end and keep the same rows, so they retract the same ids -- the network one at a time, FireLoop as a batch -- and agree after; a phase that ends nothing, or ends rows that supported nothing alone, changes neither side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__retract_ids_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A BATCH OF IDS keeps the agreement: one at a time through alpha dispatch on the network, as a batch with one propagation on FireLoop. Each network retraction keeps the agreement against one more FireLoop propagation, and those propagations compose into the batch's one; an id no live fact carries retracts nothing on either side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__tables_agree_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The tables' agreement, read at one ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__apply_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT AGREES: a no-op assert or a retraction of an id not live touches neither side; otherwise the network's assert or retract and FireLoop's assert-then-propagate or retract-then-propagate agree, and the cascades after them agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__boundary_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the input, then the run, with the same halt and count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__canonical_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CANONICAL REPLAY ON FIRELOOP IS CANONICAL ON THE NETWORK, input by input with the same fuel: each pump quiesces on both sides, and the states agree throughout."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__do_action_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE ACTION AGREES: the core actions agree, both record the same row against the same working memory, and the cascades agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__do_actions_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS AGREES, with the table and the cascade in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__mark_agree_state",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking the selected activation on both sides keeps the agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__replay_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the agreement, under one fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__run_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: the same firings, the same halt, the same count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__step_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES: both engines stop, or both fire the same activation of the same rule, record the same rows, cascade alike, and agree afterwards."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_canonical",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CANONICAL TRANSFER: a canonical replay from FireLoopTms's empty state is a canonical replay from the loaded network, with the same fuel per input, and the states agree at its end."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM WITH TRUTH MAINTENANCE: run on one history from the loaded network and from FireLoopTms's empty state under the program the network lowers to, the two engines reach one working memory and one dependency table, and each table's unblocked tokens are the terminal's activations, in order and with their flags. Every theorem stated over FireLoopTms's run -- Rete/TmsRun.idr, Lcyc/TmsTermination.idr, Rete/PumpBoundary.idr -- is a theorem about the spec's network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "rlow_4_2_1__steps_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ANY SEQUENCE OF INPUTS AND PUMPS keeps the agreement, whatever the cadence -- the canonical input-then-pump or a fixture's batched asserts before one pump: each input agrees, each pump agrees."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "rlow_4_2_1__steps_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ANY SEQUENCE OF INPUTS, TICKS AND PUMPS keeps the agreement on the clocked engines, whatever the cadence, with one deadline table and one clock on both sides: each input agrees (Rete/NetworkTtl.idr's prepare), each pump agrees (its run)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__apply_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT AGREES: the network's assert or retract and FireLoop's plain apply -- the same decision under the kind's lifecycle, then one propagation -- keep the agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__assert_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps the agreement: the network's assert and FireLoop's assert-then-propagate decide alike on the same working memory -- fresh insert, suppressed no-op, or retract-and-replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__boundary_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the input, then a run to quiescence or out of fuel, on both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__do_action_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE RHS ACTION keeps the agreement: an emit is the assert on both sides, a withdraw the retraction, on one working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__do_actions_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS keeps the agreement: the actions in order, each keeping it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE FIRST PENDING TOKEN of a table is the first unfired activation among its unblocked tokens: both skip the blocked and the fired, so the selected positions name one match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_of_net",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection's activation is the terminal's first unfired one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_of_select",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection's token is the table's first pending one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__init_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOADED NETWORK AND THE EMPTY FIRELOOP STATE AGREE under the program the loaded network lowers to: the rules reflexively, the tables by the seeding, order and well-formedness from nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__init_tables_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "AT THE START the tables agree: FireLoop's first propagation from nothing over empty working memory and the network's seeding hold the same unblocked matches, all unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__insert_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT keeps the agreement, against FireLoop's one propagation over the grown working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__mark_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "MARKING THE SELECTED TOKEN marks the selected activation: the unblocked tokens after the mark are the terminal after its mark."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__mark_tables_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Marking the selected token of the selected table marks the selected activation of the selected terminal; every other table and terminal stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__replace_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "REPLACING AN ENTITY -- the retraction then the insertion on the network, one propagation on FireLoop -- keeps the agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__replay_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY HISTORY keeps the agreement: the inputs in order, each pumped, on both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__retract_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps the agreement, against FireLoop's one propagation over the shrunk working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__rule_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The rule at an ordinal is the lowering of the chain at it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__rules_agree_mark",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking keeps every rule the lowering of its chain: the nodes and actions do not move."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__rules_agree_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The chains' lowerings are, reflexively, the lowerings of the chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__run_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: both quiescent together, or the same firings in the same order, and the agreement after."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__select_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SELECTION AGREES: with every table's unblocked tokens its terminal's activations, both engines pick nothing, or the same rule and the same activation -- the lowest ordinal with a pending activation, then its earliest."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__step_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES: both engines stop, or both fire the same activation of the same rule and agree afterwards."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__step_fire",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A FIRING AGREES: with the same activation of the same rule selected on both sides, both mark it, both run the rule's actions on its facts against one working memory, and the results agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__transfer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM: run on one history from the loaded network and from FireLoop's empty state under the program the network lowers to, the two engines reach one working memory, and each table's unblocked tokens are its terminal's activations, in order and with their flags. Against the plain pipeline, inputs without Rete/PumpBoundary.idr's TMS phase and without the clock; Rete/NetworkTmsTransfer.idr carries the phase and Rete/NetworkTtl.idr the clock, on this agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Lgra_6_1__same_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "TWO RULES THAT ARE ONE, extensionally: the same positive kinds, a guard that decides alike on every tuple, blockers that read the same kinds and decide alike, the same actions. The lowering builds closures and there is no function extensionality, so this is the equality a run can tell."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE NETWORK AND FIRELOOP AGREE: one working memory; each rule the lowering of its chain; each table's unblocked tokens its terminal's activations, in order and with their flags; both sides well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__rules_agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each rule of the program is, extensionally, the lowering of the corresponding chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__same_shape",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two chains of one shape: node by node the same alpha, join tests and flag; the memories and counts may differ. What the propagation paths never change, so a chain keeps lowering to one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__tables_agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each table's unblocked tokens are the corresponding terminal's activations, in order and with their `fired` flags."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "lgra_6_1__same_rule_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule is one with itself: at load the program's rules are the chains' lowerings outright."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "lgra_6_1__same_rule_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rules that are one compose."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__change_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE AGREEMENT SURVIVES A CHANGE OF WORKING MEMORY: given the network after the change, ordered; FireLoop's state after one propagation, well-formed; the shapes kept; and the flags persisting -- the two agree again."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__prop_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE UNBLOCKED TOKENS AFTER A PROPAGATION ARE THE NETWORK'S ACTIVATIONS after the same change: the tuples agree because both sides hold exactly the unblocked matches in the key's order and two sorted lists with the same members are one list; the flags agree because an activation whose match survives is kept on both sides, and a released or new match is unfired on both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__rule_of_same",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CHAIN'S RULE DOES NOT CHANGE: through every change of memories and flags the chain lowers to one rule, extensionally."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__rules_agree_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rules agree with the new chains when the shapes are kept."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__same_shape_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A chain has its own shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__same_shape_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Shapes compose."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__tables_agree_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Tables agree with the new terminals after a propagation, rule by rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_22_6__network_deadlines",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "[IRET.22.6] ON THE NETWORK: for a certified positive program lowered from a loaded network, every input stream with ticks has a canonical replay from the loaded network at whose end the deadline table is well-formed on the network's working memory -- every live TTL fact has its deadline, no other live fact has one, and every live fact's deadline is after the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__apply_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A DATA EVENT AGREES, the adapter assert's deadline included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__boundary_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT PUMPED agrees: the steps before firing, then the run, same halt and count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__canonical_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CANONICAL REPLAY WITH TICKS ON FIRELOOP IS ONE ON THE NETWORK, input by input with the same fuel, and the states agree throughout -- one working memory, one dependency table, one deadline table, one clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__do_action_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE ACTION AGREES, the deadline it stamps included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__do_actions_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS AGREES, the deadline table threaded through both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__prepare_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOOP'S STEPS BEFORE FIRING AGREE: a tick advances both clocks alike and sweeps alike; a data event is swept for and applied alike."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__run_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: the same firings, the same halt, the same count, the same deadlines; the clock is the pump's own."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__step_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE FIRING AGREES, the deadline table included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__sweep_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE SWEEP AGREES: the network's retractions one at a time in [LDTL.6.1]'s order and FireLoop's batch end in one working memory, and the cascades after them agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__transfer_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER WITH TICKS: a canonical replay with ticks from FireLoop's empty state is one from the loaded network, and at its end the two agree. Rete/TtlSweep.idr's theorems are theorems of the network."
+      }
+    ]
+  }
+}

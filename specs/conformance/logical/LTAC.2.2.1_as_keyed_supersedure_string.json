@@ -1,0 +1,19 @@
+{
+    "id": "LTAC.2.2.1_as_keyed_supersedure_string",
+    "category": "logical",
+    "scenario": "[LTAC.2.2.1] / [LRST.1.1] — `as`-keyed supersedure SUPERSEDES. Pin: two DISTINCT Req facts (different `entity_id`, so the logical upsert does not collapse them) each arm a 100ms timer carrying the SAME evaluated key `r.grp`. The second arming must retract the first, so advancing past the delay fires the after-body EXACTLY ONCE. NB the vehicle is log_message_sequence, not event_sequence: arming a timer emits NO fact_assert (only the two Req asserts appear in the stream), so supersedure is invisible to an expected_kinds match. log_message_sequence is exact list equality. This is the String half; the non-String half is `logical/LTAC.2.2.1_as_keyed_supersedure_int`.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    grp: String mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.grp:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "grp": "g" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "grp": "g" } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "timer fired"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSER.17.6",
+    "category": "compiler",
+    "scenario": "Quantile range constraint per LSER.17.6 — `pXX` requires `XX` to be an integer in 1..99 inclusive. `p0` and `p100` are not legal; authors use `min` / `max` for the extremes. Pin: a `series` declaration containing `p0 sliding 10_min` rejects with DS_VALIDATE_SERIES_INVALID_QUANTILE; the diagnostic should point at `min` for the extreme.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    p0 sliding 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_INVALID_QUANTILE"
+    }
+}

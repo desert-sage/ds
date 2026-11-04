@@ -1,0 +1,25 @@
+{
+    "id": "IRET.10.7_call_reply_withdraws_by_identity",
+    "clauses": ["LGRA.10.1.4"],
+    "category": "adapter",
+    "scenario": "IRET.10.7 / LGRA.10.1.4: the nested withdraw removes exactly the fact the outer rule matched, by identity. `r` consumes its `Go` and calls. A second Job with the same values is asserted before the reply, and `r` does not fire for it, because the Go is gone. The reply's body withdraws `j` and emits a Check, and `left` logs once for each Job still live. So exactly one \"left 1\" means the matched Job went and its twin stayed. A withdraw by value that takes every equal Job gives [], and one that removes nothing gives two lines. So does one that withdraws the capture fact at the view's token position. PATH PINNED: ACTION_WITHDRAW_BY_ID through libds's `ds_rete_wm_find_by_id` (`rete/engine.c`), which names one fact.",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg n: Int\n    response SvcReadReply\n\nschema Go scope explicit:\n    n: Int\n\nschema Job scope explicit:\n    id: Int\n\nschema Check scope explicit:\n    v: Int\n\nrule r:\n    Go g\n    Job j where j.id == g.n\n->\n    withdraw g\n    call svc.read n: j.id cooldown: 1_min as \"c1\"\n        on response.ok == true:\n            withdraw j\n            emit Check v: 1\n\nrule left:\n    Check c\n    Job j where j.id == c.v\n->\n    log info \"left {j.id}\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [
+            {
+                "service": "svc.read",
+                "respond_schema": "SvcReadReply",
+                "respond_slots": { "ok": true }
+            }
+        ],
+        "steps": [
+            { "op": "assert", "schema": "Go", "slots": { "n": 1 } },
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["left 1"]
+    }
+}

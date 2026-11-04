@@ -1,0 +1,75 @@
+{
+  "id": "LGRA.22.7",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.22",
+  "seq": 1985,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.22.7] **Two disjoint namespaces, selected by position.** With case removed,\na schema, a constant, and a binding may share one NFC name. The compiler must\nresolve a `NAME` against exactly one of two disjoint namespaces, chosen by\ngrammatical position:\n\n- The **type namespace** — the builtin types, which are the rows of [LGRA.22.8],\n  unit symbols, dimension and scalar-group names ([LUNI.7.1]), schemas, and the\n  kind `Schema`, which is admissible only as a service kwarg's declared type ([LADP.8.6.1]) and names a fact of any schema. It is\n  used at every *type position*: a `slot: T` annotation, a `let x: T` annotation,\n  a `::T` cast target ([LCST.4]), and a unit literal. **Every type position lexes\n  the single `TYPE_SYM` terminal** ([LGRA.2.5.3], [LCST.4.1.2]) — the type-symbol\n  class (`XID` ∪ the non-`XID` unit glyphs) — so a unit type spelled with a\n  non-`XID` glyph (`slot: °C`, `x::°C`) is admitted uniformly. **Units are\n  types** — a unit-typed value's static kind *is* its unit symbol — so the type\n  namespace is one lattice, not a type track plus a parallel unit track.\n  `Bytes` is a scalar builtin at **every** type position — a `slot: T` annotation\n  (`slot: Bytes`), a `let x: T` annotation, and a `::T` cast target — like the other\n  scalars, with no slot carve-out.\n- The **value namespace** — pattern bindings, `let` bindings, and constants. It\n  is used at expression positions.\n\nBecause the two namespaces are disjoint and position-selected, a constant named\n`Float` (value namespace) does not shadow the type `Float` (type namespace), and\na `::Float` cast target resolves `Float` in the type namespace only.\n\n**The type namespace is flat:** two type-namespace entries — any of schema, unit,\ndimension, scalar group or builtin — that share one NFC name are a compile error; a schema and a unit may\nnot both be named `celsius`. Two schemas are `DS_VALIDATE_DUPLICATE_SCHEMA`; a\nschema and a unit are `DS_VALIDATE_DUPLICATE_TYPE_NAME`. A declaration taking a\nbuiltin's name is refused as a reserved word before it can collide ([LLEX.9.7]).\n\nWithin the value namespace the compiler must resolve an expression `NAME` in the\norder in-scope binding → constant → builtin function ([LEXP.17.2]); an unresolved\n`NAME` is a compile error: `DS_VALIDATE_UNKNOWN_FUNCTION` where it is called,\na library's member included, `DS_VALIDATE_UNKNOWN_QUALIFIED_CONST` where it is a\nlibrary's member that is not called, `DS_VALIDATE_UNKNOWN_CONST` where it names\nan entry of the type namespace, and `DS_VALIDATE_UNKNOWN_BINDING` otherwise. A dotted name resolves by [LGRA.22.9].\n\n**Which names an author may not declare is not this clause's to say.** The\nbuiltin type names, the kind `Schema` and the builtin function names are\nreserved words carrying rows on [LLEX.9.6], and [LLEX.9.5] is the rule that refuses them. This clause\nstates only how a `NAME` **resolves** once written.\n\nThe resolution order above is why the builtin function names are on that list\nrather than free. A binding or constant is resolved before a builtin, so a name\nleft available would not merely coexist with the builtin it spells — it would\nprecede it, and shadow it at every call site in scope.",
+  "refs": [
+    "LADP.8.6.1",
+    "LCST.4",
+    "LCST.4.1.2",
+    "LEXP.17.2",
+    "LGRA.2.5.3",
+    "LGRA.22.8",
+    "LGRA.22.9",
+    "LLEX.9.5",
+    "LLEX.9.6",
+    "LLEX.9.7",
+    "LUNI.7.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_DUPLICATE_SCHEMA",
+    "DS_VALIDATE_DUPLICATE_TYPE_NAME",
+    "DS_VALIDATE_UNKNOWN_BINDING",
+    "DS_VALIDATE_UNKNOWN_CONST",
+    "DS_VALIDATE_UNKNOWN_FUNCTION",
+    "DS_VALIDATE_UNKNOWN_QUALIFIED_CONST"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__builtin_types",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__declared_type",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__schema_kind",
+        "tag": "spec",
+        "note": "The kind Schema as one entry of the type namespace, beside the builtin types and not among them: it has no row on LGRA.22.8."
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__schema_kind_reserved_not_builtin",
+        "tag": "spec",
+        "note": "The kind's name is a reserved word (its type row on LLEX.9.6) and is none of the builtin type names."
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__schema_kind_resolves_alone",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "No builtin type and no declared type shares the kind's name. The two facts about the kind restated; fails if either the not-in-builtins line or the flat namespace's kind line is removed."
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__type_namespace_flat",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/names.als",
+        "name": "lgra_22_7__type_resolution_unambiguous",
+        "tag": "spec"
+      }
+    ]
+  }
+}

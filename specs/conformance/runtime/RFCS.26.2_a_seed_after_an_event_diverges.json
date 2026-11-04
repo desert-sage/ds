@@ -1,0 +1,17 @@
+{
+    "id": "RFCS.26.2_a_seed_after_an_event_diverges",
+    "category": "runtime",
+    "scenario": "[RFCS.26.2]: \"A recorded `CacheSeed` was stored when it was recorded. So ... a `CacheSeed` after an event atom, which no recorder writes, [is] a replay that has not reproduced the run. The replayer must stop with `DS_ERR_FS_DIVERGENCE`.\" The host seeds `k` = 1 before any input, then asserts Trig and pumps; rule `hit` reads the seed and fires. The recording carries one `CacheSeed` in its prelude ([RFCS.26.1]). The `seed_after_event` mutation ([RCTS.1.2.18]) moves that frame, whole, to just after the first event atom, the assert's `ClockAdvance`: every byte is kept and only the seed's place moves. The unaltered recording replays with no refusal; the altered one must be refused with -725, DS_ERR_FS_DIVERGENCE. What it discriminates: a replayer that applies a seed wherever it meets one replays the altered recording without refusal, and one that refuses the place under another code (a parse error, -100) gives the wrong code. PATHS: libds's `ds_rfcs_replay` arm for `DS_ATOM_CACHE_SEED` and its `seen_event` check (`rfcs/codec.c`), through pyds's `Engine.replay` (runner.py's `_run_replay_refused`, `stream_edit.seed_after_event`); the Mercury runtime's `ds.rfcs` decoder, which marks a seed after an event atom late, and `ds.replay`'s `replay_all`, which diverges at it (test_behave.m's `stream_mutated`).",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"k\") == \"1\"\n->\n    log info \"hit {t.v}\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "cache_seed", "key": "k", "value": 1 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "seed_after_event" },
+        "code": "-725"
+    }
+}

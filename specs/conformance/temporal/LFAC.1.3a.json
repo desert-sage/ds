@@ -1,0 +1,34 @@
+{
+    "id": "LFAC.1.3a",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "Two TTL facts of the same schema with the same slot values asserted in sequence; advancing past the deadline and pumping leaves none (LFAC.1.3.3; RARC.5.2.4). The vector has one count, at the end, so it does not tell whether the second assert made a second fact (LFAC.1.3.2) or was suppressed (RARC.5.2.3): it pins the expiry only. It makes a second fact; runtime/LFAC.1.3.2_identical_ttl_asserts_accumulate and temporal/RARC.5.2.3_identical_ttl_asserts_expire_apart pin that.",
+    "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

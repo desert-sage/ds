@@ -1,0 +1,25 @@
+{
+  "id": "ISBK.1",
+  "prefix": "ISBK",
+  "doc": "SERIES_BACKINGS.md",
+  "parent": null,
+  "seq": 1,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "The backend vtable",
+  "text": "## The backend vtable [ISBK.1]\n\nOne structure is the whole contract between libds's engine and each of its\nseries backends ([NSBK.2]). The engine calls nothing a backend has not put\nhere, and knows nothing about it beyond the identifying fields at the head. It\nis libds's internal shape, not integrator contract: an integrator supplies no\nbackend ([NSBK.2.3]).\n\nFour entry points are **required** -- create per-key state, release it, absorb\na sample, answer a query ([ISBK.1.2]-[ISBK.1.4]). Everything past them may be\nabsent, and the ABI version in the header ([ISBK.1.1]) is what tells libds how\nmuch of the tail is present at all ([ISBK.1.7]).\n\nAn absent optional entry point is an **answer, not an omission**. No stale\nsweep means the backend needs no wall-clock eviction ([ISBK.1.5]); no\nas-of-now query means reads land as of the last absorbed sample ([ISBK.1.8]);\nno clone means an engine holding a live series on this backend cannot be\ncloned at all ([ISBK.1.9]). Leaving a hook out states something about the\nbackend's semantics, so leave it out deliberately.\n\n```c\ntypedef struct ds_series_backend_vtable {\n    uint32_t    abi_version;     /* must equal DS_SERIES_BACKEND_ABI_VERSION */\n    const char *backend_name;    /* e.g. \"ds-ring-buffer\" */\n    const char *backend_version; /* impl-defined; part of the replay platform signature */\n    uint32_t    atom_field;      /* the backing atom's field number ([ISBK.1.1]) */\n    uint64_t    supported_aggs;  /* bitmask of DS_SERIES_AGG_* ordinals */\n\n    ds_result_t (*instance_new)(const ds_series_decl_t *decl, void **out_state);   /* REQUIRED */\n    void        (*instance_free)(void *state);                                     /* REQUIRED */\n    ds_result_t (*update)(void *state, const ds_slot_value_t *value, uint64_t ts_ns); /* REQUIRED */\n    ds_result_t (*query)(void *state, ds_series_agg_kind_t agg, uint64_t window_ns,\n                         ds_slot_value_t *out_value);                              /* REQUIRED */\n    void        (*evict_stale)(void *state, uint64_t now_ns);                      /* OPTIONAL (NULL ok) */\n    ds_result_t (*query_with_value)(void *state, ds_series_agg_kind_t agg,\n                         uint64_t window_ns, const ds_slot_value_t *lookup_value,\n                         uint32_t k_param, ds_slot_value_t *out_value);            /* OPTIONAL (ABI v2) */\n    ds_result_t (*instance_clone)(const void *state, void **out_state);           /* OPTIONAL (ABI v4) */\n    ds_result_t (*query_at)(void *state, ds_series_agg_kind_t agg, uint64_t window_ns,\n                         uint64_t now_ns, ds_slot_value_t *out_value);             /* OPTIONAL (ABI v5) */\n} ds_series_backend_vtable_t;\n```\n\n",
+  "refs": [
+    "ISBK.1.1",
+    "ISBK.1.2",
+    "ISBK.1.4",
+    "ISBK.1.5",
+    "ISBK.1.7",
+    "ISBK.1.8",
+    "ISBK.1.9",
+    "NSBK.2",
+    "NSBK.2.3"
+  ],
+  "symbols": [
+    "DS_SERIES_BACKEND_ABI_VERSION"
+  ]
+}

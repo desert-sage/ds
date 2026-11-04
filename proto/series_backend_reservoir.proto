@@ -1,0 +1,29 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "series_backend_ring_buffer.proto";  // SeriesNullPolicy
+
+// SeriesBackendReservoir atom body. Per [RDSC.5a]. Reservoir-sampling backend
+// (Vitter Algorithm R) for a uniform k-sample from an unbounded
+// stream. Cost: O(max_samples) state, independent of stream length.
+message SeriesBackendReservoir {
+  string schema_name        = 1;
+  string slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string identity_slot_name = 3;
+  // 0 = all_time (samples from the full stream lifetime);
+  // non-zero is not currently used (reservoir is count-bounded,
+  // not time-bounded), reserved for future time-bounded variants.
+  uint64 window_ns          = 4;
+  // 0 = live-only; non-zero forwards samples to the samples plane.
+  uint64 persist_ns         = 5;
+  // Reservoir capacity k. 0 = runtime picks default.
+  // The reservoir holds exactly min(n, max_samples) samples drawn
+  // uniformly from the n samples seen so far.
+  uint32 max_samples        = 6;
+  uint32 module_id          = 10;
+  SeriesNullPolicy null_policy = 11;  // [LNUL.8.6]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "LTIM.4.1.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.4.1",
+  "seq": 293,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[LTIM.4.1.1] The runtime must support:\n\n| Expression | Result |\n|---|---|\n| `Time - Time` | `Duration` |\n| `Time + Duration` | `Time` (`tz_offset_ns` of the LHS preserved) |\n| `Time - Duration` | `Time` (`tz_offset_ns` of the LHS preserved) |\n| `Duration + Duration` | `Duration` |\n| `Duration - Duration` | `Duration` |\n| `Int * Duration`, `Duration * Int` | `Duration` |\n| `Float * Duration`, `Duration * Float` | `Duration` |\n| `Duration / Int`, `Duration // Int` | `Duration` (integer division of nanoseconds) |\n| `Duration / Float`, `Duration // Float` | `Duration` |\n| `Duration % Duration` | `Duration` ([LUNI.8.1]) |\n| `Duration / Duration` | `Float` ([LUNI.8.1]) |\n| `Duration // Duration` | `Int` ([LUNI.8.1]) |\n\nA `Duration`-valued row whose exact result in nanoseconds is negative yields\n`0_s` ([LTIM.1.3.1]): `Time - Time` with the left operand the earlier,\n`Duration - Duration` with the right operand the larger, and a product or\nquotient with a negative number. How the compiler lowers the saturation is\n[RLOW.6.1.6].\n\nA `Duration`-valued row with a `Float` operand takes the `Float` operation over\nthe nanoseconds ([LEXP.7.3]) and rounds its result, ties to even, to a whole\nnumber of nanoseconds ([LEXP.3.2]). A non-finite result, or one outside `Int`,\nraises a `ComputationError` of kind `NOT_REPRESENTABLE` ([LERR.1.4.10]). A zero\ndivisor is [LEXP.7.15.1]'s. Every other pair of a `Duration` and a number or a\n`Duration` is [LUNI.8.3]'s or [LUNI.8.4]'s.\n\nThe runtime must evaluate `Time + Duration`, `Time - Duration` and `Time - Time`\nexactly. A `Time` result outside the representable range raises as [LTIM.1.1.5]\nstates. `Time - Time` saturates at any distance between its operands, and a\nresult greater than $2^{63} - 1$ nanoseconds, which no `Duration` holds, raises a\n`ComputationError` of kind `NOT_REPRESENTABLE` ([LERR.1.4.10]), never a wrap.\n\n",
+  "refs": [
+    "LERR.1.4.10",
+    "LEXP.3.2",
+    "LEXP.7.15.1",
+    "LEXP.7.3",
+    "LTIM.1.1.5",
+    "LTIM.1.3.1",
+    "LUNI.8.1",
+    "LUNI.8.3",
+    "LUNI.8.4",
+    "RLOW.6.1.6"
+  ]
+}

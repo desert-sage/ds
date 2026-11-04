@@ -1,0 +1,10 @@
+{
+    "id": "RTIM.14.13.oracle_rule_names",
+    "category": "compiler",
+    "scenario": "[RTIM.14.13]: the rule synthesized for a `produces` assertion is named `$dstest_oracle_<t>_<i>` -- `<t>` the test's 1-based position among the file's tests, `<i>` the assertion's 0-based position among that test's assertions. Two tests: the first's only assertion is a `where` (so `$dstest_oracle_1_0`); the second's `where` is its SECOND assertion, after an `activated`, which takes index 0 and makes no rule (so `$dstest_oracle_2_1`, and no `$dstest_oracle_2_0`). The synthesized rules are appended after the author's, so they take the last terminal ordinals ([LDET.5.4]). Path: `dsc.dstest.rtim_14_11_oracle_rules` names them with `rtim_14_13_oracle_rule_name`; the TerminalNode sequence is read off the artefact.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Heater scope logical:\n    zone: String key\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    emit Heater logical zone: r.zone\n\ntest \"one\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        emitted Heater h where h.zone == \"a\"\n\ntest \"two\":\n    inputs:\n        at 0_s:\n            Reading zone: \"b\" celsius: 1.0\n    produces:\n        activated cold\n        emitted Heater h where h.zone == \"b\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["cold", "$dstest_oracle_1_0", "$dstest_oracle_2_1"]
+    }
+}

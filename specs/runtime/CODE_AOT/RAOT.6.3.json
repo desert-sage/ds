@@ -1,0 +1,15 @@
+{
+  "id": "RAOT.6.3",
+  "prefix": "RAOT",
+  "doc": "CODE_AOT.md",
+  "parent": "RAOT.6",
+  "seq": 227,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[RAOT.6.3] Slot table layout (pointer-sized entries, 0-indexed):\n\n| Slot | Function |\n|------|----------|\n| 0 | `ds_wm_assert` |\n| 1 | `ds_dispatcher_publish` |\n| 2 | `ds_dispatcher_call` |\n| 3 | `ds_dispatcher_cache_set` |\n| 4 | `ds_dispatcher_cache_delete` |\n| 5 | reserved: holds no function, and its number is never reissued ([STYL.2.8.7]) |\n| 6 | `ds_dispatcher_log` |\n| 7 | `ds_dispatcher_fmt_float` — **not a verb**; a formatting service, see [IDSP.14.2] |\n\n**The table's byte size must be rounded up to a 16-byte boundary.** That size is\none number shared by three producers — the padding the compiler prepends, the\nlinker origin, and the entry offset the loader adds — and the constraint on it is\nderivable from none of them in isolation, which is why it is stated here rather\nthan left in their comments. `ld` aligns the blob section to 16, so an unaligned\norigin is silently bumped and the difference comes back as leading padding the\nloader does not account for: the engine then jumps into padding rather than into\nthe entry point. A length change is not the uniform shift that\nRIP-relative displacement cancels, which is why this bites a host arch and not\nonly the XIP targets.\n\n",
+  "deferred": true,
+  "refs": [
+    "IDSP.14.2"
+  ]
+}

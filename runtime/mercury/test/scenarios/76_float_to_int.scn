@@ -1,0 +1,14 @@
+# Float :: Int past the int64 range.
+#
+#   r1  x = 5.5      the control: `5.5::Int` is 5, `nonzero` fires.
+#   r2  x = 1e30     past INT64_MAX: the cast traps NOT_REPRESENTABLE, the
+#                    fault is recorded and `nonzero` does not fire.
+#   r3  x = -1e30    the same below INT64_MIN.
+#
+# One fact per entity, never superseded.
+assert Reading entity_id=r1 x=5.5
+pump
+assert Reading entity_id=r2 x=1e30
+pump
+assert Reading entity_id=r3 x=-1e30
+pump

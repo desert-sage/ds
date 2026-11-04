@@ -1,0 +1,20 @@
+{
+    "id": "LSER.10.9_direction_is_int",
+    "category": "logical",
+    "scenario": "LSER.10.9 / LSER.17.2: `direction` returns an `Int?` -- `-1`, `0` or `+1` -- and is `null` while cold and over one sample. Drives the companion read `s.direction` of a `sliding` declaration through typecheck (an `Int` compared with `>= -1`, which a String-typed read cannot satisfy statically) and the series read path, the raw-sample backing (SeriesBackendRingBuffer) in both runtimes. Values 10, 20, 30, one per pump, each read pre-sample (LSER.8.6.1): the first read is cold and the second sees one sample, and both are `null`, so the guard holds neither and nothing logs; the third sees [10, 20], rising, and logs 1.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    direction sliding 1_h\n\nrule r:\n    Reading s where s.direction is not null and s.direction >= -1\n->\n    log info \"direction {s.direction}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":30 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["direction 1"]
+    }
+}

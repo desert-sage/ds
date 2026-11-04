@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Alpha regex tests with flags ([RLOW.5.2.2], [RDSC.4a.6]). Each `~` is on
+# the pattern's own non-nullable String slot, so it is hoisted onto an alpha
+# node with its flags folded into the pattern as `(?f:p)`. Each of `i`, `m`
+# and `s` meets an input where the flag alone changes the answer, beside a
+# twin rule with no flag. `seed` emits the subjects, since a scenario value
+# cannot carry a newline.
+#
+# Expected: "i", "m", "s", and no "no ..." line.
+
+use default
+
+schema Seed scope logical:
+    n: Int key
+
+schema Log scope logical:
+    id: Int key
+    msg: String mutable
+
+rule seed:
+    Seed s
+->
+    emit Log logical id: s.n msg: "ERROR: disk"
+    emit Log logical id: s.n + 1 msg: "a\nb"
+
+rule ri:
+    Log a where a.msg ~ /^error/i
+->
+    log info "i"
+
+rule rm:
+    Log b where b.msg ~ /^b$/m
+->
+    log info "m"
+
+rule rs:
+    Log c where c.msg ~ /a.b/s
+->
+    log info "s"
+
+rule c_i:
+    Log d where d.msg ~ /^error/
+->
+    log info "no i"
+
+rule c_m:
+    Log e where e.msg ~ /^b$/
+->
+    log info "no m"
+
+rule c_s:
+    Log f where f.msg ~ /a.b/
+->
+    log info "no s"

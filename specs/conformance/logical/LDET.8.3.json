@@ -1,0 +1,21 @@
+{
+    "id": "LDET.8.3",
+    "clauses": ["LDET.8.3.1"],
+    "category": "logical",
+    "scenario": "Multi-justifier coalescence gives the same fact set whichever justifier activated first (LDET.8.3.1). `from_a` and `from_b` both emit `Shared logical v: 1`. TrigA is asserted and pumped, so `from_a` justifies Shared first, then TrigB is asserted and pumped. TrigA, the first justifier, is retracted and pumped. Shared must still be live on `from_b`'s support: a Probe makes `read_back` log it exactly once. Its sibling, logical/LDET.8.3.1_coalesced_lifetime_b_first, runs the other order and expects the same message.",
+    "rules_ds": "schema TrigA scope logical:\n    v: Int key\n\nschema TrigB scope logical:\n    v: Int key\n\nschema Shared scope logical:\n    v: Int key\n\nschema Probe scope logical:\n    n: Int key\n\nrule from_a:\n    TrigA\n->\n    emit Shared logical v: 1\n\nrule from_b:\n    TrigB\n->\n    emit Shared logical v: 1\n\nrule read_back:\n    Probe\n    Shared s\n->\n    log info \"shared {s.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TrigA", "slots": { "v": 1 }, "as": "a" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "TrigB", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "retract", "label": "a" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["shared 1"]
+    }
+}

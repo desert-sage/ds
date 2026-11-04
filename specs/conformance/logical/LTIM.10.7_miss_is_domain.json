@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.10.7_miss_is_domain",
+    "clauses": ["LTIM.10.7", "LTIM.10.5.3"],
+    "category": "logical",
+    "scenario": "[LTIM.10.7] / [LTIM.10.5.3]: an instant no `TimeZoneOffset` fact answers is a read with no answer, a ComputationError of kind DOMAIN. The rule does not fire, the fault is on the stream, and the engine continues. One `Europe/Paris` row, +3600 from 2024-01-01T00:00Z until 2024-03-31T01:00Z, and one Event at 2024-04-01T09:00Z, past the row's `valid_until`. Two rules match the Event: `zoned`, first in source order, reads `e.seen.local(\"Europe/Paris\") - e.seen` in a `let`; `later` logs. The pump raises the computation error from `zoned`'s action and then fires `later`, so the stream holds a computation_error before the action_log. PATH PINNED: libds's `adapter_ds_local` (rete/adapters.c) through the per-zone index, and Mercury's `ds.eval.ltim_3_2_local` through `ds.wm`'s index.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule zoned:\n    Event e\n->\n    let d = e.seen.local(\"Europe/Paris\") - e.seen\n    log info \"zoned {d}\"\n\nrule later:\n    Event\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1711846800000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1711962000000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log"]
+    }
+}

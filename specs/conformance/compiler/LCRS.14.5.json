@@ -1,0 +1,11 @@
+{
+    "id": "LCRS.14.5",
+    "clauses": ["LCRS.6.3.3"],
+    "category": "compiler",
+    "scenario": "[LCRS.6.3.3] (LCRS.14.5, the id, is a tombstone): per-call `retain:` on a general (non-hydration) call/response service is reject-until-wired: honoring it requires runtime threading onto the response fact's TTL that v1 does not have, so silent acceptance would retain nothing. `retain` is a reserved modifier name (never a bindable service kwarg) but not an honored general-call modifier. Pin: `call svc.method retain: 30_s` fails loud with DS_VALIDATE_RETAIN_UNWIRED. (The three-layer retraction contract — superseding correlation / per-call retain / safety-net — is honored at the hydration endpoints, where retain: is wired.)",
+    "rules_ds": "service svc.method:\n    kwarg tag: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method retain: 30_s nocooldown as \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RETAIN_UNWIRED"
+    }
+}

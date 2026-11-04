@@ -1,0 +1,19 @@
+{
+    "id": "LSIG.1.3.1_golden_af_2",
+    "clauses": ["LSIG.1.3.1", "LSIG.2.2.3"],
+    "category": "logical",
+    "scenario": "Golden vector AF-2 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: a stuck-true sensor (true at 0, no falling edge) on `active_fraction sliding 1_min`, read at 60 s, is 1.0. The open interval is clipped to the query time and covers the whole window (LSIG.2.2.3): the query-time open-interval extrapolation, reached here by a rule firing 60 s after the only sample. At 60 s a `Probe` arrives and `read` logs the binding's `active_fraction` ([NSBK.6.3]).",
+    "rules_ds": "use default\n\nschema Pump scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Pump.state:\n    active_fraction sliding 1_min\n\nrule read:\n    Probe\n    Pump p\n->\n    log info \"{p.active_fraction}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pump", "slots": { "entity_id": "p1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 60000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1.0"]
+    }
+}

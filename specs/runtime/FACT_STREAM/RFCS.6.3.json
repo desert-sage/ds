@@ -1,0 +1,25 @@
+{
+  "id": "RFCS.6.3",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.6",
+  "seq": 371,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.6.3] `fact` is encoded using the protobuf message type defined\nby the `proto_source` field of the schema's `SchemaDef` atom. A reader\nuses the descriptor loaded from that `SchemaDef` to decode `fact`.\n\nA nullable slot's field is `optional` ([RDSC.5.8.3]). A writer **must**\nencode a `null` in such a slot by omitting the field, and **must** write the\nfield for any other value, the type's zero included. A reader **must** decode\nan absent nullable field as `null` and a present one as its value, and\n**must not** substitute the type's zero for an absent one. A non-nullable\nslot's field has no presence: an absent one is the type's zero, as protobuf\ndefines.\n\nA non-nullable `Json` or fact-reference slot has no such zero. Empty text is no\nJSON document, a `null` root is not a value of that slot ([LNUL.3.4]), and a\nhandle is never 0. A writer **must** write the field, and a reader **must** refuse\nthe body with `DS_ERR_PARSE` where it is absent.\n\n**A `Json` field whose document is `null` at its root is the canonical `null`**\n([LNUL.3.4]). A writer **must not** write one, since a\n`null` is the omitted field. A reader **must** decode one as `null` in a nullable\nslot, and **must** refuse the body with `DS_ERR_PARSE` in a non-nullable one.\n\n**A `String` or `Json` field holds well-formed UTF-8** (RFC 3629). A reader **must**\nrefuse with `DS_ERR_PARSE` a body in which such a field's text is not, as a\nmalformed body and not as [LSTR.8.5]'s host text. It **must not** repair the text.\nA `Bytes` field holds any octets.\n\nA fact-reference slot's field is `uint64` ([RDSC.5.8.3]), and carries the\n`fact_id` under which the referenced fact was recorded earlier in the same\nstream. That fact always precedes the one that refers to it, because a\nreference is written when the referring fact is asserted ([LGRA.5.7a.2]) and the\nfact it names was live then. A writer **must** write that handle, and a reader\n**must** resolve it to the fact recorded under it. That is the fact a record\ncarries, or a fact an `ExternalAssert` delivered, whose handle its `fact_ids`\nlists although no record carries its body ([RFCS.24.3]). A handle identifies a\nfact within one stream and nowhere else ([RFCS.4]).\n\n",
+  "refs": [
+    "LGRA.5.7a.2",
+    "LNUL.3.4",
+    "LSTR.8.5",
+    "RDSC.5.8.3",
+    "RFCS.24.3",
+    "RFCS.4"
+  ],
+  "errors": [
+    "DS_ERR_PARSE"
+  ],
+  "atoms": [
+    "SchemaDef"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.1.3",
+  "category": "logical",
+  "scenario": "Logical and comparison operators per LEXP.1 — and, or, not, ==, !=, <, <=, >, >=.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule and_rule:\n    T t where t.v > 2 and t.v < 8\n->\n    log critical \"and\"\n\nrule or_rule:\n    T t where t.v == 1 or t.v == 5\n->\n    log critical \"or\"\n\nrule not_rule:\n    T t where not t.v == 99\n->\n    log critical \"not\"\n\nrule neq:\n    T t where t.v != 4\n->\n    log critical \"neq\"\n\nrule lte:\n    T t where t.v <= 5\n->\n    log critical \"lte\"\n\nrule gte:\n    T t where t.v >= 5\n->\n    log critical \"gte\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["and_rule", "or_rule", "not_rule", "neq", "lte", "gte"]
+  }
+}

@@ -1,0 +1,65 @@
+# lowered from the probe timed.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# timed.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment: a `where` that reads a clock is
+# lowered with the clock leaves of Rete/NetworkTimed.idr -- `dwell <rank>`,
+# the monotonic sample less the fact's entry stamp in clock units, scaled to
+# nanoseconds by `mul lit i:<unit>` so that the `where` compares durations as
+# written (LEXP.9.5.1) -- and a positive pattern's `within d` as `dwell < d`
+# conjoined before the pattern's `where` (RLOW.5.4, LTIM.2.7.1). Three kinds:
+# Motion (0, entity: zone String key, n Int mutable), Sensor (1, relation: k
+# key), Occupied (2, relation: k key). The time map's unit is 2 s, the gcd of
+# the three 2 s advances, the 60 s advance and the 60 s cooldown window: the
+# window is 30 units, the ticks 1, 2, 3 and 33, and every `dwell` is scaled by
+# 2000000000. Rule 0 `settled` is timed (`dwell >= 2 s`) and cooled on
+# Motion's zone; rule 1 `occupy` is timed (`within 3 s`) and emits Occupied by
+# the Sensor's key (emitx); rule 2 `gone` has an untimed `no` node; rule 3
+# `plain` has no test. The pump re-times rules 0 and 1 at its entry over the
+# entry stamps (IRET.19.5 steps 1 to 3, LTIM.2.4.3): at 0 `occupy` fires and
+# `gone` is blocked by the emit; at 1 `settled` matures and is admitted; at 2
+# the window closes, Occupied 1 is retracted by the cascade and `gone` fires;
+# the replace of Motion a mints a wrapper stamped 2 and `plain` fires for it;
+# at 3 the wrapper matures, `settled` fires and is `gated` inside the window;
+# at 33 the match persists and nothing fires; Sensor 2 at 33 is inside its
+# window at the pump and `occupy` fires. Keys are the codes of one String (a
+# is token 0) or one Int (8 * zigzag(n) + 2); payloads one Int or the empty
+# tuple (1); no text is read, so no `string` records.
+schema 0 entity Motion
+schema 1 relation Sensor
+schema 2 relation Occupied
+alpha 0 0
+alpha 1 1
+alpha 2 2
+rule 0 settled
+pattern 0 0 0
+where 0 0 ge mul lit i:2000000000 dwell 0 lit i:2000000000
+cool 0 30 1 slot 0 key 0
+log 0 0 1 slot 0 key 0
+rule 1 occupy
+pattern 1 1 0
+where 1 0 lt mul lit i:2000000000 dwell 0 lit i:3000000000
+emitx 1 2 1 0 slot 0 key 0
+log 1 0 1 slot 0 key 0
+rule 2 gone
+pattern 2 1 0
+pattern 2 2 1
+where 2 1 eq slot 1 key 0 slot 0 key 0
+log 2 0 1 slot 0 key 0
+rule 3 plain
+pattern 3 0 0
+log 3 0 1 slot 0 key 0
+step assert _0 0 1000000000000000000003 1000000000000000000002
+step assert _1 1 1000000000000000000018 1
+step pump
+step tick 1
+step pump
+step tick 2
+step pump
+step assert _2 0 1000000000000000000003 1000000000000000000018
+step pump
+step tick 3
+step pump
+step tick 33
+step pump
+step assert _3 1 1000000000000000000034 1
+step pump

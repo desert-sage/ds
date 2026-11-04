@@ -1,0 +1,27 @@
+{
+  "id": "RDSC.5a.2",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.5a",
+  "seq": 854,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.5a.2] **Triple-driven backend selection.** The\ncompiler reads each observation triple\n(aggregation × time-model × accuracy) declared on the\nseries, groups triples by compatible backings per\n[LSER.18.1],\ncoalesces shared backings, and emits exactly the backend\natoms needed. The wire shapes below name the v1 backings\nthe matrix maps to:\n\n- `SeriesBackendWelfordEwma` — Welford running stats. Selected for\n  every aggregation [LSER.18.1] backs with it on `all_time`\n  (cumulative semantics). v1 is cumulative-only.\n- `SeriesBackendRingBuffer` — exact ring buffer. Selected for any\n  aggregation on `sliding <dur>` whose triple admits\n  exact backing per the matrix.\n- `SeriesBackendMonotonicDeque` — monotonic deque. Selected for **exact** `min` / `max`\n  on `sliding`.\n- `SeriesBackendFifoDeque` — FIFO deque. Selected for `first` / `bool_and` /\n  `bool_or` on `sliding`.\n- `SeriesBackendReservoir` — reservoir. Selected for the bag aggregations on the\n  `sample <n>` time model; `max_samples` carries `n`.\n- `SeriesBackendIntervalPulse` — interval pulse ([RDSC.5a.9]). Selected for\n  `active_fraction` on `sliding` ([LSIG.1.1]).\n- `SeriesBackendNumericIntegral` — numeric integral ([RDSC.5a.10]). Selected for\n  `integral` on `sliding` and `all_time` ([LSIG.1.1]).\n\nEvery quantile / cardinality /\nmembership / top-k need defers to the exact `SeriesBackendRingBuffer` bag.\n\nThe matrix is the source of truth for triple → backend\nselection; the wire shapes below are stable, but the\nselection rules summarised here are illustrative and\nevolve with the matrix.\n\n**A backing no rule reads is not emitted.** The compiler **may** omit a backing\nthat serves no aggregation a rule reads, whether or not the series' other\nbackings are read, and a series no rule reads emits no backend atom at all.\nSuch a series has no meaning: nothing but a rule\nreads a series ([NSBK.6.3]).\n\n",
+  "refs": [
+    "LSER.18.1",
+    "LSIG.1.1",
+    "NSBK.6.3",
+    "RDSC.5a.10",
+    "RDSC.5a.9"
+  ],
+  "atoms": [
+    "SeriesBackendFifoDeque",
+    "SeriesBackendIntervalPulse",
+    "SeriesBackendMonotonicDeque",
+    "SeriesBackendNumericIntegral",
+    "SeriesBackendReservoir",
+    "SeriesBackendRingBuffer",
+    "SeriesBackendWelfordEwma"
+  ]
+}

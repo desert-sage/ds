@@ -1,0 +1,159 @@
+{
+  "id": "RARC.5.6.6",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.6",
+  "seq": 613,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "5. [RARC.5.6.6] During a pump, the conflict resolver fires activations\n   one at a time until the agenda is empty or a real-time tier's firing limit\n   is reached ([RTCT.7.1]); each firing reaches the stream as rule-fire events.\n",
+  "refs": [
+    "RTCT.7.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "rarc_5_6_6__derives",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "rarc_5_6_6__derives_projects_onto_kinds",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A support edge between two facts -- one matched and one produced by a firing -- is a kind edge between their kinds, by the firing's rule, at scope 6. The bridge from the kind graph to the fact graph in derivation_graph.als's acyclicity argument."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "rarc_5_6_6__firing",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/ConsumptionLoop.idr",
+        "name": "rarc_5_6_6__fire_phase",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The fire phase as the engine model runs it (Rete/FireLoop.idr's iret_11_4__run): one firing per step, the limit as fuel, Quiescent or FuelOut for which disjunct stopped it, the fire count from the same recursion. Partial because the clause's disjunction is only half supplied by the corpus: \"a firing limit\" is defined nowhere in RARC (the only one is max_fires_per_pump in the optional [RTCT.7.1]), and \"the agenda is empty\" arrives only for programs certified under [LCYC.3.1.1] (lcyc_1_1__certified_terminates); Lcyc/Witnesses.idr exhibits programs that never drain."
+      },
+      {
+        "path": "formal/idris/ConsumptionLoop.idr",
+        "name": "rarc_5_6_6__quiescent_means_no_step",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A run reporting Quiescent stopped in a state with no pending activation (iret_11_4__step answers Nothing there), so an implementation cannot exit on its counter and report that it drained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_6__pump_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One pump on the network: fire until the agenda is empty or the fuel is spent, reporting which and how many firings."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "rarc_5_6_6__pump_quiesces",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE AGENDA EMPTIES. For a positive program certified as [LCYC.3.1.1] admits it, from an invariant state some fuel makes the pump halt on an empty agenda -- the clause's first disjunct, which the abstract loop of ConsumptionLoop.idr could not state -- and the invariant holds there."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "rarc_5_6_6__pump_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One pump on the engine with truth maintenance: fire until the agenda is empty or the fuel is spent, reporting which and how many firings. The concrete counterpart of ConsumptionLoop.idr's abstract loop."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "rarc_5_6_6__quiescent_means_empty",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The halt reason is honest: a pump reporting quiescence left an agenda that fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_6__pump_ttl_engine",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AGREEMENT: a pump with the deadline table is the engine's pump on the engine -- the same state and the same halt."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_6__pump_ttl_quiesces",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE AGENDA EMPTIES with the deadline table: for a certified positive program, from an invariant clocked state some fuel halts the pump on an empty agenda, by agreement with the engine's pump, and the clocked invariant holds there."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__Apply",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__End",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__Min",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__STEP",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__Select",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__activates",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__agenda",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__cur",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__emitted",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__fire",
+        "tag": "spec",
+        "note": "One firing, written once: the atomic step of [RARC.13.16] iterates it and the fine-grained pump takes it in three steps, so the refinement is about the interleaving of the pump with the integrator's callback and not a second transcription of the firing."
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_6__phase",
+        "tag": "spec"
+      }
+    ]
+  }
+}

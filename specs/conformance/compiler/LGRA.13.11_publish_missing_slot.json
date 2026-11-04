@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.13.11_publish_missing_slot",
+    "category": "compiler",
+    "scenario": "LGRA.13.11 for `publish`, the companion to LGRA.13.11_missing_slot's `emit`: a `publish` gives every non-nullable slot of the schema a value, except `ts`; the compiler must reject one that omits one (DS_VALIDATE_MISSING_SLOT). Pin: `publish Out` giving the key `n` and omitting `m` (non-nullable), while omitting the nullable `note` as allowed. Path: the validator's slot check for `publish`, the same walk of the schema's slots against the kwargs given that `emit` takes.",
+    "rules_ds": "schema In scope logical:\n    a: Int key\n\nschema Out scope logical:\n    n: Int key\n    m: Int mutable\n    note: String? mutable\n\nrule r:\n    In i\n->\n    publish Out n: i.a\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_MISSING_SLOT"
+    }
+}

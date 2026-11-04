@@ -1,0 +1,94 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// ComputationError — the ComputationError atom body (registry 325), the recorded half of a
+// TRAP.
+//
+// This is the class that abandons a computation and leaves the engine intact.
+// `EngineError` (`engine_fault.proto`) is a different class: engine state is no
+// longer trustworthy and the tier halts ([LERR.1.4.7]).
+//
+// THE FILE KEEPS ITS PATH. `proto/engine_error.proto` is this message's
+// official reference ([STYL.2.14.3]) and a move is a rename with fixups
+// ([STYL.5.2.6]), so renaming the file to match the message would break every
+// citation to buy a tidier basename.
+//
+// [LERR.1.4.7] gives the shape: kind, rule / activation / slot context, and
+// source location through the ruleset hash. [LERR.9.1] gives the ordering —
+// record THIS event, then assert the fault fact, then invoke the integrator
+// callback. The fault fact is recorded too, as a FactEmit ([LERR.9.8]); the
+// callback is the one surface that leaves no trace in the run.
+//
+// SKIP-DON'T-REJECT, deliberately. A trap event is
+// PROVENANCE: a replayer that does not know this atom should replay the run
+// rather than refuse it, and the honest signal for "this stream is not what it
+// appears" is a recorder-failure discontinuity, not an atom kind. 325 is inside
+// the 256-2047 skip band ([RFCS.16.2]).
+//
+// Identity is `rule_name` + `timetag`, the SAME pair CallIssued and
+// RuleFireAnnotation carry, so a trap joins to the activation that caused it
+// without a new join key.
+message ComputationError {
+  TrapKind kind        = 1;
+  // Activation identity ([RFCS.21.1]'s pair — the CallIssued / RuleFireAnnotation join key).
+  string   rule_name   = 2;   // the fault's rule name ([LERR.9.11]); never ""
+  int64    timetag     = 3;   // 0 for a trap raised while matching: no activation ([RFCS.21.1])
+  // Slot context: the fault's offending operand ([LERR.9.12]). All three are
+  // set when that operand is a slot read, and absent otherwise: in
+  // `100 / (x - x)` no fact or slot supplied the value.
+  string   schema_name = 4;
+  string   slot_name   = 5;
+  uint64   fact_id     = 6;
+  // Source location. The stream header carries the ruleset's dsc_sha256, so the
+  // in-ruleset locator is the node, which LineSpan maps to a line ([RDSC.14.3]).
+  uint32   node_id     = 7;
+  // Recoverability is a property of the OCCURRENCE, not of the kind
+  // ([LERR.1.4.9]) — the test is whether engine state is still trustworthy —
+  // which is why it is on the wire rather than derived from `kind`.
+  // Every `TrapKind` is `reported`, so it does not vary within this message.
+  // It stays because the distinction it carries is the one BoundsError (engine
+  // intact) and EngineError (engine not) separate; dropping it here would merge
+  // them again at one remove.
+  bool     recoverable = 8;
+  // Recording provenance, same fields CallIssued carries.
+  uint64   clock_ns    = 9;
+  uint64   seq         = 10;
+}
+
+// The CLOSED set of [LERR.1.4.9]: three kinds. An addition is a breaking
+// change, not an append, which is what lets a rule branch on a kind instead of
+// string-matching a message.
+//
+// THE RESERVED MEMBERS ([LERR.1.4.9]), and why none is a TrapKind:
+//
+//   TRAP_OVERFLOW (4)            NO REACHABLE RAISER. There is no runtime
+//                                `Rational` arithmetic ([LUNI.2.4] makes
+//                                Rational compile-time, folded before code
+//                                generation, with overflow during folding a
+//                                COMPILE error). Every other arithmetic
+//                                domain is closed against it too: integer
+//                                overflow wraps by design ([LEXP.7.13.1]) and
+//                                float overflow yields ±Inf, which [LEXP.4.2]
+//                                PERMITS.
+//   TRAP_RESOURCE_EXHAUSTED (5)  is a BoundsError where a DECLARED cap is the
+//                                limit, and an EngineError otherwise
+//                                (ENGINE_FAULT_ALLOCATION).
+//   TRAP_RECORDER_FAILURE (6)    is no computation error. A failing stream
+//                                sink is reported through the call's status
+//                                ([NCBK.1.5]) and is no fault at all.
+//
+// RESERVED by the enum-level mechanism rather than a comment
+// (`styl_5_9_2_proto_append_only`, [STYL.2.8.7]), so no later append recycles a
+// number a reader has a table entry for.
+enum TrapKind {
+  reserved 4, 5, 6;
+  reserved "TRAP_OVERFLOW", "TRAP_RESOURCE_EXHAUSTED", "TRAP_RECORDER_FAILURE";
+
+  TRAP_UNSPECIFIED       = 0;
+  TRAP_DIVIDE_BY_ZERO    = 1;
+  TRAP_DOMAIN            = 2;
+  TRAP_NOT_REPRESENTABLE = 3;
+}

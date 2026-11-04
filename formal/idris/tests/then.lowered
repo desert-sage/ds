@@ -1,0 +1,56 @@
+# lowered from the probe then.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# then.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment, rung R1: a `then Y within T` step is lowered as the next positive
+# pattern of its chain under the join `Y.ts > X.ts and Y.ts - X.ts < T` on
+# the facts' `ts` (LTHE.2.2.2, RLOW.5.6.1), the step's own `where` conjoined
+# after it (RLOW.5.6.4). Three entity kinds X (0), Y (1) and Z (2), each with
+# ts as payload 0 and, for X and Y, zone as payload 1; the bound is the
+# duration in nanoseconds as a `lit i:` (5_s; 3_s for the one-line rule).
+# Rule 0 `pair` and rule 3 `one_line` -- the line-leading and the one-line
+# layouts of LGRA.8.5.2, lowered alike -- carry the bare join on pattern 1;
+# rule 1 `same_zone` conjoins `y.zone == x.zone` after it; rule 2 `chain`
+# adds a third pattern whose join reads pattern 1, not pattern 0
+# (LTHE.2.3.1). Seven facts -- X at ts 0 and 2 s, Y at 2 s, 5 s and 7 s, Z at
+# 4 s and 9 s -- and one pump: six firings, `pair` twice (X1 Y1, X2 Y2),
+# `same_zone` once (X1 Y1), `chain` twice (X1 Y1 Z1, X2 Y2 Z2), `one_line`
+# once (X1 Y1); a pair at one ts and pairs exactly T apart fire nothing. The
+# keys are the codes of the ids 1 to 7 (8 * zigzag(n) + 2) and the payloads
+# the codes of (ts, zone), an Int 8 * zigzag(n) + 2 and a String 8 * token
+# + 3 (a is token 0, b token 1); no text is read, so no `string` records.
+schema 0 entity X
+schema 1 entity Y
+schema 2 entity Z
+alpha 0 0
+alpha 1 1
+alpha 2 2
+rule 0 pair
+pattern 0 0 0
+pattern 0 1 0
+where 0 1 and gt slot 1 pay 0 slot 0 pay 0 lt sub slot 1 pay 0 slot 0 pay 0 lit i:5000000000
+log 0 0 0
+rule 1 same_zone
+pattern 1 0 0
+pattern 1 1 0
+where 1 1 and and gt slot 1 pay 0 slot 0 pay 0 lt sub slot 1 pay 0 slot 0 pay 0 lit i:5000000000 eq slot 1 pay 1 slot 0 pay 1
+log 1 0 0
+rule 2 chain
+pattern 2 0 0
+pattern 2 1 0
+where 2 1 and gt slot 1 pay 0 slot 0 pay 0 lt sub slot 1 pay 0 slot 0 pay 0 lit i:5000000000
+pattern 2 2 0
+where 2 2 and gt slot 2 pay 0 slot 1 pay 0 lt sub slot 2 pay 0 slot 1 pay 0 lit i:5000000000
+log 2 0 0
+rule 3 one_line
+pattern 3 0 0
+pattern 3 1 0
+where 3 1 and gt slot 1 pay 0 slot 0 pay 0 lt sub slot 1 pay 0 slot 0 pay 0 lit i:3000000000
+log 3 0 0
+step assert _0 0 1000000000000000000018 1000000000000000000002000000000000000000003
+step assert _1 0 1000000000000000000034 1000000000032000000002000000000000000000011
+step assert _2 1 1000000000000000000050 1000000000032000000002000000000000000000003
+step assert _3 1 1000000000000000000066 1000000000080000000002000000000000000000003
+step assert _4 1 1000000000000000000082 1000000000112000000002000000000000000000011
+step assert _5 2 1000000000000000000098 1000000000064000000002
+step assert _6 2 1000000000000000000114 1000000000144000000002
+step pump

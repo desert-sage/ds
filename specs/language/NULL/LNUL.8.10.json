@@ -1,0 +1,49 @@
+{
+  "id": "LNUL.8.10",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.8",
+  "seq": 318,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.8.10] **Nullable identity/key slot — forbidden.** A `key` / identity slot\nmust be **non-null**: the compiler refuses a nullable identity slot with\n`DS_VALIDATE_NULLABLE_KEY`. Identity relies on **total** equality,\nand `null` breaks it — under the `[LNUL.8.2]` split a null key is non-matching\nagainst another null (SQL-style), so a nullable identity silently (a) defeats the\n`logical` one-live-per-identity upsert invariant (two null-keyed facts are\ndistinct identities, never coalesce, and **accumulate without bound**), and (b)\ndegenerates the identity hash, since every null key hashes to the pinned\n`DS_NULL_HASH64` ([LNUL.8.8]) yet compares non-equal — a single-bucket O(N) probe\nchain of mutually-non-matching facts, the same bounded-RT / token-budget DoS\n`[LNUL.8.2]` exists to forbid, moved onto the identity plane. Key markers are\n`logical`-only, so this forbids exactly the meaningless case (a null identity) and\nnothing else.\n\n",
+  "refs": [
+    "LNUL.8.2",
+    "LNUL.8.8"
+  ],
+  "errors": [
+    "DS_VALIDATE_NULLABLE_KEY"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "Lnul_8_10__same_typed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two non-null values of one type: what a `linear_scan: false` anchor compares, since it pins `key` slots ([LNLS.3.3]) and a `key` slot is never null ([LNUL.8.10])."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__typed_anchor_decided",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A NOLINSCAN ANCHOR IS DECIDED: an equality of two non-null values of one type answers true or false, never null and never a trap, so `iret_7_5_1__probe_negated`'s condition holds for every `no` node a `linear_scan: false` program can load."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnls_3_3__negated_anchor_probe",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A no node probes on its anchor without loss when both anchored slots are non-null and of one type on every candidate. The keyed form gives that premise ([LNUL.8.10]). The singleton form gives it through [LNLS.3.3]'s refusal of an anchor on a nullable singleton slot, which the model does not state, so there the theorem assumes what the clause guarantees."
+      }
+    ]
+  },
+  "symbols": [
+    "DS_NULL_HASH64"
+  ]
+}

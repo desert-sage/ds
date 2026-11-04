@@ -1,0 +1,20 @@
+{
+  "id": "LEXP.6.1",
+  "clauses": ["LEXP.12.8"],
+  "category": "logical",
+  "scenario": "JSON introspection per LEXP.6 — has() checks whether a JSON key is present at runtime. Rule fires only when the key exists in the JSON slot value. body slot receives a Python dict (JSON object) so the stored CLIPS string is a parseable JSON object.",
+  "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r_has_key:\n    Payload p where has(p.body.temperature)\n->\n    log critical \"has_temp\"\n\nrule r_no_key:\n    Payload p where has(p.body.humidity)\n->\n    log critical \"has_humid\"\n",
+  "dead_rules_expected": ["r_no_key"],
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Payload",
+        "slots": { "body": {"temperature": 22, "pressure": 1013} }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["has_temp"]
+  }
+}

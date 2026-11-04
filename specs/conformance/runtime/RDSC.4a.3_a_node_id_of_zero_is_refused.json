@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.3_a_node_id_of_zero_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.3]: a node's `node_id` of 0 is reserved as null, so an `AlphaNode` carrying it is refused at load with DS_ERR_RETP_INVALID (-601). No compiler writes one, so the harness compiles rule `on_t`, whose network is `T`'s `AlphaNode` (node 1, the compiler's node counter starting at 1), its `BetaNode` (2) and its `TerminalNode` (3), and `runtime_error`'s `tamper: {set_field: {node: 1, path: [1], value: 0}}` ([RCTS.1.2.21]) writes the alpha's field 1, `node_id`, as 0 and re-seals `dsc_sha256` ([RDSC.3.6]), so the refusal is the id's and not the hash's. What it discriminates: a loader that takes 0 as an id maps the alpha under the null id and loads, and the vector fails as unrefused; one that refuses it as dangling (-506) or for its semantics (-504) fails on `code`. Its sibling `RDSC.8.7_a_zero_node_id_is_refused_before_a_dangling_schema` holds it before a name. PATHS: libds's atom walk (`ds_engine_load_dsc`), which decodes each node body in full at its frame (`ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 0\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [1], "value": 0}},
+        "code": "-601"
+    }
+}

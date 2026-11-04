@@ -1,0 +1,30 @@
+{
+    "id": "LADP.8.5.2_plain_number_unchanged",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.2]: a written number with no unit, on a unit-typed kwarg, is taken as already in the kwarg's unit and the service receives it unchanged. `hvac.set` declares `t: celsius`; rule `go` writes `t: 20`, and the integrator receives 20. PATH PINNED: `ladp_8_5_2_written_dimension` in dsc.validate, which admits a dimensionless value on a unit-typed kwarg, and the plain call lowering, which sends the literal as written. The break is converting a plain number as if it were in the base unit (20 K to -253.15 °C), or refusing it as a dimension mismatch.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nservice hvac.set:\n    kwarg t: celsius required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set t: 20 nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "t": 20
+                }
+            }
+        ]
+    }
+}

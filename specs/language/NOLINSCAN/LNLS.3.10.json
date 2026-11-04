@@ -1,0 +1,20 @@
+{
+  "id": "LNLS.3.10",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.3",
+  "seq": 392,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "String slots used in string operations must carry `capacity`",
+  "text": "### String slots used in string operations must carry `capacity` [LNLS.3.10]\n\nA `String`-typed slot that appears as an operand to any of the\nfollowing built-in string operations must declare `capacity N`\n([LSTR.11.1]) in its schema declaration, and the compiler refuses one that\ndoes not with `DS_VALIDATE_NOLINSCAN_UNBOUNDED_STRING_OP`:\n\n| Operation | Without `capacity` | With `capacity N` |\n|---|---|---|\n| `<`, `>`, `<=`, `>=` on String (single-pattern only) | O(len) strncmp | O(N) = O(1) |\n| `~`, `!~` regex (already LNLS.3.7) | O(L×P) | O(N×P) = O(1) |\n\n`len(s)` is exempt.\n\n`==` and `!=` comparisons are O(1) for interned strings (pointer\nequality) and do not require `capacity`.\n\n**Rationale**: without a declared bound, the runtime cost of these\noperations grows with the string content — a data-dependent quantity\nnot visible at compile time.  With `capacity N`, the cost is O(N)\nwhere N is a compile-time constant (N codepoints are at most 4N bytes);\nthe operation is O(1) in the algorithmic sense.\n\n**Interaction with LNLS.3.7**: LNLS.3.7 (regex requires `capacity`)\nis a special case of LNLS.3.10.  When both would apply, the compiler\nreports [LNLS.3.7]'s code, `DS_VALIDATE_NOLINSCAN_UNBOUNDED_REGEX`.\n\nThe error must name the first use of the slot in a string operation in\nthe file.  Subsequent uses of the same slot do not generate additional\ndiagnostics for the same root cause.\n\n",
+  "refs": [
+    "LNLS.3.7",
+    "LSTR.11.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_NOLINSCAN_UNBOUNDED_REGEX",
+    "DS_VALIDATE_NOLINSCAN_UNBOUNDED_STRING_OP"
+  ]
+}

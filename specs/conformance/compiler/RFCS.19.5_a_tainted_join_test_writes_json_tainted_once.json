@@ -1,0 +1,10 @@
+{
+    "id": "RFCS.19.5_a_tainted_join_test_writes_json_tainted_once",
+    "category": "compiler",
+    "scenario": "[RFCS.19.5]'s at-most-once rule holds for `Expr.json_tainted` (19), which is not repeated. A `where` whose conjunction is split into an alpha test and one remaining conjunct that reads a `Json` projection leaves that conjunct tainted, and the rebuilt join inherits the taint ([IRET.9.6]), so the expression the writer is handed carries the flag twice over. It must write field 19 once. The program's `r.id == \"a\"` is the alpha test and `r.payload.depth > 1` the tainted conjunct. `atoms` requires the artefact to hold the `AlphaNode` and the `TerminalNode`. The harness ([RCTS.1.2.19], `dsc_field_order`) walks the `.dsc` from its `Dsc` message by `proto/`'s field types, after showing the walk refuses the same artefact with two fields of one atom body swapped. Path: `dsc.rete`'s `rlow_5_2_1_split_alpha`, then `dsc.encode`'s `rdsc_4a_9_1_expr`, through `ds.wire`'s writer; the defect it meets is one flag written per wrapper.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    payload: Json mutable\n\nrule deep:\n    Reading r where r.id == \"a\" and r.payload.depth > 1\n->\n    log info \"deep\"\n",
+    "expect": {
+        "kind": "dsc_field_order",
+        "atoms": ["DscHeader", "Slot", "SchemaLogical", "AlphaNode", "TerminalNode"]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "LCDB.3.3.4_qualified_ttl_by_ok",
+    "category": "compiler",
+    "scenario": "LCDB.3.3.4 — the control for LCDB.3.3.4_qualified_ttl_needs_by: the same rule over the library's `ttl` schema `plant.Hot`, with `by: h.entity_id`, compiles. `entity_id` is a slot of the library's declaration, so the path resolves. PATH PINNED: `dsc.validate.lcdb_3_3_4_bad_path`'s slot lookup through `dsc.resolve.lgra_22_4_schema_of`; a resolver that found the qualified schema for the refusal and not for the path would refuse a correct key here.",
+    "rules_ds": "import plant\n\nrule alert cooldown 5_min by: h.entity_id:\n    plant.Hot h\n->\n    log critical \"overheating: {h.entity_id}\"\n",
+    "libraries": {
+        "plant": "schema Hot scope ttl 5_min:\n    entity_id: String\n    celsius: Float\n    ts: Time\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

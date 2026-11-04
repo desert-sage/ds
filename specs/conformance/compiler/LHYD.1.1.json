@@ -1,0 +1,10 @@
+{
+    "id": "LHYD.1.1",
+    "clauses": ["LCCO.1.2", "LCCO.2.1"],
+    "category": "compiler",
+    "scenario": "A `call` with `on`, `timeout`, and `error` continuations compiles cleanly per LHYD.1.1. Call actions with full continuation clauses are accepted by the parser and compiler without error.",
+    "rules_ds": "schema HaReadReply scope ttl 1_h:\n    corr: String\n    state: Int\n\nservice ha.read:\n    kwarg entity_id: String\n    response HaReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call ha.read entity_id: t.entity_id cooldown: 1_min\n        on response.state > 0:\n            log info \"ok\"\n        timeout 30_s:\n            log warning \"timeout\"\n        error:\n            log error \"failed\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

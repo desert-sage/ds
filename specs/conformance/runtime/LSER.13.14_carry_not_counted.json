@@ -1,0 +1,24 @@
+{
+    "id": "LSER.13.14_carry_not_counted",
+    "category": "runtime",
+    "scenario": "[LSER.13.14] / [LSIG.2.5.1]: a step backing's carry, the newest sample older than the window start, is the boundary value and not one of the N. `integral sliding 1_h` with `capacity: 2`, on the mock clock. Samples at t=0 and t=59 min are absorbed, both inside the window. The clock moves to t=90 min, so the t=0 sample is the carry and only the 59 min one is retained; the third assert is admitted (the carry is not one of the two) and absorbed; one second later a fourth assert is refused, with two retained samples, a bounds refusal naming CAP_SERIES_CAPACITY (DS_ERR_CONTRACT_BREACH, -710). PATH PINNED: the retained half of the pre-assert capacity count in both runtimes -- libds `ds_series_state_capacity_retained` over the row's noted instants (`now - ts < window_ns`), Mercury `ds.series.lser_13_14_retained` over `in_window` -- each of which excludes the carry the step backing keeps for its value. The third assert (step 6) is the case: the carry has left the window by its clock and has NOT yet been trimmed from libds's noted instants, which are trimmed only when the next sample is absorbed; a vector whose carry left the window before an absorb pins nothing in libds. Every pump drains the pending samples, so the count here is the retained half alone. `fault_at: 9` makes the refusal the fourth assert's and no other input's.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    power: Float mutable\n\nseries Reading.power (by: dev, capacity: 2):\n    integral sliding 1_h\n\nrule r:\n    Reading s where s.integral > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_at": 9,
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3540000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": 2.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1860000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": 3.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": 4.0 } }
+        ]
+    }
+}

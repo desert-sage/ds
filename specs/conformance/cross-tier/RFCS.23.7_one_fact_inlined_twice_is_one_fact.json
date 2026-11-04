@@ -1,0 +1,28 @@
+{
+    "id": "RFCS.23.7_one_fact_inlined_twice_is_one_fact",
+    "clauses": ["RFCS.23.7"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7] step 1: \"With no equal live fact, an earlier inlined copy in the same `FactExternal` equal to this one is the same fact, and the slot refers to what that copy resolved to.\" The sender publishes an `R` whose two slots `a` and `b` both refer to its one `T`, so the record inlines that `T` twice. The receiver holds no `T`. It takes the record ([RFCS.23.1]) and pumps: the first copy has no equal live fact and no live fact with its identity (`T` is `ttl` and keyless), so it is asserted (step 2), and the second copy is equal to it, so it is the same fact. The receiver holds 2 facts: one `T` and `R`. What it discriminates: a runtime that compares a copy only against working memory as the call found it asserts the second copy too and holds 3; one that refuses the record holds 0. PATH PINNED: libds's `fx_resolve` (rfcs/codec.c), whose `same_as` names the earlier copy (`fx_pair_vals`, `fx_canon`), through pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.resolve`, through `equal_earlier`, by test_behave.m's `receive_on_tier`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema T scope ttl 1_h:\n    v: Int\n\nschema R scope ttl 1_h:\n    k: Int\n    a: T\n    b: T\n\nschema Go scope logical:\n    k: Int key\n\nrule up:\n    Go g\n    T y\n->\n    publish R k: g.k a: y b: y\n"
+            },
+            "receiver": {
+                "rules_ds": "schema T scope ttl 1_h:\n    v: Int\n\nschema R scope ttl 1_h:\n    k: Int\n    a: T\n    b: T\n"
+            }
+        },
+        "steps": [
+            { "engine": "sender", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "receiver", "op": "forward_external", "from": "sender" },
+            { "engine": "receiver", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "receiver": 2
+        }
+    }
+}

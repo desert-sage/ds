@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.2.8.3.unset_wall_emit_ts_is_a_domain_error",
+    "category": "logical",
+    "scenario": "[LTIM.2.8.3]'s emit arm: a rule emitting a fact of a schema that declares `ts` while the wall clock has no value has no sample to fill `ts` with ([LFAC.9.2]), so the emit raises a ComputationError of kind DOMAIN, the activation is abandoned, and the engine continues. The engine is on the mock clock and the wall clock is never set (`wall_clock: unset`). One `Trig` fact matches `mark`, which emits a `Marker` (with `ts`), and `later`, after it in source order, which logs. `faulted` logs the rule and kind of the ComputationError fault fact `mark` raised ([LERR.9.2]); `leaked` logs any `Marker` in working memory and must never fire. Expected, in one pump: `later`, then `mark DOMAIN`; no `leaked`. A runtime that filled `ts` with 0, or with the monotonic sample, asserts the Marker and logs `leaked`; one that halted the tier logs neither `later` nor the fault. LTIM.2.8.3.unset_wall_now_is_a_domain_error pins the `now()` arm. PATH PINNED: libds `rete/engine.c`'s `ts_ix` fill (`ds_rete_eval_wall_ns` failing, DS_FAULT_DOMAIN), the Mercury runtime's `ds.exec` emit (`has_ts_slot` with `xc_wall = no`, `rf_domain`).",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Marker scope logical:\n    k: Int key\n    ts: Time\n\nrule mark:\n    Trig t\n->\n    emit Marker logical k: t.k\n\nrule later:\n    Trig\n->\n    log info \"later\"\n\nrule faulted:\n    ComputationError c where c.rule == \"mark\"\n->\n    log info \"{c.rule} {c.kind}\"\n\nrule leaked:\n    Marker\n->\n    log info \"leaked\"\n",
+    "dead_rules_expected": ["leaked"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["later", "mark DOMAIN"]
+    }
+}

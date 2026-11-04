@@ -1,0 +1,298 @@
+{
+  "id": "IRET.7.6",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7",
+  "seq": 593,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.6] Join tests may be evaluated in any order, and combine as\n[LNUL.4.2]'s absorbing `and`: a test returning `false` rejects the pair\nwhatever another test raises — a trap, a `TypeError` or an `EngineError` — and\nthat fault reaches no surface ([LERR.1.4.11]). When no test is `false` and\nseveral fault, the pair yields the one fault [LNUL.4.2]'s order selects. A token +\ncandidate fact pair passes the join only if all join tests\nreturn `true`. The expression evaluation context provides\naccess to all fact pointers in the current (extended)\ntoken plus the candidate fact in the \"right\" slot.\n\n",
+  "refs": [
+    "LERR.1.4.11",
+    "LNUL.4.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_7_6__conj",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A conjunct: its outcome, whether it can raise by its declared types, nullability, and its body."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_5__v5_order_independent",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ORDER INDEPENDENCE: every order gives one answer and records one atom, over every `where` of up to three conjuncts. A positional pick breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Iret_7_6__env",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a fact's key and payload ids stand for: a function from an id to the slot tuple it codes, or nothing. The model is quantified over it; the fixture runner supplies the decoder of the lowering's injective value code, so the engine's equality of ids is equality of slot values."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__admits_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A positive node passes the pair only if the test answers true."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The answer a test gives the extended token."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__blocks_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The negated node's relation. A trap BLOCKS under `no`. The clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false'), so this proves more than the clause states. The where fragment the Idris model runs produces no trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__eval",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The evaluation context the clause describes -- every fact of the extended token plus the candidate -- over the fragment of Iret_7_5__expr, not over the whole expression language."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__slot",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A slot of a fact of the extended token, the candidate last. A missing fact, an id the environment does not decode, or a missing slot reads as a trap: that is a lowering defect, not DS behaviour, and it surfaces in the Idris model as a missing firing rather than disappearing."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__strict1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A trap in the operand is raised."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_6__strict2",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Operands are evaluated left first; a trap in the left is raised before the right is looked at."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_6__joining",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The candidate facts of the right memory that pass every join test against the token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_negated",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PROBE IS TRANSPARENT AT A `no` NODE when the anchor is decided on every candidate: the blockers found in the bucket are exactly the whole list's. Under `linear_scan: false` the condition holds by construction (`iret_7_5_1__typed_anchor_decided`); without it the probe is not transparent (`iret_7_5_1__null_anchor_escapes_probe`)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__probe_positive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE PROBE IS TRANSPARENT AT A POSITIVE NODE, for an anchor wherever it stands in the test list: the bucket, tested by the other tests, is exactly what the whole list admits, traps included. The clause's 'probing on one first cannot change whether the pair passes'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__conj",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A node's tests combined: the absorbing `and` of their answers, true for none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__conj_pull",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A test WHEREVER IT STANDS in the list can be taken first: the combined answer is that test's `and` the rest's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__conj_test",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A node's test list as one test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__conj_test_pull",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The same for a node's test list, pair by pair."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__map_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Answering a split list of tests is answering each part."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__node_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The relation a node reads from its test: a positive node admits a pair answering true, a `no` node counts a candidate as a blocker unless it answers false. One test, two relations -- RLOW.5.3's 'the same join tests as the positive form'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__recompute_after_history_4",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE VIEW THEOREM WITH FOUR-VALUED TESTS: after any history every alpha memory and every terminal of the loaded four-valued network is the recompute over working memory. The view theorem is over any relation, so this is its instance; the lemmas beside it say the relations are the clauses'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnul_4_2__and_assoc",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The absorbing `and` is associative, traps included; with `lnul_4_2__and_commutes` a node's tests combine to one answer in any order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__test_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A join test over the extended token with the candidate last, as Rete/Eval.idr's `iret_7_6__admits_join` evaluates it, with the clock leaves substituted first; the conjunction of a pattern's `within` and its `where` is one expression here, so [LNUL.4.2]'s absorbing `and` combines them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "Iret_7_6__pair",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A pair a node's tests answer: rule ordinal, node position, token, candidate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_6__cross",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every token against every candidate, at one node."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Iret_7_6__conjunct",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One conjunct of a join: an outcome per (token, candidate)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Iret_7_6__out",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What one conjunct yields for a pair: true, false, null, or a fault."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_5_1__v5_probe_positive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ANCHOR PROBING AT THE NETWORK: `iret_7_5_1__probe_positive` applied to V5 wheres -- probing on any one conjunct, then joining the rest, joins what the whole `where` joins at a positive node."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__as_test",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A conjunct as a NetworkAnswer four-valued test."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__map_fuse",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Answering the conjuncts as tests is projecting their outcomes."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__v5_is_conj_test",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A V5 `where` IS NetworkAnswer's combined test of its conjuncts, pointwise: the four-valued network and its view theorem (`iret_7_6__recompute_after_history_4`), which quantify over every test, take V5 wheres unchanged."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__v5_joining",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A node over a V5 `where` joins exactly what the node over NetworkAnswer's combined test joins."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__v5_refines",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Projected onto answers, a V5 `where` is Rete/NetworkAnswer.idr's combined test `iret_7_6__conj`: the clause's 'passes only if all join tests return true', with every fault a trap."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_7_6__v5_test",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A V5 `where` as a NetworkAnswer four-valued test. V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "lnul_4_2__v5",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `where`'s answer under V5: its conjuncts combined by `and5`. V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

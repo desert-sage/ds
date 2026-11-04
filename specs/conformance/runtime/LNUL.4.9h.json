@@ -1,0 +1,21 @@
+{
+    "id": "LNUL.4.9h",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LNUL.4.9] the short-circuit §6.6.3 defers narrowing ON THE GROUNDS OF, pinned rather than assumed. The guard `s.state is not null and s.state > 5.0` runs over a null slot: the left conjunct is false, and the rule must not fire. Because narrowing beyond the two mechanical cases is deferred, this idiom is the ONLY thing standing between an author and a null-typed operand in the tail — so if `and` did not admit-nothing on a false left conjunct, the deferral would be unsound rather than merely inconvenient. Drives the eval arm's negated IS_SUBJECT_NULL feeding the logical-and node. Companion to LNUL.4.9i, which runs the same rule over a value that passes the guard. fact_count 1.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state is not null and s.state > 5.0\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": null
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

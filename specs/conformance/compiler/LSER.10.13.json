@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.13",
+    "category": "compiler",
+    "scenario": "Identity slot designation via `by:` per LSER.10.13. `by:` is a block-option that defaults to `entity_id` (LFAC.1.2.2 convention) when the schema has it. Pin: a series on a Sensor schema with an `entity_id` slot and no explicit `by:` compiles, so the default resolves. PINS ONLY THAT IT COMPILES. `compile_ok` reads neither the identity it resolves to nor the absorber's pattern.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding 10_s\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

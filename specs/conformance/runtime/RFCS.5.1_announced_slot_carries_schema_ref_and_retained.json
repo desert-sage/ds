@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.5.1_announced_slot_carries_schema_ref_and_retained",
+    "category": "runtime",
+    "scenario": "[RFCS.5.1]: a trace's `Slot` atom carries every field of `proto/slot.proto#Slot` the engine holds for the slot, as it would stand in the artefact. The twin of RFCS.5.1_announced_slot_carries_identity_and_nullability, which pins `identity_role`, `tolerance`, `nullable` and `capacity`; this one pins the two markers the twin's schema cannot hold. `Holder` is a logical schema with a `key` String, a `mutable` slot typed by the schema `Inner`, and a `mutable` Float marked `retained`. One `Inner` is recorded, so the stream has its prelude; `Holder` is announced too, with no fact of it recorded, because the encoder announces every schema the engine has registered ([RFCS.5.1]'s first paragraph). `expected_slots` is every field present on each of `Holder`'s `Slot` atoms, in declaration order: `kind` 6 is SCHEMA and 2 FLOAT, `schema_ref` names the slot's target schema, and `retained` is true on `level`. A writer that drops the reference leaves `schema_ref` out and the slot's object differs; one that drops the marker leaves `retained` out. `sampled`, the seventh field the clause lists, is not pinned: no v1 source declares it, so no v1 engine holds a `sampled` slot to announce. PATH PINNED: libds's `rfcs_announce_schemas` in rfcs/codec.c, through pyds `Engine.record` in runner.py's `_run_rfcs_roundtrip`, which decodes each `Slot` with the generated `slot_pb2.Slot`; the Mercury runtime's `ds.rfcs.encode_slot_atom`, through test_behave.m's `rfcs_roundtrip_result`, which walks the same fields with `announced_slots`.",
+    "rules_ds": "schema Inner scope logical:\n    id: Int key\n\nschema Holder scope logical:\n    k: String key\n    inner: Inner mutable\n    level: Float mutable retained\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Inner", "slots": { "id": 1 } }
+        ],
+        "expected_slots": [
+            { "schema_name": "Holder", "slot_name": "k", "kind": 3, "identity_role": 1 },
+            { "schema_name": "Holder", "slot_name": "inner", "kind": 6, "schema_ref": "Inner", "identity_role": 2 },
+            { "schema_name": "Holder", "slot_name": "level", "kind": 2, "retained": true, "identity_role": 2 }
+        ]
+    }
+}

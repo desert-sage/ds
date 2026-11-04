@@ -1,0 +1,38 @@
+{
+  "id": "LUNI.8.4",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.8",
+  "seq": 874,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "8.4 Dimensioned × dimensioned — strip and assert",
+  "text": "### 8.4 Dimensioned × dimensioned — strip and assert [LUNI.8.4]\n\nNo unit algebra. `*` of two dimensioned values, `/` and `//` of two values of\ndifferent dimensions, `/` and `//` of a bare number by a dimensioned value, and `**` with a dimensioned operand on either side\nproduce a result with no dimension DS can state. The compiler **must** refuse each\nwith `DS_VALIDATE_DIM_AMBIGUOUS`, under a `let` annotation too: an annotation\nchecks a type the value already has ([LUNI.8.6]). An author who wants the raw\nnumeric result strips the units on the operands first, and may assert a unit on\nthe result: `(r.w::Float * r.h::Float)::meter_squared`.\n\nThe strip yields base-unit numbers and the assertion applies no factor\n([LUNI.8.5]), so the scale of the result is the author's to state. A value of the\n`time` dimension strips to nanoseconds ([LUNI.7.2]).\n\nThis rule applies to both scalar and complex dimensioned values. The built-in\nlibrary pre-declares common multiplication results (e.g. `watt` = `volt × ampere`,\n`joule` = `newton × meter`), so those results have a unit to assert.\n\n",
+  "refs": [
+    "LUNI.7.2",
+    "LUNI.8.5",
+    "LUNI.8.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_DIM_AMBIGUOUS"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/unit_dimension.als",
+        "name": "luni_8_4__product_needs_annotation",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The model's one `Mult` class accepts any two dimensioned operands under an annotation and refuses them without one. The clause admits a same-dimension `/` and `//` with no annotation, and refuses the rest with or without one."
+      },
+      {
+        "path": "formal/alloy/unit_dimension.als",
+        "name": "luni_8_4__unannotated_product",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The model's one `Mult` class accepts any two dimensioned operands under an annotation and refuses them without one. The clause admits a same-dimension `/` and `//` with no annotation, and refuses the rest with or without one."
+      }
+    ]
+  }
+}

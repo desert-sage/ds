@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.6.2.len_of_a_whole_json_object_slot_is_a_type_error",
+    "category": "logical",
+    "scenario": "[LEXP.6.2]: `len` raises a TypeError when the `Json` value is not an array, and for a whole `Json` slot as for a path into one. The twin of LEXP.6.1.len_of_a_whole_json_slot_is_the_array_length, over an object: `len(n.doc)` lowers to FN_STR_LENGTH over the slot read, which neither runtime answers for a Json object, and a `Json` slot read carries provenance ([IRET.9.6]), so the mismatch is the TypeError that abandons the activation -- not the EngineError that would halt the tier, which `expected_kinds` would not find as `type_error`. The `log` after it does not run. Path: libds builtins.c `builtin_str_length` (the mismatch arm), Mercury ds.eval.m FN_STR_LENGTH (`absent_or_mismatch`).",
+    "rules_ds": "schema N scope logical:\n    id: Int key\n    doc: Json mutable\n\nrule r:\n    N n\n->\n    let k = len(n.doc)\n    log info \"k={k}\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "N", "slots": { "id": 1, "doc": { "a": 1 } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

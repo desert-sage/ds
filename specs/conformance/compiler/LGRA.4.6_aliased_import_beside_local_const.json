@@ -1,0 +1,12 @@
+{
+    "id": "LGRA.4.6_aliased_import_beside_local_const",
+    "category": "compiler",
+    "scenario": "[LGRA.4.6]'s remedy: \"The author renames the local declaration, or renames the import with `as` ([LIMP.2.1.7])\". A collision is two constants under one BARE name, and `from ha import LIMIT as HA_LIMIT` binds `HA_LIMIT`, not `LIMIT`. Pin: library `ha` declares `const LIMIT = 5`; the importer does `from ha import LIMIT as HA_LIMIT`, declares its own `const LIMIT = 10`, and a rule reads both. The file compiles. This vector pins the exemption: a refusal keyed on the library's own name for the constant, rather than on the binding the import makes, refuses it. PATH PINNED: `dsc.resolve.lgra_4_6_local_consts`, keyed on `im_const_origin`'s bindings.",
+    "rules_ds": "from ha import LIMIT as HA_LIMIT\n\nconst LIMIT = 10\n\nschema Reading scope logical:\n    id: Int key\n    v: Int mutable\n\nrule between:\n    Reading t where t.v > HA_LIMIT and t.v < LIMIT\n->\n    log info \"between\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 5\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

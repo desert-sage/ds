@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.2.6.2_slot_zone_is_a_zone_read",
+    "category": "compiler",
+    "scenario": "[LTIM.2.6.2]: the compiler counts `t.local(tz)` as a zone read unless `tz` folds to `\"UTC\"`, and a designation it cannot fold counts whatever it holds. `a.zone` is a `String` slot, so `e.fired.local(a.zone)` may name any zone when the rule runs ([LTIM.10.8]): the `where` is time-dependent ([LTIM.2.4.1]) and, on a rule with two positive patterns, DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. The program is LTIM.2.6.2_const_utc_zone_multipattern_compiles with the `const` replaced by a slot; LTIM.2.6.2_zone_read_multipattern_rejects pins a literal zone that is not `\"UTC\"`. PATH: `dsc.validate.ltim_2_6_2_clock_where`'s `time_read`, whose zone arm is `dsc.typecheck.ltim_2_4_1_zone_read`; `dsc.dstest.ltsl_4_1_string_constant` does not fold a slot read, so the arm counts it.",
+    "rules_ds": "use default\n\nschema Arm scope logical:\n    k: Int key\n    zone: String mutable\n\nschema Event scope logical:\n    k: Int key\n    fired: Time mutable\n\nrule office_hours:\n    Arm a\n    Event e where e.k == a.k and e.fired.local(a.zone).hour > 8\n->\n    log info \"in hours\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+    }
+}

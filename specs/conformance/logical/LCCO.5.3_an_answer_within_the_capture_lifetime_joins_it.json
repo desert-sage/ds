@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.5.3_an_answer_within_the_capture_lifetime_joins_it",
+    "clauses": ["LCCO.5.3", "RARC.5.2.4"],
+    "category": "logical",
+    "scenario": "[LCCO.5.3]: an answer that arrives within the capture fact's lifetime joins it. The program is `logical/LCCO.5.3_a_capture_expires_at_its_lifetime`'s: rule `r` binds `Job j`, logs `called`, and calls `svc.get` as `c1` with only `on response.code == 200:` logging `ok {j.id}`; `Reply` is `ttl 10_s`, so the capture lives 10 s. At 0 a Job with id 7 is asserted and pumped; the clock moves 5 s, the answer, code 200, is asserted and pumped. The messages are exactly ['called', 'ok 7']. It is the control for the expiry vector: a runtime that expired the capture early, or never asserted it, logs only `called`, and the expiry vector would pass on it for the wrong reason. PATH PINNED: the `on` sibling's join of the answer with the live capture fact, in both runtimes.",
+    "rules_ds": "schema Reply scope ttl 10_s:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    log info \"called\"\n    call svc.get n: j.id nocooldown as \"c1\"\n        on response.code == 200:\n            log info \"ok {j.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "code": 200 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["called", "ok 7"]
+    }
+}

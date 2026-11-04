@@ -1,0 +1,48 @@
+{
+    "id": "IARC.1.11k",
+    "category": "cross-tier",
+    "scenario": "Each engine's clock starts at 0 in mock mode independently \u2014 even after they're set to different times, advancing one doesn't affect the other. Pins IARC.1.11 \u2014 independent mock clocks per engine.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Pulse scope ttl 1_s:\n    v: Int\n"
+            },
+            "b": {
+                "rules_ds": "schema Pulse scope ttl 1_s:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "a",
+                "op": "advance",
+                "delta_ns": 2000000000
+            },
+            {
+                "engine": "a",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 0,
+            "b": 1
+        }
+    }
+}

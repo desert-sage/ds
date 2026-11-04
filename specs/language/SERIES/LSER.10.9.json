@@ -1,0 +1,15 @@
+{
+  "id": "LSER.10.9",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.10",
+  "seq": 1210,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.10.9] **`direction` compares the two newest samples in the window.**\nIt returns an **`Int`** — `-1` falling, `0` steady, `+1` rising ([LSER.17.2]):\n\n$\\mathit{direction} = \\operatorname{sgn}(x_{\\mathit{new}} - x_{\\mathit{prev}})$\n\nwhere $x_{\\mathit{new}}$ is the most recently absorbed sample still in the\nwindow and $x_{\\mathit{prev}}$ the one absorbed before it. The difference is the\nexact one: the engine **must** decide the sign by comparing the two samples,\nnever from a wrapped `Int` or a rounded `Float` subtraction, and applies no\ntolerance. $-0$ and $+0$ compare equal. With fewer than two samples in the\nwindow there is no slope, and the read is `null`, as a cold read is\n([LSER.19.8]).\n\nAn ordered integer keeps the comparison checkable: `d.direction > 0` is a type error away from being wrong, where a\nstring spelling would let a misspelt category compile and never match.\n\n",
+  "refs": [
+    "LSER.17.2",
+    "LSER.19.8"
+  ]
+}

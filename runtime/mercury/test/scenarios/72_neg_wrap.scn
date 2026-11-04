@@ -1,0 +1,10 @@
+# Unary minus at the int64 boundary.
+#
+#   r1  n = INT64_MIN   `-n == n` holds (the wrap) and `n < 0` holds, so both
+#                       rules fire; `n < 0` rules out 0, where `-0 == 0` too.
+#   r2  n = -1          the control: `-(-1)` is 1, so only `boundary` fires,
+#                       which a negation that did nothing could not produce.
+assert Big entity_id=r1 n=-9223372036854775808
+pump
+assert Big entity_id=r2 n=-1
+pump

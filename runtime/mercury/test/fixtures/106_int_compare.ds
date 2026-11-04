@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Two Ints above 2^53 compare exactly ([LDET.3.2.2]), not through double,
+# where 2^53 + 1 and 2^53 are equal. For one pair exactly one of `equal`,
+# `below` and `above` fires. The guards are in `where` position, the channel
+# the runtime differential compares.
+
+use default
+
+
+schema Pair scope logical:
+    entity_id: String key
+    a: Int mutable
+    b: Int mutable
+
+rule equal:
+    Pair p where p.a == p.b
+->
+    log info "equal"
+
+rule below:
+    Pair p where p.a < p.b
+->
+    log info "below"
+
+rule above:
+    Pair p where p.a > p.b
+->
+    log info "above"

@@ -1,0 +1,43 @@
+# A host input holding a fact reference, recorded as one ExternalAssert
+# ([RFCS.24]). Fixture 133_fcxt.
+#
+# The trace compares what each runtime does; the recording gates compare the
+# two recordings atom by atom, read each with the other runtime, and replay
+# each, so every case below is recorded and replayed in both.
+#
+# Handles: 0 the Inner, 1 MakeMid, 2 MakeOuter, 3 SendOuter, 4 DropMid,
+# 5 the Mid copy and 6 the Outer the resend asserts, 7 MakeMid again,
+# 8 the Holder.
+# @spec [RFCS.24.1] [RFCS.24.2] [RFCS.24.3]
+assert Inner v=10
+assert MakeMid k=1
+pump
+assert MakeOuter n=1
+pump
+# Sent fact 0: the Outer, its Mid and its Inner inlined.
+assert SendOuter n=1
+pump
+#
+# 1. TWO DEEP, ONE COPY NEW AND ONE LIVE. The derived Mid is withdrawn; the
+# Inner stays. The sent Outer comes back: its Inner copy is equal to the live
+# Inner and is that fact (RFCS.23.7 step 1), its Mid copy is asserted new, and
+# the Outer is received. One input step, one ExternalAssert listing the Mid and
+# the Outer, innermost first (RFCS.24.3).
+assert DropMid n=1
+pump
+resend 0
+pump
+#
+# 2. A HOST RETRACT OF AN INLINED COPY, through the handle its ExternalAssert
+# lists (RFCS.24.3): the recorded FactRetract names it, and a replay binds it.
+retract 5
+pump
+#
+# 3. A DIRECT HOST ASSERT REFERRING TO A DERIVED FACT. A Mid is derived again
+# and the Holder names it: one ExternalAssert, the Holder with the Mid and its
+# Inner inlined (RFCS.24.1). On replay the copies resolve to the re-derived Mid
+# and the live Inner, and the Holder alone is asserted.
+assert MakeMid k=2
+pump
+assert Holder h=1 m=@Mid
+pump

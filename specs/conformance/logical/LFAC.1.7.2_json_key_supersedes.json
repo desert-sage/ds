@@ -1,0 +1,22 @@
+{
+    "id": "LFAC.1.7.2_json_key_supersedes",
+    "clauses": ["LFAC.1.7.2", "LFAC.2.5.1"],
+    "category": "logical",
+    "scenario": "[LFAC.1.7.2]: one identity, one live fact, whatever the key slot's type. A `Json` key compares by value, and an object's member order carries no meaning ([LFAC.2.5.1]). The twin of LFAC.1.7.2_bytes_key_supersedes. `Doc` is keyed on `body: Json` and carries a mutable `n`. Doc {a: 1, b: {c: 2, d: 3}} n 1 is asserted and pumped. Doc {b: {d: 3, c: 2}, a: 1} n 2 has the same members in the other order, nested one level down too, so it is the same identity with a new payload: it supersedes the first, and one Doc stays live. Doc {a: 1, b: {c: 2, d: 4}} differs in one leaf and is a second identity. Exactly 2 live facts. A key never found equal leaves 3; one compared by member order also leaves 3; one compared by shape alone, or not at all, leaves 1. runtime/LFAC.2.5.1_json_member_order pins the same equality on a schema whose only slot is the key, where a re-assert is a no-op; here the re-assert carries a new payload, so the identity must be found to supersede. PATH PINNED: the identity-key hash and equality, libds `rete/wm_rete.c` `hash_idval` and `idkey_equal` (their Json arms, through `json.c` `ds_json_deep_equal`), and the Mercury runtime's identity key over `ds.json` terms, whose members are stored sorted.",
+    "rules_ds": "schema Doc scope logical:\n    body: Json key\n    n: Int mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Doc", "slots": { "body": { "a": 1, "b": { "c": 2, "d": 3 } }, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "body": { "b": { "d": 3, "c": 2 }, "a": 1 }, "n": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "body": { "a": 1, "b": { "c": 2, "d": 4 } }, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 2 }
+        ]
+    }
+}

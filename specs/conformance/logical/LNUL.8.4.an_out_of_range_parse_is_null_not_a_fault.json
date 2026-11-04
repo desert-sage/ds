@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.an_out_of_range_parse_is_null_not_a_fault",
+    "category": "logical",
+    "scenario": "The `strtoll` ERANGE arm of the same row, listed separately in §2 because the failure mode is different: the text IS a number and does not fit an Int64. It is still a fallible conversion, so it is still `null` and still raises nothing — the adapter must not let ERANGE become a trap, and must not silently saturate, which would be a wrong VALUE rather than an absence.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule r:\n    S s where (s.txt::Int?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "99999999999999999999999" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.trailing_garbage_is_null_not_a_fault",
+    "category": "logical",
+    "scenario": "The trailing-garbage arm: `\"12abc\"::Int?` must be `null` rather than 12. A parse that consumed the prefix and ignored the rest would be a wrong value, and the fixture would pass a naive `is null` check only if the whole-string requirement holds — so this pins the adapter's whole-input rule alongside the classification.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule r:\n    S s where (s.txt::Int?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "12abc" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

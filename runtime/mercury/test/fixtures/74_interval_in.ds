@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `probe in (start..end)` on a half-open interval ([LINT.1.1]). The two
+# windows have distinct keys, so both live: 15 is in [10,20) and 45 is not in
+# [30,40). Two Windows and one Hit.
+schema Window scope logical:
+    start_t: Int key
+    end_t: Int mutable
+    probe: Int mutable
+
+schema Hit scope logical:
+    dummy: Int key
+
+rule in_range:
+    Window w where w.probe in (w.start_t..w.end_t)
+->
+    emit Hit logical dummy: 0

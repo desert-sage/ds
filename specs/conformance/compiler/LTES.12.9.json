@@ -1,0 +1,12 @@
+{
+    "id": "LTES.12.9",
+    "clauses": ["RLOW.13.2"],
+    "category": "compiler",
+    "scenario": "Rule-firing order is spec-defined, NOT implementation-defined, per LTES.12.9 — the terminal ordinal, which is source position ([LDET.5.4]). The clause's force is its negative half: an order falling out of when matches happened to complete would depend on propagation internals, which is precisely what it forbids. So the compile-side pin is that the TerminalNode sequence is the SOURCE sequence — `zebra` before `alpha`, so a lowering that sorted by name would fail — and that nothing else rides the artefact to order rules, field 9 (salience) being reserved. Sibling to LDET.10.7.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule zebra:\n    Trig\n->\n    log info \"zebra\"\n\nrule alpha:\n    Trig\n->\n    log info \"alpha\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["zebra", "alpha"],
+        "forbidden_term_fields": [9]
+    }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "NLFC.8.1",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.8",
+  "seq": 265,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.8.1] **`ds_engine_clone` produces an independent engine identical to the\nsource at call time.**\n\nThe contract is **behavioural equivalence + full independence**, not a memory\nlayout. Equivalence is over engine state: working memory, the agenda, the\nclocks, series and the cache. A clone starts with no callbacks ([NLFC.8.3]), so\nonce the integrator has registered callbacks on it that behave as the source's\ndo, any subsequent input sequence applied identically to `src` and to the clone\nproduces **byte-identical observable output** from both (the `LDET` stream,\n[LDET.2.2b]); and the two share **no mutable state** — an operation on\none never affects the other, and either may be freed first. How the impl\nachieves this (share-immutable / deep-copy-mutable) is [IARC.11]. Clone is a\nruntime API over in-memory state — **no wire format and no atom** — and it is\n**not** rollback: a discarded clone's events never enter the\nsource's event trace (speculation is off-trace, [IARC.11.3]).\n\n",
+  "refs": [
+    "IARC.11",
+    "IARC.11.3",
+    "LDET.2.2b",
+    "NLFC.8.3"
+  ],
+  "symbols": [
+    "ds_engine_clone"
+  ]
+}

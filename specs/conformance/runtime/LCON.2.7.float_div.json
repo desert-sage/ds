@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.7.float_div",
+    "clauses": ["LCON.2.7.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 float determinism — division. `1.0 / 3.0` is the IEEE 754 double 0.3333333333333333 (the correctly-rounded nearest), every run. The guard `(t.a / t.b) == 0.3333333333333333` fires only on an exact bit match; fact_count 2 confirms.",
+    "rules_ds": "schema T scope logical:\n    a: Float key\n    b: Float mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.a / t.b) == 0.3333333333333333\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "a": 1.0, "b": 3.0 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

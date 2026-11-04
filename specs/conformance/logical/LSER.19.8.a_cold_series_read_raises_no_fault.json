@@ -1,0 +1,15 @@
+{
+    "id": "LSER.19.8.a_cold_series_read_raises_no_fault",
+    "category": "logical",
+    "dead_rules_expected": ["cold_mean"],
+    "scenario": "A cold series read is `null` ([LSER.19.8]) and raises NOTHING. The disposition table puts it in the null arm, so the four fault kinds are all forbidden: a runtime that treated 'no samples yet' as a ComputationError would abandon the activation on the first reading of every deployment. The other LSER.19.8 fixtures pin the VALUE (cold `mean` does not fire, cold `count` is 0); this pins the CLASSIFICATION, which is the half a recording can disagree about.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule cold_mean:\n    Reading r where r.mean < 5.0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "a", "v": 2.0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "type_error", "engine_error", "bounds_error"]
+    }
+}

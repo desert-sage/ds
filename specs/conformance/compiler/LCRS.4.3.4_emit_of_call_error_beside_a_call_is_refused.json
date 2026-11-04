@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.4_emit_of_call_error_beside_a_call_is_refused",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: a rule's `emit` of a `CallError` in a program with a `call`, where the driver has injected the schema, so it resolves ([LIMP.12.2]). The twin of LCRS.4.3.4_emit_of_call_error_is_refused, which has no `call`, and the two take different arms. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag` through `lcrs_4_3_4_answer_schema`, on its `CallError` arm.",
+    "rules_ds": "service svc.op:\n    kwarg n: Int\n    no response\n\nschema Trig scope logical:\n    k: Int key\n\nrule ask:\n    Trig t\n->\n    call svc.op n: t.k cooldown: 10_s as \"c1\"\n\nrule r:\n    Trig\n->\n    emit CallError corr: \"c\" code: \"x\" message: \"m\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ANSWER_EMIT_FORBIDDEN"
+    }
+}

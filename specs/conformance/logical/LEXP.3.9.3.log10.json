@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.3.9.3.log10",
+    "category": "logical",
+    "scenario": "E3 for `log10`: every row of [LEXP.3.9.3]'s table, one rule per operand, each firing iff the result is the table's. Operands are built from the fact: -0 is `-t.z`, +Inf is `t.big * t.big` (1e300 squared), -Inf its negation. A zero's sign is read as the sign of `1.0 / r` ([LDET.3.6.2]), an infinity through `is inf` / `is -inf`, a NaN through `is NaN` ([LNUL.4.9]). PATH PINNED: the DS_FN_LOG10 handler in runtime/src/libds/builtins.c calling CORE-MATH's ds_cm_log10, and ds.eval's transcendental arm calling ds.core_math.log10, the same vendored C. Pin: one fact, all six rules fire, in source order.",
+    "rules_ds": "from math import log10\n\nschema T scope logical:\n    entity_id: String key\n    z: Float mutable\n    one: Float mutable\n    two: Float mutable\n    three: Float mutable\n    half: Float mutable\n    big: Float mutable\n\nrule log10_pos_zero_is_neg_inf:\n    T t where log10(t.z) is -inf\n->\n    log info \"a\"\n\nrule log10_neg_zero_is_neg_inf:\n    T t where log10(-t.z) is -inf\n->\n    log info \"b\"\n\nrule log10_one_is_pos_zero:\n    T t where (log10(t.one) == 0.0) and ((1.0 / log10(t.one)) is inf)\n->\n    log info \"c\"\n\nrule log10_pos_inf_is_pos_inf:\n    T t where log10(t.big * t.big) is inf\n->\n    log info \"d\"\n\nrule log10_negative_is_nan:\n    T t where log10(-t.one) is NaN\n->\n    log info \"e\"\n\nrule log10_neg_inf_is_nan:\n    T t where log10(-(t.big * t.big)) is NaN\n->\n    log info \"f\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "t", "z": 0.0, "one": 1.0, "two": 2.0, "three": 3.0, "half": 0.5, "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["log10_pos_zero_is_neg_inf", "log10_neg_zero_is_neg_inf", "log10_one_is_pos_zero", "log10_pos_inf_is_pos_inf", "log10_negative_is_nan", "log10_neg_inf_is_nan"]
+    }
+}

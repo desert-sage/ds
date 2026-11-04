@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.13.5_const_window_positive_compiles",
+    "clauses": ["LGRA.2.8.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.13.5], [LGRA.2.8.2]: a series window written as a `time` const whose value is positive compiles. `const W = 10_s` and `count sliding W`, read by a rule. The control for compiler/LGRA.13.5_const_window_zero_refused, which differs only in the const's value. That the window lowers to the const's value is logical/LGRA.2.8.2_const_series_window_reads_its_value. PATH PINNED: `dsc.validate.lgra_13_5_line` admitting it, and `dsc.rete.rlow_8_3_1_companion` lowering the read's window through `line_window_ns`.",
+    "rules_ds": "use default\n\nconst W = 10_s\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding W\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

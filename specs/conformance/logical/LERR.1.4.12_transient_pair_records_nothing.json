@@ -1,0 +1,17 @@
+{
+    "id": "LERR.1.4.12_transient_pair_records_nothing",
+    "category": "logical",
+    "scenario": "[LERR.1.4.12]: a pair the operation evaluates and then ends before it completes records nothing. The NOT node and the trapping join read one schema, so one B is both the blocker and the candidate. With `a1` live, asserting `b1` with `b1.k == a1.k` and `y = 0` offers the pair `((a1), b1)` to the join `c.x / c.y > 1.0`, which traps (an all-Int division [LEXP.7.15.1]); but the NOT node blocks `(a1)` in the same assert, so the pair is not live when the propagation completes, and no ComputationError is recorded. The order the two nodes are right-activated in does not matter: deepest first evaluates the pair and then ends it, shallowest first never evaluates it (formal witness `lerr_1_4_12__transient_pair_records_nothing`, formal/idris/Rete/NetworkTraps.idr). PATH: libds holds the trap from join_tests_pass (rete/beta.c hold_match_trap) and drops it at the end of the event because the token has left the join's left memory (ds_rete_beta_flush_match_traps); Mercury drops it in ds.match.lerr_1_4_12_derived. The runtime differential runs the same program (113_transient_trap). `r` does not fire.",
+    "rules_ds": "schema A scope logical:\n    k: String key\n\nschema B scope logical:\n    k: String key\n    x: Int mutable\n    y: Int mutable\n\nrule r:\n    A a\n    no B b where b.k == a.k\n    B c where c.x / c.y > 1.0\n->\n    log info \"r fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "k": "k1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "B", "slots": { "k": "k1", "x": 1, "y": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

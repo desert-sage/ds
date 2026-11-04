@@ -1,0 +1,27 @@
+{
+    "id": "LFAC.1.2f",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "1_ms ttl precision, the expiry side \u2014 a `ttl 1_ms` fact is gone after a 1_100_000ns advance + pump, its deadline now before the clock (RARC.5.2.4; LFAC.1.3.3). The survival side, at 999_000ns, is temporal/LFAC.1.2j. Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema Tick scope ttl 1_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Tick",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 1100000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

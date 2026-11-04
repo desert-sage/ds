@@ -1,0 +1,20 @@
+{
+  "id": "IDAT.4.7",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.4",
+  "seq": 457,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.4.7] `DS_SLOT_STRING` / `DS_SLOT_BYTES` values are interned\nin the engine's per-engine string table ([IRET.1.4]) as\n**counted** entries: reference-counted by the number of live\ncommitted fact slots holding the value and freed when the last\nholder retracts — a **reclaimable-refcount** lifetime, not an\nengine lifetime. Structural strings (schema / slot / rule\nnames, compile-time literals) are **pinned** (engine-lifetime).\n\nEvery string entering working memory — whether from a compiled\nfact, an integrator-provided slot value (`ds_engine_assert`), a\nrule-RHS emit, or an adapter — is passed through the intern\nboundary (`acquire` at commit), returning the canonical pointer\nstored in `ds_slot_value_t.v.s`.\n\n**Stored** equality is pointer comparison (Rete alpha / beta /\nidentity — [IDAT.4.4] still holds: equal stored strings share a\npointer). **Value** equality (eval `==`, no-op reassertion) is\nby **content** ([LFAC.2]) — interning is a non-observable\nimplementation detail. Fact teardown **releases** its\n`String`/`Bytes` slot references (`release` at retract); a\ncounted value frees when its last holder retracts, a pinned\nvalue at engine destroy.\n\n**Borrower rule.** Anything that\nretains a fact's string past the fact's life must not dangle\nagainst a now-reclaimable counted value:\n\n- a **retains-past-life** borrower (a series / cache backend that\n  samples a slot into its own state) **copies** the bytes;\n- a **co-lifetime mirror** (the DS-layer `ds_fact_t` wrapper,\n  whose lifetime tracks the fact) takes a **lock-step intern\n  reference** — acquire when it copies the slot, release when the\n  wrapper is freed.\n\nBoth keep the invariant *refcount = live fact-lifecycle holders*;\nneither widens it to a non-fact holder, and copying in the\nco-lifetime case would needlessly double every fact's string\nstorage.\n\n---\n\n",
+  "refs": [
+    "IDAT.4.4",
+    "IRET.1.4",
+    "LFAC.2"
+  ],
+  "symbols": [
+    "DS_SLOT_BYTES",
+    "DS_SLOT_STRING"
+  ]
+}

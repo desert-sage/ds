@@ -1,0 +1,15 @@
+{
+    "id": "LREG.2.1.runtime",
+    "category": "logical",
+    "scenario": "Capture-free regex in `where` fires correctly at runtime per LREG.2.1. Assert a Log with msg matching /^ERROR:/ and one that doesn't. Only the matching rule fires.",
+    "rules_ds": "schema Log scope logical:\n    entity_id: String key\n    msg: String mutable\n\nrule error_log:\n    Log e where e.msg ~ /^ERROR:/\n->\n    log info \"error found\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l1", "msg": "ERROR: disk full" } },
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l2", "msg": "INFO: all good" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["error_log"]
+    }
+}

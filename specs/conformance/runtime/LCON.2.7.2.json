@@ -1,0 +1,12 @@
+{
+    "id": "LCON.2.7.2",
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 float determinism — addition is NOT rounded to a decimal-friendly value. `0.1 + 0.2 != 0.2999999999999999... ` — specifically `!= 0.3`. The guard `(t.a + t.b) != 0.3` fires, proving the runtime carries the true IEEE 754 result (0.30000000000000004) rather than a tidied 0.3. Pairs with LCON.2.7.1: together they pin the exact bit pattern from both sides.",
+    "rules_ds": "schema T scope logical:\n    a: Float key\n    b: Float mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.a + t.b) != 0.3\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "a": 0.1, "b": 0.2 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

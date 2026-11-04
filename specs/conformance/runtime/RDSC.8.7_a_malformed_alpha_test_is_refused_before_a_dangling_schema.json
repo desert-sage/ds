@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.8.7_a_malformed_alpha_test_is_refused_before_a_dangling_schema",
+    "clauses": ["RDSC.4a.6.1"],
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1]: each malformed `AlphaTest` but a pattern that does not compile is a shape of the `AlphaNode`'s body, refused as the body is decoded, and so before a name [RDSC.8.7] checks. An artefact carrying an alpha test of a kind outside `AlphaTestKind` and an alpha whose schema no atom declares is refused for the first, with DS_ERR_DSC_SEMANTIC (-504), not for the name (DS_ERR_DSC_DANGLING, -506). The harness compiles rules `on_t` (`T`'s `AlphaNode` 1) and `on_u` (`U`'s `AlphaNode` 4, after `on_t`'s beta 2 and terminal 3), then `runtime_error`'s `tamper` list ([RCTS.1.2.21]) makes two edits in order and re-seals `dsc_sha256` once ([RDSC.3.6]): `set_field` writes the `kind` of `U`'s alpha's one test as 3, and `drop_schema_group: T` removes `T`'s group, so `T`'s alpha names a schema the artefact does not declare. Each defect alone has its own vector: `RDSC.4a.6.1_an_alpha_test_kind_outside_its_enum_is_refused` (-504) and `RDSC.8.7_alpha_schema_group_dropped_is_dangling` (-506). What it discriminates: a loader that checks an alpha's tests only after the names refuses with -506. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`) before the cross-atom checks; the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Int key\n\nrule on_t:\n    T t where t.v > 5\n->\n    log info \"t\"\n\nrule on_u:\n    U u where u.w > 5\n->\n    log info \"u\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": [{"set_field": {"node": 4, "path": [3, 0, 1], "value": 3}}, {"drop_schema_group": "T"}],
+        "code": "-504"
+    }
+}

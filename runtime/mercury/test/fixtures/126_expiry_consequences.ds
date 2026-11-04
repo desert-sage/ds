@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Gate scope ttl 1_h:
+    g: Int
+
+schema Held scope logical:
+    id: Int key
+
+schema P scope logical:
+    entity_id: String key
+    n: Int mutable
+
+schema Q scope logical:
+    entity_id: String key
+    d: Int mutable
+
+rule keep:
+    Gate
+->
+    emit Held logical id: 1
+
+rule ratio:
+    P p
+    no Gate
+    Q q where (p.n // q.d) > 0
+->
+    log info "ratio"

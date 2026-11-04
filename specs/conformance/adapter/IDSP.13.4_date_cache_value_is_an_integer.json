@@ -1,0 +1,16 @@
+{
+    "id": "IDSP.13.4_date_cache_value_is_an_integer",
+    "category": "adapter",
+    "scenario": "IDSP.13.4's `Date` row: a cached `Date` is a JSON integer, its days since 1970-01-01. The rule caches a `Date` slot read and the integrator's set callback receives exactly the text `19700`. Path: the compiler wraps the value in FN_JSON_VALUE (dsc.rete), and libds's rete/adapters.c `adapter_ds_json_value` renders it through `jt_value`. Pins this row only.",
+    "rules_ds": "schema Trig scope logical:\n    id: String key\n    v: Date mutable\n\nrule keep:\n    Trig t\n->\n    cache key: \"date\" value: t.v\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": "a", "v": 19700 } },
+            { "op": "pump" }
+        ],
+        "expected_sets": [
+            { "key": "date", "value_json": "19700" }
+        ]
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSTR.11.2_literal_counts_codepoints",
+    "category": "compiler",
+    "scenario": "[LSTR.11.1] / [LSTR.11.2]: a capacity counts codepoints as `len` does ([LSTR.2.1]), not bytes. The literal is five codepoints of two bytes each (ten bytes) written to a `capacity 5` slot, so it fits and the program compiles. PATH PINNED: `dsc.dstest.lstr_11_2_literal_capacity`'s `constant_codepoints`, which decodes the literal before counting. A check that measured the source bytes, or the encoded UTF-8 length, refuses this with `DS_VALIDATE_CAPACITY_LITERAL_EXCEEDED` and the vector goes red.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 5 mutable\n\nrule r:\n    Trig t\n->\n    emit Out logical k: t.k s: \"ééééé\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "NCBK.2.8",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 154,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.2.8] **Every fault is a stream event.** The four fault classes reach the integrator through the\nstream callback like any other observable event, in `seq` order, and take four\nkinds of their own:\n\n| Kind | Value | Raised when |\n|---|---|---|\n| `DS_EV_TYPE_ERROR`   | 21 | a value is present and the operation is invalid at that site; the activation is abandoned |\n| `DS_EV_BOUNDS_ERROR` | 22 | a **declared** cap was reached; the operation is rejected and the engine is intact |\n| `DS_EV_ENGINE_ERROR` | 23 | engine state is no longer trustworthy; the tier halts ([NCBK.2.9]) |\n| `DS_EV_COMPUTATION_ERROR` | 24 | a well-typed operation has no answer — `DIVIDE_BY_ZERO`, `DOMAIN`, `NOT_REPRESENTABLE` ([LERR.1.4.9]); the activation is abandoned |\n\n**Four kinds and not one**, because the recorded form is four atoms, and a single kind carrying a\ndiscriminator would have a C consumer switching on a payload field where a\nreplayer switches on the atom. Two discriminators for one distinction is what\ndrifts.\n\n**`ComputationError` takes a kind.** It is\na fault under the same rule as the other three and carries the same disposition\nas a TypeError, so a vocabulary with a disposition and no kind would leave an\nintegrator able to observe one and not the other. The first sentence of this\nclause admits no such exception: *every* fault is a stream event.\n\n**The disposition is the kind.** A TypeError and a ComputationError always\nabandon the activation, a BoundsError always leaves the engine intact, an\nEngineError always halts — so none of the four carries a recoverability or\ndisposition field, and a consumer reads it off the kind.\n\n⚠ **A fault reaching the callback does not mean it was persisted.** The engine\nemits; whether the event reaches durable storage is the integrator's, and for a\nrecorder failure it by definition does not. The engine writes nothing itself\n([IARC.1.14]), so this is a property of the integrator's sink rather than of the\nevent.\n\n",
+  "refs": [
+    "IARC.1.14",
+    "LERR.1.4.9",
+    "NCBK.2.9"
+  ]
+}

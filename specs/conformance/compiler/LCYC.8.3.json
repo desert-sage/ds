@@ -1,0 +1,11 @@
+{
+    "id": "LCYC.8.3",
+    "clauses": ["LCYC.3.4.1"],
+    "category": "compiler",
+    "scenario": "Negation-crossing cycles get a specific diagnostic per [LCYC.3.4.1] (LCYC.8.3, the id, is a tombstone) — \"rules x and y defeat each other\" instead of a generic loop message, when each rule's `no` pattern is falsified by the other's emit. Pin: two rules where each `no`s the other's schema and emits its own schema rejects with DS_VALIDATE_RULE_DEFEAT.",
+    "rules_ds": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nrule rx:\n    no Y\n->\n    emit X logical v: 1\n\nrule ry:\n    no X\n->\n    emit Y logical v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_DEFEAT"
+    }
+}

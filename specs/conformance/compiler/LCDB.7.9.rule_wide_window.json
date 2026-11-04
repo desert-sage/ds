@@ -1,0 +1,10 @@
+{
+    "id": "LCDB.7.9.rule_wide_window",
+    "category": "compiler",
+    "scenario": "LCDB.7.9 — a `cooldown` on a rule whose activation key is empty compiles, AND raises the warning DS_VALIDATE_RULE_WIDE_RATE_WINDOW naming the rule. `AmbientTemp` is `logical` with every slot `mutable`, so it contributes no key slot ([LCDB.3.3.3]) and the rule has one window for all its activations. The `warning` expectation pins both halves: a refusal fails it, and so does a clean compile. Path: `dsc.validate.lcdb_7_9_rule_wide_window`, whose emptiness test is the composition `dsc.rete.key_vars` lowers.",
+    "rules_ds": "schema AmbientTemp scope logical:\n    celsius: Float mutable\n\nrule hot cooldown 5_min:\n    AmbientTemp t where t.celsius > 30.0\n->\n    log info \"hot\"\n",
+    "expect": {
+        "kind": "compile_ok",
+        "warning": "DS_VALIDATE_RULE_WIDE_RATE_WINDOW"
+    }
+}

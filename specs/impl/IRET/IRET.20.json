@@ -1,0 +1,17 @@
+{
+  "id": "IRET.20",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": null,
+  "seq": 1445,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Memory ownership",
+  "text": "## Memory ownership [IRET.20]\n\nThe Rete engine follows libds's single-ownership discipline\n(IARC.1.13). Every heap allocation has exactly one owner;\nownership transfer happens only at explicitly-named APIs.\n\n| Object | Owner | Lifetime |\n|---|---|---|\n| `ds_rete_engine_t` | Caller of `ds_rete_engine_create` | Until `ds_rete_engine_destroy` |\n| `ds_rete_schema_t` + slot descriptors | Engine | Engine lifetime; freed on `ds_rete_engine_destroy` |\n| Alpha / beta / terminal node graphs | Engine | From the load until `ds_rete_engine_destroy`; there is no reload ([RARC.10.1]) |\n| `ds_rete_expr_t` expression trees | Engine | Read-only after the load; freed with node graphs |\n| Interned strings | Engine intern table | Structural names, engine lifetime; slot values, as long as the facts holding them ([IDAT.4.7]) |\n| `ds_rete_fact_t` | Engine working memory | From `ds_rete_wm_assert` until `ds_rete_wm_retract` |\n| `ds_rete_token_t` | Beta node left memory | From join creation until retraction propagation frees depth-first |\n| `ds_rete_activation_t` | Agenda | From terminal-node activation until its match ends ([IDAT.6.2.1]) |\n\n",
+  "refs": [
+    "IARC.1.13",
+    "IDAT.4.7",
+    "IDAT.6.2.1",
+    "RARC.10.1"
+  ]
+}

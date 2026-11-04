@@ -1,0 +1,18 @@
+{
+    "id": "LEXP.5.11.2_great_circle",
+    "clauses": ["LEXP.5.11.2", "LEXP.5.11.1"],
+    "category": "logical",
+    "scenario": "[LEXP.5.11.2]: `distance.great_circle` is haversine on a sphere of radius 6 371 008.8 m with the composition fixed, every operation rounded once, and the result a `length` in `meter`. Each expected value is the clause's composition evaluated as written, operation by operation with libds's CORE-MATH sin, cos, atan2 and sqrt. Every coordinate is a `Float` slot, so each call is the runtime's. `self`: a point to itself, (10, 20) to (10, 20), is 0 m. `near`: (0, 0) to (0.45, 0), about 50 km, is 50037.7861050898 m. `anti`: (0, 0) to (0, 180), antipodal, is 20015114.442035925 m, the radius times math.pi. `west`: (10, -179) to (20, 30), a longitude near the -180 end of its range ([LEXP.5.11.1]), is 15410533.534717109 m. A longitude outside [-180, 180] is NaN's, and is `LEXP.5.11.3_bad_coordinate_never_matches`'s. A builtin that fused an operation, reassociated `a`, used another radius, or converted with a different `radians` would miss at least one value. PATH PINNED: FN_GREAT_CIRCLE in libds (`builtins.c`) and Mercury (`ds.eval`).",
+    "rules_ds": "import distance\n\nschema G scope logical:\n    id: String key\n    lat1: Float mutable\n    lon1: Float mutable\n    lat2: Float mutable\n    lon2: Float mutable\n\nrule self_is_zero:\n    G g where g.id == \"self\" and distance.great_circle(g.lat1, g.lon1, g.lat2, g.lon2) == 0.0_m\n->\n    log info \"self\"\n\nrule near_value:\n    G g where g.id == \"near\" and distance.great_circle(g.lat1, g.lon1, g.lat2, g.lon2) == 50037.7861050898_m\n->\n    log info \"near\"\n\nrule antipodal_value:\n    G g where g.id == \"anti\" and distance.great_circle(g.lat1, g.lon1, g.lat2, g.lon2) == 20015114.442035925_m\n->\n    log info \"anti\"\n\nrule west_value:\n    G g where g.id == \"west\" and distance.great_circle(g.lat1, g.lon1, g.lat2, g.lon2) == 15410533.534717109_m\n->\n    log info \"west\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "G", "slots": { "id": "self", "lat1": 10.0, "lon1": 20.0, "lat2": 10.0, "lon2": 20.0 } },
+            { "op": "assert", "schema": "G", "slots": { "id": "near", "lat1": 0.0, "lon1": 0.0, "lat2": 0.45, "lon2": 0.0 } },
+            { "op": "assert", "schema": "G", "slots": { "id": "anti", "lat1": 0.0, "lon1": 0.0, "lat2": 0.0, "lon2": 180.0 } },
+            { "op": "assert", "schema": "G", "slots": { "id": "west", "lat1": 10.0, "lon1": -179.0, "lat2": 20.0, "lon2": 30.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["self", "near", "anti", "west"]
+    }
+}

@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// unfounded_cycle -- formal/idris/Rete/Refcount.idr's witness shape with its
+// base fact ABSENT: P -> Q, Q -> R, R -> Q, and P is empty (P retracted).
+// Q and R each justify the other and nothing founds either. The refcount of
+// [IRET.12.2] keeps both live (iret_12_2__witness_refcount); the least model
+// derives neither, which is the well-founded reading of [LLOG.2.5]
+// (llog_2_5__witness_well_founded). This program pins that the model rejects
+// the unfounded set by construction: the expected output is empty for both.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl P(x: DsInt)
+.decl Q(x: DsInt)
+.decl R(x: DsInt)
+.input P(filename="unfounded_cycle.P.facts")
+
+Q(x) :- P(x).
+R(x) :- Q(x).
+Q(x) :- R(x).
+
+.output Q
+.output R

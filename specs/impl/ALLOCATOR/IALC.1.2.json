@@ -1,0 +1,30 @@
+{
+  "id": "IALC.1.2",
+  "prefix": "IALC",
+  "doc": "ALLOCATOR.md",
+  "parent": "IALC.1",
+  "seq": 69,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IALC.1.2] A build-time selector `DS_ALLOC_MODE` chooses how the macros\nresolve. Its values are `DS_ALLOC_MACRO` (1) and `DS_ALLOC_WEAK` (2); it\nmust default to `DS_ALLOC_WEAK`, so every build is link-time-overridable\nwithout a recompile. `DS_ALLOC_MACRO` is the explicit opt-out for a\nbyte-identical, zero-indirection build. When `DS_ALLOC_MODE` is unset but\n`DS_ALLOC_HEADER` is defined, the mode is `DS_ALLOC_MACRO` — a named header is\nan explicit request for inline expansion, so the weak default must never\nsilently ignore it.\n\n- In `DS_ALLOC_WEAK` mode (the default) each macro expands to a call to the\n  correspondingly-named weak function `ds_malloc`/`ds_calloc`/… declared\n  in `ds_alloc.h` and defined in `ds_alloc.c` ([IALC.5]). The wrapper is a\n  single tail-callable cold-path frame, never on the allocation-free\n  `realtime`/`constspace` hot path ([IALC.8.2]).\n- In `DS_ALLOC_MACRO` mode the macros expand **inline**: to the\n  integrator's functions when a header named by `DS_ALLOC_HEADER` is\n  included and defines them, otherwise to the libc functions of the same\n  name. With no `DS_ALLOC_HEADER` this must be byte-identical to a direct\n  libc call — the macro is transparent.\n\n",
+  "refs": [
+    "IALC.4",
+    "IALC.5",
+    "IALC.8.2"
+  ],
+  "symbols": [
+    "DS_ALLOC_HEADER",
+    "DS_ALLOC_MACRO",
+    "DS_ALLOC_MODE",
+    "DS_ALLOC_WEAK",
+    "DS_CALLOC",
+    "DS_MALLOC",
+    "ds_calloc",
+    "ds_free",
+    "ds_malloc",
+    "ds_realloc",
+    "ds_strdup",
+    "ds_strndup"
+  ]
+}

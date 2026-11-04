@@ -1,0 +1,16 @@
+{
+    "id": "LFST.4.1",
+    "category": "logical",
+    "scenario": "Every stream event carries both `seq` and `clock_ns` envelope fields per LFST.4 / LFST.5.1 — these are mandatory per-event fields independent of the session header. Pin: seq values are strictly increasing and clock_ns is consistent with mock clock setting of 500000000 ns across all captured events.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hello\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 500000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "expected_clocks": [500000000, 500000000, 500000000]
+    }
+}

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A fault in a fire guard. A `where` that names no binding lowers to the
+# terminal's fire guard, and one that reads `now()` joins the clock tick, so
+# `zone` activates on (P, $ClockTick) and its guard runs at selection.
+# `.local(tz)` with no zone resolver is a ComputationError of kind DOMAIN
+# ([LTIM.10.5.3]): the fault is recorded and the activation denied, with no
+# frame. Neither scenario harness registers a resolver.
+use default
+
+schema P scope logical:
+    id: Int key
+
+rule zone:
+    P where now().local("UTC") >= now()
+->
+    log info "never"

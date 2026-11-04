@@ -1,0 +1,27 @@
+{
+    "id": "IDSP.1.4f",
+    "category": "logical",
+    "scenario": "Harness retract emits a fact_retract stream event for the given handle. Pins observability of explicit retraction through pyds.retract(). Pins IDSP.1.4 \u2014 explicit retract emits fact_retract event.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                },
+                "as": "h1"
+            },
+            {
+                "op": "retract",
+                "label": "h1"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_retract"
+        ]
+    }
+}

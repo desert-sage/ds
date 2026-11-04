@@ -1,0 +1,21 @@
+{
+    "id": "LEXP.9.5b",
+    "clauses": ["LEXP.9.5.1"],
+    "category": "logical",
+    "scenario": "`t.dwell` measures from the fact's entry stamp (LEXP.9.5.1, LTIM.2.8.6), never from its `ts` slot. The Sensor's `ts` claims it was observed 100_s before it entered working memory; a dwell computed from `ts` is already over 5_s at entry. Drives the time-dependent test CE that `dwell` lowers to, re-evaluated on the pump's tick. Pin: set clock 0; assert Sensor(ts = -100_s); advance 4_s; pump; assert Marker; pump; advance 2_s; pump — messages are ['marker', 'stale']. A dwell read from `ts` fires at the first pump and gives ['stale', 'marker'].",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    ts: Time\n\nschema Marker scope logical:\n    k: String key\n\nrule stale_check:\n    Sensor s where s.dwell > 5_s\n->\n    log critical \"stale\"\n\nrule mark:\n    Marker\n->\n    log critical \"marker\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1", "ts": -100000000000 } },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "pump" },
+            { "op": "assert",  "schema": "Marker", "slots": { "k": "m" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["marker", "stale"]
+    }
+}

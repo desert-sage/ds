@@ -1,0 +1,10 @@
+{
+    "id": "LSER.10.17",
+    "category": "compiler",
+    "scenario": "Unique-required schema scoping per LSER.10.17. Unqualified `series <slot>:` binds to the unique schema with that slot in scope; ambiguity (2+ matching schemas) is a compile error directing the author to qualify. Pin: two schemas both declaring a `state` slot make the bare `series state:` ambiguous and reject with DS_VALIDATE_SERIES_AMBIGUOUS_SLOT.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nschema Heater scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries state:\n    count sliding 10_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AMBIGUOUS_SLOT"
+    }
+}

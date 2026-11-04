@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A match-time trap is recorded once per derivation of its pair
+# ([LERR.1.4.12]). `105_released_trap` with the NOT node and the trapping join
+# on one schema, so a single `B` is both the blocker `b` and the candidate
+# `c`, and both nodes sit on one alpha memory.
+#
+#   TRANSIENT (`113_transient_trap`). With `a1` live, assert `b1` with
+#   `b1.k == a1.k` and `y = 0`. The trapping join may evaluate `((a1), b1)`
+#   and trap, but the NOT node on the same fact blocks `(a1)`, so the pair is
+#   not live when the assert's propagation completes: nothing is recorded,
+#   whatever order the two nodes are right-activated in (formal witness
+#   `lerr_1_4_12__transient_pair_records_nothing`).
+#
+#   RE-DERIVED (`114_rederived_trap`). `c1` (another key, `y = 0`) traps
+#   against `(a1)`; `b1` (a1's key, `y = 1`) blocks `(a1)` and ends the pair;
+#   retracting `b1` releases `(a1)` and derives `((a1), c1)` again, and it
+#   records again. Two traps.
+#
+# `x` and `y` are Int: only an all-Int division traps [LEXP.7.15.1].
+use default
+
+schema A scope logical:
+    k: String key
+
+schema B scope logical:
+    k: String key
+    x: Int mutable
+    y: Int mutable
+
+rule r:
+    A a
+    no B b where b.k == a.k
+    B c where c.x / c.y > 1.0
+->
+    log info "r fired"

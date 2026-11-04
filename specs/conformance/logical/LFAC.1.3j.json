@@ -1,0 +1,17 @@
+{
+    "id": "LFAC.1.3j",
+    "clauses": ["LSTR.3.1"],
+    "category": "logical",
+    "scenario": "String equality comparison at runtime (LSTR.3.1: codepoint by codepoint) — a rule gated on `d.state == \"on\"` fires once for each of d1 and d3 and not for d2. Named for the LFAC.1.3 heading (`ttl` facts), which it does not test; its schema is `logical`.",
+    "rules_ds": "schema Device scope logical:\n    entity_id: String key\n    state: String mutable\n\nrule on_device:\n    Device d where d.state == \"on\"\n->\n    log info \"device on\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Device", "slots": { "entity_id": "d1", "state": "on" } },
+            { "op": "assert", "schema": "Device", "slots": { "entity_id": "d2", "state": "off" } },
+            { "op": "assert", "schema": "Device", "slots": { "entity_id": "d3", "state": "on" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["on_device", "on_device"]
+    }
+}

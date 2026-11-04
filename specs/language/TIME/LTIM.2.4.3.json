@@ -1,0 +1,124 @@
+{
+  "id": "LTIM.2.4.3",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.4",
+  "seq": 194,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.4.3] Re-evaluation reads both clocks as sampled when the pump began\n([LTIM.2.8.4]), and every series as it stood when the pump began\n([LSER.8.6.1]); all `now()` reads within one activation are still atomic\n([LTIM.2.1.3]).\n\n",
+  "refs": [
+    "LSER.8.6.1",
+    "LTIM.2.1.3",
+    "LTIM.2.8.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__retime_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time stage keeps the invariant: the tick changes no fact and keeps the frame, the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_2__pump_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The pump re-evaluates under the sample the state holds as it begins. LESS than the clause: no series."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__entry_retime_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Re-evaluation at the pump's entry with nothing to re-evaluate changes nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__retime_at_entry",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE RE-TIME AT THE PUMP'S ENTRY: every timed chain re-evaluated at the held sample over the stamps as they stand, then the cascade for the rows of the activations it ended. 'Re-evaluation reads both clocks as sampled when the pump began': the state's clock and wall sample, held since the last tick or input. LESS than the clause: a series snapshot is outside the fragment."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__tick_then_pump_is_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A TICK THEN A PUMP IS THE CLOCKED PUMP: with no rule cooled, the net a tick and the pump after it leave is Rete/NetworkClocked.idr's `iret_19_5__pump_clocked` at the tick with the tests fixed at the wall sample over the stamps, which is Rete/NetworkTwoClocks.idr's `ltim_2_8_4__pump_sampled` at the sample `(t, w)`. Over every program, test list, fuel, net, wall sample, stamp table and tracker table. What lets C2 (the wall moves no monotonic gate), C3a (a rising gate fires at most once) and B2 (the counts are the edges) be read on this engine's tick-then-pump cycle, with the tests this module builds in place of the gates those files take."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_3__true_at_assert_decided_at_the_pump",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Re-evaluation reads the clock as sampled when the pump began -- the tick's 3, not the assert's 0. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__retime_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RE-TIME AT THE PUMP'S ENTRY on the quiescent state's net moved to a new clock: the cascade touches nothing (no row), so it is the re-time alone, which the tick literal computes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__tick_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Re-evaluation under the sample taken when the pump began: the new clock's reading of the gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__timer_cycle",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Re-evaluation under the pump's sample: the gate read at the clock the tick set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Re-evaluation reads both clocks as sampled when the pump began': the `now()` gate re-evaluated at each sample reads the wall sample of that pump, and reopens when it goes back."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_3__true_at_assert_fires_once_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The pump at (7, 7) re-evaluates under its own sample and finds the condition it found at the assert. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Re-evaluation reads both clocks as sampled when the pump began': the pump at (3, 1) reads the wall the step before it set, not the tick's. Executed."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_3__wall_moves_a_now_gate",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Re-evaluation reads both clocks as sampled': a `now()` gate re-evaluated under a sample whose wall clock moved has moved with it, the monotonic clock standing still."
+      }
+    ]
+  }
+}

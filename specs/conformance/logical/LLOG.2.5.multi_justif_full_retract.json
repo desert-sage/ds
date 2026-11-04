@@ -1,0 +1,20 @@
+{
+  "id": "LLOG.2.5.multi_justif_full_retract",
+  "category": "logical",
+  "scenario": "Multi-justification lifecycle, full withdrawal: a keyed logical fact emitted by two rules retracts cleanly only when ALL justifiers are withdrawn, leaving no orphan. A runtime that builds a second DS wrapper orphans it on the TMS retract (dangling rete_fact, never emits FACT_RETRACT), and working memory keeps 1 stale Mark instead of 0.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\nschema Gate scope logical:\n    g: Int key\nschema Mark scope logical:\n    step: String key\nrule from_trig:\n    Trig\n->\n    emit Mark logical step: \"X\"\nrule from_gate:\n    Gate\n->\n    emit Mark logical step: \"X\"\n",
+  "expect": {
+    "kind": "introspection_assert",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+      { "op": "assert", "schema": "Gate", "slots": { "g": 1 }, "as": "g" },
+      { "op": "pump" },
+      { "op": "retract", "label": "t" },
+      { "op": "retract", "label": "g" },
+      { "op": "pump" }
+    ],
+    "checks": [
+      { "surface": "fact_count", "equals": 0 }
+    ]
+  }
+}

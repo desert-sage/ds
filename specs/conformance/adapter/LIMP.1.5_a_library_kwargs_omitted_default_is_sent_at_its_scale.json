@@ -1,0 +1,28 @@
+{
+    "id": "LIMP.1.5_a_library_kwargs_omitted_default_is_sent_at_its_scale",
+    "clauses": ["LIMP.1.5", "LADP.8.5.2"],
+    "category": "adapter",
+    "scenario": "[LIMP.1.5]: a name in a library's declaration resolves in that library, so a library service's `default` is the quantity its declaring library spells, and [LADP.8.5.2] decides the number the service receives from it. `a` declares the dimension `warmth`, its base unit `base_a`, and `mark` at `x * 2`. `c`, on `a`'s `warmth`, declares its own `mark` at `x * 3`, and `svc.x` with two kwargs that default to `5_mark`: `d`, typed by the dimension `warmth`, and `u`, typed by `c`'s `mark`. The program binds `mark` to `a`'s and does `import c`, and rule `go` calls `svc.x` writing neither kwarg, so both defaults are supplied ([LADP.8.5.1]). In `c`, `5_mark` is 15 `base_a`. So `d` sends 15.0, the base-unit value, and `u` sends 5.0, the quantity in `c`'s `mark`. A default read in the program's scope takes `a`'s `mark`, 10 `base_a`, and sends `d` as 10.0. One that reads the default in the program's scope but the kwarg's unit in `c` sends `u` as 10/3. PATH PINNED: `dsc.rete.ladp_8_5_1_with_defaults` and `omitted_default`, which folds the default with `ladp_8_5_2_default` in the declaring file's scope (`dsc.resolve.kwarg_scope`, recorded by `dsc.imports.limp_1_5_kwarg`). Both runtimes send the body the compiler emits: libds through `runner.py`, and the Mercury runtime through `test_behave.m`.",
+    "rules_ds": "from a import mark\nimport c\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call svc.x nocooldown\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2\n",
+        "c": "from a import warmth\n\nunit mark: warmth = x * 3\n\nservice svc.x:\n    kwarg d: warmth default 5_mark\n    kwarg u: mark default 5_mark\n    no response\n"
+    },
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "d": 15.0,
+                    "u": 5.0
+                }
+            }
+        ]
+    }
+}

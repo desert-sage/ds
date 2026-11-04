@@ -1,0 +1,52 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// AlphaNode atom — one alpha (pattern filter) node in the RETE network.
+//
+// node_id is globally unique across all RETE node atoms (AlphaNode, BetaNode, TerminalNode)
+// in the bundle. 0 is reserved as null/unset.
+//
+// schema_name references a schema already declared by Slot atoms.
+// Each test narrows which facts of that schema are admitted to the
+// node's memory.
+
+message AlphaNode {
+    uint32             node_id     = 1;
+    string             schema_name = 2;
+    repeated AlphaTest tests       = 3;
+}
+
+message AlphaTest {
+    AlphaTestKind kind       = 1;
+    uint32        slot_index = 2;
+    AlphaCmpOp    op         = 3;  // for EQ / CMP
+    AlphaLiteral  literal    = 4;  // for EQ / CMP
+    string        pattern    = 5;  // for REGEX; compiler pre-validates syntax
+}
+
+enum AlphaTestKind {
+    ALPHA_TEST_EQ    = 0;  // slot == literal
+    ALPHA_TEST_CMP   = 1;  // slot <op> literal
+    ALPHA_TEST_REGEX = 2;  // regex_match(slot, pattern)
+}
+
+enum AlphaCmpOp {
+    ALPHA_CMP_EQ  = 0;
+    ALPHA_CMP_NEQ = 1;
+    ALPHA_CMP_LT  = 2;
+    ALPHA_CMP_GT  = 3;
+    ALPHA_CMP_LTE = 4;
+    ALPHA_CMP_GTE = 5;
+}
+
+message AlphaLiteral {
+    oneof value {
+        int64  int_val   = 1;
+        double float_val = 2;
+        string str_val   = 3;
+        bool   bool_val  = 4;
+    }
+}

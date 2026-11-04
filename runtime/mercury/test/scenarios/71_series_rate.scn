@@ -1,0 +1,16 @@
+# Sliding `rate`: one sample, two samples, and a window emptied underneath
+# them. `Rate.r` is a payload slot, so `verify recordings` compares the value.
+#
+#   pump 1  one sample, no elapsed time: `rate` is null, written as -1.0
+#   pump 2  two samples 2 s apart, 10.0 -> 30.0: (30 - 10) / 2 = 10.0
+#   pump 3  20 s later, past the 10 s window: one sample again, -1.0. The
+#           value changes (31.0), since a no-op reassert would not fire the
+#           rule ([LFAC.2.5.1]).
+assert Flow k=a v=10.0
+pump
+advance 2000000000
+assert Flow k=a v=30.0
+pump
+advance 20000000000
+assert Flow k=a v=31.0
+pump

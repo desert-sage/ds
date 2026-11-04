@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.3.3_negative_time_literal_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.3.3] / [LEXP.7.10]: \"The `time` units are the exception. A `Duration` is never negative ([LTIM.1.3.1]), so the compiler must refuse a unary minus on a `time`-dimensioned unit literal, such as `-15_min`, with `DS_VALIDATE_BAD_OPERAND_TYPE`.\" A `where` compares a `Duration` slot with `-15_min`. PATH PINNED: `dsc.typecheck`'s `lexp_7_10_unary`, which takes `Int` or `Float` and so refuses the `Duration` a time literal types as (`ltim_1_3_2_dimensioned`).",
+    "rules_ds": "schema Wait scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule r:\n    Wait w where w.d > -15_min\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_OPERAND_TYPE"
+    }
+}

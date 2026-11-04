@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.4.1.5_two_libraries_one_dimension_name_are_two",
+    "category": "compiler",
+    "scenario": "[LUNI.4.1.5]: \"Two declarations are two, whatever their names, storage types and units, so a value of one meeting a value of the other is [LUNI.8.2]'s error.\" `a` and `b` each declare a dimension `warmth`, and a rule compares a slot of each. A compiler comparing bare names sees one dimension and compiles it. PATH PINNED: `dsc.imports.limp_1_5_unit`, which stamps each `warmth` with the library declaring it, then `dsc.typecheck`'s comparison.",
+    "rules_ds": "import a\nimport b\n\nrule r:\n    a.Ta x\n    b.Tb y where x.t == y.t\n->\n    log info \"x\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base ta_unit\nunit ta_unit: warmth\n\nschema Ta scope logical:\n    k: Int key\n    t: ta_unit mutable\n",
+        "b": "unit dimension warmth storage float64 base tb_unit\nunit tb_unit: warmth\n\nschema Tb scope logical:\n    k: Int key\n    t: tb_unit mutable\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

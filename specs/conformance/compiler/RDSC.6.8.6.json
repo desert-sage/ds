@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.6.8.6",
+    "category": "compiler",
+    "scenario": "Multi-pattern rule per RDSC.6.8.4 and RDSC.6.8.6: the positive Sensor and Event patterns each contribute an entry, in source order, and the negated Lock pattern contributes none. The expected template is the whole string, closing `)` included, so an `lk=` entry would not match. `test_conformance.m` reads it from the RuleDebugName atom in the emitted `.dsc`.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n\nschema Event scope logical:\n    entity_id: String key\n    kind: String mutable\n\nschema Lock scope logical:\n    entity_id: String key\n\nrule pair:\n    Sensor s\n    Event e where e.entity_id == s.entity_id\n    no Lock lk where lk.entity_id == s.entity_id\n->\n    log info \"pair\"\n",
+    "expect": {
+        "kind": "dsc_dnam_templates",
+        "expected_dnam": {
+            "pair": "pair(s={s.entity_id}, e={e.entity_id})"
+        }
+    }
+}

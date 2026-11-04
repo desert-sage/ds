@@ -1,0 +1,29 @@
+{
+    "id": "IDSP.3b",
+    "clauses": ["RARC.5.8.12"],
+    "category": "logical",
+    "scenario": "A rule firing `emit` produces an action_emit stream event AND a fact_assert (the emitted fact lands in working memory). Pins IDSP.3 contract \u2014 emit's primary effect is a local-only assert. The emitted fact's fact_assert is stated inside the firing, after rule_fire_begin; the host's Trig is the first one. A runtime that emits the event and never asserts the fact fails.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Local scope logical:\n    a: Int key\n\nrule r:\n    Trig\n->\n    emit Local logical a: 1\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

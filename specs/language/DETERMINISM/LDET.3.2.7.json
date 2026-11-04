@@ -1,0 +1,244 @@
+{
+  "id": "LDET.3.2.7",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.3.2",
+  "seq": 365,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LDET.3.2.7] **Float canonical text form + Float→JSON serialization.** A finite\n  `Float` renders as the **shortest decimal string that parses back to the\n  identical IEEE-754 `double`** — the round-trip *shape*: fixed notation for\n  `1e-4 ≤ |x| < 1e16`, scientific outside. In fixed notation the `.0` is\n  **kept** on a whole float (`42.0` → `\"42.0\"`, never `\"42\"`, so the value\n  round-trips as a `Float`, not collapsing to an `Int`). In scientific notation\n  a mantissa of one digit carries no point (`1e16` → `\"1e+16\"`, never\n  `\"1.0e+16\"`): the\n  exponent already makes the text a `FLOAT_LIT` ([LLEX.11.2]). Lowercase signed\n  exponent with ≥2 digits; `-0.0` preserved in\n  the rendered text. A `Json` value holds no `-0.0` ([LGRA.5.8.8]), so none\n  reaches its text. This shaping is DS-owned — it is *repr-shaped*, **not** Python-`repr`-identical: the runtime\n  owns its own shaping and depends on no host `repr`. The compiler lowers a source\n  `FloatLit` through the **same** shaping ([LUNI.2.7], [LUNI.17.7]), so a\n  serialized cache value and the same value written as a source literal render\n  alike, and a serialized cache value round-trips (`cached(\"k\")` reads back what\n  was written).\n\n  **Determinism scope.** Both the shaping and the digits are the runtime's own,\n  on every platform: the digits are correctly rounded and the form round-trips\n  bit for bit ([LDET.3.2.8]). No host conversion routine takes part.\n\n  **Non-finite on the JSON data plane — hard error.** The JSON data plane (the\n  cache value, and every JSON value the engine builds) uses the finite form above; a **non-finite** `Float` (`±Inf`, or a\n  NaN an expression produced, [LDET.3.6.2]) forced into a JSON\n  body is a **`NOT_REPRESENTABLE` trap at the verb** ([LERR.1.4.9]): the engine\n  abandons the activation and the verb does not run, so no `inf` token reaches\n  the wire. A rule's path does not return `DS_ERR_JSON_NONFINITE`, which answers\n  a host call that would build such a value ([LGRA.5.8.10]). A `Json`\n  value holds none ([LGRA.5.8.10]), and no non-finite value is ever serialized\n  to JSON.\n\n  **±`Inf` text form (the text / display plane, not JSON).** Where a non-finite\n  `Float` is rendered as **text** rather than JSON — `Float::String` ([LCST.4.5.6])\n  and the display default below — `±Inf` renders `\"inf\"` / `\"-inf\"`. This clause is\n  the home of both the finite canonical form and the `±Inf` text form; `[LCST.4.5.6]`\n  references it.\n\n  **Display default.** A string-interpolation segment with no\n  explicit format spec (`\"{x}\"`), and `log` message text, render a `Float`\n  in this **same** canonical form (faithful-by-default, the auto formatter); an\n  explicit author format spec renders by [LGRA.2.9.6.5]'s rules. Display default, data plane\n  and source-literal form are therefore one and the same shaping. *Carve-out:* the internal identity-value **row key** used for\n  fact dedup is not observable rendering and is not governed here — `-0.0` is\n  normalized to `0.0` in the identity / join float hashes ([LFAC.2]), and a\n  `Float` used as an identity key already sits outside the cross-platform guarantee\n  ([LDET.3.2.4] covers non-float slots).\n\n",
+  "refs": [
+    "LCST.4.5.6",
+    "LDET.3.2.4",
+    "LDET.3.2.8",
+    "LDET.3.6.2",
+    "LERR.1.4.9",
+    "LFAC.2",
+    "LGRA.2.9.6.5",
+    "LGRA.5.8.10",
+    "LGRA.5.8.8",
+    "LLEX.11.2",
+    "LUNI.17.7",
+    "LUNI.2.7"
+  ],
+  "errors": [
+    "DS_ERR_JSON_NONFINITE"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__render_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The canonical text: `nan`, `inf`, `-inf`, `0.0` and `-0.0` each with its sign, and for a finite nonzero value the shortest digits in the clause's shape -- the double decomposed by exact halvings and doublings, `ldet_3_2_7__shortest`, the trailing zeros stripped, `ldet_3_2_7__shape`. Total but for a search that finds no digits, a trap no finite double reaches. The digits are found and checked by the model's own parse: run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__after_point",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What follows the leading digit of a scientific mantissa: nothing when it is the only digit, else a point and the rest."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__and_right",
+        "tag": "derives",
+        "role": "lemma",
+        "note": "The right half of a true conjunction is true; a Bool lemma under the clause it serves."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidate_round_trips",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A candidate the search returns at one length passes `ldet_3_2_7__round_trips`: the choice admitted it with its own test true and by nothing else, for every value, length and candidate. What the test computes is run."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two decimals of one length bracketing the value on that length's grid, each tested by the parse, the upper only when the value is not the lower exactly, the nearer and the parity of the lower handed to `ldet_3_2_7__choose`: a decimal of that length that parses back is one of the two, the decimals that parse back forming an interval around the value."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The choice at one length over an abstract test of a candidate: `lo` and `lo + 1` at power `p`, the two decimals of the length bracketing the value `lo + r / den`, each tested by `rt` (the upper only when the value is not `lo` exactly), the nearer and `lo`'s parity handed to `ldet_3_2_7__choose`. Abstract in the test so that `ldet_3_2_7__candidates_by_admit` is stated over variables and unfolds no parse; `ldet_3_2_7__candidates` is it at the parse's own test."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates_by_admit",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A candidate the choice returns passed the test, whatever the test: `lo` with `rt lo p` true, or `lo + 1` with `rt (lo + 1) p` true, read off `ldet_3_2_7__chosen_was_admitted`. `ldet_3_2_7__candidate_round_trips` is this theorem at the parse's test."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__choose",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's choice at one length as a case table and no `if`: the candidate that parses back; of two, the nearer; at an exact tie the even last digit ([LDET.3.2.8]'s rule); of none, nothing."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__chosen_was_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What the choice admits, read off its seven clauses: a chosen candidate is the lower with the lower parsing back, or the upper with the upper parsing back, at the power it was offered at, whatever the nearness and parity flags say."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__decimal_exponent",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The power of ten of a positive value's leading digit, from an estimate corrected a step at a time by exact comparison with powers of ten."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__fixed_form",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `1e-4 <= |x| < 1e16`, as the leading digit's power of ten from -4 to 15."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__found_round_trips",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The round trip by construction: whatever the search returns, at any length and from any starting length, passes `ldet_3_2_7__round_trips` for the value it was searched for -- the digits were admitted by the parse's own test. A theorem of the search's shape over every value; the test itself is run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__ge_pow10",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether an exact fraction is at least a power of ten, for either sign of the exponent, by Integer comparison."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__just_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "note": "`Just` is injective: the accepted duplicate of `lcyc_1_1__just_injective` in a module that imports none of the lane, base 0.8.0 having no `Injective Just`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__last_power",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The power of ten of the last of a given number of significant digits, from the leading digit's."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__round_trips",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's 'parses back to the identical IEEE-754 double', read through the parse's own rounding: the decimal's nearest double (`ldet_3_2_8__nearest`), recomposed, is the value. What it computes is run against the fixtures and libds, not proved (the parse's proof is post-v1)."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__scaled10_den",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The divisor of an exact fraction scaled by a power of ten, with `ldet_3_2_7__scaled10_num` the numerator."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__scaled10_num",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The numerator of an exact fraction scaled by a power of ten of either sign."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shape",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The shape: fixed notation from `1e-4` to below `1e16` with `.0` kept on a whole value and a `0` before a sub-one one, scientific outside it with a lowercase `e`, a signed exponent of at least two digits, a `-` first when negative, and no point after a one-digit scientific mantissa (`1e+16`, never `1.0e+16`), as the clause states; `ldet_3_2_7__shape_rows` executes `1e+16` and `1.5e+16`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shape_rows",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Twelve rows of the shape on literal digits, each `Refl`: `42.0`, the fixtures' `0.30000000000000004` and `3.141592653589793`, the fixed form's edges `0.0001` and `9999999999999998.0`, the scientific `1e-05`, `1e+16`, `1.5e+16` and `-2.5e-07`, the extremes `5e-324` and `1.7976931348623157e+308`, `123456789.0`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The shortest digits of a finite nonzero magnitude by the clause's words -- among the decimals that parse back, the fewest significant digits; of that length the nearest; at a tie the even last digit -- searched from one digit upward. Partial on the bound: the search stops at seventeen digits, which the clause does not state; seventeen identify every binary64, so no finite value is left without digits, but that is a fact about the format and no theorem here, and a search that fails is a trap in `lcst_4_5_6__render_float`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The search from a length upward, a bounded number of lengths: the candidates at this length, else the next."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One step of the search: the candidates at this length when there are any, else the rest of the search, which arrives as a thunk so that a length that answers ends it."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__step_just",
+        "tag": "derives",
+        "role": "lemma",
+        "note": "A step that answers rests on the candidates at its length, or on the rest of the search with none at its length: the step's two clauses read back, over variables, for `ldet_3_2_7__found_round_trips`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__strip",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The digits with their trailing zeros removed and the power of ten moved up by as many: one decimal, written with no trailing zero in the mantissa."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__two_digits",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's exponent of at least two digits: a one-digit magnitude padded with a leading `0`."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dscast.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

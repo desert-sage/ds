@@ -1,0 +1,93 @@
+# lowered from the probe latest.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# latest.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment, rung R2: `latest` on a sequence's anchor is lowered as RLOW.5.6.5.2
+# and IRET.7.10.2 state it -- after the sequence's last step a `no` pattern on
+# the anchor's schema (a standard NOT node, `pattern <rule> <alpha> 1`), its
+# candidate at the rank after every positive pattern, its test `cand.ts >
+# anchor.ts` conjoined with the anchor's own `where` and every step's join and
+# `where`, each re-lowered with the candidate in the anchor's place. Three
+# `ttl` kinds as the LTHE.2.5.3 vectors have them: DoorOpen (0; payload loc,
+# n, ts), Motion (1; loc, ts), Light (2; loc, ts); the bound is 30_s as a
+# `lit i:`. Rule 0 `pair` carries the bare exclusion on pattern 2: the
+# candidate (slot 2) after the anchor (slot 0) and the first step's join with
+# the candidate in the anchor's place. Rule 1 `trailing_where` conjoins the
+# step's `d.loc == m.loc` after its join, so the exclusion carries it with the
+# candidate's loc (`eq slot 2 pay 0 slot 1 pay 0`). Rule 2 `anchor_where`
+# carries the anchor's own `d.loc == "hall"` on pattern 0 and again, on the
+# candidate, in the exclusion. Rule 3 `chain_where` is a three-step chain whose
+# last step reads the anchor: the NOT sits after the LAST join (pattern 3), its
+# test ordering the candidate against the FIRST follower (slot 1) and carrying
+# the Light step's `l.loc == d.loc` with the candidate (slot 3) in the anchor's
+# place; the second step's join rides along unchanged. Rule 4 `one_line` is
+# `pair` in LGRA.8.5.2's one-line layout, lowered alike. Seven facts -- DoorOpen
+# hall 1 at ts 1, hall 2 at ts 2, porch 3 at ts 3; Motion hall at ts 4; Light
+# hall at ts 5; DoorOpen hall 6 at ts 6; Motion hall at ts 7 -- and one pump:
+# nine firings. `pair` and `one_line` fire on the anchor at 3 for the Motion at
+# 4 (the anchors at 1 and 2 excluded) and on the anchor at 6 for the Motion at
+# 7 (the anchor at 6 excludes nothing for the Motion at 4, which it does not
+# precede); `trailing_where` and `anchor_where` fire on the anchor at 2 for the
+# Motion at 4, the porch anchor at 3 neither matching nor excluding, and on
+# the anchor at 6 for the Motion at 7; `chain_where` fires once, on the anchor
+# at 2, the Light at 5 completing the chain for the hall anchors and the porch
+# one failing `l.loc == d.loc`. The logs read the anchor's n. The keys are the
+# code of the empty tuple (1; a `ttl` fact carries no identity) and the
+# payloads the codes of (loc, n, ts) or (loc, ts): a String 8 * token + 3
+# (hall is token 0, porch token 1) and an Int 8 * zigzag(n) + 2; no text is
+# read, so no `string` records.
+# lowered from latest.json (rule_fire_order)
+schema 0 explicit DoorOpen
+schema 1 explicit Motion
+schema 2 explicit Light
+ttl 0 1
+ttl 1 1
+ttl 2 1
+alpha 0 0
+alpha 1 1
+alpha 2 2
+rule 0 pair
+pattern 0 0 0
+pattern 0 1 0
+where 0 1 and gt slot 1 pay 1 slot 0 pay 2 lt sub slot 1 pay 1 slot 0 pay 2 lit i:30000000000
+pattern 0 0 1
+where 0 2 and gt slot 2 pay 2 slot 0 pay 2 and gt slot 1 pay 1 slot 2 pay 2 lt sub slot 1 pay 1 slot 2 pay 2 lit i:30000000000
+log 0 0 1 slot 0 pay 1
+rule 1 trailing_where
+pattern 1 0 0
+pattern 1 1 0
+where 1 1 and and gt slot 1 pay 1 slot 0 pay 2 lt sub slot 1 pay 1 slot 0 pay 2 lit i:30000000000 eq slot 0 pay 0 slot 1 pay 0
+pattern 1 0 1
+where 1 2 and gt slot 2 pay 2 slot 0 pay 2 and and gt slot 1 pay 1 slot 2 pay 2 lt sub slot 1 pay 1 slot 2 pay 2 lit i:30000000000 eq slot 2 pay 0 slot 1 pay 0
+log 1 0 1 slot 0 pay 1
+rule 2 anchor_where
+pattern 2 0 0
+where 2 0 eq slot 0 pay 0 lit s:0
+pattern 2 1 0
+where 2 1 and gt slot 1 pay 1 slot 0 pay 2 lt sub slot 1 pay 1 slot 0 pay 2 lit i:30000000000
+pattern 2 0 1
+where 2 2 and and gt slot 2 pay 2 slot 0 pay 2 eq slot 2 pay 0 lit s:0 and gt slot 1 pay 1 slot 2 pay 2 lt sub slot 1 pay 1 slot 2 pay 2 lit i:30000000000
+log 2 0 1 slot 0 pay 1
+rule 3 chain_where
+pattern 3 0 0
+pattern 3 1 0
+where 3 1 and gt slot 1 pay 1 slot 0 pay 2 lt sub slot 1 pay 1 slot 0 pay 2 lit i:30000000000
+pattern 3 2 0
+where 3 2 and and gt slot 2 pay 1 slot 1 pay 1 lt sub slot 2 pay 1 slot 1 pay 1 lit i:30000000000 eq slot 2 pay 0 slot 0 pay 0
+pattern 3 0 1
+where 3 3 and and gt slot 3 pay 2 slot 0 pay 2 and gt slot 1 pay 1 slot 3 pay 2 lt sub slot 1 pay 1 slot 3 pay 2 lit i:30000000000 and and gt slot 2 pay 1 slot 1 pay 1 lt sub slot 2 pay 1 slot 1 pay 1 lit i:30000000000 eq slot 2 pay 0 slot 3 pay 0
+log 3 0 1 slot 0 pay 1
+rule 4 one_line
+pattern 4 0 0
+pattern 4 1 0
+where 4 1 and gt slot 1 pay 1 slot 0 pay 2 lt sub slot 1 pay 1 slot 0 pay 2 lit i:30000000000
+pattern 4 0 1
+where 4 2 and gt slot 2 pay 2 slot 0 pay 2 and gt slot 1 pay 1 slot 2 pay 2 lt sub slot 1 pay 1 slot 2 pay 2 lit i:30000000000
+log 4 0 1 slot 0 pay 1
+step assert _0 0 1 1000000000000000000003000000000000000000018000000000000000000018
+step assert _1 0 1 1000000000000000000003000000000000000000034000000000000000000034
+step assert _2 0 1 1000000000000000000011000000000000000000050000000000000000000050
+step assert _3 1 1 1000000000000000000003000000000000000000066
+step assert _4 2 1 1000000000000000000003000000000000000000082
+step assert _5 0 1 1000000000000000000003000000000000000000098000000000000000000098
+step assert _6 1 1 1000000000000000000003000000000000000000114
+step pump

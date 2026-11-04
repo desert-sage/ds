@@ -1,0 +1,15 @@
+{
+    "id": "LFAC.2.5.1_json_int_float_distinct",
+    "category": "runtime",
+    "scenario": "[LFAC.2.5.1]: an integer and a float are different kinds, so `{\"v\": 1}` and `{\"v\": 1.0}` are not equal and are two identities, so two facts. PATH PINNED: the identity-key comparison (libds `rete/wm_rete.c` `idkey_equal` through `json.c` `ds_json_deep_equal`, whose kind test runs first; Mercury `ds.json`, where `j_int` and `j_float` are separate arms). The vector relies on each runtime's driver keeping the kind the vector writes: `1.0` must reach the engine as a float. A driver that folds it to an integer would show one fact, and that is a driver defect, not a pass for the other reading.",
+    "rules_ds": "schema Reading scope logical:\n    payload: Json key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Reading", "slots": { "payload": { "v": 1 } } },
+            { "schema": "Reading", "slots": { "payload": { "v": 1.0 } } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

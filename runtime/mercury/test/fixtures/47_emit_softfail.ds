@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The source of a crafted artefact. `emit_bad` stands for
+# `zeta: i.txt + i.txt`, `+` on two Strings, an EngineError on a clean node,
+# which the compiler refuses. The corpus build puts the `+` in after
+# compiling (pattern 0, `In`; slot 1, `txt`), and the suite loads that
+# artefact.
+schema Evt scope logical:
+    zeta: String key
+    alpha: Int mutable
+
+schema In scope logical:
+    id: Int key
+    txt: String mutable
+
+rule emit_bad:
+    In i
+->
+    emit Evt logical zeta: i.txt alpha: i.id

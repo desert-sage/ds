@@ -1,0 +1,8 @@
+{
+    "id": "LCST.4.3_float_to_int_redundant_q_reject",
+    "clauses": ["LCST.4.3.2", "LCST.4.3.1"],
+    "category": "compiler",
+    "scenario": "LCST.4.3.2 — Float->Int is total (the non-finite case traps, it is not a null result), so a '?' is redundant. Pin: s.f::Int? rejects with DS_VALIDATE_CAST_NULLABILITY.",
+    "rules_ds": "schema S scope logical:\n    f: Float key\n    txt: String mutable\n    i: Int mutable\n\nrule r:\n    S s\n->\n    let n = s.f::Int?\n    log info \"x\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_CAST_NULLABILITY" }
+}

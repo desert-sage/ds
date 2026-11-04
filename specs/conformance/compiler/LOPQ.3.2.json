@@ -1,0 +1,10 @@
+{
+    "id": "LOPQ.3.2",
+    "category": "compiler",
+    "scenario": "LOPQ.3.2 — a declared adapter operation whose signature names an opaque type may take it. A service kwarg typed as an imported opaque type validates, and a `call` binding an opaque-typed value into that kwarg is admitted (the seal is on representation operations, not declared-op argument binding).",
+    "rules_ds": "from crypto import (Key, Signature)\n\nservice adapter.verify:\n    kwarg pub_key: Key required\n    kwarg sig: Signature required\n    no response\n\nschema Machine scope logical:\n    pubkey: Key key\n    sig: Signature mutable\n\nrule r:\n    Machine m\n->\n    call adapter.verify pub_key: m.pubkey sig: m.sig nocooldown\n",
+    "libraries": {
+        "crypto": "opaque type Key       over Bytes\nopaque type Signature over Bytes\n"
+    },
+    "expect": { "kind": "compile_ok" }
+}

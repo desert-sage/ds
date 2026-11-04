@@ -1,0 +1,25 @@
+{
+    "id": "RFCS.6a.1_rule_emit_is_a_fact_emit",
+    "clauses": ["RFCS.11.3"],
+    "category": "runtime",
+    "scenario": "[RFCS.6a.1]: a fact the engine produces by firing a rule is recorded as a `FactEmit`; the host's own assert is a `FactAssert` ([RFCS.6.1]). [RFCS.11.3]: the firing is bracketed by two `RuleFireAnnotation` atoms, the begin immediately before every atom its RHS produced and the end immediately after. One host assert of Trig fires `r`, which emits a logical Out. After the announcements (the fault-fact schemas ComputationError and TypeError, five slots each, then Trig and Out, one slot each; [RFCS.5.1]), the stream is the assert's ClockAdvance, its FactAssert, the pump's PumpBoundary ([RFCS.22]), then RuleFireAnnotation, FactEmit, RuleFireAnnotation. Break: a recorder that wrote the emitted fact as a FactAssert, or outside the bracket, changes the list. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "FactEmit", "RuleFireAnnotation"
+        ]
+    }
+}

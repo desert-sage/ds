@@ -1,0 +1,228 @@
+{
+  "id": "IRET.4.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.4",
+  "seq": 407,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Fact",
+  "text": "### Fact [IRET.4.3]\n\nA fact carries its identity, its schema, two timestamps, its\ntruth-maintenance refcount, and its slot values:\n\n| Field | Holds |\n|---|---|\n| id | monotonically assigned, **never reused** within a session ([IRET.4.4]) |\n| schema | the schema this fact instantiates |\n| assert_ns | the fact's entry stamp: the monotonic clock's sample when it entered working memory ([LTIM.2.8.6]) |\n| deadline_ns | the expiry instant for a TTL fact; `0` means no deadline |\n| justif_count | the number of active justifications; non-zero only on `logical` facts, and reaching zero is what retracts one ([IRET.4.5]) |\n| slots | the values, one per slot the schema declares |\n\nThe slot values are stored **inline with the fact**, sized from the\nschema's slot count, rather than behind a pointer — one allocation per\nfact, and slot access is an offset rather than an indirection.\n\n",
+  "refs": [
+    "LTIM.2.8.6",
+    "IRET.4.4",
+    "IRET.4.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/EntryStamp.idr",
+        "name": "Ltim_2_8_6__stamps",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `assert_ns` -- 'the monotonic clock's sample when it entered working memory' -- kept as a table from fact id to stamp rather than inline in the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_4_3__record_action_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Both sides stamp the same deadline for one action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_4_3__record_action_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What one RHS action mints, on the network: an activation's fact ids are its token's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__apply_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `assert_ns` is written at the data input, at the held monotonic sample, as Rete/EntryStamp.idr keeps it."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Iret_4_3__deadlines",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `deadline_ns`, kept beside the engine as a table from fact id to deadline rather than inline in the fact; a fact without a row has no deadline (the clause's `0`)."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Iret_4_3__deadlines_ok",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TABLE'S INVARIANT: one row per id; every live TTL fact has its row; no other live fact has one; every live fact's deadline is after the clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__clear",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Drop an id's rows."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__clear_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row of the cleared table is a row of the table, of another id."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__clear_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rows of other ids survive a clear."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__deadlines_core",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Through one core action the table stays well-formed: a withdraw mints nothing and only removes; an emit mints at most the fresh id with the emitted kind, by the action shape of Rete/TmsRun.idr."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__deadlines_mint",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A mint keeps the table well-formed: the fresh id was not live, so its old rows belonged to no live fact, and the new fact's row, if any, is in the future."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__deadlines_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Fewer facts, same table: still well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__emit_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`Emit` is injective."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__init",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The input's table: every input fact of a TTL kind, asserted at the start clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__init_ok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The input's table is well-formed, given unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__lt_ttl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A non-zero TTL puts the deadline strictly after the clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__record_action",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What one RHS action mints: an emit stamps the fresh id [LFAC.2.5.3] with the clock the firing read; a withdraw stamps nothing."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__row",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An input fact's row: none for a kind without a TTL."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__row_for",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An input fact of a TTL kind has its row."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__row_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a row of the input's table says of its fact: its id, its deadline, its kind's TTL non-zero."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__stamp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Record a fresh fact's deadline: `assert_ns` plus the kind's TTL, with the id's stale rows dropped first. The model's fresh id is the smallest free one, not the clause's never-reused id; the clear makes the table right under reuse, and is a no-op when ids are never reused."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__stamp_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row of the stamped table is an untouched row of another id, or the new row: the fresh id, the clock plus the kind's non-zero TTL."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__stamp_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rows of other ids survive a stamp."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__stamp_new",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Stamping a TTL kind adds its row."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__stamp_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A stamp keeps one row per id."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_4_3__withdraw_not_emit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`Withdraw` is not `Emit`."
+      }
+    ]
+  }
+}

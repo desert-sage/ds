@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.11_a_negative_tolerance_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.11]: a loader refuses with DS_ERR_DSC_SEMANTIC (-504) an artefact holding a `Slot` whose `tolerance` is less than zero. The harness compiles schema `T`, whose `x` is a `Float` declared `tolerance 0.5`, and `runtime_error`'s `tamper: {set_field: {atom: [257, 0], path: [7], value: {f64: bff0000000000000}}}` ([RCTS.1.2.21]) writes -1.0 as field 7, `tolerance`, of the artefact's first `Slot` atom (257), and re-seals `dsc_sha256` ([RDSC.3.6]). Which schema that slot belongs to does not matter: the clause refuses a negative tolerance on any slot. What it discriminates: a loader that reads a tolerance not above zero as exact, or a finite negative one as a bound no delta meets, loads it, and the vector fails as unrefused. PATHS: libds's atom walk (`ds_engine_load_dsc`, `handle_slot`); the Mercury runtime's `ds.dsc_schema.decode_slot`, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    k: Int key\n    x: Float mutable tolerance 0.5\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"atom": [257, 0], "path": [7], "value": {"f64": "bff0000000000000"}}},
+        "code": "-504"
+    }
+}

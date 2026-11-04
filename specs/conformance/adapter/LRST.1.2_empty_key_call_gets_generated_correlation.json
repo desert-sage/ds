@@ -1,0 +1,20 @@
+{
+    "id": "LRST.1.2_empty_key_call_gets_generated_correlation",
+    "clauses": ["LCRS.3.1", "LCCO.3.4"],
+    "category": "adapter",
+    "scenario": "[LRST.1.2]: \"On a `call`, the engine must give a call whose key evaluates to `\\\"\\\"` the correlation it gives a call with no `as` ([LCCO.3.4]), so that the call's correlation is never empty ([LCRS.3.1]).\" Rule `r` calls `svc.read` `as j.tag`, a computed key. The first Job carries `tag = \"\"`, so its call is issued with the generated `$r_c0_g0`; the second carries `tag = \"x\"`, which passes through unchanged ([LCCO.3.4]: any other `as` value overrides the generated form). PATH PINNED: the call's correlation as the compiler lowers it for a computed String `as` -- the key, or the per-firing generated value when the key renders `\"\"` -- evaluated by each runtime at dispatch and handed to the call callback. A runtime that dispatched the `\"\"` fails the first call; one that substituted for a non-empty key fails the second.",
+    "rules_ds": "service svc.read:\n    kwarg n: Int\n    no response\n\nschema Job scope explicit:\n    id: Int\n    tag: String\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id nocooldown as j.tag\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1, "tag": "" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Job", "slots": { "id": 2, "tag": "x" } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            { "service": "svc.read", "correlation": "$r_c0_g0", "body": { "n": 1 } },
+            { "service": "svc.read", "correlation": "x", "body": { "n": 2 } }
+        ]
+    }
+}

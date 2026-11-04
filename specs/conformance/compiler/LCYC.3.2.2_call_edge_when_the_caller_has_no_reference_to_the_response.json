@@ -1,0 +1,13 @@
+{
+    "id": "LCYC.3.2.2_call_edge_when_the_caller_has_no_reference_to_the_response",
+    "category": "compiler",
+    "scenario": "[LCYC.3.2.2]'s call edge runs to \"a pattern, positive or under `no`, over that service's response schema\", whatever the calling file can spell. The root does `from lib import service, Trig`: the domain import brings the service ([LIMP.4.2.4]) and not `AReply`, so the file binds no name for the response. `again` calls `service.a` as \"a-response\", and `lib`'s `on_reply` matches `AReply` with that `corr` and emits `Trig`, which `again` matches. So the two rules are one SCC that consumes what its `call` produces, and [LCYC.3.1.1] refuses it with DS_VALIDATE_RULE_CYCLE. Its control is `LCYC.6.1_call_edge_when_the_caller_has_no_reference_pins_another_corr`. PATH PINNED: `dsc.cycle.lcyc_3_2_2_unit_outcomes`, the unit graph's response outcome, keyed by the schema's own name from `rf_response_names`. The break is an outcome written only as a name the caller binds: there are none, the edge is missing, and the program compiles.",
+    "rules_ds": "from lib import service, Trig\n\nrule again:\n    Trig\n->\n    call service.a nocooldown as \"a-response\"\n",
+    "libraries": {
+        "lib": "schema AReply scope ttl 1_h:\n    corr: String\n\nschema Trig scope ttl 1_h:\n    k: Int\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    response AReply\n\nrule on_reply:\n    AReply r where r.corr == \"a-response\"\n->\n    emit Trig k: 1\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

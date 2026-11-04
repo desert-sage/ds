@@ -1,0 +1,195 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "test_scenario.proto"; // TestSlotLiteral, test_id joins
+import "log_level.proto";     // LogSeverity
+
+// The log level's one definition is `proto/log_level.proto#LogSeverity`, which
+// is 0-based. The type name `LogLevel` and its member names are not issued
+// ([STYL.2.8.7]).
+
+// Portable test IR — the oracle atoms (Oracle*).  One atom per assertion head:
+// OracleActivated, OracleEmit, OraclePublish, OracleCall, OracleCacheSet,
+// OracleCacheDelete, OracleLog, OracleRetract, OracleWorkingMemory,
+// OracleExclusive.
+//
+// Every oracle atom carries two uniform modifiers, at the same field numbers in every
+// message so a reader recognises them by number:
+//   polarity   (2)  POS = at least once over the whole run; NEVER = zero times.
+//   occurrence (10) `exactly N` (LTSL.8.7). 0 = unconstrained, so polarity
+//                   alone decides. N >= 1; `exactly 0` is not admitted because
+//                   NEVER already is that assertion.
+// The two are one axis at different resolutions — POS is ">= 1", NEVER is
+// "== 0", occurrence is "== N" — so `never` and `exactly` do not combine and
+// the compiler rejects the pair.
+//
+// OracleWorkingMemory carries NO occurrence field, deliberately: `wm has`/`wm count`/`wm
+// empty` observe working memory at the END of the run, so there is no stream of
+// occurrences to tally. Its `count` is a final-state CARDINALITY and stays a
+// different concept with a different spelling (LTSL.8.7).
+//
+// There is NO output-side timing (no `when`), and no oracle atom is scoped to a
+// window — except OracleExclusive, whose whole content is a scope (see below).
+//
+// Matching is partial/subset equality (slot_match), or, on OracleEmit, a `where`
+// predicate in its place, never both ([LTSL.8.4]). No conforming compiler sets
+// OraclePublish's has_where.
+// Format/packaging/skip semantics: see test_scenario.proto.
+//
+// `where_expr_id` IS RESERVED AND UNASSIGNED ([RTIM.14.11]). A `where` predicate
+// is a compiler-synthesised rule, and the oracle is bound to it by name, so the
+// field has no referent. It is never reissued ([STYL.2.8.7]).
+
+enum TestPolarity {
+  TEST_POLARITY_UNSPECIFIED = 0;
+  TEST_POLARITY_POS         = 1;  // >= 1 occurrence
+  TEST_POLARITY_NEVER       = 2;  // 0 occurrences
+}
+
+// OracleActivated — `activated <rule>`: the rule produced and ran an activation.
+// rule_name is compile-bound against the program's rule inventory (an
+// `activated typo_rule` fails to compile) and matched on the fired terminal.
+message OracleActivated {
+  uint32       test_id   = 1;
+  TestPolarity polarity  = 2;
+  string       rule_name = 3;
+  uint32       occurrence = 10;           // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// `emitted <Schema> ...` — an emit-event match.
+//
+// OraclePublish below carries the identical layout for `published`. The two are
+// separate messages rather than one shared body because the ATOM'S IDENTITY IS
+// ITS FIELD NUMBER ([RDSC.1.2]), and a message reached from exactly one field
+// names the distinction that field makes. A shared body left the emit-vs-publish
+// distinction stated only in prose.
+message OracleEmit {
+  uint32       test_id       = 1;
+  TestPolarity polarity      = 2;
+  string       schema_name   = 3;          // compile-bound
+  repeated TestSlotLiteral slot_match = 4; // subset equality
+  bool         has_where     = 5;
+  uint32       where_expr_id = 6;          // unassigned — see header ([RTIM.14.11])
+  uint32       occurrence    = 10;         // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// `published <Schema> ...` — a publish-event match.
+//
+// The layout is identical to OracleEmit's and that is deliberate: the two
+// differ in the event kind they match, not in what they carry. Keeping them
+// as separate messages is what lets the field they are reached from say which
+// is which, rather than leaving it to a comment.
+message OraclePublish {
+  uint32       test_id       = 1;
+  TestPolarity polarity      = 2;
+  string       schema_name   = 3;          // compile-bound
+  repeated TestSlotLiteral slot_match = 4; // subset equality
+  bool         has_where     = 5;
+  uint32       where_expr_id = 6;          // unassigned — see header ([RTIM.14.11])
+  uint32       occurrence    = 10;         // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// `called <service> [slot: val] [as "corr"]`: an outbound call match.
+message OracleCall {
+  uint32       test_id         = 1;
+  TestPolarity polarity        = 2;
+  string       service         = 3;
+  bool         has_correlation = 4;
+  string       correlation     = 5;        // when has_correlation; else any corr
+  repeated TestSlotLiteral arg_match = 6;
+  uint32       occurrence      = 10;       // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// OracleCacheSet — `cached "k" [: v]`: a cache write.
+message OracleCacheSet {
+  uint32       test_id   = 1;
+  TestPolarity polarity  = 2;
+  string       key       = 3;
+  bool         has_value = 4;
+  TestSlotLiteral value_match = 5;         // slot_name unused; value equality
+  uint32       occurrence = 10;            // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// OracleCacheDelete — `cache_deleted "k"`: a cache delete.
+message OracleCacheDelete {
+  uint32       test_id  = 1;
+  TestPolarity polarity = 2;
+  string       key      = 3;
+  uint32       occurrence = 10;            // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// OracleLog — `logged <level> ["substr"]`: a log at that level.
+message OracleLog {
+  uint32       test_id    = 1;
+  TestPolarity polarity   = 2;
+  // Reserved, never reissued ([STYL.2.8.7]).
+  reserved 3;
+  reserved "level";
+  LogSeverity  severity   = 6;             // proto/log_level.proto
+  bool         has_msg    = 4;
+  string       msg_substr = 5;             // substring match when has_msg
+  uint32       occurrence = 10;            // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// The `alerted` oracle's atom number 295 and field name "oalt" are reserved in
+// atom.proto and never reissued. Nothing reserves here, because this file
+// defines BODIES and a body carries no registry number of its own
+// ([RFCS.16.1]: an atom's identity is its oneof field number in atom.proto).
+
+// OracleRetract — `retracted <Schema> ...`: a matching fact left working memory (TTL
+// expiry, logical supersedure).
+message OracleRetract {
+  uint32       test_id    = 1;
+  TestPolarity polarity   = 2;
+  string       schema_name = 3;            // compile-bound
+  repeated TestSlotLiteral slot_match = 4;
+  uint32       occurrence  = 10;           // LTSL.8.7 `exactly N`; 0 = unconstrained
+}
+
+// OracleWorkingMemory — `wm has <Schema> ...` / `wm count <Schema> == N` / `wm empty`:
+// working-memory state at the END of the run.
+message OracleWorkingMemory {
+  uint32       test_id   = 1;
+  TestPolarity polarity  = 2;
+  enum Mode {
+    MODE_UNSPECIFIED = 0;
+    HAS              = 1;  // some matching fact present
+    COUNT            = 2;  // exactly `count` matching facts
+    EMPTY            = 3;  // working memory empty
+  }
+  Mode         mode        = 3;
+  string       schema_name = 4;            // HAS / COUNT
+  repeated TestSlotLiteral slot_match = 5; // HAS
+  uint32       count       = 6;            // COUNT
+}
+
+// OracleExclusive — `exclusive <rule>, <rule>[, ...]`: no two of the named rules fire
+// within the same PUMP, for every pump in the scenario (LTSL.8.8).
+//
+// The only SCOPED oracle atom. Every other oracle atom is a whole-run present/absent
+// check, which cannot express co-occurrence: a whole-run tally cannot tell two
+// rules firing on one trigger from one rule firing on two. Mutual exclusivity
+// is a claim about co-occurrence, so it needs a window, and the pump is it.
+//
+// WHY THE PUMP and not "the rules matched a common fact": two rules that both
+// match a long-lived configuration or connection fact would share it forever
+// and never be exclusive — a silent false PASS. Pump scope instead
+// over-reports when one pump batches unrelated inputs, which is a false
+// FAILURE, and a test that wrongly fails is investigated. The asymmetry
+// decides it.
+//
+// The pump boundary needs no stream event: the interpreter drives the scenario
+// and therefore knows which observations belong to which pump.
+//
+// NO occurrence field and NO scope selector. The head is not a tallied
+// observation, and a narrower scope would be a new form rather than a modifier
+// on this one. `polarity` is POS only — the compiler rejects NEVER, because
+// asserting that two rules DO co-fire has not been asked for.
+message OracleExclusive {
+  uint32       test_id   = 1;
+  TestPolarity polarity  = 2;              // POS only; NEVER is a compile error
+  repeated string rule_name = 3;           // >= 2, compile-bound; pairwise
+}

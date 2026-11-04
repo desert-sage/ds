@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.6.2",
+    "category": "compiler",
+    "scenario": "LCYC.6.2 — `ttl` does not break a cycle at compile-time. Even though `emit X ttl 1_s` causes X facts to expire after one second, the static rule-graph edge from a's RHS to b's LHS still exists; the cycle detector rejects the program. Pin: TTL is not a cycle-breaker.",
+    "rules_ds": "schema X scope ttl 1s:\n    v: Int\n\nschema Y scope logical:\n    v: Int key\n\nrule a:\n    X\n->\n    emit Y logical v: 1\n\nrule b:\n    Y\n->\n    emit X v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

@@ -1,0 +1,57 @@
+# lowered from the probe call.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# call.expected (scripts/formal/check_idris.py). The call surface on Rete/NetworkCall.idr's engine. Kind
+# 0 Reply is svc.read's response schema and kind 3 CallError the built-in the
+# lowering synthesizes (LCRS.4.2.1), the two `answer` records with `corr` at
+# payload slot 0; kind 1 Trig is logical on the key `k` and kind 2 Probe
+# explicit. Rule 0 `r` has one call site at position 0 (no emit before it):
+# svc.read, window 10 units, response kind 0, the key `slot 0 key 0`
+# (Trig's `k`, LCRS.8.2), one argument `n: t.k`, the correlation "c1"
+# (token 0). The `string` records give every token its text, the sweeps
+# comparing correlations as texts (the lowering's THE STRING TABLE): "c1",
+# the CallError's code and its message. Rule 1 `seen` logs the Reply's `v`.
+# The time map's unit is 1 s:
+# the TTLs 3600 and 300, the window 10, the ticks 5 and 11. Pump 1 issues
+# the call (`call 0 0 svc.read s:0 i:1`) with nothing to sweep; the reply
+# v1 arrives and pump 2 logs it; at 5 the Trig changes, `r` fires and the
+# site's gate refuses the call -- no `call` line, the reply stays; at 11
+# the gate admits and the call sweeps the reply before it is issued
+# (LCRS.6.2.1); a reply v2 enters, a CallError sweeps it (LCRS.6.2.4), a
+# reply v3 sweeps the error, and pump 5 logs v3.
+schema 0 explicit Reply
+schema 1 entity Trig
+schema 2 explicit Probe
+schema 3 explicit CallError
+ttl 0 3600
+ttl 3 300
+alpha 0 0
+alpha 1 1
+alpha 2 2
+alpha 3 3
+answer 0 response pay 0
+answer 3 error pay 0
+string 0 2 99 49
+string 1 17 116 114 97 110 115 112 111 114 116 46 116 105 109 101 111 117 116
+string 2 8 110 111 32 114 111 117 116 101
+rule 0 r
+pattern 0 1 0
+callsite 0 0 0 svc.read 10 0 1 slot 0 key 0 1 slot 0 key 0 lit s:0
+rule 1 seen
+pattern 1 2 0
+pattern 1 0 0
+log 1 0 1 slot 1 pay 1
+step assert _0 1 1000000000000000000018 1000000000000000000002
+step pump
+step assert _1 0 1 1000000000000000000003000000000000000000018
+step assert _2 2 1 1000000000000000000018
+step pump
+step tick 5
+step assert _3 1 1000000000000000000018 1000000000000000000018
+step pump
+step tick 11
+step assert _4 1 1000000000000000000018 1000000000000000000034
+step pump
+step assert _5 0 1 1000000000000000000003000000000000000000034
+step assert _6 3 1 1000000000000000000003000000000000000000011000000000000000000019000000000000000000002
+step assert _7 0 1 1000000000000000000003000000000000000000050
+step pump

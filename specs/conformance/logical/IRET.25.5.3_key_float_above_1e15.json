@@ -1,0 +1,18 @@
+{
+    "id": "IRET.25.5.3_key_float_above_1e15",
+    "category": "logical",
+    "scenario": "[IRET.25.5.3]: a large `Float` keeps its value in the activation key. 2e15 and 3e15 are two keys; a repeat of the first is suppressed by the 10s cooldown, the control. `by: e.x` makes the slot the key ([LCDB.3.3.4]). PATH PINNED: libds `rk_walk` and Mercury `ds.rate.key_part_of`; a text key that maps every magnitude above 1e15 to `0` makes both one key and suppresses the second.",
+    "rules_ds": "schema Ev scope ttl 1_min:\n    x: Float\n\nrule r cooldown 10_s by: e.x:\n    Ev e\n->\n    log info \"fire\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "x": 2e15 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "x": 3e15 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "x": 2e15 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire", "fire" ]
+    }
+}

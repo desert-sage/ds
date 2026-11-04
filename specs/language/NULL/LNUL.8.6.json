@@ -1,0 +1,31 @@
+{
+  "id": "LNUL.8.6",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.8",
+  "seq": 282,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.8.6] **Series null-absorption.** A series over a `T?`\nsource is a **compile error unless it declares a null-absorption policy**:\n`skip` (drop the sample), `hold` (repeat the last absorbed value) or `zero`\n(absorb 0). Each is deterministic and bounded. **There is no default** — the\nauthor must decide how dropout is handled, or the window is non-deterministic\n*and* signal-wrong ([LNUL.7.2]).\n\n**This is not [LSER.13.5.1]'s `gap` phrase, and the two must not be\nconflated.** They answer different questions that happen to admit the same\nthree answers:\n\n- `gap` is a **time-axis** policy — how a time-integrating aggregation\n  advances across an interval in which *no sample was asserted*. Only\n  `integral` has that axis, which is why [LSER.13.5.1] admits the phrase there\n  and nowhere else.\n- null-absorption is a **value** policy — what the series does with a sample\n  that *was* asserted and *carries `null`*. Every aggregation over a nullable\n  source faces it.\n\nAn empty window is neither: it is a cold read, which yields the aggregation's\ncold value ([LSER.19.8]). So a non-integrating aggregation needs no gap policy,\nand a series over a nullable source still needs this one.\n\nThe declaring phrase is therefore **not** `gap`. It is the `nulls:` option of\nthe series declaration ([LSER.13.5]), and one policy covers every aggregation\nover that slot.\n\n- The compiler **must** refuse a series over a `T?` source that omits `nulls:`,\n  with `DS_VALIDATE_SERIES_NULLS_REQUIRED`.\n- The compiler **must** refuse `nulls:` on a series whose source is not\n  nullable, with `DS_VALIDATE_SERIES_NULLS_ON_NON_NULLABLE`: there is no\n  `null` for the policy to absorb.\n- The compiler **must** refuse `nulls: zero` unless the source is `Int?` or\n  `Float?`, unit-typed or not, with `DS_VALIDATE_SERIES_NULLS_ZERO_NON_NUMERIC`:\n  absorbing 0 has no meaning for any other kind.\n- Under `hold`, a `null` arriving before any value has been absorbed absorbs\n  nothing. The read stays cold ([LSER.19.8]); the engine **must not** hold a\n  `null`.\n\n",
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/series_backend_ring_buffer.proto",
+        "name": "SeriesNullPolicy",
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LNUL.7.2",
+    "LSER.13.5",
+    "LSER.13.5.1",
+    "LSER.19.8"
+  ],
+  "errors": [
+    "DS_VALIDATE_SERIES_NULLS_ON_NON_NULLABLE",
+    "DS_VALIDATE_SERIES_NULLS_REQUIRED",
+    "DS_VALIDATE_SERIES_NULLS_ZERO_NON_NUMERIC"
+  ]
+}

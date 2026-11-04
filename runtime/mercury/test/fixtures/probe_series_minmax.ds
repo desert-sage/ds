@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `min, max` declared over a sliding window and not read.
+
+schema Thermometer scope logical:
+    entity_id: String key
+    temperature: Float mutable
+
+series Thermometer.temperature (by: entity_id):
+    min, max sliding 10_min
+
+schema Trig scope logical:
+    v: Int key
+
+rule fire:
+    Trig
+->
+    log info "declared"

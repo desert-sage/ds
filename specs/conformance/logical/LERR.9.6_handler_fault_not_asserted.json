@@ -1,0 +1,15 @@
+{
+    "id": "LERR.9.6_handler_fault_not_asserted",
+    "category": "logical",
+    "dead_rules_expected": ["witness"],
+    "scenario": "A fault raised in a fault handler's own activation is recorded and is NOT asserted as a fault fact (LERR.9.6), so a handler cannot feed itself. `divide` traps (Int division by zero, rule = \"divide\"); `handler` matches that fault fact, logs, and then traps in its own second action: the pure `let z` is inlined at its one use site (LLET.3.5), so the first `log` runs before the division does. Were the handler's trap asserted, a ComputationError with rule = \"handler\" would enter working memory and `witness` would log 'leaked'. Drives the handler-site marking at load (the handler's terminal and every node of its chain) and the funnel's skip of a marked site. Int slots: an Int division by zero traps, a Float one is IEEE. Pin: assert S(a, b=0); pump. Messages are ['handled DIVIDE_BY_ZERO'].",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule divide:\n    S s\n->\n    let q = s.a / s.b\n    log critical \"q {q}\"\n\nrule handler:\n    ComputationError e where e.rule == \"divide\"\n->\n    let z = e.node / (e.node - e.node)\n    log critical \"handled {e.kind}\"\n    log critical \"z {z}\"\n\nrule witness:\n    ComputationError e where e.rule == \"handler\"\n->\n    log critical \"leaked\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "one", "a": 1, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["handled DIVIDE_BY_ZERO"]
+    }
+}

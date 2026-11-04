@@ -1,0 +1,27 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "series_backend_ring_buffer.proto";
+
+// SeriesBackendFifoDeque atom body. Per [RDSC.5a]. FIFO-deque backend for ordered
+// first / bool_and / bool_or aggregations. Element type restricts
+// which aggregations compile per LSER.3.
+message SeriesBackendFifoDeque {
+  string            schema_name        = 1;
+  string            slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string            identity_slot_name = 3;
+  SeriesElementType element_type       = 4;
+  // Required (> 0); the deque evicts samples older than window_ns.
+  uint64            window_ns          = 5;
+  // 0 = live-only; non-zero forwards samples to the samples plane.
+  uint64            persist_ns         = 6;
+  // 0 = window is the only bound; non-zero caps in-memory entry count
+  // even within the window, enabling RT pre-allocation.
+  uint32            max_samples        = 7;
+  uint32            module_id          = 10;
+  SeriesNullPolicy  null_policy        = 11;  // [LNUL.8.6]
+}

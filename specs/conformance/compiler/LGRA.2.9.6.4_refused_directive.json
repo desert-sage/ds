@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.4_refused_directive",
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.6.4] closes the directive set, and the compiler refuses any other `%` sequence with DS_VALIDATE_INTERP_BAD_FORMAT. Pin: `%j` (Python's day of the year, which DS does not admit) is not a TIME_DIR of [LGRA.2.9.6.1]'s grammar, so `dsc.strlit.lgra_2_9_6_1_format` reads the spec as bad and `dsc.validate.luni_11_2_format` raises the code — on a Time slot, so the refusal is the directive's and not the kind check's.",
+    "rules_ds": "schema E scope logical:\n    id: Int key\n    t: Time mutable\n\nrule r:\n    E e\n->\n    log info \"day {e.t:%j}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_FORMAT"
+    }
+}

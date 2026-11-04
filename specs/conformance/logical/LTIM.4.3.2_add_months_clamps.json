@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.4.3.2_add_months_clamps",
+    "category": "logical",
+    "scenario": "LTIM.4.3.1 / LTIM.4.3.2 / LTIM.4.3.3: `.add_months(n)` and `.add_years(n)` on a Date move it on the calendar, clamping the day to the target month's last; on a Time they move its UTC date and keep its UTC time-of-day. The rule logs the three results through the cast `::String` ([LCST.4.5.9]), which renders a Date as iso8601 and a Time as iso8601 in UTC. Fact 1: Date 2024-03-31 (day 19813) and Time 2024-03-31T10:20:30Z: `d.add_months(1)` is 2024-04-30 (the clause's example), `d.add_years(1)` is 2025-03-31, `t.add_months(1)` is 2024-04-30T10:20:30Z. Fact 2: Date 2024-02-29 (day 19782) and Time 2024-02-29T00:00:00Z: a month on is 2024-03-29, a year on is 2025-02-28 (a leap day clamped), and the Time keeps its midnight. Drives the compiler's FN_ADD_MONTHS / FN_ADD_YEARS member lowering (dsc.rete `luni_13_5_method_call`, the Time receiver through FN_UTC, the Date untagged) and its `::String` cast lowering on both (FN_TO_STRING, the Time tagged), and in the runtimes libds's `calendar_shift` / `shift_days`, Mercury's `ltim_4_3_shift` / `ltim_4_3_shift_days`. A shift that did not clamp gives 2024-05-01 and 2025-03-01; one that read the Date as an instant, or the Time as a Date, renders the wrong kind.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    cal: Date mutable\n    stamp: Time mutable\n\nrule r:\n    Ev e\n->\n    let a = (e.cal.add_months(1))::String\n    let b = (e.cal.add_years(1))::String\n    let c = (e.stamp.add_months(1))::String\n    log critical \"{a} {b} {c}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "cal": 19813, "stamp": 1711880430000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "cal": 19782, "stamp": 1709164800000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "2024-04-30 2025-03-31 2024-04-30T10:20:30Z",
+            "2024-03-29 2025-02-28 2024-03-29T00:00:00Z"
+        ]
+    }
+}

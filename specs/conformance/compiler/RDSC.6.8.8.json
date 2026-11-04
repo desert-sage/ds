@@ -1,0 +1,13 @@
+{
+    "id": "RDSC.6.8.8",
+    "category": "compiler",
+    "scenario": "Multiple rules in the same module each get an independent RuleDebugName atom. Each template is the full RDSC.6.8.4 string for its own rule and binding, which `test_conformance.m` reads from the RuleDebugName atoms in the emitted `.dsc`. Pins per-rule independence (RDSC.6.8.8 — at most one per rule per module).",
+    "rules_ds": "schema A scope logical:\n    entity_id: String key\n\nschema B scope logical:\n    entity_id: String key\n\nrule rule_a:\n    A a\n->\n    log info \"{a.entity_id}\"\n\nrule rule_b:\n    B b\n->\n    log info \"{b.entity_id}\"\n",
+    "expect": {
+        "kind": "dsc_dnam_templates",
+        "expected_dnam": {
+            "rule_a": "rule_a(a={a.entity_id})",
+            "rule_b": "rule_b(b={b.entity_id})"
+        }
+    }
+}

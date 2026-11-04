@@ -1,0 +1,17 @@
+{
+    "id": "LNUL.4.1_regex_null_neither_matches",
+    "category": "logical",
+    "scenario": "[LNUL.4.1] and [LREG.1.3]: a regex match on an absent string propagates `null`, so the activation continues for neither `~` nor `!~`. `msg` is `String?`, which keeps both matches beta join tests through `FN_REGEX_MATCH` (a decided match on a non-nullable slot is an alpha REGEX test instead; RLOW.5.2.2). With `msg` absent neither `match` nor `no_match` fires, and no TypeError is raised: `saw_type_error` matches any `TypeError` fault fact ([LERR.9.3]) and must never fire. With `msg` \"abc\", which `/x/` does not match, only `no_match` fires. A runtime that treated `null !~ /x/` as a non-match fires `no_match` twice and fails here. PATH PINNED: `FN_REGEX_MATCH` over a `null` subject, and the `!~` negation over its result -- libds `builtin_regex_match` (builtins.c) through rete/eval.c, Mercury `ds.eval`'s `fn_regex_match` arm.",
+    "rules_ds": "schema L scope logical:\n    id: Int key\n    msg: String? mutable\n\nrule match:\n    L l where l.msg ~ /x/\n->\n    log info \"match\"\n\nrule no_match:\n    L l where l.msg !~ /x/\n->\n    log info \"no match\"\n\nrule saw_type_error:\n    TypeError\n->\n    log critical \"type error\"\n",
+    "dead_rules_expected": ["match", "saw_type_error"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "L", "slots": { "id": 1, "msg": null } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "L", "slots": { "id": 2, "msg": "abc" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["no match"]
+    }
+}

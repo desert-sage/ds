@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.5.1_implicit_at_call_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.4.5.1] position 4: an `implicit` unit formula auto-applies at a service `call` keyword argument. `timer.set_period` declares `kwarg period: nanosecond`, the call passes `s.freq` (Hz), and the program compiles because `hz_period`'s `hz_to_period` applies there.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period inverting implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nservice timer.set_period:\n    kwarg period: nanosecond required\n    no response\n\nschema Signal scope logical:\n    freq: Hz key\n\nrule slow:\n    Signal s\n->\n    call timer.set_period period: s.freq cooldown: 30s\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LFAC.9.2_ts_fill_before_slot_values",
+    "category": "logical",
+    "scenario": "[LFAC.9.2]: the engine fills `ts` before it evaluates any of an emit's slot values, so where the wall clock has no value ([LTIM.2.8.3]) the fault recorded is the `ts` fill's ComputationError of kind DOMAIN, whatever a slot value would have raised. `Out` declares `ts`, and each of three rules emits an `Out` whose `q` is `t.a // t.b`, an Int floor division that traps DIVIDE_BY_ZERO when `b` is 0 ([LEXP.7.15.1]). Each rule takes one `Trig` by its key, so each fault is at its own (node, rule) site and none is latched away ([LERR.9.5]). The engine is on the mock clock and the wall clock starts with no value (`wall_clock: unset`). Step 1: `both` meets `b` = 0 with no wall clock, and both faults are possible; the fill's comes first, so `both DOMAIN`. Step 2, a control: `ts_only` meets `b` = 1 with no wall clock, so `ts_only DOMAIN`, and the fill's fault is reachable without a slot fault. Step 3, a control: the wall clock is set, and `trap_only` meets `b` = 0, so `trap_only DIVIDE_BY_ZERO`, and the slot's fault is reachable once the fill succeeds. `faulted` logs each ComputationError's rule and kind ([LERR.9.2]); `leaked` logs any `Out` in working memory and must never fire, because every emit here faults. Expected: `both DOMAIN`, `ts_only DOMAIN`, `trap_only DIVIDE_BY_ZERO`. A runtime that evaluates the slot values first logs `both DIVIDE_BY_ZERO` at step 1. PATH PINNED: libds `rete/engine.c`'s action loop, whose `ts_ix` fill (`ds_rete_eval_wall_ns` failing, DS_FAULT_DOMAIN) precedes its assigns; the Mercury runtime's `ds.exec.assert_verb`, whose `has_ts_slot` with `xc_wall = no` (`rf_domain`) precedes `assign_fault`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    a: Int mutable\n    b: Int mutable\n\nschema Out scope logical:\n    k: Int key\n    q: Int mutable\n    ts: Time\n\nrule both:\n    Trig t where t.k == 1\n->\n    emit Out logical k: t.k\n        q: t.a // t.b\n\nrule ts_only:\n    Trig t where t.k == 2\n->\n    emit Out logical k: t.k\n        q: t.a // t.b\n\nrule trap_only:\n    Trig t where t.k == 3\n->\n    emit Out logical k: t.k\n        q: t.a // t.b\n\nrule faulted:\n    ComputationError c\n->\n    log info \"{c.rule} {c.kind}\"\n\nrule leaked:\n    Out\n->\n    log info \"leaked\"\n",
+    "dead_rules_expected": ["leaked"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "a": 6, "b": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "a": 6, "b": 1 } },
+            { "op": "pump" },
+            { "op": "wall_set", "utc_ns": 1000000000000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 3, "a": 6, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["both DOMAIN", "ts_only DOMAIN", "trap_only DIVIDE_BY_ZERO"]
+    }
+}

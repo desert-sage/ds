@@ -1,0 +1,17 @@
+{
+    "id": "LFAC.1.7.2_key_all_relation",
+    "category": "runtime",
+    "scenario": "[LFAC.1.7.2]'s key = all slots case, a relation: every slot of Pair is `key`, so the tuple is the identity, identical tuples coalesce and distinct tuples coexist. Asserts (1,x), (1,x), (1,y), (2,x); the repeated (1,x) coalesces, leaving 3 live facts. Drives the engine's logical-assert identity lookup over a two-slot key. The key = one slot contrast, where (1,y) replaces (1,x), is logical/LFAC.2.5.3.",
+    "rules_ds": "schema Pair scope logical:\n    a: Int key\n    b: String key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Pair", "slots": { "a": 1, "b": "x" } },
+            { "schema": "Pair", "slots": { "a": 1, "b": "x" } },
+            { "schema": "Pair", "slots": { "a": 1, "b": "y" } },
+            { "schema": "Pair", "slots": { "a": 2, "b": "x" } }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

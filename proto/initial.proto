@@ -1,0 +1,36 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// A ruleset's `initial:` block ([LGRA.24]) -- the starting state a program
+// declares for itself: facts placed in working memory and cache keys seeded
+// before any rule is evaluated.
+//
+// REJECT-DON'T-SKIP (128-255), unlike the `.dstest` atoms TestFact /
+// TestCacheSeed whose shape these follow. A test atom is metadata a production runtime may skip;
+// these are program content. A runtime that skipped one would run the program
+// from a different working memory and report nothing.
+//
+// Values are the literal carrier the `.dstest` atoms already use
+// (TestSlotLiteral, test_scenario.proto): a `const` an author named is folded
+// to its literal at compile time ([LTSL.4.1]), so no expression travels here.
+
+import "test_scenario.proto";
+
+// One fact the block places in working memory.
+message InitialFact {
+  uint32 module_id    = 1;   // owning module; applied in import-DAG order
+  string schema_name  = 2;   // compile-bound; dangling = compile error
+  repeated TestSlotLiteral slots = 3;
+  uint32 source_order = 4;   // the item's position in its block, over facts and seeds
+}
+
+// One cache key the block seeds.
+message InitialCacheSeed {
+  uint32 module_id    = 1;
+  string key          = 2;
+  TestSlotLiteral value = 3; // slot_name unused; the literal carries the value
+  uint32 source_order = 4;
+}

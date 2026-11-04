@@ -1,0 +1,17 @@
+{
+    "id": "LTAC.5.4_same_tick_order",
+    "category": "logical",
+    "scenario": "[LTAC.5.4]: two timers from one `after` site fall due in the same tick, so their follow-ups are activations of one rule that complete together on that tick, and [LDET.5.5] orders them by their facts: the zone-1 timer entered working memory first, so its follow-up takes the lower timetag and `off 1` fires before `off 2`. Both Motions are asserted before one pump, so both timers are armed in one step with the same 5-minute deferral; one advance past it makes both due at once. PATH PINNED: libds holding the follow-ups' matches at the rule's last positive join when the tick completes them, and sorting them at the end of the event by `completion_key_cmp` (rete/beta.c); stamping them in join-walk order fired `off 2` first. Does NOT pin Mercury's sort, whose memories stay in insertion order and reach the older timer first either way (that is LDET.5.5_self_join). Does not pin ordering between two different rules' follow-ups, which is [LDET.5.4]'s.",
+    "rules_ds": "schema Motion scope logical:\n    zone: Int key\n\nrule arm:\n    Motion m\n->\n    log info \"armed {m.zone}\"\n    after 5_min:\n        log info \"off {m.zone}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Motion", "slots": { "zone": 1 } },
+            { "op": "assert", "schema": "Motion", "slots": { "zone": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 301000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "armed 1", "armed 2", "off 1", "off 2" ]
+    }
+}

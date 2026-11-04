@@ -1,0 +1,33 @@
+{
+  "id": "NDBG.2.4",
+  "prefix": "NDBG",
+  "doc": "INTROSPECTION.md",
+  "parent": "NDBG.2",
+  "seq": 70,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDBG.2.4] **Services:** `ds_engine_service_count` / `_at` / `_find` return a\n`ds_service_view_t` per service the loaded program declares, one per\n`ServiceDef` atom (`proto/service_def.proto#ServiceDef`), with `_at` in the\nartefact's order, which is source order ([RDSC.8.4]). `_at` must return `DS_ERR_NOT_FOUND` for an index past the\ncount. `_find` looks a service up by name and must report a miss through its\nfound flag with `DS_OK`, and leave the view unwritten, as\n`ds_engine_rule_meta_find` does ([NDBG.2.3]).\n\nThe engine must give, for each service, every field below that the artefact\ncarries, and must keep each view's strings and kwarg array for the engine's\nlifetime:\n\n- the service's name;\n- the response schema's name, empty for a service that declares `no response`\n  ([LADP.8.4.2]), and a flag that is set exactly when it declares `no response`;\n- its kwargs, in the artefact's order, which is by name ([LGRA.23.2]). Each\n  gives its name; its declared type as the artefact spells it\n  (`ServiceKwarg.ds_type`, [RDSC.6a.2.7]): a builtin type, a unit symbol, a\n  dimension, a schema by its own name, the kind `Schema` or an opaque type, so the view carries the name and\n  not a closed enumeration; whether it is `required` and whether it is\n  `literal` ([LADP.8.5.1]); and its default, as the canonical text\n  [RDSC.6a.2.4] gives, empty when it has none.\n\nA service's hydration block is not in the view: hydration does not bind in\nthis edition.\n\nThis is how an integrator that hosts services learns what to assert for one:\na fact of the response schema with the call's correlation ([LCRS.4.3.1]), or\nnothing for a `no response` service ([LADP.8.4.2]). It may also refuse to\nregister a callback under a name the loaded program does not declare. Reading\nthe `ServiceDef` atoms from the artefact's bytes instead would be a second\nreader of what the engine loaded.\n\n---\n\n",
+  "refs": [
+    "LADP.8.4.2",
+    "LADP.8.5.1",
+    "LCRS.4.3.1",
+    "LGRA.23.2",
+    "NDBG.2.3",
+    "RDSC.6a.2.4",
+    "RDSC.6a.2.7",
+    "RDSC.8.4"
+  ],
+  "errors": [
+    "DS_ERR_NOT_FOUND"
+  ],
+  "symbols": [
+    "ds_engine_service_count",
+    "ds_engine_service_at",
+    "ds_engine_service_find",
+    "ds_service_view_t"
+  ],
+  "atoms": [
+    "ServiceDef"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LFST.9.3.1_a_type_error_taken_out",
+    "clauses": ["RFCS.3.1"],
+    "category": "runtime",
+    "scenario": "[LFST.9.3.1]: a `TypeError` the replayer re-derives and the recording lacks is a divergence. The run is `LFST.9.3.1_a_recorded_type_error_differs`'s. `drop_fault` removes the atom's frame ([RCTS.1.2.18]). The unaltered recording replays, so the refusal is the edit's. The altered one is refused with DS_ERR_FS_DIVERGENCE (-725). Break: a replay that compared only the atoms the recording holds accepts it. PATH PINNED: libds's `verify_match` (rfcs/codec.c), through pyds `Engine.replay` in runner.py `_run_replay_refused`; the Mercury runtime's `ds.replay.lfst_9_3_1_match`, through test_behave.m `replay_refused_result`.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule typed:\n    Payload p where p.body.name > 5\n->\n    log info \"typed\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "drop_fault", "atom": "TypeError" },
+        "code": "-725"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LTIE.9.3_emit_and_publish_are_two_verbs",
+    "clauses": ["LTIE.9.3"],
+    "category": "compiler",
+    "scenario": "[LTIE.9.3]: `emit` and `publish` are distinct verbs. Rule `intra_tier` emits `Sig logical`; rule `upward` publishes `Sig`, with no modifier ([LTIE.4.9]). Both compile. PINS ONLY THAT IT COMPILES: their difference, a local assert against an upstream send that asserts nothing here ([LTIE.4.3]), is the cross-tier vectors' to observe. PATH: `dsc.validate`'s `lgra_10_3_2_action` over both verbs.",
+    "rules_ds": "schema Trig1 scope logical:\n    v: Int key\n\nschema Trig2 scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule intra_tier:\n    Trig1\n->\n    emit Sig logical v: 99\n\nrule upward:\n    Trig2\n->\n    publish Sig v: 100\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

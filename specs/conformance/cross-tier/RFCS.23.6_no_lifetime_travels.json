@@ -1,0 +1,44 @@
+{
+    "id": "RFCS.23.6_no_lifetime_travels",
+    "clauses": ["RFCS.23.6"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.6]: a `FactExternal` carries no lifetime, so the receiving engine applies its own schema's lifecycle. This holds on both runtimes, through each one's own `assert_external` ([NCBK.10.4]): the `forward_external` step hands the receiver the FactExternal record the sender's publish event carried ([RFCS.23.1]), not a host assert of the slot values. Two senders, two receivers, each receiver declaring `Ref scope ttl 30_s`. `pub_short` declares `Ref scope ttl 5_s` and feeds `hub_alive`; `pub_long` declares `Ref scope ttl 60_s` and feeds `hub_dead`. Each sender asserts a Trig and pumps, so its rule publishes a Ref; a `publish` asserts nothing there ([LTIE.4.3]), so each holds its Trig alone: 1 fact. Each hub receives at t = 0 and pumps. `hub_alive` then advances 30 s less 1 ns and pumps: its Ref is live, 1 fact. `hub_dead` advances exactly 30 s and pumps: its Ref has expired, 0 facts. Each wrong reading fails: a receiver that took the sender's 5 s holds 0 in `hub_alive`; one that took 60 s holds 1 in `hub_dead`; one that applied no TTL to a received fact holds 1 in `hub_dead`. The schema hash a receiver checks leaves lifecycle out ([RFCS.23.3]), so the senders' differing lifetimes do not make it refuse the record. PATH PINNED: libds's `ds_engine_assert_external` (through pyds `Engine.assert_external`, runner.py) and the Mercury runtime's `ds.fact_receive.assert_external` (test_behave.m's `receive_on_tier`), each asserting under the receiving schema's own lifetime.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "pub_short": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Ref scope ttl 5_s:\n    v: Int\n\nrule up:\n    Trig t\n->\n    publish Ref v: t.v\n"
+            },
+            "hub_alive": {
+                "rules_ds": "schema Ref scope ttl 30_s:\n    v: Int\n"
+            },
+            "pub_long": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Ref scope ttl 60_s:\n    v: Int\n\nrule up:\n    Trig t\n->\n    publish Ref v: t.v\n"
+            },
+            "hub_dead": {
+                "rules_ds": "schema Ref scope ttl 30_s:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            { "engine": "pub_short", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "pub_short", "op": "pump" },
+            { "engine": "hub_alive", "op": "forward_external", "from": "pub_short" },
+            { "engine": "hub_alive", "op": "pump" },
+            { "engine": "hub_alive", "op": "advance", "delta_ns": 29999999999 },
+            { "engine": "hub_alive", "op": "pump" },
+            { "engine": "pub_long", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "pub_long", "op": "pump" },
+            { "engine": "hub_dead", "op": "forward_external", "from": "pub_long" },
+            { "engine": "hub_dead", "op": "pump" },
+            { "engine": "hub_dead", "op": "advance", "delta_ns": 30000000000 },
+            { "engine": "hub_dead", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "pub_short": 1,
+            "hub_alive": 1,
+            "pub_long": 1,
+            "hub_dead": 0
+        }
+    }
+}

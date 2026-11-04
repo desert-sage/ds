@@ -1,0 +1,28 @@
+{
+    "id": "LTIE.4.3_publish_leaves_nothing_on_its_tier",
+    "clauses": ["LTIE.4.3", "LTIE.9.2", "RARC.13.4"],
+    "category": "cross-tier",
+    "scenario": "[LTIE.4.3]: `publish X` sends X upstream and asserts nothing in the current tier. Tier `edge` publishes Sig(v) for every Trig(v); the integrator bridges it to tier `hub` as [NCBK.10.1] describes -- on DS_EV_ACTION_PUBLISH, the schema name and slot values, asserted on the receiving engine (the harness's `forward` step, [RCTS.1.2.29]). `edge` holds its Trig alone: 1 fact. `hub` holds the forwarded Sig: 1 fact. A runtime that still asserted the published fact locally leaves `edge` at 2; one that raised no ACTION_PUBLISH leaves `hub` empty. Its twin NCBK.10.2_emit_stays_on_its_tier is the same programs with `emit`. PATH: libds's `adapter_ds_publish` / `ds_rete_publish_values` and `bridge_publish`; the Mercury runtime's `ds.exec.publish_verb`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "schema Sig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 1,
+            "hub": 1
+        }
+    }
+}

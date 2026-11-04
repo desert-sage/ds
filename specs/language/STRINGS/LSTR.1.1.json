@@ -1,0 +1,43 @@
+{
+  "id": "LSTR.1.1",
+  "prefix": "LSTR",
+  "doc": "STRINGS.md",
+  "parent": "LSTR.1",
+  "seq": 43,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSTR.1.1] A `String` value is a sequence of Unicode codepoints.\nEvery codepoint in `[U+0001, U+10FFFF]` is admissible except the\nsurrogate range `[U+D800, U+DFFF]`, which is forbidden per RFC\n3629. **U+0000 is not admissible:** no `String` holds it. A literal that\nwould spell it is a compile error ([LGRA.2.9.4]), and a value that would carry\nit is refused where it enters ([LSTR.1.5]).\n\n",
+  "refs": [
+    "LGRA.2.9.4",
+    "LSTR.1.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lstr_1_1__text",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A String value's text: a sequence of Unicode codepoints, each a natural. Admissibility is not carried as an index: the fixture runner refuses a `string` record carrying a codepoint `lstr_1_1__admissible` rejects where it enters, so every text the model is run on is admissible, and the model's functions are total on every list of naturals."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_1_1__admissible",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's range: U+0001 to U+10FFFF less the surrogates U+D800 to U+DFFF, and never U+0000."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_1_1__text_admissible",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every codepoint of a text admissible: what the fixture runner decides of a `string` record. The compile error on a literal and the refusal where a value enters are the compiler's and the runtime's, outside the model."
+      }
+    ]
+  }
+}

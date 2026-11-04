@@ -1,0 +1,31 @@
+{
+    "id": "LFAC.2.5.3",
+    "category": "logical",
+    "scenario": "A logical fact emitted by two independent rules persists when one justifier retracts but retracts when both retract per LFAC.2.5. Two rules emit the same State. Retract first trigger: State stays. Retract second: State retracts. The `pump` boundaries are stated so the list sees which retract the fact goes with: a retract's justification change happens at the retract, before the next pump. So one fact_retract (the trigger's) before the second pump, and two (the trigger's, then Active's) before the third. A runtime that drops Active with its first justifier, or never drops it, puts the wrong count of fact_retract before a pump and fails.",
+    "rules_ds": "schema Trigger scope logical:\n    entity_id: String key\n    source: String mutable\n\nschema Active scope logical:\n    dummy: Int key\n\nrule from_a:\n    Trigger t where t.source == \"a\"\n->\n    emit Active logical dummy: 0\n\nrule from_b:\n    Trigger t where t.source == \"b\"\n->\n    emit Active logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trigger", "slots": { "entity_id": "t1", "source": "a" }, "as": "ta" },
+            { "op": "assert", "schema": "Trigger", "slots": { "entity_id": "t2", "source": "b" }, "as": "tb" },
+            { "op": "pump" },
+            { "op": "retract", "label": "ta" },
+            { "op": "pump" },
+            { "op": "retract", "label": "tb" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "pump",
+            "fact_assert",
+            "rule_fire_end",
+            "rule_fire_end",
+            "fact_retract",
+            "pump",
+            "fact_retract",
+            "fact_retract",
+            "pump"
+        ]
+    }
+}

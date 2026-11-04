@@ -1,0 +1,7 @@
+{
+    "id": "LGRA.2.9.6.8.inert_nested_operand",
+    "category": "compiler",
+    "scenario": "LGRA.2.9.6.8 — an `emit` slot value is eligible, but only the value itself: a string that is an OPERAND inside it (here the right side of `==`) is 'any operand' in the clause's list, so a valid `{path}` there is DS_VALIDATE_INTERP_INERT_POSITION. Path: `dsc.validate`'s `arg_strings` walking a non-string argument with `inert_strings`. A compiler that examines only a top-level string argument compiles this, comparing against the literal text `m-{s.obj}`.",
+    "rules_ds": "schema Src scope logical:\n    obj: String key\n\nschema Flag scope logical:\n    b: Bool key\n\nrule r:\n    Src s\n->\n    emit Flag logical b: (s.obj == \"m-{s.obj}\")\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_INTERP_INERT_POSITION" }
+}

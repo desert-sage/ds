@@ -1,0 +1,22 @@
+{
+    "id": "LTIM.6.5_components_at_boundaries",
+    "category": "logical",
+    "scenario": "LTIM.6.5 / [LTIM.6.3] / [LTIM.6.4]: every component of `t.utc`, at five boundaries. One rule per boundary requires all seven components (year, month, day, hour, minute, second, day_of_week) to equal that boundary's, and logs its label; one Event at each instant: 2023-12-31T23:59:59Z (a year end, a Sunday: 6); 2024-01-01T00:00:00Z (midnight, a Monday: 0, the ISO origin); 2024-02-29T12:30:45Z (a leap day, a Thursday: 3); 2024-03-01T00:00:00Z (the month end after a leap day, a Friday: 4); and 1969-12-31T23:59:59Z, one second before the epoch, where every component floors (a Wednesday: 2). Exactly the five labels in order: a runtime that gets any component wrong at an instant loses that label -- truncating instead of flooring loses `pre_epoch`, and counting day_of_week from Sunday loses all five. Drives libds's time_component and Mercury's component_at through FN_YEAR .. FN_DAY_OF_WEEK.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule year_end:\n    Event e where e.seen.utc.year == 2023 and e.seen.utc.month == 12 and e.seen.utc.day == 31 and e.seen.utc.hour == 23 and e.seen.utc.minute == 59 and e.seen.utc.second == 59 and e.seen.utc.day_of_week == 6\n->\n    log critical \"year_end\"\n\nrule monday_midnight:\n    Event e where e.seen.utc.year == 2024 and e.seen.utc.month == 1 and e.seen.utc.day == 1 and e.seen.utc.hour == 0 and e.seen.utc.minute == 0 and e.seen.utc.second == 0 and e.seen.utc.day_of_week == 0\n->\n    log critical \"monday_midnight\"\n\nrule leap_day:\n    Event e where e.seen.utc.year == 2024 and e.seen.utc.month == 2 and e.seen.utc.day == 29 and e.seen.utc.hour == 12 and e.seen.utc.minute == 30 and e.seen.utc.second == 45 and e.seen.utc.day_of_week == 3\n->\n    log critical \"leap_day\"\n\nrule after_leap:\n    Event e where e.seen.utc.year == 2024 and e.seen.utc.month == 3 and e.seen.utc.day == 1 and e.seen.utc.hour == 0 and e.seen.utc.minute == 0 and e.seen.utc.second == 0 and e.seen.utc.day_of_week == 4\n->\n    log critical \"after_leap\"\n\nrule pre_epoch:\n    Event e where e.seen.utc.year == 1969 and e.seen.utc.month == 12 and e.seen.utc.day == 31 and e.seen.utc.hour == 23 and e.seen.utc.minute == 59 and e.seen.utc.second == 59 and e.seen.utc.day_of_week == 2\n->\n    log critical \"pre_epoch\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1704067199000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 2, "seen": 1704067200000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 3, "seen": 1709209845000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 4, "seen": 1709251200000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 5, "seen": -1000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["year_end", "monday_midnight", "leap_day", "after_leap", "pre_epoch"]
+    }
+}

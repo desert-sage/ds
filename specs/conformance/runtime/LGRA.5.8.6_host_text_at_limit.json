@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.5.8.6_host_text_at_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: JSON text of exactly the text limit, 24,576 bytes, handed to a host parse, is admitted. The site is the cache seed ([NSTG.9.1]), the one place the harness hands a runtime JSON TEXT rather than a built value: `runner.py`'s `_cache_seeds` passes `json.dumps(value)`, which writes U+0001 as the six bytes `\\u0001` and separates array items with `, `. The value is a two-item array: 2,233 repeats of U+0001 followed by `aaaaa` (11 bytes of text each), then `aaaaa`. Its text is 1 + (2 + 24,563) + 2 + (2 + 5) + 1 = 24,576 bytes, while the value is inside the three tree limits (depth 2, 3 nodes, 13,403 string bytes), so only the text limit could refuse it. The seed raises nothing and nothing is asserted (fact_count 0). Paired with LGRA.5.8.6_host_text_over_limit, whose last string is one byte longer, so a text limit of 24,575 (this vector goes red) or 24,577 (the other goes red) is caught. PATH PINNED: on libds, `ds_json_parse`'s `len > DS_JSON_MAX_TEXT_BYTES` test in pyds's `cache_seed`, then `ds_engine_cache_seed`. On the Mercury runtime, `test_behave.m` hands `ds.engine.seed_cache_text` the same `json.dumps` text, and `ds.json_text.parse` admits it on the same byte count.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "k", "value": [ { "$repeat": "\u0001aaaaa", "count": 2233 }, "aaaaa" ] }
+        ],
+        "fact_count_after": 0
+    }
+}

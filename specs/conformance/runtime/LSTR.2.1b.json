@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.2.1b",
+    "category": "runtime",
+    "dead_rules_expected": ["trig"],
+    "scenario": "`len(s)` gate does not fire when the string does not match. A rule gated on `len(m.text) == 3` must NOT fire for a 5-character string. Fact count remains 1 after pump.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule trig:\n    Msg m where len(m.text) == 3\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Msg", "slots": { "entity_id": "m1", "text": "hello" } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

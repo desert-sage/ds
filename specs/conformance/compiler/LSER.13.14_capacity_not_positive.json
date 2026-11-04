@@ -1,0 +1,10 @@
+{
+    "id": "LSER.13.14_capacity_not_positive",
+    "category": "compiler",
+    "scenario": "[LSER.13.14]: `capacity: N` on a series block takes a positive integer, and the compiler must refuse one below 1 with `DS_VALIDATE_CAPACITY_NOT_POSITIVE` -- the same code the slot form uses ([LSTR.11.1]). The grammar types the value as `INT_LIT` ([LGRA.7.1]), so `0` parses and reaches validation. PATH PINNED: `dsc.series.lser_13_14_capacity`'s `N < 1` arm, reached through `block_kwarg_value(\"capacity\", ...)` in `dsc.parse`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (capacity: 0):\n    mean sliding 1_h\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPACITY_NOT_POSITIVE"
+    }
+}

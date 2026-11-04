@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.8.6_negated_binding_read_in_action",
+    "category": "compiler",
+    "scenario": "[LGRA.8.6]: \"A negated pattern's binding is in scope in its own `where` alone ... The compiler must refuse a reference to it ... in an action with `DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE`.\" `no Alarm a where a.id == s.id` reads `a` in its own `where`, which is legal, and the `log` then interpolates `{a.id}`, which names a fact the pattern says is absent. PATH PINNED: `dsc.validate.lgra_8_6_negated_binding_scope`, its action arm over the interpolation's sites; without it, the read reaches lowering and the rule is refused as unlowered (DS_VALIDATE_RULE_NOT_LOWERED), which is the code for an unfinished lowering, not for a program the language refuses.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n\nschema Alarm scope logical:\n    id: String key\n\nrule r:\n    Sensor s\n    no Alarm a where a.id == s.id\n->\n    log info \"{a.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE"
+    }
+}

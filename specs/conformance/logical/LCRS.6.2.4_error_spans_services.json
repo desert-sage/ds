@@ -1,0 +1,18 @@
+{
+    "id": "LCRS.6.2.4_error_spans_services",
+    "category": "logical",
+    "dead_rules_expected": ["seen_a", "seen_b"],
+    "scenario": "[LCRS.6.2.4]: replies of two services' response schemas are live with corr `c1` when a `CallError` with corr `c1` arrives. A `CallError` names no service ([LCRS.4.2.1]), so its supersede spans every response schema: both replies go and the probes log [\"error\"]. PATH PINNED: the host-assert supersede for a `CallError` -- `ds_dispatch_supersede_arrival` walking every `call_response` schema (libds), `ds.exec.lcrs_6_2_4_arrival_victims` over the artefact's response set (Mercury). The break is a `CallError` that retracts only one response schema's facts: the other reply stays and the probes log it before [\"error\"].",
+    "rules_ds": "schema ReplyA scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema ReplyB scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.a:\n    kwarg n: Int\n    response ReplyA\n\nservice svc.b:\n    kwarg n: Int\n    response ReplyB\n\nschema Probe scope explicit:\n    k: Int\n\nrule seen_a:\n    Probe\n    ReplyA x\n->\n    log info \"a {x.v}\"\n\nrule seen_b:\n    Probe\n    ReplyB y\n->\n    log info \"b {y.v}\"\n\nrule seen_error:\n    Probe\n    CallError\n->\n    log info \"error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "ReplyA", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "ReplyB", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no response", "ts": 0 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["error"]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.6.2.len_of_an_unresolved_path_is_a_type_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LEXP.6.2]: `len` raises a TypeError if the `Json` value isn't an array, and a path that does not resolve reads as `null` ([LNUL.8.4]), which is not an array either -- so `len` of it is the TypeError, and `has` is the guard the clause names for such a path. The formal tie says so outright: formal/idris/Rete/Eval.idr `lexp_6_1__len` and `lexp_6_2__len_is_an_arrays_alone` give a trap for every object, every scalar leaf, and `null`. The twin of LEXP.6.2.len_of_a_non_array_is_a_type_error, for the path that resolves to nothing rather than to an object: `body` has no `missing` key. A runtime that answers `null` there records no fault, and `null == 0` does not fire, so the event sequence is empty; this vector requires the `type_error`. Path: libds builtins.c `builtin_json_len` (found == NULL), Mercury ds.eval.m `json_introspect` (the unresolved arm).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where len(p.body.missing) == 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "obj": { "a": 1 } } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

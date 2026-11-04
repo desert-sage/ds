@@ -1,0 +1,18 @@
+{
+    "id": "LDET.5.8_tick_is_not_counted",
+    "category": "temporal",
+    "scenario": "[LDET.5.8]: an engine-synthesised fact is not counted by the fact count. `late`'s `now()` gate makes the engine re-drive its LHS on each clock tick ([RARC.12.4]). One Ping is asserted at 0 and pumped, the clock advances 6_s past the gate, and two pumps follow, so the engine has synthesised its tick and `late` has fired. The fact count is 1, the Ping alone. Break: a runtime that kept the tick as a working-memory fact counts 2. [LDET.5.8] leaves where the tick lives to the implementation; it requires only that the count not see it.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    v: Int key\n\nrule late:\n    Ping where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log warning \"late fired\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

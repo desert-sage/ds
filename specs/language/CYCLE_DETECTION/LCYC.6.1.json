@@ -1,0 +1,31 @@
+{
+  "id": "LCYC.6.1",
+  "prefix": "LCYC",
+  "doc": "CYCLE_DETECTION.md",
+  "parent": "LCYC.6",
+  "seq": 278,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LCYC.6.1] **Slot-value refinement.** A rule that matches\n  `Alert a where a.severity > 5` and emits an\n  `Alert` with `severity: 7` is technically\n  self-referential but may not be infinite — it\n  depends on whether re-matching happens with\n  a value that would re-trigger. The compiler\n  applies a **literal-equality cycle-breaking\n  check to every edge of the rule graph**: if every\n  non-negated LHS pattern the target rule has for\n  the schema carries a `binding.slot == X`\n  where-clause constraint that the source rule's\n  RHS emit violates (emits `slot: Y` with literal\n  `Y ≠ X`), the edge is dropped. The emit provably\n  cannot satisfy that LHS, so it cannot close a\n  loop through it.\n  This handles the common \"kind flip\" pattern\n  (match `kind == \"enter\"`, emit `kind: \"leave\"`)\n  whether the flip sits on one rule or is spread\n  across several, without opening up genuine\n  infinite loops. Non-literal expressions\n  (arithmetic, slot references) remain strict.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/cycle_detection.als",
+        "name": "lcyc_6_1__edges",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/cycle_detection.als",
+        "name": "lcyc_6_1__literal",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/cycle_detection.als",
+        "name": "lcyc_6_1__literal_mismatch_breaks_edge",
+        "tag": "spec"
+      }
+    ]
+  }
+}

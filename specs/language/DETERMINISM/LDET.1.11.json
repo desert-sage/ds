@@ -1,0 +1,58 @@
+{
+  "id": "LDET.1.11",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.1",
+  "seq": 67,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.1.11] **The guarantee is for an artefact that does not lie.** A run in\nwhich evaluating an expression raises an `EngineError` — a value contradicting\nthe type the artefact declared for it ([IRET.9.6]) — is outside [LDET.1.1]. Two\nconforming runtimes may then differ in whether they meet the error at all: one\nmay reject a fact on a comparison that never inspects the lie, where another\nevaluates the lying operand and halts the tier. That error ends the trace, as\nevery halting fault does ([LFST.9.2.1]); what precedes it stays comparable.\n\n",
+  "refs": [
+    "IRET.9.6",
+    "LDET.1.1",
+    "LFST.9.2.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_6__honest",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The artefact did not lie: no conjunct yields an EngineError, the third arm of [IRET.9.6]. The determinism guarantee is scoped to such runs ([LDET.1.11])."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_6__v5_lie_breaks_hoisting",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "WHY THE ARTEFACT MUST NOT LIE: a hoisted conjunct over a value the artefact lied about raises its EngineError alone and blocks the `no` pattern, where the whole `where` is false."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rlow_5_5__v5_hoist_sound",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND for an artefact that does not lie: filters on decided conjuncts leave the decision of a positive and of a `no` pattern, and the record, unchanged. Admitting a nullable filter breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__faulting_filter_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHY NO FAULT: a filter raising an EngineError -- an artefact that lied, [IRET.9.6] -- raises it alone and blocks a `no` pattern where the `where` is false. So two engines may differ on an artefact that lies, which is why [LDET.1.11] scopes the guarantee to one that does not."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ]
+  }
+}

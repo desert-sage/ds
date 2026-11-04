@@ -1,0 +1,20 @@
+{
+  "id": "NCBK.7.2",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.7",
+  "seq": 411,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.7.2] **One setter, two persistence callbacks, one shared `user`** —\n`ds_engine_cache_callbacks(engine, abi_version, set_cb, delete_cb, user)`. The\nsame external-store handle backs both, so they share context. The setter keeps\nthe name `ds_engine_cache_callbacks` (no `set_` prefix): the two persistence ops\nare one durability surface, not independent registrations.\n\nThe caller passes the `DS_CACHE_CB_ABI_VERSION` it compiled against, which is\n`3` in this edition. A mismatch is refused with `DS_ERR_BACKEND_ABI_VERSION`\nand registers nothing, so a caller built against a header with other callback\nsignatures is never invoked with an argument it does not expect ([NCBK.7.4]).\nThe value is append-only ([STYL.2.8.7]): a change to either callback's\nsignature takes the next number, and no number is reissued.\n\n",
+  "refs": [
+    "NCBK.7.4"
+  ],
+  "symbols": [
+    "DS_CACHE_CB_ABI_VERSION"
+  ],
+  "errors": [
+    "DS_ERR_BACKEND_ABI_VERSION"
+  ]
+}

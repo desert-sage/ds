@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9l",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] — an epoch `Int` asserted into a `Time`-typed slot answers `is Int` TRUE, exactly as LNUL.4.9k's `now()`-written value does. THIS IS THE PROVENANCE RULE, and the schema here is deliberately identical to k's `Stamped`: one slot, two write routes, one answer. The integrator ABI has no time slot value, so a fact asserted through it carries DS_RETE_VAL_INT where `now()` would have left DS_RETE_VAL_TIME — `rete_slot_kind_admissible` records that a Time-typed slot is declared INT and admits both, and [LNUL.8.7] blesses an Int-epoch `ts` as well as a Time `ts`, so both routes are reachable rather than theoretical. A runtime whose two routes answer DIFFERENTLY makes the operator a function of who wrote the slot rather than of the value. This case cannot fail in libds — the value is already INT-tagged — which is why it pins nothing alone and everything beside k. fact_count 2 — Stamped, Marker.",
+    "rules_ds": "schema Stamped scope logical:\n    entity_id: String key\n    ts: Time\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule check:\n    Stamped s where s.ts is Int\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Stamped",
+                "slots": {
+                    "entity_id": "a",
+                    "ts": 1700000000000000000
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

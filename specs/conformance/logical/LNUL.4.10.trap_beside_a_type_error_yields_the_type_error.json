@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.10.trap_beside_a_type_error_yields_the_type_error",
+    "category": "logical",
+    "scenario": "[LNUL.4.10]: when both operands of a non-connective operator fault, the expression yields the one [LNUL.4.2]'s order selects, and position never enters. The operator is `==` over two Bool operands, each of which faults while it is evaluated: `p.a // p.z > 0` traps (DIVIDE_BY_ZERO, raised inside the operand), and `p.body.name > 5`, a String in a Json slot compared with an Int, raises a TypeError (raised inside the other operand). The kind order ranks the TypeError first. Two rules put the trap on each side of `==`, so a runtime that yields the LEFT fault (or records both) fails at least one. Each fault is an OPERAND's: a mismatch raised by performing the operator itself (`p.a // p.z < p.body.name`) would not count, because [LNUL.4.10] performs no operation once an operand has faulted. Its twin LNUL.4.10.trap_beside_a_type_error_records_no_trap pins that the trap is not recorded ([LERR.1.4.11]). Path: the non-connective BINOP arm -- libds rete/eval.c BINOP (both operands evaluated with faults held, ds_rete_held_select), Mercury ds.eval.m eval_node(e_binop(...)) (lnul_4_10_yielded).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule trap_left:\n    Payload p where (p.a // p.z > 0) == (p.body.name > 5)\n->\n    log info \"left\"\n\nrule trap_right:\n    Payload p where (p.body.name > 5) == (p.a // p.z > 0)\n->\n    log info \"right\"\n",
+    "dead_rules_expected": ["trap_left", "trap_right"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error", "type_error"]
+    }
+}

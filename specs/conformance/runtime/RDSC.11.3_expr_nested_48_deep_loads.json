@@ -1,0 +1,14 @@
+{
+    "id": "RDSC.11.3_expr_nested_48_deep_loads",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s boundary: an artefact whose deepest `Expr` is at depth 48 loads, and the expression evaluates. The program is compiler/RDSC.11.3_expression_48_deep_compiles's: the test `s.v + ... + s.v > 0` over 48 slot reads is the comparison at depth 0 and 47 additions under it, so its deepest `Expr`, a read, sits at 48. Slot reads, so nothing folds. The harness loads the compiler's own artefact, unedited, asserts one Sensor with `v` 1 and pumps: the sum is 48, `deep` fires, and one fact is live. Break: a loader whose limit is below 48, or that counts the outermost `Expr` as depth 1, refuses the load with -504 and fails. Its pair past the limit is `RDSC.11.3_expr_nested_49_deep_is_refused`. Paths: libds's `decode_expr_msg` (`dsc/rete_loader.c`) depth guard and the Mercury runtime's `ds.dsc_expr`, each admitting 48.",
+    "rules_ds": "schema Sensor:\n    v: Int\n\nrule deep:\n    Sensor s where s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v > 0\n->\n    log info \"deep\"\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Sensor", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

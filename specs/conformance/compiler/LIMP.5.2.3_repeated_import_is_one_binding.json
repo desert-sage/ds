@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.5.2.3_repeated_import_is_one_binding",
+    "category": "compiler",
+    "scenario": "[LIMP.5.2.3]: a file writes `import ha` twice, and the compiler accepts it, with `ha` bound once. A rule matching `ha.Trig` reads through that binding, so a compiler that refused the repeated line, or lost the binding to it, refuses this program. PATH PINNED: `dsc.imports`'s `limp_7_1_take`, whose `aif_qualified` arm runs once per import line and keys `im_qualified_surface` and `im_qualified_schemas` by the qualifier, so the second line writes the same entries over the first.",
+    "rules_ds": "import ha\nimport ha\n\nrule r:\n    ha.Trig\n->\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

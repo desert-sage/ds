@@ -1,0 +1,16 @@
+{
+    "id": "LFAC.2.5.2",
+    "clauses": ["LFAC.2.5.3", "NFCT.5.1"],
+    "category": "logical",
+    "scenario": "[LFAC.2.5] tolerance-aware mutable-slot dedup — verified on the FACT STREAM. Under declared-key identity tolerance is event-observable, not count-observable: a same-key fact is a singleton (LFAC.1.7.2), so a re-assert never changes fact_count (it is a no-op or an in-place replace). Reading{zone key, celsius mutable tolerance 0.5}: assert zone=a celsius=10.0 (fact_assert); re-assert celsius=10.3 within 0.5 tolerance -> NO meaningful change -> no-op: the WM change is suppressed and the fact_id is preserved, but the assert ARRIVED and is recorded, so a second fact_assert appears (RFCS.6.7); re-assert celsius=10.8 outside tolerance -> meaningful change -> assert+retract pair, the arriving assert recorded before the retract it causes (fresh fact_id, LFAC.1.2.2, LFAC.2.5.3, RFCS.6.7). Exactly [tick, fact_assert, fact_assert, fact_assert, fact_retract] (strict) — the leading tick is the engine's first clock sample, taken by the first assert and recorded before it ([LTIM.2.8.5]); the clock does not move, so no later assert records another — a broken within-tolerance no-op would emit an extra RETRACT+assert PAIR rather than the lone assert, and fail. LFAC.2.5.1 enumerates what a suppressed reassertion does not do (dwell does not reset, no series sample, no logical flicker, a counter increments) and the recorder is not in that list. RFCS.6.7 governs uniformly: tolerance absorption is a working-memory discipline and does not reach the recorder. The atom carries the STORED value (10.0), not the arriving 10.3: 'records an assert arriving' is the EVENT, not the payload. Conformance mirror of pyds test_tolerance_runtime.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable tolerance 0.5\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "zone": "a", "celsius": 10.0 } },
+            { "op": "assert", "schema": "Reading", "slots": { "zone": "a", "celsius": 10.3 } },
+            { "op": "assert", "schema": "Reading", "slots": { "zone": "a", "celsius": 10.8 } }
+        ],
+        "expected_kinds": ["tick", "fact_assert", "fact_assert", "fact_assert", "fact_retract"]
+    }
+}

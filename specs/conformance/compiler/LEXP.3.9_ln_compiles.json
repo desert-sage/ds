@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.3.9_ln_compiles",
+    "clauses": ["LEXP.3.9.1"],
+    "category": "compiler",
+    "scenario": "The natural log is spelled `ln` in DS, and it compiles: it is FN_LN, correctly rounded through CORE-MATH ([LEXP.3.9.1]). Pins the NAME SET of the builtin table on the `ln` spelling specifically: `log` is the DS action verb (FN_LOG = 47), not the function, so a table that spells the natural log `log` refuses or mis-resolves `ln(x)`. `sin` is covered by LEXP.3.9_sin_in_a_where_compiles; this one exists for the spelling.",
+    "rules_ds": "from math import ln\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nrule trig:\n    Sensor s where ln(s.state) > 0.5\n->\n    log critical \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

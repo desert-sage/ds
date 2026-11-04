@@ -1,0 +1,12 @@
+{
+    "id": "RBND.1.3_capabilities_out_of_order_refused_at_load",
+    "category": "runtime",
+    "scenario": "[RBND.1.3]: the header's `capabilities` list is strictly ascending, and a reader must refuse a list out of order at load with DS_ERR_DSC_SEMANTIC (-504), not sort it. The harness compiles the program under `use default`, which enables more than two capabilities, and `runtime_error`'s `tamper: {swap_capabilities: 0}` swaps the header's first two, in place, then re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]), so the list holds the same members in another order. What it discriminates: a reader that sorts the list, or compares it as a set, loads the artefact; one that checks only for a repeated member loads it too, which RBND.1.3_repeated_capability_refused_at_load cannot tell. PATH: libds's `ds_binding_capabilities_well_formed` in the header check (`dsc/loader.c`); the Mercury runtime's `ds.dsc.check_header` through `rbnd_1_3_capabilities_malformed`.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"swap_capabilities": 0},
+        "code": "-504",
+        "message_contains": "RBND.1.3"
+    }
+}

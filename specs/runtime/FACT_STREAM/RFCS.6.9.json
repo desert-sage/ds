@@ -1,0 +1,25 @@
+{
+  "id": "RFCS.6.9",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.6",
+  "seq": 377,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.6.9] **How the engine numbers its facts.** The engine must give each\nfact its `fact_id` from one counter per engine, which starts at 1 and\nincreases by 1 with each id taken. The engine takes the next id:\n\n- for each fact that enters working memory, whatever put it there: a host\n  assert, a rule's `emit`, an `ExternalAssert` delivery, in [RFCS.24.3]'s\n  order, a hydrated row ([NCBK.9.3]) or a fault fact ([LERR.9.8]). An\n  identity update's replacement is a fact that enters ([RFCS.6.7]);\n- for each host assert a bound refuses, whose `FactAssert` is recorded\n  although no fact enters ([RFCS.6.7]). No later atom names that id.\n\nThe engine takes no id for a no-op reassertion, whose `FactAssert` carries the\nlive fact's id ([RFCS.6.7]), nor for a host call refused as not a well-formed\ninput, which records nothing, nor for a fact the lowering or the engine\ncreates for its own use ([RFCS.6a.5], [LDET.5.8]). No fact has the id 0, so a\n`fact_id` field holding 0 names no fact. A clone continues the counter\n([IARC.11.2]).\n\nThe ids are observable. Every compared body carries them ([RFCS.6a.3]), so a\nreplay matches its recording only if it numbers as the recorded run did.\n\n",
+  "refs": [
+    "IARC.11.2",
+    "LDET.5.8",
+    "LERR.9.8",
+    "NCBK.9.3",
+    "RFCS.24.3",
+    "RFCS.6.7",
+    "RFCS.6a.3",
+    "RFCS.6a.5"
+  ],
+  "atoms": [
+    "ExternalAssert",
+    "FactAssert"
+  ]
+}

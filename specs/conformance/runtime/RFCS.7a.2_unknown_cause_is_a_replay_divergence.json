@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.7a.2_unknown_cause_is_a_replay_divergence",
+    "clauses": ["RFCS.7a.3"],
+    "category": "runtime",
+    "scenario": "[RFCS.7a.2]: \"A reader must accept a `FactWithdraw` whose cause the enum does not hold, the reserved 4 included, and carry the number. The atom is compare class ([RFCS.7a.3]), so an unknown cause is a difference the comparison finds, not a decode error.\" `RFCS.7a.2_unknown_cause_is_carried` pins the reader; this pins the replay. The harness ([RCTS.1.2.18]) records the same session with the runtime's own recorder: Tmp (ttl 1 s) is asserted and pumped, the clock advances 2 s, and a pump's sweep withdraws it TTL_EXPIRED (2). `withdraw_cause` then writes 4, the reserved number, over that FactWithdraw's one-byte cause. The unaltered recording must replay, so the refusal is the edit's. The altered one must be refused with DS_ERR_FS_DIVERGENCE (-725): the replay re-derives the withdrawal with cause 2, and the recorded one says 4. A reader that refused the atom would refuse with a format or decode status, and one that dropped the cause would replay it clean; either fails this vector. PATHS: libds's `Engine.replay` in verify mode, whose capture sink keeps the re-derived FactWithdraw and byte-compares it with the recorded one (`rfcs/codec.c`'s `verify_match`); the Mercury runtime's `ds.replay`, which compares a FactWithdraw as an atom and ends the replay `diverged` (`replay_refusal_code` -725), after `ds.rfcs`'s decoder carries cause 4 as `se_fact_withdraw_unnamed`.",
+    "rules_ds": "schema Tmp scope ttl 1_s:\n    k: String\n\nrule seen:\n    Tmp t\n->\n    log info \"{t.k}\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tmp", "slots": { "k": "t" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "withdraw_cause", "index": 0, "cause": 4 },
+        "code": "-725"
+    }
+}

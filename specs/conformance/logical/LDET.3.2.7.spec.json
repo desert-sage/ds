@@ -1,0 +1,16 @@
+{
+    "id": "LDET.3.2.7.spec",
+    "category": "logical",
+    "scenario": "[LDET.3.2.7] / [LGRA.2.9.6.5] (display plane) — routing auto-Float display through ds_fmt_float must NOT clobber an explicit per-site interpolation format spec. When the interp carries a non-empty NUM_SPEC (`{v:.2f}`), the display path applies the user's format, not the canonical formatter: 3.14159 renders \"3.14\" (2-place rounded) and the whole Float 42.0 renders \"42.00\" (spec forces two fractional digits, so the canonical bare \"42.0\" must NOT win). The empty-spec canonical path is pinned by the sibling LDET.3.2.7 fixture; this one pins the spec-correct override behaviour. The interpreted lowering translates the DS NUM_SPEC into a complete printf conversion (`.2f` -> `%.2f`) so the interpreted path matches the AOT path.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    v: Float mutable\n\nrule show:\n    Reading r\n->\n    log critical \"{r.v:.2f}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "v": 3.14159 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "b", "v": 42.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["3.14", "42.00"]
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.4.2.3_subday_runtime_domain",
+    "clauses": ["LTIM.4.2.3"],
+    "category": "logical",
+    "scenario": "[LTIM.4.2.3]: a `Duration` that is not a whole number of days and is known only at run time makes `d + dur` raise a ComputationError of kind DOMAIN ([LERR.1.4]); [LTIM.4.2.2]'s compile-time refusal covers only a literal. Rule `shift` logs `(v.due + v.step)::String`, the step a `Duration` slot, and rule `handler` logs each ComputationError's kind and rule ([LERR.9.1]). Pump 1: a Visit on 2024-02-29 (day 19782) with a step of 1 h: `shift` faults DOMAIN and logs nothing, `handler` logs `DOMAIN shift`. Pump 2: a second Visit, the same day, with a step of 24 h: `shift` logs 2024-03-01. A runtime that floored or truncated the step would log 2024-02-29 in pump 1, with no fault; a plain Int `+` would leave the Date range and fault NOT_REPRESENTABLE instead. PATH PINNED: the whole-day check in FN_DATE_ADD_DURATION in libds (`rete/adapters.c`, `date_shift`) and Mercury (`ds.eval.ltim_4_2_3_date_shift`), before its range check.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n    step: Duration mutable\n\nrule shift:\n    Visit v\n->\n    let a = (v.due + v.step)::String\n    log info \"shift {a}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 19782, "step": 3600000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "due": 19782, "step": 86400000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN shift", "shift 2024-03-01"]
+    }
+}

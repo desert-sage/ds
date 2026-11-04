@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.5.1e",
+    "category": "compiler",
+    "scenario": "CV-5b ([LNUL.5.1]) — arithmetic propagates null, so `s.state + 1` on a `T?` slot is itself nullable, and feeding it to a non-nullable `emit` slot is still a compile error. PATH PINNED: `dsc.typecheck`'s type walk gives `s.state + 1` its operand's nullability, and `dsc.validate.lexp_7_3b_kwarg_type` calls `lnul_5_1_concrete` on an emit value into a non-nullable slot. A walk that typed the sum non-null would compile this program. LNUL.5.1c is the `where` half, where the same value is legal.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Out scope logical:\n    k: String key\n    val: Float mutable\n\nrule r:\n    Sensor s\n->\n    emit Out logical k: \"x\" val: s.state + 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

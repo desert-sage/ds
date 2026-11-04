@@ -1,0 +1,33 @@
+{
+    "id": "LADP.8.5.3_tier2_from_base_converted",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3], [RLOW.7.3.9]: a quantity on a kwarg typed with a TIER-2 unit reaches the service in that unit, by the unit's `from_base` evaluated when the call is. `loudness` is stored `float64` in its base `sone`; `phon` is tier-2, `from_base: 10.0 * log2(x) + 40.0`, as `stdlib/units/future/audio.ds` declares it. `amp.set` declares `p: phon` and `q: phon`, and rule `go` passes the `sone` slot `l.s` (the fact asserts 4.0) to `p` and the literal `2_sone` to `q`. The integrator receives p=60.0, 10 * log2(4) + 40, and q=50.0, 10 * log2(2) + 40. Both are exact in binary64: log2 of a power of two is an integer, which CORE-MATH returns exactly, and the product and sum are small integers. PATH PINNED: `written_in_unit` in dsc.rete finds each argument a `loudness` quantity by its type (`argument_quantity_of`) -- the literal too, because `ladp_8_5_2_in_unit` has no tier-1 line for `phon` to fold it by -- `dsc.quantity.rlow_7_3_9_conversion` gives `cv_from_base` with the unit's body, and `kwarg_pairs` lowers it through `luni_4_3_from_base`, with `x` the lowered argument: `FN_LOG2`, then the multiply and add nodes. Both runtimes evaluate the nodes the compiler emits.",
+    "rules_ds": "from math import log2\n\nunit dimension loudness storage float64 base sone\nunit sone: loudness\nunit phon: loudness:\n    to_base:   2.0 ** ((x - 40.0) / 10.0)\n    from_base: 10.0 * log2(x) + 40.0\n\nservice amp.set:\n    kwarg p: phon required\n    kwarg q: phon required\n    no response\n\nschema Level scope logical:\n    room: String key\n    s: sone mutable\n\nrule go:\n    Level l\n->\n    call amp.set p: l.s q: 2_sone nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Level",
+                "slots": {
+                    "room": "hall",
+                    "s": 4.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "amp.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "p": 60.0,
+                    "q": 50.0
+                }
+            }
+        ]
+    }
+}

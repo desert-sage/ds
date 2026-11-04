@@ -1,0 +1,27 @@
+{
+    "id": "LFAC.1.2l",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "TTL `1_min` precision \u2014 fact retracts after 1_min + 1_s advance (RARC.5.2.4; LFAC.1.3.3). Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema Minute scope ttl 1_min:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Minute",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 61000000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

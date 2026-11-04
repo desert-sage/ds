@@ -1,0 +1,14 @@
+{
+    "id": "IDSP.13.4_bytes_cache_value_is_a_computation_error",
+    "category": "logical",
+    "scenario": "IDSP.13.4: a `Bytes` value has no JSON form, so caching one raises a ComputationError of kind NOT_REPRESENTABLE and abandons the activation. The rule caches a `Bytes` slot read; the step asserts the slot as `{\"$bytes\": \"<hex>\"}`, the form runner.py's `_step_slot_value` and test_behave's `slot_value` both decode. Its twin `IDSP.13.4_bytes_cache_value_writes_nothing` pins that no cache set happens. Path: the compiler wraps the value in FN_JSON_VALUE (dsc.rete); libds refuses it in rete/adapters.c's `adapter_ds_json_value`, before `jt_value`; the Mercury runtime in ds.exec's `first_uncacheable`, before `json_value_text`.",
+    "rules_ds": "schema Blob scope logical:\n    id: String key\n    b: Bytes mutable\n\nrule keep:\n    Blob x\n->\n    cache key: \"blob\" value: x.b\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": "a", "b": { "$bytes": "00ff41" } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

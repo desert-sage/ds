@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+[build-system]
+# 0.18: the first meson-python that reads a PEP 639 licence expression.
+requires = ["meson-python>=0.18", "meson>=1.4", "ninja"]
+build-backend = "mesonpy"
+
+[project]
+# The distribution is `ds-lang`; the package it installs, and what a program
+# imports, is `pyds`.
+name = "ds-lang"
+# meson.build decides it at configure time (scripts/python/version.py).
+dynamic = ["version"]
+description = "Python binding for libds, the Desert Sage (DS) rules engine"
+readme = "README.md"
+license = "BSD-4-Clause OR AGPL-3.0-or-later"
+# A copy of the repository's LICENSE: PEP 639 takes no path outside the
+# project. tests/test_packaging.py holds it byte-identical to the original.
+license-files = ["LICENSE"]
+authors = [{ name = "Dan Finster" }]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Interpreters",
+    "Typing :: Typed",
+]
+# 3.12 FLOOR, and 3.12 is the interpreter certified. The compiler is the Mercury
+# dsc, which carries its own identifier tables, and nothing here reads
+# `unicodedata`.
+requires-python = ">=3.12"
+# `protobuf` is the runtime of the generated `pyds.proto` modules, which
+# `pyds.atoms` and the fault codec import; it publishes a pure-Python wheel, so it
+# installs wherever pyds does. No lower bound: the tree is tested against
+# whatever pip resolves, and a bound nothing exercises would be a claim.
+dependencies = ["protobuf"]
+
+# The compiler the wheel carries at `pyds/bin/dsc`, by name.
+[project.scripts]
+dsc = "pyds._dsc_command:main"
+
+# What running the tests needs (PEP 735): `pip install --group test`. Not an
+# extra, because no installed pyds ever needs it.
+[dependency-groups]
+test = ["pytest>=8"]
+
+# PY.15: `ruff format` decides the layout, Black's output with one departure,
+# `line-length = 100`; `ruff check` runs the rule sets of PY.15's table.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# Generated: a reformat here would differ from the generator's output.
+extend-exclude = [
+    "src/pyds/_atom_registry.py",
+    "src/pyds/_capability.py",
+    "src/pyds/_faults.py",
+    "src/pyds/_status.py",
+]
+
+# PY.16: `_pyds` is built for the limited API of the floor above
+# (meson.build's `limited_api`), so the wheel is tagged `cp312-abi3-<platform>`
+# and installs on every CPython from 3.12. The release's import gate refuses a
+# pyds wheel whose tags, Requires-Python or extension name say otherwise.
+[tool.meson-python]
+limited-api = true
+
+[tool.ruff.lint]
+select =["E", "W", "F", "I", "N", "D", "UP", "B", "RUF"]
+
+# PY.13: tests need no docstring, so `D1` (a missing one) is
+# off under tests/. The rest of `D` still holds a docstring a test carries.
+# PY.15's one exception to "never for a file".
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D1"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+# PY.12: `mypy --strict` over the package.
+[tool.mypy]
+strict = true
+python_version = "3.12"
+
+# protoc's own stubs for `pyds.proto` (scripts/python/gen_proto_package.py): the image's
+# protoc (3.21) writes a bare `Mapping` in every message constructor that takes
+# a map or message, which is the one strict check they fail. They are
+# generated, and the generator is what would change, so that check alone is
+# off for them; every module that uses them is checked in full.
+[[tool.mypy.overrides]]
+module = "pyds.proto.*"
+disallow_any_generics = false

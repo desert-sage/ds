@@ -1,0 +1,18 @@
+{
+    "id": "LCON.4.5.1",
+    "category": "logical",
+    "scenario": "LCON.4.5.1 introspection surface — justifier chain. A logical `emit` derives a fact that the TMS records as supported by the firing rule. After Trigger(v=7) makes rule `derive` emit Derived, the engine's get_justifiers introspection reports Derived (fact_id 2) is justified by exactly rule `derive`. Reaches the justifier-chain surface the event stream cannot expose.",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nschema Derived scope logical:\n    v: Int key\n\nrule derive:\n    Trigger t\n->\n    emit Derived logical v: t.v\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 7 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 2 },
+            { "surface": "justifiers", "fact_id": 2, "expect_rules": ["derive"] },
+            { "surface": "justifier_count", "fact_id": 2, "count": 1 }
+        ]
+    }
+}

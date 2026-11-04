@@ -1,0 +1,14 @@
+{
+    "id": "LDET.5.6",
+    "category": "logical",
+    "scenario": "Rule firing order is deterministic per LDET.5 — rules fire in declaration order when triggered by the same fact. Declaration order is the outer key ([LDET.5.4]). Pin: two rules both matching the same trigger fire in source-declaration order. NOTE: both match on ONE propagation, so source order and completion order COINCIDE here and either model passes — this fixture cannot tell them apart. It refuses an order that is neither (a hash or a reversal). LDET.5.4.completion.json is the one that can.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule first_rule:\n    Trig\n->\n    log info \"first\"\n\nrule second_rule:\n    Trig\n->\n    log info \"second\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["first_rule", "second_rule"]
+    }
+}

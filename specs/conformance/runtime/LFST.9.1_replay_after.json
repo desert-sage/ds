@@ -1,0 +1,23 @@
+{
+    "id": "LFST.9.1_replay_after",
+    "category": "runtime",
+    "scenario": "An `after` TIMER replayed ([LFST.9.1], [LTAC.3]). `arm` defers `emit Late` by 30_s and captures `t.v` for it ([LTAC.3.5]). Trig 1 at 0, Trig 2 at 20_s, pumps at 35_s and 55_s: the deferred body for 1 fires at the 35_s pump and the one for 2 at the 55_s pump, re-activated each pump by the engine's `$ClockTick` and admitted by the fire guard only once the instant has passed. The timer, the capture and the tick are all engine-made, so the replay must re-derive every one from its own clock. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Late scope ttl 1_h:\n    v: Int\n\nrule arm:\n    Trig t\n->\n    after 30_s:\n        emit Late v: t.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 20000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 15000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 20000000000 },
+            { "op": "pump" }
+        ],
+        "min_events": 8,
+        "min_rule_fires": 4
+    }
+}

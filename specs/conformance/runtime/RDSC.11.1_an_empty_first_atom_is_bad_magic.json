@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_an_empty_first_atom_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose `Atom` has no oneof member is malformed ([RFCS.19.3]), and a malformed FIRST frame is refused with DS_ERR_DSC_BAD_MAGIC (-501). `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a00\"}}` ([RCTS.1.2.21]) puts a complete, empty frame before the compiled artefact's first atom: outer tag 0x0A and outer length 0, so the `Atom` carries no field and has no identity to dispatch on. The walk from the first byte stops at that frame and reaches no DscHeader, so nothing is re-sealed. What it discriminates: a loader that steps over an empty frame by its length reaches the DscHeader behind it and loads the artefact. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom`: an outer length of 0, MALFORMED with no short body); the Mercury runtime's `ds.atom.next_frame` (`ae_empty_atom`) in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a00"}},
+        "code": "-501"
+    }
+}

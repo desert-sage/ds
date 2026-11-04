@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.15.8_unknown_escape_rejects",
+    "category": "compiler",
+    "scenario": "[LGRA.15.8] — \"Unknown escape is a compile error\", exercised. A compiler that passes `\\q` through as a literal `q` fails this. `\\q` is not in _ESCAPE_MAP (\\\\ \" n t r 0) nor a numeric introducer (x u U), so it is the unknown case rather than a malformed known one. Asserts the specific diagnostic, not merely non-OK — a vector that accepts any error passes against a compiler rejecting this for the wrong reason, e.g. a lexer that choked on the backslash before ever classifying the escape.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"bad \\q escape\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_BAD_ESCAPE"
+    }
+}

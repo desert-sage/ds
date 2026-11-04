@@ -1,0 +1,52 @@
+{
+    "id": "IARC.1.11f",
+    "category": "cross-tier",
+    "scenario": "Two engines have independent clocks. Advancing engine A's mock clock past a TTL deadline retracts A's fact while engine B's identical fact (asserted at the same wall-time but with a younger clock) survives. Pins IARC.1.11 \u2014 clock state per-engine.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n"
+            },
+            "b": {
+                "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "a",
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "engine": "a",
+                "op": "pump"
+            },
+            {
+                "engine": "b",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 0,
+            "b": 1
+        }
+    }
+}

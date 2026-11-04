@@ -1,0 +1,20 @@
+{
+    "id": "LCDB.3.3",
+    "clauses": ["LCDB.3.2.1"],
+    "category": "logical",
+    "scenario": "`cooldown T` suppresses further fires of the same activation key for T (LCDB.3.2.1), and no longer. `r cooldown 1_h` fires on Trig v=1. Trig is retracted, the clock moves 61 min, Trig v=1 is asserted again, and `r` fires again: two `tick` lines. The in-window suppression is not stepped, so this pins only that the cooldown ends.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r cooldown 1_h:\n    Trig\n->\n    log critical \"tick\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 1000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "v": 1 }, "as": "h" },
+            { "op": "pump" },
+            { "op": "retract", "label": "h" },
+            { "op": "advance", "delta_ns": 3660000000000 },
+            { "op": "assert",  "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["tick", "tick"]
+    }
+}

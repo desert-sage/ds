@@ -1,0 +1,16 @@
+{
+    "id": "LNUL.4.10.null_beside_a_trap_is_not_a_null",
+    "clauses": ["LNUL.5.3"],
+    "category": "logical",
+    "scenario": "The twin of LNUL.4.10.null_beside_a_trap_is_the_trap, and the half that carries the content: were `null + <trap>` the `null` of [LNUL.4.1], `?? 7` would rescue it and the rule would fire. [LNUL.4.10] makes it the fault, which `??` does not rescue ([LNUL.5.3]), so neither rule fires. Both sides of `+`. `type_error` and `engine_error` are forbidden: every operand is well-typed and the engine stays intact. Path: the non-connective BINOP arm under a `??` — libds rete/eval.c (BINOP, then COALESCE's latch-before-kind test), Mercury ds.eval.m eval_node(e_binop(...)) under eval_node(e_coalesce(...)).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int? mutable\n    a: Int mutable\n    z: Int mutable\n\nrule null_left:\n    S s where ((s.n + s.a // s.z) ?? 7) == 7\n->\n    log info \"left rescued\"\n\nrule null_right:\n    S s where ((s.a // s.z + s.n) ?? 7) == 7\n->\n    log info \"right rescued\"\n",
+    "dead_rules_expected": ["null_left", "null_right"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "n": null, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "engine_error", "rule_fire_begin"]
+    }
+}

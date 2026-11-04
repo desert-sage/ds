@@ -1,0 +1,30 @@
+{
+    "id": "LDTL.4.1_retain_override_deadline",
+    "category": "logical",
+    "scenario": "[LDTL.4.1]: a per-emit `retain:` fixes the fact's deadline at the assert, deadline = entry stamp + the evaluated duration ([LTIM.2.8.6]), and replaces the schema's TTL for that fact alone. `dynamic_ttl` is on. `Hold` is `scope ttl 30_s`. At 0 s one Trig fires `emit_short`, which emits a `Hold` \"short\" with `retain: 5_s`, and `emit_long`, which emits a `Hold` \"long\" with no `retain:`. Liveness is read by probes: each `Probe*` assert joins its `Hold` if that `Hold` is live, and each is pumped alone, so each pump fires at most one rule and the log order is the steps' order. The clock is `set` to 4 s, 6 s and 31 s, probing \"short\" then \"long\" at each. Messages: `short 4`, `long 4`, `long 6`. So the overridden `Hold` is live at 4 s and gone at 6 s, which is 0 + 5 s; the other is live at 6 s and gone at 31 s, the schema's 30 s; and nothing else expires (Trig and the probes are `logical`). A runtime that ignored the override expires \"short\" at 30 s and logs `short 6`; one that applied it to both schemas' facts loses `long 6`. In `logical/` rather than `temporal/`, because the temporal driver reads only a fact count at the end and this needs liveness at three instants. PATH PINNED: the deadline each runtime fixes at the assert from the `ttl_override` Expr: libds's action loop (`rete/engine.c`, `pending_ttl_override_ns`) into `ds_rete_wm_assert_ex` (`rete/wm_rete.c`); the Mercury runtime's `ds.exec.assert_verb` through `deadline_for`.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\n\nschema Hold scope ttl 30_s:\n    which: String\n\nschema ProbeShort scope logical:\n    n: Int key\n\nschema ProbeLong scope logical:\n    n: Int key\n\nrule emit_short:\n    Trig\n->\n    emit Hold which: \"short\" retain: 5_s\n\nrule emit_long:\n    Trig\n->\n    emit Hold which: \"long\"\n\nrule short_live:\n    ProbeShort p\n    Hold h where h.which == \"short\"\n->\n    log info \"short {p.n}\"\n\nrule long_live:\n    ProbeLong p\n    Hold h where h.which == \"long\"\n->\n    log info \"long {p.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "ProbeShort", "slots": { "n":4 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeLong", "slots": { "n":4 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 6000000000 },
+            { "op": "assert", "schema": "ProbeShort", "slots": { "n":6 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeLong", "slots": { "n":6 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 31000000000 },
+            { "op": "assert", "schema": "ProbeShort", "slots": { "n":31 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeLong", "slots": { "n":31 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["short 4", "long 4", "long 6"]
+    }
+}

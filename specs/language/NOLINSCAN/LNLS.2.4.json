@@ -1,0 +1,17 @@
+{
+  "id": "LNLS.2.4",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.2",
+  "seq": 116,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What `realtime` does NOT enforce from `linear_scan: false`",
+  "text": "### What `realtime` does NOT enforce from `linear_scan: false` [LNLS.2.4]\n\nThe following `linear_scan: false` constraints are **not** required for hard RT\nand are **not** automatically enforced by `realtime`:\n\n| LNLS constraint | Why `realtime` does not need it | What it means for T_wcet |\n|---|---|---|\n| LNLS.3.1 — no JSON slots | Borrow semantics make JSON slot assert O(1). JSON_PATH is already blocked (LNLS.3.9). LIVE blocks re-assertion. JSON slots are RT-compatible. | No impact |\n| LNLS.3.3 — logical identity join required | Multi-pattern joins not anchored to logical identity slots fall back to O(L_β × T_j), bounded by N_max — finite, computable, valid hard RT. | T_wcet contains O(N_max × T_j) beta term instead of O(1) |\n\n**Practical implication**: `realtime` alone is sufficient for hard RT as defined by the\nrealtime contract ([RTCT.1]).  Adding `linear_scan: false` eliminates the O(N_max)\ndependency from join costs entirely (beta joins become O(1) via the\nlogical-identity-slot constraint).\nThis is a T_wcet improvement, not an RT prerequisite.\n\n",
+  "deferred": true,
+  "refs": [
+    "LNLS.3.1",
+    "LNLS.3.3",
+    "RTCT.1"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.6.1_an_alpha_test_kind_outside_its_enum_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1]: an `AlphaTest` whose `kind` is no member of `AlphaTestKind` is refused at load with DS_ERR_DSC_SEMANTIC (-504). No compiler writes one, so the harness compiles rule `on_t`, whose `T t where t.v > 5` puts one CMP test on `T`'s `AlphaNode` (node 1), and `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 1], value: 3}}` ([RCTS.1.2.21]) writes that test's field 1, `kind`, as 3, one past `ALPHA_TEST_REGEX`, and re-seals `dsc_sha256` ([RDSC.3.6]). What it discriminates: a loader that reads an unknown kind as one it knows (EQ, the proto3 default, or CMP) loads, and the vector fails as unrefused. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 5\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 1], "value": 3}},
+        "code": "-504"
+    }
+}

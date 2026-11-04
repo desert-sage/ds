@@ -1,0 +1,30 @@
+{
+  "id": "LGRA.9.3.3",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.9.3",
+  "seq": 1127,
+  "depth": 3,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.9.3.3] The `is` subject vocabulary:\n\n```\nis_subject ::= 'null'\n            |  'true' | 'false'\n            |  'inf'  | '-inf' | 'NaN'\n            |  'Int'  | 'Float' | 'Bool' | 'String' | 'Bytes' | 'Json'\n```\n\n**Twelve subjects, and the set is closed** ([LNUL.4.9]): six distinguished\nconstants and six tag names. `[LNUL.4.9]` governs what each answers — a\nconstant tests tag **and** value, a tag name tests the tag alone — and is the\nnormative home of the semantics; this production is the surface. `x is Blah`\nis a parse error rather than a later rejection, so an artefact can carry\nexactly these twelve and no illegal thirteenth.\n\n**Residue the grammar cannot carry ([STYL.2.15.4]):**\n\n- **This vocabulary reserves nothing.** A subject is recognised **only** in\n  subject position, so none of these spellings becomes unavailable to an\n  author elsewhere by virtue of appearing here: a cast still reads `::Int`,\n  and a bare `inf` is still the float constant. Whether any of these\n  spellings is refused as an author-declared name is [LLEX.9.5]'s question\n  and is answered by [LLEX.9.6], not by this production.\n- **The tag names are not the type namespace**, though they are spelled like\n  it. A schema name is not a subject: a schema has no representation of its\n  own, so it is neither spellable here nor answerable ([LNUL.4.9]).\n- **`-inf` is one subject, not `-` applied to `inf`.** It is admitted in\n  subject position only, where no unary-arithmetic level ([LGRA.9.5.1]) is\n  reachable, and there is nothing for a sign to attach to.\n- **`NaN` is spelled as the initialism** and is the only subject that is.\n  [LGRA.22.7] detects author-name collisions with case removed, so `nan` is\n  not available to fill the apparent gap.\n- **Extension is an amendment to [LNUL.4.9] first.** A subject added here\n  with no stated answer parses and means nothing, which is worse than not\n  parsing.\n",
+  "refs": [
+    "LGRA.22.7",
+    "LGRA.9.5.1",
+    "LLEX.9.5",
+    "LLEX.9.6",
+    "LNUL.4.9"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Lnul_4_9__subject",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The production's twelve alternatives as a closed type: six constants, six tag names, no thirteenth. What each answers is [LNUL.4.9]'s, tied there."
+      }
+    ]
+  }
+}

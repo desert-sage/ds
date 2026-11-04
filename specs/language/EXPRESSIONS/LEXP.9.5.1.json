@@ -1,0 +1,170 @@
+{
+  "id": "LEXP.9.5.1",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.9.5",
+  "seq": 654,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.9.5.1] `t.dwell` is a compile-time alias for the time `t`'s fact has\nbeen in working memory: `monotonic_ns()` minus the fact's entry stamp\n([LTIM.2.8.6]), a `Duration`. `t` is a `logical`-schema binding. It composes\nwith arithmetic. It reads no slot of the fact — `ts` included — so neither an\nadapter's timestamp nor a wall-clock change moves it.\n\n",
+  "refs": [
+    "LTIM.2.8.6"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Ltim_2_4_1__read",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`t.dwell` as the leaf `ReadDwell b`, `b` the rank of `t`'s fact in the extended token: the alias the clause names, carried into the `where` grammar; what it reads is Rete/NetworkTimed.idr's `ltim_2_4_1__read_at`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lexp_9_5_1__dwell_leaf",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE `dwell` LEAF IS THE SAMPLE LESS THE STAMP: for a fact the token holds and the table stamps, `ltim_2_4_1__at_sample` replaces `t.dwell` by TwoClocks.idr's `lexp_9_5_1__dwell` at the sample and that stamp. A TRANSCRIPTION of `ltim_2_4_1__read_at`'s third clause, said so: it fails if the leaf is changed to read a slot or the wall and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lexp_9_5_1__dwell_of_head",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`t.dwell` of the single positive pattern's fact: the leaf at rank 0. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__read_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`t.dwell` is `monotonic_ns()` minus the fact's entry stamp: TwoClocks.idr's `lexp_9_5_1__dwell` at the sample and the stamp read off the table, as an Int of clock units; it reads no slot of the fact, `ts` included. LESS than the clause: a `Duration` in nanoseconds is the fixture lowering's scaling by the time map's unit, and `t` a `logical` binding is its refusal (`where:dwell-schema`); the leaf reads any rank's stamp. A fact the token does not hold, or one with no stamp, reads `null`, which no positive node admits."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__due_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`dwell >= d` over the stamp table, as the gate the theorems take. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_expr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`t.dwell` of the timer, the monotonic sample less its entry stamp, against the duration. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_forms_agree",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "`dwell >= d` evaluated by the Integer order and by the Nat gate, decided alike at two samples. Computed; run, not proved on variables."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_is_due",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`dwell >= d` from a stamp is `monotonic_ns() >= stamp + d`, for every stamp, positive duration and sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'`monotonic_ns()` minus the fact's entry stamp', compared with `d`, at one sample over the stamp table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_fires_once_executed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The one rule under `dwell >= 2` fires once, at the sample where `dwell` reaches 2, and never again. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`dwell >= d` as a two-clock test reading the monotonic sample alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`dwell >= d` for a fixed stamp, as a predicate of the monotonic clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'Neither an adapter's timestamp nor a wall-clock change moves it': a TRANSCRIPTION by construction on the monotonic component."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate_rising",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`dwell` only grows while the stamp stands, so a `dwell >= d` gate is rising."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_ignores_wall_executed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Nor a wall-clock change moves it', executed: the same counts with the wall going 1, 2, 1, 2 and with every wall sample 9."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_start",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one rule under `dwell >= 2`, the `Ping` stamped at 0. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_tests_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The `dwell` test is monotonic at every stamp table: C2's hypothesis, inhabited."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_steps_move_no_dwell_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Neither an adapter's timestamp nor a wall-clock change moves it': the stamp is read, the wall is not. Executed."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "lexp_9_5_1__dwell",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`dwell`: the monotonic sample less the fact's entry stamp ([LTIM.2.8.6]). Reduced to its clock dependence; the stamp's lifecycle is Rete/EntryStamp.idr's."
+      }
+    ]
+  }
+}

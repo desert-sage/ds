@@ -1,0 +1,15 @@
+{
+    "id": "LCST.4.3.4.a_present_source_still_converts",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "LCST.4.3.4 control: the same cast over a present value still converts, so the null arm is a null short-circuit and not a cast that stopped working. `f` holds 1.5, `(s.f::String?) is null` is false, and the rule does not fire.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    f: Float? mutable\n\nrule r:\n    S s where (s.f::String?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "f": 1.5 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["rule_fire_begin"]
+    }
+}

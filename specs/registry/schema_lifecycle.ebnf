@@ -1,0 +1,27 @@
+(* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors *)
+(* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later *)
+
+(* ds_schema_lifecycle — an enumeration registry ([STYL.2.15.6]).
+
+   How a fact of a schema leaves working memory, as an integrator sees it:
+   retracted by the host, a rule or truth maintenance; retracted at its
+   deadline; or owned by the engine. libds's `ds_schema_lifecycle_t` mirrors
+   it name for name and value for value. It is not the artefact's scope
+   (`proto/schema_logical.proto#SchemaLifecycle`), which answers a different
+   question. It travels nowhere, so it is an EBNF registry rather than a
+   protobuf ([STYL.5.9.7]).
+
+   The alternation below is the closure: these names and no others.
+   Each production is an allocation. A production that is NOT a member
+   of the alternation is out of use — the number stays allocated to that
+   name ([STYL.2.8.7]). *)
+
+ds_schema_lifecycle = DS_SCHEMA_LIFECYCLE_LOGICAL
+                    | DS_SCHEMA_LIFECYCLE_TTL
+                    | DS_SCHEMA_LIFECYCLE_INTERNAL ;
+
+(* allocations *)
+
+DS_SCHEMA_LIFECYCLE_LOGICAL  = "0" ;
+DS_SCHEMA_LIFECYCLE_TTL      = "1" ;
+DS_SCHEMA_LIFECYCLE_INTERNAL = "2" ;

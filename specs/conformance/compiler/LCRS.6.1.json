@@ -1,0 +1,7 @@
+{
+    "id": "LCRS.6.1",
+    "category": "compiler",
+    "scenario": "Response facts (LCRS.4.3.1) and `CallError` facts live in working memory once asserted, per LCRS.6.1; a rule matches them as it matches any fact. Pin: a standalone rule matching a service's response schema `Ack` (`ttl`, declaring `corr`, LCRS.4.3.2) on its correlation compiles cleanly. Path: `Ack` is an author-declared schema like any other, so resolution, validation and lowering treat the pattern as an ordinary one.",
+    "rules_ds": "schema Ack scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.do:\n    kwarg x: Int\n    response Ack\n\nrule handle_response:\n    Ack r where r.corr == \"my-call\"\n->\n    log info \"got response: {r.corr}\"\n",
+    "expect": { "kind": "compile_ok" }
+}

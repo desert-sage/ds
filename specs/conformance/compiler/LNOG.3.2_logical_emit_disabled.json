@@ -1,0 +1,11 @@
+{
+    "id": "LNOG.3.2_logical_emit_disabled",
+    "category": "compiler",
+    "scenario": "LNOG.3.2 / LDIA.3.4.2 — negative: the program sets `logical: false` and writes `emit X logical`. No schema is `scope logical`, so the emit is the only site, and its `logical` on an `explicit` schema also raises DS_VALIDATE_BAD_LIFECYCLE_FLAG. Rejected with DS_VALIDATE_CAPABILITY_DISABLED, the one code for a construct the settings forbid (NOLOGICAL_EMIT is retired). Drives dsc.dialect's action site for `logical` on an emit.",
+    "rules_ds": "use default:\n    logical: false\n\nschema Trig scope explicit:\n    v: Int\n\nschema Out scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED",
+        "also_raises": ["DS_VALIDATE_BAD_LIFECYCLE_FLAG"]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.6_host_text_over_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: JSON text one byte past the text limit, 24,577 bytes, handed to a host parse, is refused with `DS_ERR_JSON_LIMIT` (-221) before any of it is read. Nothing changes, and NO fault event reaches the stream: the status is the whole host refusal. The site is the cache seed ([NSTG.9.1]): `runner.py`'s `_cache_seeds` passes `json.dumps(value)`, which writes U+0001 as the six bytes `\\u0001` and separates array items with `, `. The value is LGRA.5.8.6_host_text_at_limit's with its last string `aaaaaa` instead of `aaaaa`: text 24,577 bytes, value inside the three tree limits (depth 2, 3 nodes, 13,404 string bytes), so the text limit is the only one it crosses. `message_contains` names the text limit, so a refusal by any other limit fails this vector. PATH PINNED: on libds, `ds_json_parse`'s `len > DS_JSON_MAX_TEXT_BYTES` test in pyds's `cache_seed`; `ds_engine_cache_seed` is never called. On the Mercury runtime, `test_behave.m` hands `ds.engine.seed_cache_text` the same `json.dumps` text, and `ds.json_text.parse` refuses it on the same byte count.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-221",
+        "message_contains": "DS_JSON_MAX_TEXT_BYTES",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "value": [ { "$repeat": "\u0001aaaaa", "count": 2233 }, "aaaaaa" ] }
+        ]
+    }
+}

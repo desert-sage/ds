@@ -1,0 +1,69 @@
+{
+  "id": "IRET.10.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.10",
+  "seq": 847,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.10.4] **Rate gate.** A rule's cooldown lowers to its\nterminal's `fire_guard` ([IRET.16.6]), evaluated before the\naction loop: a false result skips every action. A call site's\ncooldown gates that call alone ([RLOW.4.6.6.1]).\n\nEither gate calls the rate-allow builtin (`FN_RATE_ALLOW`), which receives `(name, key_1, ..., key_N,\ncooldown_ns)`: a tracker name (the rule's, or a call site's\n`<rule>#call<N>`, [IRET.25.5.1]), then the activation key's components,\nwhich [LCDB.3.3.3] composes from the bound facts, then the window in\nnanoseconds. The window is always the last argument. The builtin\nmaintains per-engine state keyed by `(name, activation_key)`:\n\n- **Cooldown** (RLOW.4.6.2): state value is\n  `last_fire_ns`. Returns `true` (allow) when\n  `now_ns - last_fire_ns >= cooldown_ns`. On allow,\n  updates `last_fire_ns = now_ns`.\n\n---\n\n",
+  "refs": [
+    "IRET.16.6",
+    "IRET.25.5.1",
+    "LCDB.3.3.3",
+    "RLOW.4.6.2",
+    "RLOW.4.6.6.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Iret_10_4__trackers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The per-engine state keyed `(name, activation_key)` whose value is `last_fire_ns`: a table from (rule ordinal, key code) to the last allowed instant, a stamp recorded in front and read newest first. The name is the rule's ordinal; a call site's `<rule>#call<N>` tracker is outside the fragment, with calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "iret_10_4__allow",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rate-allow builtin: allow iff Rete/RateGate.idr's gate at `now_ns` over the key's recorded stamp -- `now_ns - last_fire_ns >= cooldown_ns`, or no recorded firing -- and on allow `last_fire_ns = now_ns`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "iret_10_4__prepare_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Per-engine state: an input -- a data event or a tick -- prepares the net as Rete/NetworkTtl.idr does and moves no tracker."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rdsc_4a_8_2_3__gate_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The builtin reads its state once per firing and updates it on allow alone: the trackers after a firing are the trackers before, or those with the key stamped at the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__lookup",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state value `last_fire_ns` read for `(name, activation_key)`, or none."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/rgate.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

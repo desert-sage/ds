@@ -1,0 +1,19 @@
+{
+    "id": "LIMP.1.5_library_slot_opaque_type_importer_binds_another",
+    "category": "logical",
+    "scenario": "[LIMP.1.5], [LOPQ.2.3]: `vault.Box.pubkey` is `crypto`'s `Key`, and the program binds `Key` to `other`'s. It compiles, and a run sees the fact: exactly [\"seen\"]. `LIMP.1.5_library_slot_opaque_type_compared_with_the_importers` is its refusal twin. PATH PINNED: `dsc.imports.limp_1_5_field` giving the slot `crypto`'s declaration, whatever the program binds `Key` to, and `dsc.resolve.slot_entry` reading it.",
+    "rules_ds": "from other import (Key)\nimport vault\n\nschema Mine scope logical:\n    k: Int key\n    token: Key mutable\n\nrule r:\n    vault.Box\n->\n    log info \"seen\"\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n",
+        "other": "opaque type Key over Bytes\n",
+        "vault": "from crypto import (Key)\n\nschema Box scope logical:\n    k: Int key\n    pubkey: Key mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "vault.Box", "slots": { "k": 1, "pubkey": { "$bytes": "00" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen"]
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "id": "LSER.16.2.1_mean_all_time",
+    "clauses": ["LSER.16.2.1", "LSER.18.1", "LSER.17.2"],
+    "category": "logical",
+    "scenario": "[LSER.16.2] / [LSER.18.1], read by a rule: `mean all_time` is the arithmetic mean of the samples absorbed for the identity, as a `Float` ([LSER.17.2]), so it renders `4.0` over Int samples. `all_time` routes `mean` to the accumulator backing (SeriesBackendWelfordEwma): libds's `sbwe_query` DS_SERIES_AGG_AVG arm (the running Welford mean), Mercury's `aggregate(agg_mean)` over the unwindowed row (sum over count). Samples 1, 3, 5, 7: every running mean (1, 2, 3, 4) and the sum (16) are exact in binary, so the incremental and two-pass forms agree to the bit. At 5 s a `Probe` arrives and `read` logs the binding's `mean` ([NSBK.6.3]), once per `Reading` fact, since a `ttl` schema keeps each assert as a fact of its own: four messages.",
+    "rules_ds": "use default\n\nschema Reading scope ttl 1_h:\n    k: String\n    v: Int\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.v (by: k):\n    mean all_time\n\nrule read:\n    Probe\n    Reading s\n->\n    log info \"{s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "k": "g", "v": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "k": "g", "v": 3 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "k": "g", "v": 5 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "k": "g", "v": 7 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["4.0", "4.0", "4.0", "4.0"]
+    }
+}

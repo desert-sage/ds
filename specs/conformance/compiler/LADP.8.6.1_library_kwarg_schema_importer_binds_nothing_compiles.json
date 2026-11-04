@@ -1,0 +1,13 @@
+{
+    "id": "LADP.8.6.1_library_kwarg_schema_importer_binds_nothing_compiles",
+    "category": "compiler",
+    "scenario": "[LADP.8.6.1], [LIMP.1.5]: `lib`'s service has a kwarg typed `Reply`, its own import of `a`'s, and the program holds `a`'s only as `AR`. A binding of `AR` is the kwarg's schema, so it compiles. Its twin, `LADP.8.6.1_library_kwarg_schema_importer_binds_nothing`, passes an unrelated schema. PATH PINNED: `dsc.imports.limp_1_5_kwarg`, then `dsc.validate.ladp_8_6_1_fact_kwarg`.",
+    "rules_ds": "from a import Reply as AR\nimport lib\n\nrule r:\n    AR y\n->\n    call svc.x r: y nocooldown\n",
+    "libraries": {
+        "a": "schema Reply scope logical:\n    k: Int key\n",
+        "lib": "from a import Reply\n\nservice svc.x:\n    kwarg r: Reply\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

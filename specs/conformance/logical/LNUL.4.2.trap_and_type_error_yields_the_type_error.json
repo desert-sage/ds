@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.trap_and_type_error_yields_the_type_error",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: when several operands fault and none decides, the expression yields ONE fault, chosen by kind -- EngineError, then TypeError, then the trap kinds. `p.a // p.z > 1 and p.body.name > 5` with z = 0 and body.name = \"alice\": the left operand traps (DIVIDE_BY_ZERO), the right raises a TypeError, nothing is `false`, so the `and` yields the TypeError and the rule does not fire. This fixture pins that the TypeError IS recorded; its twin LNUL.4.2.trap_and_type_error_records_no_trap pins that the trap is NOT ([LERR.1.4.11]). formal/k/dswhere.two_kinds.prog's program. Path: one join test (nothing hoists); libds holds both faults in rete/eval.c's AND arm and raises the one ds_rete_held_select ranks first, Mercury selects with ds.fault.lnul_4_2_yielded in ds.eval.lnul_4_2_absorbing.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule r:\n    Payload p where p.a // p.z > 1 and p.body.name > 5\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "RDSC.4a.8.2.1",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.8.2",
+  "seq": 497,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.8.2.1] A `TerminalNode`'s `fire_guard` carries at most two parts:\n\n- the **condition**: a `where` that reads a clock or a series ([LTIM.2.4.1]), an `after`\n  follow-up's included ([LTAC.3.4]), or a positive pattern's `within` window\n  ([LTIM.2.7.1]), moved off the rule's pattern so that it is read under each\n  pump's sample;\n- the **rate gate**: a `CallExpr` whose `op` is `FN_RATE_ALLOW` (RLOW.4.6.1).\n\nThe compiler **must** emit the guard in one of three shapes: the condition\nalone; the rate gate alone; or, for a rule that has both ([LTIM.2.5.4]), a\n`BinopExpr` whose `op` is `BINOP_AND`, whose `left` is the condition and whose\n`right` is the rate gate. The condition contains no `FN_RATE_ALLOW` call.\n\nA runtime **must** tell the parts apart by these shapes and by the callee: a\ntop-level call is the rate gate only when its `op` is `FN_RATE_ALLOW`, and any\nother guard expression, a call included, is a condition.\n\n",
+  "refs": [
+    "LTAC.3.4",
+    "LTIM.2.4.1",
+    "LTIM.2.5.4",
+    "LTIM.2.7.1"
+  ],
+  "symbols": [
+    "FN_RATE_ALLOW"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__retime_at_entry",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "WHERE THE MODEL AND THE COMPILER PART: the compiler carries the condition in the terminal's fire guard, read at selection under the pump's sample; this engine keeps it as the single positive node's join test, re-timed here under the same sample. At every pump boundary the two agree -- a condition false at the sample is no activation here and a withheld activation there, neither fires or counts, and the justification of an ended match is dropped on both -- and the guard's shapes are not modelled. Partial for the mechanism."
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/term.proto",
+        "name": "TerminalNode",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.9.3_unhandled_op_at_an_action_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.3]: \"At load, a runtime must refuse with `DS_ERR_FN_NOT_FOUND` an artefact holding a `CallExpr` whose op it has no handler for at the site where it stands.\" A `CallExpr` stands at one of two sites; this vector is the first, an action's `expr` (`ACTION_CALL`, [RDSC.4a.8]). Rule `r`'s one action is a `log`, which the compiler writes as an `ACTION_CALL` whose `expr` is a call of FN_LOG (47). The harness ([RCTS.1.2.21]'s `set_action_op`) rewrites that call's op to 109 and re-seals the artefact, so the refusal is the op's and not the hash's ([RDSC.3.6]). 109 is FN_IS_NULL's number, reserved in `proto/builtin_fn.proto` and never reissued ([STYL.2.8.7]): it is no member of `BuiltinFn`, so no runtime holds a handler for it anywhere, and the vector holds whatever a runtime implements. An unallocated number (153 or above) would hold only until it was allocated. The load must be refused with -604. What it discriminates: a loader that admits an op it cannot run, which [RDSC.4a.9.3] names as a rule that silently never fires; one that refuses for another reason (a decode refusal of an unknown enum number, -100, or the arity check the clause forbids). Its sibling RDSC.4a.9.3_unhandled_op_in_an_expression_is_refused holds the other site. PATHS: libds's loader's op-handler check (`dsc/rete_loader.c`), through pyds `load_dsc` (runner.py's `_tampered`, `dsc_seal.set_action_op`); the Mercury runtime's `ds.dsc_action` decode of an action's op, through test_behave.m's `action_op_set` and `judge_tampered`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    log info \"seen {t.v}\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": { "set_action_op": { "rule": "r", "op": 109 } },
+        "code": "-604"
+    }
+}

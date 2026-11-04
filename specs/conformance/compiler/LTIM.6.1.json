@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.6.1",
+    "clauses": ["RLOW.1.6"],
+    "category": "compiler",
+    "scenario": "Component access after `.utc` per LTIM.6.1: `m.fired_at.utc.hour` is valid, because the `.utc` member establishes UTC timezone context, and the read lowers to FN_HOUR (LTIM.6.5). Pin: a where clause using `m.fired_at.utc.hour` twice compiles cleanly. Compile-only: logical/LTIM.6.5_utc_hour_gate pins what the read evaluates to.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule business_hours:\n    Event m where m.fired_at.utc.hour > 8 and m.fired_at.utc.hour < 17\n->\n    log info \"business hours event\"\n",
+    "expect": { "kind": "compile_ok" }
+}

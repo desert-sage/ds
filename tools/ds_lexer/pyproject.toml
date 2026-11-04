@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+# The distribution's name on PyPI, under the `ds-lang-` prefix the project's
+# packages share. The import name is `ds_lexer`.
+name = "ds-lang-lexer"
+# A placeholder, as in every package a release ships: the release stamps the
+# real version from ds-version.py. A site highlights DS with the
+# same lexer as the release's books, and "the same" is checkable only because
+# the wheel's version is the release's.
+version = "0.0.0"
+description = "Pygments lexer for the Desert Sage (DS) rule language (keyword sets generated from LLEX.9.6)"
+# A highlighter colours source and runs nothing, so no DS determinism floor
+# applies to it (it reads no DSC). It is installed by whoever renders DS, not only by the
+# books, so it asks for as old a Python as Pygments serves.
+requires-python = ">=3.11"
+dependencies = ["Pygments>=2.10"]
+
+# Installing this package registers the `ds` lexer with Pygments globally,
+# so ```ds fences highlight anywhere Pygments runs (Sphinx, JupyterBook, etc.).
+[project.entry-points."pygments.lexers"]
+ds = "ds_lexer:DSLexer"
+
+# A single module, not a package — hatchling needs telling, where setuptools
+# had `py-modules`.
+[tool.hatch.build.targets.wheel]
+only-include = ["ds_lexer.py"]

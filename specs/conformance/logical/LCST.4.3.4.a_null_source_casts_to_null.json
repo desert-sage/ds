@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.3.4.a_null_source_casts_to_null",
+    "category": "logical",
+    "scenario": "LCST.4.3.4 — a null source converts to null. `f` is a nullable Float slot left absent, so `(s.f::String?) is null` is true and the rule fires. Drives the conversion path in the evaluator with a null argument, which is the case no existing vector reaches: LNUL.8.4's failed-parse vectors hand the conversion a present String it cannot parse, and the K dscast vectors cast literals.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    f: Float? mutable\n\nrule r:\n    S s where (s.f::String?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

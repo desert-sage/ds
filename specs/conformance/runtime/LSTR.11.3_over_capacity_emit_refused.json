@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.11.3_over_capacity_emit_refused",
+    "category": "runtime",
+    "scenario": "[LSTR.11.3]: an emitted value longer than its slot's `capacity` is refused on the same terms as an asserted one -- the emit does not happen, and the refusal is `DS_ERR_CONTRACT_BREACH` (-710) naming `CAP_VALUE_CAPACITY`. The literal carries interpolation sites, so the compiler cannot measure it ([LSTR.11.2] checks constants only) and the length is decided at the firing: `t.text` is five codepoints and the rendered value ten, against `capacity 8`. PATH PINNED: libds's action loop in `rete/engine.c` calling `ds_rete_wm_assert` for an `ACTION_ASSERT`, whose `rete_validate_slot_kinds` refuses and whose non-OK status ends the firing and is reported by the pump; the Mercury runtime's `ds.exec` emit arm through `lstr_11_3_over_capacity`, ahead of `wm_max`. A runtime that checked capacity only on the host path lands the fact, the pump reports nothing, and the vector goes red.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    text: String mutable\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 8 mutable\n\nrule r:\n    Trig t\n->\n    emit Out logical k: t.k s: \"{t.text}{t.text}\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "asserts": [
+            { "schema": "Trig", "slots": { "k": 1, "text": "abcde" } }
+        ],
+        "pump": true
+    }
+}

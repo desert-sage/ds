@@ -1,0 +1,10 @@
+{
+  "doc": "REALTIME_CONTRACT.md",
+  "tree": "runtime",
+  "src": "docs/specs/runtime/REALTIME_CONTRACT.md",
+  "prefixes": [
+    "RTCT"
+  ],
+  "title": "Realtime contract: `.dsrt` source + `.profile` measurement",
+  "preamble": "# Realtime contract: `.dsrt` source + `.profile` measurement\n\nA rule file compiled with the `realtime` extension carries a\n**realtime contract**: a set of caps the author guarantees the\nengine will not exceed under any permitted input. The contract\nlives in a sibling `.dsrt` file at compile time, gets embedded\ninto the produced `.dsc`, and is enforced at runtime.\n\nTwo YAML files use a shared schema:\n\n- `foo.profile` — written by the profile binary; records what\n  was observed during a workload. Pure measurement. Regenerated\n  unilaterally whenever the profile binary runs.\n- `foo.dsrt` — hand-authored realtime contract. Same schema as\n  `.profile`. Read by the compiler when `realtime` is enabled.\n  Required for any `realtime` compile to succeed.\n\nThe author's \"commit point\" is the compile. Once `foo.dsc` is\nproduced, the contract inside it is binding; subsequent edits\nto `foo.dsrt` do not affect the deployed `.dsc`. To revise the\ncontract the author re-compiles.\n\nThis document defines the YAML schema, the `RealtimeContract` atom in compiled\n`.dsc` files, the compile-time obligations of `realtime`,\nand the runtime enforcement contract.\n\nPrefix `RTCT`.\n\nParents:\n- [RARC.4] format version discipline.\n- [RBND] dialect / contract bindings.\n- [LDIA] dialect mechanism (the `realtime` capability).\n\n---\n\n"
+}

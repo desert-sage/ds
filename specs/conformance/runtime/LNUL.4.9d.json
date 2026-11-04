@@ -1,0 +1,21 @@
+{
+    "id": "LNUL.4.9d",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LNUL.4.9] the wrong-tag case, negative. Drives the eval arm with subject IS_SUBJECT_INT over a slot holding a Float, un-negated. `is Int` is false for 2.5 — the tag is Float — so the rule does NOT fire and working memory holds only the asserted Sensor. Pins that the tag comparison is an equality on the value's discriminant rather than a numeric-ish predicate: an implementation treating Int and Float as interchangeable numbers would fire here. fact_count 1.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state is Int\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": 2.5
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

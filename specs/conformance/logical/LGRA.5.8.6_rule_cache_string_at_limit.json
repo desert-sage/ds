@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.5.8.6_rule_cache_string_at_limit",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.6]: a value a rule makes, at the string-bytes limit, is written. The rule caches a `String` slot holding 16,384 ASCII `a`s (the harness's `$repeat` form); `cache` wraps the value as a `Json` string ([IDSP.7]), one node of exactly 16,384 string bytes, within every limit, so the write happens and the stream carries `action_cache_set`. Paired with LGRA.5.8.6_rule_cache_string_over_limit_raises and _writes_nothing, one byte longer. PATH PINNED: on libds, `adapter_ds_json_value` renders the value and `adapter_ds_cache_set` re-parses that text against the tree limits (`ds_json_parse_limited`, text limit off); on the Mercury runtime, `ds.exec.cache_set_verb` through `json_over_limit`.",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n    s: String mutable\n\nrule r:\n    T t\n->\n    cache key: \"k\" value: t.s\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "k": 1, "s": { "$repeat": "a", "count": 16384 } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_cache_set"]
+    }
+}

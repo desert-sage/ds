@@ -1,0 +1,18 @@
+{
+  "id": "LNUL.8.4a",
+  "category": "logical",
+  "scenario": "[LNUL.8.4] a Json path resolving to a present `null` READS AS null, so `??` catches it. Drives the operator half of a pair: `??` short-circuits on DS_RETE_VAL_NULL alone, so a projection that returns a soft-fail marker for a null leaf makes `p.body.nulled ?? 7` yield the marker rather than 7, which contradicts `[LNUL.8.9]`. Pins the DS_JSON_NULL arm of `ds_rete_json_to_val` (rete/eval.c) — the ONE projection, reached from both the evaluator's json_path arm and builtins.c's. The second conjunct is the control and is not decoration: a projection that answered `null` for EVERY leaf would satisfy the first conjunct, and only a present non-null value distinguishes `??` working from `??` always defaulting. ONLY MEANINGFUL BESIDE LNUL.8.4b, which drives `is null` over the same document — the two operators read the marker differently, so either vector alone passes under a mistake that fixes the other.",
+  "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule coalesce_reads_the_null_leaf:\n    Payload p where (p.body.nulled ?? 7) == 7 and (p.body.five ?? 7) == 5\n->\n    log critical \"coalesce-ok\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Payload",
+        "slots": { "body": {"nulled": null, "five": 5} }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["coalesce-ok"]
+  }
+}

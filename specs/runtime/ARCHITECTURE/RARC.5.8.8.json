@@ -1,0 +1,37 @@
+{
+  "id": "RARC.5.8.8",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.8",
+  "seq": 758,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RARC.5.8.8] **`event_id` is a deterministic derivation.** The UUID is\n  keyed on the run identifier, the tier identifier and the `seq` of the fact's\n  `FactAssert` ([LFST.5.6]), by the function [RFCS.6.8] states, so\n  distinct keys derive distinct `event_id`s. All three inputs reproduce on\n  replay; reading `/dev/urandom` would break replay ([LDET.6.4.2]). The\n  `event_id` identifies a fact within this engine only: a fact received from\n  another tier gets this engine's own ([LFST.5.6]).\n\n",
+  "refs": [
+    "LDET.6.4.2",
+    "LFST.5.6",
+    "RFCS.6.8"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "rarc_5_8_8__event",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "rarc_5_8_8__same_key_same_id",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Two events with one key carry one event_id, which is what makes replay reproduce it. Rests on the stamp rule and on the key being the whole input to the derivation jointly; a hidden input such as a clock or /dev/urandom is what fails it."
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "rarc_5_8_8__stamp",
+        "tag": "spec"
+      }
+    ]
+  }
+}

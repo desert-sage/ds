@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.10_nan_lit_float_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.10]: an artefact whose `Expr.lit_float` holds a NaN, quiet or signalling, is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_t`, `T -> emit U logical w: 1.5`, whose network is `T`'s alpha (node 1), its beta (2) and the terminal (3), whose one action asserts `U` with one assignment, `w`, whose `expr` is `Expr { lit_float: 1.5 }`. `runtime_error`'s `tamper: {set_field: {node: 3, path: [6, 0, 4, 0, 2, 0, 2], value: {f64: \"7ff0000000000001\"}}}` ([RCTS.1.2.21]) writes that `Expr`'s field 2, `lit_float`, as the signalling NaN 0x7FF0000000000001 (action 0, `assigns` 0, `expr`, field 2), and re-seals `dsc_sha256` ([RDSC.3.6]). It is the last member of the `Expr`'s oneof, so the decoded atom holds it. What it discriminates: a loader that takes the bits as a Float, or reads a NaN as 0.0, loads, and the vector fails as unrefused. PATHS: libds's `ds_dsc_rete_body_decodes`, `decode_expr_msg`'s `lit_float` arm, reached from the terminal's `SlotAssign` decode; the Mercury runtime's `ds.dsc_expr` `lit_float` member, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Float key\n\nrule on_t:\n    T\n->\n    emit U logical w: 1.5\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 3, "path": [6, 0, 4, 0, 2, 0, 2], "value": {"f64": "7ff0000000000001"}}},
+        "code": "-504"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.11.3_slot_assign_with_no_expr_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s second shape: an artefact carrying a `SlotAssign` with no `expr` is refused at load with DS_ERR_DSC_SEMANTIC (-504). An absent expression is not a literal `0`, not `null` and not an unassigned slot. No source produces one, so the harness compiles rule `r`, whose one action is `emit Out logical v: t.v`, an `ACTION_LOGICAL_ASSERT` with one `SlotAssign`, and `runtime_error`'s `tamper: {drop_assign_expr: r}` removes that assignment's `expr`, keeping its `slot_index`, and re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]). Break: a loader that leaves the slot unassigned, or fills it with `0` or `null`, loads the artefact and fails as unrefused. Paths: libds's action decoder (`dsc/rete_loader.c`), whose assignment arm refuses; the Mercury runtime's `ds.dsc_action`, which refuses with `lek_semantic` under RDSC.11.3.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"drop_assign_expr": "r"},
+        "code": "-504",
+        "message_contains": "RDSC.11.3"
+    }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "LERR.9.7_one_pending_per_site",
+  "category": "logical",
+  "dead_rules_expected": ["ratio"],
+  "scenario": "At most one fault is pending per (node, rule) site between a raise and the drain (LERR.9.7): a later fault at a site still pending replaces it, and the stream carries the drained fact only. Drives ONE propagation that faults twice at ONE site with two kinds: the join test of rule `ratio`'s beta on Q (a two-pattern `where`, so a join test, IRET.6.4) is evaluated against both Q facts when P arrives. Q `zero` traps DIVIDE_BY_ZERO on the Int `//`; Q `huge` traps NOT_REPRESENTABLE in `floor` of 1e300. Both are ComputationErrors at the same beta under the matching-time name `$beta_<id>` (LERR.9.11), so their fault facts differ in `kind` alone. Without coalescing the drain asserts the first, then supersedes it with the second (LERR.9.5), and the stream carries a `fact_retract` for the first; with it there is one pending fault and one assertion, and nothing retracts, whichever candidate the beta evaluates last. Nothing else in the scenario retracts: every fact has a fresh key. LERR.9.7_one_pending_per_site_fires pins that the faults are raised and their fact asserted, so this vector cannot pass by raising nothing. Pin: assert Q(zero), Q(huge), P; pump. No `fact_retract`.",
+  "rules_ds": "from math import floor\n\nschema P scope logical:\n    entity_id: String key\n    n: Int mutable\n\nschema Q scope logical:\n    entity_id: String key\n    d: Int mutable\n    f: Float mutable\n\nrule ratio:\n    P p\n    Q q where (p.n // q.d) > floor(q.f)\n->\n    log info \"ratio\"\n",
+  "expect": {
+    "kind": "event_kinds_forbidden",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Q",
+        "slots": {
+          "entity_id": "zero",
+          "d": 0,
+          "f": 1.0
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Q",
+        "slots": {
+          "entity_id": "huge",
+          "d": 1,
+          "f": 1e300
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "P",
+        "slots": {
+          "entity_id": "p",
+          "n": 7
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "forbidden_kinds": [
+      "fact_retract"
+    ]
+  }
+}

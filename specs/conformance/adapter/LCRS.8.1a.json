@@ -1,0 +1,43 @@
+{
+    "id": "LCRS.8.1a",
+    "category": "adapter",
+    "scenario": "`call` with `nocooldown` flag dispatches without a per-call gate per LCRS.8.1 \u2014 every fired rule produces a call regardless of how often the rule fires within the test window.",
+    "rules_ds": "service svc.x:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.x nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {}
+            },
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g1",
+                "body": {}
+            }
+        ]
+    }
+}

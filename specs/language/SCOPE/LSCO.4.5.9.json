@@ -1,0 +1,64 @@
+{
+  "id": "LSCO.4.5.9",
+  "prefix": "LSCO",
+  "doc": "SCOPE.md",
+  "parent": "LSCO.4.5",
+  "seq": 394,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LSCO.4.5.9] **Assertion and retraction.** Facts are schema-typed; assertion is\n  through `emit`; retraction is via TTL,\n  meaningful-change, `logical` justifier-end, or `withdraw`.\n\n  **A rule retracts a fact only by `withdraw`, and only one it matched:**\n\n  - A rule that matches fact X and removes X in its RHS creates the same\n    oscillation risk as a rule that emits X — the removal of X can let\n    the rule fire again, re-establishing the very condition that\n    triggers it. `[LCYC.3.1.1]` admits exactly the shapes that cannot:\n    a rule that only matches and withdraws X, never also emits it\n    within the same cycle. A rule pair that matches this clause's own\n    oscillation risk — one rule re-emitting what another withdraws,\n    in one cycle — remains rejected under `[LCYC.3.1.1]`, not merely\n    warned about.\n  - Retraction in rules violates the declarative model unless it is\n    consumption: `withdraw` acts only on a binding the rule itself\n    matched, stating \"the fact I read is now spent,\" not an arbitrary\n    imperative delete. Rules that do not consume stay idempotent and\n    order-independent; `withdraw` creates execution-order dependence\n    only where a rule's own semantics already are order-dependent (it\n    consumed something).\n  - The sanctioned retraction mechanisms:\n      1. **TTL expiry** — size the schema's `ttl` to the\n         desired lifetime. The engine retracts when the\n         deadline passes.\n      2. **Meaningful-change / tolerance dedup** — an\n         identical (or within-tolerance) reassertion is a\n         no-op; the existing fact is not replaced.\n      3. **Truth-maintenance on `emit X logical`**\n         — the engine retracts X when the LHS patterns\n         that justified it are no longer matched ([LLOG.15.1]).\n         This is the `logical` schema retraction path.\n      4. **`withdraw <binding>`, `scope explicit` or `internal`\n         only** ([LSCP.2.6.1]) — a rule consumes a fact it matched. Admitted only where\n         `[LCYC.3.1.1]`'s certificate accepts the resulting rule\n         graph. A binding of any other scope is a compile refusal,\n         `DS_VALIDATE_WITHDRAW_SCOPE`: `[LLOG.11.8]` for `logical`;\n         `activation` and `ambient` are engine-managed and\n         author-read-only respectively, neither an author's to end.\n",
+  "refs": [
+    "LSCP.2.6.1",
+    "LCYC.3.1.1",
+    "LLOG.11.8",
+    "LLOG.15.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_WITHDRAW_SCOPE"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "lsco_4_5_9__refill_drain_diverges",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed and checked: period 2 from the start. The removal of X lets refill fire again, re-establishing the condition drain fires on -- the clause's stated risk, exhibited on the deterministic engine. What the [LCYC] amendment's certificate refuses: X is emitted, read and withdrawn in one SCC."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lsco_4_5_9__drain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`X x -> withdraw x`: the fourth sanctioned mechanism, as an action -- admitted alone, and in any SCC where nothing also emits X."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lsco_4_5_9__refill",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`no X -> emit X`: the rule the clause's oscillation re-arms."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lsco_4_5_9__refill_drain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pair, over an explicit kind, refill first."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lsco_4_5_9__refill_drain0",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "From empty working memory."
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LSTR.11.3_over_capacity_emit_is_a_bounds_error",
+    "category": "runtime",
+    "scenario": "[LSTR.11.3] with [LERR.1.5]: a rule's emit of a value longer than its slot's `capacity` is classified as a BoundsError and as nothing else -- not the TypeError [RARC.5.2.7] gives a rule emitting a value of a kind its slot does not admit, because the kind here is admitted and only the length is over. `t.text` is five codepoints and the rendered value ten, against `capacity 8`; the literal carries interpolation sites so the compiler cannot measure it ([LSTR.11.2]). The pump returns `DS_ERR_CONTRACT_BREACH` (-710), and the stream's fault events are exactly one `bounds_error`. PATH PINNED: libds's action loop in `rete/engine.c` calling `ds_rete_wm_assert` for an `ACTION_ASSERT`, whose `rete_validate_slot_kinds` records the breach through `ds_rete_emit_breach` -- deliberately there and not in `ds_rete_slot_refused`, which is the TypeError check; the Mercury runtime's `ds.exec` emit arm through `ds.fact.lstr_11_3_over_capacity`, ahead of `wm_max`. A runtime that classified the over-long emit with the kind check would record a `type_error` and go red here.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    text: String mutable\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 8 mutable\n\nrule r:\n    Trig t\n->\n    emit Out logical k: t.k s: \"{t.text}{t.text}\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_events": ["bounds_error"],
+        "asserts": [
+            { "schema": "Trig", "slots": { "k": 1, "text": "abcde" } }
+        ],
+        "pump": true
+    }
+}

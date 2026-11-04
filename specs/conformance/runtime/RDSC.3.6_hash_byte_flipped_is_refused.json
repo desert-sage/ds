@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.3.6_hash_byte_flipped_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.3.6] the runtime recomputes `dsc_sha256` at load with the field zeroed and refuses a mismatch with DS_ERR_DSC_SEMANTIC (-504). The path: the compiler writes and seals the artefact; the harness (`runtime_error`'s `tamper: dsc_sha256`) XORs the FIRST BYTE OF THE STORED HASH with 0x01 and changes nothing else; libds's loader (`dsc_verify_self_hash`, reached from `handle_dsco` once the version and Unicode-pin gates pass) refuses it. The artefact's content is exactly what the compiler wrote, so the stored value is the only thing wrong, and a loader that skipped the check would load it cleanly. The Mercury runtime's own suite (`test_ds`) pins the same refusal for its loader. Its twin, `RDSC.3.6_body_byte_flipped_is_refused`, flips a byte of the body instead.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": "dsc_sha256",
+        "code": "-504",
+        "message_contains": "dsc_sha256"
+    }
+}

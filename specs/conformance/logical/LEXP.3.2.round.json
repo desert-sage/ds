@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.3.2.round",
+  "category": "logical",
+  "scenario": "round(x) is nearest-integer with ties-to-even (Python banker's rounding) per LEXP.3.2, returning Int. Each tie lands on the even neighbour: round(2.5)==2 (not 3) and round(3.5)==4; round(2.6)==3 is the ordinary nearest case. 2.5 and 3.5 are exact dyadic floats so each tie is genuine. The round(2.5)==2 rule is the discriminator — an away-from-zero impl computes 3 and fails to fire it.",
+  "rules_ds": "schema T scope logical:\n    a: Float key\n    b: Float mutable\n    c: Float mutable\n\nrule r_round_tie_even_down:\n    T t where round(t.a) == 2\n->\n    log critical \"a\"\n\nrule r_round_tie_even_up:\n    T t where round(t.b) == 4\n->\n    log critical \"b\"\n\nrule r_round_ordinary:\n    T t where round(t.c) == 3\n->\n    log critical \"c\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "a": 2.5, "b": 3.5, "c": 2.6 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_round_tie_even_down", "r_round_tie_even_up", "r_round_ordinary"]
+  }
+}

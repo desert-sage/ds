@@ -1,0 +1,17 @@
+{
+    "id": "LTHE.2.4",
+    "clauses": ["LTHE.2.4.1"],
+    "category": "logical",
+    "scenario": "A constraint across a sequence's patterns is the follower step's `where`, which sees the anchor's binding (LTHE.2.4.1): `then Exit b within 60_s where b.zone == a.zone`. One Entry (north), then two Exits (north, south), one pump: `matched_exit` fires exactly once, for the north Exit.",
+    "rules_ds": "schema Entry scope logical:\n    entity_id: String key\n    zone: String mutable\n    ts: Time\n\nschema Exit scope logical:\n    entity_id: String key\n    zone: String mutable\n    ts: Time\n\nschema Traversal scope logical:\n    dummy: Int key\n\nrule matched_exit:\n    Entry a\n    then Exit b within 60_s where b.zone == a.zone\n->\n    emit Traversal logical dummy: 0\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Entry", "slots": { "entity_id": "e1", "zone": "north", "ts": 0 } },
+            { "op": "assert", "schema": "Exit",  "slots": { "entity_id": "e2", "zone": "north", "ts": 1 } },
+            { "op": "assert", "schema": "Exit",  "slots": { "entity_id": "e3", "zone": "south", "ts": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["matched_exit"]
+    }
+}

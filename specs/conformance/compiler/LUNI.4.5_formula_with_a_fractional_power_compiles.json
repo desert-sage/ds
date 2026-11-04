@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.5_formula_with_a_fractional_power_compiles",
+    "category": "compiler",
+    "scenario": "A `unit formula` line whose body raises to a non-integer power (the midi-to-Hz piano formula, `2.0 ** ((x - 69.0) / 12.0)`) compiles: [LEXP.7.3a]'s `**` is correctly rounded through CORE-MATH, so the formula is EXACT and [LDET.3.4.4] does not refuse it ([LUNI.4.5]). PATH PINNED: `formula_line_transcendentals` in dsc.validate, the walk over each formula line, which admits a non-integer exponent.",
+    "rules_ds": "unit dimension pitch  storage float64  base p_base\nunit dimension freq   storage float64  base f_base\nunit p_base: pitch\nunit f_base: freq\n\nunit formula piano:\n    p_to_f(x: p_base): f_base  = 440.0 * 2.0 ** ((x - 69.0) / 12.0)\n    f_to_p(x: f_base): p_base  = 69.0 + 12.0 * f_base\n\nschema Pad scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

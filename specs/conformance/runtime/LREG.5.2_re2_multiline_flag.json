@@ -1,0 +1,12 @@
+{
+    "id": "LREG.5.2_re2_multiline_flag",
+    "category": "runtime",
+    "scenario": "[LREG.5.2] The `m` flag makes `^` and `$` match at LINE boundaries. `/^b$/m` against \"a\\nb\" matches (the second line is exactly `b`); without `m` it does not, because `^` is then the start of the text and the text starts with `a`. So this vector's answer differs by flag alone, which is the only way to observe `m` when matching is boolean.\n\nWritten because the RE2 shim got this wrong on the first attempt and nothing would have said so. RE2::Options carries a `one_line` field that reads as exactly this flag inverted, so the obvious implementation is set_one_line(!m) — and it is DEAD CODE: re2.h consults one_line only when posix_syntax is true, and posix_syntax must stay false or `\\d`, `\\w` and `\\b` stop being classes, which is most of why DS is on RE2. set_one_line compiled, ran, and did nothing. The remedy re2.h names in the same breath is to begin the regexp with `(?m)`, which is what ds_re2_compile does. No vector covered `m` at runtime before this one — LREG.5.2's three registered fixtures all exercise `i`.\n\nPATH PINNED: `FN_REGEX_MATCH`'s flags argument through `ds_re2_compile`'s `(?m)` prefix (libds) and `ds.re2` (Mercury). `msg` is `String?` so the match stays a beta join test: a decided match on a non-nullable slot is an alpha REGEX test with the flag folded into its pattern (RLOW.5.2.2), which never reaches that prefix and has its own vector, `RLOW.5.2.2_alpha_regex_flags`.\n\nExpected count 2 = the Log fact plus the emitted Hit.",
+    "rules_ds": "schema Log scope logical:\n    id: Int key\n    msg: String? mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    Log e where e.msg ~ /^b$/m\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "Log", "slots": { "id": 1, "msg": "a\nb" } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

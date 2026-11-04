@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.10.builtin_trap_beside_a_type_error_yields_the_type_error",
+    "category": "logical",
+    "scenario": "[LNUL.4.10] for the arguments of a builtin call: when two arguments fault, the call yields the fault [LNUL.4.2]'s order selects, and an argument's position never enters. The builtin is `max` (two Int arguments, [LEXP.3.8]); one argument is `p.a // p.z`, which traps (DIVIDE_BY_ZERO), the other `len(p.body.obj)`, `len` of a Json object rather than an array, which raises a TypeError ([LEXP.6.2]). The kind order ranks the TypeError first. Two rules put the trap in each argument position, so a runtime that yields the FIRST argument's fault (or records both) fails at least one. Its twin LNUL.4.10.builtin_trap_beside_a_type_error_records_no_trap pins that the trap is not recorded ([LERR.1.4.11]). Path: the CALL argument loop -- libds rete/eval.c eval_call (each argument evaluated with faults held, ds_rete_held_select), Mercury ds.eval.m eval_all (folded with ds.fault.lnul_4_2_yielded). No adapter is involved: `max` and `len` are builtins of both runtimes.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule trap_first:\n    Payload p where max(p.a // p.z, len(p.body.obj)) > 0\n->\n    log info \"first\"\n\nrule trap_second:\n    Payload p where max(len(p.body.obj), p.a // p.z) > 0\n->\n    log info \"second\"\n",
+    "dead_rules_expected": ["trap_first", "trap_second"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "obj": { "k": 1 } }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error", "type_error"]
+    }
+}

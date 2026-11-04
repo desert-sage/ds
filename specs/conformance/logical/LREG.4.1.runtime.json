@@ -1,0 +1,24 @@
+{
+    "id": "LREG.4.1.runtime",
+    "clauses": ["RARC.13.6"],
+    "category": "logical",
+    "scenario": "LREG.4.1 — captures bound by `where (device, code) = ...` carry the CAPTURED VALUES at runtime, into a log interpolation and into an emitted fact's slots. A placeholder (`<capture:NAME>`) written where the value belongs, or an empty string, fails it. `parse` logs the captures and emits them into `Hit`; `seen` reads `Hit` back, so the emit path is checked by value too, not only the log path. The third Log does not match, so the capture's match gates: nothing fires for it. Path: the match lowers to FN_REGEX_MATCH on the beta, and each capture read to FN_REGEX_CAPTURE (`dsc.rete.lreg_4_1_capture_expr`) — in the `log` via the interpolation site and in the `emit` via a kwarg value.",
+    "rules_ds": "schema Log scope logical:\n    entity_id: String key\n    msg: String mutable\n\nschema Hit scope logical:\n    device: String key\n    code: String mutable\n\nrule parse:\n    Log e where (device, code) = e.msg ~ /(?<device>\\w+) on (?<code>\\d+)/\n->\n    emit Hit logical device: device code: code\n    log critical \"{device}/{code}\"\n\nrule seen:\n    Hit h\n->\n    log critical \"hit {h.device} {h.code}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l1", "msg": "pump on 42" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l2", "msg": "fan on 7" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Log", "slots": { "entity_id": "l3", "msg": "no match here" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "pump/42",
+            "hit pump 42",
+            "fan/7",
+            "hit fan 7"
+        ]
+    }
+}

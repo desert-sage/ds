@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.5.1",
+    "category": "compiler",
+    "scenario": "LHS bindings are in scope in a continuation body (LCCO.5.1): an `on response` body logging the outer binding `{s.entity_id}` compiles, so the name resolves there. PINS ONLY THAT IT COMPILES: `compile_ok` does not observe the `$CaptureBindings_<rule>_c<N>` schema or its binding slot.",
+    "rules_ds": "schema NotifySendReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice notify.send:\n    kwarg entity_id: String\n    response NotifySendReply\n\nschema Sensor scope logical:\n    entity_id: String key\n\nrule alert_rule:\n    Sensor s\n->\n    call notify.send entity_id: s.entity_id cooldown: 30_s\n        on response.status == 200:\n            log info \"sent to {s.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

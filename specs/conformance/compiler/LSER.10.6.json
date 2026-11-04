@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.6",
+    "category": "compiler",
+    "scenario": "Companion-slot sugar per LSER.10.6 \u2014 `t.mean` desugars to `mean(<slot>)` at validate time. Pin: a `series Sensor.state:` declaring `mean sliding 10_s`, and a rule reading `t.mean`, compile. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowered defrule, so the lowering is not observed.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean sliding 10_s\n\nrule alert_high_avg:\n    Sensor t where t.mean > 50\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

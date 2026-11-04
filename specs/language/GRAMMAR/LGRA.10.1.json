@@ -1,0 +1,39 @@
+{
+  "id": "LGRA.10.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.10",
+  "seq": 1328,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.10.1] Action productions:\n\n```\naction ::= call_action\n        |  action_head action_arg* NEWLINE action_block?    # the block: [LGRA.10.8]\n\ncall_action ::= 'call' service_ref action_arg* call_as? NEWLINE action_block?\ncall_as     ::= 'as' expression                    # the correlation ([LRST.1.1]); not an action_arg\n\naction_head ::= 'log' log_level STRING_LIT\n             |  'emit' type_ref                   # Name or lib.Name, as a pattern's ([LGRA.8.1])\n             |  'publish' type_ref\n             |  'cache'\n             |  'cache_delete'\n             |  'withdraw' NAME                    # NAME is a positively-bound LHS variable, not a schema name\n\nlog_level      ::= 'debug' | 'info' | 'warning' | 'error' | 'critical'   # case-insensitive\n\nservice_ref    ::= service_name                                 # one global service namespace ([LGRA.10.1.6])\nservice_name   ::= NAME ('.' NAME)*                             # the service's own name (light.turn_on, hydrate_facts)\n```\n\n**Residue the grammar does not carry ([STYL.2.15.4]):** `as` is a reserved\nword ([LLEX.9.5]), so `call_as` is never read as a flag, and an argument after\nit is a parse error ([LCRS.6.2.3]). A `call` carries at most one `as`, on its\nhead line or in its block ([LGRA.10.8]).\n\n",
+  "refs": [
+    "LCRS.6.2.3",
+    "LGRA.10.1.6",
+    "LGRA.10.8",
+    "LGRA.8.1",
+    "LLEX.9.5",
+    "LRST.1.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lgra_10_1__emit_const",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`emit K` with a constant value."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Lgra_10_1__action",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Two action heads: `emit` with a value computed from the bindings, and `withdraw` of a positive binding (the [LCYC] amendment's action). `log`, `call`, `publish`, `cache`, `cache_delete` are outside the engine."
+      }
+    ]
+  }
+}

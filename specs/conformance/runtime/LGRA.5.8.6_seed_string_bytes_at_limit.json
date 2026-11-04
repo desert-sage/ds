@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.5.8.6_seed_string_bytes_at_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6] at the cache-seed host site ([NSTG.9.1]): a seeded value holding exactly the string-bytes limit, one JSON string of 16,384 ASCII `a`s (the harness's `$repeat` form), is taken. The seed raises nothing, and nothing is asserted (fact_count 0); a runtime that refused it would raise, and the driver fails on that. Paired with LGRA.5.8.6_seed_string_bytes_over_limit, one byte longer and refused. PATH PINNED: on libds, `ds_json_parse` of the seed's text in pyds's `cache_seed`, then `ds_engine_cache_seed`'s `ds_json_within_limits`; on the Mercury runtime, `ds.engine.seed_cache`'s `limit_breach` check.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "k", "value": { "$repeat": "a", "count": 16384 } }
+        ],
+        "fact_count_after": 0
+    }
+}

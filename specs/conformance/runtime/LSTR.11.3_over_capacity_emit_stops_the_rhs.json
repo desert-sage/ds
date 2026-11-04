@@ -1,0 +1,18 @@
+{
+    "id": "LSTR.11.3_over_capacity_emit_stops_the_rhs",
+    "clauses": ["LERR.1.5"],
+    "category": "runtime",
+    "scenario": "[LERR.1.5] with [LSTR.11.3]: a bounds refusal of an action inside a rule's RHS stops the firing at the refused action. The RHS is three emits: `Before`, which stands; `Out`, whose String is ten codepoints against `capacity 8` and is refused as a BoundsError; and `After`, which must never run. So after the refused pump the live facts are `Trig` and `Before`, two: a runtime that rolled back `Before` reads 1, and one that went on to `After` reads 3. The pump returns `DS_ERR_CONTRACT_BREACH` (-710), and the stream's fault events are exactly one `bounds_error`. LSTR.11.3_over_capacity_emit_is_a_bounds_error pins the classification of the same refusal, and this vector pins what the refusal leaves behind. PATH PINNED: libds's action loop in `rete/engine.c`, where `ds_rete_wm_assert`'s `rete_validate_slot_kinds` refuses the `Out` emit through `ds_rete_emit_breach` and the loop stops; the Mercury runtime's `ds.exec` emit arm through `ds.fact.lstr_11_3_over_capacity`. The count is read through `runner.py`'s and `test_behave.m`'s `fact_count_after` on a `runtime_error`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    text: String mutable\n\nschema Before scope logical:\n    k: Int key\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 8 mutable\n\nschema After scope logical:\n    k: Int key\n\nrule r:\n    Trig t\n->\n    emit Before logical k: t.k\n    emit Out logical k: t.k s: \"{t.text}{t.text}\"\n    emit After logical k: t.k\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_events": ["bounds_error"],
+        "asserts": [
+            { "schema": "Trig", "slots": { "k": 1, "text": "abcde" } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LFST.9.1_replay_then_within",
+    "category": "runtime",
+    "scenario": "A `then ... within` SEQUENCE replayed ([LFST.9.1], [LTHE.2]). `confirm` matches a Door followed by a Motion in the same zone within 30_s. Door a at ts 0, Motion a at ts 10_s (confirmed), Door b at ts 20_s, Motion b at ts 60_s (40_s later, outside the bound, so not confirmed). ⚠ The sequence's time axis is each fact's `ts` slot, an INPUT, not the engine clock: this vector pins that a recording carries what the bound is decided on, not the clock the other LFST.9.1 replay vectors replay. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Door scope ttl 1_h:\n    zone: String\n    ts: Time\n\nschema Motion scope ttl 1_h:\n    zone: String\n    ts: Time\n\nschema Confirmed scope ttl 1_h:\n    zone: String\n\nrule confirm:\n    Door d\n    then Motion m within 30_s where m.zone == d.zone\n->\n    emit Confirmed zone: d.zone\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Door", "slots": { "zone": "a", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Motion", "slots": { "zone": "a", "ts": 10000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Door", "slots": { "zone": "b", "ts": 20000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Motion", "slots": { "zone": "b", "ts": 60000000000 } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "min_rule_fires": 1
+    }
+}

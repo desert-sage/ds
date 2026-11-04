@@ -1,0 +1,32 @@
+# An arriving answer supersedes ([LCRS.6.2.4]). Fixture 129_answer_supersede.
+#
+# Two Jobs fire `r` twice under `c1` before anything is answered. Then, all as
+# host asserts:
+#
+#   ReplyA v=1, ReplyA v=2   the second withdraws the first (one live, v=2)
+#   ReplyB v=3               another service's schema: ReplyA v=2 stays
+#   Probe k=1, pump          logs `a 2 at 1`, `b 3 at 1`
+#   CallError c1             withdraws ReplyA v=2 AND ReplyB v=3
+#   Probe k=2, pump          logs only the CallError, for both Probes
+#   ReplyB v=4               withdraws the CallError
+#   Probe k=3, pump          logs `b 4` for all three Probes
+#
+# Each withdrawal is SUPERSEDED. Working memory loses the old answer before the
+# new one enters, but the stream is input-first ([RFCS.6.7]): the answer's
+# FactAssert, then its withdrawals.
+# @spec [LCRS.6.2.4]
+assert Job id=1
+pump
+assert Job id=2
+pump
+assert ReplyA corr="c1" v=1
+assert ReplyA corr="c1" v=2
+assert ReplyB corr="c1" v=3
+assert Probe k=1
+pump
+assert CallError corr="c1" code="transport.timeout" message="late" ts=0
+assert Probe k=2
+pump
+assert ReplyB corr="c1" v=4
+assert Probe k=3
+pump

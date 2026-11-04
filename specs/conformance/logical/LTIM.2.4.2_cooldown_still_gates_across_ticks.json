@@ -1,0 +1,26 @@
+{
+    "id": "LTIM.2.4.2_cooldown_still_gates_across_ticks",
+    "clauses": ["RDSC.4a.8.2.3"],
+    "category": "logical",
+    "scenario": "[LTIM.2.4.2], [RDSC.4a.8.2.3]: re-driving a cooldown rule on the tick does not make the cooldown periodic. The rule `settled cooldown 1_min` on `where m.dwell >= 2_s` acts at +2 s. At +10 s the Motion fact is retracted and asserted again, a new match, which matures at +12 s inside the minute: it fires, and the rate gate suppresses its actions. The clock then moves to +70 s, past the minute, with the second fact still matched: no further firing and no second action, because a firing the gate suppressed is still that match's firing and the match persists. Pin: set 0; assert m; pump; advance 2 s, pump (`settled`); advance 8 s; retract m; assert m again; pump (+10 s, immature); advance 2 s, pump (+12 s, gated: no log); advance 58 s, pump (+70 s, nothing). Messages are ['settled']. PATH PINNED: the condition is read at selection and the gate once in the firing (libds rete/engine.c guard_condition / guard_gate; Mercury ds.exec.rdsc_4a_8_2_1_guard_parts); a gated firing is latched by libds's edge-once mark and Mercury's refraction after the condition (ds.engine.fire_one).",
+    "rules_ds": "schema Motion scope logical:\n    zone: String key\n    ts: Time\n\nrule settled cooldown 1_min:\n    Motion m where m.dwell >= 2_s\n->\n    log critical \"settled\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Motion", "slots": { "zone": "hall", "ts": 0 }, "as": "m" },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 8000000000 },
+            { "op": "retract", "label": "m" },
+            { "op": "assert",  "schema": "Motion", "slots": { "zone": "hall", "ts": 10000000000 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 58000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["settled"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.24.3_cache_bound_refuses_the_first_step",
+    "category": "runtime",
+    "scenario": "[LGRA.24.3]: a bounds refusal refuses the step. The block places one `Seed` fact and then seeds two cache keys, and the engine's key bound is 1, so the block's second cache item would exceed it. The first step is the host's `Trig` assert, input 0: it returns `DS_ERR_CONTRACT_BREACH` (-710), the engine applies none of the block and none of the input, and evaluates no rule. The stream's fault events are exactly one `bounds_error`, recorded after the refused assert's `FactAssert` as [RFCS.6.7] records a refused assert. Pin: `fact_count_after` 0. A runtime that applied the block item by item and stopped at the refusal holds `Seed` (1); one that dropped the refused seed and carried on holds `Seed` and `Trig` (2); one that refused the seed but took the input holds `Trig` (1). The bound is engine configuration, given before the load through the harness's `cache_cap` (pyds `set_cache_cap`, the Mercury runtime's `ds.engine.set_cache_cap`). Raising the bound between steps is not expressible in either harness, which sets it only before the load, so the block's application at a later step is not pinned here. PATH PINNED: the first step's bounds check over the block's cache items, before any item is placed (libds `ds_engine_initial_apply` from `ds_engine_clock_step`, the refusal recorded by `engine_assert_body`; the Mercury runtime's `lgra_24_3_apply` from `clock_step`, recorded by `host_assert_core`).",
+    "rules_ds": "schema Seed scope explicit:\n    k: Int\n\nschema Trig scope explicit:\n    k: Int\n\ninitial:\n    Seed k: 1\n    cache \"a\": 1\n    cache \"b\": 2\n\nrule r:\n    Trig t\n->\n    log info \"fired {t.k}\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "cache_cap",
+        "fault_events": ["bounds_error"],
+        "cache_cap": { "keys": 1 },
+        "asserts": [
+            { "schema": "Trig", "slots": { "k": 1 } }
+        ],
+        "fault_at": 0,
+        "fact_count_after": 0
+    }
+}

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `after` reading a parent binding: the capture fact of [LTAC.3.5]. The
+# follow-up rule `$arm_after_0` has no `m` of its own: `m.zone` in its
+# body is a snapshot the parent took when it fired. The compiler binds a fresh
+# `ds_gensym()` per parent activation, asserts the timer with that correlation
+# and a `$CaptureBindings_arm_after_0` fact carrying it plus `m.zone`, and
+# the follow-up joins the capture on `corr` and reads the slot from it.
+#
+# Two activations, two zones: a shared correlation would log each zone twice,
+# and a missing join nothing. Each follow-up retracts its own timer and
+# capture, so working memory ends with the two Motions and the current tick.
+schema Motion scope logical:
+    zone: Int key
+
+rule arm:
+    Motion m
+->
+    log info "armed {m.zone}"
+    after 5_min:
+        log info "off {m.zone}"

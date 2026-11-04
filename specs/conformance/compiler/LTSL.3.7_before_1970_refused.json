@@ -1,0 +1,11 @@
+{
+    "id": "LTSL.3.7_before_1970_refused",
+    "clauses": ["LTSL.3.7"],
+    "category": "compiler",
+    "scenario": "[LTSL.3.7]: the compiler refuses an absolute coordinate before 1970-01-01T00:00:00Z with DS_VALIDATE_TEST_BAD_TIMESTAMP, since `TestCase.when_ns` is a `uint64` and cannot carry it. `at calendar.time(1969, 12, 31, 23, 59, 59):` folds, to one second before the epoch, and is refused for that. PATH PINNED: `dsc.dstest.ltsl_3_1_coordinate`'s `calendar_value` arm, which refuses a negative instant.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    id: Int key\n\nrule seen:\n    Ping p\n->\n    log info \"seen {p.id}\"\n\ntest \"before the epoch\":\n    inputs:\n        at calendar.time(1969, 12, 31, 23, 59, 59):\n            Ping id: 1\n    produces:\n        activated seen\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_BAD_TIMESTAMP"
+    }
+}

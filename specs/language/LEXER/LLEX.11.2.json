@@ -1,0 +1,70 @@
+{
+  "id": "LLEX.11.2",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.11",
+  "seq": 488,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": "Float (`FLOAT_LIT`)",
+  "text": "### Float (`FLOAT_LIT`) [LLEX.11.2]\n\n```\nFLOAT_LIT ::= DEC_LIT '.' DEC_LIT EXPONENT?\n           |  DEC_LIT EXPONENT\nEXPONENT  ::= ('e' | 'E') ('+' | '-')? DIGIT ('_'? DIGIT)*\n```\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__accepted_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Seven `FLOAT_LIT` spellings read to their decimals, each `Refl`: `1500.0`, `1.5e3`, `1.5E3`, `1.5e+03`, `15e2`, `1_500.0`, and `1e1_0`, the separator in an exponent the production admits."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__dec_more",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The digits after the first of a `DEC_LIT`, with the value and the count so far: a digit continues the run, a `_` continues it when a digit follows ([LLEX.11.1]'s `('_'? DIGIT)*`) and ends the literal otherwise, any other codepoint ends the run and is handed back."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__dec_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `DEC_LIT` at the head of a text: a digit, then `llex_11_2__dec_more`; its value, its digit count and the text after it; nothing when no digit opens it."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__exponent",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An `EXPONENT` after its marker: an optional sign, then a `DEC_LIT` that ends the text, its signed value; a `_` before a digit is admitted as the production's `DIGIT ('_'? DIGIT)*` places it (`1e1_0` is `1e10`), and [LLEX.12.1.1] says the same: the unit `_` never stands inside a scientific literal, and a `_` within it is a digit-group separator. logical/LCST.4.5.8_separator_in_exponent spells the admitted and the refused placements and agrees with libds under idris-libds."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__float_lit",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `FLOAT_LIT`, the whole text: `DEC_LIT '.' DEC_LIT EXPONENT?` or `DEC_LIT EXPONENT`, both sides of the point required ([LLEX.11.2.1]) and the exponent required on the bare form ([LLEX.11.2.2]); its value as the digits and the power of ten they sit at."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__refused_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Nine texts that are no `FLOAT_LIT`, each `Refl`: `1.` and `.5` (one side of the point), `1500` (an `INT_LIT`), `1.5e` (no exponent digits), `1_.5`, `1._5` and `1.5e_1` (a separator beside the point or the marker), `0x1p3` (a hex float, [LLEX.11.2.3]), ` 1.5` (a space)."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dscast.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

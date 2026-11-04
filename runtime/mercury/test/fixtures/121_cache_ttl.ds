@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `rw` writes "k" with a 10-second TTL, and each reader logs what it reads in
+# a pump of its own. An entry expires when the engine clock reaches its
+# deadline (`now >= deadline`, [NSTG.2.4.2]), so `r3` logs a miss.
+
+schema Trig scope logical:
+    tag: String key
+
+rule rw:
+    Trig t where t.tag == "w"
+->
+    cache key: "k" value: 7 ttl: 10_s
+
+rule r1:
+    Trig t where t.tag == "r1"
+->
+    let v = cached("k")
+    log critical "r1=[{v}]"
+
+rule r2:
+    Trig t where t.tag == "r2"
+->
+    let v = cached("k")
+    log critical "r2=[{v}]"
+
+rule r3:
+    Trig t where t.tag == "r3"
+->
+    let v = cached("k")
+    log critical "r3=[{v}]"

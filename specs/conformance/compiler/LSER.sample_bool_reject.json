@@ -1,0 +1,11 @@
+{
+    "id": "LSER.sample_bool_reject",
+    "clauses": ["LSMP.3.2a"],
+    "category": "compiler",
+    "scenario": "bool_and / bool_or are NOT admitted under the `sample` time model (LSER.16.8.3). They are exact predicates, not statistical summaries: a uniform reservoir can omit the one value that determines the AND/OR, so the reduction over the sample is not faithful (unlike mean/pXX, which are unbiased estimators). The SeriesBackendReservoir runtime backing can compute bool over the bag (registry.c SBRS_AGGS), but the compiler — the language contract — rejects it. Pin: `bool_and sample 200` rejects with DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    active: Bool mutable\n\nseries Sensor.active:\n    bool_and sample 200\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH"
+    }
+}

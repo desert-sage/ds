@@ -1,0 +1,20 @@
+{
+    "id": "LLET.6.3",
+    "category": "logical",
+    "scenario": "Multiple lets chain: later let can reference an earlier let per LLET.6 ordered evaluation. Pin: `let a = t.v + 1; let b = a * 2` — both lets are used in a where-guarded emit. Rule fires when t.v == 4 (a=5, b=10 > 5).",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n    v: Int mutable\n\nschema Out scope logical:\n    dummy: Int key\n\nrule r:\n    Trig t where t.v == 4\n->\n    let a = t.v + 1\n    let b = a * 2\n    emit Out logical dummy: b\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1", "v": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

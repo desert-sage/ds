@@ -1,0 +1,234 @@
+{
+  "id": "IRET.12.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.12",
+  "seq": 1007,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.12.4] **Dependency table.** An `oa` map ([IRET.28])\nkeyed by the justifying activation's creation timetag, which\nno two activations share. Each value holds the activation's\nrule name and the ids of the logical facts it justifies: up to\n16 inline, overflow in a heap list.\n\n---\n\n",
+  "refs": [
+    "IRET.28"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "Iret_12_4__run_kind",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every row's rule exists, and a live fact with the row's target id has a kind that rule emits. A run invariant, what makes a retracted fact's kind one of its row's rule."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_4__reach_engine_justifs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the reach run's final table, as two mutually supporting justifications."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "Iret_12_4__row",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One dependency: the activation as its (rule ordinal, token identity) pair [IRET.11] and the logical fact id it justifies -- one entry of the clause's `activation_id -> fact_id_list` map, flattened."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "Iret_12_4__table",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The dependency table as a list of rows; the hash map and inline array are representation."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_4__justifs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The table read as Rete/Refcount.idr's justifications: an activation's antecedents are the facts its token binds, its target the fact it justified. The bridge from the engine to the fixpoint theorems."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__emitted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a row of the dependency table can target: a kind some rule emits."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__rows_emitted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE DEPENDENCY TABLE'S INVARIANT under the frame: every row's target, read as a live fact, is of an emitted kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fresh fact appended is no row's target, so the table's invariant holds over the grown memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_record",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row appended for a live fact of an emitted kind keeps the table's invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sub-table over a sub-memory keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__fired_row",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The dependency table after one logical emit: one row, its target the emitted fact. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "Iret_12__net_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The dependency table beside the network engine: a row per activation and the logical fact it justifies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After any history the network's dependency table is FireLoopTms's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_rows",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The dependency table at the fixture as a literal: one row, (rule 0, token identity [1], target 2). Computed."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "Iret_12_4__run_kind_s",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds of the rows' targets, of a state."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_4__phase_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One cascade phase keeps the target kinds: it only removes facts."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_4__phase_n_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And so does any number of phases, alongside the cascade invariant."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_4__justif_of_row",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row of the table is a justification."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_4__row_justif",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A justification read off the table is a row's."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_4__target_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row's target is among the table's targets."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "Iret_12_4__row_facts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a row's activation identity stands for: facts with the row's ids that match the row's rule (kinds in pattern order, guard passed), and such that a live id of theirs is theirs."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_4__facts_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row's facts are all live when the row's ids are all live, by the row's reading."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_4__id_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And conversely."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_4__live_id",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An id live in working memory belongs to some live fact."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_4__row_facts_retract",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row's reading survives a retraction: a fact of it live afterwards is the same fact, by uniqueness of ids."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_4__targets",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The targets of a table."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_4__row_facts_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row's reading survives a change that keeps the facts of surviving ids and adds only facts with ids outside the row."
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+    "id": "LSER.14.1_inside_edge_sample_is_in_count_fires",
+    "category": "logical",
+    "scenario": "LSER.14.1 — the other side of the edge: the right end of (t−W, t] is inclusive, so a sample ONE NANOSECOND short of W old is still in the window. Same steps as LSER.14.1_edge_sample_is_out_count_fires but the clock advances by 599999999999 ns. `where r.v > 1.5 and count(r.v) == 1` fires only if the t=0 sample is still counted. A runtime that evicts or goes cold one step early — `>` where the edge needs `>=`, or a window of W−1 — reads 0 and does not fire. Path: libds `series_window_emptied` (not emptied) → the ring buffer's COUNT, `trim_stale_prefix` keeping ts > t−W; Mercury `in_window`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    count sliding 10_min\n\nrule inside_count:\n    Reading r where r.v > 1.5 and count(r.v) == 1\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 599999999999
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

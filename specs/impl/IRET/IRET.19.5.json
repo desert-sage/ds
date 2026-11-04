@@ -1,0 +1,1066 @@
+{
+  "id": "IRET.19.5",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.19",
+  "seq": 1416,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`$ClockTick` schema",
+  "text": "### `$ClockTick` schema [IRET.19.5]\n\n`$ClockTick` is an engine-internal schema with no slots and a synthetic name\n([LLEX.10.6.1]). Its\nassert/retract cycle drives reevaluation of `within <dur>` test CEs, which\ncompare the monotonic clock's sample against the fact's entry stamp\n([LTIM.2.7.1]), and of every other time-dependent test ([LTIM.2.4.1]). A\n`then … within` test compares two facts' `ts` values ([LTHE.2.2.2]) and is\nnot re-evaluated by the tick.\n\nThe **consumption loop** (engine.c, not the integrator)\ndrives the clock cycle once on every `ds_engine_pump` call ([IRET.19.4]):\n\n1. Sampling both clocks as the pump begins ([LTIM.2.8.4]).\n2. The TTL sweep ([IRET.19.3]) against the pump's monotonic\n   sample ([LTIM.2.8.2]).\n3. Retracting the previous `$ClockTick` fact, if any, and\n   asserting a new one. The turnover ends no match that\n   persists (below, [IRET.12.2]).\n4. Calling `ds_rete_run` to fire any activations that\n   became ready because time advanced.\n\nThe integrator does not manage `$ClockTick` directly;\nit is an engine-internal fact driven by `ds_engine_pump`.\nThe clock source (IRET.14) is the only external input.\n\n**The tick lives outside working memory** ([LDET.5.8]). libds asserts it into\nthe Rete network's own fact store, not the engine's working-memory table: it is\nnot counted by the fact count, it is not delivered to the fact callbacks or the\nstream as a fact event, and **cycling it never makes a new match of one that\npersists**. A token that joins the tick is formed again on every tick, with the\nnew tick's fact. For as long as its time-dependent test stays true, those are\none match: refraction holds it through the edge-once set ([IRET.11.3.5]),\nkeyed by the matched fact rather than the tick, and its justifications carry\nover ([IRET.12.2]). A test that goes false ends the match, and one that goes\ntrue again makes a new one ([LTIM.2.5.1]).\n\nRules that use `within <dur>` pattern-match on\n`$ClockTick` as their time-advancement trigger. The\nassert of a new tick causes those rules' beta joins to\nreevaluate their time-window test CEs with the clocks as\nsampled for that pump ([LTIM.2.8.4]).\n\n---\n\n",
+  "refs": [
+    "IRET.11.3.5",
+    "IRET.12.2",
+    "IRET.14",
+    "IRET.19.3",
+    "IRET.19.4",
+    "LDET.5.8",
+    "LLEX.10.6.1",
+    "LTHE.2.2.2",
+    "LTIM.2.4.1",
+    "LTIM.2.5.1",
+    "LTIM.2.7.1",
+    "LTIM.2.8.2",
+    "LTIM.2.8.4"
+  ],
+  "symbols": [
+    "ds_engine_pump",
+    "ds_rete_run"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/EventTime.idr",
+        "name": "iret_19_5__by_clock_is_time_dependent",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLOCK-MEASURED WINDOW IS TIME-DEPENDENT: the same two facts, true under one sample and false under a later one, so a tick would have to re-evaluate it. The clause's test has no clock in it to move, which is why the tick leaves it. Computed."
+      },
+      {
+        "path": "formal/idris/EventTime.idr",
+        "name": "iret_19_5__sequence_window_by_clock",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A sequence's window measured on the monotonic clock -- Y after X, and X entered less than the bound ago at the sample -- which is the reading the clause refuses: a `then ... within` test 'compares two facts' `ts` values and is not re-evaluated by the tick'. Partial because it models a reading the clause rules out; kept so that what is ruled out is computed beside what is required."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__tick_literal",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 on the follow-up's chain, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__ticked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state after step 3 of the tick. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed test the tick re-evaluates, by ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_3__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed tests of the parent fixture, by ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__ticked_run",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 4 after step 3, on the follow-up."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__timer_counts_are_edges",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A history of ticks, each pumped, on the follow-up."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__timer_pump",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The tick and the run that follows, on the follow-up."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__pump_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pump: Rete/NetworkTimed.idr's re-time at entry, then the called run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__retime_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time stage keeps the invariant: the tick changes no fact and keeps the frame, the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__born_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And makes nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__counts_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firings of a sequence of inputs, one count per pump, the fold's counts: the observable the executed witnesses compute."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__ended_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A re-time whose new test answers on every live pair what the old one answered ends nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__pump_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A PUMP: the input prepared, then Rete/NetworkTtl.idr's run to quiescence (step 4), with its halt and its number of firings."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__retime_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RE-TIME STAGE: every timed chain re-evaluated at the state's clock (step 3), then the cascade for the rows of the activations that ended. Rete/NetworkTick.idr's `iret_19_5__tick` on the engine component, then Rete/NetworkTms.idr's `iret_12_2__phase_net`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__retime_unmoved",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A re-time that moves no verdict leaves the activations as they were."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__run_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A HISTORY PUMPED: every input prepared and run in turn, returning the state the history leaves and one count per pump. The one fold the state (`lfst_9_2_1__after_clocked`) and the counts (`iret_19_5__counts_clocked`) are read off; the clock after the history is the state's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__run_clocked_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One pump of a history, unfolded: the fold over the rest from the state the pump left, with the pump's count in front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chain_cacts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unmoved chain keeps its activations through the re-time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chain_consistent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time of one chain keeps its consistency from the nil token: a single positive node by Tick's `iret_19_5__retime_consistent`, any other shape by being left alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chain_lmems",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And its left memories: a re-time changes a node's test and nothing else of the node."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chain_sets_test",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-timed chain carries the test at the new clock: what the next tick re-times from. A TRANSCRIPTION of `iret_19_5__retime`'s definition, `Refl`; it fails if the re-time stops setting the node's test and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chains_cacts",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unmoved chains, one and all, keep their activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chains_consistent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every chain, re-timed or not, stays consistent."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chains_lmems",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And every chain keeps its left memories, moved or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chains_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The chain at an ordinal after the re-time is that chain re-timed by the test at that ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TICK ON THE CLOCKED NETWORK, in the clause's order: advance the clock and sweep what has expired, one fact at a time in [LDTL.6.1]'s order, then the cascade (steps 1 and 2, Rete/NetworkTtl.idr's prepare), then the re-time stage (steps 3 and the cascade after it). The tick fact itself is not modelled ([LDET.5.8]): its effect is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_clocked_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A2. THE COMPOSED TICK KEEPS THE VIEW: after any tick on the clocked network every alpha memory and every terminal are what the recompute over working memory gives, none twice -- Rete/NetworkDispatch.idr's view theorem across ticks that sweep, re-time and cascade. The sweep and the cascade are retractions, which keep the view; the re-time keeps it chain by chain by Tick's `iret_19_5__retime_consistent`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RE-TIME KEEPS THE VIEW: working memory and the alpha memories are untouched, and every chain stays consistent."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__late_fires_once_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S OBSERVABLE ON THE COMPOSED ENGINE: assert one `Ping`, pump twice with the gate shut, advance the clock past it, pump twice more. `late` fires exactly once, in the third pump: `[0, 0, 1, 0]`, on the engine with the tables, as on Rete/NetworkTick.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__quiet_tick_is_retime",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE COMPOSED TICK, WHEN QUIET, IS THE RE-TIME of the state with the clock moved: the sweep retracted nothing and the cascade after the re-time ended nothing. Rete/NetworkTtl.idr's `ldet_5_8__quiet_tick_net` for the first two stages, the cascade's quiet case for the last."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__shut_tick_moves_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the tick to 1 leaves the one chain's activations as they were, none, with the `Ping` live: what A1 says of it, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_4_2__born_unfired_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A3. AND EVERY MATCH THE TICK MADE IS THERE TO FIRE, on this engine's timed chain: a rule whose only unmet gate is a time-dependent condition fires once the clock advances to satisfy it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_4_2__first_tick_opens",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And the re-time at 1 makes the `Ping` match, unfired: the one activation of the one chain, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_4_2__unfired_are_born_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A3. AFTER A QUIESCENT PUMP, THE TICK LEAVES UNFIRED ONLY WHAT IT MADE, on this engine's timed chain at `r`: what the next run fires is exactly what the re-time made true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__closing_ends_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A3. A CONDITION THAT CLOSES ENDS THE MATCH, on this engine: under the view, the re-timed chain at `r` holds no activation whose match the new test refuses, fired or not. Tick's `ltim_2_5_1__closing_ends` at the chain's consistency, which the view supplies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A3. A REOPENING IS A NEW EDGE, on this engine: under the view, an activation of the re-timed chain at `r` whose match the tick made is unfired, whatever fired before the gate shut. 'No memory of the firing outlives the activation.'"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__second_edge_refires_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE SECOND EDGE FIRES AGAIN ON THE CLOCKED NETWORK: one `Ping`, no TTL, the window gate; ticks to 1, 2, 3, 4 fire the rule in the first pump and the third, once per opening -- `[1, 0, 1, 0]`, Tick's observable on the engine with the tables. 'A window that shuts and reopens fires once per opening', computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "rarc_5_6_3__first_tick_moves_the_clock",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The first tick moves the clock to 1: computed through the composed tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__born_chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The matches one chain's re-time at a clock makes: for the single positive node with a timed test, the born tokens, counted; for any other shape, none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__born_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The matches the tick makes, over every chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__counts_clocked_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One pump of a sequence, unfolded: its count, then the counts from the state it left."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__tick_chain_actions",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time changes a chain's test and activations, never its actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__tick_chain_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "From a quiescent chain, the tick leaves unfired exactly the matches it made, counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_19_5__tick_chains_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And over the chains: from a quiescent state the tick leaves unfired exactly what it made."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__action_free_tick",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "So the tick keeps a program action-free."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__counts_are_edges",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's cycle over a history of pumps, for one fact under any gate: one firing per tick that makes the match, none otherwise."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_after",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What the tick and the run leave of the one rule's activations, from quiescence at the old gate value: quiescence at the new one. A gate that stays true keeps the fired match; one that closes ends it; one that opens makes a new match, which the run fires. All four cases."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_pump",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE PUMP OF THE ONE RULE: from the quiescent state at a clock, the pump at a tick fires the edge and leaves the quiescent state at the new clock. B1 at the one rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__one_rule_tick",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The one rule after the tick and the run: the one rule at the new clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__pump_fires_the_born",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Steps 3 and 4 of the clause's cycle, counted: the re-time makes matches and `ds_rete_run` fires exactly those, under the action-free frame."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__second_edge_refires_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The `[1, 0, 1, 0]` of Rete/NetworkClocked.idr is B2's instance at the window gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Step 4 after steps 1 to 3 of any inputs: a framed chain fires once per match it holds when step 4 begins, the matches step 3 made among them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__retime_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 with the cascade that follows it keeps the invariant and ends between actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__retime_clocked_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 with its cascade fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__retime_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3's re-evaluation of one node ends matches and makes matches unfired; it fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chain_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3's re-evaluation of a timed node gives it the test at the new clock and nothing else: the alpha and the flag stay."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chain_unfired_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 on one chain fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chains_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3, ordinal by ordinal, keeps every chain's alphas, flags and actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chains_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 re-evaluates chains; it adds and removes none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_chains_unfired_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 on every chain fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 keeps the frame invariant: the view and the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 leaves working memory and the alphas alone, and every chain's kinds and actions; what it changes is the timed nodes' tests, the activations they end and make."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_unfired_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 fires nothing: the matches it makes are born unfired, for step 4 to fire."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__b_shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed tests step 3 re-evaluates, by ordinal: B's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ended_fired_cascade",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The cascade after step 3 executed with a row to drop: the ended activation's logical fact is retracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ended_fired_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 3 executed on a fired activation: the re-evaluation ends it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 4 after step 3 executed: the match step 3 made fires once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 3 executed: A's node re-evaluated at clock 1, the match it makes born unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gates",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed tests step 3 re-evaluates, by ordinal: one, A's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 4 after step 3 executed: the match step 3 ended does not fire."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shut_ready_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 3 executed: A's node re-evaluated at clock 1, the match it had ended."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__shutters",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed tests of the shutting fixture, by ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Step 4 after a tick that swept and re-evaluated: nothing to fire."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Steps 2 and 3 in one tick, executed: the sweep retracts the fact first, so the re-evaluation finds nothing to match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "rarc_5_6_3__prepare_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Steps 1 to 3 with their cascades keep the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "rarc_5_6_3__prepare_clocked_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Steps 1 to 3 fire nothing: step 4 is the run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "rarc_5_6_3__prepared_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Steps 1 to 3 for each input in order, no step 4 between them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_sampled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Step 4 after steps 1 to 3 of every input, data events included: a framed chain fires once per match it holds when step 4 begins."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_19_5__retime_clocked_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 with its cascade reads the clock and moves it not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_19_5__tick_clocked_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Steps 1 to 3: the clock after them is the sample step 1 took."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_chain",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Steps 1 to 3 on a data event's sample, then the event: the match the re-evaluated test admits, born unfired. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__tick_leaves_chain",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 on a chain with no timed test: the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__tick_leaves_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 on an engine with no timed test: the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__born",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The matches a tick makes: the old test refused them, the new one admits."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__born_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match the tick made: the old test refused it, the new one admits."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__clash",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One pair cannot be admitted and refused by one test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__counts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firings of a sequence of pumps, one count per pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__ended",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The matches a tick ends: the old test admitted them, the new one does not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__ended_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match the tick ended: the old test admitted it, the new one does not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__not_ended",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match the new test admits is not one the tick ended."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__pump",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A pump: the tick, then the run to quiescence ([IRET.19.5] steps 3 and 4), with its firings."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__retime",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RE-EVALUATION AT A TICK: the node takes the test at the new clock; the matches the tick ends leave the terminal, the matches it makes become unfired activations, every other activation is left as it is. The tick's effect, not its representation: the model has no tick fact ([LDET.5.8]), which [IRET.19.5] leaves to libds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__retime_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TICK KEEPS THE VIEW: a single positive node consistent under the old test is consistent under the new one after the tick -- the terminal holds exactly the matches at the new clock, none twice. Re-evaluation on every tick misses nothing and leaves nothing stale."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__tick",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tick: working memory untouched, every time-dependent test re-evaluated at the new clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__tick_chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A rule whose single positive pattern carries a time-dependent test ([LTIM.2.6.1]) is re-timed at a tick; any other chain is untouched."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__tick_chains",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every chain at a tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_4_2__born_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Every match the tick made is there to fire: a rule whose only unmet gate is a time-dependent condition fires once the clock advances to satisfy it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_4_2__unfired_are_born",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After a quiescent pump a tick leaves unfired only the matches it made: what the next run fires is exactly what the tick made true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__closing_ends",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A test that goes false ends the match': after the tick no activation whose match the new test refuses is left, fired or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'One that goes true again makes a new one': an activation of a match the tick made is unfired, whatever fired before."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_1__tick_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3 with no time-dependent test: no chain is re-evaluated."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_2__pump_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE PUMP: the re-time at entry (steps 1 to 3, by their effect), then the run (step 4). LESS than the clause as `ltim_2_4_3__retime_at_entry` is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__retime_at_entry",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The consumption loop's steps 1 to 3 by their effect: Rete/NetworkClocked.idr's re-time stage with the sample the state holds. LESS than the clause: no `$ClockTick` fact (its effect, not its representation); the sample is the last tick's or input's, which the Idris model's cadence makes the pump's; the sweep is at the tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__tick_then_pump_is_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The re-time at entry after the tick's advance and sweep is Rete/NetworkClocked.idr's composed tick, by definition, and the run is its run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_1__lower_tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The test list by ordinal, a follow-up's guard at its ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__retime_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "Steps 1 to 3 at the pump's entry on a state with no row: the re-time stage alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__tests_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The test list the re-time stage takes: the follow-up's gate at its ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__tick_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "Step 3 on the follow-up's chain: the node's test replaced at the new clock, the born and ended matches as the readings give them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__born_run_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "Step 4 after the re-time: the run from the state the re-time left, over the readings that made or did not make the activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__cycle",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One tick per pump: the tick's advance and sweep, then the pump's re-time and run. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__cycles",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A history pumped, one tick per pump, folded. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__cycles_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "One pump of a history, unfolded."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__timer_counts_are_edges_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Every pump re-evaluates the LHS, and the firings over a history are the gate's edges."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__timer_cycle",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "One tick per pump on the follow-up: the re-time at entry makes the edge's activation and the run fires it. LESS than the clause as Rete/NetworkTimed.idr's `retime_at_entry` is: modelled by its effect."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__retime_clocked_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time stage at two wall samples is one state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_chain_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-evaluation of a monotonic gate at a tick reads the wall sample not at all: one chain at two wall samples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_chains_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every chain, at two wall samples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_clocked_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The composed tick at two wall samples is one state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_fires_at_most_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Over any history of the clause's cycles, a rising gate's rule fires at most once per wrapper."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_2__pump_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's cycle at two wall samples, every test monotonic, is one cycle: same engine, same halt, same count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__pump_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's cycle at a sample: the tick at the monotonic sample with every time-dependent test fixed at the wall sample, then the run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "rfcs_10_5__replay_drives_the_engine",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's cycle, recorded as a tick history and replayed, reaches the same state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__queued_successor_removed_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The tick's turnover carries the fired match as one persisting activation; the withdraw ends it inside the pump. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__unrelated_change_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The tick re-forms no activation for a match that persists, and an unrelated assert touches no chain of the rule. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_step_moves_no_monotonic_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The re-time at the pump's entry (steps 1 to 3 by their effect) under two wall samples is one network when every test is monotonic, and step 4 from one network is one run. LESS than the clause as Rete/NetworkTimed.idr's `ltim_2_4_3__retime_at_entry` is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_row_dead",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The re-time at the fixture's clock, executed: the terminal of the shutting gate holds no fired activation of the row's identity after it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapsed_justification_retracted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The re-time stage of the composed tick (step 3 and the cascade after it), as the theorem's engine: the state after `iret_19_5__retime_clocked`."
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.6.6_date_components_at_boundaries",
+    "category": "logical",
+    "scenario": "LTIM.6.6: a Date's components are its UTC midnight's, through LTIM.6.5's builtins with the zone \"UTC\". A Date is its epoch-day count, so the slot holds that Int. One rule per boundary requires all four Date components (year, month, day, day_of_week) to equal that boundary's, and logs its label; one Event at each: 2023-12-31 (day 19722, a year end, a Sunday: 6); 2024-02-29 (day 19782, a leap day, a Thursday: 3); and 1969-12-31 (day -1, the day before the epoch, a Wednesday: 2). Exactly the three labels in order: a lowering that read the day count as nanoseconds, or as an instant in another zone, gets every component wrong and loses every label. Drives the compiler's Date arm (dsc.rete `ltim_6_6_fn`: FN_<C>((d :: Float * 86400e9) :: Int, \"UTC\")) and the runtimes' LTIM.6.5 handlers.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    cal: Date mutable\n\nrule year_end:\n    Event e where e.cal.year == 2023 and e.cal.month == 12 and e.cal.day == 31 and e.cal.day_of_week == 6\n->\n    log critical \"year_end\"\n\nrule leap_day:\n    Event e where e.cal.year == 2024 and e.cal.month == 2 and e.cal.day == 29 and e.cal.day_of_week == 3\n->\n    log critical \"leap_day\"\n\nrule before_epoch:\n    Event e where e.cal.year == 1969 and e.cal.month == 12 and e.cal.day == 31 and e.cal.day_of_week == 2\n->\n    log critical \"before_epoch\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "cal": 19722 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 2, "cal": 19782 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "id": 3, "cal": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["year_end", "leap_day", "before_epoch"]
+    }
+}

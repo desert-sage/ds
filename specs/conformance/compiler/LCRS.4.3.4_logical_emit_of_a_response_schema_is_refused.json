@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.4_logical_emit_of_a_response_schema_is_refused",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: `emit Reply logical` on a `ttl` response schema is told DS_VALIDATE_ANSWER_EMIT_FORBIDDEN and not DS_VALIDATE_BAD_LIFECYCLE_FLAG, because adding or removing `logical` would not make it legal. The vector kind can show the code present and cannot show another absent; the one diagnostic comes from one arm of an if-then-else. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag`, whose answer arm precedes its two flag arms.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit Reply logical corr: \"c\" v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ANSWER_EMIT_FORBIDDEN"
+    }
+}

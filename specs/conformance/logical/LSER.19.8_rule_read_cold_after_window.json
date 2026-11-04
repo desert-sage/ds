@@ -1,0 +1,19 @@
+{
+    "id": "LSER.19.8_rule_read_cold_after_window",
+    "clauses": ["LSER.19.8", "LSER.14.1"],
+    "category": "logical",
+    "scenario": "[LSER.19.8] / [LSER.14.1]: a read is evaluated as of its instant. One sample, 4.0 at 0, on `mean sliding 10_s`. At 20 s a `Probe` arrives and `read` logs the binding's `mean` in brackets: every absorbed sample has left the half-open window (t-W, t], so the read is cold, and `mean`, outside the clause's concrete table, is `null`, which interpolates as the empty string ([LGRA.2.9.6.2]): `[]`. The warm half is `logical/LSER.19.8_rule_read_warm_within_window`. `LSER.19.8_emptied_window_mean_does_not_fire` pins the emptied window for a read in a single-pattern `where`, by its not firing; this one is the read in a firing's action, on a join, where the null is seen as text.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level (by: dev):\n    mean sliding 10_s\n\nrule read:\n    Probe\n    Reading s\n->\n    log info \"[{s.mean}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[]"]
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "IRET.28.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28",
+  "seq": 2036,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Representation",
+  "text": "### Representation [IRET.28.3]\n\nThe table is **open-addressed with a dense payload**: a probe array of\nindices, and the keys and values packed contiguously beside it.\n\n**The probe array holds indices, not entries.** A slot is either empty or\npoints at a position in the dense arrays. So probing touches a compact\narray of integers rather than striding over key-value pairs, and the\npayload stays packed in `[0, len)` with no holes.\n\n**Two side arrays make the packing maintainable.** A cached hash per\ndense entry allows probe comparison and rehashing without re-reading —\nor re-hashing — the key. A reverse map from dense index back to probe\nslot is what makes deletion O(1): the last entry swaps into the freed\nposition and its slot is repaired directly, with no scan.\n\n**Invariants.** Capacity is zero or a power of two, so the probe index is\na mask rather than a modulo. Live count is **strictly less** than\ncapacity — the table never reaches 100% load, which is what guarantees a\nprobe terminates. `cap` is `u32` and bounded at 2³¹; no runtime table\napproaches that, and the bound is asserted at grow.\n\n**Three behaviours are configured per table.** A growth threshold\n(default 70%). A **lock** flag which, under real-time mode, forbids\ngrowth so an insert fails rather than allocating. And a value destructor\ncalled when an entry *leaves* the map — on delete, clear and free, but\n**never on growth**, because growth moves values rather than destroying\nthem. That asymmetry is the one a caller most easily gets wrong.\n\nThe open-addressing table is `oa_t`, declared in `runtime/src/libds/oa.h`.\n\n"
+}

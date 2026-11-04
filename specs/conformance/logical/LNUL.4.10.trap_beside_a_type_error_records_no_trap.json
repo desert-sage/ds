@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.10.trap_beside_a_type_error_records_no_trap",
+    "category": "logical",
+    "scenario": "[LNUL.4.10] / [LERR.1.4.11]: the twin of LNUL.4.10.trap_beside_a_type_error_yields_the_type_error. Each `==` has two faulting operands -- `p.a // p.z > 0` traps and `p.body.name > 5` raises a TypeError -- and yields the TypeError, so the DIVIDE_BY_ZERO is not the expression's fault and is NOT recorded, on either side. In `trap_left` the trap is met first in a left-to-right evaluation, which is what makes this pin the selection rather than the order. Path: the non-connective BINOP arm -- libds rete/eval.c BINOP (faults held, one raised), Mercury ds.eval.m eval_node(e_binop(...)) (lnul_4_10_yielded).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule trap_left:\n    Payload p where (p.a // p.z > 0) == (p.body.name > 5)\n->\n    log info \"left\"\n\nrule trap_right:\n    Payload p where (p.body.name > 5) == (p.a // p.z > 0)\n->\n    log info \"right\"\n",
+    "dead_rules_expected": ["trap_left", "trap_right"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.4.2.3_null_operand",
+    "clauses": ["LTIM.4.2.3"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LTIM.4.2.3] with [LNUL.4.1]: a `null` operand of `Date` arithmetic yields `null`, and raises no fault. `due`, `step` and `other` are nullable. Rule `shifted` fires where `(v.due + v.step) is null` and rule `apart` where `(v.due - v.other) is null`; rule `handler` logs any ComputationError. Visit 1 has no `due`; Visit 2 has a `due` and neither of the others; Visit 3 has all three, whole days, so neither rule fires for it. Messages, rule then assertion order: `shifted 1`, `shifted 2`, `apart 1`, `apart 2`, and no fault. A builtin that faulted on a null operand would log no `shifted` or `apart` line and a ComputationError handler line instead. PATH PINNED: the null arm of FN_DATE_ADD_DURATION and FN_DATE_DIFF in libds (`rete/adapters.c`) and Mercury (`ds.eval`), ahead of their kind checks.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date? mutable\n    step: Duration? mutable\n    other: Date? mutable\n\nrule shifted:\n    Visit v where (v.due + v.step) is null\n->\n    log info \"shifted {v.id}\"\n\nrule apart:\n    Visit v where (v.due - v.other) is null\n->\n    log info \"apart {v.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "step": 86400000000000, "other": 19782 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "due": 19782 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 3, "due": 19782, "step": 86400000000000, "other": 19781 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["shifted 1", "shifted 2", "apart 1", "apart 2"]
+    }
+}

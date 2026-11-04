@@ -1,0 +1,10 @@
+{
+    "id": "LSER.6",
+    "clauses": ["LSER.6.1"],
+    "category": "compiler",
+    "scenario": "The companion-slot read `s.mean` of a declared `mean` aggregation (LSER.6.1) compiles in a `where`. PINS ONLY THAT IT COMPILES: the lowering is not observed. Named for the LSER.6 heading.",
+    "rules_ds": "use default\n\nschema SensorReading scope ttl 1_min:\n    entity_id: String\n    val: Float\n\nseries SensorReading.val (by: entity_id):\n    mean, stdev sliding 10_min\n\nrule high_mean:\n    SensorReading s where s.mean > 5.0\n->\n    log info \"high mean\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

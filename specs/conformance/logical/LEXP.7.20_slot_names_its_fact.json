@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.20_slot_names_its_fact",
+    "category": "logical",
+    "scenario": "LEXP.7.20: a schema-typed slot read is a fact reference, equal to a pattern binding exactly when the slot names that fact. `make` emits one Child per Parent, Child 1n for Parent n, its `parent` slot set to that Parent ([LGRA.5.7a.2]); Parent 1 then Parent 2, one pump. `eq` (`Child c, Parent p where c.parent == p`) fires once per child, with its own parent only; `ne` (the same with `!=`) fires once per child, with the other parent. Exactly [\"eq 11/1\", \"eq 12/2\", \"ne 11/2\", \"ne 12/1\"]: `make`'s terminal is first, so both children enter before either comparison fires; then LDET.5.4 orders `eq` before `ne`, and LDET.5.5 orders each rule's two matches by their latest fact, Child 11 before Child 12. A runtime that refused the slot read as an operand of `==`, or faulted on it, logs nothing; LEXP.7.20_slot_target_retracted separates naming a fact from naming its key. PATH PINNED: the join test over a slot read and a whole-fact read, both fact references, scanned; libds `rete/eval.c` `val_eq_unordered`'s FACT_REF arm (the slot holds the target's rete id), Mercury `ds.eval` `compare_outcome` (`fact_ref` by fact id).",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent mutable\n\nrule make:\n    Parent p\n->\n    emit Child logical id: (p.id + 10) parent: p\n\nrule eq:\n    Child c\n    Parent p where c.parent == p\n->\n    log info \"eq {c.id}/{p.id}\"\n\nrule ne:\n    Child c\n    Parent p where c.parent != p\n->\n    log info \"ne {c.id}/{p.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Parent", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Parent", "slots": { "id": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["eq 11/1", "eq 12/2", "ne 11/2", "ne 12/1"]
+    }
+}

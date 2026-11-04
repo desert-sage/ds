@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.1.1.1_ns_boundary_alive",
+    "category": "temporal",
+    "scenario": "[LTIM.1.1.1] utc_ns is NANOSECONDS — low half of the discriminating pair. The TTL is written `1001_ns`, a duration literal that has no microsecond representation at all: 1.001 µs is not a whole number of microseconds, so an implementation quantised to µs must round the DECLARATION before the clock is even consulted. At 1000 ns the fact is still alive. Its twin LTIM.1.1.1_ns_boundary_dead advances one further nanosecond and it is gone. Neither half proves anything alone — a single fact count is satisfiable at any precision. The PAIR is the assertion: round 1001_ns down to 1000 and the alive half dies early; round it up to 2000 and the dead half survives. Either way one of the two goes red. Distinct from LFAC.1.2f, which pins sub-MILLISECOND TTL at microsecond granularity and passes fine on a microsecond clock.",
+    "rules_ds": "schema Pulse scope ttl 1001_ns:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

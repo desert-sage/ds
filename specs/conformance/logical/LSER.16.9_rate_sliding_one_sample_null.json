@@ -1,0 +1,20 @@
+{
+    "id": "LSER.16.9_rate_sliding_one_sample_null",
+    "category": "logical",
+    "scenario": "LSER.16.9: a `sliding` `rate` over one sample reads `null` -- no elapsed time to divide by -- and over two reads (last - first) / elapsed_seconds. Drives the companion read `s.rate` of a `sliding` declaration, which the compiler puts on the raw-sample backing (SeriesBackendRingBuffer): libds's `ds_series_ring_buffer_rate`, Mercury's `aggregate(agg_rate)`. A `ttl` schema (LSER.7.6.3). 10 at 0 s, 30 at 1 s, then a third assert; reads pre-sample (LSER.8.6.1): cold, [10] null (no log), [10, 30] 20.0. THE `where` READS A SERIES, SO IT IS RE-READ EVERY PUMP ([LTIM.2.4.1]) and each live fact fires once, on the pump its condition first holds ([LTIM.2.5.1]): at the third pump the two facts before read 20.0 with it, so `r 20.0` logs three times.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Int\n\nseries Sample.level (by: dev):\n    rate sliding 1_h\n\nrule r:\n    Sample s where s.rate is not null\n->\n    log info \"r {s.rate}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 30 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["r 20.0", "r 20.0", "r 20.0"]
+    }
+}

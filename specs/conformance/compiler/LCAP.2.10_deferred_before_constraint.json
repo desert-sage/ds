@@ -1,0 +1,10 @@
+{
+    "id": "LCAP.2.10_deferred_before_constraint",
+    "category": "compiler",
+    "scenario": "[LCAP.2.10] / [LDIA.3.3.7]: the deferred-setting refusal precedes the constraint check of [LDIA.3.5.1]. The block sets `call: false` and `storage_hydrate_facts: true`, which breaks [LCAP.3.8]'s `storage_hydrate_facts` requires `call` (and `default`'s `nocooldown` requires `call`); the compiler refuses the deferred setting with DS_VALIDATE_CAPABILITY_DEFERRED, so a compiler that checks the constraints first reports DS_VALIDATE_CAPABILITY_CONSTRAINT instead. PATH PINNED: the [LCAP.2.10] arm of the deferred-setting check in override resolution in `dsc.dialect`, ahead of the constraint check.",
+    "rules_ds": "use default:\n    call: false\n    storage_hydrate_facts: true\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DEFERRED"
+    }
+}

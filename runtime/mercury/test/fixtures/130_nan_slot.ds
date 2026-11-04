@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A NaN a rule computes into a slot, and an infinity beside it. `overflow`
+# emits `a * 10.0 - a * 10.0`: with `a = 1e308` each product overflows to
+# inf ([LEXP.4.2]: overflow is a producer), and inf - inf is NaN. [RARC.5.2.7]
+# makes that a TypeError naming `Nan.v`; the fact does not enter. `big` emits
+# `a * 10.0`, inf, which a Float slot admits.
+#
+# The operand is a slot, so nothing folds it and the compiler cannot refuse it
+# ([LDET.3.3a.10]); `nan` written as a constant would be a compile error.
+
+schema Reading scope logical:
+    id: Int key
+    a: Float mutable
+
+schema Nan scope logical:
+    id: Int key
+    v: Float mutable
+
+schema Big scope logical:
+    id: Int key
+    v: Float mutable
+
+rule overflow:
+    Reading r
+->
+    emit Nan logical id: r.id v: (r.a * 10.0 - r.a * 10.0)
+
+rule big:
+    Reading r
+->
+    emit Big logical id: r.id v: (r.a * 10.0)

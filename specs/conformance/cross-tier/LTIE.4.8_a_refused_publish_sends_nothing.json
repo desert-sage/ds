@@ -1,0 +1,32 @@
+{
+    "id": "LTIE.4.8_a_refused_publish_sends_nothing",
+    "clauses": ["LTIE.4.8", "LSTR.11.3"],
+    "category": "cross-tier",
+    "scenario": "[LTIE.4.8]: the engine judges a `publish`'s values as it judges an `emit`'s, and \"a `publish` the engine refuses sends nothing\". Tier `edge` runs three firings, one pump each. Rule `nan_up` publishes `Sig v: (x.a - x.a)` over a Reading whose `a` is inf, so the value is NaN, computed from a slot so nothing folds it: a TypeError, as an `emit` of it is ([RARC.5.2.7], [LEXP.4.2]), and the pump reports no error, 0. Rule `long_up` publishes `Note s: \"{t.text}{t.text}\"` over a Trig whose `text` is five codepoints, so the value is ten against `capacity 8`: refused as a bound ([LSTR.11.3]), and the pump reports `DS_ERR_CONTRACT_BREACH`, -710. Rule `long_emit` is the control, an `emit` of the same value into a slot of the same `capacity`: -710 too. `expected_pump_statuses` pins all three ([RCTS.1.2.30]). Then `hub` takes whatever `edge` published (`forward`, [RCTS.1.2.29]) and pumps: it holds 0 facts. What it discriminates: a publish that sent its values unjudged gives `hub` a Sig or a Note, or `hub`'s own assert refuses the NaN or the long String and the step fails; a publish refused with another status than the emit's, or a runtime whose pump reports no status for either refusal, fails the statuses. PATH PINNED: libds's `ds_rete_publish_values` (rete/adapters.c), which judges the values before the publish callback runs, and `ds_rete_wm_assert`'s capacity refusal for the `emit`, each returned by the pump; the Mercury runtime's `ds.exec.publish_verb` and `assert_verb`, each raising its pump status through `lstr_11_3_pump_status`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Reading scope explicit:\n    id: String\n    a: Float\n\nschema Trig scope explicit:\n    k: Int\n    text: String\n\nschema Line scope explicit:\n    k: Int\n    text: String\n\nschema Sig scope explicit:\n    v: Float\n\nschema Note scope explicit:\n    s: String capacity 8\n\nschema Out scope explicit:\n    s: String capacity 8\n\nrule nan_up:\n    Reading x\n->\n    publish Sig v: (x.a - x.a)\n\nrule long_up:\n    Trig t\n->\n    publish Note s: \"{t.text}{t.text}\"\n\nrule long_emit:\n    Line l\n->\n    emit Out s: \"{l.text}{l.text}\"\n"
+            },
+            "hub": {
+                "rules_ds": "schema Sig scope explicit:\n    v: Float\n\nschema Note scope explicit:\n    s: String capacity 8\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Reading", "slots": { "id": "a", "a": Infinity } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "k": 1, "text": "abcde" } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "edge", "op": "assert", "schema": "Line", "slots": { "k": 1, "text": "abcde" } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "expected_pump_statuses": [0, -710, -710, 0],
+        "engine_fact_counts_after": {
+            "hub": 0
+        }
+    }
+}

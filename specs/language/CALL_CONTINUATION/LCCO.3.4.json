@@ -1,0 +1,53 @@
+{
+  "id": "LCCO.3.4",
+  "prefix": "LCCO",
+  "doc": "CALL_CONTINUATION.md",
+  "parent": "LCCO.3",
+  "seq": 126,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCCO.3.4] **A generated correlation is per activation, not per call\nsite.** Each firing of a `call` with no `as`, or whose `as` evaluates to `\"\"`\n([LRST.1.2]), gets its own value ([LCRS.3.1]), of the form `$<outer_rule_name>_c<N>_<u>`, where `<outer_rule_name>`\nis the name of the rule that issues the call, `<N>` is the source-order index of\nthe `call` action among the calls of that rule's own body, counting every call\nwhatever its `as` (zero for the first), and `<u>` is `g<k>`, the value the\nfiring takes from the engine's correlation counter ([LCCO.3.7]).\n\nA call in an `after` body or a continuation body is issued by the synthesized\nrule that runs that body ([RLOW.14.7]), not by the authored rule: its\n`<outer_rule_name>` is that rule's name, `$<rule>_after_<N>` ([LTAC.8.1]) or\n`$<outer>_<kind>_<N>` ([LCCO.4.1]), and its `<N>` counts the calls of that\nbody alone. So the first call in rule `r`'s first `after` body is\n`$$r_after_0_c0_g<k>`. The counter never repeats a value, so the correlation is unique\nwithin the engine, and a replay takes values in the same order, so the same\nrecorded input yields the same correlation ([LDET.2.2]).\nAny other `as` value overrides the generated form and passes through\nunchanged.\n\n**A constant per call site cross-matches concurrent activations.** Two\nfirings in flight at once share it, so one response satisfies both `on`\nsiblings, one activation's capture snapshot joins the other's response, and a\ntimeout sibling sees a sibling activation's answer and never fires. The\nauthor wrote one call per activation and gets one reply per call.\n\n",
+  "refs": [
+    "LCCO.3.7",
+    "LCCO.4.1",
+    "LCRS.3.1",
+    "LDET.2.2",
+    "LRST.1.2",
+    "LTAC.8.1",
+    "RLOW.14.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__empty_corr_call_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "One reply per call: a call whose correlation is generated supersedes nothing. The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcco_3_4__GENERATED",
+        "tag": "spec",
+        "note": "The calls whose correlation the engine generates, one value per firing: a call with no `as`, or whose `as` evaluates to \"\" (LRST.1.2). One of the two calls in every config, the one with no cooldown."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_3_1__corr",
+        "tag": "derives",
+        "note": "A generated correlation is the number of the request it is minted for: unique to the firing, as the clause's counter makes it; its form and the counter are not modelled. The sitecorr teeth engine gives such a call one value per call site, the constant the clause's third paragraph rules out."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lrst_1_2__generated_supersedes_nothing",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "One reply per call: a call whose correlation is generated retracts no answer when it fires and none when its answer arrives, since no other answer carries the firing's value. Bounded as LCRS.6.2.1's issued_call_sweeps; the sitecorr teeth engine violates it, and the generated probe shows two of the call's answers live together, one per firing."
+      }
+    ]
+  }
+}

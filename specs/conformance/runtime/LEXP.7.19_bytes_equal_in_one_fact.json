@@ -1,0 +1,37 @@
+{
+    "id": "LEXP.7.19_bytes_equal_in_one_fact",
+    "category": "runtime",
+    "scenario": "LEXP.7.19: `==` on two `Bytes` values compares their content. Pair p1 holds the same three octets in both slots, so `p.a == p.b` is true and the rule fires. Pair p2 holds two values of one length that differ in the last octet, and p3 a value and a prefix of it; neither fires. Three Pairs plus one Found. A `Bytes` slot is written `{\"$bytes\": \"<hex>\"}` (the harness's form, read alike by both drivers). PATH PINNED: a slot-versus-slot test inside one pattern, which no alpha test can carry (there is no `Bytes` literal), so the predicate evaluator answers it: libds `rete/eval.c` `val_eq_unordered` through the BINOP comparison arm; Mercury `ds.eval` `compare_outcome`. p2 pins content over length, p3 length over a shared prefix.",
+    "rules_ds": "schema Pair scope logical:\n    id: String key\n    a: Bytes mutable\n    b: Bytes mutable\n\nschema Found scope logical:\n    id: String key\n\nrule r:\n    Pair p where p.a == p.b\n->\n    emit Found logical id: p.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p1",
+                    "a": { "$bytes": "610062" },
+                    "b": { "$bytes": "610062" }
+                }
+            },
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p2",
+                    "a": { "$bytes": "610062" },
+                    "b": { "$bytes": "610063" }
+                }
+            },
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p3",
+                    "a": { "$bytes": "6100" },
+                    "b": { "$bytes": "610062" }
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 4
+    }
+}

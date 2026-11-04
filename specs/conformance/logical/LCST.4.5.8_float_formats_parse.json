@@ -1,0 +1,26 @@
+{
+    "id": "LCST.4.5.8_float_formats_parse",
+    "category": "logical",
+    "scenario": "[LCST.4.5.8]: `::Float?` parses every signed INT_LIT and FLOAT_LIT spelling, and `inf`. Rule `thousand` matches strings that parse to 1500.0, and covers: an integer, a separated integer, a dotted float, both exponent cases, a signed exponent, a bare-mantissa exponent, a hex integer, a leading `+`, and a separated dotted float. `neg` matches -1500.0, `pinf` +Inf and `ninf` -Inf, which covers the `inf` / `-inf` that [LCST.4.5.6] renders and promises round-trip. PATH PINNED: FN_STRING_TO_FLOAT's runtime adapter in both runtimes; the source is a slot read. libds's strtod today takes neither `1_500` nor `1_500.0`, so this vector fails on it.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule thousand:\n    S s where (s.txt::Float? ?? 0.0) == 1500.0\n->\n    log info \"{s.txt}\"\n\nrule neg:\n    S s where (s.txt::Float? ?? 0.0) == -1500.0\n->\n    log info \"{s.txt}\"\n\nrule pinf:\n    S s where (s.txt::Float? ?? 0.0) > 1.0e308\n->\n    log info \"{s.txt}\"\n\nrule ninf:\n    S s where (s.txt::Float? ?? 0.0) < -1.0e308\n->\n    log info \"{s.txt}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "1500" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "1_500" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "1500.0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "1.5e3" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "1.5E3" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "1.5e+03" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "15e2" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "0x5DC" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "i", "txt": "+1.5e3" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "j", "txt": "1_500.0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "k", "txt": "-1.5e3" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "l", "txt": "inf" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "m", "txt": "-inf" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "1500", "1_500", "1500.0", "1.5e3", "1.5E3", "1.5e+03", "15e2", "0x5DC", "+1.5e3", "1_500.0", "-1.5e3", "inf", "-inf" ]
+    }
+}

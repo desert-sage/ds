@@ -1,0 +1,16 @@
+{
+  "id": "NDBG.1.2",
+  "prefix": "NDBG",
+  "doc": "INTROSPECTION.md",
+  "parent": "NDBG.1",
+  "seq": 40,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDBG.1.2] **Several reads are only meaningful while the engine is paused** —\nthat is, between pumps, when the integrator's driver has stopped advancing the\nengine and working memory is quiescent. Specifically: live occupancy in\n`ds_engine_rete_network` ([NDBG.4.1]) and `ds_engine_get_justifiers`\n([NDBG.5.2]). Reading them mid-pump yields a torn snapshot. A debugger tracks its\nown paused state and gates these reads on it (the DAP bridge does exactly this).\n\nThe engine gates it too, and more broadly: the only way to be on the pump's\nstack is from inside a callback, and **every** `ds_engine_*` call from there\nreturns `DS_ERR_STATE` ([RARC.13.16]) — reads included. So a mid-pump read is\nrefused rather than torn. A debugger's own paused-state tracking stays worth\nhaving, because it keeps the debugger from asking a question it will be told to\nstop asking.\n\n",
+  "refs": [
+    "NDBG.4.1",
+    "NDBG.5.2",
+    "RARC.13.16"
+  ]
+}

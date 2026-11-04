@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_nan_start_raises_domain",
+    "clauses": ["RLOW.6.1.7", "LEXP.4.2"],
+    "category": "logical",
+    "dead_rules_expected": ["inside"],
+    "scenario": "[LINT.7.2]: an interval with a NaN endpoint is invalid, because `start <= end` is false ([LEXP.4.2]: a NaN is a `Float` an expression may compute). One F with `z` 0.0, `t` 1.0 and `b` 5.0: rule `inside` tests `f.t in ((f.z / f.z) .. f.b)`, whose start is 0.0 / 0.0, NaN ([LDET.3.6.2]: a Float division by zero traps nothing). It does not fire, and rule `handler` logs the DOMAIN fault's kind, schema and slot (not its `rule`, which for a trap raised during matching is a node name, [LERR.9.2]). The start is computed, not a slot read, so the fault's schema and slot are empty ([LERR.9.12]): `DOMAIN [] []`. The old condition, invalid when `end < start`, admitted this interval: `5.0 < NaN` is false. PATH PINNED: FN_INTERVAL_CHECK's pair test, which is `s <= e` under the element type's `<=` ([LEXP.7.3]: a NaN compares false), in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema F scope logical:\n    id: Int key\n    t: Float mutable\n    z: Float mutable\n    b: Float mutable\n\nrule inside:\n    F f where f.t in ((f.z / f.z) .. f.b)\n->\n    log info \"inside {f.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "F", "slots": { "id": 1, "t": 1.0, "z": 0.0, "b": 5.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN [] []"]
+    }
+}

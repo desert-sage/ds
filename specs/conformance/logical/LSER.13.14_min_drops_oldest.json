@@ -1,0 +1,23 @@
+{
+    "id": "LSER.13.14_min_drops_oldest",
+    "category": "logical",
+    "scenario": "[LSER.13.14]: at capacity a **drop** aggregation evicts the identity's oldest sample. `min sliding 1_h` with `capacity: 2` takes 1, 5, 6, 7 one per pump inside the window, each read pre-sample ([LSER.8.6.1]): cold (no log), [1] -> 1, [1, 5] -> 1, then the third sample drops 1 and the read of [5, 6] is 5. Drives the monotonic-deque backing (SeriesBackendMonotonicDeque) in both runtimes: libds `series/monotonic_deque.c`, which evicts by sequence number once the identity holds `max_samples`, and the Mercury `ds.series` deque kept to the newest N.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev, capacity: 2):\n    min sliding 1_h\n\nrule r:\n    Reading s where s.min is not null\n->\n    log info \"min {s.min}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 6 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["min 1", "min 1", "min 5"]
+    }
+}

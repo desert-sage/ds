@@ -1,0 +1,19 @@
+{
+    "id": "LCST.4.5.8_separator_in_exponent",
+    "clauses": ["LLEX.11.2", "LLEX.12.1.1"],
+    "category": "logical",
+    "scenario": "[LCST.4.5.8] with [LLEX.11.2] and [LLEX.12.1.1]: `String :: Float?` reads a `_` in an exponent as a source literal places it, between two digits. `1e1_0` is `1.0e10` and `1_000e1_0` is `1.0e13`; `1e_10` (a `_` before the first exponent digit), `1e10_` (a trailing `_`) and `1e1__0` (two in a row) are not FLOAT_LITs and read `null`, which the rule replaces with the sentinel `-1.0`. The rule logs the input beside the value, rendered by [LDET.3.2.7] in fixed notation. Each `S` is asserted before the one pump, so the rule fires in assert order. Pin: the five messages in order. A scanner that refuses every `_` in an exponent logs \"-1.0\" for the first two; one that skips every `_` reads the last three as numbers. PATH PINNED: `FN_STRING_TO_FLOAT`'s runtime adapter, libds `adapter_ds_string_to_float` and Mercury `ds.eval`'s `cast_builtin(fn_string_to_float)`, both through `ds_parse_float_text`'s `decimal_to_double`, whose exponent is `digit_run`'s `DIGIT ('_'? DIGIT)*` (`float_text/float_parse.cc`).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule render:\n    S s\n->\n    let v = s.txt::Float? ?? -1.0\n    log info \"{s.txt} {v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "1e1_0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "1_000e1_0" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "1e_10" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "1e10_" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "1e1__0" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1e1_0 10000000000.0", "1_000e1_0 10000000000000.0", "1e_10 -1.0", "1e10_ -1.0", "1e1__0 -1.0"]
+    }
+}

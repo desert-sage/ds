@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.14_null_skip_is_not_counted",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LSER.13.14] x [LNUL.8.6]: under `nulls: skip` a null reading absorbs nothing, so it is no sample: it neither counts against `N` nor is refused. The control for `LSER.13.14_null_hold_counts_against_capacity`: the same shape -- `integral sliding 1_h` over a `Float?` slot with `capacity: 2`, three superseding asserts of one identity before a pump, 1.0 then null then null -- under `nulls: skip`. The identity has one sample pending at the third assert, and the arriving null is none, so every assert is admitted; after the pump the identity is one logical fact. PATH PINNED: the same pre-assert capacity check taking the skip arm for both the pending null and the arriving one (libds `capacity_reading_absorbs`; Mercury `ds.series.lser_13_14_absorbs`).",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    power: Float? mutable\n    n: Int mutable\n\nseries Reading.power (by: dev, capacity: 2, nulls: skip):\n    integral sliding 1_h\n\nrule r:\n    Reading s where s.integral > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Reading", "slots": { "dev": "k", "power": 1.0, "n": 1 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 2 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 3 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

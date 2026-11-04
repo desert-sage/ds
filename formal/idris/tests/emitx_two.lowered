@@ -1,0 +1,19 @@
+# lowered from the probe emitx_two_values.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# emitx_two.expected (scripts/formal/check_idris.py). LSCO.2.1's copy emit over TWO Trig
+# values: the copied value decides which tuple each Result carries ("t1"
+# is token 0, "t2" token 1: the blocks 3 and 11), so an emit that ignored the
+# bound fact would give both Results one payload. Agrees with libds
+# (idris_churn.py --fixtures on the probe).
+schema 0 relation Trig
+schema 1 explicit Result
+alpha 0 0
+alpha 1 1
+rule 0 make_result
+pattern 0 0 0
+emitx 0 1 0 1 slot 0 key 0
+step assert t1 0 1000000000000000000003 1
+step assert t2 0 1000000000000000000011 1
+step pump
+step retract t1
+step pump

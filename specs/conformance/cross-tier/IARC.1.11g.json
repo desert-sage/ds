@@ -1,0 +1,75 @@
+{
+    "id": "IARC.1.11g",
+    "category": "cross-tier",
+    "scenario": "Three engines coexisting \u2014 fact bookkeeping is per-engine across N>2 instances. Pins that engine count is unbounded (no global table cap). Pins IARC.1.11 \u2014 engine count is unbounded, no global table cap.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "b": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "c": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "engine": "c",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "c",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "engine": "c",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 3
+                }
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 1,
+            "b": 2,
+            "c": 3
+        }
+    }
+}

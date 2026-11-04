@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6_interp_let_const_literal_ok",
+    "clauses": ["LGRA.2.9.6.2"],
+    "category": "compiler",
+    "scenario": "A `let` bound to a bare const / integer / float / bool literal, interpolated by name, must lower cleanly. Pin: `const PLANT_CAP = 10` -> `let cap = PLANT_CAP` -> `log critical \"...{cap}...\"` (plus float and bool consts) compiles. PATH PINNED: `dsc.rete`'s `site_value`, its `let_inline` arm. (Case 1 — a const referenced DIRECTLY in a `{...}` site — is a separate interpolation-surface question, not covered here.)",
+    "rules_ds": "use default\n\nconst PLANT_CAP = 10\nconst RATE = 1.5\nconst ARMED = true\n\nschema PlantQuery scope logical:\n    id: String key\n    revectoring: Int mutable\n\nrule plant_hold_capped:\n    PlantQuery p where p.revectoring >= PLANT_CAP\n->\n    let cap = PLANT_CAP\n    let speed = RATE\n    let armed = ARMED\n    log critical \"hold:{p.id}:{cap}:{speed}:{armed}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

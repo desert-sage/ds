@@ -1,0 +1,14 @@
+{
+    "id": "LCRS.10.4.5",
+    "clauses": ["LCRS.10.4.2"],
+    "category": "compiler",
+    "scenario": "A service no imported library declares is refused, with a whole-library import in scope. A service takes no library qualifier, and a service name is looked up as written. `import ha` brings in library `ha`, which declares only `light.turn_on`. The rule writes `call weather.get_forecasts`, which no declaration names, so it is DS_VALIDATE_UNKNOWN_SERVICE ([LCRS.10.4.2], [LADP.8.2.3]). PATH PINNED: `ladp_8_2_3_service` in dsc.validate, its bare arm, against the service table dsc.imports fills from the whole import closure (LGRA.10.1.6): a whole-library import brings every service under its own name and nothing else.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call weather.get_forecasts location: \"home\" cooldown: 1_h\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SERVICE"
+    }
+}

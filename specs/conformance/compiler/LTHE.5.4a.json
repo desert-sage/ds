@@ -1,0 +1,10 @@
+{
+    "id": "LTHE.5.4a",
+    "category": "compiler",
+    "scenario": "`then` after a negated pattern rejects with DS_VALIDATE_THEN_AFTER_NEGATION per LTHE.5 / LGRA.8.5. A negated predecessor has no fact to bind a `ts` from, so the follower cannot wire its `follows_from` to the predecessor's binding. Pin: `no Trig t then Signal s within 30_s` rejects.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n    ts: Time\n\nschema Signal scope logical:\n    payload: Int key\n    ts: Time\n\nrule r:\n    no Trig\n    then Signal within 30_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_THEN_AFTER_NEGATION"
+    }
+}

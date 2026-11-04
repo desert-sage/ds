@@ -1,0 +1,16 @@
+{
+    "id": "LFAC.2.5.1_json_member_order",
+    "category": "runtime",
+    "scenario": "[LFAC.2.5.1]: an object's member order carries no meaning. Two asserts of a `Json key` payload with the same members in the other order, nested one level down as well, are one identity, so one fact. A third payload differing in one leaf is a second fact. PATH PINNED: the identity-key comparison (libds `rete/wm_rete.c` `idkey_equal` and its hash, both through `json.c` `ds_json_deep_equal`; Mercury's `ds.json` term, whose members are stored sorted so `=` is the relation). The no-op test uses the same function in libds, so the two cannot drift apart.",
+    "rules_ds": "schema Reading scope logical:\n    payload: Json key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Reading", "slots": { "payload": { "a": 1, "b": { "c": 2, "d": 3 } } } },
+            { "schema": "Reading", "slots": { "payload": { "b": { "d": 3, "c": 2 }, "a": 1 } } },
+            { "schema": "Reading", "slots": { "payload": { "a": 1, "b": { "c": 2, "d": 4 } } } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LDET.5.5b",
+    "category": "logical",
+    "scenario": "Multiple activations at the same clock instant fire in activation-creation order per LDET.5.5. Two facts matching the same rule fire in assertion order: item asserted first fires first. Pin: assert 'a' then 'b'; pump; log messages appear as ['a', 'b'].",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n\nrule r:\n    Item i\n->\n    log critical \"{i.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "a" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "b" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a", "b"]
+    }
+}

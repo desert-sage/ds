@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.23.2_unit_default_same_dimension",
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a unit-typed kwarg takes a `default` that is a quantity in the unit's dimension, in any unit of it. `kwarg t: celsius default 68_fahrenheit` compiles. PATH PINNED: `lgra_23_2_default_misfit`'s `te_unit(uk_symbol(_), _)` arm in dsc.validate, which reads the default's dimension through `dsc.quantity.luni_3_1_7_unit_of` and finds it equal to the kwarg's. The break is restoring the strict four-type check that refused any default it could not read as a scalar literal, or comparing the default's unit rather than its dimension: either refuses this program.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\nunit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg t: celsius default 68_fahrenheit\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

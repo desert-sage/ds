@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.7.3c",
+    "category": "compiler",
+    "scenario": "A bare (un-negated) integer literal 9223372036854775808 = 2^63 is one past INT64_MAX and is a range error per LGRA.2.7.3, even though `-9223372036854775808` (INT64_MIN) is valid (LGRA.2.7.3b). Confirms the INT64_MIN admission does not leak into the positive range.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v > 9223372036854775808\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_INT_RANGE"
+    }
+}

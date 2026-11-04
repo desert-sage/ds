@@ -1,0 +1,11 @@
+{
+    "id": "DS03_reserved_meta_kwarg",
+    "clauses": ["LLEX.9.7"],
+    "category": "compiler",
+    "scenario": "ISSUE DS-03 — a service `kwarg` (or schema slot) named after a reserved control-plane call/emit modifier (`retain` / `cooldown` / `nocooldown` / `as`) is intercepted as the modifier at the call/emit site and its value silently dropped. Reserve the names against binding-target declarations so the collision is a declaration-time error, not silent data loss. Pin: a service declaring `kwarg retain:` is DS_VALIDATE_RESERVED_META_KWARG.",
+    "rules_ds": "service mqtt.publish:\n    kwarg topic: String required\n    kwarg retain: Bool\n    no response\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RESERVED_META_KWARG"
+    }
+}

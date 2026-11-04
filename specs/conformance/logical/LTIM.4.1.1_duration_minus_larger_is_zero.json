@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_duration_minus_larger_is_zero",
+    "category": "logical",
+    "dead_rules_expected": ["negative"],
+    "scenario": "[LTIM.4.1.1] / [LTIM.1.3.1]: `Duration - Duration` with the right operand the larger is `0_s`. One D, `x` 2 s and `y` 5 s. Rule `saturates` fires where `d.x - d.y == 0_s`; rule `negative`, where `d.x - d.y < 0_s`, would fire on the unsaturated -3 s and must not; rule `render` logs `(d.x - d.y)::String`, `0s`. A constant `BACK = 0_s - 3_d` is inlined where rule `back` reads it, and is `0_s` there too, so `back` fires. PATH PINNED: `dsc.rete`'s `rlow_6_1_6_saturating` lowering `Duration - Duration` to `FN_MAX(x - y, 0)` ([RLOW.6.1.6]), in a join test, in an action, and in a constant's inlined right-hand side (`lgra_13_3_const`).",
+    "rules_ds": "const BACK = 0_s - 3_d\n\nschema D scope logical:\n    id: Int key\n    x: Duration mutable\n    y: Duration mutable\n\nrule saturates:\n    D d where d.x - d.y == 0_s\n->\n    log info \"zero\"\n\nrule negative:\n    D d where d.x - d.y < 0_s\n->\n    log info \"negative\"\n\nrule render:\n    D d\n->\n    let s = (d.x - d.y)::String\n    log info \"d {s}\"\n\nrule back:\n    D d where d.id == 1 and BACK == 0_s\n->\n    log info \"back\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "D", "slots": { "id": 1, "x": 2000000000, "y": 5000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zero", "d 0s", "back"]
+    }
+}

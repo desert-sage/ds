@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.4.2.3_date_minus_later_date_is_zero",
+    "clauses": ["LTIM.4.2.3", "RLOW.6.1.6"],
+    "category": "logical",
+    "dead_rules_expected": ["negative"],
+    "scenario": "[LTIM.4.2.3]: `a - b` of two `Date`s is `0_s` when `a` is the earlier. One Span, `a` 2024-02-29 (day 19782) and `b` 2024-03-03 (day 19785). Rule `saturates` fires where `s.a - s.b == 0_s`; rule `negative`, where `s.a - s.b < 0_s`, would fire on the unsaturated -3 days and must not; rule `render` logs `(s.a - s.b)::String`, `0s`. PATH PINNED: FN_DATE_DIFF's saturation ([RLOW.6.1.6]: \"`Date - Date` saturates inside `FN_DATE_DIFF`\"), in libds (`rete/adapters.c`, `adapter_ds_date_diff`) and Mercury (`ds.eval.ltim_4_2_3_date_diff`).",
+    "rules_ds": "schema Span scope logical:\n    id: Int key\n    a: Date mutable\n    b: Date mutable\n\nrule saturates:\n    Span s where s.a - s.b == 0_s\n->\n    log info \"zero\"\n\nrule negative:\n    Span s where s.a - s.b < 0_s\n->\n    log info \"negative\"\n\nrule render:\n    Span s\n->\n    let d = (s.a - s.b)::String\n    log info \"span {d}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Span", "slots": { "id": 1, "a": 19782, "b": 19785 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zero", "span 0s"]
+    }
+}

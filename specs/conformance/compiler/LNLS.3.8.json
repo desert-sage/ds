@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.8",
+    "category": "compiler",
+    "scenario": "[LNLS.3.8]: ordering `String` slots of two different patterns is a compile error in a `+nolinscan` file. The rule is key-anchored ([LNLS.3.3]) so the ordering is the only thing wrong with it. PATH PINNED: `dsc.validate.lnls_compare`, both operands `String` slots of different bindings. `LNLS.3.8_numeric_ok` is the control: the clause names String slots, and Int ordering across patterns compiles.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Left scope logical:\n    k: Int key\n    tag: String mutable\n\nschema Right scope logical:\n    k: Int key\n    tag: String mutable\n\nrule r:\n    Left a\n    Right b where b.k == a.k and b.tag > a.tag\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_STRING_ORDER"
+    }
+}

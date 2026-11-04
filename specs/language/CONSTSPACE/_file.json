@@ -1,0 +1,15 @@
+{
+  "doc": "CONSTSPACE.md",
+  "tree": "language",
+  "src": "docs/specs/language/CONSTSPACE.md",
+  "prefixes": [
+    "LCSP"
+  ],
+  "title": "Constant-space strategy `constspace`",
+  "preamble": "# Constant-space strategy `constspace`\n\nThe `constspace` strategy capability. A program compiled\n`constspace` runs a slab-pool / pre-sized-arena allocator, makes no WCET\nclaim, requires no `.dsrt` contract, and remains compatible with AOT `CompiledCode`\natoms.\n\nPrefix `LCSP`.\n\nPaired with:\n\n- [LDIA] — the `use` mechanism and\n  extension token surface this extends.\n- [RTCT] — the stricter sibling. `realtime` ⊃ `constspace` (every\n  `realtime` program is also `constspace`).\n- [RAOT] — the no-`CompiledCode`-atoms-under-`realtime` gate does **not**\n  apply to `constspace`.\n\n## What this is not\n\n- Not a WCET claim. Pump time is unbounded under `constspace`\n  alone; the `T_wcet` formula (LDTL.7) does not apply.\n- Not a guarantee of zero allocation **ever** — the engine allocates\n  pools at boot (engine creation, then pool sizing). The\n  guarantee is **no allocation on the hot path** (assert / pump /\n  fire).\n- Not a replacement for `realtime`. Use `realtime` when WCET\n  matters.\n- Not a contract carrier — `constspace` programs MUST NOT ship a\n  `.dsrt` file (per [LCSP.4.2]).\n\n---\n\n",
+  "paired_with": [
+    "CODE_AOT.md",
+    "DIALECTS.md",
+    "REALTIME_CONTRACT.md"
+  ]
+}

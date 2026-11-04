@@ -1,0 +1,17 @@
+{
+    "id": "LSER.16.4.1_p5_reads",
+    "category": "logical",
+    "scenario": "LSER.16.4.1: `pXX` for any integer percentile in 1..99. Drives the companion-slot read `s.p5` through validate (the bundled backend's claim list), lowering and the series read path. The second read, pre-sample (LSER.8.6.1), sees the one-sample window [10], whose p5 is 10.0 under any percentile method. The first read is cold and does not log.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    p5 sliding 1_h\n\nrule r:\n    Reading s where s.p5 is not null\n->\n    log info \"p5 {s.p5}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":20 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["p5 10.0"]
+    }
+}

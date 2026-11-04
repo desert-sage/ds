@@ -1,0 +1,21 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// CacheSeed — atom body ([RFCS.26]). One cache entry the host seeded before
+// the engine's first stream event ([NLFC.9.1]), written in the stream's
+// prelude ([RFCS.26.1]) so a replay reproduces the cache without the host
+// seeding the replaying engine ([RFCS.26.2]).
+//
+// Inject class: applied to the engine on replay and never compared. It is no
+// stream event and carries no seq: a seed emits none ([NFCT.1.1]).
+//
+// An `initial` block's cache items are not recorded here: the artefact
+// carries them, and a replay applies them as the run did ([LGRA.24.3]).
+message CacheSeed {
+  string key         = 1;  // the cache key, as the host passed it
+  string value_json  = 2;  // the value as the cache holds it: canonical JSON text ([IARC.12.2])
+  uint64 deadline_ns = 3;  // engine-clock deadline (ns) the cache holds; 0 = no expiry
+}

@@ -1,0 +1,8 @@
+{
+    "id": "LCST.4.5_fact_to_json_ok",
+    "clauses": ["RLOW.1.6"],
+    "category": "compiler",
+    "scenario": "dsc.rete does not lower a `fact::Json` cast (it has no defined shape), so dsc.driver refuses the rule with DS_VALIDATE_RULE_NOT_LOWERED (RLOW.1.6) instead of writing an artefact without it. LCST.4.5.2 states `fact -> Json` as a total conversion: any fact-typed source converts to Json, here `emit Out payload: s::Json` where s is a pattern binding (total, no `?`).",
+    "rules_ds": "schema Sample scope logical:\n    x: String key\n\nschema Out scope ttl 1_h:\n    payload: Json\n\nrule r:\n    Sample s\n->\n    emit Out payload: s::Json\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_RULE_NOT_LOWERED" }
+}

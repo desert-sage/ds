@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.5.2a",
+    "category": "compiler",
+    "scenario": "[LNUL.5.2] — a leading `is not null and` guard before an arithmetic tail compiles. SCOPE: [LNUL.5.1] makes arithmetic a Kleene consumer, so the tail `s.state + 1 > 5` compiles with or without the guard (LNUL.5.1c), and this vector shows only that the guarded form is accepted. Narrowing does its real work at a concrete-value position ([LNUL.5.2]'s `emit` case), which a compile_ok here cannot pin.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Out scope logical:\n    k: String key\n    val: Float mutable\n\nschema OutN scope logical:\n    k: String key\n    maybe: Float? mutable\n\nrule r:\n    Sensor s where s.state is not null and s.state + 1 > 5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

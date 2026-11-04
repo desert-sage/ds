@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.4.3.4_emit_through_an_aliased_response_is_refused",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: an `emit` of a schema named in a `response_decl` is refused when the declaration and the `emit` both reach it through an import alias. `from b import Reply as BR` binds `BR` to `b`'s `Reply`, whose own name differs from the spelling, so a comparison of the spelling with the schema's name would miss it. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag` through `lcrs_4_3_4_answer_schema`, over `rf_response_names`, which `dsc.imports.lgra_23_1_responses` fills.",
+    "rules_ds": "from b import Reply as BR\n\nservice svc.read:\n    kwarg n: Int\n    response BR\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit BR corr: \"c\" v: 1\n",
+    "libraries": {
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ANSWER_EMIT_FORBIDDEN"
+    }
+}

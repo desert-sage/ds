@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.5.1_implicit_at_where_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.4.5.1] position 2: an `implicit` unit formula auto-applies at a cross-dimension `where` comparison between two pattern-bound variables. `a.freq > b.period` compares a frequency (Hz) with a time (nanosecond), and the program compiles because `hz_period` applies there. NOT HERE: which operand converts and the operator flip `inverting` adds, [LUNI.4.5.2]. A `compile_ok` cannot see which operator the comparison lowered to; logical/LUNI.4.5.2_inverting_flips_the_operator and logical/LUNI.4.5.2_non_inverting_keeps_the_operator run them on both runtimes.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period inverting implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nschema A scope logical:\n    freq: Hz key\nschema B scope logical:\n    period: nanosecond key\n\nrule cmp:\n    A a\n    B b where a.freq > b.period\n->\n    log info \"matched\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.5.3.coalesce_yields_the_value_or_the_default",
+    "category": "logical",
+    "scenario": "[LNUL.5.3]: `x ?? d` yields `x` when `x` is present and `d` when it is null, for Int and String alike. One C fact holds iv = 5, inull = null, sv = \"a\" and snull = null. Each case is compared with the answer it must give, and a rule beside it compares the same expression with the answer it must not give. So `int_present` ((iv ?? 0) == 5), `int_null` ((inull ?? 0) == 0), `str_present` ((sv ?? \"\") == \"a\") and `str_null` ((snull ?? \"\") == \"\") fire. `dead_rules_expected` requires the four `_wrong` rules never to: a `??` that always took the default fires `int_present_wrong` and `str_present_wrong`. One that left a null alone fires none of the null cases, and its rules then miss. `runtime/LNUL.8.9a` and `8.9b` pin a Float null taking its default inside a comparison. Agenda order is source order ([LDET.5.4]). Path: libds rete/eval.c DS_RETE_EXPR_COALESCE, Mercury ds.eval ev_node(e_coalesce(...)).",
+    "rules_ds": "schema C scope logical:\n    id: String key\n    iv: Int? mutable\n    inull: Int? mutable\n    sv: String? mutable\n    snull: String? mutable\n\nrule int_present:\n    C c where (c.iv ?? 0) == 5\n->\n    log info \"int_present\"\n\nrule int_present_wrong:\n    C c where (c.iv ?? 0) == 0\n->\n    log info \"int_present_wrong\"\n\nrule int_null:\n    C c where (c.inull ?? 0) == 0\n->\n    log info \"int_null\"\n\nrule int_null_wrong:\n    C c where (c.inull ?? 0) == 5\n->\n    log info \"int_null_wrong\"\n\nrule str_present:\n    C c where (c.sv ?? \"\") == \"a\"\n->\n    log info \"str_present\"\n\nrule str_present_wrong:\n    C c where (c.sv ?? \"\") == \"\"\n->\n    log info \"str_present_wrong\"\n\nrule str_null:\n    C c where (c.snull ?? \"\") == \"\"\n->\n    log info \"str_null\"\n\nrule str_null_wrong:\n    C c where (c.snull ?? \"\") == \"a\"\n->\n    log info \"str_null_wrong\"\n",
+    "dead_rules_expected": ["int_present_wrong", "int_null_wrong", "str_present_wrong", "str_null_wrong"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "C", "slots": { "id": "c", "iv": 5, "inull": null, "sv": "a", "snull": null } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["int_present", "int_null", "str_present", "str_null"]
+    }
+}

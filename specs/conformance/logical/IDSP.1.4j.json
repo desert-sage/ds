@@ -1,0 +1,30 @@
+{
+    "id": "IDSP.1.4j",
+    "category": "logical",
+    "scenario": "Strict-sequence event match \u2014 a rule with one log action emits exactly fact_assert + rule_fire_begin + action_log + rule_fire_end with no extras. Pins the strict event surface for one rule firing. Pins IDSP.1.4 \u2014 strict event surface for one rule firing (no spurious events). The run's two step events are part of that surface: the assert takes the engine's first clock sample, recorded as a tick before the assert ([LTIM.2.8.5]), and the pump announces itself with a pump boundary before it fires ([RFCS.22]); the pump's own sample is unchanged, so it records no second tick.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "tick",
+            "fact_assert",
+            "pump",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

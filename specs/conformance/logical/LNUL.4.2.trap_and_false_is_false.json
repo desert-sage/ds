@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.trap_and_false_is_false",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: `and` ABSORBS a trap. `s.a / s.b > 1.0 and s.ok` with Int a, b and b = 0, and ok = false, is `false` (Int operands, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf and there would be no trap to absorb): the division traps, the right conjunct is `false`, and a `false` decides the `and` wherever it stands. No ComputationError is recorded and the rule does not fire. The `false` comes from a slot so the compiler cannot fold it. Path: an `and` inside one `where`. Neither conjunct is a slot compared with a literal, so nothing hoists into the alpha test and the compiler emits the `where` as ONE join test; libds evaluates it in rete/eval.c's AND arm with the left operand's trap HELD (ds_rete_eval_holding) and dropped, Mercury in ds.eval.lnul_4_2_absorbing. beta.c's multi-test arm of join_tests_eval is not driven.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    ok: Bool mutable\n\nrule r:\n    S s where s.a / s.b > 1.0 and s.ok\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "ok": false } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

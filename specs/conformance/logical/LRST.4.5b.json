@@ -1,0 +1,46 @@
+{
+    "id": "LRST.4.5b",
+    "category": "logical",
+    "scenario": "The other direction of LRST.4.5, and the reason the sibling case is not sufficient on its own: two activations under DISTINCT `as` keys supersede nothing and both fire. Pin: `fired dev1` and `fired dev2` both appear, so a sweep that matched too widely -- retracting on schema alone rather than on the key, or keying the sweep on something every activation shares -- fails here while passing LRST.4.5. Same lowering site as LRST.4.5 (dsc.rete.clause_corr); this one drives the FN_RETRACT_CORR argument rather than its presence. The message ORDER is LDET.5.5's: both follow-ups share one terminal and complete in the same pump when `$ClockTick` joins, so they are ordered by their facts, pattern by pattern, and dev1's timer entered working memory first -- `dev1` fires before `dev2`. The order is incidental to supersedure: a failure on order alone is not a supersedure regression.",
+    "rules_ds": "schema Request scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule r:\n    Request e\n->\n    log info \"start\"\n    after 30_s as e.entity_id:\n        log info \"fired {e.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Request",
+                "slots": {
+                    "entity_id": "dev1",
+                    "n": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Request",
+                "slots": {
+                    "entity_id": "dev2",
+                    "n": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 31000000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_messages": [
+            "start",
+            "start",
+            "fired dev1",
+            "fired dev2"
+        ]
+    }
+}

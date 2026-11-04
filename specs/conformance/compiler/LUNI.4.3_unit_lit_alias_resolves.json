@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.3_unit_lit_alias_resolves",
+    "category": "compiler",
+    "scenario": "LUNI.4.3 — declared aliases of a unit symbol resolve to the same entry as the canonical name. `unit kilometer: length = x * 1000 alias km` makes `1_km` a literal of `kilometer`. PATH PINNED: `dsc.quantity`'s `luni_3_1_7_unit_of`, which looks in `rf_types` first and `rf_unit_alias` second, so a canonical name takes precedence. `compile_ok` does not observe the value.",
+    "rules_ds": "unit kilometer: length = x * 1000 alias km\n\nschema Distance scope logical:\n    d: Float key\n\nrule far:\n    Distance r where r.d > 1_km\n->\n    log info \"more than a km via alias\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

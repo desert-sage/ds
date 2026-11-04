@@ -1,0 +1,20 @@
+{
+    "id": "RLOW.4.6.6.1_window_lapses",
+    "category": "adapter",
+    "scenario": "Per-call `cooldown:` holds a call back only inside its window. `a` fires the call; after the clock passes the 30 s window, `a` fires again (a new `level`) and the call is issued again. Expected: two calls, both for `a`. A gate that never released would issue one. PATH PINNED: the compiler's per-call gate (`dsc.rete.rlow_4_6_6_1_call_gates`) and `adapter_ds_rate_allow`'s window check against the engine clock, in libds's action loop (`rete/engine.c`, ACTION_CALL).",
+    "rules_ds": "schema Dev scope logical:\n    id: String key\n    level: Int mutable\n\nservice svc.x:\n    kwarg id: String\n    no response\n\nrule r:\n    Dev d\n->\n    call svc.x id: d.id cooldown: 30_s\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 1}},
+            {"op": "pump"},
+            {"op": "advance", "delta_ns": 31000000000},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 2}},
+            {"op": "pump"}
+        ],
+        "expected_calls": [
+            {"service": "svc.x", "correlation": "$r_c0_g0", "body": {"id": "a"}},
+            {"service": "svc.x", "correlation": "$r_c0_g1", "body": {"id": "a"}}
+        ]
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LTAC.4.3",
+    "category": "logical",
+    "scenario": "Multiple parent fires create independent timers per LTAC.4.3 — each parent activation asserts a separate timer fact; two fires create two timers; both follow-ups eventually fire. Pin: two different triggers → both after-clauses fire (two `$..._after_0` firings).",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nrule notify:\n    Trig t\n->\n    log info \"triggered\"\n    after 3_s:\n        log info \"delayed: {t.entity_id}\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "a" } },
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": [
+            "notify", "notify",
+            "$notify_after_0", "$notify_after_0"
+        ]
+    }
+}

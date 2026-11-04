@@ -1,0 +1,13 @@
+{
+    "id": "LCYC.3.2.2_call_edge_through_call_error_across_modules",
+    "category": "compiler",
+    "scenario": "[LCYC.3.2.2]'s call edge runs to \"a pattern, positive or under `no`, over that service's response schema or over `CallError`\", and the pattern here is in another module. The root's `again` calls `service.a`, a `no response` service, as \"a-call\". `lib`'s `on_error` matches `CallError` with that `corr` and emits `Trig`, which `again` matches. So the two rules are one SCC that consumes what its `call` produces, and [LCYC.3.1.1] refuses it with DS_VALIDATE_RULE_CYCLE: for a service with no response, over `CallError` alone. Its control is `LCYC.6.1_call_error_edge_across_modules_pins_another_corr`. PATH PINNED: `dsc.cycle.lcyc_3_2_2_unit_outcomes`'s `CallError` outcome through `unit_emission`, and `unit_match` in `lib`. The break is an edge dropped for a built-in reached from two modules: the program compiles.",
+    "rules_ds": "from lib import service, Trig\n\nrule again:\n    Trig\n->\n    call service.a nocooldown as \"a-call\"\n",
+    "libraries": {
+        "lib": "schema Trig scope ttl 1_h:\n    k: Int\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    no response\n\nrule on_error:\n    CallError e where e.corr == \"a-call\"\n->\n    emit Trig k: 1\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LINT.2.2_unordered_operand_bytes",
+    "category": "compiler",
+    "scenario": "[LINT.2.2]: `Bytes` has equality and no ordering ([LEXP.7.19]), so it is not an interval element type ([LINT.1.1]), and `p.lo .. p.hi` on two `Bytes` slots is refused with DS_VALIDATE_UNORDERED_TYPE. This is the `Bytes` case beside LINT.2.2_unordered_operand_bool: one is refused for having no `<` at all, the other for an ordering LEXP.7.19 withholds. PATH PINNED: `dsc.typecheck`'s `lint_2_2_interval`, the unordered-operand arm.",
+    "rules_ds": "schema P scope logical:\n    entity_id: String key\n    lo: Bytes mutable\n    hi: Bytes mutable\n\nrule r:\n    P p where p.lo in (p.lo .. p.hi)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

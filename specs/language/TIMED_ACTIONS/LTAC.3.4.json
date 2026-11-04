@@ -1,0 +1,364 @@
+{
+  "id": "LTAC.3.4",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.3",
+  "seq": 132,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.3.4] The follow-up rule is named as [LTAC.8.1] states. Its one\npattern matches a fact `t` of the timer schema under the guard `monotonic_ns() >= t.fire_at`, so it\nmatches the timer whose `fire_at` is at or before the current clock. Its RHS\nis the `after` clause's action list, followed by the retraction of `t`.\n\nThe retraction has no author syntax: the timer schema's lifecycle is\nexplicit, and the compiler emits the retraction directly into the synthetic\nrule. Neither this\nrule nor its schema is writable by an author — `retract` is not one\nof the action heads ([LGRA.10.1]) — which is why `after` is a\nlanguage form rather than a macro over one.\n\n\n**A `logical` emit in the body is refused** ([LLOG.11.9]): the follow-up\nretracts the timer, so the activation that would justify the fact ends\ninside its own firing.\n\n",
+  "refs": [
+    "LGRA.10.1",
+    "LLOG.11.9",
+    "LTAC.8.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__alphas",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up program's alphas: the timer schema its one pattern matches. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__born",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up's activation as a tick makes it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__due",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`monotonic_ns() >= t.fire_at`, the follow-up's single positive pattern's guard, as a timed test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__due_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The guard for one timer, a predicate of the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__due_is_the_gate",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The follow-up's test at a timer is that timer's gate, at every clock and whatever the token. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__follow_up_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FOLLOW-UP RULE: the timer schema's single positive pattern under the gate, then the retraction. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up's chain and the timer alpha. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__program",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE PROGRAM: the follow-up alone, the timer kind explicit. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up's quiescent state at a clock. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__tick_literal",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The follow-up's LHS re-evaluated at a tick: the timer matched when its `fire_at` is at or before the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__ticked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up as a tick leaves it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED TESTS, by ordinal: the follow-up's gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_4__wm",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timer live until its follow-up retracts it; gone after. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__gone_is_an_instance",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "ONE-SHOT at the one-shot history, through the theorem: the clock reaches `fire_at`, so the timer is not in working memory after. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__gone_once_due",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The follow-up's retraction, seen after any history that reaches `fire_at`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__idle_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The follow-up's network with nothing pending. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__retract_timer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The retraction the compiler emits into the synthetic rule, with no author syntax: the RHS's last action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__step_fires",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The follow-up matches the due timer, runs its action list, and retracts the timer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__fires_on_the_first_due_tick",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The follow-up rule, over any tick history: it fires when the clock first reaches `fire_at`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__timer_pump",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The follow-up, pumped at a tick: matches the timer whose `fire_at` is at or before the clock, fires, retracts it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_1__lower",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One follow-up per clause, on its timer, with the body and the retraction. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_1__lower_tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED TESTS the lowering gives with the rules: the parent's own, then each follow-up's guard. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__born_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ACTIVATION A RE-TIME MAKES of one timer: the timer's match, unfired, when the gate was shut at the old clock and is open at the new; none otherwise. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__chain_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FOLLOW-UP'S CHAIN at a clock over the timer's stamp: the one node with the gate re-timed to the clock, its activations, the retraction. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__due_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE GUARD AS A GATE: Rete/NetworkTwoClocks.idr's `dwell >= d` over the stamp table, the form the theorems take -- `t.dwell` read off the candidate's entry stamp, compared as naturals. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__due_stamped_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE GATE FORM IS A MONOTONIC GATE at every stamp table: it reads the monotonic sample and the stamps, nothing of the wall. C2's hypothesis, inhabited; a TRANSCRIPTION of Rete/NetworkTwoClocks.idr's `dwell_gate_monotonic`, said so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__follow_up",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FOLLOW-UP RULE as this clause has it: one pattern on the timer under the guard, the body then the retraction. Its name is [LTAC.8.1]'s, `$<rule>_after_<N>`, which the lowering writes; the model carries ordinals and no name. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE GUARD AS THE RUNNER BUILDS IT: Rete/NetworkTimed.idr's monotonic timed test of the expression, which reads no `now()`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_expr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FOLLOW-UP'S GUARD AS THE LOWERING WRITES IT: `t.dwell >= dur` on the chain's one positive pattern, in the witnesses' units. `monotonic_ns() >= t.fire_at` with `fire_at` the stamp plus the duration. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_forms_agree",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "THE TWO FORMS DECIDE ALIKE ON THE EXECUTED SHAPES: the runner's expression and the gate, on the timer stamped 0 with duration 5, both admit at the sample 6 and refuse at the sample 3. Computed. LESS than the clause: what the evaluator's Integer order gives on literals is run, not proved, as Rete/NetworkTimed.idr's `within` is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_is_due",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE GUARD IS THE GATE: for every stamp, every positive duration and every sample, `dwell >= S d` from the stamp `s` is `monotonic_ns() >= fire_at` with `fire_at = s + S d`, Rete/NetworkAfter.idr's gate. A Nat lemma, by induction on the stamp and the sample together; the duration is positive by [LTAC.7.1], which closes the case of a stamp ahead of the sample, where `dwell` saturates at zero."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__net_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE FOLLOW-UP'S NETWORK over a working memory at a clock: the timer alpha holding it and the one chain. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__retime_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The follow-up's node re-timed at the pump's entry, over the timer's stamp."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__state_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE QUIESCENT STATE OF ONE TIMER AT A CLOCK: the timer's working memory at that clock, no activation. What a cycle leaves, and what the theorems start from. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__tests_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE TIMED TESTS of the follow-up alone, by ordinal: its gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__tick_literal_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RE-TIME OF THE FOLLOW-UP at a new clock over the timer's stamp: the node takes the gate at the new clock; the timer's match is born unfired exactly when the gate was shut and is open; nothing is ended, a rising gate refusing nothing it admitted. Computed, over the four readings of the gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__timed_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TIMED STATE of the follow-up: the clocked net over a working memory with no row and no deadline at a clock, the wall, the timer's stamp as the one entry, no tracker. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__wm_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "WORKING MEMORY OF ONE TIMER AT A CLOCK, quiescent: the timer stamped `s` with duration `d` live while its gate is shut at the clock, gone once the gate has opened -- the follow-up fired and retracted it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__gone_once_due_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The follow-up's retraction, seen after any history that reaches `fire_at`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__idle_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "AN IDLE STATE: the follow-up with nothing to fire over a working memory at a clock. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_4_2__step_fires_timed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The follow-up matches the due timer, runs its action list, and retracts the timer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__fires_on_the_first_due_tick_timed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The follow-up rule, over any tick history on the Idris model's engine: it fires when the clock first reaches the stamp plus the duration."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_5_1__timer_cycle",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The follow-up, pumped at a tick: matches the timer whose stamp plus duration is at or before the clock, fires, retracts it."
+      }
+    ]
+  }
+}

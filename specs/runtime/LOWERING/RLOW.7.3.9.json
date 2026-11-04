@@ -1,0 +1,36 @@
+{
+  "id": "RLOW.7.3.9",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.7.3",
+  "seq": 923,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.7.3.9] **A quantity argument on a unit-typed kwarg is lowered in the\nkwarg's unit** ([LADP.8.5.3]). Unless the kwarg's unit is tier-2 ([LUNI.4.3]),\nthe compiler folds a value it knows at compile time into the kwarg's unit and\nemits the result as a literal. For any other value, and for every value on a\ntier-2 unit, it wraps the argument's expression in the unit's conversion from\nthe base unit:\n\n- where the dimension's storage is `float64` ([LUNI.7.2]), the conversion built\n  from the arithmetic expression nodes the engine already evaluates, with the\n  constants the artefact carries ([LUNI.2.7.1]): a tier-1 unit's inverse affine\n  map, and a tier-2 unit's `from_base` ([LUNI.4.3]);\n- where the dimension's storage is `int64`, `FN_INT_DIV_EXACT`\n  (`proto/builtin_fn.proto#BuiltinFn`) of the base-unit value and the unit's\n  factor, which is a whole number of base units ([LUNI.2.7.1]).\n\n`FN_INT_DIV_EXACT(n, d)` yields `n / d` when `d` divides `n` exactly. When `d`\nis zero, the engine must raise a `ComputationError` of kind `DIVIDE_BY_ZERO`;\nwhen `d` does not divide `n`, one of kind `NOT_REPRESENTABLE` ([LERR.1.4]). A\nnull operand yields null ([LNUL.4.1]).\n\n",
+  "refs": [
+    "LADP.8.5.3",
+    "LERR.1.4",
+    "LNUL.4.1",
+    "LUNI.2.7.1",
+    "LUNI.4.3",
+    "LUNI.7.2"
+  ],
+  "symbols": [
+    "FN_INT_DIV_EXACT"
+  ],
+  "defines": {
+    "symbols": [
+      "FN_INT_DIV_EXACT"
+    ]
+  },
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/builtin_fn.proto",
+        "name": "BuiltinFn",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+    "id": "LNAM.2.4_nfc_equality_ok",
+    "clauses": ["LNAM.2.4.1"],
+    "category": "compiler",
+    "scenario": "The compiler normalizes every identifier to NFC before interning (LNAM.2.4.1), so two spellings that normalize equal are one name. A schema declared `café` with precomposed U+00E9 is referenced by a pattern spelled with `e` + U+0301 COMBINING ACUTE; the reference resolves and the rule compiles. Without normalization the pattern names an unknown schema.",
+    "rules_ds": "schema caf\u00e9 scope logical:\n    v: Int key\n\nrule r:\n    cafe\u0301 c where c.v > 0\n->\n    log info \"ok\"\n",
+    "expect": { "kind": "compile_ok" }
+}

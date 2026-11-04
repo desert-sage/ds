@@ -1,0 +1,22 @@
+{
+  "id": "LEXP.7.3b",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 430,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LEXP.7.3b] **Promotion is an OPERATOR rule and stops at a slot.** The\n  automatic `Int` → `Float` promotion of [LEXP.7.3] applies where an operator\n  combines operands. It does **not** apply where a value is assigned into a\n  declared slot: an `emit` / `publish` kwarg whose expression\n  types `Int` and whose slot declares `Float` is a compile error\n  ([RLOW.1.4]), not a widening. The author writes the cast — `value: count ::\n  Float` ([LCST.4.1]) — and the widening becomes visible where it happens.\n\n  **The distinction is legibility at the site, not type purity.** In `count +\n  2.5` both operands and the operator are in front of the reader, the promotion\n  is a property of the operation being performed, and the result type follows\n  from what is written. In `emit R value: count` the reader sees the value and\n  **not** the slot's type: `R` is declared elsewhere in the file, or in another\n  file entirely through an import ([LGRA.8]). The obviousness that earns\n  [LEXP.7.3] its escape hatch is absent at a destination.\n\n  So this is not an inconsistency with [LEXP.7.3] to be reconciled — the two\n  rules govern positions that differ in exactly the property the escape hatch\n  rests on.\n\n  **And the direction does not soften it.** `Int` → `Float` is lossless only\n  below 2^53; DS slots are `int64`, so a large integer promoted at a slot\n  boundary loses precision silently and permanently, in the one position where\n  the value stops being transient. [LEXP.7.3] carries the same hazard for\n  transient operands and that is where it stays.\n\n",
+  "refs": [
+    "LEXP.7.3",
+    "LCST.4.1",
+    "RLOW.1.4",
+    "RARC.5.2.6",
+    "LGRA.8"
+  ],
+  "errors": [
+    "DS_VALIDATE_TYPE_MISMATCH"
+  ]
+}

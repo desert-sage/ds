@@ -1,0 +1,21 @@
+{
+    "id": "LSER.18.last_sliding_value.runtime",
+    "clauses": ["LSER.18.1", "LSER.6.1"],
+    "category": "logical",
+    "scenario": "`last sliding` is exact (LSER.18.1's `last` row), read through the companion slot `r.last` (LSER.6.1). Readings 10, 20, 30, 40 are asserted one per pump, and `saw_latest` (`r.last == 30.0`) must fire at some pump: a `last` that answered the window's first sample (10), or a smoothed estimate, never equals 30. The expectation states one action_log, so it pins that the rule fires once and not at which pump, and so does not pin LSER.8.6's fire-then-sample order: absorb-before-fire would fire it one pump earlier.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Reading.val:\n    last sliding 5_s\n\nrule saw_latest:\n    Reading r where r.last == 30.0\n->\n    log info \"last is 30\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 40.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

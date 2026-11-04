@@ -1,0 +1,19 @@
+{
+    "id": "LFST.9.3.1_a_fault_atom_is_compared",
+    "clauses": ["RFCS.3.1", "RFCS.6.7"],
+    "category": "runtime",
+    "scenario": "[RFCS.3.1] classes `TypeError` and `ComputationError` as `compare`, so [LFST.9.3.1] byte-compares each re-derived one with the recorded one, and its `timetag` by pairing ([LFST.9.3.6]). `typed` reads `p.body.name`, a String, with `>`: a TypeError ([LERR.1.3.1]). `trap` divides by a slot holding 0: a ComputationError ([LEXP.7.15.1]). A run holding both replays into a fresh engine with no divergence. This vector does not check that the recording holds them: `LFST.9.3.1_a_recorded_type_error_differs` and `LFST.9.3.1_a_recorded_computation_error_differs` run the same rules with an edit that has no site unless it does ([RCTS.1.2.18]), and those and the `_taken_out` vectors are the edited recordings. Break: an encoder that wrote a field that is a function of the replaying process makes this replay diverge. PATH PINNED: libds's `verify_capture_sink` and `verify_match` (rfcs/codec.c), through pyds `Engine.record` / `Engine.replay` in runner.py `_replay_through_libds_rfcs`; the Mercury runtime's `ds.rfcs.lfst_9_3_1_compared` and `ds.replay.lfst_9_3_1_match`, through test_behave.m `replay_determinism_result`.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema S scope logical:\n    k: Int key\n    a: Int mutable\n    b: Int mutable\n\nrule typed:\n    Payload p where p.body.name > 5\n->\n    log info \"typed\"\n\nrule trap:\n    S s where s.a // s.b > 1\n->\n    log info \"trap\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "a": 7, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 0
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "RTCT.12.2",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.12",
+  "seq": 694,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Mutations between pump cycles",
+  "text": "### Mutations between pump cycles [RTCT.12.2]\n\n[RTCT.12.1] bounds the pump. In LIVE the same discipline binds the\nmutations that happen between pump calls:\n\n```\nT_assert(fact)  = c_wm_insert\n                + c_dlheap × log N_ttl          (if the fact has a TTL)\n                + c_alpha × A_s × T             (alpha test + insert)\n                + c_beta_right × matched × T_j  (for EQ-join betas)\n                + c_beta_right × L_β × T_j      (for non-indexed betas)\n                + c_agenda × log A              (activation insertion)\n\nT_retract(fact) = c_wm_remove\n                + c_dlheap × log N_ttl          (if the fact had a TTL)\n                + c_alpha × A_s                 (alpha memory remove)\n                + c_beta_ridx × joined × k      (ridx-based retract)\n                + c_tms × n_ids                 (if a logical fact)\n\nT_tick_ttl(expired) = c_dlheap × expired × log N_max   (`dynamic_ttl`, heap)\n                    + T_retract × expired\n\nT_tick_ttl(expired) = c_fifo × (expired × log n_ttl_schemas + n_ttl_schemas)   (default FIFO queue)\n                    + T_retract × expired\n```\n\nThe full-cycle bound is therefore:\n\n```\nT_wcet = T_init_cycle                     (clock cache refresh, budget reset)\n       + n_asserts  × T_assert\n       + n_retracts × T_retract\n       + T_tick_ttl(max_expired_per_tick) (default) or T_tick_ttl(expired_max)\n       + T_run(max_fires)                 ([RTCT.12.1])\n```\n\n`T_init_cycle` is O(1); `n_asserts` and `n_retracts` are bounded by `N_max`.\n\nUnder `linear_scan: false` with default TTL every parameter is a compile-time constant —\n`max_expired_per_tick` derives per [LDTL.7.2], `F_max` / `A_max` / `E_rhs` are\n`.dsc` topology constants, and `n_ttl_schemas` is fixed at load. The formula\nthen evaluates to a single fixed number: **`T_wcet` is O(1) in `N_max`** under\nthat configuration. [LDTL.7.1]–[LDTL.7.4] carry the derivation.\n\n",
+  "deferred": true,
+  "refs": [
+    "LDTL.7.1",
+    "LDTL.7.2",
+    "LDTL.7.4",
+    "RTCT.12.1"
+  ]
+}

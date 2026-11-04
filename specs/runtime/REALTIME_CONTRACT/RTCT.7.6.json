@@ -1,0 +1,15 @@
+{
+  "id": "RTCT.7.6",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.7",
+  "seq": 601,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.7.6] **RT-safety is checked at LOAD, not at evaluation.** A `.dsc` whose\ndialect resolves `realtime` **must** be refused at load if it contains a call\nto an operation the runtime does not hold to be RT-safe — bounded time, bounded\nspace, no allocation. The refusal is a load error, alongside the other\ncapability refusals, and names the operation.\n\n**Why load and not first fire.** A per-activation check discovers the breach\nonly when the offending rule happens to fire, which may be days in. Until then\nthe artefact has been accepted, `ds_engine_go_live` has succeeded, and the\ndeployment reads as conforming — so the failure arrives as a trap in the field\nrather than as a refusal at deploy, on the one profile whose entire purpose is\nthat its costs are known **before** it runs.\n\nIt also cannot be reconciled with the contract itself. `[RTCT.7.2]` enforces\ncaps against declared bounds, and a WCET bound over a rule set containing an\nunbounded operation is not a bound that was ever satisfiable. Admitting the\nartefact and trapping later asserts a guarantee the artefact cannot keep.\n\n**The set of RT-safe operations is the runtime's to declare and is not an\nauthor surface.** An author writes the same language under `realtime`; what\nchanges is which of it the profile admits, which is `[LCAP]`'s model and not a\nsecond dialect.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "RTCT.7.2"
+  ]
+}

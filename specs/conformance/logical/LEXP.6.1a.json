@@ -1,0 +1,19 @@
+{
+  "id": "LEXP.6.1a",
+  "clauses": ["LEXP.12.8"],
+  "category": "logical",
+  "scenario": "[LEXP.6.1] `len(<Json>)` is the ARRAY LENGTH at runtime. Asserts the VALUE. Pins the lowering — `len` over a json-path chain renames the FN_JSON_PATH call to FN_JSON_LEN, so the count is taken from the array itself and never from its serialised text. The three-element array is chosen so the two wrong answers are BOTH excluded and distinguishable: the serialised text `[10, 20, 30]` is 12 characters, and a discarded-contents projection answers 0. A vector asserting only `> 0` or `> 3` would pass on the serialised length.",
+  "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule len_counts_elements:\n    Payload p where len(p.body.items) == 3\n->\n    log critical \"len-3\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Payload",
+        "slots": { "body": {"items": [10, 20, 30]} }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["len-3"]
+  }
+}

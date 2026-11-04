@@ -1,0 +1,29 @@
+{
+  "id": "LUNI.14.5",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.14",
+  "seq": 1521,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "14.5 Built-in operations",
+  "text":"### 14.5 Built-in operations [LUNI.14.5]\n\n`real(z)` and `imag(z)` return the real/imaginary component in `z`'s unit;\n`abs(z)` returns the magnitude in `z`'s unit, implemented as\n`distance.hypotenuse(real(z), imag(z))`; `arg(z)` returns the phase angle as `radian`,\n`atan2(imag(z), real(z))`; `conjugate(z)` returns `complex <unit>` (`a -\nbi`); `exp(z)` returns `complex`, extended to accept a complex argument.\n\n**Determinism class** per [LDET.3.3a]:\n\n| Op | Class | Notes |\n|---|---|---|\n| `real`, `imag`, `conjugate` | EXACT | field access / sign flip — basic ops |\n| `+`, `-`, `*` (where annotated valid) | EXACT | basic IEEE 754, correctly-rounded |\n| `abs(z)` | EXACT | computed as `distance.hypotenuse(real(z), imag(z))` ([LEXP.5.5]) — avoids the squaring overflow/underflow of a naive `√(a²+b²)` |\n| `arg(z)` | EXACT | one correctly-rounded `atan2(imag(z), real(z))` ([LEXP.3.9.2]) |\n| `exp(z)` | EXACT | Euler's formula, decomposed as below |\n\n**`exp(z)` is this composition, and no other.** For $z = a + bi$, with\n$\\circ(\\cdot)$ the correctly-rounded result of one operation:\n\n$$\\operatorname{Re} \\exp(z) = \\circ\\big(\\circ(e^{a}) \\times \\circ(\\cos b)\\big), \\qquad \\operatorname{Im} \\exp(z) = \\circ\\big(\\circ(e^{a}) \\times \\circ(\\sin b)\\big)$$\n\n$e^{a}$ is evaluated once and used in both products. The result is not the\ncorrectly-rounded complex exponential, and it is identical on every conforming\nengine because every step is fixed ([LDET.3.4.4]). At the special values each\nstep follows [LEXP.3.9.3] and [LDET.3.6.2], so `exp(inf + 0i)` has an imaginary\npart of `inf × 0`, which is NaN.\n\n",
+  "deferred": true,
+  "refs": [
+    "LDET.3.3a",
+    "LEXP.5.5",
+    "LEXP.3.9.2",
+    "LDET.3.4.4",
+    "LEXP.3.9.3",
+    "LDET.3.6.2"
+  ],
+  "checks": {
+    "k": [
+      {
+        "path": "formal/k/fpcompose.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

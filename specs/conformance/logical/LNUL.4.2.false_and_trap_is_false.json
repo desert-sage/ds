@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.false_and_trap_is_false",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: the mirror of `trap_and_false_is_false`. `s.ok and s.a / s.b > 1.0` with ok = false and Int a, b with b = 0 is `false` (Int operands, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf), so `a and b` and `b and a` agree. A deciding left operand stops the evaluation, so the division is never reached here; the pair of fixtures pins that the ORDER does not change the answer. No ComputationError is recorded and the rule does not fire.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    ok: Bool mutable\n\nrule r:\n    S s where s.ok and s.a / s.b > 1.0\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "ok": false } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

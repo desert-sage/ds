@@ -1,0 +1,20 @@
+{
+    "id": "LCRS.6.6.1_response_ttl_dead",
+    "category": "temporal",
+    "scenario": "LCRS.6.6.1: a response fact leaves working memory when its response schema's TTL runs out, with nothing kept beyond it. High half of a discriminating pair: identical to LCRS.6.6.1_response_ttl_alive until the clock stands at 30 s minus 1 ns after the answer, then it advances one further nanosecond onto the deadline and the `Reply` is retracted ([LFAC.1.2], expiry at now >= deadline). The working memory holds the `Trig` alone. The advance is a separate step so that the alive half's instant is reached here too. PATH PINNED: the response schema's TTL atom, read by libds's TTL sweep for a schema the loader marks `call_response`; the Mercury runtime is compared against it by the runtime differential's `97_response_ttl` on `132_response_ttl`. The break is a response that outlives its schema's TTL: the `Reply` is still live and the count is 2.",
+    "rules_ds": "schema Reply scope ttl 30_s:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig t\n->\n    call svc.read n: t.k nocooldown as \"c1\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 29999999999 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

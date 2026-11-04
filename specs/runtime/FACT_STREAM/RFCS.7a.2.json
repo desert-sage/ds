@@ -1,0 +1,32 @@
+{
+  "id": "RFCS.7a.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.7a",
+  "seq": 424,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.7a.2] The `FactWithdraw` body carries a **closed** `Cause` enum,\non the `TrapKind` precedent ([LERR.1.4.9]) — so a consumer branches on a\ncause rather than string-matching, and a cause added without a raiser is\nvisible:\n\n| value | raised by |\n|---|---|\n| `JUSTIFIER_ENDED` | the truth-maintenance cascade — the last justifier LHS stopped matching |\n| `TTL_EXPIRED` | the pump TTL sweep |\n| `SUPERSEDED` | **supersedure generally** — a successor took the fact's place under the same identity. Both an identity upsert replacing a keyed fact ([LFAC.2.5.1]) and an `as`-keyed re-fire superseding a prior timer, response fact, `CallError` or capture fact ([LRST.2.2]) |\n| `SYNTHETIC_DISCHARGED` | a fact **the lowering** created to carry a deferred action, withdrawn because that action has run or an answer has ended it — the `after`-clause timer fact ([LTAC.3.1]) dropped at end-of-RHS, the `timeout`-clause timer fact dropped at end-of-RHS ([LCCO.7.2]) or by an answer ([LCCO.7.6]), and the capture-corr facts ([LRST.4]). Never an author fact, and never recorded: every fact it labels is compiler-owned ([RFCS.6a.5]) |\n| `AUTHOR_WITHDRAWN` | a rule's own `withdraw <binding>` action ([LSCO.4.5.9], [LCYC.3.1.1]) — the one cause here where an author fact leaves by the author's own instruction, always `scope explicit` |\n| `ACTIVATION_COMPLETED` | a fact an activation emitted into a `scope activation` schema, withdrawn because the activation completed ([LSCP.2.4.1]): at the synchronous end of its RHS, or when the token fact carrying its last deferred path was discharged or superseded. An author fact, by the author's declaration of the scope |\n\nThe engine **must** set the cause of each `FactWithdraw` it records where the\nwithdrawal originates, and **must not** record one whose cause is\n`CAUSE_UNSPECIFIED`. Several origins reach one retraction path, so a cause\ncomputed on that path would label them all alike.\n\n**The cause binds a recorded withdrawal only.** A compiler-owned fact's\nwithdrawal is never recorded ([RFCS.6a.5]), so no cause the engine gives it\nreaches any reader, and none binds. `SYNTHETIC_DISCHARGED` is the member that\nnames such a withdrawal. A runtime may label one by another member inside the\nengine, as when a `timeout` sibling releases its call's capture fact by\ncorrelation ([LCCO.7.2]).\n\n**Every member has a raiser**, as every `TrapKind` member has. Number 4 is\nreserved: the engine has no concept of a disconnected adapter ([RARC.14.5]),\nso no withdrawal has that cause. A member added to a closed enum breaks a\nreader that switches on it, so a new cause is a format change ([LDET.1.10]).\n\nA reader **must** accept a `FactWithdraw` whose cause the enum does not hold,\nthe reserved 4 included, and carry the number. The atom is compare class\n([RFCS.7a.3]), so an unknown cause is a difference the comparison finds, not a\ndecode error.\n\n",
+  "refs": [
+    "LCCO.7.2",
+    "LCCO.7.6",
+    "LCYC.3.1.1",
+    "LDET.1.10",
+    "LERR.1.4.9",
+    "LFAC.2.5.1",
+    "LRST.2.2",
+    "LRST.4",
+    "LSCO.4.5.9",
+    "LSCP.2.4.1",
+    "LTAC.3.1",
+    "RARC.14.5",
+    "RFCS.6a.5",
+    "RFCS.7a",
+    "RFCS.7a.3"
+  ],
+  "atoms": [
+    "FactRetract",
+    "FactWithdraw"
+  ]
+}

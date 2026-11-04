@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_terminal_parent_beta_dropped_is_index_oob",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] a `TerminalNode` whose `parent_beta_id` names no node is refused with DS_ERR_RETP_INDEX_OOB (-602), the row for a node_id cross-reference not found. The harness compiles a two-pattern rule, then `runtime_error`'s `tamper: {drop_terminal_parent: pair}` removes the `BetaNode` whose `node_id` `pair`'s `TerminalNode` names as its parent, and re-seals `dsc_sha256` ([RDSC.3.6]), so the load reaches the network's cross-references with every schema group intact. Paths: libds's rete loader (`rete/loader.c`), whose terminal arm refuses a `parent_beta_id` it cannot find; the Mercury runtime's `ds.network`, which refuses with `lek_retp_index_oob`, mapped to -602.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nschema Sensor scope logical:\n    id: String key\n\nrule pair:\n    Reading r\n    Sensor s where s.id == r.id\n->\n    log info \"p\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"drop_terminal_parent": "pair"},
+        "code": "-602"
+    }
+}

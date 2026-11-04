@@ -1,0 +1,9 @@
+{
+    "id": "LFAC.1.1d",
+    "category": "compiler",
+    "scenario": "Mixed `logical` and `ttl` schemas in the same file and rule coexist per LFAC.1.1 \u2014 the two lifecycle categories are orthogonal. A rule matching a `ttl` trigger fact and emitting a `logical` derived fact compiles cleanly. Pin: both schema types coexist; the rule emits `Derived` logical while reading a ttl `Event`.",
+    "rules_ds": "schema Event scope ttl 5_min:\n    entity_id: String\n    state: Int\n\nschema Derived scope logical:\n    entity_id: String key\n    val: Int mutable\n\nrule r:\n    Event e where e.state > 0\n->\n    emit Derived logical entity_id: e.entity_id val: e.state\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

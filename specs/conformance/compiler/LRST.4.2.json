@@ -1,0 +1,9 @@
+{
+    "id": "LRST.4.2",
+    "category": "compiler",
+    "scenario": "On supersedure of a `call`, the prior answers with the same correlation are retracted per LRST.4.2: the live facts of the service's response schema and the live `CallError` facts ([LCRS.6.2.1]). `svc.read` is a `no response` service, so its supersedure retracts `CallError` facts alone. Pin: a call with `as s.entity_id` compiles cleanly \u2014 the supersedure key is a slot-access expression, not a literal.",
+    "rules_ds": "service svc.read:\n    kwarg entity_id: String\n    no response\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Float mutable\n\nrule r:\n    Sensor s\n->\n    call svc.read entity_id: s.entity_id nocooldown as s.entity_id\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

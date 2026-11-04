@@ -1,0 +1,14 @@
+{
+  "id": "LSER.8.6.5",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.8.6",
+  "seq": 985,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.8.6.5] **A fact's sample is absorbed exactly once, for the life of that\nfact.** Absorption is tracked per fact, not per pump and not per key, and three\ncases follow that the pump-scoped rule above makes non-obvious:\n\n- A **no-op reassertion** produces no second sample. The adapter returns the\n  existing fact and the fact has already been absorbed ([LSER.8.5.1]).\n- A **retract** ends the fact, and with it the record that it was absorbed. A\n  later fact on the same key is a new fact and absorbs its own sample.\n- A fact **superseded within a pump** still contributes. The absorption step\n  runs after the agenda drains and by then the superseded fact is gone, so its\n  sample must be resolved when it is superseded and held until the step runs —\n  otherwise N asserts against one key before a pump would contribute one sample\n  instead of N, against [LSER.8.5.1]'s \"on every meaningful fact update\".\n\nThe third is the one a second implementation gets wrong, because it is invisible\nuntil a program updates the same key twice between pumps.\n\n",
+  "refs": [
+    "LSER.8.5.1"
+  ]
+}

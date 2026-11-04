@@ -1,0 +1,18 @@
+{
+    "id": "LSER.8.6_series_frozen_within_a_pump",
+    "category": "logical",
+    "scenario": "[LSER.8.6]: sample absorption is a step of the pump, run once after the agenda has drained, and within one pump the series are frozen -- every firing reads the snapshot that held when the pump began. Two asserts to one key before the first pump: the firing that pump runs reads `count` as it stood at pump start, 0 (the cold typed zero, [LSER.19.8]), and NOT 1 or 2; then both asserted facts are absorbed, the superseded one too ([LSER.8.5.1]: a sample is an assertion, not a pump), so the next pump's firing reads 2. Both runtimes implement the end-of-pump sweep; the differential cannot see this because they agree, which is why the vector is against the clause.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    count all_time\n\nrule r:\n    Reading s where s.count >= 0\n->\n    log info \"count {s.count}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["count 0", "count 2"]
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LERR.1.4.7_engine_error_stops_the_pump",
+    "category": "runtime",
+    "scenario": "[LERR.1.4.7]: an EngineError stops the work in progress where it is raised, and it is the tier's last record. One `Trig` matches two rules. `bad` comes first in source, so its activation fires first ([LDET.5.4]: the terminal ordinal is the outermost key). Its first action is a `log`, which `tamper: {drop_call_operand: bad}` leaves with two of its three operands ([RDSC.4a.9.3]), so it raises an EngineError, ARTEFACT_LIED, when it runs. Its second action, `emit After`, must not run, and `later`, still on the agenda, must not fire. Pin: the `engine_error` is the LAST event on the stream. A runtime that ran the rest of `bad`'s activation records `After`'s FactEmit after it; one that went on to fire `later`, as a ComputationError or a refusal lets the pump go on (`RFCS.6.7_refused_emit_ends_the_firing_not_the_pump`), records `later`'s firing and `Later`'s FactEmit; one that recorded `bad`'s activation close records that. The pump, input 1, is the call during which the EngineError was raised, so it returns DS_ERR_ENGINE_HALTED (-10) itself ([NCBK.2.9]), and the stream's fault events are exactly one `engine_error`. NOT PINNED HERE: a change the engine made after the EngineError without recording it. Working memory is undefined and refused on a halted engine ([NCBK.2.9], [RCTS.1.2.25]), so no conformance test can see one. PATH PINNED: libds's run loop (rete/engine.c `ds_rete_run`), which stops at the latch, its action loop, which runs no action after the faulting one, and its recorder, which records nothing after the EngineError (recorder.c); the Mercury runtime's `ds.engine.pump_loop`, `ds.exec`'s executor and the step's effects, cut at the EngineError (ds.engine), through test_behave.m's `run_runtime_error`.",
+    "clauses": ["NCBK.2.9"],
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema After scope logical:\n    k: Int key\n\nschema Later scope logical:\n    k: Int key\n\nrule bad:\n    Trig t\n->\n    log info \"fired\"\n    emit After logical k: t.k\n\nrule later:\n    Trig t\n->\n    emit Later logical k: t.k\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": { "drop_call_operand": "bad" },
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

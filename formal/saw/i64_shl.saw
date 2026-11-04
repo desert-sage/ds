@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+//@spec [LEXP.7.14.1]
+//
+// i64_shl.saw -- SAW proof that DS's `<<` is [LEXP.7.14.1]'s left shift: `a << n`
+// is a * 2^n under the `Int` wrap of [LEXP.7.13.1], and the count is NEVER reduced
+// modulo 64, so a count of 64 or more gives 0. C's `<<` on a signed value that
+// overflows, or by a count of 64 or more, is undefined, so `ds_i64_shl` has to
+// reach this explicitly; this proves it does, for every `a` and every
+// non-negative count.
+//
+// THE NEGATIVE COUNT IS THE CALLER'S, as in `i64_shr.saw`: a negative run-time
+// count is a DOMAIN trap the evaluators raise before calling, so `count >= 0` is
+// the contract's precondition and the trap is a conformance fixture's to pin.
+//
+// THE REFERENCE. On a 64-bit word, Cryptol's `<<` by a count below 64 is a * 2^n
+// modulo 2^64, which read as two's complement is the `Int` wrap; at 64 or more,
+// a * 2^n is a multiple of 2^64 and wraps to 0. `1 << 63` is INT64_MIN.
+//
+// TEETH. A C that shifts by `count & 63` with no guard fails this: z3
+// returns a count of 64 or more with a non-zero `a`, where the mask shifts by the
+// low six bits and the clause gives 0. `ds_i64_shl` in `int_ops.h` has the guard,
+// and the mask inside it, and this proof passes.
+//
+// WHY THE C GUARDS, AND MASKS INSIDE THE GUARD. Measured against a
+// scratch C: `if (count >= 64) return 0; return (int64_t)((uint64_t)a <<
+// count);` is correct C and fails here, because clang -O1 turns the guard into
+// a `select` and computes the shift speculatively, and an LLVM `shl` by 64 or
+// more creates a poison value, which SAW rejects even in the arm not taken ("The
+// second operand of `shl` was equal to or greater than the number of bits").
+// Masking the count inside the guarded branch -- `(uint64_t)a << (count & 63)`
+// -- is a no-op below 64 and keeps the speculated shift defined; with it this
+// proof and `i64_shr.saw` both pass, and it is the form `ds_i64_shl` has.
+// `ds_i64_shr`'s guarded form (`if (count >= 64) return a < 0 ? -1 : 0;`) passed
+// unmasked.
+
+// @spec [LEXP.7.14.1]
+// The LLVM contract: for every `a` and every non-negative `count`, the C equals
+// a * 2^count wrapped to 64 bits.
+let lexp_7_14_1__shl_spec = do {
+    a     <- llvm_fresh_var "a" (llvm_int 64);
+    count <- llvm_fresh_var "count" (llvm_int 64);
+    llvm_precond {{ count >=$ 0 }};
+    llvm_execute_func [llvm_term a, llvm_term count];
+    llvm_return (llvm_term {{ if count >=$ 64 then (0 : [64]) else a << count }});
+};
+
+// @probe [LEXP.7.14.1]
+lexp_7_14_1__shl_mod <- llvm_load_module "i64_shl_shim.bc";
+llvm_verify lexp_7_14_1__shl_mod "lexp_7_14_1__i64_shl" [] false lexp_7_14_1__shl_spec z3;
+print "[LEXP.7.14.1] ds_i64_shl == a * 2^count wrapped, count never masked: PROVED for every a and every count >= 0";

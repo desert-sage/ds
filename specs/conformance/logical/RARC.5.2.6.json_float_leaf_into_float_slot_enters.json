@@ -1,0 +1,16 @@
+{
+    "id": "RARC.5.2.6.json_float_leaf_into_float_slot_enters",
+    "clauses": ["RARC.5.2.7"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[RARC.5.2.6]: a slot value whose kind is the declared type enters, from a Json leaf as from anywhere. The control for `RARC.5.2.6.json_int_leaf_into_float_slot_is_a_type_error`: the same program, and the leaf written `2.5`, a Float ([LFAC.2.5.1]). `got` logs the fact that entered; `handler` would log a TypeError on `Out.v`. Exactly [\"entered 2.5\"]: a runtime that refused every Json leaf into a typed slot, rather than deciding by the leaf's kind, logs `handler`'s line instead, and so the sibling's refusal is shown to be the kind's. Path: libds rete/engine.c eval_actions (ds_rete_slot_refused admits it, then ds_rete_wm_assert); Mercury ds.exec.m assert_verb (ds.fact.slot_fault finds nothing).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema Out scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Payload p\n->\n    emit Out logical id: \"o\" v: p.body.n\n\nrule got:\n    Out o\n->\n    log info \"entered {o.v}\"\n\nrule handler:\n    TypeError e where e.schema == \"Out\" and e.slot == \"v\"\n->\n    log info \"refused Out.v {e.actual}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "n": 2.5 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["entered 2.5"]
+    }
+}

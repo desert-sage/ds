@@ -1,0 +1,12 @@
+{
+    "id": "LCYC.3.3_all_disjoint_cycles_reported",
+    "clauses": ["LCYC.3.3.1", "LCYC.3.3.2"],
+    "category": "compiler",
+    "scenario": "Two rule-graph cycles in disjoint SCCs, `one_a`/`one_b` and `two_a`/`two_b`, bridged by one acyclic edge (`one_a` also matches S4, which `two_a` emits), must both be reported: any directed cycle is reported (LCYC.3.3.1), by rule name (LCYC.3.3.2). The expectation is `message_contains: two_a`, which a report naming only the `one_a` cycle does not carry; the error code fires either way. The trap it guards: a search started from `two_a` reaches the `one_a` cycle before its own, and a checker that reports one cycle per search root and skips duplicates drops the second cycle. Every rule emits one schema, so the search order is declaration order, not set iteration.",
+    "rules_ds": "schema S1 scope logical:\n    kind: String key\n\nschema S2 scope logical:\n    kind: String key\n\nschema S3 scope logical:\n    kind: String key\n\nschema S4 scope logical:\n    kind: String key\n\nrule one_a:\n    S1 a where a.kind == \"x\"\n    S4 d where d.kind == \"q\"\n->\n    emit S2 logical kind: \"y\"\n\nrule one_b:\n    S2 b where b.kind == \"y\"\n->\n    emit S1 logical kind: \"x\"\n\nrule two_a:\n    S3 c where c.kind == \"p\"\n->\n    emit S4 logical kind: \"q\"\n\nrule two_b:\n    S4 d where d.kind == \"q\"\n->\n    emit S3 logical kind: \"p\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE",
+        "message_contains": "two_a"
+    }
+}

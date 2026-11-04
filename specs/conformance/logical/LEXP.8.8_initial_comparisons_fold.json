@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_initial_comparisons_fold",
+    "category": "logical",
+    "scenario": "[LEXP.8.8]: a comparison in a `const` folds, and an `initial:` item may name it. Each `initial` fact carries one `Bool` `const`'s folded value, and its rule compares that slot with the same `const` inlined and evaluated by the engine; the rule fires only if the two agree. `L1 = 1 < 2 < 3` is the chain's conjunction ([LGRA.9.3.2]); `L2 = 2.0 == 2` compares an `Int` with a `Float`; `L3 = \"b\" > \"a\"` orders `String`s by code unit; `L4 = 9007199254740993 == 9007199254740992.0` converts the `Int` to the nearest double before it compares, so it is `true` where an exact comparison is `false` ([LEXP.7.3]); `L5 = 3 >= 4` is `false`. Pin: all five rules log, in source order. A compiler that does not fold the comparisons refuses the program with DS_VALIDATE_INITIAL_NOT_CONST. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s comparisons (`fold_chain`, `fold_compare`), against the rule's inlined `const` evaluated by each runtime's `val_cmp` / `compare_values`.",
+    "rules_ds": "const L1 = 1 < 2 < 3\nconst L2 = 2.0 == 2\nconst L3 = \"b\" > \"a\"\nconst L4 = 9007199254740993 == 9007199254740992.0\nconst L5 = 3 >= 4\n\nschema VB scope explicit:\n    k: String\n    b: Bool\n\ninitial:\n    VB k: \"l1\" b: L1\n    VB k: \"l2\" b: L2\n    VB k: \"l3\" b: L3\n    VB k: \"l4\" b: L4\n    VB k: \"l5\" b: L5\n\nrule r1:\n    VB v where v.k == \"l1\" and v.b == L1\n->\n    log info \"l1\"\n\nrule r2:\n    VB v where v.k == \"l2\" and v.b == L2\n->\n    log info \"l2\"\n\nrule r3:\n    VB v where v.k == \"l3\" and v.b == L3\n->\n    log info \"l3\"\n\nrule r4:\n    VB v where v.k == \"l4\" and v.b == L4\n->\n    log info \"l4\"\n\nrule r5:\n    VB v where v.k == \"l5\" and v.b == L5\n->\n    log info \"l5\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["l1", "l2", "l3", "l4", "l5"]
+    }
+}

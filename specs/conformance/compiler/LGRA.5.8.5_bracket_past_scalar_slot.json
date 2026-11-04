@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.5.8.5_bracket_past_scalar_slot",
+    "category": "compiler",
+    "scenario": "[LGRA.5.8.5]: a bracket index past a slot is admitted only where the slot is `Json`. `qty` is an `Int` slot, so `t.qty[0]` is refused with DS_VALIDATE_BAD_PATH: an `Int` has no parts to index, and members are read with a dot, never a bracket. A compiler that types every index as an untyped Json projection refuses nothing here, and fails at lowering instead. Path: dsc.typecheck `type_of_expr`'s `ex_index` arm -> `lgra_5_8_5_index_type`.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n    qty: Int mutable\n\nrule r:\n    Trig t where t.qty[0] > 0\n->\n    log info \"indexed\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_PATH"
+    }
+}

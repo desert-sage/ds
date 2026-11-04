@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.2.9.6.2_interp_let_renders",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.2]: interpolation formats a `let`'s bound value, whatever expression bound it. `show` binds a comparison, a `not`, an `and`, an `is null` over an absent `Json` leaf, a `Json` path and an index into a `Json` array, and logs all six with the fact's id. R 1 (`c` 40.0, `doc` {\"a\":{\"b\":7},\"items\":[3,4]}) is asserted and pumped, then R 2 (`c` 10.0, `doc` {\"a\":{\"b\":8},\"items\":[5]}). Expected `1 true false true true 7 3`, then `2 false true false true 8 5`. A compiler that refuses any of the six refuses the program; a runtime that renders a `Bool` otherwise, or reads the path or the index wrong, logs other text. PATH PINNED: `dsc.rete.site_value`'s `let_inline` arm, which lowers each through `rlow_6_1_1_expr` as a `where` does, and each runtime's interpolation renderer.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    c: Float mutable\n    doc: Json mutable\n\nrule show:\n    R r\n->\n    let hot = r.c > 30.0\n    let cool = not (r.c > 30.0)\n    let band = r.c > 30.0 and r.c < 50.0\n    let vacant = r.doc.gone is null\n    let leaf = r.doc.a.b\n    let elem = r.doc.items[0]\n    log info \"{r.id} {hot} {cool} {band} {vacant} {leaf} {elem}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": 1, "c": 40.0, "doc": { "a": { "b": 7 }, "items": [3, 4] } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "R", "slots": { "id": 2, "c": 10.0, "doc": { "a": { "b": 8 }, "items": [5] } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1 true false true true 7 3", "2 false true false true 8 5"]
+    }
+}

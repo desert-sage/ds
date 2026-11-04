@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.6.2",
+    "category": "compiler",
+    "scenario": "Bare extraction on raw Time rejection per LTIM.6.2. Component slots (`.hour`, `.minute`, `.day`, etc.) on a raw `Time` value reject; the author must go through the `.utc` or `.local(tz)` member to declare timezone context. Pin: `m.fired_at.hour` rejects with DS_VALIDATE_TIME_NEEDS_TZ_CONTEXT.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule trig:\n    Event m where m.fired_at.hour > 12\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TIME_NEEDS_TZ_CONTEXT"
+    }
+}

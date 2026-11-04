@@ -1,0 +1,660 @@
+{
+  "id": "RARC.5.6.7",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.6",
+  "seq": 617,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "6. [RARC.5.6.7] Runs each RHS action in the order the artefact declares: an\n   `emit` or a `withdraw` changes working memory directly, and every other verb\n   goes through the dispatcher ([RARC.5.7.1]).\n",
+  "refs": [
+    "RARC.5.7.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "rarc_5_6_7__action_step",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One dispatched action preserves the invariant and extends progress: a no-op changes nothing, a real emit or withdraw lowers its stratum's first component or touches a kind the stratum does not read, and no earlier stratum sees it."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "rarc_5_6_7__actions_step",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The same across the whole RHS."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_7__do_action",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Dispatch of one action with immediate propagation: an emit or withdraw that changed working memory reaches Rete before the next action of the same RHS, and the running RHS keeps its bindings. `emit` and `withdraw` only -- the two verbs the clause says change working memory directly. The verbs that go through the dispatcher ([RARC.5.7.1]: `call`, `publish`, `cache` and `cache_delete`, `log`) have no model here; a `log` is an effect record of the Idris model's trace (Rete/NetworkTraced.idr), changing no engine state."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_7__do_actions",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The RHS actions in order, each dispatched as above."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "rarc_5_6_7__action_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "On an explicit-only program one action with truth maintenance is the core's action."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "rarc_5_6_7__actions_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And so is a whole RHS."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "rarc_5_6_7__do_action_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One action with truth maintenance: the core's action, the justification it records, then the cascade its retraction started, before the next action. `emit` and `withdraw` only, as for the core; the dispatched verbs of [RARC.5.7.1] have no model."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "rarc_5_6_7__do_actions_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The RHS actions in order, each as above."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rarc_5_6_7__do_action_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One RHS action against the engine, the fired match bound: an emit under the lifecycle, or a withdraw."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rarc_5_6_7__do_actions_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS actions in order, each propagated before the next."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_net_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What one action leaves live on the plain network: live before, or minted by the action, of the kind the action mints."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action keeps what is carried on the plain network: an emit is an assert, a withdraw of a bound fact a withdraw."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What one action with truth maintenance leaves live: live before, or minted by the action; the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action with truth maintenance keeps what is carried: the dispatch, the record (rows alone), the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_ttl_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action on the clocked network keeps the invariant when it mints no answer; the deadlines ride beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_action",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One answer per correlation survives an action that mints no answer: every fact live after is live before or is the minted one, over every pair of memories."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__do_action_acc",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One emit or withdraw on the accumulator: Rete/NetworkTimed.idr's stamped action; the trackers and the records stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__do_actions_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls: at each position the sites there, then the action there; the sites past the last action after it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__no_site_is_the_stamped_rhs",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO SITE THE FOLD IS THE STAMPED RHS, from any position, the trackers and records untouched. By induction on the actions, over every program and state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_action_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_action_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_action_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One RHS action keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_actions_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_actions_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_actions_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The RHS keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_7__do_action_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE RHS ACTION keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_7__do_actions_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The RHS keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_emit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emit's kind is among what the RHS writes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the dispatcher's emit and withdraw write: an emit's schema, a withdraw's the positive kind at its position. These are the two actions the model dispatches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__writes_withdraw",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A withdraw's kind is among what the RHS writes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_7__do_action_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One dispatched action of a rule that does not write into the chain leaves the chain and keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_7__do_actions_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The dispatched RHS, action by action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__emits_writes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What the dispatcher's emit writes is among the RHS's writes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_action_net_rows_emitted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One dispatched action keeps the row property, from a state between actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_action_net_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One dispatched action keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_action_tms_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One dispatched action with the record and the cascade after it, under the frame: the framed chain is left and the invariant is kept, ending between actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_7__do_actions_ttl_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The dispatched RHS on the clocked network, action by action, each with its cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_6_7__do_action_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE RHS ACTION keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_6_7__do_actions_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The RHS keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_action_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One RHS action with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_action_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's action is the model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_action_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE RHS ACTION keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_actions_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_actions_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's RHS is the model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_7__do_actions_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The RHS keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rarc_5_6_7__do_action_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "ONE ACTION, STAMPED: Rete/NetworkTtl.idr's action on the net, and the stamps updated at the net's clock over the working memory the action read. LESS than the clause: `emit` and `withdraw`, which change working memory; every other verb goes through the dispatcher and is an effect the harness renders, not engine state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rarc_5_6_7__do_actions_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE RHS, STAMPED, action by action in the order the artefact declares. LESS than the clause as `rarc_5_6_7__do_action_stamped` is."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rarc_5_6_7__do_actions_stamped_net",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE STAMPED RHS'S NET IS Rete/NetworkTtl.idr's: the stamps ride beside and change nothing the actions compute, over every program, action list, net and stamp table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_7__actions_tms_net_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more action at the front of an RHS on the network, when the first is known."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_7__do_action_tms_fl_unfold",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "FireLoop's action, when the core action is known."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_7__do_action_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One action on the network: the dispatch, the justification it records, then the cascade its retraction started, before the next action."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_7__do_action_tms_net_unfold",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The network's action, when the dispatch is known."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_7__do_actions_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS on the network, action by action, the cascade in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__do_action_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE ACTION AGREES: the core actions agree, both record the same row against the same working memory, and the cascades agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__do_actions_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS AGREES, with the table and the cascade in the loop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rarc_5_6_7__do_action_emit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The Emit action is the named assert-then-propagate on its bound facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__do_action_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE RHS ACTION keeps the agreement: an emit is the assert on both sides, a withdraw the retraction, on one working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__do_actions_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS keeps the agreement: the actions in order, each keeping it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_7__do_action_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One RHS action keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_7__do_actions_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The RHS keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_7__actions_ttl_fl_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The same on FireLoop with the deadline table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_7__actions_ttl_net_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more action at the front of an RHS on the network, when the first is known."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_7__do_action_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One action on the network, and the deadline its emit mints."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_7__do_actions_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS on the network, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__do_action_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE ACTION AGREES, the deadline it stamps included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__do_actions_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE RHS AGREES, the deadline table threaded through both."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "Rarc_5_6_7__action_shape",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a core action that changed working memory did to it: kept every surviving id's fact, added at most facts with an id neither live before nor bound by the firing token, left ids unique, and touched only one kind, one the rule writes."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__action_cascade",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One action of the dispatcher with truth maintenance keeps the firing invariant, and its cascade is Rete/Refcount.idr's cascade of the table it recorded."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_7__action_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One core action from an invariant state with unique ids: the invariant holds after, and working memory is unchanged with the tables, or changed with the action shape and propagated. `emit` (no-op, append, entity replace) and `withdraw` (no-op, remove)."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_7__action_noop",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An action that changed nothing."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_7__actions_tms_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The whole RHS keeps the firing invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_7__actions_tms_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more action at the front of an RHS, when the first is known."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__action_ttl_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action agrees with the engine's on the engine."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__action_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One action keeps the firing invariant and the deadline table's well-formedness: the core action mints at most the fresh id, and the cascade only removes facts."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__actions_ttl_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An RHS does not touch the clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__actions_ttl_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The whole RHS agrees with the engine's on the engine."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__actions_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And so does the whole RHS."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__actions_ttl_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Unfolding the RHS by one action."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__do_action_tms_unfold",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine's action, given the core action's result: record the row, then cascade."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__do_action_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One action: the engine's, and the deadline the emit mints, at the clock the firing read [IRET.25.4.1]."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_7__do_actions_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The whole RHS, the deadline table threaded through."
+      }
+    ]
+  }
+}

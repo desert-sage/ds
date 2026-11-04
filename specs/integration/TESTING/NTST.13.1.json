@@ -1,0 +1,35 @@
+{
+  "id": "NTST.13.1",
+  "prefix": "NTST",
+  "doc": "TESTING.md",
+  "parent": "NTST.13",
+  "seq": 441,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NTST.13.1] **The runtime runs an artefact's tests itself.** `ds_test_run(dsc, len, cfg, &report)` runs the test cases a compiled\nartefact carries ([LTSL.2.4], [RLOW.17.1]) as [RTIM.14] states. For each\n`TestCase` it creates an engine of its own, loads the artefact into it ([RTIM.14.3])\nand drives the case on the mock clock ([RTIM.14.2]). It takes no engine of the\ncaller's and touches none. `cfg` selects every case, or the one whose `test_id`\nit names; a `NULL` `cfg` selects every case. Both runtimes **must** provide it.\n\nThe call's status says whether the run happened, not whether the cases passed:\n\n- `DS_OK`: every selected case ran, and `*report` holds the results ([NTST.13.2]),\n  passing or failing.\n- The load's own code ([RDSC.11.1]), when the artefact is refused before any case\n  runs. `*report` is `NULL`.\n- `DS_ERR_DSC_DECODE` or `DS_ERR_DSC_DANGLING`, when the artefact's test atoms\n  cannot be read ([RTIM.14.15]). `*report` is `NULL`.\n- `DS_ERR_NOT_FOUND`, when `cfg` names a `test_id` the artefact does not carry.\n- `DS_ERR_INVAL` for a `NULL` `dsc` or `report`, and `DS_ERR_OOM`.\n\n",
+  "deferred": true,
+  "refs": [
+    "LTSL.2.4",
+    "NTST.13.2",
+    "RDSC.11.1",
+    "RLOW.17.1",
+    "RTIM.14",
+    "RTIM.14.15",
+    "RTIM.14.2",
+    "RTIM.14.3"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DANGLING",
+    "DS_ERR_DSC_DECODE",
+    "DS_ERR_INVAL",
+    "DS_ERR_NOT_FOUND",
+    "DS_ERR_OOM"
+  ],
+  "atoms": [
+    "TestCase"
+  ],
+  "symbols": [
+    "ds_test_run"
+  ]
+}

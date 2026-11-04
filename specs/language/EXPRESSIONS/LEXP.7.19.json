@@ -1,0 +1,40 @@
+{
+  "id": "LEXP.7.19",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 456,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.19] **`Bytes` and whole `Json` values admit equality and no\n  ordering.**\n\n  - The engine **must** answer `==` and `!=` on two `Bytes` operands by\n    content: they are equal iff they have the same length and the same octet\n    at every position ([LSTR.4.1]).\n  - The engine **must** answer `==` and `!=` on two `Json` operands by the\n    deep structural equality [LFAC.2.5.1] applies to a `Json` slot, so a\n    comparison and a no-op reassertion agree on whether two values are the\n    same.\n  - The compiler **must** refuse `<`, `<=`, `>` and `>=` when either operand\n    is a `Bytes` value or a whole `Json` value, with\n    `DS_VALIDATE_UNORDERED_TYPE`, at the operator. In a comparison chain each\n    step is judged on its own two operands.\n\n  A whole `Json` value is a `Json` slot read without a path. A path into a\n  `Json` slot reads a leaf whose type is known only at run time, and its\n  comparison is [LEXP.7.12.1]'s. A `null` operand propagates ([LNUL.4.1]). The\n  refusal holds whatever the other operand's type. Equality between a `Bytes`\n  or whole `Json` operand and an operand of another type is outside this\n  clause.\n\n",
+  "refs": [
+    "LEXP.7.12.1",
+    "LFAC.2.5.1",
+    "LNUL.4.1",
+    "LSTR.4.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_UNORDERED_TYPE"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_json",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`==` and `!=` on two `Json` operands by [LFAC.2.5.1]'s deep structural equality; a `null` operand propagates ([LNUL.4.1]); an operand of another kind is a TypeError, a trap here. An ordering on two `Json` values answers as a trap here, which the compiler refuses before any runtime sees it; the `Bytes` bullet is outside the fragment."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lfac_2_5_1__json_eq",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The deep structural equality the engine answers `==` and `!=` on two `Json` operands by -- one definition for the comparison and the no-op reassertion, so the two agree."
+      }
+    ]
+  }
+}

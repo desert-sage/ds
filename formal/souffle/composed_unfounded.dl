@@ -1,0 +1,38 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// composed_unfounded -- composed_founded with stratum 1's seed ABSENT
+// (withdrawn), both edges kept. Under the refcount of [IRET.12.2] the two
+// Reach facts would keep each other live (iret_12_2__reach_refcount) and
+// stratum 2 would keep Far(a, c) and Far(a, d) on their strength; the least
+// model derives no Reach at all, so stratum 2's net-diff output loses the
+// part founded on stratum 1 and keeps only its own seed's part: Far is
+// {(m, n)}. This is the composition case: the second stratum must be
+// recomputed from the first's REDUCED output, not from its refcounts.
+// Expected: Reach empty, Far = {(m, n)}.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl Edge(x: DsStr, y: DsStr)
+.decl Seed(x: DsStr, y: DsStr)
+.decl Link(x: DsStr, y: DsStr)
+.decl Seed2(x: DsStr, y: DsStr)
+.decl Reach(x: DsStr, y: DsStr)
+.decl Far(x: DsStr, y: DsStr)
+.input Edge(filename="composed_unfounded.Edge.facts")
+.input Seed(filename="composed_unfounded.Seed.facts")
+.input Link(filename="composed_unfounded.Link.facts")
+.input Seed2(filename="composed_unfounded.Seed2.facts")
+
+// stratum 1
+Reach(x, y) :- Seed(x, y).
+Reach(x, z) :- Reach(x, y), Edge(y, z).
+
+// stratum 2, reading stratum 1's output and its own seed
+Far(x, z) :- Reach(x, y), Link(y, z).
+Far(x, z) :- Seed2(x, z).
+Far(x, z) :- Far(x, y), Link(y, z).
+
+.output Reach
+.output Far

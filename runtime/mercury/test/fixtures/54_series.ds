@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A sliding `mean`. A cold `mean` is null ([LSER.19.8]) and reaches the Float
+# slot through `??` ([LNUL.5.1]); `-1.0` is outside every temperature the
+# scenario asserts, so a cold read and a warm one stay distinct.
+use default
+
+
+schema Thermometer scope logical:
+    entity_id: String key
+    temperature: Float mutable
+
+schema Report scope ttl 1_h:
+    label: String
+    avg: Float
+
+series Thermometer.temperature (by: entity_id):
+    mean sliding 10_min
+
+rule report:
+    Thermometer t
+->
+    emit Report label: t.entity_id avg: t.mean ?? -1.0

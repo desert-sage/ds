@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.5.8.6_host_depth_at_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: a `Json` value whose depth is exactly the limit, 16, is admitted when the host asserts it into a `Json` slot. The value is fifteen nested arrays around one scalar: the scalar is one level and each array adds one. The fact lands (fact_count 1). Paired with LGRA.5.8.6_host_depth_over_limit, one level deeper and refused, so a limit of 15 (this vector goes red) or 17 (the other goes red) is caught. PATH PINNED: on libds, pyds's `pyds_py_to_json_tree_at` depth check and libds's builders, which build the tree before `ds_engine_assert`; on the Mercury runtime, `ds.engine.host_assert` through `ds.fact`'s `sr_json_limit` check (`ds.json.limit_breach`).",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n    doc: Json mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Blob", "slots": { "id": 1, "doc": [[[[[[[[[[[[[[[1]]]]]]]]]]]]]]] } }
+        ],
+        "fact_count_after": 1
+    }
+}

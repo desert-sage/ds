@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A rule's emit that supersedes a live fact. `copy` emits `Out logical` with
+# the constant key 1, so two Readings of different `src` emit one Out
+# identity, and the second replaces Out(1, 1) while the first Reading still
+# justifies it: the supersedure is the emit's own, not truth maintenance's.
+# The recording carries the new fact's FactEmit and then the old one's
+# FactWithdraw(SUPERSEDED) ([RFCS.6a.4], [LFAC.2.5.3]), as a host upsert's
+# ([RFCS.6.7]).
+
+schema Reading scope logical:
+    src: Int key
+    v: Int mutable
+
+schema Out scope logical:
+    id: Int key
+    v: Int mutable
+
+rule copy:
+    Reading r
+->
+    emit Out logical id: 1 v: r.v

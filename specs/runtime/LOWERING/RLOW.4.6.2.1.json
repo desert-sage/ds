@@ -1,0 +1,384 @@
+{
+  "id": "RLOW.4.6.2.1",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.4.6.2",
+  "seq": 472,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.4.6.2.1] State: `(rule_name, activation_key) → last_fire_ns`. The\nactivation key is the sequence of values [LCDB.3.3.3] composes, and **two keys\nare the same key only if they have the same length and, position by position,\nvalues of the same representation that are equal.** `1`, `\"1\"` and `true` are\nthree keys, not one. The representation is the value's tag, not its declared\ntype ([LNUL.4.9]), so a `Time` and an `Int` holding the same count are one key.\n\nEquality within a representation is the language's `==` for a scalar — `0.0`\nand `-0.0` are one key — deep structural equality for `Json` ([LFAC.2.5.1]),\nand `null` equals only `null`. The comparison is **exact and whole**: nothing is\nrounded, truncated or compared by prefix, and a key has no length limit of its\nown. How a runtime stores a key is its own, provided the storage preserves this\nidentity.\n\n",
+  "refs": [
+    "LCDB.3.3.3",
+    "LFAC.2.5.1",
+    "LNUL.4.9"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The key: the components in [LCDB.3.3.3]'s order, as a list of canonical parts."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__part",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One component: a value under its representation's tag ([LNUL.4.9]), in the canonical form that representation compares by -- a Float by its bits with the two zeros one pattern, a Json by its canonical text, a String or Bytes by its bytes, null by itself -- so that 'equal under the representation' is structural equality of the part. Partial because the canonical forms are taken as given, not derived from the representations' equalities; and a value no representation carries (libds's RK_UNBOUND, the Mercury runtime's kp_unexpanded for a broken artefact) has no constructor, since the clause composes a key from values."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__same",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE IDENTITY, as the clause words it: the same length, and position by position the same canonical part."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__word",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "libds's word codec -- how `rk_feed_u64` writes a 64-bit count into a stored key and how a reader takes it back -- as a parameter: two functions, taken at the contract `Rlow_4_6_2_1__word_ok` states rather than modelled byte by byte. The real codec, eight little-endian bytes, runs in Main.idr."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "Rlow_4_6_2_1__word_ok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The codec's contract: a word written in front of anything reads back as that word and leaves the rest. What eight little-endian bytes have for every value a uint64 holds, and the one hypothesis the storage theorems take."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bool_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Bool's word read back: libds writes 1 or 0."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bytes_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A length-prefixed component written reads back whole and leaves what followed it, for every byte string and every tail: no byte a component holds can end it early, and none is cut."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__bytes_then",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A length-prefixed component read back: the word says how many bytes are the component's."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__cons_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A component read in front of the components read after it."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__decode",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The key read back from libds's frame: the count, then that many components, and nothing left over. libds has no reader -- it compares keys in place -- and the reader is written because one that inverts the writer is what makes the writer injective."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__decode_encode",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE KEY WRITTEN READS BACK: the reader inverts libds's frame on every key, under every codec with the contract."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__drop_app",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Dropping a list's own length from in front of a tail leaves the tail. A list lemma of this standalone module's own."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__encode",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE KEY AS libds STORES IT (`rk_walk`, rete/adapters.c): the component count, then per component a tag byte and a fixed-width word or a length word and the bytes. 'How a runtime stores a key is its own, provided the storage preserves this identity': this is libds's storage, and `rlow_4_6_2_1__encode_injective` is that it preserves the identity."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__encode_injective",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "libds's STORAGE PRESERVES THE IDENTITY: two keys stored as one byte string are one key, for every pair of keys and every codec with the contract. The count, the tag bytes and the length words make the frame prefix-free, so a component may hold any byte and any length."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__equal_is_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key is the same key as itself, so the relation is exactly equality."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One component read back: the tag byte decides the shape, the word the value or the length."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A component written reads back and leaves exactly what followed it, for every component of every representation and every tail."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__field_to",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One component's bytes, `rk_walk`'s arm for its kind: a tag byte for the representation, then a word for a scalar, or a word giving the length and then the bytes for a String, Bytes or Json; null its tag alone; a Ratio two words."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "So many components read back, in order."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The components written read back, as many as were written, and leave exactly what followed them."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__fields_to",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The components' bytes in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__int_is_not_the_bool",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The integer 1 and the boolean true are two keys: two representations. By the constructors."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__int_is_not_the_string",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'`1`, `\"1\"` and `true` are three keys, not one': the integer 1 and the string \"1\" (its one byte, 0x31) are two keys. By the constructors."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__just_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`Just` is injective; the base has no `Injective Just` and this module imports nothing of the lane."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__negative_zero_is_zero",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The negative zero's pattern keys as the zero, for every pattern that stands for it."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__of_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Float keys by the bits of its double, the negative zero's pattern read as the positive zero's: '`0.0` and `-0.0` are one key'. The pattern of -0.0 is a parameter so the rule is stated without a 64-bit literal; both runtimes make the normalisation as they key."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__of_time",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Time keys as its count, an Int: 'the representation is the value's tag, not its declared type'. There is no constructor for a Time; a Date or a Duration takes the same function."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__ratio_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Ratio's second word read back after its first."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__ratio_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Ratio's second word reads back after its first."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__same_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The key compared, exact and whole: the same length, then component by component. The executable form of the identity, run in Main.idr; not proved equal to `Rlow_4_6_2_1__same`."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__same_is_equality",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE IDENTITY IS EQUALITY OF THE KEY: two keys the clause calls the same are one list of canonical parts -- what a `map` keyed on the Mercury runtime's `rate_key` compares (ds.rate.m), so that storage preserves the identity by construction."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__same_part_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One component compared: the same representation and an equal value under it; two representations are two components whatever the values."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__string_is_not_the_bool",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The string \"1\" and the boolean true are two keys: the third pair of the clause's example."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__take_app",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Taking a list's own length from in front of a tail gives the list. A list lemma of this standalone module's own."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__time_keys_as_int",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A `Time` and an `Int` holding the same count are one key', for every count. A transcription of `rlow_4_6_2_1__of_time`, `Refl`."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__whole_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The components read back are the key when nothing is left over."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__word_rt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A scalar component written reads back and leaves what followed it, for every word and every tail."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__word_then",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A scalar component read back: one word, under the constructor its tag named."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__zero_is_zero",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The zero keys as itself whatever pattern stands for the negative one: the normalisation touches nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/ActivationKey.idr",
+        "name": "rlow_4_6_2_1__zeros_one_key",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'`0.0` and `-0.0` are one key', for every pattern of the negative zero."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Iret_10_4__trackers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "State `(rule_name, activation_key) -> last_fire_ns`, keyed on the rule's ordinal and the activation key's CODE: the value code of the key's tuple, whose equality is the clause's identity -- the same length and, per position, the same representation tag and an equal value under it -- by the code's construction, run and not proved (Main.idr, THE VALUE CODE). Partial for that: the identity is the code's, not derived from the representations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_1__same_key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Two tracker keys are one key when the rule and the key code are equal: the clause's identity through the value code, whose injectivity is run and not proved."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_1__same_key_is_equality",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "TWO KEYS THE TABLE CALLS THE SAME ARE ONE PAIR: the identity is equality of the rule and the code, over every pair of keys."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_1__same_key_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A key is the same key as itself."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/rgate.k",
+        "name": null,
+        "tag": "spec"
+      },
+      {
+        "path": "formal/k/rkey.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

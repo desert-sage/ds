@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.8.4.1_duration_compact_form",
+    "category": "logical",
+    "scenario": "LTIM.8.4.1 / LTIM.8.4.2: `dur::String` writes the compact form, largest unit first, zero components omitted, no sign (a `Duration` is never negative, [LTIM.1.3.1]). DS reads no temporal text ([LTIM.14]), so each `Duration` is built by unit arithmetic ([LTIM.4.1.1]), times the slot `e.k` (1) so that nothing folds and the engine writes it. `write` logs six, with what each pins: `1h30m` (`1_h + 30_min`), `500ms`, `2h15s` (`2_h + 15_s`) -- the clause's three examples; `1h30m` again from `90_min` (the writer carries minutes into hours); `1h` from `1_h + 0_min` (a zero component is dropped); `0s` from `0_s` (the zero Duration is `0s`). Drives the compiler's cast lowering (`Duration -> String` onto FN_DURATION_TO_STRING), and in the runtimes libds's `fmt_duration` and Mercury's `ltim_8_4_render_duration`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    k: Int mutable\n\nrule write:\n    Ev e\n->\n    let a = (e.k * (1_h + 30_min))::String\n    let b = (e.k * 500_ms)::String\n    let c = (e.k * (2_h + 15_s))::String\n    let d = (e.k * 90_min)::String\n    let z = (e.k * (1_h + 0_min))::String\n    let o = (e.k * 0_s)::String\n    log critical \"{a} {b} {c} {d} {z} {o}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1h30m 500ms 2h15s 1h30m 1h 0s"
+        ]
+    }
+}

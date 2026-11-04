@@ -1,0 +1,10 @@
+{
+    "id": "LINT.5.4",
+    "category": "compiler",
+    "scenario": "Cross-type interval equality per LINT.5.4 — `Interval<Time> == Interval<Int>` is a compile error. PATH PINNED: `dsc.typecheck`'s `adjacent_mismatches`, whose interval arm compares the two element families and refuses with DS_VALIDATE_TYPE_MISMATCH.",
+    "rules_ds": "schema Mix scope logical:\n    entity_id: String key\n    t_start: Time mutable\n    t_end: Time mutable\n    i_start: Int mutable\n    i_end: Int mutable\n\nrule r:\n    Mix m where (m.t_start..m.t_end) == (m.i_start..m.i_end)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,139 @@
+{
+  "id": "LNUL.11.1",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.11",
+  "seq": 357,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.11.1] **A verb's argument may be `null`** — one absent value, not a\nseparate sentinel ([LNUL.7.1]). What each RHS verb does with a `null` argument:\n\n| Verb | Policy |\n|---|---|\n| `log` | a `null` interpolated in the message renders as the empty string ([LGRA.2.9.6.2]) |\n| `emit`, `publish` | a slot declared `T?` takes `null`, and any other slot raises a `TypeError` ([RARC.5.2.7]) |\n| `call` | the call is not made, and the firing's other actions run ([NCBK.6.8]) |\n| `cache` | **the stored value may be `null`, and it is stored as one** — caching that a thing was absent is a valid thing to cache |\n\n**`cache` stores `null` as itself**, because a cache entry has no declared type\nto refuse it. The consequence is deliberate: after this, a `cached(key)` **miss** and a stored\n`null` are indistinguishable at the read ([LSTO.4.3.1a]). An author who needs to\ntell them apart stores a sentinel of their own choosing.\n\n**This table is over arguments to VERBS, and that is its whole scope.** A value\nconsumed as a boolean is ruled elsewhere and the two answers differ by site: a\n`where` clause does not fire on `null` ([LNUL.4.3]); a guard admits on it\n([LNUL.4.8]). Neither is a case of this clause.\n\nA **fault** is not this. A fault raised while evaluating an argument never\nreaches the verb, whichever verb holds the argument: the engine handles it as\n[LERR.1.4] states, and a `ComputationError` or a `TypeError` abandons the\nactivation. A trap has no honest answer, is not an absent value, and\nnever reaches a slot ([LERR.1.4.9], [LCST.4.5.4]) — it abandons the activation\ninstead.\n\n**Abandoning is a PREFIX rule, not a rollback.** A trap stops the action\nsequence at the point it occurs: actions already performed **stand**, and\nactions after it do not run. Nothing is undone, because a DS activation is\nnot atomic — the verbs have already reached the integrator's callbacks and the\nengine has no way to recall them. So a rule that emits, then traps, then would\nhave published has emitted and not published, and the stream shows exactly that.\n\nStated because \"abandons the activation\" reads as though the activation leaves\nno trace, and the half of it that already ran is the half an operator has to\nreason about.\n\n",
+  "refs": [
+    "LCST.4.5.4",
+    "LERR.1.4",
+    "LERR.1.4.9",
+    "LGRA.2.9.6.2",
+    "LNUL.4.3",
+    "LNUL.4.8",
+    "LNUL.7.1",
+    "LSTO.4.3.1a",
+    "NCBK.6.8",
+    "RARC.5.2.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "Lnul_11_1__absent",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The clause's single absent value, as the TARGET of the collapse. One constructor, exactly as the clause says -- it is the domain above that the clause does not describe."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "Lnul_11_1__outcome",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THREE absences where the clause states one -- Declared (the author wrote `null`), Declined (the runtime declined to produce a value), Missing (`cached(key)` never written, [LSTO.4.3.1], a statement about the store). Deliberately richer than the clause: AbsentValue.idr carries the clause's own single-value reading, and this type exists to test it."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__collapse",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The collapse the clause performs, as a function. Total and information-losing by construction; the theorems below measure what it loses."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__collapse_keeps_the_slot_policy",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "Proves the collapse harmless under a slot policy the clause does not state: the model zeroes the slot, and the clause stores `null` in a `T?` slot and raises a `TypeError` in any other."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__collapse_loses_the_decline",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The same for Declined, which is the one that matters to a runtime rather than to a store."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__collapse_loses_the_miss",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NO IMPLEMENTATION CAN RECOVER THE DISTINCTION, not merely that this one does not. Quantified over every total function from the collapsed type and refuting all of them at once -- the shape an ITP is for, and why this is not in Alloy: a bounded search can exhibit a lossy encoding, but \"no decoder exists\" is a statement about a function space."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__declined_is_not_declared",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The control: the two absences the theorems above say are conflated ARE distinguishable BEFORE the collapse. Without it, `collapse_loses_*` would be consistent with a domain that never separated them."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__is_a_miss",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A consumer the clause was NOT written for -- one that needs to know a store miss from a declared null. `ds.cache.cache_get` is `semidet` in the Mercury runtime precisely so a miss is not a value."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__zeroes_the_slot",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A slot policy on the richer domain that the clause does not state: the slot takes the zero of its declared type whichever absence arrived. The clause stores `null` in a `T?` slot and raises a `TypeError` in any other."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__zeroes_the_slot_after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The same slot policy stated on the collapsed type, so the two can be compared across the collapse. The clause does not state this policy."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "Lnul_11_1__policy",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "What a verb does when its argument is absent. `Prevent` and `StoreNull` are the clause's `call` and `cache` rows. `DegradeToPartial` and `ZeroAndProceed` are not its `log` and `emit` rows. The `call` row's counter, `ds.calls.arg_error_total`, is a row of [NMET.4.1], a metric and not a policy of a language clause."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "Lnul_11_1__value",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One `Absent`, not a family of sentinels. The clause is explicit that there is a single absent value, and modelling two would have assumed the finding."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "Lnul_11_1__verb",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The verb classes the table distinguishes; `cache` takes a policy of its own, as the clause says in as many words."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_11_1__on_absent",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A per-verb table as a total function: every verb class has an answer and the answers are distinct. Its `MessageVerb` and `SlotVerb` answers are not the clause's `log` and `emit` rows."
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LTSL.2.4_a_refused_dstest_that_is_no_modules_companion_is_not_read",
+    "category": "compiler",
+    "scenario": "[LTSL.2.4]: a `.dstest` that is no compiled module's companion is not part of the compile, so text a companion may not hold does not refuse it there. `stray.dstest` beside the program and `zeta.dstest` beside library `alpha` each declare a schema, which [LTSL.2.1] refuses in a companion; the program compiles. The same text as the program's companion is refused (`LTSL.2.1_a_companion_holding_a_schema_is_refused`), and as alpha's (`LTSL.2.4_a_library_companion_is_read_where_its_import_resolves`), so this passes because the files are not read, not because the text is accepted. PATH PINNED: dsc.cli `ltsl_2_4_read_companion`.",
+    "rules_ds": "use default\n\nimport alpha\n\nschema Tick scope logical:\n    id: Int key\n",
+    "libraries": {
+        "alpha": "schema Ping scope logical:\n    id: Int key\n"
+    },
+    "files": {
+        "stray.dstest": "schema Extra scope logical:\n    id: Int key\n",
+        "lib/zeta.dstest": "schema Extra scope logical:\n    id: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

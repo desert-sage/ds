@@ -1,0 +1,16 @@
+{
+    "id": "LCST.4.5.6_int_bool_render_null_source",
+    "clauses": ["LCST.4.3.4"],
+    "category": "logical",
+    "scenario": "[LCST.4.3.4] on the two renders: a null source converts to null and the conversion is not attempted, whatever its class. `m: Int?` and `c: Bool?` are absent on `a`, so rule `nulls` sees both casts null; on `b` they are present, so rule `present` sees `\"5\"` and `\"true\"`. A runtime that handed the absent value to the render would fault, or render `0` / `false`, and fire neither rule for `a`. PATH PINNED: the null short-circuit before FN_INT_TO_STRING and FN_BOOL_TO_STRING in both runtimes, beside the present-value path.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    m: Int? mutable\n    c: Bool? mutable\n\nrule nulls:\n    S s where (s.m::String?) is null and (s.c::String?) is null\n->\n    log info \"null {s.entity_id}\"\n\nrule present:\n    S s where ((s.m::String?) ?? \"\") == \"5\" and ((s.c::String?) ?? \"\") == \"true\"\n->\n    log info \"present {s.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "m": 5, "c": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "null a", "present b" ]
+    }
+}

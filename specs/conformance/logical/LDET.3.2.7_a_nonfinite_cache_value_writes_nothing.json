@@ -1,0 +1,15 @@
+{
+    "id": "LDET.3.2.7_a_nonfinite_cache_value_writes_nothing",
+    "clauses": ["LDET.3.2.7", "NERR.6", "IDSP.13.4"],
+    "category": "logical",
+    "scenario": "[LDET.3.2.7], [NERR.6]: the verb a non-finite `Float` traps does not run, so no invalid `inf` token reaches the wire. The input is LDET.3.2.7_a_nonfinite_cache_value_is_a_trap's: a rule caching a `Float` slot holding +Inf. Pin: no `action_cache_set` on the stream. A runtime that wrote the value, under any spelling, writes one and fails. PATH PINNED: libds's `adapter_ds_json_value` → `jt_refuse` (`rete/adapters.c`), so `adapter_ds_cache_set` never runs; the Mercury runtime's `ds.exec.cache_set_verb`, which abandons through `first_uncacheable` before `cache_put`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    v: Float mutable\n\nrule writer:\n    Trig t\n->\n    cache key: \"k\" value: t.v ttl: 1_h\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "v": Infinity } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["action_cache_set"]
+    }
+}

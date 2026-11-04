@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A host assert a bound refuses is recorded, and replays as a refusal. `text`
+# holds at most three codepoints ([LSTR.11.1]); the middle of three asserts
+# does not fit, is refused naming CAP_VALUE_CAPACITY ([LSTR.11.3]), and never
+# enters. It is an input that arrived ([RFCS.6.7]), so its FactAssert and then
+# its BoundsError are recorded, and a replay re-derives the refusal.
+
+schema Line scope logical:
+    k: Int key
+    text: String capacity 3 mutable
+
+rule r:
+    Line l
+->
+    log info "line {l.k}"

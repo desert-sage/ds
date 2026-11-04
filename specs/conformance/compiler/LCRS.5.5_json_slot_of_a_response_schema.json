@@ -1,0 +1,12 @@
+{
+    "id": "LCRS.5.5_json_slot_of_a_response_schema",
+    "category": "compiler",
+    "scenario": "A rule reads a response as it reads any fact (LCRS.5.5): it matches the response schema, constrained on `corr` to the call's correlation, and \"a slot of the response schema declared `Json` is read as any `Json` slot is\". Pin: library `ha` declares `response LightReply`, whose `payload` slot is `Json`; a sibling rule matches `LightReply r where r.corr == \"corr1\"` and reads `r.payload.anything`, a path no schema describes, and compiles. Path: the pattern resolves to the library's schema through `ha.`, and the path below a Json slot is that slot's business (LEXP.7.12's soft-fail at run time).",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule trigger:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s as \"corr1\"\n\nrule check:\n    ha.LightReply r where r.corr == \"corr1\" and r.payload.anything == \"x\"\n->\n    log info \"y\"\n",
+    "libraries": {
+        "ha": "schema LightReply scope ttl 1_h:\n    corr: String\n    payload: Json\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response LightReply\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

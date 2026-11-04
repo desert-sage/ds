@@ -1,0 +1,21 @@
+{
+  "id": "ISBK.1.9",
+  "prefix": "ISBK",
+  "doc": "SERIES_BACKINGS.md",
+  "parent": "ISBK.1",
+  "seq": 10,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[ISBK.1.9] **`instance_clone` (optional, ABI v4).** Deep-copies per-key state\ninto `*out_state` — **verbatim**, including any PRNG state (the reservoir's\n`xorshift64` seed) and every owned buffer / string — so a cloned engine's series\nare exact, not cold-started ([IARC.11.2] / [LDET.2.2b]). The copy is caller-owned\nand freed via `instance_free`, independently of the source; `DS_ERR_OOM` on\nallocation failure leaves the source unchanged. Consumed by the engine-clone\ndeep-copy (the `[IARC.11.1]` deep-copy-mutable set).\n\n**Every backend libds ships must set the hook.** The backend set is closed\n([NSBK.2.3]), so no engine an integrator holds has a series that cannot be\ncloned. A NULL hook is a defect in libds's own registration, and\n`ds_engine_clone` refuses an engine holding a live series row on such a backend\nwith `DS_ERR_STATE` rather than cold-start it.\n\n---\n\n",
+  "refs": [
+    "IARC.11.1",
+    "IARC.11.2",
+    "LDET.2.2b",
+    "NSBK.2.3"
+  ],
+  "errors": [
+    "DS_ERR_OOM",
+    "DS_ERR_STATE"
+  ]
+}

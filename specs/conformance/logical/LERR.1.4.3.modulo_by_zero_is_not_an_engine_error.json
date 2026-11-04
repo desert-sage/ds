@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.4.3.modulo_by_zero_is_not_an_engine_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "The negative half of the modulo-by-zero row: the engine is intact, so `engine_error` must not appear and the tier must not halt, and nothing here is Json-sourced, so `type_error` must not either. The activation is abandoned, so the rule must not fire.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    S s where s.a % s.b == 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 7, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "engine_error", "rule_fire_begin"]
+    }
+}

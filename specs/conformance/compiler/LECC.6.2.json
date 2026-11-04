@@ -1,0 +1,9 @@
+{
+    "id": "LECC.6.2",
+    "category": "compiler",
+    "scenario": "Family-level error matching per LECC.6.2 — `error adapter:` catches every leaf an adapter reports under `adapter` ([LECC.4.3]). An `error adapter:` continuation, naming a family rather than a leaf, compiles. PINS ONLY THAT IT COMPILES: `compile_ok` observes neither the sibling rule's `adapter.*` prefix match (LCCO.8.3) nor which codes it catches.",
+    "rules_ds": "service weather.get_forecasts:\n    kwarg entity_id: String\n    no response\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        error adapter:\n            log info \"adapter problem\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

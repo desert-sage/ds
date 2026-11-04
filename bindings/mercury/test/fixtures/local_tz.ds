@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: `t.local(tz)` through the `TimeZoneOffset` rows the
+# host asserts ([LTIM.10.7]). `Seen` enters only when a row answers for Los
+# Angeles: with no rows, or rows for another zone only, `local` faults and the
+# firing is abandoned, never read as UTC.
+#
+# The offset itself is not observable here: a stored `Time` keeps its UTC
+# instant only, so what the test can see is whether the firing completed.
+
+use default
+
+schema Ping scope logical:
+    id: Int key
+
+schema Seen scope ttl 1_h:
+    id: Int
+    stamp: Time
+
+rule zone_it:
+    Ping p
+->
+    emit Seen id: p.id stamp: now().local("America/Los_Angeles")

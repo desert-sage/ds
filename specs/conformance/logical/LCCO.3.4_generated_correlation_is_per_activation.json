@@ -1,0 +1,23 @@
+{
+    "id": "LCCO.3.4_generated_correlation_is_per_activation",
+    "category": "logical",
+    "scenario": "[LCCO.3.4]: a call with no `as` gets a GENERATED correlation, one per activation, `$r_c0_<u>`, never a constant per call site. Two `Req` facts fire the rule twice, so two calls of the one call site are in flight at once, for `a` and then `b` (activations complete together in their facts' order, [LDET.5.5]). Only the FIRST call is answered: a `GetReply`, the service's response schema ([LCRS.4.3.2]), whose `corr` is the correlation that call carried (`corr_from_call: 0` reads it off the issued call, since the fixture cannot spell a generated value). Then the clock passes the timeout. Expected: `got a` once -- the `on` sibling joined to `a`'s capture fact on `corr` ([LCCO.3.3], [LCCO.5.2]) -- and `late b`, the second activation's `timeout` sibling firing on ITS own correlation, which nothing answered. PATH PINNED: `dsc.rete`'s per-activation correlation (an InterpExpr over the activation) and the sibling join through the capture fact, in each runtime.",
+    "rules_ds": "schema GetReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.get:\n    kwarg k: Int\n    response GetReply\n\nschema Req scope logical:\n    id: String key\n\nrule r:\n    Req q\n->\n    call svc.get k: 1 nocooldown\n        on response.ok == true:\n            log info \"got {q.id}\"\n        timeout 30_s:\n            log info \"late {q.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "id": "a" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "GetReply", "corr_from_call": 0, "slots": { "ok": true } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 31000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "got a",
+            "late b"
+        ]
+    }
+}

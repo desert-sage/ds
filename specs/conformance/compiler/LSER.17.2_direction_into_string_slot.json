@@ -1,0 +1,10 @@
+{
+    "id": "LSER.17.2_direction_into_string_slot",
+    "category": "compiler",
+    "scenario": "LSER.17.2 / LSER.10.9 — `direction` returns `Int?` (-1 / 0 / +1), and [LSER.17.2]'s Returns column is the static type of the companion read, so emitting `t.direction` into a `String?` slot is refused with DS_VALIDATE_TYPE_MISMATCH ([LEXP.7.3b]). The slot is `String?` so that [LNUL.5.1]'s non-null check cannot be what refuses it; the leaf mismatch is the only defect in the program. PATH PINNED: `dsc.typecheck.luni_9_1_agg_type` types `direction` as `Int?`, and `dsc.validate.lexp_7_3b_kwarg_type` refuses the Int leaf against the String slot. A compiler that types the read `ty_unknown` skips the check and compiles this. The positive counterpart is compiler/LSER.17.2_direction_into_nullable_int_slot.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nschema Out scope logical:\n    k: String key\n    d: String? mutable\n\nseries Sensor.state:\n    direction sliding 10_s\n\nrule r:\n    Sensor t\n->\n    emit Out logical k: t.entity_id d: t.direction\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

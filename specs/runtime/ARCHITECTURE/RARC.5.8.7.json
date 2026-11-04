@@ -1,0 +1,22 @@
+{
+  "id": "RARC.5.8.7",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.8",
+  "seq": 750,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RARC.5.8.7] **Delivery within the producing call.** The engine must hand\n  the integrator every event ([RARC.5.8.5]) in `seq` order, each before the\n  integrator's typed callback for the action it describes runs ([RARC.5.8.9],\n  [RARC.5.8.12]), and all of them before the call that produced them returns\n  ([RARC.5.6.1]). The engine must hold no event past that return, and must\n  spawn no writer ([RARC.6.4.1], [RARC.5.8.3]). Within those bounds a runtime\n  may deliver in either of two ways:\n\n    - **Synchronously.** The hook site hands each event to the integrator's\n      stream callback from inside the consumption loop, on the caller's stack\n      ([RARC.6.5.1]), and the engine holds no queue of its own. Where the\n      integrator's sink is slower than the tier produces events, the callback\n      blocks and the consumption loop blocks with it, so a slow sink\n      throttles the engine mid-pump. The block is metered under `ds.recorder`\n      ([NMET.4.1]).\n    - **As a returned effect list.** The call returns its events and actions as\n      one ordered list, and the integrator's shell hands each to its callback in\n      that order. The engine holds the list from the first event to the\n      return, and nothing reaches the integrator before the call returns. So a\n      slow sink throttles the engine only between calls, never mid-pump, and a\n      call holds all of its effects until it returns.\n\n  Either way the lossless contract outranks the throughput ceiling\n  ([RARC.14.3]), because loss would be a determinism-guarantee violation, and\n  the order the integrator sees is the same. What differs is when a slow sink\n  is felt. Buffering, batching and any onward flush are the integrator's.\n\n",
+  "refs": [
+    "NMET.4.1",
+    "RARC.14.3",
+    "RARC.5.6.1",
+    "RARC.5.8.12",
+    "RARC.5.8.3",
+    "RARC.5.8.5",
+    "RARC.5.8.9",
+    "RARC.6.4.1",
+    "RARC.6.5.1"
+  ]
+}

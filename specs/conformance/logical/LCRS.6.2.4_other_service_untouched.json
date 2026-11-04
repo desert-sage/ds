@@ -1,0 +1,16 @@
+{
+    "id": "LCRS.6.2.4_other_service_untouched",
+    "category": "logical",
+    "scenario": "[LCRS.6.2.4]: two services answer with two response schemas, and a reply of each arrives with the same corr `c1`. A response supersedes only its own schema's facts (and `CallError`s), so both replies stay live and the probes log [\"a 1\", \"b 2\"]. PATH PINNED: the host-assert supersede for a fact of a response schema -- `ds_dispatch_supersede_arrival` (libds), `ds.exec.lcrs_6_2_4_arrival_victims` (Mercury) -- and its choice of target schemas. The break is a response that retracts every response schema's `c1`: ReplyA goes when ReplyB arrives and the probes log [\"b 2\"].",
+    "rules_ds": "schema ReplyA scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema ReplyB scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.a:\n    kwarg n: Int\n    response ReplyA\n\nservice svc.b:\n    kwarg n: Int\n    response ReplyB\n\nschema Probe scope explicit:\n    k: Int\n\nrule seen_a:\n    Probe\n    ReplyA x\n->\n    log info \"a {x.v}\"\n\nrule seen_b:\n    Probe\n    ReplyB y\n->\n    log info \"b {y.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "ReplyA", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "ReplyB", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a 1", "b 2"]
+    }
+}

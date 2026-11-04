@@ -1,0 +1,11 @@
+{
+    "id": "LSER.18.2.tumbling_no_backing",
+    "clauses": ["LSER.14.4.5"],
+    "category": "compiler",
+    "scenario": "No exact backing -> reject, per LSER.18.2 / LSER.15.2 (v1). `mean` / `sum` / `count` / `stdev` / `variance` are exact on `all_time` (SeriesBackendWelfordEwma accumulator), `sliding` (SeriesBackendRingBuffer raw-sample ring buffer), and `sample` (SeriesBackendReservoir reservoir). The `tumbling` form is specified as exact over a per-bucket backing (LSER.18.2 / LSER.14.4 — the most-recently-completed bucket) that v1 does not yet ship; routing it to the Welford accumulator would silently return an exponentially-weighted estimate, not the exact bucket statistic. Pin: `mean tumbling` rejects with DS_VALIDATE_SERIES_NO_EXACT_BACKING; the diagnostic points at the bounded `sliding` / `all_time` forms.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    mean tumbling 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+    }
+}

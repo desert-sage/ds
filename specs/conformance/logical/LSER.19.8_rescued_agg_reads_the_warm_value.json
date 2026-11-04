@@ -1,0 +1,37 @@
+{
+    "id": "LSER.19.8_rescued_agg_reads_the_warm_value",
+    "category": "logical",
+    "scenario": "LSER.19.8 — `??` rescues a COLD read, and a warm read under it is still the aggregate. One sample (v=1.0) into `mean sliding 10_min`, pumped; then an upsert (v=2.0) re-evaluates `where r.v > 1.5 and (r.mean ?? -1.0) == 1.0` against the pre-sample snapshot ([LSER.8.6.1]), whose mean is 1.0 — so it fires. It does NOT fire if the read under `??` stays cold: it then answers -1.0. The compile_ok vector LSER.19.8_nullable_agg_rescued cannot see that. PATH PINNED: `dsc.rete`'s `bo_coalesce` arm of `binary`, which emits `e_coalesce` over the read, then each runtime's warm mean read.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule rescued_mean:\n    Reading r where r.v > 1.5 and (r.mean ?? -1.0) == 1.0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

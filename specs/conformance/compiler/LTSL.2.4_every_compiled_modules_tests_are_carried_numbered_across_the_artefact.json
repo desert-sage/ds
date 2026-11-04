@@ -1,0 +1,24 @@
+{
+    "id": "LTSL.2.4_every_compiled_modules_tests_are_carried_numbered_across_the_artefact",
+    "category": "compiler",
+    "scenario": "[LTSL.2.4]: a compile carries the tests of every module it compiles, from each module's `.ds` and its companion `.dstest`, and [RLOW.17.1] numbers them from 1 across the artefact, by module in ascending module_id, leaves first, and within a module the `.ds`'s tests before the companion's. The program imports libraries `alpha` and `beta`, each with a companion holding one test named \"answers\"; the program holds one inline and its companion one more. The compile is from files ([RCTS.1.2.35]), so the compiler finds each companion beside its module, the libraries' where their imports resolve under `-L`. Each TestCase carries its module's module_id ([RDSC.4.7]): alpha's, beta's, then the program's twice. PATH PINNED: dsc.cli `ltsl_2_4_read_companion` for the program and in `add_library` for each library, dsc.driver `ltsl_2_4_companion` and `ltsl_2_4_library_tests`, and dsc.dstest's numbering.",
+    "rules_ds": "use default\n\nimport alpha\nimport beta\n\nschema Tick scope logical:\n    id: Int key\n\nschema Tock scope logical:\n    id: Int key\n\nrule tock:\n    Tick p\n->\n    emit Tock logical id: p.id\n\ntest \"answers\":\n    inputs:\n        at 0_s:\n            Tick id: 3\n    produces:\n        emitted Tock o where o.id == 3\n",
+    "libraries": {
+        "alpha": "schema Ping scope logical:\n    id: Int key\n\nschema Pong scope logical:\n    id: Int key\n\nrule answer:\n    Ping p\n->\n    emit Pong logical id: p.id\n",
+        "beta": "schema Ding scope logical:\n    id: Int key\n\nschema Dong scope logical:\n    id: Int key\n\nrule ring:\n    Ding p\n->\n    emit Dong logical id: p.id\n"
+    },
+    "files": {
+        "lib/alpha.dstest": "test \"answers\":\n    inputs:\n        at 0_s:\n            Ping id: 1\n    produces:\n        emitted Pong o where o.id == 1\n",
+        "lib/beta.dstest": "test \"answers\":\n    inputs:\n        at 0_s:\n            Ding id: 2\n    produces:\n        emitted Dong o where o.id == 2\n        activated ring\n",
+        "main.dstest": "test \"from the companion\":\n    inputs:\n        at 0_s:\n            Tick id: 4\n    produces:\n        activated tock\n"
+    },
+    "expect": {
+        "kind": "dsc_test_cases",
+        "test_cases": [
+            {"test_id": 1, "name": "answers", "module": "alpha"},
+            {"test_id": 2, "name": "answers", "module": "beta"},
+            {"test_id": 3, "name": "answers", "module": ""},
+            {"test_id": 4, "name": "from the companion", "module": ""}
+        ]
+    }
+}

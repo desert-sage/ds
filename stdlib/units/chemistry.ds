@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.chemistry — chemical and laboratory units
+#
+from units.si import proportion
+# pH's tier-2 body calls `math`'s `log10`.
+from math import log10
+
+# ── Molarity ──────────────────────────────────────────────────────────────────
+# mol/L (molar) is the practical concentration unit; mol/m³ is SI but unusual.
+# Base is molar (mol/L); SI mol/m³ = molar / 1000.
+
+unit dimension molarity  storage float64  base molar
+
+unit molar:      molarity                       label "M"    alias M
+unit millimolar: molarity  = x / 1000          label "mM"   alias mM
+unit micromolar: molarity  = x / 1_000_000     label "µM"   alias µM, uM
+unit nanomolar:  molarity  = x / 1_000_000_000 label "nM"   alias nM
+
+# ── Acidity / pH ──────────────────────────────────────────────────────────────
+# pH is the negative log₁₀ of hydrogen ion activity (≈ molarity in dilute solutions).
+# Tier-2 non-affine: the relationship is logarithmic and inverting.
+# Base: molar (hydrogen ion concentration in mol/L).
+
+unit dimension acidity  storage float64  base molar_h
+
+unit molar_h: acidity                          label "mol/L [H⁺]"
+
+unit pH: acidity:                              label "pH"
+    to_base:   10.0 ** (-x)
+    from_base: -log10(x)
+
+# ── Proportion extensions ─────────────────────────────────────────────────────
+# Extends the `proportion` scalar declared in units.si.
+# ppm/ppb/ppt are dimensionless ratios commonly used in chemistry and sensors.
+
+unit ppm: proportion  = x / 1_000_000         label "ppm"
+unit ppb: proportion  = x / 1_000_000_000     label "ppb"
+unit ppt: proportion  = x / 1_000_000_000_000 label "ppt"
+# ppt here means parts per trillion (10⁻¹²), following IUPAC and most analytical
+# chemistry usage. In oceanography ppt sometimes means parts per thousand (‰);
+# authors in that domain should use `permille` (= ppm * 1000) declared locally.

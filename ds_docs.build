@@ -1,0 +1,197 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# ds_docs.build — the rendered books: the four reference books and the
+# specification, each a JupyterBook rendered by `jupyter-book build`.
+#
+# Public: it runs and reads nothing private. Packing the renders into the
+# release's docs tarball, and the link gate that reads them, are
+# runtime/docker/release.build's docs section, which imports this file.
+#
+#   python3 -m build_unit ds_docs.build docs/references/author/_build/html.tar.gz
+#
+# At the repository root, as mercury.build is: build-unit resolves `import
+# ds_docs` against the build root, and no driver passes `-L`
+# (scripts/private/tests/pins/test_buildfile_imports.py).
+#
+# `require py3.12 docs` is the `ds-build` image's capability set: the books
+# render in that image (runtime/docker/ds-build.Dockerfile), which carries
+# jupyter-book 1.x and the books' requirements, so a render is content-addressed
+# and its environment pinned. build.ini [caps] says which host runs it.
+#
+# A step hands on what it declares and nothing else: steps run in different
+# trees, on one host as on several (OPERATING.md §4, [slots]), and build-unit
+# moves a declared output between them. So a step that writes a directory
+# declares one archive of it. Each render's output is its book's whole
+# `_build/html` with the pages its `_toc.yml` names, as one archive
+# (scripts/docs/render_book.py), and spec-book's is every page it generates.
+# scripts/private/tests/pins/test_docs_books.py refuses a step that reads a
+# rendered book's pages one by one.
+#
+# Each book's render is its own step, so a single book's edit re-renders only
+# that book.
+
+# the five books the docs site is rendered from.
+#
+# A second copy of this table is runtime/docker/release.build's, whose pack
+# and link gate read every book; an import does not bring a table.
+# scripts/private/tests/pins/test_docs_books.py holds the two equal, with
+# docs-pack's argv and ds_intersphinx.BOOKS.
+table Book
+  """One rendered JupyterBook: its directory, and the glob patterns of its pages and its config, which its renders read."""
+  dir                          md_glob                                  cfg_glob
+  docs/references/author        docs/references/author/**/*.md           docs/references/author/*.yml
+  docs/references/integrator    docs/references/integrator/**/*.md       docs/references/integrator/*.yml
+  docs/references/bindings      docs/references/bindings/**/*.md         docs/references/bindings/*.yml
+  docs/references/internals     docs/references/internals/**/*.md        docs/references/internals/*.yml
+  docs/specs                    docs/specs/**/*.md                       docs/specs/*.yml
+
+# ── each render reads its own book's sources. `**` recurses, and build-unit's
+#    walk prunes git-ignored directories, which keeps `{b.dir}/_build` — the
+#    render's own output, inside its source directory — out of its inputs;
+#    `_build/` is in .gitignore.
+#
+#    Both passes take the same inputs: a stale objects.inv silently un-resolves
+#    other books' links to whatever this book renamed.
+#
+#    And the extensions every book loads: `_config.yml` names them by directory
+#    under `local_extensions`, so a glob over the config sees a path, not the
+#    code. They are read here, beside the sources, with the static files an
+#    extension puts into every book (`docs/_ext/static/`: the code font, its
+#    licence and its stylesheet).
+each Book b
+  # one render Step per book. Its output is the archive of the whole render,
+  # the one file every reader of a book's render consumes.
+  step "render {b.dir}"
+    tool    sh
+    require py3.12 docs
+    run     python3 scripts/docs/render_book.py {b.dir} --archive {b.dir}/_build/html.tar.gz
+    reads   glob {b.md_glob} glob {b.cfg_glob}
+            glob docs/_ext/*.py glob docs/_ext/static/* tools/ds_lexer/ds_lexer.py
+            scripts/docs/render_book.py
+    makes   {b.dir}/_build/html.tar.gz
+
+  # ── pass 1: render each book only to emit its objects.inv.
+  #
+  # Cross-book links go through intersphinx, which reads the target book's
+  # objects.inv at build time. The link graph is cyclic, so no ordering of the
+  # renders can satisfy it in a DAG; hence two passes. Two are enough:
+  # objects.inv holds doc and label entries derived from a book's own TOC and
+  # headings, not from whether its outbound links resolved.
+  #
+  # `--inv` renders into `<dir>/_inv`, out of `_build/`, which pass 2 writes,
+  # and sets `DS_DOCS_PASS=1`, which tells docs/_ext/ds_intersphinx.py to
+  # install no mapping here: the other inventories do not exist yet. `_inv/` is
+  # in .gitignore, so the glob walk keeps it out of the render's inputs. The
+  # inventory is one file, and it is all pass 2 reads of this render.
+  step "inv {b.dir}"
+    tool    sh
+    require py3.12 docs
+    run     python3 scripts/docs/render_book.py {b.dir} --inv
+    reads   glob {b.md_glob} glob {b.cfg_glob}
+            glob docs/_ext/*.py glob docs/_ext/static/* tools/ds_lexer/ds_lexer.py
+            scripts/docs/render_book.py
+    makes   {b.dir}/_inv/_build/html/objects.inv
+
+# ── pass 2 waits on every inventory, its own included, which is what orders
+#    this book's pass 1 before its pass 2.
+#
+# A full cross join rather than a matrix of who links to whom: a matrix would
+# encode the link graph a second time and go stale silently, since an
+# unresolved `inv:` target deletes its own link text.
+#
+# A second `each Book b`, because `with Book o` applies to every block after
+# it, and the render and inv steps must not be multiplied by `o`.
+each Book b
+  with Book o
+  extend "render {b.dir}"
+    reads {o.dir}/_inv/_build/html/objects.inv
+
+# ── the specs book is rendered from generated pages. scripts/spec/spec_book.py
+#    writes the normative clause pages from specs/**.json ([STYL.5.6]); they
+#    are git-ignored build products, so a render on a fresh clone with no
+#    spec-book step would ship the specs book without them.
+#
+#    The step carries the render's own `require py3.12 docs`, the image its
+#    generator is tested in.
+#
+#    The Output is the archive of every page it writes, and both passes of the
+#    specs book unpack it before they render (`DS_DOCS_UNPACK`,
+#    scripts/docs/render_book.py): the pages are written in the tree
+#    spec-book runs in, and the renders may run in others.
+#
+#    What invalidates it: spec_book.py iterates specs/*/*/_file.json, one
+#    manifest per generated page. The clause files do not: they are past
+#    BUILD_MAX_INPUTS, so a clause-text edit does not re-render on a warm tree.
+#    The release path is a cold clone.
+step spec-book
+  require py3.12 docs
+  run     python3 scripts/spec/spec_book.py --archive builds/docs/spec-pages.tar.gz
+  reads   scripts/spec/spec_book.py scripts/spec/spec_render.py
+          specs/*/*/_file.json
+  makes   builds/docs/spec-pages.tar.gz
+
+extend "render docs/specs"
+  reads builds/docs/spec-pages.tar.gz specs/*/*/_file.json
+  env   DS_DOCS_UNPACK=builds/docs/spec-pages.tar.gz
+
+extend "inv docs/specs"
+  reads builds/docs/spec-pages.tar.gz specs/*/*/_file.json
+  env   DS_DOCS_UNPACK=builds/docs/spec-pages.tar.gz
+
+# ── the reference books' catalogue tables: each is generated from its source
+#    by scripts/spec/catalogues.py into its book's `_generated/`, git-ignored,
+#    and a page includes it, so a catalogue on a page is the source's rows as
+#    this commit has them.
+#
+#    The step refuses a source it cannot read rather than writing an empty table,
+#    and feeds itself those refusals' negative fixtures on every run.
+#
+#    What invalidates it: the named sources, libds.h, the standard library's
+#    unit modules, and the clause tree's manifests. The diagnostics' `Raised by`
+#    reads every clause's `errors`, and the census is every NERR clause; like
+#    spec-book's, those files are past BUILD_MAX_INPUTS, so a clause edit
+#    outside the named sources does not regenerate on a warm tree. The release
+#    path is a cold clone.
+#
+#    Both passes of each book that includes them read them, as they read the
+#    pages: `_generated/` is git-ignored, so the books' own globs prune it.
+step catalogues
+  require py3.12 docs
+  run     python3 scripts/spec/catalogues.py
+  reads   scripts/spec/catalogues.py glob scripts/spec/*.py
+          specs/language/EXPRESSIONS/LEXP.17.2.json specs/language/LEXER/LLEX.9.6.json
+          specs/integration/CALLBACKS/NCBK.2.3.json specs/integration/CALLBACKS/NCBK.2.4.json
+          specs/integration/CALLBACKS/NCBK.2.8.json specs/integration/ERRORS/NERR.18.json
+          specs/registry/validate.ebnf runtime/include/libds.h
+          proto/stream_event_kind.proto specs/language/UNIT_SYSTEM/LUNI.13.11.json
+          glob stdlib/units/*.ds
+          specs/*/*/_file.json
+  makes   docs/references/author/_generated/builtins.md
+          docs/references/author/_generated/aggregations.md
+          docs/references/author/_generated/keywords.md
+          docs/references/author/_generated/diagnostics.md
+          docs/references/author/_generated/units.md
+          docs/references/integrator/_generated/errors.md
+          docs/references/integrator/_generated/event_kinds.md
+
+extend "render docs/references/author"
+  reads docs/references/author/_generated/builtins.md
+        docs/references/author/_generated/aggregations.md
+        docs/references/author/_generated/keywords.md
+        docs/references/author/_generated/diagnostics.md
+        docs/references/author/_generated/units.md
+
+extend "inv docs/references/author"
+  reads docs/references/author/_generated/builtins.md
+        docs/references/author/_generated/aggregations.md
+        docs/references/author/_generated/keywords.md
+        docs/references/author/_generated/diagnostics.md
+        docs/references/author/_generated/units.md
+
+extend "render docs/references/integrator"
+  reads docs/references/integrator/_generated/errors.md
+        docs/references/integrator/_generated/event_kinds.md
+
+extend "inv docs/references/integrator"
+  reads docs/references/integrator/_generated/errors.md
+        docs/references/integrator/_generated/event_kinds.md

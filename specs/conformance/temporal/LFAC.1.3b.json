@@ -1,0 +1,30 @@
+{
+    "id": "LFAC.1.3b",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "TTL-lifecycle fact: advancing the mock clock past the deadline + pumping retracts it (LFAC.1.3.3; RARC.5.2.4), end-to-end through the harness clock-control surface (RTIM.3). The first pump, before the deadline, is not counted.",
+    "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

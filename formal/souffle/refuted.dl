@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// refuted -- the `never emitted` shape as a program. Base holds 3 and 7;
+// Derived is the Base tuples above 5, the way [LLOG.1.2]'s Occupied holds
+// exactly while its LHS matches; Refuted names the tuples that must NOT be
+// derived (3); Violation joins the two. Expected: Derived is {7}, Violation
+// is empty. The two must_fail_* twins beside this file doctor the
+// expectation and the input so the recipe is seen to fail ([STYL.5.10.5]).
+//
+//@derives [LLOG.1.2]
+#include "prelude.dl"
+
+.decl Base(x: DsInt)
+.decl Derived(x: DsInt)
+.decl Refuted(x: DsInt)
+.decl Violation(x: DsInt)
+.input Base(filename="refuted.Base.facts")
+.input Refuted(filename="refuted.Refuted.facts")
+
+Derived(x) :- Base(x), x > 5.
+Violation(x) :- Refuted(x), Derived(x).
+
+.output Derived
+.output Violation

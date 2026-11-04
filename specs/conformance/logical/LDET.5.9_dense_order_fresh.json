@@ -1,0 +1,17 @@
+{
+    "id": "LDET.5.9_dense_order_fresh",
+    "category": "logical",
+    "scenario": "[LDET.5.9], the control half of a pair. Items 2 and 3 are asserted, then an Anchor; `joined` joins the Anchor with each Item and logs the Item's id. Both activations complete when the Anchor arrives, so their order is the order the join walks the Item memory. With no delete in the history every walk is insertion order: 2, then 3. `LDET.5.9_dense_order_history` reaches the SAME working memory and the same match set through a retract, and [LDET.5.9] requires it to fire in this same order. PATH PINNED: libds's join scan over the alpha memory's dense vector (`rete/alpha.c`, [IRET.28.0.1]) -- no `where`, so no join index is consulted.",
+    "rules_ds": "schema Anchor scope logical:\n    id: Int key\n\nschema Item scope logical:\n    id: Int key\n\nrule joined:\n    Anchor\n    Item b\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Item", "slots": {"id": 2}},
+            {"op": "assert", "schema": "Item", "slots": {"id": 3}},
+            {"op": "pump"},
+            {"op": "assert", "schema": "Anchor", "slots": {"id": 1}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["2", "3"]
+    }
+}

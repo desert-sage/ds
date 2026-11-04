@@ -1,0 +1,24 @@
+{
+  "id": "NCBK.3.2",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.3",
+  "seq": 227,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.3.2] A metric emission is **self-describing**. One value carries\neverything a receiver needs to route and fold the observation, with no prior\nregistration step and no schema to look up.\n\n| Field | Meaning |\n|---|---|\n| name | the metric's dotted identifier, e.g. `ds.samples.dropped_total` |\n| kind | how the receiver should fold `value` -- see below |\n| value | the observation itself |\n| labels / n_labels | optional dimensions; **`labels` is NULL whenever `n_labels` is 0** |\n\nThe kind is the field that decides aggregation: a **counter** contributes an\nincrement, a **gauge** replaces the previous reading, and a **histogram** is a\nsingle observation the receiver buckets itself ([NCBK.3.3]). libds keeps\nneither running totals nor bucket boundaries -- both live on the integrator's\nside, which is what lets the one emission path serve stacks as different as\nPrometheus and a plain array of counters.\n\nTwo consequences for a receiver. Because `labels` is absent rather than empty\nwhen there are no dimensions, gate on `n_labels`, never on the pointer. And\nbecause a single value field serves all three kinds it is floating-point, so\nan integral counter delta is carried exactly only below 2^53.\n\nThe set libds emits is listed in [NMET.4.1] ([NCBK.3.4]). A receiver should\ntreat a name it does not know as a metric from a newer libds, not as an error.\n\nThe payload type is `ds_metric_t`, carrying `ds_metric_kind_t` and `ds_metric_label_t`, declared in `runtime/include/libds.h`.\n\n",
+  "refs": [
+    "NCBK.3.3",
+    "NCBK.3.4",
+    "NMET.4.1"
+  ],
+  "metrics": [
+    "ds.samples.dropped_total"
+  ],
+  "symbols": [
+    "DS_METRIC_COUNTER",
+    "DS_METRIC_GAUGE",
+    "DS_METRIC_HISTOGRAM"
+  ]
+}

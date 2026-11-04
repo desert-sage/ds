@@ -1,0 +1,21 @@
+{
+    "id": "LSER.16.5.2_dedup.runtime",
+    "category": "logical",
+    "dead_rules_expected": ["never_fires"],
+    "scenario": "count_distinct counts DISTINCT values, not raw observations (LSER.16.5.2). Asserting the same value (7) four times yields a distinct cardinality of 1 — a raw `count` would reach 4. Pin: a rule gated `count_distinct(r.val) >= 2` (the declared 5_s window, LSER.6.11.3) NEVER fires, so its `action_log` is forbidden. This proves the duplicates collapse to one distinct value; the companion positive fixture LSER.16.5.2.runtime confirms the backend is loaded and does fire on genuinely-distinct values.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Int mutable\n\nseries Reading.val:\n    count_distinct sliding 5_s\n\nrule never_fires:\n    Reading r where count_distinct(r.val) >= 2\n->\n    log info \"should not fire\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 7 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["action_log"]
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.1.2.2_out_of_range_date_refused_above",
+    "category": "runtime",
+    "scenario": "[LTIM.1.2.2]: the upper side of LTIM.1.2.2_out_of_range_date_refused. The host asserts a `Date` slot of 106752 (2262-04-12, the day after the last): the call returns `DS_ERR_TIME_RANGE` (-205), naming the Date range, nothing is asserted, and no fault event reaches the stream. PATH PINNED: libds's `engine_assert_canonical` (wm.c); the Mercury runtime's `ds.engine.host_assert_core`.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nrule seen:\n    Visit\n->\n    log info \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-205",
+        "message_contains": "Date range",
+        "no_fault_events": true,
+        "fact_count_after": 0,
+        "fault_at": 0,
+        "asserts": [
+            { "schema": "Visit", "slots": { "id": 1, "due": 106752 } }
+        ]
+    }
+}

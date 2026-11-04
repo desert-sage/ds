@@ -1,0 +1,23 @@
+{
+  "id": "RTIM.14.7",
+  "prefix": "RTIM",
+  "doc": "TESTING_IMPLEMENTATION.md",
+  "parent": "RTIM.14",
+  "seq": 613,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTIM.14.7] **Oracle check.** The interpreter observes the engine's stream events\nand final working memory and checks every `Oracle*` atom over the whole run — `POS`\nrequires ≥ 1 occurrence, `NEVER` requires 0 ([LTSL.8.3]) — matching by partial\n(subset) equality or, on an `OracleEmit` that carries\n`has_where`, by the `where` predicate in its place ([LTSL.8.4]). The\npredicate is evaluated by a **compiler-synthesized oracle rule matched by the real\nengine** ([RTIM.14.11]), never a shadow or parallel evaluator ([RTIM.14.8]): the\nrule's LHS is `<schema> <binding> where <pred>`, and the interpreter binds the\n`OracleEmit` to that rule by the deterministic name convention. A `where` match\nis a firing of that oracle rule on a fact that was **emitted** this\nrun — the interpreter attributes each firing to an `ACTION_EMIT`\nby fact identity (the matched fact handle on the pre-fire event); a firing on an\ninput / arrange fact that merely satisfies the predicate is **not** a match. The\noracle rule's own effects are not part of the observed output. v1 exact-value\nmakes a float match exact ([LDET.3.2]).\n\nAn `OracleEmit` that carries both `has_where` and a `slot_match`, and an\n`OraclePublish` that carries `has_where`, are ones no conforming compiler writes\n([LTSL.8.4]). The interpreter **must** fail the case and name the atom, as it fails an assertion\nit does not understand ([RTIM.14.9]), and **must not** check either half alone.\n\n",
+  "refs": [
+    "LDET.3.2",
+    "LTSL.8.3",
+    "LTSL.8.4",
+    "RTIM.14.11",
+    "RTIM.14.8",
+    "RTIM.14.9"
+  ],
+  "atoms": [
+    "OracleEmit",
+    "OraclePublish"
+  ]
+}

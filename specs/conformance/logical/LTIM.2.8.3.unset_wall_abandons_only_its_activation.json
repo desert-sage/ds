@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.2.8.3.unset_wall_abandons_only_its_activation",
+    "category": "logical",
+    "scenario": "[LTIM.2.8.3]: a `now()` read while the wall clock has no value abandons that activation, so its rule does not fire, and the engine continues: the next rule in the same pump fires. Mock clock, wall clock never set (`wall_clock: unset`). `stamp`, first in source order, reads `now()` in a `let` and would log `stamp <t>`; `later` logs `later`. Exactly [\"later\"]: a `now()` that read the epoch logs `stamp 0` first, and a fault that halted the engine logs nothing. Its sibling LTIM.2.8.3.unset_wall_now_is_a_domain_error pins the fault's kind.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n\nrule stamp:\n    S\n->\n    let t = now()\n    log info \"stamp {t}\"\n\nrule later:\n    S\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["later"]
+    }
+}

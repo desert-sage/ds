@@ -1,0 +1,19 @@
+{
+  "id": "RCTS.1.2.26",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 122,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.26] **`introspection_assert`'s fields** — a fixture whose\n  `expect.kind` is `introspection_assert` carries `steps`, the session's\n  inputs as [RCTS.1.2.28] has them, and `checks`, a non-empty array of checks.\n  A harness must run the steps, then read each check through the runtime's\n  introspection surface ([LCON.4.5.1]). The runtime passes only when every\n  check holds.\n\n  A check is an object whose `surface` names one member of a closed set, and\n  which carries exactly the members that surface takes:\n\n  - `fact_count`, with `equals`, a non-negative integer: working memory holds\n    that many live facts.\n  - `justifiers`, with `fact_id`, a positive integer, and `expect_rules`, an\n    array of rule names: the rules justifying that fact, by name and counted\n    with repeats, are the array's.\n  - `justifier_count`, with `fact_id` and `count`, a non-negative integer:\n    that fact has that many justifications.\n  - `rete_network`, with `min_nodes` and `min_edges`, non-negative integers:\n    the network has at least that many nodes and at least that many edges.\n  - `slot_schema_ref`, with `schema` and `slot`, strings, and `equals`, a\n    string or `null`: the loaded schema `schema`'s slot `slot` names the\n    schema `equals` as its reference, or none when `equals` is `null`\n    ([RDSC.5.5.5]). The check fails when no such slot is loaded.\n\n  A `fact_id` names a fact by the id the runtime gave it ([RFCS.6.9]).\n\n  `add_schema_ref` (optional, `introspection_assert` only) is an object of\n  exactly three strings, `schema`, `slot` and `ref`. Before the load, a\n  harness must give the compiled artefact's one `Slot` atom for `schema`'s\n  slot `slot` a `schema_ref` of `ref`, written in ascending field order\n  ([RFCS.19.5]), re-frame the atom, and recompute `dsc_sha256` as [RDSC.3.6]\n  states. No compiler writes a `schema_ref` on a slot that is not a schema\n  slot ([RDSC.5.5.5]), so this is how a fixture gives a runtime one to ignore.\n  A harness must fail a fixture whose artefact holds no such `Slot`, more than\n  one, or one that already carries a `schema_ref`.\n\n  A harness must fail a fixture whose `checks` is not a non-empty array of\n  objects; a check whose `surface` names no member of the set, or that lacks\n  a member its surface takes, carries one it does not take, or gives one a\n  value of another type; and an `add_schema_ref` of another shape. It must\n  fail a fixture of any other `expect.kind` that carries `add_schema_ref`. The\n  set grows only by a change to this clause.\n\n",
+  "refs": [
+    "LCON.4.5.1",
+    "RCTS.1.2.28",
+    "RDSC.3.6",
+    "RDSC.5.5.5",
+    "RFCS.19.5",
+    "RFCS.6.9"
+  ]
+}

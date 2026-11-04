@@ -1,0 +1,34 @@
+{
+  "id": "LLEX.12.1",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.12",
+  "seq": 536,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LLEX.12.1] **`_` is optional, for every unit** (LUNI.3.1.1). A unit\n  literal is `NUM_PREFIX _? UNIT_SUFFIX`: `30_s` and `30s` are one\n  token, as are `100_km` / `100km`, `23_°C` / `23°C`, and — `45°` / `45_°`, `30′`, `45″`. The plane-angle\n  glyphs are ordinary `UNIT_SUFFIX` characters. Within the numeric prefix, `_` before a digit is a group\n  separator (`23_000_m` = `INT_LIT(23000)` then unit `_` then\n  `UNIT_SUFFIX(m)`); the separator before the suffix is the unit `_`.\n",
+  "refs": [
+    "LUNI.3.1.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__digits_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's separator rule in a parsed `INT_LIT`: within the numeric prefix a `_` before a digit is a group separator, so a `_` is admitted where a digit follows and nowhere else -- not at the end of the run, not before another `_`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__refused_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The trailing separator `31_` parses to `null`, executed; the unit `_` before a suffix (`31_s`) is no part of an `INT_LIT` and parses to `null` too."
+      }
+    ]
+  }
+}

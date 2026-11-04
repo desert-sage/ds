@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.3b_int_expr_into_float_slot",
+    "category": "compiler",
+    "scenario": "LEXP.7.3b — promotion is an OPERATOR rule and stops at a slot. [LEXP.7.3] promotes Int operands automatically, but an Int-typed expression assigned into a Float slot is a compile error, not a widening. The distinction is legibility: in `qty + 2.5` both operands and the operator are in front of the reader; in `emit R val: qty` the slot's type is declared elsewhere, possibly in another file.",
+    "rules_ds": "schema Reading scope logical:\n    qty: Int key\n\nschema Result scope ttl 1_h:\n    val: Float\n\nrule widen:\n    Reading r\n->\n    emit Result val: r.qty\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

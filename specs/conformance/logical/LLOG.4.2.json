@@ -1,0 +1,20 @@
+{
+  "id": "LLOG.4.2",
+  "category": "logical",
+  "scenario": "Negation under logical per LLOG.4.2 — a logical fact is justified by the absence of a matching fact. Quiet is emitted when no Noise exists. Once Noise is asserted the not-pattern fails and Quiet retracts.",
+  "rules_ds": "schema Noise scope logical:\n    v: Int key\n\nschema Quiet scope logical:\n    dummy: Int key\n\nrule r:\n    no Noise\n->\n    emit Quiet logical dummy: 0\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      { "op": "pump" },
+      { "op": "assert", "schema": "Noise", "slots": { "v": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "action_emit",
+      "fact_assert",
+      "fact_retract"
+    ]
+  }
+}

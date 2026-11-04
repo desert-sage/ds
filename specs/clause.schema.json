@@ -1,0 +1,545 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ds.spec/clause.schema.json",
+  "title": "DS spec clause",
+  "description": "One numbered spec paragraph. Per STYL.5.3. `text` is the verbatim Markdown span (lossless render); all other fields are derived/authored metadata.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "prefix",
+    "doc",
+    "parent",
+    "seq",
+    "depth",
+    "kind",
+    "heading",
+    "text"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{4,5}\\.[0-9]+[a-z]*(\\.[0-9]+[a-z]*){0,3}$",
+      "description": "Canonical clause ID; equals the filename stem (STYL.2.1). A segment is digits with an optional lowercase tail."
+    },
+    "prefix": {
+      "type": "string",
+      "pattern": "^[A-Z]{4,5}$",
+      "description": "4-5 letter prefix; tree derives from prefix[0] (STYL.5.2.2)."
+    },
+    "doc": {
+      "type": "string",
+      "description": "Source document basename, e.g. DSC_FORMAT.md."
+    },
+    "parent": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[A-Z]{4,5}\\.[0-9]+[a-z]*(\\.[0-9]+[a-z]*){0,3}$",
+      "description": "Enclosing clause ID; null for a top-level (PFX.N) item."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Physical (document) order. Render sort key, decoupled from numeric ID (STYL.2.8.5)."
+    },
+    "depth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "ID level 1-4 (STYL.2.1)."
+    },
+    "kind": {
+      "enum": [
+        "normative",
+        "definition",
+        "observation",
+        "note",
+        "grammar",
+        "table",
+        "heading",
+        "tombstone"
+      ],
+      "description": "Spec-beat class (STYL.5.3.2); decides whether a check is expected. `tombstone` is a retired ID's stub (empty text)."
+    },
+    "heading": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Section title when kind=heading or the item leads with a titled header; else null."
+    },
+    "text": {
+      "type": "string",
+      "description": "The clause's Markdown body (verbatim span incl. its ID tag)."
+    },
+    "deferred": {
+      "type": "boolean",
+      "description": "Written only as `true`: the obligation does not bind this edition (STYL.5.3.3). Absent means it binds. Whether a clause is ratified is derived, never stored."
+    },
+    "compiler_only": {
+      "type": "boolean",
+      "description": "Written only as `true`: everything the clause states is the compiler's verdict on a program (STYL.5.3.11.1), so a `compile_ok` vector can ratify it (STYL.5.3.11). Only a normative, definition, observation or table clause carries it."
+    },
+    "also_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{4,5}\\.[0-9]+[a-z]*(\\.[0-9]+[a-z]*){0,3}$"
+      },
+      "description": "Additional clause IDs co-defined in this clause's header (a multi-ID header, STYL.2.6); they share this clause's text span and get no separate file."
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Clause IDs cited by this item's prose (extracted from [ID] tokens)."
+    },
+    "referenced_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Inverse of refs; generated."
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Error codes mentioned (STYL.5.3.5)."
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Metric names mentioned."
+    },
+    "atoms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DSC atom magics mentioned."
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Builtins/entrypoints/enum values mentioned."
+    },
+    "defines": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Identifiers this clause is the single authoritative definer of, per registry (STYL.5.3.5.1). Consumed by the registry-sync gate (STYL.5.9).",
+      "properties": {
+        "atoms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "symbols": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Verification ties to models and notations: tool -> array of check objects (STYL.5.3.6). Conformance tests are not stored here: their links are on the test side and derived on every load.",
+      "properties": {
+        "alloy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/model_check"
+          }
+        },
+        "tla": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/model_check"
+          }
+        },
+        "saw": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "cbmc": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "k": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "souffle": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "proto": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "ebnf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "asdl": {
+          "type": "array",
+          "description": "An ASDL definition of a syntax tree a tool exchanges, by path + type or constructor name (STYL.2.15.2).",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "jsonschema": {
+          "type": "array",
+          "description": "A JSON Schema of a document a tool writes, by path + `$defs` name, or `null` for the whole document (STYL.2.15.2).",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "idris": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/idris_check"
+          }
+        }
+      }
+    },
+    "data": {
+      "description": "Structured source for a clause whose `text` block is GENERATED from it (STYL.5.3.2.1). Two shapes, discriminated by which key is present — a registry TABLE, or an EBNF grammar. `additionalProperties: false` on both arms is what makes presence a discriminator rather than a hint: a mixed object validates against neither.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A registry table. The Markdown pipe table in `text` is rendered from it.",
+          "required": [
+            "columns",
+            "rows"
+          ],
+          "properties": {
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "An EBNF grammar. The fenced ```ebnf block in `text` is rendered from it. THE SOURCE, not a path: a path would make the clause a pointer to the authority instead of the authority (EBNFFOLD1, implementer's answer).",
+          "required": [
+            "ebnf"
+          ],
+          "properties": {
+            "ebnf": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "verification": {
+      "enum": [
+        "covered",
+        "partial",
+        "gap",
+        "exempt",
+        "refuted",
+        null
+      ],
+      "description": "Coverage verdict; derived unless asserted (STYL.5.3.7). `refuted` is ASSERTED ONLY and is never derived: a clause shown false by a proof is not a coverage state, and no count of passing checks can produce it."
+    },
+    "gap_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Required when verification=gap."
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "name",
+        "tag"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Repo-relative model/test file."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Element inside the file (sig / operator / K program label / test id / proto message); null for a file-level tie."
+        },
+        "tag": {
+          "enum": [
+            "spec",
+            "derives",
+            "gap"
+          ]
+        },
+        "polarity": {
+          "enum": [
+            "positive",
+            "negative",
+            "differential",
+            null
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "model_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "An Alloy or TLA+ tie. Structure (`path`, `name`, `tag`) is derived from the model tags and regenerated by `spec_crossref.py --write`; `verdict`, `counterexample` and `note` are AUTHORED and merged across a write, exactly as on the idris lane. A bounded model can prove a clause within its scope, prove less than the clause claims, show the clause false, or show that the IMPLEMENTATION breaks a clause that stands, and `verdict` says which.",
+      "required": [
+        "path",
+        "name",
+        "tag"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Repo-relative model file, e.g. formal/alloy/kleene_logic.als."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The element inside the file: an Alloy sig / fact / check / run, a TLA+ operator / VARIABLE / CONSTANT."
+        },
+        "tag": {
+          "enum": [
+            "spec",
+            "derives",
+            "gap"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "proven",
+            "refuted",
+            "partial",
+            "violated"
+          ],
+          "description": "What the check concluded, when the author has said. OPTIONAL: the default reading of a green bounded check is STYL.5.5.4's tie -- the property holds within the model's scope -- and most entries say nothing more. `proven` -- the property holds within the model's scope and establishes the clause. `refuted` -- the CLAUSE is false; `counterexample` is then required and the clause must carry `verification: \"refuted\"`. `partial` -- the model and the clause do not coincide, in either direction; `note` says how. `violated` -- the clause STANDS and the model shows the IMPLEMENTATION breaking it; `counterexample` is then required, and the clause's `verification` is untouched because the finding is about the code, not the corpus. `assumed` is deliberately absent: it names a hole in a proof term, which a bounded model has none of; a model whose property rests on an asserted fact is `partial`, with the assumption in its note."
+        },
+        "counterexample": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Required when verdict is refuted or violated: the witness -- a TLC trace or an Alloy instance, in prose -- stated so a reader can check it without running the tool."
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verdict": {
+                "enum": [
+                  "refuted",
+                  "violated"
+                ]
+              }
+            },
+            "required": [
+              "verdict"
+            ]
+          },
+          "then": {
+            "required": [
+              "counterexample"
+            ],
+            "properties": {
+              "counterexample": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "idris_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "An Idris tie. Every other lane records WHETHER a clause is checked; this one also records WHAT THE CHECK CONCLUDED, because a proof assistant can conclude the clause is false and no other surface in this corpus can express that -- and WHAT KIND OF ELEMENT concluded it, because the STYL.5.5.4 name rule makes every column-0 element an entry, so without a `role` a hundred list lemmas read as a hundred proofs of the clause.",
+      "required": [
+        "path",
+        "name",
+        "tag",
+        "role"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Repo-relative Idris module, e.g. formal/idris/Units/Dimension.idr."
+        },
+        "name": {
+          "type": "string",
+          "description": "The named element inside the module. NOT nullable, unlike `check.name`: Idris is an ELEMENT surface, so a file-level tie is not expressible and the STYL.5.5.4 name rule has nothing to check without it."
+        },
+        "tag": {
+          "enum": [
+            "spec",
+            "derives",
+            "gap"
+          ]
+        },
+        "role": {
+          "enum": [
+            "definition",
+            "lemma",
+            "theorem",
+            "witness"
+          ],
+          "description": "What kind of element this is. REQUIRED, with no default. `definition` -- a data / record / interface declaration or a function that models the clause's vocabulary; it establishes nothing by itself. `lemma` -- a helper step (a list or arithmetic fact, an unfolding) used by a theorem; it establishes nothing about the clause on its own. `theorem` -- the element that states and discharges a claim of the clause, quantified over its inputs. `witness` -- a concrete instance or refutation: a `Refl` on literals, an `impossible` case, an executed history; it establishes exactly one point. Coverage counts theorems and witnesses; a definition or a lemma is bookkeeping toward them."
+        },
+        "verdict": {
+          "enum": [
+            "proven",
+            "refuted",
+            "assumed",
+            "partial",
+            "violated"
+          ],
+          "description": "What the element concluded. REQUIRED for a `theorem` or a `witness`, with no default and no derivation; OPTIONAL for a `definition` or a `lemma` that is sound. `proven` -- it typechecks and establishes the clause. `refuted` -- the clause is FALSE; `counterexample` is then required. `violated` -- the clause stands and the element shows the IMPLEMENTATION breaking it; `counterexample` is then required and the clause's `verification` is untouched. `assumed` -- the element rests on a postulate, believe_me, assert_total or assert_smaller, so it is a statement of intent rather than a proof; recorded on EVERY role, because an unlabelled hole carries a type checker's authority whatever kind of element hides it. `partial` -- the element and the clause do not coincide, in either direction, per the [LFST.4.6] precedent."
+        },
+        "counterexample": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Required when verdict is refuted or violated: the witness, stated so a reader can check it without running Idris."
+        },
+        "polarity": {
+          "enum": [
+            "positive",
+            "negative",
+            "differential",
+            null
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "enum": [
+                  "theorem",
+                  "witness"
+                ]
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "required": [
+              "verdict"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verdict": {
+                "enum": [
+                  "refuted",
+                  "violated"
+                ]
+              }
+            },
+            "required": [
+              "verdict"
+            ]
+          },
+          "then": {
+            "required": [
+              "counterexample"
+            ],
+            "properties": {
+              "counterexample": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

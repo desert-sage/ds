@@ -1,0 +1,18 @@
+{
+    "id": "LCON.4.4.1",
+    "category": "runtime",
+    "scenario": "LCON.4.4.1 fact-stream primitive — the runtime records the fact stream losslessly and replays it bit-identically (LCON.4.4.2). A rule deriving a fact across two triggers is recorded and replayed; the lossless round-trip is proven by the recorded and replayed streams matching event-for-event (handles normalized).",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nschema Derived scope logical:\n    v: Int key\n\nrule derive:\n    Trigger t\n->\n    emit Derived logical v: t.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000 },
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 6
+    }
+}

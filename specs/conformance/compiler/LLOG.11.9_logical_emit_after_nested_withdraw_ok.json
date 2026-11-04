@@ -1,0 +1,9 @@
+{
+    "id": "LLOG.11.9_logical_emit_after_nested_withdraw_ok",
+    "category": "compiler",
+    "scenario": "LLOG.11.9: \"A body nested in a later action is not this RHS. It runs in a rule of its own, a continuation rule (LCCO.5.2) or an `after` follow-up, and the `withdraw` does not end that rule's match.\" The `withdraw t` is inside the call's `on response` body, which runs in the continuation rule, so the top-level `emit L logical` after the `call` follows no `withdraw` of this RHS. Compiles. PATH PINNED: `dsc.validate`'s `llog_11_9_emit_after_withdraw` reads only the rule's top-level actions; a `withdraw` nested in a continuation body starts nothing. Refusing this program is the break.",
+    "rules_ds": "schema NotifySendReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice notify.send:\n    kwarg n: Int\n    response NotifySendReply\n\nschema Trig scope explicit:\n    v: Int\n\nschema L scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call notify.send n: 1 cooldown: 30_s\n        on response.status == 200:\n            withdraw t\n    emit L logical v: 1\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.10.6.1_author_double_underscore_name_compiles",
+    "category": "compiler",
+    "scenario": "[LLEX.10.6.1]: a synthetic name is `$` followed by the name, and `$` is no `NAME` character, so the `__X__` shape is not reserved: \"An author may declare any `NAME`, `__Foo__` included.\" A schema `__Foo__` with a slot `__k__`, and a rule `__foo__` matching it, compile, and the rule lowers under the name its author gave it. Pinned as `dsc_term_order`, not `compile_ok`, so the rule has to lower and its TerminalNode has to carry `__foo__`: a compiler that refuses the shape fails with DS_VALIDATE_RESERVED_IDENT (retired), one that took the name for a synthetic one and renamed or dropped it fails the order. PATH PINNED: `dsc.lex` emitting `__foo__` as a `NAME`, with no `__X__` refusal in `dsc.validate` or `dsc.parse`.",
+    "rules_ds": "schema __Foo__ scope logical:\n    __k__: Int key\n\nrule __foo__:\n    __Foo__\n->\n    log info \"foo\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["__foo__"]
+    }
+}

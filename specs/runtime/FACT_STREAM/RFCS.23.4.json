@@ -1,0 +1,16 @@
+{
+  "id": "RFCS.23.4",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.23",
+  "seq": 954,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.23.4] **Fields.** A `FactExternal` carries one field per slot of the\nwriting schema, in that schema's declaration order, each named for its slot. A\n`null` slot is `KIND_NULL`.\n\n**A fact-reference slot carries the referenced fact, inlined** as a nested\n`FactExternal` of kind `KIND_FACT_REF`. References are written once, when the\nreferring fact is asserted ([LGRA.5.7a.2]), so a referenced fact always predates\nthe fact that refers to it: nesting is finite and acyclic.\n\n**A reference whose target has left working memory is written as `KIND_NULL`,\nwhether or not the slot is nullable.** The engine holds no copy of the\ntarget to inline. [RFCS.23.7] says how a receiver reads it.\n\n**Nesting is at most 16 deep.** The top-level fact is at depth 0 and a fact\ninlined in a slot of a fact at depth *d* is at depth *d* + 1; no inlined fact\nmay be deeper than 16. A receiving engine must refuse a deeper `FactExternal`\nwhole, as malformed (`DS_ERR_PARSE`, [NCBK.10.4]). An engine writes a fact\nwhose references chain deeper as it is, and no receiver accepts it.\n\n",
+  "refs": [
+    "LGRA.5.7a.2",
+    "NCBK.10.4",
+    "RFCS.23.7"
+  ]
+}

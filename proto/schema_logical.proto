@@ -1,0 +1,27 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The lifecycle a schema declares with `scope`. Per [LSCP.1.5]; the SchemaLogical
+// atom carries it per [RDSC.5.4.5]. `ttl` is not a member: a ttl schema
+// carries an SchemaTtl atom with its duration instead ([RDSC.5.3]).
+enum SchemaLifecycle {
+  SCHEMA_LIFECYCLE_UNSPECIFIED = 0;  // never written; a runtime refuses it ([RDSC.5.4.5])
+  SCHEMA_LIFECYCLE_EXPLICIT    = 1;  // `scope explicit` — the engine never retracts
+  SCHEMA_LIFECYCLE_LOGICAL     = 2;  // `scope logical` — truth maintenance retracts
+  SCHEMA_LIFECYCLE_ACTIVATION  = 3;  // `scope activation` — every completion path retracts
+}
+
+// SchemaLogical atom body. Per [RDSC.5.4]. Carries the schema's declared
+// lifecycle in `lifecycle` ([RDSC.5.4.5]).
+message SchemaLogical {
+  string          schema_name = 1;
+  // When true, the schema is `scope ambient` (LSCP.2.5): host-owned on the DS
+  // WM side, so the loader registers it ONLY with the Rete engine (so rules
+  // matching it bind) and never adds it to the DS schema registry.
+  bool            ambient     = 2;
+  SchemaLifecycle lifecycle   = 3;
+  uint32          module_id   = 10;
+}

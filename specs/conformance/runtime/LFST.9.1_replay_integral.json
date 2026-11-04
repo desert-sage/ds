@@ -1,0 +1,25 @@
+{
+    "id": "LFST.9.1_replay_integral",
+    "category": "runtime",
+    "scenario": "A TIME-WEIGHTED SERIES replayed ([LFST.9.1], [LSIG.1.1]). `integral sliding 10_min` over one flow's readings 1.0, 2.0, 4.0, 0.5 at 0, 3_s, 7_s and 9_s; `volume` emits the integral it reads each time. Each value weights the previous reading by the time it was held, so it is a function of the gaps between samples, which come only from the clock. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    lpm: Float mutable\n\nschema Volume scope ttl 1_h:\n    label: String\n    total: Float\n\nseries Flow.lpm (by: entity_id):\n    integral sliding 10_min\n\nrule volume:\n    Flow f\n->\n    emit Volume label: f.entity_id total: f.integral\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f", "lpm": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f", "lpm": 2.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f", "lpm": 4.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f", "lpm": 0.5 } },
+            { "op": "pump" }
+        ],
+        "min_events": 8,
+        "min_rule_fires": 4
+    }
+}

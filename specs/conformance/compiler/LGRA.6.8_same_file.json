@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.6.8_same_file",
+    "category": "compiler",
+    "scenario": "[LGRA.6.8]: two rules in one file share the name `alarm`, so the compiler refuses the program with DS_VALIDATE_DUPLICATE_RULE. The two bodies differ, so neither is a harmless repeat of the other. PATH PINNED: the compilation-unit rule-name check over the root file alone, with no library loaded. Does not pin the cross-file halves, which are LGRA.6.8_file_and_library and LGRA.6.8_two_libraries.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule alarm:\n    Trig t where t.v > 10\n->\n    log info \"high\"\n\nrule alarm:\n    Trig t where t.v < 0\n->\n    log info \"low\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_RULE"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LREG.4.1.capture_in_let",
+    "category": "compiler",
+    "scenario": "LREG.4.1 — \"A capture must not be written as a `let`\". The `let (a, b) = s ~ /re/` form parses, so the refusal is a validator code naming the move rather than a parse error. Pin: `let (device) = e.msg ~ /(\\w+)/` rejects with DS_VALIDATE_REGEX_CAPTURE_IN_LET. Path: `dsc.validate.lreg_4_1_let`, the `alb_capture` arm.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nrule r:\n    Log e\n->\n    let (device) = e.msg ~ /(\\w+)/\n    log info \"{device}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_CAPTURE_IN_LET"
+    }
+}

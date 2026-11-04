@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.24.2_non_const_value_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.24.2]: a fact item's values, and a cache item's, are each a literal or the name of a `const`, and the compiler must reject any other value with DS_VALIDATE_INITIAL_NOT_CONST. `1 + 2` is neither, though it would fold: the clause admits a name, not an expression. The schema is `scope explicit` and the block precedes the rule, so the value is the only thing wrong. PATH PINNED: the block's value check in `dsc.validate`, its fact-item arm.",
+    "rules_ds": "schema S scope explicit:\n    v: Int\n\ninitial:\n    S v: 1 + 2\n\nrule r:\n    S s\n->\n    log info \"v {s.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INITIAL_NOT_CONST"
+    }
+}

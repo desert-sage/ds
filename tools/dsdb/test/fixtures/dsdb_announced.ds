@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb types a trace's facts by the stream's own Slot announcement when no
+# program is given ([RFCS.5.1]). Motion has a slot of each kind a body
+# decodes; Trace holds a fact reference, whose handle names a fact only within
+# its stream ([RFCS.4]), so nothing outside a replay types it.
+
+use default
+
+schema Motion scope logical:
+    entity_id: String key
+    state: Int? mutable
+    level: Float mutable
+    lit: Bool mutable
+    doc: Json mutable
+    raw: Bytes? mutable
+
+schema Trace scope ttl 1_h:
+    target: Motion
+
+rule make_trace:
+    Motion m where m.level > 0.5
+->
+    emit Trace target: m

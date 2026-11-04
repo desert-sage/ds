@@ -1,0 +1,14 @@
+{
+    "id": "IDSP.13.4_bytes_cache_value_writes_nothing",
+    "category": "logical",
+    "scenario": "IDSP.13.4: caching a `Bytes` value writes nothing. The twin of `IDSP.13.4_bytes_cache_value_is_a_computation_error`, with the same rule and step: no `action_cache_set` event appears, and the fault is no `type_error` or `engine_error`. A runtime that escapes the bytes as a JSON string, or writes `null`, writes an entry and fails. Path: libds's rete/adapters.c `adapter_ds_json_value` and the Mercury runtime's ds.exec `first_uncacheable`, each refusing before any write.",
+    "rules_ds": "schema Blob scope logical:\n    id: String key\n    b: Bytes mutable\n\nrule keep:\n    Blob x\n->\n    cache key: \"blob\" value: x.b\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": "a", "b": { "$bytes": "00ff41" } } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["action_cache_set", "type_error", "engine_error"]
+    }
+}

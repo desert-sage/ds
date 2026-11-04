@@ -1,0 +1,12 @@
+{
+  "id": "IAOT.2.4",
+  "prefix": "IAOT",
+  "doc": "CODE_AOT.md",
+  "parent": "IAOT.2",
+  "seq": 90,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IAOT.2.4] **The pipeline supports GNU and LLVM toolchains alike.**\nBoth `gcc` and `clang` are supported drivers, for host and\ncross-compilation, and neither is privileged: an integrator building\nDS into an existing product must be able to use the toolchain that\nproduct already uses.  The generated C is written to the common\nsubset both accept — `__builtin_*` intrinsics are spelled explicitly\nand no driver-specific attribute or pragma is emitted.\n\nThe compiler used is configurable.  The default is the system `cc`.\nIntegrators may override via `DS_CC` environment variable or `--cc`\nCLI flag.  The minimum required flags are `-O2 -fPIC -c`; additional\nflags (e.g. `-march=native`, `-flto`) are integrator-configurable.\n\n**The blob must be self-contained, so the driver's compiler-runtime\nsupport library is linked in.**  On a soft-float target a `double`\ncompare or convert lowers to helpers (`__ltdf2`, `__gtdf2`,\n`__floatdidf`) that a freestanding link does not otherwise supply.\nThat library is `libgcc` under GNU and `compiler-rt` under LLVM, so\nthe pipeline MUST select it from the driver rather than naming one of\nthem unconditionally.\n\n",
+  "deferred": true
+}

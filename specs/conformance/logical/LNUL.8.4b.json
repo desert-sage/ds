@@ -1,0 +1,19 @@
+{
+  "id": "LNUL.8.4b",
+  "category": "logical",
+  "scenario": "[LNUL.8.4] the two missings are distinct, and `has()` is the only thing that separates them. Drives the other half of the pair. Three conjuncts, each pinning a different sentence of the clause: `p.body.nulled is null` — a present JSON null READS AS null, and `is` is total over it ([LNUL.4.9]), which a soft-fail marker makes answer FALSE; `p.body.five is not null` — the control, without which a projection answering `null` for every leaf would pass; and `has(p.body.nulled)` — a leaf-read of a present JSON null is a VALUE, so has() must still say the key is there. The dead rule is the other missing: an unresolved path also reads as `null` but has() must say FALSE, which is the distinction the clause exists to state and the reason `builtin_json_has` reads presence off the node pointer rather than off the projected value. ONLY MEANINGFUL BESIDE LNUL.8.4a, which drives `??` over the same document.",
+  "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule is_null_reads_the_present_null:\n    Payload p where p.body.nulled is null and p.body.five is not null and has(p.body.nulled)\n->\n    log critical \"is-null-ok\"\n\nrule has_refuses_the_unresolved_path:\n    Payload p where has(p.body.missing)\n->\n    log critical \"has-missing\"\n",
+  "dead_rules_expected": ["has_refuses_the_unresolved_path"],
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Payload",
+        "slots": { "body": {"nulled": null, "five": 5} }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["is-null-ok"]
+  }
+}

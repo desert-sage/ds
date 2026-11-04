@@ -1,0 +1,20 @@
+{
+  "id": "NSTG.2.4",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.2",
+  "seq": 158,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "delete_cb — optional write-through persistence",
+  "text": "### delete_cb — optional write-through persistence [NSTG.2.4]\n\nThe deletion counterpart of [NSTG.2.3], and **optional independently of\nit**: an integrator may persist writes without persisting deletes,\nthough the result is a store that outlives its keys.\n\nIt receives the key and **why the key is gone** — there is no value,\nbecause the entry has already left the engine's cache by the time the\ncallback runs. As with the setter, this is notification rather than\nauthority: returning an error does not restore the entry.\n\n**Both exits notify.** An entry leaves the cache by an explicit\n`cache_delete` or by its TTL elapsing ([NSTG.2.4.2]), and each fires this\ncallback — so it means *this key is gone from the engine's cache*, not\n*someone called the delete verb*. An integrator therefore receives\ndeletions never requested, including for entries their own store may\nalready have expired, so **the delete path must be idempotent**\n([NSTG.2.4.1]).\n\n| Reason | What happened | What a persisting store should do |\n|---|---|---|\n| the delete verb | a rule asked for it | drop the row |\n| TTL expiry | the value is no longer valid | drop the row |\n\n**A full cache refuses the write.** A write that would breach `cap_keys` or `cap_bytes` **fails**, and the\ncache is left unchanged ([RTCT.7.1]) — the engine does not make room by\ndropping something else. So no entry is ever removed for want of space,\nand the callback has no such reason to carry.\n\nThat is a determinism property rather than an implementation detail.\n[LDET.2.1] lists what a run depends on — compiled rule set, event trace,\nadapter contract, starting state, platform signature — and memory\npressure is not among them. A cache that evicted under pressure would\nmake the same event trace produce different output depending on how full\nit was, which is exactly the input the guarantee cannot admit. Failing\nthe write keeps the pressure visible and the run reproducible.\n\nThe reason enum is `ds_cache_removal_reason_t`, the payload struct is\n`ds_cache_removal_t`, and the callback signature is\n`ds_cache_delete_cb_t` — all declared in `runtime/include/libds.h`.\n\n**The reason arrives in a payload struct rather than a fourth\nparameter.** Adding an argument breaks every existing registration, and\nso would the next reason after these two; a `const` payload pointer\nmatches the shape of every registered callback ([NCBK.1.1]), and absorbs a\nthird reason without breaking a registration. The set callback's payload is a\nstruct for the same reason ([NSTG.2.3]).\n\n**Registration is version-gated.** The registering call carries a\ncallback-ABI version ([NCBK.7.2]), and a mismatch is refused with\n`DS_ERR_BACKEND_ABI_VERSION` rather than accepted. This is not\nceremony: an integrator built against a header whose callbacks take other\narguments would be handed a struct pointer where it expects a `const char *`,\nand would read it as a string. Refusing the registration is what turns that\nfrom a silent misread into an error at the point of wiring.\n\n",
+  "refs": [
+    "LDET.2.1",
+    "NCBK.1.1",
+    "NCBK.7.2",
+    "NSTG.2.3",
+    "NSTG.2.4.1",
+    "NSTG.2.4.2",
+    "RTCT.7.1"
+  ]
+}

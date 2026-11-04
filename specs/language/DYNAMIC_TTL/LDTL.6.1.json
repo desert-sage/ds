@@ -1,0 +1,147 @@
+{
+  "id": "LDTL.6.1",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.6",
+  "seq": 250,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Without `dynamic_ttl`",
+  "text": "### Without `dynamic_ttl` [LDTL.6.1]\n\n- The facts one tick expires leave by deadline, earliest first, and facts\n  that share a deadline by when each entered working memory ([LDET.5.11]).\n  Within one schema that is assertion order. The order in which the schemas\n  are visited does not affect it.\n- The tick's cost is [LDTL.6.4]'s.\n\n",
+  "refs": [
+    "LDET.5.11",
+    "LDTL.6.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sweep inside the tick retracts expired facts one at a time in Rete/NetworkTtl.idr's `ldtl_6_1__order`: the clause's set, in the clause's order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__deadline_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An id's deadline, from its row of the deadline table. The sweep orders only ids the table holds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__insert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Insert an id ahead of every id whose deadline is the same or later: deadline order kept, and an id ahead of another with the same deadline stays ahead of it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__insert_back",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And everything inserted is there."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__insert_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What inserting yields is the id inserted or the list's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__interleaved",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witness's deadline table: four mints of two kinds, whose deadlines interleave."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__interleaved_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two schemas whose deadlines interleave, with two facts sharing a deadline: the order is by deadline, then entry, and differs from entry order and from an order by schema."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE EXPIRY ORDER of the default mode: by deadline, earliest first, and facts that share a deadline by when each entered working memory ([LDET.5.11]). A stable sort by deadline of the expired ids, which `iret_19_3__expired` yields in the deadline table's order: rows are appended as facts are minted, so that order is entry order. Established for the witness's table by `ldtl_6_1__interleaved_order`; no general theorem states sortedness or stability."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__order_back",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every expired id is in the order: it is a permutation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__order_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every id the order yields was expired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__place",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Place an id before the first whose deadline is the same or later, or after this one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__place_back",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And everything placed is there."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__place_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What placing yields is the id placed or the list's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__retract_order",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "BOTH SIDES EXPIRE THE SAME FACTS: retracting the expired ids in [LDTL.6.1]'s order removes exactly what Rete/TtlSweep.idr's batch removes. The order is visible only in the sequence of retractions -- the FACT_RETRACT events of [NFCT.5.4] -- since any order ends in the same state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__two_ttls",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witness's TTL table: kind 0's TTL is 5, kind 1's is 7."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_3__sweep_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SWEEP ON THE NETWORK: every live fact whose deadline is at or before the clock retracted one at a time through alpha dispatch -- [IRET.19.3] step 2, `ds_rete_wm_retract` per fact -- in [LDTL.6.1]'s order, then the cascade."
+      }
+    ]
+  }
+}

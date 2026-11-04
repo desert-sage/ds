@@ -1,0 +1,15 @@
+{
+    "id": "LREG.1.2",
+    "category": "logical",
+    "scenario": "`s ~ /pattern/` fires when the string matches per LREG.1.2; does not fire when it doesn't. Pin: assert two users — one with name `alice` (matches `/^ali/`), one with `bob` (doesn't). Only one rule fires.",
+    "rules_ds": "schema User scope logical:\n    entity_id: String key\n    name: String mutable\n\nrule found:\n    User u where u.name ~ /^ali/\n->\n    log info \"matched\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u1", "name": "alice" } },
+            { "op": "assert", "schema": "User", "slots": { "entity_id": "u2", "name": "bob" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["found"]
+    }
+}

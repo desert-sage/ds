@@ -1,0 +1,251 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A FactExternal sent back ([NCBK.10.4], [RFCS.23.4], [RFCS.23.7]). The
+# scenario's `resend K` feeds back, through `assert_external`, the facts the
+# `send_*` rules handed to a call, each runtime its own bytes.
+#
+# `Main` and `Pair` are derived from a `Ref` they refer to, so replacing or
+# retracting the `Ref` takes them with it; `Pair` refers to one `Ref` twice.
+# `N0` .. `N17` are a chain, so a record of `Ni` inlines a fact at depth i;
+# [RFCS.23.4] admits 16. Each `send_*` rule consumes its trigger, so the
+# `resend` indices count exactly the calls the scenario asked for.
+
+schema Ref scope logical:
+    id: String key
+    note: String mutable
+
+schema Seed scope explicit:
+    k: Int
+
+schema Main scope logical:
+    k: Int key
+    r: Ref mutable
+
+schema Pair scope logical:
+    k: Int key
+    a: Ref mutable
+    b: Ref mutable
+
+schema SendMain scope explicit:
+    n: Int
+
+schema SendPair scope explicit:
+    n: Int
+
+schema SendN16 scope explicit:
+    n: Int
+
+schema SendN17 scope explicit:
+    n: Int
+
+schema N0 scope logical:
+    n: Int key
+
+schema N1 scope logical:
+    n: Int key
+    r: N0 mutable
+
+schema N2 scope logical:
+    n: Int key
+    r: N1 mutable
+
+schema N3 scope logical:
+    n: Int key
+    r: N2 mutable
+
+schema N4 scope logical:
+    n: Int key
+    r: N3 mutable
+
+schema N5 scope logical:
+    n: Int key
+    r: N4 mutable
+
+schema N6 scope logical:
+    n: Int key
+    r: N5 mutable
+
+schema N7 scope logical:
+    n: Int key
+    r: N6 mutable
+
+schema N8 scope logical:
+    n: Int key
+    r: N7 mutable
+
+schema N9 scope logical:
+    n: Int key
+    r: N8 mutable
+
+schema N10 scope logical:
+    n: Int key
+    r: N9 mutable
+
+schema N11 scope logical:
+    n: Int key
+    r: N10 mutable
+
+schema N12 scope logical:
+    n: Int key
+    r: N11 mutable
+
+schema N13 scope logical:
+    n: Int key
+    r: N12 mutable
+
+schema N14 scope logical:
+    n: Int key
+    r: N13 mutable
+
+schema N15 scope logical:
+    n: Int key
+    r: N14 mutable
+
+schema N16 scope logical:
+    n: Int key
+    r: N15 mutable
+
+schema N17 scope logical:
+    n: Int key
+    r: N16 mutable
+
+service out.main:
+    kwarg fact: Main
+    no response
+
+service out.pair:
+    kwarg fact: Pair
+    no response
+
+service out.n16:
+    kwarg fact: N16
+    no response
+
+service out.n17:
+    kwarg fact: N17
+    no response
+
+rule make_main:
+    Seed s
+    Ref r
+->
+    emit Main logical k: s.k r: r
+
+rule make_pair:
+    Seed s
+    Ref r
+->
+    emit Pair logical k: s.k a: r b: r
+
+rule c1:
+    N0 x
+->
+    emit N1 logical n: x.n r: x
+
+rule c2:
+    N1 x
+->
+    emit N2 logical n: x.n r: x
+
+rule c3:
+    N2 x
+->
+    emit N3 logical n: x.n r: x
+
+rule c4:
+    N3 x
+->
+    emit N4 logical n: x.n r: x
+
+rule c5:
+    N4 x
+->
+    emit N5 logical n: x.n r: x
+
+rule c6:
+    N5 x
+->
+    emit N6 logical n: x.n r: x
+
+rule c7:
+    N6 x
+->
+    emit N7 logical n: x.n r: x
+
+rule c8:
+    N7 x
+->
+    emit N8 logical n: x.n r: x
+
+rule c9:
+    N8 x
+->
+    emit N9 logical n: x.n r: x
+
+rule c10:
+    N9 x
+->
+    emit N10 logical n: x.n r: x
+
+rule c11:
+    N10 x
+->
+    emit N11 logical n: x.n r: x
+
+rule c12:
+    N11 x
+->
+    emit N12 logical n: x.n r: x
+
+rule c13:
+    N12 x
+->
+    emit N13 logical n: x.n r: x
+
+rule c14:
+    N13 x
+->
+    emit N14 logical n: x.n r: x
+
+rule c15:
+    N14 x
+->
+    emit N15 logical n: x.n r: x
+
+rule c16:
+    N15 x
+->
+    emit N16 logical n: x.n r: x
+
+rule c17:
+    N16 x
+->
+    emit N17 logical n: x.n r: x
+
+rule send_main:
+    SendMain g
+    Main m
+->
+    withdraw g
+    call out.main fact: m nocooldown
+
+rule send_pair:
+    SendPair g
+    Pair p
+->
+    withdraw g
+    call out.pair fact: p nocooldown
+
+rule send_n16:
+    SendN16 g
+    N16 x
+->
+    withdraw g
+    call out.n16 fact: x nocooldown
+
+rule send_n17:
+    SendN17 g
+    N17 x
+->
+    withdraw g
+    call out.n17 fact: x nocooldown

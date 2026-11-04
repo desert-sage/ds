@@ -1,0 +1,13 @@
+{
+    "id": "LTSL.4.4_qualified_schema_in_a_test",
+    "category": "compiler",
+    "scenario": "LTSL.4.4: a test names a schema as a rule does, `lib.Name` included. An `inputs` fact constructed as `board_model.SocArch ...` and a `wm count board_model.SocArch` head, plus an `emitted board_model.Flag f where ...` head. Pinned as `dsc_term_order` rather than `compile_ok` so the test's oracle rule, whose pattern head is the qualified reference, has to LOWER: `flag_arm`, then `$dstest_oracle_1_0` ([RTIM.14.13]). PATH PINNED: `dsc.parse`'s `ltsl_4_1_fact` and `ltsl_8_2_head` reading the pattern's `type_ref`, and `dsc.dstest`'s `rlow_17_3_schema_slots` resolving it through the qualified imports, as `dsc.resolve` resolves a head.",
+    "rules_ds": "import board_model\n\nrule flag_arm:\n    board_model.SocArch a where a.arch == \"arm\"\n->\n    emit board_model.Flag logical chip: a.chip\n\ntest \"qualified schema names in a test block\":\n    inputs:\n        at 0_s:\n            board_model.SocArch chip: \"rp2350\" arch: \"arm\"\n    produces:\n        emitted board_model.Flag f where f.chip == \"rp2350\"\n        wm count board_model.SocArch == 1\n",
+    "libraries": {
+        "board_model": "schema SocArch scope logical:\n    chip: String key\n    arch: String mutable\n\nschema Flag scope logical:\n    chip: String key\n"
+    },
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["flag_arm", "$dstest_oracle_1_0"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LREG.4.1.capture_before_pattern",
+    "category": "compiler",
+    "scenario": "A `where` reads the captures of its own pattern and of earlier ones ([LGRA.8.6]'s ladder); before its pattern a capture has nothing to read, because the fact holding the subject has not joined. Pin: `Dev d where d.id == dev` ahead of the `Log` pattern that binds `dev` rejects with DS_VALIDATE_UNKNOWN_BINDING. Path: `dsc.validate.lreg_4_1_capture_order`.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nschema Dev scope logical:\n    id: String key\n\nrule r:\n    Dev d where d.id == dev\n    Log e where (dev) = e.msg ~ /(\\w+)/\n->\n    log info \"{dev}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_BINDING"
+    }
+}

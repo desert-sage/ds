@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A `let` bound to `now()`, read by a `log` and by an `emit`. A sync-impure
+# binding is bound once per activation ([LGRA.9.8.4]), so both see one value.
+
+schema Tick scope logical:
+    n: Int key
+
+schema Mark scope ttl 1_h:
+    seen: String
+
+rule hoist_probe:
+    Tick t where t.n == 1
+->
+    let stamp = now()
+    log info "LOG-SEES=[{stamp}]"
+    emit Mark seen: "EMIT-SEES=[{stamp}]"

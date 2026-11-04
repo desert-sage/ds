@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.23.2_unit_default_other_dimension",
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a unit-typed kwarg's `default` must be a quantity in the unit's dimension. `kwarg t: celsius default 5_meter` gives a length to a temperature kwarg and is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE. PATH PINNED: `quantity_misfit` in dsc.validate, its `Given \\= Dimension` arm. The break is dropping the dimension comparison, which lets the program compile.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nservice hvac.set:\n    kwarg t: celsius default 5_meter\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

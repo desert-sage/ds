@@ -1,0 +1,45 @@
+{
+  "id": "LNUL.4.8",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 133,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.8] **A GUARD admits on `null`, and that is the opposite of\n[LNUL.4.3].** A guard is an engine-evaluated expression that decides whether an\n**already-matched** activation is withheld — the compiler-emitted cooldown gate\nis the one v1 has ([IRET.25.5.1]). Where the guard evaluates to `null`, the\nruntime **must** let the activation proceed. Only an explicit `false` suppresses.\n\nA time-dependent condition that the runtime reads beside the gate is not a guard\n([RDSC.4a.8.2.2]): it decides whether the rule matches, and [LNUL.4.3] governs it.\n\nThe value is still `null` and Kleene still holds ([LNUL.4.2]); what this clause\nsettles is the **disposition of `null` at this site**, which [LNUL.4.3] settles\nthe other way at its own.\n\n**Why the two differ, because a single default cannot serve both.** A `where`\nclause decides whether a rule *matches*: declining to fire on an unknown is\ncautious, recoverable, and visible in the next cycle when the value arrives —\n*don't act on what you don't know*. A guard decides whether a rule that has\nalready matched is *held back*. Suppressing on an unknown does not decline to\nact; it **deletes the rule for as long as the value is absent**, and nothing\ndistinguishes that from a rule whose conditions are simply never met.\n\nSo the safe direction inverts with the site. A guard that cannot establish\ngrounds for suppression has not established them, and the activation stands.\nFiring more often than the author intended is bounded and observable; a rule\nthat silently ceases to exist is neither.\n\n⚠ **No test can distinguish the two policies**, which is why this needs stating\nrather than discovering. The two agree on every value that evaluates, so a suite\nover evaluable data returns identical results under either. Only an\nunevaluable guard separates them, and a fixture has to be written to produce one.\n\n",
+  "refs": [
+    "LNUL.4.3",
+    "LNUL.4.2",
+    "IRET.25.5.1",
+    "RDSC.4a.8.2.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_3__sites_agree_when_evaluable",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The two sites agree on EVERY evaluable value. This is the half that makes the disagreement dangerous rather than obvious: no test over evaluable inputs can tell the sites apart."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_8__admits_open",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The GUARD site: a fire guard admits on the absent value, and only an explicit false suppresses -- failing OPEN, as the clause rules."
+      },
+      {
+        "path": "formal/idris/AbsentValue.idr",
+        "name": "lnul_4_8__sites_disagree_on_absent",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The witness that the two sites take OPPOSITE dispositions of the one absent value: `Not (True = False)` between the guard site and the where site. A fire guard failing closed silently deletes every rate-limited rule; a match test failing open fires on exactly the data the author excluded. The right answer depends on the SITE, as this clause and [LNUL.4.3] say."
+      }
+    ]
+  }
+}

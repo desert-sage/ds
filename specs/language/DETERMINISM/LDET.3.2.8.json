@@ -1,0 +1,650 @@
+{
+  "id": "LDET.3.2.8",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.3.2",
+  "seq": 366,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LDET.3.2.8] **Decimal text and `Float` convert with correct rounding, in both\n  directions, and the runtime owns both.**\n\n  - **Parse.** Decimal text becomes the binary64 value nearest the exact decimal\n    value it denotes, ties to even (roundTiesToEven), whatever the number of\n    significant digits. This covers every place a `Float` is read from text: a\n    source literal, a cast from `String` ([LCST.4.5]), and a number in JSON\n    handed to the engine. A source literal whose value lies past the largest\n    finite `Float` is a lexer error ([LLEX.11.2.4]). Inside a `Json` value a zero then loses its sign\n    ([LGRA.5.8.8]), and JSON text whose number lies past the largest finite\n    `Float` is malformed ([LGRA.5.8.10]).\n  - **Render.** The digits of the canonical form ([LDET.3.2.7]) are the\n    fewest that parse back to the same value, correctly rounded under the same\n    rule. A fixed precision ([LGRA.2.9.6.10]) is the binary value correctly\n    rounded to that many decimal places, ties to even.\n  - **Round trip.** For every finite `Float` `x`, parsing the canonical text of\n    `x` yields `x`, bit for bit, `-0.0` included. The runtime must establish\n    this for all finite values by proof, not by sampling.\n  - **Owned, not delegated.** The runtime must perform both conversions itself.\n    Neither may depend on a host platform's conversion routines, because the\n    runtime does not control their rounding, and a difference between two\n    platforms is a difference in replayed output ([LDET.1.1]).\n\n",
+  "refs": [
+    "LCST.4.5",
+    "LDET.1.1",
+    "LDET.3.2.7",
+    "LGRA.2.9.6.10",
+    "LGRA.5.8.10",
+    "LGRA.5.8.8",
+    "LLEX.11.2.4"
+  ],
+  "checks": {
+    "cbmc": [
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__plan_rounds_p0",
+        "tag": "spec",
+        "note": "Fixed precision, end to end, at 0 places: every m < 2^53, s in 1..60. Excludes s > 60. With p1, binds the shape of the plan loop and pass 2, which FixedRound.idr takes as a reading."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__plan_rounds_p1",
+        "tag": "spec",
+        "note": "As p0, at 1 place, s in 1..60."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__next_digit_bounds",
+        "tag": "derives",
+        "note": "Safety and range over the whole domain (s in 1..1074, every F < 2^s): the digit is 0..9 and F stays below 2^s, the digit loop's invariant."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__next_digit_exact",
+        "tag": "derives",
+        "note": "The next-digit contract exact against __int128 for s <= 123; s beyond is `_full`'s."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__cmp_half_bounds",
+        "tag": "derives",
+        "note": "Safety and range over every s and every F < 2^s."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__cmp_half_exact",
+        "tag": "derives",
+        "note": "The half-comparison contract exact against __int128 for s <= 127; s beyond is `_full`'s."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__frac_init_full",
+        "tag": "derives",
+        "note": "F = m mod 2^s exact for every m < 2^53 and s in 1..1074, against a 1152-bit reference: the whole domain."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__next_digit_full",
+        "tag": "derives",
+        "note": "The next-digit contract exact for every s in 1..1074 and every F < 2^s, against a 1152-bit reference: the whole domain."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__cmp_half_full",
+        "tag": "derives",
+        "note": "The half-comparison contract exact for every s in 1..1074: the whole domain."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__int_init_exact",
+        "tag": "derives",
+        "note": "N = m * 2^e exact for every m < 2^53 and e in 0..971: the whole domain."
+      },
+      {
+        "path": "formal/cbmc/ldet_3_2_8__fixed.c",
+        "name": "ldet_3_2_8__divmod_bounds",
+        "tag": "derives",
+        "note": "Safety and range for every N < 2^1024. Exactness is FixedRound.idr's divmod_sound and divmod_limb_fits."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "Ldet_3_2_8__Chunks",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "Ldet_3_2_8__Decide",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "Ldet_3_2_8__DivTrace",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "Ldet_3_2_8__TopNonzero",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "Ldet_3_2_8__Trace",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__apart",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__apart_close",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__carry",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__carry_into_ip",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__chunks_below",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Over the model of the loop. That `fx_put_big_int`'s do-while has that shape is a reading, and `divmod_bounds` checks a pass."
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__chunks_of_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Over the model of the loop. That `fx_put_big_int`'s do-while has that shape is a reading, and `divmod_bounds` checks a pass."
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__chunks_top",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Over the model of the loop. That `fx_put_big_int`'s do-while has that shape is a reading, and `divmod_bounds` checks a pass."
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__chunks_value",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Over the model of the loop. That `fx_put_big_int`'s do-while has that shape is a reading, and `divmod_bounds` checks a pass."
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__chunks_witness",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__digit_lt",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__digits_exact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__divmod_limb_fits",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__divmod_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__divtrace_below",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__even",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__even_double",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__even_succ",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__exact_at_s",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__hv",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__hv_acc_lte",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__hv_nonzero",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__hv_zero",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__inc_digit",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__lt_of_mult_lt",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__lte_cancel",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__lte_neq_lt",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__mult_lte_left",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__mult_lte_right",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__mult_swap",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__near",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__nines_val",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__no_grow",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__parity_last",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__plan_rounds",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__pw",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__pw_mul",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__pw_pos",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__qv",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__remainder_unique",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__remainder_unique_cmp",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounding_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "from the primitives' contracts, which formal/cbmc/ldet_3_2_8__fixed.c checks over their whole domains; the loop and pass-2 shape is a reading, checked end to end by plan_rounds_p0/p1"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounding_unique_cmp",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounds",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounds_above",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounds_below",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounds_half_even",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__rounds_half_odd",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__tie_even",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__trace_below",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/FixedRound.idr",
+        "name": "ldet_3_2_8__zeros_val",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidate_round_trips",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A candidate the render's search returns at one length parses back under `ldet_3_2_8__nearest`, the Render bullet's 'correctly rounded under the same rule': the choice admitted it with that test true. What the test computes is run."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Render bullet's search at one length: the two decimals bracketing the value on that length's grid, each tested by the parse's rounding, the nearer and the lower's parity handed to the choice."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Render bullet's choice at one length over an abstract test of a candidate, the nearer taken and the tie broken on the even last digit; `ldet_3_2_7__candidates` is it at the parse's rounding."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__candidates_by_admit",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A candidate the choice returns passed its test, whatever the test, read off the choice's clauses; at the parse's rounding this is `ldet_3_2_7__candidate_round_trips`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__choose",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The choice among the candidates of one length, the tie broken on the even last digit as the bullets' ties-to-even rule has it."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__chosen_was_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A chosen candidate is one of the two offered and its own parse test was true, read off the choice's clauses."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__found_round_trips",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The Round-trip bullet by construction, over every finite nonzero value: whatever digits the render's search returns parse back to the value under the model's own rounding. What the rounding computes is run, not proved; the clause asks the runtime for the proof, and the model's own is post-v1."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__round_trips",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether a decimal parses back to a double under `ldet_3_2_8__nearest`: the Render bullet's test. Run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The Render bullet's fewest digits that parse back, searched from one significant digit to seventeen. Partial on the bound, which the clause does not state: seventeen identify every binary64, a fact about the format and no theorem here."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The search from a length upward, a bounded number of lengths."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_7__shortest_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One step of the Render bullet's search: the candidates at this length when there are any, else the rest of the search."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__bit_length",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bit length of a non-negative Integer, the least `k` with `n < 2^k`; the Parse bullet's estimate of the binary exponent starts from it."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__compose",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The double of a sign, a significand below 2^53 and a binary exponent, by `ldet_3_2_8__scale` from the significand read exactly by the primitive cast: no step rounds, every intermediate value being representable. Run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__decompose",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A finite nonzero double as its sign, its significand in `[2^52, 2^53)` and its binary exponent, by exact halvings and doublings (`ldet_3_2_8__normalise`) and the primitive cast on the integral result. Run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__digit_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The decimal digit count of a non-negative Integer; `ldet_3_2_8__of_decimal` settles a decimal's magnitude by it before any arithmetic."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__exponent_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The binary exponent at which an exact fraction's quotient has 53 bits, from an estimate corrected a step at a time."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__nearest",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Parse bullet: the double nearest a positive decimal `d * 10^x`, ties to even, as significand and binary exponent -- the decimal as an exact fraction, the exponent at which its quotient has 53 bits or the least a double has, the remainder against a half, a rounding that carries into a 54th bit moving the exponent up, nothing past the largest double. Exact Integer arithmetic, no host conversion (the Owned bullet). What it computes is run against the fixtures and libds, not proved: the parse's correctness proof is post-v1."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__normalise",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A finite nonzero magnitude brought into `[2^52, 2^53)` by exact halvings and doublings, with the exponent it was moved by."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__of_decimal",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A signed decimal to the nearest double, ties to even, a zero keeping the sign it was spelt with: the magnitude settled by the digit count first -- past `10^310` nothing (an infinity, [LCST.4.5.8]'s `null`), below `10^-324` the signed zero -- and `ldet_3_2_8__nearest` between. Run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__pow",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An Integer power, by recursion on the exponent; the scalings' powers of two and ten."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__round_half_even",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "roundTiesToEven of a quotient with its remainder: the quotient, or one more when the remainder is above a half, or at exactly a half when the quotient is odd."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__scale",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A double doubled or halved once per unit of a binary exponent, every intermediate value representable, so no step rounds; 2200 steps cover every exponent a double has."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__scaled_den",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The divisor of an exact fraction scaled by a power of two, with `ldet_3_2_8__scaled_num` the numerator."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__scaled_num",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The numerator of an exact fraction scaled by a power of two of either sign."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dscast.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

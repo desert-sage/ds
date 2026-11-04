@@ -1,0 +1,22 @@
+{
+    "id": "IDSP.4.6_a_publish_delivers_no_fact_assert",
+    "clauses": ["IDSP.4.6", "LTIE.4.3"],
+    "category": "cross-tier",
+    "scenario": "[IDSP.4.6]: when a rule's `publish` runs, libds must deliver an ACTION_PUBLISH stream event and must not deliver a FACT_ASSERT or an ACTION_EMIT for it: a publish is not an emit, and it puts nothing in working memory ([LTIE.4.3]). One engine, `e`: rule `r` publishes a `Local` for its Trig. After the host's assert and a pump, `e`'s stream holds exactly one `fact_assert` (the Trig's), one `action_publish`, and no `action_emit`. Counted, not matched as a subsequence: a runtime that still asserted the published fact delivers 2 `fact_assert`s. PATH: libds's `adapter_ds_publish` / `bridge_publish` (`ds_recorder_emit_action_publish`, no FACT_ASSERT); the Mercury runtime's `ds.exec.publish_verb`, which emits `se_publish` and no `se_fact_assert`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_per_engine_event_counts",
+        "engines": {
+            "e": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Local scope logical:\n    a: Int key\n\nrule r:\n    Trig\n->\n    publish Local a: 1\n"
+            }
+        },
+        "steps": [
+            { "engine": "e", "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "engine": "e", "op": "pump" }
+        ],
+        "expected_event_counts": {
+            "e": { "fact_assert": 1, "action_publish": 1, "action_emit": 0 }
+        }
+    }
+}

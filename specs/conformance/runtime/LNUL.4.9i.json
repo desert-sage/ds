@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9i",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] the positive half of LNUL.4.9h's guard, and the control that keeps it honest. Same rule, same eval arms, over a slot holding 7.5: the negated IS_SUBJECT_NULL test is true, the tail evaluates, 7.5 > 5.0 holds, and the rule FIRES. Without this, LNUL.4.9h passes for a rule that never fires at all — a guard that admits nothing is indistinguishable from a broken one when the only fixture is the one that must not fire. fact_count 2.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state is not null and s.state > 5.0\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": 7.5
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

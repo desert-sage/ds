@@ -1,0 +1,31 @@
+{
+    "id": "LGRA.23.1_negative_int_default_sent",
+    "category": "adapter",
+    "scenario": "LGRA.23.1: `kwarg_modifier ::= 'default' '-'? literal`, so an `Int` kwarg may default to a negative number. `svc.set` declares `n: Int default -5`; rule `go` omits `n`, so the default is supplied ([LADP.8.5.1]) and the integrator receives -5. PATH PINNED: `dsc.parse.lgra_23_1_default_value`'s signed arm, which builds unary minus over the literal; `ladp_8_5_1_with_defaults` in dsc.rete joins it to the written kwargs. Both runtimes render the body the compiler emits. The break is a parser that takes no sign: the program is refused at parse.",
+    "rules_ds": "service svc.set:\n    kwarg zone: String literal required\n    kwarg n: Int default -5\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call svc.set zone: \"hall\" nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "n": -5,
+                    "zone": "hall"
+                }
+            }
+        ]
+    }
+}

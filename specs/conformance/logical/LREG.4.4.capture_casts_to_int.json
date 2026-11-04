@@ -1,0 +1,23 @@
+{
+    "id": "LREG.4.4.capture_casts_to_int",
+    "category": "logical",
+    "scenario": "[LREG.4.4]: a capture is a `String`, so `::Int?` applies to it ([LCST.4.5.2]) and `??` supplies the default ([LNUL.5.4]). `parse` captures a pool name and a percentage from alert text and emits the percentage, cast, into an `Int` slot. `usage` logs every `Usage`, so a wrong value shows as a wrong number. `full` compares the slot numerically (`>= 90`), so a value stored as text or left uncast fails it. The third alert's `pct` capture is `N/A`, which `::Int?` cannot parse, so it reads as `null`, the default `-1` is emitted, and `full` stays quiet for it. PATH PINNED: the capture lowers to FN_REGEX_CAPTURE (`dsc.rete.lreg_4_1_capture_expr`), the cast to FN_STRING_TO_INT over it, and `??` to a coalesce, all in the `emit` kwarg; `full`'s comparison reads the stored Int slot.",
+    "rules_ds": "schema Alert scope logical:\n    entity_id: String key\n    msg: String mutable\n\nschema Usage scope logical:\n    pool: String key\n    pct: Int mutable\n\nrule parse:\n    Alert a where (pool, pct) = a.msg ~ /pool '(?<pool>\\w+)' is (?<pct>[^%]+)%/\n->\n    emit Usage logical pool: pool pct: pct::Int? ?? -1\n\nrule usage:\n    Usage u\n->\n    log critical \"usage {u.pool} {u.pct}\"\n\nrule full:\n    Usage u where u.pct >= 90\n->\n    log critical \"full {u.pool}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Alert", "slots": { "entity_id": "a1", "msg": "Space usage for pool 'tank' is 91%." } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Alert", "slots": { "entity_id": "a2", "msg": "Space usage for pool 'data' is 42%." } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Alert", "slots": { "entity_id": "a3", "msg": "Space usage for pool 'odd' is N/A%." } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "usage tank 91",
+            "full tank",
+            "usage data 42",
+            "usage odd -1"
+        ]
+    }
+}

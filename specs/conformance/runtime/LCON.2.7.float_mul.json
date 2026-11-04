@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.7.float_mul",
+    "clauses": ["LCON.2.7.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 float determinism — multiplication. `0.1 * 0.1` is the IEEE 754 double 0.010000000000000002, not 0.01. The guard `(t.x * t.x) == 0.010000000000000002` fires only on an exact bit match; fact_count 2 confirms.",
+    "rules_ds": "schema T scope logical:\n    x: Float key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x * t.x) == 0.010000000000000002\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 0.1 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "LUNI.14.7",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.14",
+  "seq": 1576,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "14.7 Series aggregations",
+  "text": "### 14.7 Series aggregations [LUNI.14.7]\n\nDirect aggregation of `complex`-typed series fields is a **compile error**. Authors\nextract a scalar component first, via a derived series over one of the\nextraction functions, then aggregate that.\n\n#### Derived series grammar\n\n```\nseries_decl ::= 'series' NAME '=' extract_fn '(' NAME ')' ('sliding' time_expr)?\nextract_fn  ::= 'abs' | 'arg' | 'real' | 'imag'\n```\n\nThe outer `NAME` is the new series name. The inner `NAME` must be a field in the\nsame schema. `sliding` is optional; if omitted the series uses the schema-level\ndefault window.\n\nResult types:\n- `abs(f)` → base unit of `f`'s dimension (e.g. `ohm` for `complex ohm`)\n- `arg(f)` → `radian` (angle scalar, dimensionless)\n- `real(f)` → base unit of `f`'s dimension\n- `imag(f)` → base unit of `f`'s dimension\n\n`conjugate` is excluded — it returns `complex`, not a scalar. Arbitrary\nexpressions are not allowed in derived series declarations; complex transformations\nbelong in rules.\n\n#### Untyped `complex` fields\n\n`complex` without a unit annotation is valid in schemas (useful for FFT output,\nraw signal buffers, etc.). Extraction function return types for untyped vs typed:\n\n| Function | `complex ohm` | `complex` (untyped) |\n|---|---|---|\n| `real(z)` | `ohm` | `Float` |\n| `imag(z)` | `ohm` | `Float` |\n| `abs(z)` | `ohm` | `Float` |\n| `arg(z)` | `radian` | `radian` |\n| `conjugate(z)` | `complex ohm` | `complex` |\n\n`arg()` always returns `radian` — phase angle is always angular regardless of the\nunit (or absence of unit) of the complex value.\n\n",
+  "deferred": true
+}

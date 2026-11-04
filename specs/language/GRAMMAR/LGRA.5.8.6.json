@@ -1,0 +1,20 @@
+{
+  "id": "LGRA.5.8.6",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5.8",
+  "seq": 653,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.5.8.6] **A `Json` value is bounded.** Every `Json` value a runtime holds\nis within four limits, and every conforming runtime **must** enforce the same\nones:\n\n| Limit | Maximum | Counted as |\n|---|---|---|\n| depth | 16 | a scalar, or an empty array or object, is one level; each enclosing array or object adds one |\n| nodes | 256 | every scalar, array and object in the value, the root included |\n| string bytes | 16,384 | the UTF-8 bytes of every string and every object key in the value, summed |\n| text | 24,576 | the bytes of JSON text handed to a parse |\n\nA realtime contract may lower any of the four for its tier, and may not raise\none ([RTCT.6.10]).\n\nDepth, nodes and string bytes hold wherever a `Json` value comes into being: a\nfact asserted with a `Json` slot, JSON text parsed, a value built in a rule, a\ncall response, the cache, and a recording read on replay. The text limit holds\nfor JSON text a runtime is handed to parse: by the host, as a call response, or\nas a `String` a rule parses. It is checked before any of the text is read, so\ntext over it is refused unread. A runtime's own serialization of a value it\nholds is not handed text, and the text limit does not apply to it.\n\nThe `Json` field of a `FactExternal` a runtime receives ([RFCS.23.2]) has a text\nlimit of its own: 106,496 bytes, the most [LGRA.5.8.7a] writes for a value within\nthe other three limits (six bytes for each string byte, and 32 for each node).\nA value one runtime holds can therefore always reach another. The text is still\nchecked before any of it is read, and depth, nodes and string bytes hold for it\nas for any other.\n\nA value that would exceed a limit is refused, never truncated. A host call that\nwould admit such a value **must** return `DS_ERR_JSON_LIMIT` and change\nnothing. The status is the whole refusal: the runtime records no event for it,\nsince the call that refuses may hold no engine. Inside a rule, the engine raises\na `ComputationError` of kind `NOT_REPRESENTABLE` ([LERR.1.4]) and abandons the\nactivation.\n\n",
+  "refs": [
+    "LERR.1.4",
+    "LGRA.5.8.7a",
+    "RFCS.23.2",
+    "RTCT.6.10"
+  ],
+  "errors": [
+    "DS_ERR_JSON_LIMIT"
+  ]
+}

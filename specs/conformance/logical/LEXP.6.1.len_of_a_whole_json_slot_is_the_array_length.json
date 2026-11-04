@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.6.1.len_of_a_whole_json_slot_is_the_array_length",
+    "category": "logical",
+    "scenario": "[LEXP.6.1]: `len(<Json>)` is the array's length at runtime, an `Int`, and that holds for a whole `Json` slot as for a path into one. `len(n.doc)` is no path, so the compiler does not fold it into FN_JSON_LEN as it folds `len(n.doc.items)`: it lowers to FN_STR_LENGTH (`dsc.rete.m`'s `scalar_fn(\"len\", 1, fn_str_length)`) over the slot read, and each runtime's FN_STR_LENGTH answers a Json array with its length. The twin LEXP.6.2.len_of_a_whole_json_object_slot_is_a_type_error pins the other half. Path: libds builtins.c `builtin_str_length` (its Json-array arm), Mercury ds.eval.m FN_STR_LENGTH (`json(j_array(Es))`).",
+    "rules_ds": "schema N scope logical:\n    id: Int key\n    doc: Json mutable\n\nrule r:\n    N n\n->\n    let k = len(n.doc)\n    log info \"k={k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "N", "slots": { "id": 1, "doc": [1, 2, 3] } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["k=3"]
+    }
+}

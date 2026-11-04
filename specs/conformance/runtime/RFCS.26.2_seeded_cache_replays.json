@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.26.2_seeded_cache_replays",
+    "clauses": ["RFCS.26.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.26.1]: the recorder writes each host cache seed in the stream's prelude as a `CacheSeed`. [RFCS.26.2]: the replayer applies those seeds before the replay's first input, and the reading engine is given nothing but the stream. The host seeds `level` = 7, then `alpha` = 5, before any input. The recording therefore carries two `CacheSeed` atoms, `alpha` first, since the order is by the key's bytes and not the order of seeding. This vector does not observe that order, or the atoms' fields: seeds are independent, so any order replays (libds's test_rfcs_prelude test 5 and Mercury's check_prelude_seeds check them byte for byte). One `Trig` is asserted and pumped. Rule `hit` fires only when `cached()` reads both seeded values. `cached()` reads the stored canonical JSON text, so the gate compares against the texts \"7\" and \"5\", as test_cache_spec's `cached(\"k\") == \"1\"` does. The run fires `hit` once. The replay must reproduce the run: no DS_ERR_FS_DIVERGENCE, the same facts at the end, and at least one rule fire compared. A recorder that writes no seed, or a replayer that does not apply one, leaves the reading engine's cache empty: `hit` does not fire on replay, and the recorded RuleFireAnnotation has no re-derived counterpart. PATHS: libds's recorder prelude (`rfcs_announce_seeds` in `rfcs/codec.c`) and its replay arm (`ds_engine_cache_seed_replay`), through `Engine.record` and `Engine.replay`; the Mercury runtime's `ds.engine.prelude_seeds` and `ds.rfcs.encode_recording`, then `ds.replay`'s `rfcs_26_2_apply`.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"level\") == \"7\" and cached(\"alpha\") == \"5\"\n->\n    log info \"hit {t.v}\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "cache_seed", "key": "level", "value": 7 },
+            { "op": "cache_seed", "key": "alpha", "value": 5 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 1,
+        "min_rule_fires": 1
+    }
+}

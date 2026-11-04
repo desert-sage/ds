@@ -1,0 +1,16 @@
+{
+    "id": "LTHE.2.5.3_later_anchor_does_not_exclude",
+    "category": "logical",
+    "scenario": "LTHE.2.5.3 — `latest` pins the anchor to its most recent match BEFORE THE FOLLOWER. DoorOpen at ts 1, Motion at ts 2, DoorOpen at ts 3, all asserted before one pump. The ts-3 DoorOpen follows the Motion, so it cannot match it and must not exclude the ts-1 anchor: the rule fires once, logging `1`. Drives the NOT sub-node's placement and test (RLOW.5.6.5.2): a NOT placed straight after the anchor's alpha can only test `other.ts > anchor.ts`, blocks d1 on d2, and logs nothing. The log reads the anchor's `n`, which mirrors its `ts`, because `ts` is a `Time` ([LFAC.9.1]) and the vector should not depend on how a `Time` renders.",
+    "rules_ds": "schema DoorOpen scope ttl 1_h:\n    loc: String\n    n: Int\n    ts: Time\n\nschema Motion scope ttl 1_h:\n    loc: String\n    ts: Time\n\nrule entry:\n    latest DoorOpen d\n    then Motion within 30_s\n->\n    log info \"{d.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": "hall", "n": 1, "ts": 1}},
+            {"op": "assert", "schema": "Motion", "slots": {"loc": "hall", "ts": 2}},
+            {"op": "assert", "schema": "DoorOpen", "slots": {"loc": "hall", "n": 3, "ts": 3}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["1"]
+    }
+}

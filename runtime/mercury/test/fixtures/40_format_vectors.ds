@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The interpolation renderer, one log line per part of [LGRA.2.9.6.1]'s
+# grammar, compiled to `ValuePrim` / `TimePrim` primitives ([RLOW.6.4]) and
+# compared across the runtimes by `82_format_vectors`. `check_format_specs`
+# prints what each spec resolved to.
+#
+# Only specs [LGRA.2.9.6.5] admits: no `s` on a Bool, no sign or zero on a
+# String or Bool, no precision on `d`/`x`/`X`/`b`, and a timestamp spec only on
+# a Time. A precision with no type on a number is left out: [LGRA.2.9.6.10]
+# does not say what it means.
+
+schema V scope logical:
+    id: Int key
+    i: Int mutable
+    f: Float mutable
+    s: String mutable
+    bl: Bool mutable
+    t: Time mutable
+
+rule show:
+    V v
+->
+    log info "bare_d={v.i}"
+    log info "d=[{v.i:d}]"
+    log info "d_w5=[{v.i:5d}]"
+    log info "d_lt5=[{v.i:<5d}]"
+    log info "d_gt5=[{v.i:>5d}]"
+    log info "d_z5=[{v.i:05d}]"
+    log info "d_sign=[{v.i:+d}]"
+    log info "d_sign_z5=[{v.i:+05d}]"
+    log info "hex=[{v.i:x}]"
+    log info "HEX=[{v.i:X}]"
+    log info "hex_z6=[{v.i:06x}]"
+    log info "bin=[{v.i:b}]"
+    log info "bin_z8=[{v.i:08b}]"
+    log info "i_f=[{v.i:f}]"
+    log info "i_p2=[{v.i:.2f}]"
+    log info "bare_f={v.f}"
+    log info "f=[{v.f:f}]"
+    log info "f_p0=[{v.f:.0f}]"
+    log info "f_p1=[{v.f:.1f}]"
+    log info "f_p3=[{v.f:.3f}]"
+    log info "f_w10p2=[{v.f:10.2f}]"
+    log info "f_lt10p2=[{v.f:<10.2f}]"
+    log info "f_z10p2=[{v.f:010.2f}]"
+    log info "f_sign_p2=[{v.f:+.2f}]"
+    log info "f_w12=[{v.f:>12}]"
+    log info "f_sign=[{v.f:+}]"
+    log info "bare_s={v.s}"
+    log info "s=[{v.s:s}]"
+    log info "s_w8=[{v.s:8s}]"
+    log info "s_lt8=[{v.s:<8s}]"
+    log info "s_gt8=[{v.s:>8s}]"
+    log info "s_p3=[{v.s:.3s}]"
+    log info "s_gt8p2=[{v.s:>8.2s}]"
+    log info "bare_b={v.bl}"
+    log info "b_w6=[{v.bl:6}]"
+    log info "b_gt6=[{v.bl:>6}]"
+    log info "time_iso=[{v.t:%Y-%m-%dT%H:%M:%S}]"
+    log info "time_date=[{v.t:%Y-%m-%d}]"
+    log info "time_frac=[{v.t:%H:%M:%S.%f}]"
+    log info "time_zone=[{v.t:%z}]"
+    log info "time_pct=[{v.t:%%}]"
+    log info "braces={{literal}}"

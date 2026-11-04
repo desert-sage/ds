@@ -1,0 +1,24 @@
+{
+    "id": "LCCO.6.1",
+    "clauses": ["LCCO.1.3"],
+    "category": "logical",
+    "scenario": "`on <pred>:` continuation fires when the response fact -- a fact of the service's response schema, `SvcReadReply` (LCRS.4.3.1) -- matches the predicate per LCCO.6.1. Simulate: assert trigger → pump (call fires) → assert `SvcReadReply` with the call's corr and `ok: true`, as the adapter would → pump → on-clause rule fires. Pin: action_log appears in the on-clause response. Path: the `on` sibling's pattern is over `SvcReadReply` on its `corr` slot (LCCO.3.3).",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg entity_id: String\n    response SvcReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 1_min as \"corr1\"\n        on response.ok == true:\n            log info \"got response\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "dev1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "SvcReadReply", "slots": { "corr": "corr1", "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

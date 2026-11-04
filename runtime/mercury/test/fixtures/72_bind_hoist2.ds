@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A `let` bound to `cached()`, which is sync-impure ([LGRA.9.8.4]) and so a
+# real binding, not folded away, read by two `log` lines after it. Both show 7
+# when the bind runs before the actions that read it.
+
+schema Tick scope logical:
+    n: Int key
+
+rule writer:
+    Tick t where t.n == 1
+->
+    cache key: "hoist-k" value: 7
+
+rule probe:
+    Tick t where t.n == 2
+->
+    let c = cached("hoist-k")
+    log info "A=[{c}]"
+    log info "B=[{c}]"

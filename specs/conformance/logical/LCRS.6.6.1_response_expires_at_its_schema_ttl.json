@@ -1,0 +1,22 @@
+{
+    "id": "LCRS.6.6.1_response_expires_at_its_schema_ttl",
+    "clauses": ["LCRS.4.3.2", "RARC.5.2.4"],
+    "category": "logical",
+    "scenario": "[LCRS.6.6.1]: a response fact that no superseding call retracts lives exactly its response schema's TTL, and the engine applies no other lifetime. `Reply`, the response schema of `svc.read`, is `ttl 10_s`; the host delivers one reply, corr `c1`, at t=0, and no call follows to supersede it. A probe asserted at t=9.999999999s sees it, so `seen` logs \"seen 1 1\"; a probe asserted at t=10s exactly does not, because the pump retracts a fact due at the current instant before anything fires ([RARC.5.2.4], [RARC.5.6.3]). Exactly [\"seen 1 1\"]. Each break moves the log: a shorter lifetime (or a site setting) loses the first line; no expiry, a longer one, or a sweep that keeps a fact due now (`<` for `<=`) adds \"seen 2 1\". Twin: LCRS.6.6.1_callerror_expires_at_5_min. PATH PINNED: the pump-entry TTL sweep over a host-asserted fact of a response schema -- libds `ds_engine_sweep_ttl_via_wrappers`, Mercury `ds.engine.sweep_expired` -- with the schema's own declared TTL.",
+    "rules_ds": "schema Reply scope ttl 10_s:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Probe scope explicit:\n    k: Int\n\nrule seen:\n    Probe p\n    Reply x\n->\n    log info \"seen {p.k} {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 9999999999 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen 1 1"]
+    }
+}

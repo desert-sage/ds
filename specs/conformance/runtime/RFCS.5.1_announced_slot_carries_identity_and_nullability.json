@@ -1,0 +1,20 @@
+{
+    "id": "RFCS.5.1_announced_slot_carries_identity_and_nullability",
+    "category": "runtime",
+    "scenario": "[RFCS.5.1]: a trace's `Slot` atom carries every field of `proto/slot.proto#Slot` the engine holds for the slot, as it would stand in the artefact -- `schema_ref`, `sampled`, `retained`, `tolerance`, `identity_role`, `nullable` and `capacity` -- so the announcement says which slots are keys and which may be null. `Item` is a logical schema with a `key` String, a `mutable` Int, a `mutable` Float with `tolerance 0.5`, a nullable `mutable` String and a `mutable` String with `capacity 8`. One `Item` is recorded, and `expected_slots` is every field present on each of `Item`'s `Slot` atoms, in declaration order: proto3 omits a zero, so `identity_role` 1 is KEY and 2 MUTABLE, `kind` 1 Int, 2 Float and 3 String, and a field at its default (`nullable` false, no `capacity`, `tolerance` 0) is absent. A writer that drops the role, the tolerance or the capacity leaves the field out and the slot's object differs. PATH PINNED: libds's `ds_rfcs_record_to` announcement loop in rfcs/codec.c, through pyds `Engine.record` in runner.py's `_run_rfcs_roundtrip`, which decodes each `Slot` with the generated `slot_pb2.Slot`; the Mercury runtime's `ds.rfcs.encode_slot_atom`, through test_behave.m's `rfcs_roundtrip_result`, which walks the same fields with `announced_slots`.",
+    "rules_ds": "schema Item scope logical:\n    sku: String key\n    qty: Int mutable\n    level: Float mutable tolerance 0.5\n    note: String? mutable\n    label: String capacity 8 mutable\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Item", "slots": { "sku": "a", "qty": 1, "level": 1.0, "label": "x" } }
+        ],
+        "expected_slots": [
+            { "schema_name": "Item", "slot_name": "sku", "kind": 3, "identity_role": 1 },
+            { "schema_name": "Item", "slot_name": "qty", "kind": 1, "identity_role": 2 },
+            { "schema_name": "Item", "slot_name": "level", "kind": 2, "tolerance": 0.5, "identity_role": 2 },
+            { "schema_name": "Item", "slot_name": "note", "kind": 3, "identity_role": 2, "nullable": true },
+            { "schema_name": "Item", "slot_name": "label", "kind": 3, "identity_role": 2, "capacity": 8 }
+        ]
+    }
+}

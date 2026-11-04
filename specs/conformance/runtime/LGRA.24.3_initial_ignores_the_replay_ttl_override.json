@@ -1,0 +1,20 @@
+{
+    "id": "LGRA.24.3_initial_ignores_the_replay_ttl_override",
+    "clauses": ["LGRA.24.2", "LSCP.2.1.1"],
+    "category": "runtime",
+    "scenario": "[LGRA.24.3]: the `initial` block places only `scope explicit` facts ([LGRA.24.2]), and an explicit fact has no deadline ([LSCP.2.1.1]), whatever step applies the block. A recording's FactAssert carries its fact's TTL window ([RFCS.6]), and the replayer re-asserts it with that window as an override; when that assert is the replay's first step, the block is applied inside it, and the override is the input's, not the block's. The program: `Mark` (explicit), placed by the block; `Ping` (`ttl 1_s`); `Tick` (explicit); `marked` joins a Tick with the Mark and logs both. Steps: set 0; assert Ping k=1, the first step, so the block places Mark under its sample; pump; advance 2 s; assert Tick k=1; pump, where Ping has expired and Mark has not, so `marked` fires once. The replay re-asserts Ping with its recorded 1 s window as its first step, applies the block there, re-derives the one `marked` fire, and ends holding Mark and Tick, as the run does. What it refuses: a replayer whose block takes the input's override gives Mark the 1 s deadline, so the sweep at the 2 s pump retracts it; the replay then re-derives no `marked` fire against one recorded (DS_ERR_FS_DIVERGENCE) and ends without Mark. PATH PINNED: libds `ds_engine_clock_step` clearing `wm.ttl_override_ns` around `ds_engine_initial_apply` (clock.c), reached from the replayer's `ds_engine_assert_with_ttl` (rfcs/codec.c); the Mercury runtime's `ds.engine.lgra_24_3_item`, which asserts each block fact with `ov_deadline(no)`, through `ds.replay`.",
+    "rules_ds": "schema Mark scope explicit:\n    k: Int\n\nschema Ping scope ttl 1_s:\n    k: Int\n\nschema Tick scope explicit:\n    k: Int\n\ninitial:\n    Mark k: 1\n\nrule marked:\n    Tick t\n    Mark m\n->\n    log info \"marked {t.k} {m.k}\"\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Ping", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert",  "schema": "Tick", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 1
+    }
+}

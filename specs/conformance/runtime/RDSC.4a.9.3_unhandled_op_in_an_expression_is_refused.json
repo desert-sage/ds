@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.9.3_unhandled_op_in_an_expression_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.3]: \"At load, a runtime must refuse with `DS_ERR_FN_NOT_FOUND` an artefact holding a `CallExpr` whose op it has no handler for at the site where it stands.\" A `CallExpr` stands at one of two sites; this vector is the second, inside an expression. Rule `r` emits `Out` with `v: abs(t.v)`, which the compiler writes as an `ACTION_LOGICAL_ASSERT` whose first `SlotAssign`'s `expr` is a call of FN_ABS (1). The harness ([RCTS.1.2.21]'s `set_assign_op`) rewrites that call's op to 109 and re-seals the artefact. 109 is FN_IS_NULL's number, reserved in `proto/builtin_fn.proto` and never reissued ([STYL.2.8.7]), so no runtime holds a handler for it at any site. The load must be refused with -604. What it discriminates: a loader that checks an action's op and not an expression's, which RDSC.4a.9.3_unhandled_op_at_an_action_is_refused alone would pass; one that admits the op and fails, or yields null, only when the expression is evaluated; one that refuses with another code. PATHS: libds's loader's op-handler check over expression trees (`dsc/rete_loader.c`), through pyds `load_dsc` (runner.py's `_tampered`, `dsc_seal.set_assign_op`); the Mercury runtime's expression decode (`ds.dsc_expr`'s `rejection_kind`, `lek_fn_not_found`), through test_behave.m's `assign_op_set` and `judge_tampered`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical v: abs(t.v)\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": { "set_assign_op": { "rule": "r", "op": 109 } },
+        "code": "-604"
+    }
+}

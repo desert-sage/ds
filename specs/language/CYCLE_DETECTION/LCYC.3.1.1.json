@@ -1,0 +1,408 @@
+{
+  "id": "LCYC.3.1.1",
+  "prefix": "LCYC",
+  "doc": "CYCLE_DETECTION.md",
+  "parent": "LCYC.3.1",
+  "seq": 163,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LCYC.3.1.1] An SCC of the rule graph is admitted despite [LCYC.3.1]\nwhen both hold: no schema is both emitted by a rule of the SCC and\nmatched, positively or under `no`, by a rule of the SCC; and the SCC\nconsumes nothing its rules produce through a `call` or the cache, and\nno rule of the SCC matches, via `latest` or `then`, a schema a rule of\nthe SCC emits. Every internal edge of an admitted SCC is then a\n`withdraw` edge under [LCYC.3.2.2].\n\nThe SCC consumes what a `call` produces when a rule of it carries the\n`call` and a rule of it has a pattern, positively or under `no`, over the\nservice's response schema or over `CallError`; for a service declared with\nno response, over `CallError` alone ([LCRS.17.1]). The SCC consumes what\nthe cache holds when a rule of it carries a `cache` or `cache_delete` of a\nkey and a rule of it reads `cached()`, in a `where` or a `let`, on that\nkey ([LSTO.4.3.1b]). A key that is not a literal is the same key as\nevery other. A `call` or a cache write whose product no rule of the SCC\nconsumes does not stop the SCC being admitted.\n\nAn admitted program stands on one of two grounds, decided by the rule graph\nbefore [LCYC.6.1] drops any edge. A program whose\nevery SCC of that graph meets the conditions above stands on the\nstratification they describe: no SCC emits a schema it matches, so a firing\ncannot re-enter its own SCC whatever values it emits. A program that meets\nthem only after [LCYC.6.1] has dropped an edge stands on the break's ground:\neach dropped edge joins an emit to a pattern whose literal test the emitted\nliteral fails ([LCYC.6.1.2]), so the firing creates no activation across that\nedge, and the SCCs that remain meet the conditions above. The first ground\ndoes not read values; the second reads the literal comparison [LCYC.6.1.2]\ndefines, and holds exactly as far as that comparison is by value.\n",
+  "refs": [
+    "LCRS.17.1",
+    "LCYC.3.1",
+    "LCYC.3.2.2",
+    "LCYC.6.1",
+    "LCYC.6.1.2",
+    "LSTO.4.3.1b"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "iret_12_2__admitted_support_acyclic",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Condition (a) of this clause -- no kind both emitted and matched within one SCC -- makes fact-level support acyclic: the consequence [IRET.12.2] states and the count's correctness rests on, derived from the condition alone. The direct statement at scope 4; at scope 6 through `lcyc_3_1_1__admitted_kind_graph_acyclic` and `rarc_5_6_6__derives_projects_onto_kinds`, which compose into it. Conditions (b) and (c) take no part."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__admitted",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "Condition (a) alone, over the emit-edge graph: no kind both emitted by a rule of an SCC and matched, positively or under `no`, by a rule of the same SCC. Conditions (b) (`call`, `cache`, `cache_delete`) and (c) (`latest`, `then`) are not drawn. The compiler's SCCs are the drawn graph's, `lcyc_3_1_1__admitted_graph`."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__admitted_graph",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "Condition (a) over the SCCs of the drawn graph, emit and withdraw edges together -- the SCCs `dsc.cycle` takes, as its `lcyc_3_1_1_admitted` tests condition (a) over schemas. Conditions (b) and (c) are not drawn, and neither are the call and cache edge forms."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__admitted_graph_implies_admitted",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The admission over the compiler's SCCs implies the admission over the emit-edge SCCs, at scope 6: withdraw edges only coarsen the SCCs. So `iret_12_2__admitted_support_acyclic` and `lcyc_3_1_1__admitted_kind_graph_acyclic` hold of every program the compiler admits over emit and withdraw edges; for the call and cache forms the same holds by the same argument, undrawn."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__admitted_kind_graph_acyclic",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Under condition (a) the kind graph -- k1 -> k2 when some rule matches k1 and emits k2 -- is acyclic, at scope 6: a kind cycle names rules that share an SCC and a kind emitted and matched inside it. The rules-and-kinds half of the support-acyclicity argument."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__internal_edges_are_withdraw",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The clause's last sentence, at scope 6: under the admission over the compiler's SCCs, every edge inside an SCC is a withdraw edge -- an internal emit edge is a kind emitted by one rule of the SCC and read by another, which condition (a) forbids. TEETH: an admission testing 'emitted twice' instead of 'emitted and read' admits a two-rule emit cycle over two kinds, and the check fails with it."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__same_scc",
+        "tag": "spec",
+        "note": "Two rules of one SCC: each reaches the other through the emit edges, or they are one rule."
+      },
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "lcyc_3_1_1__same_scc_graph",
+        "tag": "spec",
+        "note": "Two rules of one SCC of the drawn graph, the compiler's: each reaches the other through emit or withdraw edges, or they are one rule."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Certificate.idr",
+        "name": "Lcyc_3_1_1__cert_emit",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Models the GENERAL condition (a) including the recursion exception (a `logical`, key-all-slots relation may be emitted-and-read if not withdrawn in the same stratum). This clause requires no emitted-and-read kind to exist in the SCC at all; every program it admits satisfies this predicate vacuously (the antecedent never holds), but the reverse does not hold. Proven for more than the clause states, not less -- the AbsentTrichotomy.idr shape of `partial`."
+      },
+      {
+        "path": "formal/idris/Lcyc/Certificate.idr",
+        "name": "Lcyc_3_1_1__certified",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Bundles cert_emit, range and the stratification/range-restriction fields into one certificate. Same gap as cert_emit: admits the recursive case this clause refuses."
+      },
+      {
+        "path": "formal/idris/Lcyc/Certificate.idr",
+        "name": "Lcyc_3_1_1__range",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The range-restriction condition (b): every emitted value is a program literal or a copy of a bound fact's value. Unconditional -- no recursion exception here -- so this half of the certificate is not narrower than what this clause admits."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_1_1__emit_in_dom",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The emitted value lands in the domain: a literal, or a copy of a bound value, by the certificate's range. Stated over a range on the domain itself; both engines (Lcyc/Termination.idr's action step, Rete/TmsRun.idr's) call it through `lcyc_3_1_1__range_widen`."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_1_1__emitted_not_withdrawn",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "A kind emitted and read in one stratum is not withdrawn there, read off `certEmit`. `partial` as `Lcyc_3_1_1__cert_emit` is: the clause admits no emitted-and-read kind, so for every program it admits this lemma's antecedent never holds; it is live only for the recursive exception the clause refuses."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "lcyc_3_1_1__range_widen",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A range over some literals is a range over any superset."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "Lcyc_3_1_1__certified_tms",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE CERTIFICATE AT KIND LEVEL: a stratification respecting every kind-level edge in which no kind emitted by a stratum is read by that stratum, and the range restriction. With one stratum per SCC of the KIND graph this is the clause's condition (a) -- no schema both emitted and matched within an SCC. `partial`: the clause's SCCs are those of the graph [LCYC.6.1]'s literal break has pruned, so a program admitted only by the break (`compiler/LCYC.6.1_self_edge_kind_flip_ok`) keeps a kind-level edge inside an SCC and has no certificate here; conditions (b) and (c) are not modelled."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "Lcyc_3_1_1__fire_measure",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the termination argument carries through a firing: the core's progress relative to the post-pop state, that rows of strata below the firing one are live, and the kinds of the rows' targets."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_1_1__certified_terminates_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The termination theorem for this clause's certificate at kind level, on the engine with truth maintenance, for positive programs and inputs with unique ids. `partial`: a program this clause admits only through [LCYC.6.1]'s literal break has no kind-level certificate, and the theorem does not reach it."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__action_measure",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One action with truth maintenance keeps the firing invariant and the measure data: the core action by the core's progress lemma, the record by the emitted kind, the cascade by `lcyc_3_1_1__cascade_measure`."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__actions_measure",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The whole RHS keeps the firing invariant and the measure data."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__cascade_measure",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The whole cascade: the bridge's fixpoint, the tracked activation, and the measure data for the rows the cascade keeps."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__own_reads_none",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The firing stratum reads no kind emitted at or above it: a reader at i of a kind emitted at i or above puts the emitter at i, which the certificate forbids."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__phase_kinds",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FORWARD-REACHABILITY LEMMA. During a firing at stratum i, a cascade phase retracts only facts of kinds emitted at stratum i or above: a retracted fact is the live target of a row whose activation is dead, that row's rule is not below i since rows below i are live, and the fact's kind is one that rule emits. So the phase is a frame for every stratum at or below i."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__phase_measure",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One cascade phase keeps the measure data."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__phase_n_measure",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And so does any number of phases, alongside the cascade invariant and the tracked activation."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__retract_measure",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction phase keeps the measure data: the components of every stratum at or below the firing one are unchanged, rows below stay live, and targets keep their kinds."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "lcyc_3_1_1__tms_to_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "This clause's certificate is Lcyc/Certificate.idr's certificate: its recursion disjunct is vacuous, so the core's measure and progress lemmas apply unchanged."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "lcyc_3_1_1__join_wave_rel_halts",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The join wave, an SCC this clause refuses (X is emitted by one rule and matched by three inside it), quiesces after six firings under the reference source order: three no-op re-emits, three withdrawals. The certificate is conservative here, knowingly -- the clause refuses the emitted-and-matched case without exception. A 720-order REPL sweep (lcyc_3_1_1__sweep_join_wave) found every order quiescent; that run is not a proof."
+      },
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "lcyc_3_1_1__row2_diverges",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An SCC this clause refuses (W emitted by two rules and matched by a third inside it) diverges: after the consumption fires the state recurs with period twelve. The refusal is not gratuitous. Twelve single-firing Refls chained by lcyc_1_1__periodic_diverges."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__emit_copy",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Emit copying the bound fact's payload; B's action in the row-2 SCC."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__emit_flip",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Emit flipping the bound fact's payload; C's action in the row-2 SCC, so every emit around the B <-> C loop is a replace."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__join_wave",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The join-wave program over a rule order and a lifecycle for every kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__join_wave_input",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One X, one Y, one Z: the join wave's input working memory."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__join_wave_rel",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The join wave over dedup'd (Relation) kinds in the reference source order; the instance WitnessProofs runs to quiescence."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__join_wave_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six rules of the join wave in a fixed reference order; a source order is a permutation of this list."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__perms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "All permutations of a list; the 720 source orders of the join wave. REPL helper for the sweep."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__row2_prog",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The three-rule SCC this clause refuses: A consumes X and Y and emits W, B copies W to V, C flips V back to W and emits Y. W and V Entity, Y Relation."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__row2_s0",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The row-2 SCC's initial state: one X and one Y, propagated."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_a",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Row-2 SCC rule A: X x, Y y -> withdraw x, emit W. The consumption."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_b",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Row-2 SCC rule B: W w -> emit V (copy)."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_c",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Row-2 SCC rule C: V v -> emit W (flip), emit Y. Y closes C -> A."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_rx",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Join wave RX: Y y, Z z -> emit X. The join whose constituents are each withdrawn and re-emitted."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_ry",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Join wave RY: X x -> emit Y."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__rule_rz",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Join wave RZ: X x -> emit Z."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__sweep_join_wave",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "How many of the join wave's 720 source orders fail to quiesce within the fuel, and the first few that do. A REPL sweep, executed rather than proved; every order quiesced within 30."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_3_1_1__wdr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Join wave W-rules: K k -> withdraw k, for each of X, Y, Z."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "lfst_9_2_1__canonical_from_input",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A positive program certified at kind level as this clause admits it replays every canonical stream from every input with unique ids, every pump quiescent. `partial`: a program admitted only through [LCYC.6.1]'s literal break has no kind-level certificate."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__certified_ranked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Every run of a program certified at kind level has acyclic support: the table is ranked at every state between actions. What the count's correctness rests on -- no admitted program reaches the difference between the refcount and [LLOG.2.5] -- proved on the engine rather than argued, for the kind-level certificate. `partial`: a program this clause admits only through [LCYC.6.1]'s literal break has no such certificate, and the ranking by a kind's level does not reach it."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "lcyc_3_1_1__emit_below_read",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Under the certificate an emitter of a kind sits in a strictly lower stratum than any reader of it: no lower by edge monotonicity, and not the same, since no stratum reads what it emits."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12__run_inv_certified",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The run invariant holds along every run of a positive program certified at kind level, on an input with unique ids: the certificate's domain and range are what the core invariant needs. `partial`: a program this clause admits only through [LCYC.6.1]'s literal break has no kind-level certificate."
+      }
+    ]
+  }
+}

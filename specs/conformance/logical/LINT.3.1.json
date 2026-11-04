@@ -1,0 +1,16 @@
+{
+    "id": "LINT.3.1",
+    "clauses": ["LINT.3.1.1"],
+    "category": "logical",
+    "scenario": "`t in i` holds iff `i.start <= t < i.end` (LINT.3.1.1). `s.val in (s.lo..s.hi)` with lo=1, hi=10: val=5 is inside and val=10 is the excluded end, so `r` fires exactly once.",
+    "rules_ds": "schema Sample scope logical:\n    entity_id: String key\n    val: Int mutable\n    lo: Int mutable\n    hi: Int mutable\n\nrule r:\n    Sample s where s.val in (s.lo..s.hi)\n->\n    log info \"in range\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "entity_id": "inside",  "val": 5,  "lo": 1, "hi": 10 } },
+            { "op": "assert", "schema": "Sample", "slots": { "entity_id": "boundary", "val": 10, "lo": 1, "hi": 10 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

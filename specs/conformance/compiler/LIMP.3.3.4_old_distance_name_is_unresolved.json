@@ -1,0 +1,11 @@
+{
+    "id": "LIMP.3.3.4_old_distance_name_is_unresolved",
+    "clauses": ["LIMP.3.3.4", "LEXP.17.1"],
+    "category": "compiler",
+    "scenario": "[LEXP.17.1]: a spelling that is not a row of [LEXP.17.2] names no builtin. The file imports `distance`, and calls `euclidean_distance` in one rule and `hypot` in another; each is rejected as a call to an unresolved name, DS_VALIDATE_UNKNOWN_FUNCTION, with no hint toward `distance.euclidean` or `distance.hypotenuse`. PATH PINNED: `dsc.typecheck`'s unknown-function arm, which finds neither name among [LEXP.17.2]'s rows; `dsc.resolve` rewrites only a member the import reaches.",
+    "rules_ds": "import distance\n\nschema P scope logical:\n    id: String key\n    x: Float mutable\n    y: Float mutable\n\nrule far:\n    P p where euclidean_distance(0.0, 0.0, p.x, p.y) > 5.0\n->\n    log info \"far\"\n\nrule long:\n    P p where hypot(p.x, p.y) > 5.0\n->\n    log info \"long\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

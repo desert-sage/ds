@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.20_ordering_between_lets_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.20 with [LLET.12.5]: a `let` whose right-hand side is a pattern binding is that binding, a fact reference, so an ordering between two such `let`s is refused with DS_VALIDATE_UNORDERED_TYPE at the `<`, though neither operand is a pattern binding as written. `let x = a`, `let y = b`, then `x < y` as the value of an emit's `Bool` slot. PATH PINNED: `dsc.typecheck` types an unannotated `let` that names a pattern binding as that binding's fact (`llet_12_5_bound_binding`), and `adjacent_mismatches` refuses an ordering on an operand typed `lk_fact` (`fact_operand`). A check keyed on the type that left an unannotated `let` untyped compiles this source.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nschema Before scope logical:\n    id: String key\n    earlier: Bool mutable\n\nrule r:\n    Reading a\n    Reading b\n->\n    let x = a\n    let y = b\n    emit Before logical id: a.id earlier: x < y\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

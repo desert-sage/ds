@@ -1,0 +1,11 @@
+{
+    "id": "LCAP.2.1.5_constspace_refused",
+    "clauses": ["LDIA.3.3.7"],
+    "category": "compiler",
+    "scenario": "[LCAP.2.1.5]: `constspace` is not part of this edition, so a `use` block line setting it `true` is refused with DS_VALIDATE_REALTIME_DEFERRED, at the line ([LDIA.3.3.7]), with the same code as `realtime`. The same program as LCAP.2.1.5_realtime_refused with only `constspace: true` in the block; that setting satisfies every constraint of [LCAP.3.8], so a compiler that still admits it reports compile_ok instead. PATH PINNED: the deferred-setting check in override resolution in `dsc.dialect`, the arm for `constspace`.",
+    "rules_ds": "use default:\n    constspace: true\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REALTIME_DEFERRED"
+    }
+}

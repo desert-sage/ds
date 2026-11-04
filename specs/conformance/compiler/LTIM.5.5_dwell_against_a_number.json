@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.5.5_dwell_against_a_number",
+    "clauses": ["LEXP.9.5.1"],
+    "category": "compiler",
+    "scenario": "[LEXP.9.5.1] makes `t.dwell` a `Duration`, and [LTIM.5.5] makes a cross-type comparison a compile error, so `s.dwell > 60` (a `Duration` against an `Int`) is DS_VALIDATE_TYPE_MISMATCH. The author writes `s.dwell > 60_s`, which `LSER.10.4` pins as compiling. Drives dsc.typecheck lser_10_4_dwell_read, which types the read, and the comparison's settled-family check.",
+    "rules_ds": "schema Sensor scope logical:\n    state: Float key\n\nrule stale:\n    Sensor s where s.dwell > 60\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

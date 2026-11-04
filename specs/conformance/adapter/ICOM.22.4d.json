@@ -1,0 +1,31 @@
+{
+    "id": "ICOM.22.4d",
+    "clauses": ["NCBK.6.10"],
+    "category": "adapter",
+    "scenario": "A `call` kwarg with a Float value reaches the integrator's cb as a Float argument (`DS_ARG_FLOAT`), through FN_CALL's name/value operand pairs (RDSC.4a.9.4) and libds's call bridge. Pins [NCBK.6.10]'s Float kind on its own, a non-integral value, so a runtime that sent it as an Int would fail. The ICOM.22.4 in its id is no clause: no document carries the ICOM prefix.",
+    "rules_ds": "service svc.x:\n    kwarg temperature: Float\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.x temperature: 22.5 nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {
+                    "temperature": 22.5
+                }
+            }
+        ]
+    }
+}

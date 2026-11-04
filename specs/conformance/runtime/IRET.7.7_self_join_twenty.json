@@ -1,0 +1,193 @@
+{
+  "id": "IRET.7.7_self_join_twenty",
+  "category": "runtime",
+  "scenario": "The first 20 facts of a word-squares stream ([IRET.7.7], [IRET.11.3], [LDET.5.3]). 19 distinct (f0..f5) tuples match; a runtime without deepest-first right-activation fires 31 times (fact count 51). Every firing emits one ttl-scoped Fired fact, which accumulates, so the count after the pump is 20 Words plus one Fired per firing: 39, and more when a tuple fires again. Small enough for the Mercury runtime, which is held to libds on the same 20 words by its differential pair 118_self_join_square / 85_self_join_square.",
+  "rules_ds": "schema Word scope logical:\n    id: Int key\n    c0: Int mutable\n    c1: Int mutable\n    c2: Int mutable\n\nschema Fired scope ttl 1_h:\n    a: Int\n    b: Int\n    c: Int\n    d: Int\n    e: Int\n    f: Int\n\nrule square:\n    Word f0\n    Word f1\n    Word f2\n    Word f3 where f3.c0 == f0.c0 and f3.c1 == f1.c0 and f3.c2 == f2.c0\n    Word f4 where f4.c0 == f0.c1 and f4.c1 == f1.c1 and f4.c2 == f2.c1\n    Word f5 where f5.c0 == f0.c2 and f5.c1 == f1.c2 and f5.c2 == f2.c2\n->\n    emit Fired a: f0.id b: f1.id c: f2.id d: f3.id e: f4.id f: f5.id\n",
+  "expect": {
+    "kind": "runtime_fact_count",
+    "asserts": [
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 1,
+          "c0": 0,
+          "c1": 4,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 2,
+          "c0": 4,
+          "c1": 6,
+          "c2": 4
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 3,
+          "c0": 4,
+          "c1": 2,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 4,
+          "c0": 5,
+          "c1": 3,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 5,
+          "c0": 1,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 6,
+          "c0": 0,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 7,
+          "c0": 6,
+          "c1": 0,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 8,
+          "c0": 4,
+          "c1": 2,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 9,
+          "c0": 1,
+          "c1": 3,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 10,
+          "c0": 3,
+          "c1": 5,
+          "c2": 1
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 11,
+          "c0": 0,
+          "c1": 1,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 12,
+          "c0": 6,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 13,
+          "c0": 0,
+          "c1": 1,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 14,
+          "c0": 2,
+          "c1": 2,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 15,
+          "c0": 1,
+          "c1": 0,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 16,
+          "c0": 0,
+          "c1": 0,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 17,
+          "c0": 0,
+          "c1": 0,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 18,
+          "c0": 2,
+          "c1": 2,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 19,
+          "c0": 3,
+          "c1": 4,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 20,
+          "c0": 1,
+          "c1": 0,
+          "c2": 4
+        }
+      }
+    ],
+    "pump": true,
+    "fact_count_after": 39
+  }
+}

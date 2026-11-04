@@ -1,0 +1,62 @@
+{
+    "id": "IARC.1.11b",
+    "category": "cross-tier",
+    "scenario": "Engines started at different mock-clock times advance independently. Pins per-engine clock isolation per IARC.1.11.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "early": {
+                "rules_ds": "schema Pulse scope ttl 1_s:\n    v: Int\n"
+            },
+            "late": {
+                "rules_ds": "schema Pulse scope ttl 1_s:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "early",
+                "op": "set",
+                "now_ns": 0
+            },
+            {
+                "engine": "late",
+                "op": "set",
+                "now_ns": 5000000000
+            },
+            {
+                "engine": "early",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "late",
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "early",
+                "op": "advance",
+                "delta_ns": 2000000000
+            },
+            {
+                "engine": "early",
+                "op": "pump"
+            },
+            {
+                "engine": "late",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "early": 0,
+            "late": 1
+        }
+    }
+}

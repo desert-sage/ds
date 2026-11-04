@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.1.2.2_date_range_boundaries",
+    "category": "logical",
+    "scenario": "[LTIM.1.2.2]: the first and last `Date`, days -106751 and 106751 from 1970-01-01, are admitted at the host assert and read as 1677-09-22 and 2262-04-11, by their components ([LTIM.6.6]) and by `::String` ([LCST.4.5.9], [LTIM.8.2.4]). Each is the day whose UTC midnight is the first or last representable `Time` midnight ([LTIM.1.1.5]): INT64_MIN ns is 1677-09-21T00:12:43Z and INT64_MAX ns is 2262-04-11T23:47:16Z. `day_of_week` is 0 for Monday ([LTIM.6.4]): 1677-09-22 was a Wednesday (2) and 2262-04-11 a Friday (4). Pin: both rules log, the earlier fact first. A range one day narrower refuses one of them (DS_ERR_TIME_RANGE, so the run stops at that assert); a Date midnight computed with a wrapping Int multiply gives the wrong year. PATH PINNED: the host assert's range check in both runtimes (it admits both), the LTIM.6.6 component lowering (dsc.rete `ltim_6_6_fn`, through FN_FLOAT_TO_INT) and FN_TO_STRING's Date arm (libds `fmt_date`, Mercury `ltim_8_2_1_render_date`).",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nrule r:\n    Visit v\n->\n    let s = v.due::String\n    let y = v.due.year + 0\n    let m = v.due.month + 0\n    let d = v.due.day + 0\n    let w = v.due.day_of_week + 0\n    log critical \"{s} {y} {m} {d} {w}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": -106751 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "due": 106751 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1677-09-22 1677 9 22 2",
+            "2262-04-11 2262 4 11 4"
+        ]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "LCYC.6.1_call_error_edge_across_modules_pins_another_corr",
+    "category": "compiler",
+    "scenario": "[LCYC.6.1]'s literal break on a `CallError` edge across modules, the control of `LCYC.3.2.2_call_edge_through_call_error_across_modules`. The same program, but `on_error` pins `corr` to \"other\", which the call's `as` \"a-call\" is not, so there is no edge and no cycle: it compiles. PATH PINNED: the `corr` argument of `dsc.cycle.lcyc_3_2_2_unit_outcomes`'s `CallError` outcome, read by the literal break. The break is an outcome with no `corr`, which pins nothing and keeps the edge: DS_VALIDATE_RULE_CYCLE.",
+    "rules_ds": "from lib import service, Trig\n\nrule again:\n    Trig\n->\n    call service.a nocooldown as \"a-call\"\n",
+    "libraries": {
+        "lib": "schema Trig scope ttl 1_h:\n    k: Int\n\nservice service.a:\n    \"\"\"stub\"\"\"\n    no response\n\nrule on_error:\n    CallError e where e.corr == \"other\"\n->\n    emit Trig k: 1\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

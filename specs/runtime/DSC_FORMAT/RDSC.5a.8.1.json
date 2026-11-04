@@ -1,0 +1,16 @@
+{
+  "id": "RDSC.5a.8.1",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.5a.8",
+  "seq": 1006,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.5a.8.1] Each backend atom is at most one per\n`(schema_name, slot_name, identity_slot_name, atom, window_ns)`\ntuple per module ([RDSC.7.2.1]). The runtime must key the state it\nallocates on the same tuple.\n\n**The window is part of the key because a declaration may observe\none slot at several of them.** `mean sliding 10_min as recent`\nbeside `mean sliding 1_h as hourly` selects one backing twice, at\ntwo windows, and each read resolves to its own line's window\n([LSER.6.8.1]). One atom per `(schema, slot, identity)` can carry\nonly one of them, so a key omitting the window answers every read of\nthat slot from a single window whatever the author wrote.\n\nThe atom is part of it for the reason [RDSC.5a.8.2] gives: parallel\nbackings over one slot are ordinary. No field changes — every backend\natom already carries `window_ns`, and its field number names its backing.\n\n",
+  "refs": [
+    "LSER.6.8.1",
+    "RDSC.5a.8.2",
+    "RDSC.7.2.1"
+  ]
+}

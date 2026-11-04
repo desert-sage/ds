@@ -1,0 +1,13 @@
+# A kwarg with no value prevents the call, and is counted.
+#
+#   id=1  x is JSON null  no call, `ds.calls.arg_error_total{service=svc.n}`
+#                         where the call would have been, then the log
+#   id=2  x is 2.5        the call is issued, nothing counted, then the log
+#
+# Compared on the metric line's position among the firing's events: libds
+# counts in `bridge_call` (`engine_rete_adapters.c`), Mercury in
+# `ds.exec.call_verb_admitted`.
+assert E id=1 payload=json:{"x":null}
+pump
+assert E id=2 payload=json:{"x":2.5}
+pump

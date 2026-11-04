@@ -1,0 +1,10 @@
+{
+    "id": "LREG.2.3",
+    "category": "compiler",
+    "scenario": "Position rule per LREG.2.3 — `where` clause requires a pattern with zero capturing groups. A `where`-position pattern that contains captures rejects; the diagnostic should point at converting captures to `(?:...)` non-capturing groups or moving to a `let` form. Pin: `where m.text ~ /(\\w+)/` rejects with DS_VALIDATE_REGEX_WHERE_HAS_CAPTURES.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule trig:\n    Msg m where m.text ~ /(\\w+)/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_WHERE_HAS_CAPTURES"
+    }
+}

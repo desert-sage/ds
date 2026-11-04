@@ -1,0 +1,670 @@
+{
+  "id": "LCRS.6.2.1",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.6.2",
+  "seq": 302,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.6.2.1] When a rule fires `call S ... as K`, the engine must first\nretract every live fact of `S`'s response schema ([LCRS.4.3.2]) whose `corr` is\n`K` and every live `CallError` whose `corr` is `K`, and only then issue the\nrequest. A call to a `no response` service ([LCRS.17.1]) has no response schema\nand retracts `CallError` facts alone. Responses of other services are\nuntouched, whichever rule or clause position issued the call. A call its\ncooldown suppresses ([LCRS.8.1]) is not issued and retracts nothing. Every\ncall has a correlation ([LCRS.3.1]), so every issued call sweeps. Natural for\nrefresh-on-trigger rules — only the latest response for a given service and\ncorrelation is live at any time.\n\n",
+  "refs": [
+    "LCRS.17.1",
+    "LCRS.3.1",
+    "LCRS.4.3.2",
+    "LCRS.8.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__called_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timed state with the call trackers beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__firing",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A firing named: Rete/NetworkTimed.idr's name with the calls the firing issued, in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__outcome",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A call site: its position among the rule's emits and withdraws, its gate, its response kind, its correlation and arguments as functions of the match. The site's tracker, keyed (rule, site, key). LESS than the clause: `<rule>#call<N>` is a site index here, and the key is the lowering's composition (the `logical` facts' key slots, the empty key where the activation binds none with a `key` slot, as [LCRS.8.2] has it)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_17_1__no_response_sweeps_error_alone",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `no response` service's call sweeps CallError alone: a transcription, said so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_17_1__no_response_sweeps_error_only",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A `no response` call sweeps the CallError alone; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__admitted_call_supersedes",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN ISSUED CALL SUPERSEDES: past its window the call retracts the live reply of its correlation before it is issued; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__args_k",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witness sites' one argument, the trigger's key slot. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__c1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__c2",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__calls_of_trace",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__cooldown_suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A SUPPRESSED CALL RETRACTS NOTHING: inside the window the rule fires, the site is refused, no call is recorded and the reply stays; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__corr_c1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The correlation \"c1\" as every witness site's `as`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__empty_corr_call_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Every issued call sweeps, and a call under a generated correlation sweeps nothing. The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__fire_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firing at a selection, with calls: mark, then the gated RHS with the rule's sites."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__fire_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gated firing with calls: Rete/NetworkTimed.idr's selection and mark, then the gated RHS with calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issue",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The issue: the sweep on the site's correlation over the kinds its service answers with, before the request. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issue_if",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The issue under a verdict: admitted, the sweep runs and the call is recorded; refused, nothing moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issued_call_sweeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVERY SWEEP SWEEPS: after a sweep on a non-empty correlation over some kinds no live fact of those kinds carries it, under unique ids, over every state; the call's and the arrival's sweep are instances."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__label",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witnesses' lifecycles: the trigger an entity, every answer kind explicit. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__loaded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loaded called state: no rows, no deadlines, the clock and the wall at 0, no stamps, no tracker of either kind. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_fire_at_projects",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no rule sited the firing at a selection projects to Rete/NetworkTimed.idr's at the same selection, over every selection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_fire_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A called firing that names a firing: the timed firing names its projection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_fire_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A called firing that resolves to nothing: so does the timed firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_fire_projects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "With no rule sited the called firing projects to the timed firing on the timed half of the state, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_is_the_timed_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FRAME: with no rule sited the called pump projects to Rete/NetworkTimed.idr's timed pump, the call trackers beside and no call issued; every earlier fixture's agreement holds by it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_outcome",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO SITE THE GATED RHS IS Rete/NetworkTimed.idr's: the same gate, verdict, net, stamps and trackers, the call trackers untouched and no call issued."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_run_if",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no site, the RHS under a verdict is Rete/NetworkTimed.idr's, over every verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__no_site_run_projects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO RULE SITED THE RUN PROJECTS: state, halt and trace, for any fuel. By induction on the fuel through the firing's projection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__of_acc",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__other_kind_is_no_victim",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A kind outside the swept pair is no victim, whatever its correlation: the other service's response survives the call and the response's arrival."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__other_service_reply_survives",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The other service's reply survives the call, computed; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__outcome_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__proj_firing",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__pump_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pump: Rete/NetworkTimed.idr's re-time at entry, then the called run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rec_k1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The record of the witness call with the trigger's key 1. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rec_k2",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The record of the second Job's call with its key 2. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__results_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The results of a schedule from the loaded network: per pump, the verdicts and the calls. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__retraction_keeps_non_victims",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "\"Responses of other services are untouched\": proved of the sweep's retraction alone; the cascade is IRET.12.2's, and a response fact has no justification row."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rhs_gated_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls gated by the rule's cooldown: Rete/NetworkTimed.idr's gate, then the RHS with calls under its verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__rule_trig",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One rule over the trigger, action-free: its RHS is the call alone. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run, traced: Rete/RunFold.idr's traced fold over the called firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_if_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls under the rule's verdict: admitted, the actions and the sites run from position 0; refused, nothing runs and no call is issued."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_steps_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture's steps on the called engine: a tick, a data input through the arrival, a pump; per pump, the verdicts and the calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__site_cooled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cooled site: window 10, keyed on the trigger's identity key, on the first service. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__site_ping",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `no response` site under `nocooldown`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__site_plain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same call under `nocooldown`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__sites_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sites of the rule at an ordinal; none past the list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__sites_at_unsited",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no rule sited, every ordinal's sites are none. By induction on the table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__sites_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CALL ITS COOLDOWN SUPPRESSES IS NOT ISSUED AND RETRACTS NOTHING: inside the window the accumulator is left exactly as it was. The gate covers the sweep as it covers the call."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__swept_by_call",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds a call sweeps: the site's response schema and CallError, or CallError alone for a `no response` service."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__tick_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A tick: Rete/NetworkTimed.idr's; the call trackers stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__unsited",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No rule has a call site: the frame theorems' hypothesis."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__verdicts_of_trace",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wall_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The wall step: Rete/NetworkWall.idr's; the call trackers stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wanswers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witnesses' answer kinds: two response schemas and CallError. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wcorr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Where the witnesses' kinds keep `corr`: the three answer kinds at payload slot 0. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wenv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witnesses' environment: a response payload (corr, v), a CallError payload (corr, code, message, ts), any other id the Int it is. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wm",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wm_after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The working memory after a schedule from the loaded network. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_sweep_keeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ARRIVAL ON A CORRELATION KEEPS ONE ANSWER PER CORRELATION: after its sweep and the TTL sweep every live fact was live before or is the answer minted, and the minted one against a survivor is `lcrs_6_2_4__new_against_survivor_at`'s case. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__call_site_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A call site keeps the invariant: admitted, its issue is a correlation sweep; refused, the net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__fire_at_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The firing at a selection keeps the invariant: the selected chain is at its ordinal, so its actions are the loaded rule's (the shapes kept), which mint no answer; the mark, then the gated RHS with calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__fire_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The called firing keeps the invariant, at the selection the engine makes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_against_survivor",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ARRIVING ANSWER AGAINST A SURVIVOR: an answer live after the arrival's sweep on a non-empty correlation, carrying it, is of none of the swept kinds, so of another response schema, and neither is CallError. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_against_survivor_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The same for the fact the arrival minted, whose correlation is the one asserted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_per_corr_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "ONE ANSWER PER CORRELATION OVER ANY HISTORY: from the loaded state, after any ticks, data inputs and pumps under any fuel, two distinct live answers carrying one non-empty correlation are of different response schemas and neither is CallError. Over every program, environment, kind table, site table, cooldown table and schedule. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation. LESS than the clause: THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it. The clause's sentence that each live answer is the last of its kind asserted with that correlation is not proved: the theorem gives at most one live answer per kind and not which one; the witnesses alone show the last asserted staying. The stream's record order (the answer's FactAssert first, the withdrawals after) is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__other_service_untouched",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The other service is untouched by a response: both replies live, and a second reply of one service retracts that service's alone; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__refire_pending_last_reply_wins",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two calls before any reply find nothing to retract, each recorded with its Job's key; the last reply asserted stays; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__rhs_gated_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gated RHS with calls keeps the invariant: admitted, the RHS with calls; refused, the marked net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__witnesses_keep_one_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One answer per correlation in the witness world over every history: any site on the witnesses' rule, any schedule. The theorem at the witnesses' program, whose one rule is action-free and so mints no answer; the call fixtures' schedules are among them. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__no_carrier_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A correlation no live fact carries sweeps nothing: the sweep is the identity, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ADMITTED SITE SWEEPS, RECORDS AND STAMPS: the issue on its net, the stamps kept, the trackers the gate's, the call recorded after the ones before."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_refused",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A REFUSED SITE LEAVES THE NET, THE STAMPS AND THE RECORDS: only the trackers are the gate's."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__Fire",
+        "tag": "spec",
+        "note": "The gate admits the call and it fires: every live answer with the firing's correlation is retracted first (one service, so every response fact and every CallError), then the request is issued, the two in one step inside the gate, as RLOW.7.3.8 has the engine perform the sweep while evaluating the call. Every call has a correlation, so every admitted firing sweeps; under a generated correlation the sweep finds nothing, no earlier answer carrying the firing's. Nothing stops it firing while an earlier request is still owed, which is LCRS.6.2.4's case."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__after_sweep",
+        "tag": "spec",
+        "note": "The live answers the firing's sweep leaves: those whose correlation is not the firing's -- none under an author's `as`, which every answer of the call shares; all under a generated correlation, which no earlier answer carries."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__issued_call_sweeps",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "EVERY ISSUED CALL SWEEPS: after a call's admitted firing no live answer carries the firing's correlation. Bounded: two calls, one with an author's `as` and cooled, one with a generated correlation, two firings each, TTLs of 2 and 3 ticks in either order; the nosweep teeth engine, which issues without the sweep, violates it, and the superseded probe shows the sweep retract a live answer."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__suppressed_retracts_nothing",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The 'retracts nothing' half of the clause's cooldown sentence: a cooled call's firing inside its cooldown window leaves every live answer of its correlation live. Stated over the window and not over the denial step, so an engine with no gate is caught as well as one with the sweep compiled ahead of it. Bounded: two calls, the one with an author's `as` cooled with a one-tick window, one denial per run; the ungated and nogate teeth engines violate it, and the suppressed probe shows the denial happen with an answer live."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__Deny",
+        "tag": "derives",
+        "note": "The suppressed firing of the clause's cooldown sentence: the call is not issued and retracts nothing, and only the count of denials moves."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__suppressed_not_issued",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The 'is not issued' half of the clause's cooldown sentence: a cooled call's firing inside its window owes the adapter no new request. Same bound as suppressed_retracts_nothing; the nogate teeth engine violates it."
+      }
+    ]
+  }
+}

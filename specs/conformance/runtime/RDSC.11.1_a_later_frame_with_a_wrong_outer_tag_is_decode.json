@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_later_frame_with_a_wrong_outer_tag_is_decode",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose outer tag is not 0x0A is malformed, and a malformed frame AFTER the first is refused with DS_ERR_DSC_DECODE (-503). `runtime_error`'s `tamper: {insert_bytes: {at: 1, hex: \"0b00\"}}` ([RCTS.1.2.21]) puts the octets 0x0B 0x00 after the compiled artefact's DscHeader and before its second atom: an outer tag of field 1 with wire type 3, which begins no frame, then a zero. The walk reaches the DscHeader first, so `dsc_sha256` is re-sealed over the edited artefact and the refusal is the frame's, not the hash's. Twin of RDSC.11.1_a_first_frame_with_a_wrong_outer_tag_is_bad_magic, the same octets at the first position. What it discriminates: a loader that skips a byte it cannot frame loads the atoms after it; one that answers every malformed frame with BAD_MAGIC gives -501. PATHS: libds's `ds_dsc_load` atom walk (`ds_pbf_next_atom`, MALFORMED); the Mercury runtime's `ds.atom.next_frame` (`ae_bad_outer_tag`) in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 1, "hex": "0b00"}},
+        "code": "-503"
+    }
+}

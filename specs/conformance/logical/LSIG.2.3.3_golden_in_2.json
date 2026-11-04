@@ -1,0 +1,22 @@
+{
+    "id": "LSIG.2.3.3_golden_in_2",
+    "clauses": ["LSIG.2.3.3"],
+    "category": "logical",
+    "scenario": "Golden vector IN-2 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: the partial-interval clip at the sliding boundary. `integral sliding 10s` over 10.0 at 0 and 4.0 at 15 s, read at 20 s over (10, 20], is 10*5 + 4*5 = 70.0. The closed [0, 15) interval contributes 150, of which the out-of-window [0, 10] portion (100) is discounted at the read. At 20 s a `Probe` arrives and `read` logs the binding's `integral` ([NSBK.6.3]).",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Flow.q:\n    integral sliding 10s\n\nrule read:\n    Probe\n    Flow f\n->\n    log info \"{f.integral}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 10.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 15000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 4.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["70.0"]
+    }
+}

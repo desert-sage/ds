@@ -1,0 +1,19 @@
+# Two samples, then reads fired by `Tick` with no new assertion. After t=60
+# the closed interval [0,60) holds v=10 and an open one starts at v=20
+# ([LSIG.3.6]):
+#
+#   `gap hold` -> 600 + 20 x (t-60)   growing with every tick
+#   `gap zero` -> 600                 flat
+assert Meter entity_id=m v=10.0
+assert MeterZ entity_id=m v=10.0
+pump
+advance 60000000000
+assert Meter entity_id=m v=20.0
+assert MeterZ entity_id=m v=20.0
+pump
+advance 60000000000
+assert Tick n=1
+pump
+advance 60000000000
+assert Tick n=2
+pump

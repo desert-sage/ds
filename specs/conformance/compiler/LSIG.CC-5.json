@@ -1,0 +1,11 @@
+{
+    "id": "LSIG.CC-5",
+    "clauses": ["LSIG.1.2", "LSIG.1.4.3"],
+    "category": "compiler",
+    "scenario": "LSIG.1.2 / 1.3.3 CC-5: `active_fraction` on a `Float` slot is a compile error — it is admitted on `Bool` only.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Sensor.val:\n    active_fraction sliding 5_min\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.9.8.11_formula_body_calls_a_builtin_compiles",
+    "category": "compiler",
+    "scenario": "[LGRA.9.8.11]: \"Every call in a formula's body is to a built-in.\" `there`'s body calls `log2`, a built-in the file imports from `math`, so the program compiles. The control for `LGRA.9.8.11_formula_body_calls_itself_refused` and its siblings: a check refusing every call in a body refuses this. PATH PINNED: `dsc.validate.lgra_9_8_11_formula_body`, after `dsc.libcall` has rewritten the call.",
+    "rules_ds": "from math import log2\n\nunit dimension da storage float64 base ua\nunit ua: da\nunit dimension db storage float64 base ub\nunit ub: db\n\nunit formula ab:\n    there(x: ua): ub = log2(x)\n    back(x: ub): ua = 2.0 ** x\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.3.3_negated_slot_is_arithmetic",
+    "category": "logical",
+    "scenario": "[LUNI.3.3]: the literal rule is for a unit literal only. A minus on anything else, here a slot, negates its stored base-unit value. `t: celsius` stores kelvin. Sensor `a` reads 273.15 K and `b` 268.15 K, and the rule `Reading r where -(r.t) < -270_kelvin` compares -273.15 and -268.15 with -270 K: `a` logs and `b` does not. (`-270_kelvin` is a literal in the base unit, so both readings give -270 K.) PATH PINNED: the arithmetic branch of `rlow_6_1_1_expr`'s unary arm in dsc.rete, `e_unop(op_neg, ...)` over the slot read. The break is applying the literal rule to every minus, converting -(the slot in °C) back to kelvin (546.3 - t), under which `a` gives 273.15 and nothing logs.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    t: celsius mutable\n\nrule neg:\n    Reading r where -(r.t) < -270_kelvin\n->\n    log info \"{r.sensor}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "a", "t": 273.15}},
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "b", "t": 268.15}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a"]
+    }
+}

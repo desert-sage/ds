@@ -1,0 +1,26 @@
+{
+  "id": "RCTS.1.2.25",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 121,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.25] **`runtime_error`'s fields** — a fixture whose `expect.kind`\n  is `runtime_error` pins a refusal. A harness must load the compiled\n  artefact, edited as `tamper` says ([RCTS.1.2.21]), into a fresh engine, seed\n  its cache as `cache_seeds` says, and give it the inputs in order until one\n  is refused. The runtime passes only when the load, a seed or an input is\n  refused, and the refusal satisfies every field below that the fixture\n  carries.\n\n  - `code` (required), a string: the status the refusal carries, as the\n    negative integer in a string.\n  - `message_contains`, a string or a non-empty array of strings: the\n    refusal's text contains it, or each of them. A harness for a runtime\n    that reports a refusal's reason as a value, not as text, must map each\n    reason it can report onto one text, and must fail a fixture whose\n    refusal has a reason it does not map.\n  - `steps`, an array of objects, the session's inputs as [RCTS.1.2.28] has\n    them, run on the harness's mock clocks; or `asserts`, an array of objects,\n    each one assert, and `pump`, a boolean: those asserts in order, then one\n    pump when `pump` is `true`. A fixture with none of the three has the load\n    as its only input.\n  - `cache_seeds`, an array of objects, each `{\"key\": K, \"value\": V}`,\n    `{\"key\": K, \"text\": T}` or `{\"key\": K, \"text_bytes\": H}`, K and T\n    strings, V any JSON value and H octets as two hex digits each, none of\n    them `00`: after the load and before the first input, each is seeded\n    under K, in order\n    ([NLFC.9.1]). T is given to the runtime as the seed's JSON text exactly as\n    written, which states a text no JSON value is read back as, such as an\n    integer literal outside int64 ([LGRA.5.8.9]). H is given as the seed's\n    JSON text, its octets unchanged, which need not be well-formed UTF-8: it\n    states a text [LSTR.8.5] refuses, which no JSON string can. H holds no\n    `00` octet: a U+0000 is [LSTR.1.5]'s refusal, which a binding makes\n    before the call, so no harness could hand it over unchanged. V is given\n    as JSON text with\n    its members in the fixture's order, `, ` between items, `: ` after a key, and\n    every character outside U+0020 to U+007E escaped: `\\\"`, `\\\\`, `\\b`, `\\f`,\n    `\\n`, `\\r` and `\\t` for those seven, and `\\u` with four lower-case hex\n    digits for the rest, as a surrogate pair above U+FFFF. So a limit on the\n    text's length ([LGRA.5.8.6]) is met or broken alike in every harness.\n    `runtime_fact_count` takes the field too.\n  - `cache_cap`, an object whose members are among `keys` and `bytes`, each a\n    non-negative integer: the engine's cache bounds, set before the load. A\n    member that is absent or `0` sets no bound ([LSTO.4.7.5]).\n  - `fault_at`, a non-negative integer: the input that must be refused,\n    counted from 0, in `steps`, or in `asserts` with the pump after the last of\n    them. Every input before it must be accepted. A refusal at the load or at a\n    seed is at no input.\n  - `no_fault_events`, a boolean: when `true`, the stream carries no\n    `TypeError`, `BoundsError`, `ComputationError` or `EngineError` event once\n    the refusal has happened ([NCBK.2.8]).\n  - `fault_events`, an array of the names `type_error`, `bounds_error`,\n    `computation_error` and `engine_error`: the stream's events of those four\n    kinds, in stream order, are exactly the array.\n  - `fact_count_after`, a non-negative integer: the facts live in working\n    memory once the refusal has happened ([LERR.1.5]). Working memory is\n    neither defined nor readable on a halted engine ([LERR.1.4.7],\n    [NCBK.2.9]), so a harness must fail a fixture that carries it and whose\n    refusal leaves the engine halted.\n  - `halted_fault`, the name of a member of `EngineFault`\n    (`proto/engine_fault.proto`): once the refusal has happened the engine has\n    halted ([NCBK.2.9]), and its halt latch reports that fault ([NCBK.2.11]).\n  - `last_event`, one of the names `fault_events` takes: the last event on the\n    stream once the refusal has happened is of that kind. With `engine_error`\n    it pins that the EngineError is the tier's last record ([LERR.1.4.7]).\n\n  A harness must fail a fixture with no `code`, one whose value for any of\n  these fields is not of the type stated here, one with `steps` and either of\n  `asserts` and `pump`, one whose `halted_fault` names no member of\n  `EngineFault`, and one that carries both `halted_fault` and\n  `fact_count_after`. It must fail a fixture of any other `expect.kind` that\n  carries `fault_at`, `no_fault_events`, `fault_events`, `cache_cap`,\n  `halted_fault` or `last_event`.\n\n",
+  "refs": [
+    "LERR.1.4.7",
+    "LERR.1.5",
+    "LGRA.5.8.6",
+    "LGRA.5.8.9",
+    "LSTO.4.7.5",
+    "LSTR.1.5",
+    "LSTR.8.5",
+    "NCBK.2.11",
+    "NCBK.2.8",
+    "NCBK.2.9",
+    "NLFC.9.1",
+    "RCTS.1.2.21",
+    "RCTS.1.2.28"
+  ]
+}

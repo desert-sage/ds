@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.11.1_capacity_bad_type",
+    "category": "compiler",
+    "scenario": "[LSTR.11.1]: `capacity` is admitted on `String` slots only, and the compiler must refuse it on a slot of any other type with `DS_VALIDATE_CAPACITY_BAD_TYPE`. The grammar admits any type ([LGRA.4.1]'s grammar-permissive, validate-strict split) so the diagnostic can name the slot's type. PATH PINNED: `dsc.validate.lstr_11_1_capacity`'s type arm, which runs before the `N >= 1` arm -- the `N` here is positive, so only the type can refuse it.",
+    "rules_ds": "schema Line scope logical:\n    k: Int key\n    n: Int capacity 8 mutable\n\nrule r:\n    Line\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPACITY_BAD_TYPE"
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "RFCS.24.3",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.24",
+  "seq": 963,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.24.3] **`fact_ids` lists the facts the input asserted, in [RFCS.23.7]'s\norder.** Each inlined copy the delivery asserted comes first, innermost first,\nthen the received fact. A copy that resolved to a live fact asserted nothing and\ncontributes no handle. A received fact that was a no-op reassertion\n([RFCS.6.7]) contributes the handle a `FactAssert` for the same input would\ncarry. A later\n`FactRetract` of any of these facts echoes its handle, as for a `FactAssert`\n([RFCS.6.2]).\n\n**Each fact the delivery asserts is its own stream event.** The engine must\nemit one `FactAssert` event for each fact in `fact_ids`, in that order, and\neach takes the next `seq` ([LFST.5.3]). Each fact's `event_id` derives from its\nown event's `seq` ([LFST.5.6]), so no two facts of one delivery share one. The\n`ExternalAssert` carries the `seq` of the first of these events. The others are\nrecorded by no atom of their own, as every stream event of a kind the recording\ndoes not carry is. A replayer delivering the atom emits the same events in the\nsame order, so every `seq` and `event_id` reproduces.\n\n**A new inject-class atom is not additive** ([RFCS.3.4]). An older reader\ncannot skip it without losing an input, so it rejects the trace with\n`DS_ERR_FS_UNKNOWN_INJECT` ([RFCS.18.8]). It therefore lands with a minor\nrelease ([LDET.1.10]).\n\n---\n\n",
+  "refs": [
+    "LDET.1.10",
+    "LFST.5.3",
+    "LFST.5.6",
+    "RFCS.18.8",
+    "RFCS.23.7",
+    "RFCS.3.4",
+    "RFCS.6.2",
+    "RFCS.6.7"
+  ],
+  "atoms": [
+    "ExternalAssert",
+    "FactRetract"
+  ],
+  "errors": [
+    "DS_ERR_FS_UNKNOWN_INJECT"
+  ]
+}

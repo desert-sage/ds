@@ -1,0 +1,18 @@
+{
+    "id": "LFST.9.3.6_timetag_pairing_broken_diverges",
+    "clauses": ["RFCS.11.2"],
+    "category": "runtime",
+    "scenario": "[LFST.9.3.6]: a replayer pairs each recorded `timetag` with the re-derived one the first time either occurs, and every later atom must agree with that pairing in both directions; a disagreement is the Divergence ([RFCS.11.2]). The harness ([RCTS.1.2.18]) records two Trig asserts and a pump, so `seen` fires twice with two `timetag`s the engine keeps apart, and then gives the second firing's RuleFireAnnotations the first's `timetag` (`merge_timetags`, firings 0 and 2: [RCTS.1.2.18] counts every RuleFireAnnotation, and each firing writes two, its begin and its `end`, so the second firing's begin is the third). The unaltered recording must replay, so the refusal is the merge's. The altered one must be refused with DS_ERR_FS_DIVERGENCE (-725): the first recorded `timetag` is paired with the first re-derived one, and the second firing re-derives a different `timetag` against the same recorded one. NOT PINNED: [LFST.9.3.6] places the Divergence at the second firing's `seq`, but `replay_refused` checks only the status, and neither replayer reports a `seq` a harness reads. PATHS: libds's `Engine.replay` in verify mode (`rfcs/codec.c`'s pairing); the Mercury runtime's `ds.replay`, whose pairing ends the replay `diverged` (`replay_refusal_code` -725).",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule seen:\n    Trig t\n->\n    log info \"{t.v}\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "merge_timetags", "firings": [0, 2] },
+        "code": "-725"
+    }
+}

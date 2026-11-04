@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The R2 fixture for the @ds-lang/ds suite: one rule per effect callback, each
+# triggered by its own schema so a test fires exactly the effect it is about.
+# Compiled by the branch's own Mercury dsc in the gate, like r1.ds.
+
+use default
+
+schema FooReply scope ttl 1_min:
+    corr: String
+
+service svc.foo:
+    "test stub"
+    response FooReply
+
+schema Send scope logical:
+    id: String key
+    n: Int mutable
+    x: Float mutable
+    ok: Bool mutable
+    raw: Bytes mutable
+    doc: Json mutable
+
+service svc.all:
+    kwarg n: Int
+    kwarg x: Float
+    kwarg s: String
+    kwarg ok: Bool
+    kwarg raw: Bytes
+    kwarg doc: Json
+    kwarg sent: Send
+    no response
+
+schema Say scope logical:
+    v: Int key
+
+schema Call scope logical:
+    v: Int key
+
+schema Cache scope logical:
+    v: Int key
+
+schema Uncache scope logical:
+    v: Int key
+
+rule say:
+    Say
+->
+    log warning "hello"
+
+rule call_out:
+    Call
+->
+    call svc.foo nocooldown as "corr-1"
+
+rule send:
+    Send s
+->
+    call svc.all n: s.n x: s.x s: s.id ok: s.ok raw: s.raw doc: s.doc sent: s nocooldown
+
+rule cache_it:
+    Cache c
+->
+    cache key: "last" value: c.v ttl: 5_min
+
+rule uncache_it:
+    Uncache
+->
+    cache_delete key: "last"

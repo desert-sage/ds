@@ -1,0 +1,18 @@
+{
+    "id": "IRET.25.5.3_key_float_seventh_decimal",
+    "category": "logical",
+    "scenario": "[IRET.25.5.3]: no rounding of a `Float` in the activation key. 1.0000001 and 1.0000002 differ in the seventh decimal and are two keys; a repeat of the first is suppressed by the 10s cooldown, the control that the gate still gates. `by: e.x` makes the slot the key ([LCDB.3.3.4]). PATH PINNED: libds `rk_walk` keys a Float by its IEEE bits (with -0.0 folded to 0.0) and Mercury `ds.rate.key_part_of` by the value; a text key that rounds to six decimals renders both `1` and suppresses the second.",
+    "rules_ds": "schema Ev scope ttl 1_min:\n    x: Float\n\nrule r cooldown 10_s by: e.x:\n    Ev e\n->\n    log info \"fire\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "x": 1.0000001 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "x": 1.0000002 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "x": 1.0000001 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire", "fire" ]
+    }
+}

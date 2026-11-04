@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb batch mode's calls socket (DSDB.md §9.1): a rule that calls, and rules
+# that read the replies: the service's response schema, and CallError, which
+# a rule reading it registers. The answer to a reply calls again, so a later
+# pump cycle has a call to wait on too.
+
+use default
+
+schema AskReply scope ttl 1_min:
+    corr: String
+    ok: Bool
+
+service svc.ask:
+    "test stub"
+    response AskReply
+
+schema Question scope logical:
+    id: String key
+
+rule ask:
+    Question q
+->
+    call svc.ask nocooldown as q.id
+
+rule answered:
+    AskReply r
+->
+    log info "answered {r.corr}"
+
+rule failed:
+    CallError e
+->
+    log warning "failed {e.corr} {e.code}"
+
+rule again:
+    AskReply r where r.corr == "first"
+->
+    call svc.ask nocooldown as "second"

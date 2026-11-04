@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_object_without_spec_is_a_type_error",
+    "category": "logical",
+    "scenario": "Only a leaf renders (LGRA.2.9.6.11): `{p.body.o}` with no spec, where `o` is an object, is a TypeError, and `handler` logs. PATH PINNED: in libds, the composite flag the FN_JSON_PATH builtin sets and `eval_interp` reads: the projection yields the object as a `Json` value, which the renderer alone would write as its text, so the flag is what refuses it. In Mercury, the composite stays `json(...)`, which `renderable_of` refuses. The break is rendering the object's JSON text, which logs `v {\"a\":1}`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.o}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "o": { "a": 1 } } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

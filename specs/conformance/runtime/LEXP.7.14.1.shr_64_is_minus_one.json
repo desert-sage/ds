@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.14.1.shr_64_is_minus_one",
+    "category": "runtime",
+    "scenario": "[LEXP.7.14.1]: the shift count is never reduced modulo 64. `-8 >> 64` is floor(-8 / 2^64) = -1; masked, it reads `-8 >> 0` = -8. Both operands come from slots so nothing folds at compile time. Guard `(t.x >> t.n) == -1` gates the emit; fact_count 2 confirms it fired. Path: rete/eval.c's SHR arm into int_ops.h's ds_i64_shr (formal/saw/i64_shr.saw); Mercury ds.eval.bit_result.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    n: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x >> t.n) == -1\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -8, "n": 64 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

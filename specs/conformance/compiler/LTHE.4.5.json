@@ -1,0 +1,10 @@
+{
+    "id": "LTHE.4.5",
+    "category": "compiler",
+    "scenario": "`then` requires a `ts` slot on every schema in the sequence per LTHE.4.5. The anchor schema missing `ts` rejects with DS_VALIDATE_WITHIN_NO_TS_SLOT naming the anchor schema. Pin: `Door` (no ts) then `Motion` (has ts) → error naming Door.",
+    "rules_ds": "schema Door scope logical:\n    entity_id: String key\n\nschema Motion scope logical:\n    entity_id: String key\n    ts: Time\n\nrule entry:\n    Door\n    then Motion within 30_s\n->\n    log info \"entry\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHIN_NO_TS_SLOT"
+    }
+}

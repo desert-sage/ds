@@ -1,0 +1,18 @@
+{
+    "id": "LERR.1.4.12_supersede_records_no_trap_for_ended_pair",
+    "category": "logical",
+    "scenario": "[LERR.1.4.12]: a pair an operation ends records nothing, and a retraction evaluates no join test ([IRET.7.7]). `div_where` joins every Sensor against the nil token with `s.a / s.b > 1.0` (an all-Int division [LEXP.7.15.1]); `no_div` blocks `Tick` on the same test. Asserting a Sensor with `b = 0` and then a Tick derives one trapping pair at each node: two ComputationErrors. Superseding the Sensor with `b = 1` retracts the old one, which ENDS both pairs, and asserts the new one, whose pairs answer `2 / 1 > 1.0`, true, and trap nowhere. So the run records exactly two. PATH: libds's ds_rete_beta_right_retract on a positive node that never recorded a join returns without a scan (rete/beta.c); a runtime that re-tests the leaving Sensor records a third trap. Mercury drops the re-tests a retraction makes (ds.match.maybe_unblock). The runtime differential runs a larger form of the program (70_match_faults). `no_div` never fires: a trap keeps its block ([LNUL.4.7]) and the new Sensor blocks by a definite `true`. `div_where` fires once the Sensor divides.",
+    "rules_ds": "schema Tick scope logical:\n    id: Int key\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n    a: Int mutable\n    b: Int mutable\n\nrule no_div:\n    Tick\n    no Sensor s where s.a / s.b > 1.0\n->\n    log info \"no_div fired\"\n\nrule div_where:\n    Sensor s where s.a / s.b > 1.0\n->\n    log info \"div_where fired\"\n",
+    "dead_rules_expected": ["no_div"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "state": null, "a": 1, "b": 0 } },
+            { "op": "assert", "schema": "Tick", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "state": 10.0, "a": 2, "b": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "computation_error"]
+    }
+}

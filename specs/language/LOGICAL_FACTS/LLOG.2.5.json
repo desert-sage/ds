@@ -1,0 +1,592 @@
+{
+  "id": "LLOG.2.5",
+  "prefix": "LLOG",
+  "doc": "LOGICAL_FACTS.md",
+  "parent": "LLOG.2",
+  "seq": 93,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LLOG.2.5] Retracted only when the **last** justification goes away.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "llog_2_5__reach_engine_well_founded",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Over the surviving inputs, the well-founded answer for the engine's own table retracts both Reach facts -- what this clause intends and the refcount does not do."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "llog_2_5__boundary_unfounded",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AT A BOUNDARY the well-founded facts are live, and if any live fact is not well-founded, the live facts outside the well-founded set are an unfounded set -- what recompute-and-diff at the boundary would retract, and what the refcount keeps."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__rd_after_exact",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "For any list retracted that holds no well-founded id and every live id outside the well-founded set, the live ids after are exactly the well-founded set."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__rd_exact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE STEP IS EXACT. After recompute-and-diff the live facts are exactly the well-founded set of the engine's table over the live facts before: this clause with \"the last justification\" read as the last grounded one, the reading that is the contract. On a positive program, from a state satisfying the run invariant; no clause states the step."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__rd_gone_greatest",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And it holds every unfounded set among the live facts: the diff is the greatest unfounded set, no more retracted than must be and no unfounded support left."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__rd_gone_unfounded",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What the step retracts is an unfounded set among the live facts, whenever it retracts anything: no base fact is in it, and every justification of a member with live antecedents uses another member."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__rd_reach_engine",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: on Lcyc/TmsWitnesses.idr's reach run, where the refcount leaves both Reach facts live on each other alone, the step retracts both and leaves the two edges with every table empty."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__wf_grow",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The well-founded set survives the step's own bookkeeping: the rows the cascade keeps still ground every surviving fact. What makes one step suffice."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__wf_in_cascade_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The refcount cascade never retracts a well-founded fact, even over the smaller live set a recompute-and-diff retraction leaves: what makes the step's cascade retract nothing more."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeFire.idr",
+        "name": "Llog_2_5__grounded",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every live fact is in the well-founded set of the state's own table over its live facts: each has a justification grounded in the facts nothing justifies."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeFire.idr",
+        "name": "Llog_2_5__grounded_s",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same, of a state."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeFire.idr",
+        "name": "llog_2_5__grounded_empty",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With an empty table every live fact is base, so grounded: the start of a run."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeFire.idr",
+        "name": "llog_2_5__rd_run_grounded",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AT EVERY STATE OF EVERY RUN of Rete/RecomputeFire.idr's engine -- recompute-and-diff after every action, which no clause states -- from an input with unique ids, the run invariant holds and every live fact is grounded, including after a rule's withdraw mid-pump, where the refcount engine keeps an unfounded closure live (Main.idr's alarm trace). Positive programs."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "Llog_2_5__stratified_list",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Strata in the SCC-DAG's order: no stratum reads what any later one derives."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__all_strata",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "All the strata's justifications, first stratum first, by structure."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__hybrid_agrees",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Stratum by stratum, the hybrid agrees with the recompute from a base with the same members in the universe, when the recompute's facts are live: a recursive stratum is a recompute on both sides, a self-free one is the cascade, exact because ranked."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__hybrid_exact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE HYBRID IS EXACT: recomputing the recursive strata and keeping the refcount cascade on the self-free ones, in the SCC-DAG's order, yields exactly the global well-founded set whenever the well-founded facts are live, as at every boundary. The recompute can be confined to the recursive strata. No clause states this. The abstract model; the engine's step recomputes every stratum at once."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__hybrid_mixed_after",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the seed withdrawn, the hybrid recomputes the recursive stratum to nothing and the cascade on the self-free stratum retracts 5 -- all three gone, as this clause requires."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__hybrid_mixed_before",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: with the seed, all four facts live under the hybrid."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__hybrid_strata",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witness strata: a recursive pair seeded by 10 below, a self-free 1 -> 5 above."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__strata_base_in",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A base fact of the universe survives every stratum."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__strata_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "N STRATA COMPOSE: the stratum-by-stratum recompute is the global one, both inclusions, for any number of strata. `llog_2_5__stratified_compose` is the two-strata case; this is the one the per-stratum mechanism runs."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__strata_wf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Recompute stratum by stratum: each stratum's well-founded set over the one below becomes the next stratum's base."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "llog_2_5__wf_mono_base_univ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The well-founded set depends on the base only through its members in the universe."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Llog_2_5__stratified",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two strata of justifications in the SCC-DAG's order: the lower one never reads what the upper one derives."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Llog_2_5__unfounded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An unfounded set among a live set: nonempty, free of base facts, every justification keeping a member alive uses another member."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_unfounded",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What the refcount keeps beyond this clause's intended answer is an unfounded set, in general."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__reach_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The refcount keeps both: recursion through a `logical` relation leaves unfounded facts live after the seed is withdrawn, which is why the recommendation ties `+recursive` to a TMS change."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__witness_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "After P is retracted the refcount of [IRET.12.2] keeps Q and R: each still has a justification, in the other. Read literally this clause is satisfied by that -- a justification remains -- and the fact is nevertheless unfounded. The clause means the well-founded reading, and [IRET.12.2] says so; the count is libds's mechanism on the acyclic support every admitted program has."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__ranked_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "On a ranked support graph the refcount realises this clause exactly."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__base_in_wf",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A base fact of the universe is well-founded."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__compose_hb",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The composed recompute holds the base facts of the universe."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__compose_hs",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And is closed under both strata's support."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__compose_lower_in",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The lower stratum's recompute is within the global one."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_n",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "n rounds."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_n_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more round at the front of a derivation, for witnesses against literal states."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_n_fixed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "From a known set that is a filter of the universe and that one round keeps, the derivation stabilises within as many rounds as the universe has facts beyond it: the fuel the derivation is given always suffices."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_n_stable",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Once a round adds nothing, no later round does."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One derivation round from what is known."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__derive_step_mono",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One derivation round is monotone in what is known."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__outside",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The facts outside a set; applied to the well-founded set, the candidate unfounded set."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__reach_js",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The `+recursive` proposal's transitive-closure shape as justifications: seed -> Reach(a,b), Reach(a,b) + Edge(b,a) -> Reach(a,a), Reach(a,a) + Edge(a,b) -> Reach(a,b)."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__reach_well_founded",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Withdraw the seed, keep both edges: the well-founded answer retracts both Reach facts."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_after",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: withdraw the seed and the global recompute keeps nothing."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The five-fact universe of the witness; small so the type-level evaluator finishes."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_before",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed and checked, as a chain of single-round `Refl`s: with the seed everything is well-founded."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_composed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the two composed give the global recompute."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_js1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two-strata witness, lower stratum: a cycle seeded from outside it."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_js2",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Upper stratum: a second cycle seeded by the lower stratum's output."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_lower",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the lower stratum's recompute retracts its pair; its net diff is two retractions."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_upper",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the upper stratum, recomputed over the lower's output, retracts its pair although nothing of its own was withdrawn."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__stratified_ante",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An antecedent of a lower-stratum justification that the composed recompute derives is derived by the lower stratum alone."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__stratified_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Stratified recomputation composes: the least fixpoint of two strata together is the least fixpoint of the upper over the lower's. Recompute-and-diff can run stratum by stratum in the DAG's order."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__unfounded_disagrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Conversely an unfounded set among the survivors is disjoint from the well-founded set. With `iret_12_2__cascade_unfounded`: the refcount and this clause's intended answer agree exactly when the survivors hold no unfounded set -- the characterisation the module's header claimed and now proves."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__unfounded_hb",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The well-founded facts outside an unfounded set hold the base facts of the universe."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__unfounded_hs",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And are closed under support."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__well_founded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The least fixpoint of support: what remains after the last justification goes away, with \"justification\" read as one grounded in base facts."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_closed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fact of the universe supported by well-founded facts is well-founded."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_fixed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The well-founded set is a fixpoint of derivation."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_in_cascade",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cascade never retracts a well-founded fact."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_least",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The well-founded set is below every closed set, so it is the LEAST fixpoint: this clause's \"last justification\" read as the last GROUNDED one, which is the reading the TMS change proposes."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_mono_base",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Fewer base facts, no more well-founded facts: a withdrawal of inputs only ever retracts derived facts, so recompute-and-diff commits retractions only."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_sub_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The well-founded set lies in the universe."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__witness_before",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Before P is retracted everything is live and well-founded."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__witness_js",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "P -> Q, Q -> R, R -> Q as justifications, with P the one base fact."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__witness_well_founded",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "After P is retracted the well-founded answer retracts Q and R: their last grounded justification is gone."
+      }
+    ],
+    "souffle": [
+      {
+        "path": "formal/souffle/composed_founded.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/composed_unfounded.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/founded_cycle.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/founded_reach.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/unfounded_cycle.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/unfounded_reach.dl",
+        "name": null,
+        "tag": "derives"
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "llog_2_5__Derive",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "llog_2_5__WellFounded",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "llog_2_5__well_founded_is_fixed",
+        "tag": "derives"
+      }
+    ]
+  }
+}

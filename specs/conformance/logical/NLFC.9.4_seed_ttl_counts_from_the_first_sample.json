@@ -1,0 +1,22 @@
+{
+    "id": "NLFC.9.4_seed_ttl_counts_from_the_first_sample",
+    "category": "logical",
+    "scenario": "[NLFC.9.4]: a seed's TTL counts from the engine's first sample, and \"neither where the host set a mock clock before that step ... changes it\". The mock clock is set to 5 s, then \"k\" is seeded with 7 and a 3 s TTL (`cache_seed`'s `ttl_ns`, [RCTS.1.2.28]). The first host assert, Trig `a` at 5 s, is the engine's first sample, so the entry's deadline is 8 s. `rr` reads `cached(\"k\")` on each Trig and logs it: `a` at 5 s and `b` at 7 s read 7, and `c` at 9 s, past the deadline, reads nothing. Exactly [\"a v=[7]\", \"b v=[7]\", \"c v=[]\"]. What it discriminates: a harness that accepted `ttl_ns` and did not hand it to the runtime gives three hits; a runtime that counted the TTL from the clock's zero, or from the seed call's clock reading taken as 0, gives a deadline of 3 s and three misses. NOT PINNED: counting from the clock's reading when the seed was made also gives 8 s here, because the first sample is at that same instant; the unit suites tell the two apart (libds `test_cache_spec.c`, Mercury `test_ds`'s [NLFC.9.4] checks). PATHS: `ds_engine_cache_seed`'s `ttl_ns`, through pyds's `cache.seed(..., ttl_ns=)` (`runner.py`'s `_Session`); the Mercury runtime's `ds.engine.seed_cache_text` with its TTL (`test_behave.m`'s `cache_seed` step).",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nrule rr:\n    Trig t\n->\n    let v = cached(\"k\")\n    log info \"{t.tag} v=[{v}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "cache_seed", "key": "k", "value": 7, "ttl_ns": 3000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "c" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a v=[7]", "b v=[7]", "c v=[]"]
+    }
+}

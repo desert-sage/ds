@@ -1,0 +1,22 @@
+{
+    "id": "LSER.7.6.3_co_absorbed_samples_take_assertion_order",
+    "clauses": ["LSER.7.6.3", "NSTG.5.3"],
+    "category": "logical",
+    "scenario": "[LSER.7.6.3]: on a `ttl` schema every fact assertion absorbs as a sample, and [NSTG.5.3] has the sample taken \"during fact assertion\", so two samples of one row absorbed in one sweep take their assertions' order. Pump 1 asserts `a` (dev `x`) and `b` (dev `y`). Before pump 2 the host asserts `c` (dev `k`, level 1) and `d` (dev `k`, level 2) at the same instant, then retracts `a`; pump 2's sweep absorbs `c` and `d` into row `k`. Pump 3 asserts a Probe, and `seen` logs row `k`'s `last` once per live `k` fact: [\"last 2\", \"last 2\"]. A sweep that took `d` before `c` would read `last 1`. PATH PINNED: the end-of-pump absorber, libds's `absorb_visitor` over working memory's dense vector (engine_rete_adapters.c), where retracting `a` swap-removes `d` into `a`'s slot ahead of `c`, and the Mercury runtime's `ds.engine` sweep in fact_id order.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Int\n\nschema Probe scope explicit:\n    k: Int\n\nseries Sample.level (by: dev):\n    last sliding 10_min\n\nrule seen:\n    Probe\n    Sample s where s.dev == \"k\"\n->\n    log info \"last {s.last}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "x", "level": 0 }, "as": "a" },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "y", "level": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 1 } },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 2 } },
+            { "op": "retract", "label": "a" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["last 2", "last 2"]
+    }
+}

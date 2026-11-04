@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.12.7",
+    "clauses": ["LTIM.5.1"],
+    "category": "compiler",
+    "scenario": "[LTIM.5.1] (LTIM.12.7, the id, is a tombstone): `<` is defined for `Time`, so `t1.fired_at < t2.fired_at` compiles. That the comparison is on `utc_ns` (LTIM.5.2) is a runtime result, logical/LTIM.5.2.runtime's.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule r:\n    Event t1 where t1.entity_id == \"a\"\n    Event t2 where t2.entity_id == \"b\" and t1.fired_at < t2.fired_at\n->\n    log info \"t1 is older\"\n",
+    "expect": { "kind": "compile_ok" }
+}

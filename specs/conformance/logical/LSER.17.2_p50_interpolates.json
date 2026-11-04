@@ -1,0 +1,20 @@
+{
+    "id": "LSER.17.2_p50_interpolates",
+    "category": "logical",
+    "scenario": "LSER.17.2: `median` and `pXX` interpolate rather than select an observed value -- `p50` of an `Int` slot's [1, 2] is 1.5. Drives the companion read `s.p50` on a logical schema into the ring-buffer percentile of both runtimes. Values 1, 2, 3, one per pump, each read pre-sample (LSER.8.6.1): the first is cold and does not log, the second sees [1] (1.0 under any method), the third sees [1, 2] and must read 1.5. Nearest-rank turns this red at the third message.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    p50 sliding 1_h\n\nrule r:\n    Reading s where s.p50 is not null\n->\n    log info \"p50 {s.p50}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level":3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["p50 1.0", "p50 1.5"]
+    }
+}

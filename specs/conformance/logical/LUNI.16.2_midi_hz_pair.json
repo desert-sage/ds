@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.16.2_midi_hz_pair",
+    "clauses": ["LGRA.9.8.11"],
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `midi_hz` pair in `units.audio`, called explicitly on slot values ([LUNI.4.5]: without `implicit`, a formula is called at the call site). `midi_to_hz(69)` is 440.0 * 2.0 ** ((69.0 - 69.0) / 12.0) = 440.0, and `hz_to_midi(880 Hz)` is 69.0 + 12.0 * log2(880.0 / 440.0) = 69.0 + 12.0 * 1.0 = 81.0, both exact under correct rounding, so both rules fire, in source order. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]), through an explicit formula call, then both runtimes' evaluation (libds in the corpus, the Mercury runtime through the behaviour suite), `log2` through CORE-MATH in both.",
+    "rules_ds": "from units.audio import midi_note, midi_hz\nfrom units.si import Hz\n\nschema Tone scope logical:\n    id: String key\n    note: midi_note mutable\n    freq: Hz mutable\n\nrule a4_is_440:\n    Tone t where midi_to_hz(t.note) == 440_Hz\n->\n    log info \"a4 is 440\"\n\nrule octave_up:\n    Tone t where hz_to_midi(t.freq) == 81_midi_note\n->\n    log info \"880 is 81\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Tone", "slots": { "id": "a", "note": 69.0, "freq": 880.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a4 is 440", "880 is 81"]
+    }
+}

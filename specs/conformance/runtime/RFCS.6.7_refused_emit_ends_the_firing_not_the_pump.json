@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.6.7_refused_emit_ends_the_firing_not_the_pump",
+    "category": "runtime",
+    "scenario": "[RFCS.6.7] with [LERR.1.5]: \"A refusal inside a pump ends the firing, not the pump.\" One `Trig` matches two rules. `r_refused` comes first in source, so its activation fires first ([LDET.5.4]: the terminal ordinal is the outermost key), and its `emit Out` is refused as a BoundsError: the rendered String is ten codepoints against `capacity 8` ([LSTR.11.3]). `r_later` is still on the agenda, and the pump must go on to fire it, so after the one pump the live facts are `Trig` and `Later`, two. A runtime that ended the pump at the refusal leaves `Later` queued and reads 1. A runtime that let the refused emit happen reads 3. The pump, input 1, returns `DS_ERR_CONTRACT_BREACH` (-710), and the stream's fault events are exactly one `bounds_error`. PATH PINNED: libds's run loop in `rete/engine.c` (`ds_rete_run`), which holds the `DS_ERR_CONTRACT_BREACH` that `eval_actions` returns for the refused emit and goes on selecting, returning it at the drained-agenda exit; the Mercury runtime's `ds.engine.pump_loop`, whose `xs_capped` is per firing.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    text: String mutable\n\nschema Out scope logical:\n    k: Int key\n    s: String capacity 8 mutable\n\nschema Later scope logical:\n    k: Int key\n\nrule r_refused:\n    Trig t\n->\n    emit Out logical k: t.k s: \"{t.text}{t.text}\"\n\nrule r_later:\n    Trig t\n->\n    emit Later logical k: t.k\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_events": ["bounds_error"],
+        "asserts": [
+            { "schema": "Trig", "slots": { "k": 1, "text": "abcde" } }
+        ],
+        "pump": true,
+        "fault_at": 1,
+        "fact_count_after": 2
+    }
+}

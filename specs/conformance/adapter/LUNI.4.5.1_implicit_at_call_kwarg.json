@@ -1,0 +1,22 @@
+{
+    "id": "LUNI.4.5.1_implicit_at_call_kwarg",
+    "category": "adapter",
+    "scenario": "[LUNI.4.5.1]'s boundary 4: an `implicit` formula auto-applies at a service `call` keyword argument whose declared unit's dimension differs from the value's. `timer.set_period` declares `period: tick`; rule `slow` passes `period: s.freq` from a `Hz` slot holding 4, so the service receives `hz_to_tick(4)` = 1.0 / 4.0 = 0.25, exact. Unconverted, it would receive 4.0. PATH PINNED: `luni_4_5_1_call_kwarg` in dsc.rete, which makes a written kwarg the formula's call against the service's declared kwarg type before `rlow_7_3_1_call` lowers the body, then `lgra_9_8_11_formula_call`.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\nunit dimension period storage float64 base tick\nunit tick: period\n\nunit formula hz_tick inverting implicit:\n    hz_to_tick(x: Hz): tick  = 1.0 / x\n    tick_to_hz(x: tick): Hz  = 1.0 / x\n\nservice timer.set_period:\n    kwarg period: tick required\n    no response\n\nschema Signal scope logical:\n    id: String key\n    freq: Hz mutable\n\nrule slow:\n    Signal s\n->\n    call timer.set_period period: s.freq nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Signal", "slots": { "id": "a", "freq": 4.0 } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            {
+                "service": "timer.set_period",
+                "correlation": "$slow_c0_g0",
+                "body": {
+                    "period": 0.25
+                }
+            }
+        ]
+    }
+}

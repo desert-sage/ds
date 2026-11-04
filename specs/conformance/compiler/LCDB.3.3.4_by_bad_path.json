@@ -1,0 +1,10 @@
+{
+    "id": "LCDB.3.3.4_by_bad_path",
+    "category": "compiler",
+    "scenario": "LCDB.3.3.4 — a `by:` path naming a slot the bound schema does not have is DS_VALIDATE_RATE_KEY_BAD_PATH. The binding `h` is declared and `celsius` exists, so the case drives the path resolver's slot lookup rather than its binding lookup.",
+    "rules_ds": "schema Hot scope ttl 5_min:\n    entity_id: String\n    celsius: Float\n    ts: Time\n\nrule alert cooldown 5_min by: h.zone:\n    Hot h\n->\n    log critical \"overheating\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RATE_KEY_BAD_PATH"
+    }
+}

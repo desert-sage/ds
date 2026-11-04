@@ -1,0 +1,10 @@
+{
+    "id": "LFAC.1.4.2",
+    "category": "compiler",
+    "scenario": "`t.dwell` is only well-defined on logical-schema bindings per LFAC.1.4.2. Applied to a ttl-schema binding, the validator rejects with DS_VALIDATE_DWELL_TTL_SCHEMA pointing at the spec'd alternative (`now() - <binding>.<event-ts-slot>`). Pin: `where e.dwell > 60` on a ttl schema rejects.",
+    "rules_ds": "schema Evt scope ttl 1_min:\n    code: String\n    ts: Time\n\nrule stale:\n    Evt e where e.dwell > 60\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DWELL_TTL_SCHEMA"
+    }
+}

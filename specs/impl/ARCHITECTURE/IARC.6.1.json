@@ -1,0 +1,17 @@
+{
+  "id": "IARC.6.1",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.6",
+  "seq": 712,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IARC.6.1] The public surface hands an integrator a fixed set of handles and\nnever their layout. The handles are `ds_engine_t`, `ds_fact_t`, `ds_schema_t`\nand `ds_json_t`, and each is a pointer to a structure the holder cannot see\ninside ([IDAT.1.2]).\n\nThat is where the data boundary is drawn: at the type, not at the function.\nBecause a caller can hold nothing but the pointer, the owning module stays\nfree to change what the structure contains without breaking anyone who\ncompiled against an earlier header, and every read has to route through that\nmodule's exported functions ([IARC.6.3]). The cost is an accessor for each\nreadable field; the return is that layout is never part of the contract.\n\nEvery one of these belongs to exactly one module, which is also what fixes its\nlifetime ([IARC.6.2]).\n\n**The stream event is not a handle.** `ds_stream_ev_t` is a callback payload\nwhose layout the public header states, and the stream callback reads its\nmembers in place, for the length of the call ([NCBK.2.2], [IDAT.1.2]).\n\n",
+  "refs": [
+    "IARC.6.2",
+    "IARC.6.3",
+    "IDAT.1.2",
+    "NCBK.2.2"
+  ]
+}

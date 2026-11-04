@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.9.8c",
+    "category": "compiler",
+    "scenario": "Bare-name namespace per LIMP.9.8 / LIMP.4.2 — service importing (acceptance only). `from ha import light` matches the `light` domain (first segment of any `light.*` service decl in the library); the import resolves cleanly. Per the LADP design decision, v1 service-import is acceptance-only — the call-site validator that checks kwargs against the service decl lands in a follow-up. This pin covers the import surface only.",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "ha": "schema TurnOnAck scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response TurnOnAck\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

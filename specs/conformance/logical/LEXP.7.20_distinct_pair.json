@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.20_distinct_pair",
+    "category": "logical",
+    "scenario": "LEXP.7.20: two pattern bindings are equal exactly when they bind the same fact, so `Reading a, Reading b where a != b` matches each ordered pair of two different facts and never a fact paired with itself. Two Readings, r1 then r2, and one pump: the rule fires twice, `r1/r2` then `r2/r1`, and never `r1/r1` or `r2/r2`. Both matches complete when r2 enters, so LDET.5.5 orders them by their facts pattern by pattern, and a=r1 entered first. PATH PINNED: the join test, scanned. The test is `NE(VAR(left, 0, whole fact), VAR(right, whole fact))`; libds builds no EQ index for an `!=` and evaluates it in `rete/eval.c` `val_eq_unordered`, through the BINOP comparison arm; Mercury answers in `ds.eval` `compare_outcome`. A runtime with no arm for two fact references raises a TypeError on every pair and logs nothing; a runtime that compares keys or slots, not the fact, passes here, which is why LEXP.7.20_same_fact is its twin.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nrule pair:\n    Reading a\n    Reading b where a != b\n->\n    log info \"{a.id}/{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r1"}},
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r2"}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["r1/r2", "r2/r1"]
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "id": "RFCS.6.8_ascii_ids",
+    "category": "runtime",
+    "scenario": "[RFCS.6.8]: a recorded `FactAssert`'s `event_id` is the clause's function of the run id, the tier id and the `seq`. Here the engine is given run id `run-7` and tier id `edge` before it records ([RCTS.1.2.23]). LFST.2.2's session -- one Reading asserted, no pump -- is recorded: the assert's clock sample is the stream's first event, `ClockAdvance` at seq 0 ([LTIM.2.8.5], [LFST.7.1.3]), and the `FactAssert` follows it at seq 1. KNOWN ANSWER, computed from the clause's text with Python's `hashlib` in the build container, not by either runtime: preimage `\"ds.rfcs.event_id.v1\"` 1F `run-7` 1F `edge` 1F be64(1) = 64732e726663732e6576656e745f69642e76311f72756e2d371f656467651f0000000000000001; SHA-256 = 9887c505452af0e04cb59ac74dde0784cabdff34682f3ed5af9878a844033b1d; byte 6 0xf0 becomes (0xf0 & 0x0F) | 0x80 = 0x80, byte 8 0x4c becomes (0x4c & 0x3F) | 0x80 = 0x8c; so the event_id is 9887c505-452a-80e0-8cb5-9ac74dde0784. A derivation that ignored either id, swapped them, or joined them without the 1F separators records another id. `be64(seq)` is pinned below 2^32 only: a recording's `seq` counts every event from 0 ([LFST.7.1.3]), and no harness can reach 2^32 cheaply. PATH PINNED: the stamp on a recorded `FactAssert`, not a call to the helper ([STYL.5.10.8]) -- libds's `ds_rfcs_gen_event_id` (rfcs/codec.c) through pyds `Engine(run_id=, tier_id=)` and `Engine.record`, read back as each `FactAssert`'s message through libds's reader (`pyds.atoms`) in runner.py `_run_rfcs_roundtrip`; the Mercury runtime's `ds.rfcs.lfst_5_6_event_id` after `ds.engine.set_run_id` / `set_tier_id`, read back as `FactAssert` field 8 in compiler/mercury/test/test_behave.m `rfcs_roundtrip_result`.",
+    "rules_ds": "schema Reading scope logical:\n    sensor: String key\n    val: Float mutable\n    ok: Bool mutable\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "run_id": "run-7",
+        "tier_id": "edge",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "sensor": "dev1", "val": 21.5, "ok": true } }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot",
+            "ClockAdvance", "FactAssert"
+        ],
+        "expected_event_ids": ["9887c505-452a-80e0-8cb5-9ac74dde0784"]
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.5.6_nan_renders_nan",
+    "category": "logical",
+    "scenario": "A NaN on the text plane renders `nan` ([LCST.4.5.6]). The NaN is `inf - inf`, an expression [LDET.3.6.2] lets produce one: `t.a / t.z` is +Inf for a zero Float divisor, and +Inf minus itself is NaN. It never reaches a slot ([LEXP.4.2]); it is interpolated into a `log` message, which renders Floats through the canonical text ([LDET.3.2.7]). PATH PINNED: `ds_fmt_float` in `runtime/src/libds/float_fmt.c`, which both runtimes call (Mercury through `ds.float_text.canonical`). Whatever the NaN's sign — x86_64 and aarch64 produce different default NaNs — the text is `nan`.",
+    "rules_ds": "schema T scope logical:\n    entity_id: String key\n    a: Float mutable\n    z: Float mutable\n\nrule r:\n    T t\n->\n    let q = t.a / t.z - t.a / t.z\n    log info \"q={q}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "a", "a": 1.0, "z": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["q=nan"]
+    }
+}

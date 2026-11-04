@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.19_bytes_equal_join",
+    "category": "logical",
+    "scenario": "LEXP.7.19: `==` between `Bytes` values of two facts, as a join. A holds 0x01 0x02; B b1 holds the same octets and joins; B b2 differs in the last octet and does not. The log is exactly `b1`. A `Bytes` slot is written `{\"$bytes\": \"<hex>\"}`. PATH PINNED: the EQ join index. Both key slots are non-nullable `Bytes`, so `key_slot_decided` (libds `rete/beta.c`) admits the key and the join PROBES the index, whose `lmem_idx_val_eq` and `lmem_idx_val_hash` answer the match, rather than scanning and evaluating the test. Mercury has no index and answers in `ds.eval` `compare_outcome`. An index that compared `Bytes` keys by anything but content, or not at all, logs nothing.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    k: Bytes mutable\n\nschema B scope logical:\n    id: String key\n    k: Bytes mutable\n\nrule r:\n    A a\n    B b where b.k == a.k\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "A", "slots": {"id": "a", "k": {"$bytes": "0102"}}},
+            {"op": "assert", "schema": "B", "slots": {"id": "b1", "k": {"$bytes": "0102"}}},
+            {"op": "assert", "schema": "B", "slots": {"id": "b2", "k": {"$bytes": "0103"}}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["b1"]
+    }
+}

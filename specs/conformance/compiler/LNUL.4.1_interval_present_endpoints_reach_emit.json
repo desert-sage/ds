@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.4.1_interval_present_endpoints_reach_emit",
+    "category": "compiler",
+    "scenario": "[LNUL.4.1] with [LNUL.5.1]: LNUL.4.1_interval_null_endpoint_reaches_emit's program with `lo: Int`. Both endpoints are present, so `(r.lo..r.hi) contains (3 .. 4)` is `Bool` and the non-nullable `emit` slot `inside` takes it. The pair pins that the refusal there is for the endpoint's nullability and not for an interval relation in an `emit` slot. PATH PINNED: the Mercury compiler's `lint_2_2_interval` in `dsc.typecheck`, which types the interval non-null when neither endpoint is nullable.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    lo: Int mutable\n    hi: Int mutable\n\nschema Out scope logical:\n    id: Int key\n    inside: Bool mutable\n\nrule r:\n    R r\n->\n    emit Out logical id: r.id inside: (r.lo..r.hi) contains (3 .. 4)\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

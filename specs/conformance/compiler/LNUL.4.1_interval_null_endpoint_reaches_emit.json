@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.4.1_interval_null_endpoint_reaches_emit",
+    "category": "compiler",
+    "scenario": "[LNUL.4.1] with [LNUL.5.1]: `..` is an operator, so an interval with an absent endpoint is absent, and a relation over it is `Bool?`. `lo` is `Int?`, so `(r.lo..r.hi) contains (3 .. 4)` is `Bool?`, and feeding it to the non-nullable `emit` slot `inside` is refused with DS_VALIDATE_NULLABLE_UNNARROWED, as arithmetic's is (LNUL.5.1e). LNUL.4.1_interval_present_endpoints_reach_emit is the same program with `lo: Int`, which compiles; the pair pins that the endpoint's nullability, and nothing else, is what is refused. PATH PINNED: the Mercury compiler's `lint_2_2_interval` in `dsc.typecheck`, which types the interval nullable when an endpoint is. An interval typed non-null whatever its endpoints makes the relation `Bool`, and this program compiles.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    lo: Int? mutable\n    hi: Int mutable\n\nschema Out scope logical:\n    id: Int key\n    inside: Bool mutable\n\nrule r:\n    R r\n->\n    emit Out logical id: r.id inside: (r.lo..r.hi) contains (3 .. 4)\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

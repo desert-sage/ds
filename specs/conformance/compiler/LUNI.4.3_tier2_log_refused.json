@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.4.3_tier2_log_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.4.3]: a tier-2 unit body that calls `log(x)` is refused at the unit declaration with DS_VALIDATE_UNIT_TIER2_BAD_BODY. The tier-2 vocabulary names `ln`; `log` is the action verb, not a function. The `to_base` direction is inside the vocabulary, so the refusal is the `from_base` body's alone. PATH PINNED: `unit_decl_checks` in dsc.validate calls `luni_4_3_tier2_body`, which asks `dsc.quantity.luni_4_3_tier2_outside` for the first node outside the vocabulary in each direction and refuses at it; `log` is not in `luni_4_3_tier2_fn`.",
+    "rules_ds": "from math import exp\n\nunit dimension loudness storage float64 base sone\nunit sone: loudness\nunit nep: loudness:\n    to_base:   exp(x)\n    from_base: log(x)\n\nschema Pad scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNIT_TIER2_BAD_BODY"
+    }
+}

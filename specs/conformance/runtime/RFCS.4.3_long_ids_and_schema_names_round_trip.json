@@ -1,0 +1,28 @@
+{
+    "id": "RFCS.4.3_long_ids_and_schema_names_round_trip",
+    "clauses": ["RFCS.4.4", "RFCS.5.4", "LFST.5.6"],
+    "category": "runtime",
+    "scenario": "[RFCS.4.3] / [RFCS.4.4]: a recording carries the run id and tier id the engine was given, whole, so that a replay given them reproduces every `event_id` ([LFST.5.6]); and [RFCS.5.4]: a `FactAssert` names its schema, whole. No clause bounds any of these lengths, and each here is past 63 bytes. The engine is given run id `north-east-substation-feeder-breaker-temperature-run-2026-10-26-0001` (68 bytes) and tier id `edge-tier-north-east-substation-feeder-breaker-temperature-gateway` (66 bytes) before it records ([RCTS.1.2.23]). The program declares `SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter` (69 bytes) and `DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast` (71 bytes), and `r` emits the second from the first, so the stream carries a long name on a `FactAssert` and on a `FactEmit`. One assert and one pump are recorded; the atoms are RFCS.6a.1_rule_emit_is_a_fact_emit's. KNOWN ANSWER for the one `FactAssert` (seq 1, after the assert's `ClockAdvance` at seq 0), computed from [RFCS.6.8]'s text with Python's `hashlib` in the build container, not by either runtime, and checked there against RFCS.6.8_ascii_ids's answer: preimage SHA-256 = 0b44f41911e44b840440a671edf275fc7273200158f2cf68bd779a149a3504da; byte 6 0x4b becomes 0x8b, byte 8 0x04 becomes 0x84; so the event_id is 0b44f419-11e4-8b84-8440-a671edf275fc. A writer that cut either id records another id. What each harness then holds: the header's `session_id` read back equals the engine's, every `FactAssert`'s schema is announced by name before it ([RFCS.6.5]), and the `event_id` is the known answer. libds's harness also replays the recording into a fresh engine given the same two ids, and requires the header to verify. A decoder that cuts the header's ids makes a replay given them diverge with DS_ERR_FS_DIVERGENCE, and one that cuts the `FactAssert`'s schema name names no schema (DS_ERR_SCHEMA_UNKNOWN, -101). The Mercury runtime's `rfcs_roundtrip` decodes but does not replay; RFCS.5.4_long_schema_names_replay replays the long schema names on both runtimes. PATH PINNED: libds's `ds_rfcs_record_to` and `ds_rfcs_replay` (rfcs/codec.c, the header's and fcem's views) through pyds `Engine(run_id=, tier_id=)`, `Engine.record` and `Engine.replay`, read through `pyds.atoms` in runner.py `_run_rfcs_roundtrip`; the Mercury runtime's `ds.rfcs` writer and reader after `ds.engine.set_run_id` / `set_tier_id`, in compiler/mercury/test/test_behave.m `rfcs_roundtrip_result`.",
+    "rules_ds": "schema SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter scope logical:\n    v: Int key\n\nschema DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast scope logical:\n    v: Int key\n\nrule r:\n    SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter t\n->\n    emit DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast logical v: t.v\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "run_id": "north-east-substation-feeder-breaker-temperature-run-2026-10-26-0001",
+        "tier_id": "edge-tier-north-east-substation-feeder-breaker-temperature-gateway",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "FactEmit", "RuleFireAnnotation"
+        ],
+        "expected_event_ids": ["0b44f419-11e4-8b84-8440-a671edf275fc"]
+    }
+}

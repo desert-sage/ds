@@ -1,0 +1,22 @@
+{
+    "id": "LTIM.2.5_now_edge_once_multipump",
+    "clauses": ["LTIM.2.5.1"],
+    "category": "logical",
+    "scenario": "[LTIM.2.5.1] edge-once — a now()-gated rule fires exactly ONCE on the false->true edge and MUST NOT re-fire on subsequent clock ticks while the condition stays true. This is the guard that distinguishes the correct persistent fact_id-keyed one-shot from the naive `$ClockTick` re-driver (which fires every tick post-maturity, since per-generation refraction resets each pump). Pin: after the clock crosses the 5_s threshold, pump three more times as the clock keeps advancing — the rule still fires only once (rule_fire_order is an exact match).",
+    "rules_ds": "import calendar\n\nschema Sensor scope logical:\n    entity_id: String key\n\nrule after_5_s:\n    Sensor where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"time passed\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["after_5_s"]
+    }
+}

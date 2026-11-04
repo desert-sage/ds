@@ -1,0 +1,14 @@
+{
+    "id": "LTIM.10.5.3.no_row_is_a_domain_error",
+    "category": "logical",
+    "scenario": "[LTIM.10.5.3] / [LERR.1.4.10]: `t.local(tz)` for a zone no `TimeZoneOffset` fact answers ([LTIM.10.7]) is a ComputationError of kind DOMAIN. The rule does not fire, the fault is on the stream, and the engine continues. The harness asserts no row. Two rules match one Event: `zoned`, first in source order, reads `e.seen.local(\"Asia/Tokyo\") - e.seen` in a `let` (a difference, because the compiler interpolates a `let` of an operation and not yet one of a bare call); `later` logs. The pump raises the computation error from `zoned`'s action and then fires `later` in the same pump, so the stream holds a computation_error before the action_log. The discriminator: DS_FAULT_ARTEFACT / rf_artefact_lied reaches the stream as engine_error and halts the tier, so neither the computation_error nor `later`'s action_log appears. Drives the no-row arm of libds's adapter_ds_local (rete/adapters.c) and Mercury's ds.eval.ltim_3_2_local.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule zoned:\n    Event e\n->\n    let d = e.seen.local(\"Asia/Tokyo\") - e.seen\n    log info \"zoned {d}\"\n\nrule later:\n    Event\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log"]
+    }
+}

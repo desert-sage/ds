@@ -1,0 +1,18 @@
+{
+    "id": "LFST.4.10",
+    "category": "logical",
+    "scenario": "LFST.4.10 — every stream event carries a clock_ns monotonic with the engine clock. After advancing the mock clock between two fact assertions, the captured events show clock_ns moving forward across the boundary. Pins that clock_ns is the engine's clock at event-emit time, not a fixed header value.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"tick\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 6
+    }
+}

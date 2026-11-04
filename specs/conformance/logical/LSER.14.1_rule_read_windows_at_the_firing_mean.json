@@ -1,0 +1,20 @@
+{
+    "id": "LSER.14.1_rule_read_windows_at_the_firing_mean",
+    "category": "logical",
+    "scenario": "LSER.14.1 — a rule's series read answers the window at the firing, (t−W, t] at the engine's clock, and not what the backing last trimmed. `mean sliding 10_s` absorbs 1.0 at t=0 and 3.0 at t=8 s; at t=15 s an upsert of the same identity re-evaluates `where r.v > 4.5 and r.mean == 3.0` at assert, before that pump's sweep. The window (5 s, 15 s] holds the t=8 s sample alone, so the mean is 3.0 and the rule fires. A partly stale window is what this pins, not an emptied one: the newest sample is 7 s old, so the coldness test (`series_window_emptied`) passes the read to the backing. A read that answers what the backing holds averages in the t=0 sample, reads 2.0 and does not fire; a read that goes cold reads null and does not fire either. The guard `r.v > 4.5` keeps the t=0 and t=8 s asserts from firing. Path: libds `series_read_dispatch` → `series_evict_at_clock` → SeriesBackendRingBuffer `query_at` (mean delegates to `query`); Mercury `ds.series.query` → `in_window_samples` at `ec_now`. Companion: LSER.14.1_rule_read_windows_at_the_firing_count_of, the value-taking dispatch.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nseries Reading.v:\n    mean sliding 10_s\n\nrule windowed_mean:\n    Reading r where r.v > 4.5 and r.mean == 3.0\n->\n    log info \"the mean of the window at the firing\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 8000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 3.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 7000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "s1", "v": 5.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

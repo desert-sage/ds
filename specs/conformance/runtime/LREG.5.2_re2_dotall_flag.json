@@ -1,0 +1,12 @@
+{
+    "id": "LREG.5.2_re2_dotall_flag",
+    "category": "runtime",
+    "scenario": "[LREG.5.2] The `s` flag makes `.` match a newline. `/a.b/s` against \"a\\nb\" matches; without `s` it does not, because `.` excludes `\\n` by default. Answer differs by flag alone, which is the only way to observe `s` under boolean matching.\n\nPOSIX ERE has no dotall: an engine that drops `s` reads `/a.b/s` and `/a.b/` as one pattern.\n\nUnlike `m` (see LREG.5.2_re2_multiline_flag, where the obvious RE2 Option is dead code) `s` really is a plain Option: re2.h lists dot_nl outside the posix_syntax-only group, so ds_re2_compile sets it directly. This vector is what makes that a measurement rather than a reading of the header.\n\nPATH PINNED: `FN_REGEX_MATCH`'s flags argument through `ds_re2_compile` (libds) and `ds.re2` (Mercury). `msg` is `String?` so the match stays a beta join test: a decided match on a non-nullable slot is an alpha REGEX test with the flag folded into its pattern (RLOW.5.2.2), which never reaches the flags argument and has its own vector, `RLOW.5.2.2_alpha_regex_flags`.\n\nExpected count 2 = the Log fact plus the emitted Hit.",
+    "rules_ds": "schema Log scope logical:\n    id: Int key\n    msg: String? mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    Log e where e.msg ~ /a.b/s\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "Log", "slots": { "id": 1, "msg": "a\nb" } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

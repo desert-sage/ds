@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.6.8_file_and_library",
+    "category": "compiler",
+    "scenario": "[LGRA.6.8]: library `pack` declares rule `alarm`, and the importing file declares its own rule `alarm`. The import names only the schema, yet the library's rule still compiles into the artefact ([LIMP.7.5]), so the unit holds two rules named `alarm` and the compiler refuses it with DS_VALIDATE_DUPLICATE_RULE. Importing only the schema means no bare import binds `alarm`, so the check must run over every library's rules, not over the importer's bindings. PATH PINNED: the check across the root file and one library.",
+    "rules_ds": "from pack import Trig\n\nrule alarm:\n    Trig t where t.v < 0\n->\n    log info \"low\"\n",
+    "libraries": {
+        "pack": "schema Trig scope logical:\n    v: Int key\n\nrule alarm:\n    Trig t where t.v > 10\n->\n    log info \"high\"\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_RULE"
+    }
+}

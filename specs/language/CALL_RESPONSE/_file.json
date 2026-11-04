@@ -1,0 +1,17 @@
+{
+  "doc": "CALL_RESPONSE.md",
+  "tree": "language",
+  "src": "docs/specs/language/CALL_RESPONSE.md",
+  "prefixes": [
+    "LCRS"
+  ],
+  "title": "`call` and responses",
+  "preamble": "# `call` and responses\n\nThe async call / response primitive. A rule issues a `call`, the target adapter performs\nwhatever external operation it bridges, and the response\narrives as a fact of the service's declared response schema (or as a\n`CallError`) that a sibling rule pattern-matches.\n\nPaired with:\n- [LGRA.10] for the `call` action\n  grammar and mandatory-cooldown rule.\n- [LADP] for adapter-\n  published service manifests and response schemas.\n- [LHYD] for the hydration-specific\n  endpoint family built on this mechanism.\n- [LSTO] for the storage-adapter calls\n  (`call record_fact`, `call hydrate_*`).\n- [LFAC] for the `ttl` lifecycle\n  that response facts and `CallError` live under.\n\n## What this is not\n\n- Not a proposal for making all actions return values.\n  `emit`, `publish`, `log` and `cache` stay fire-and-forget,\n  as does a call to a `no response` service.\n- Not a generic RPC framework. The shape must fit DS's fact\n  plane — responses are facts, not opaque return values.\n- Not sync bind-to-variable for external calls. That's\n  rejected (see §Async only for external calls below). The\n  sync-intent affordance stays on `cached()` only — the cache\n  read expression callable from a `let` RHS per LGRA.9.8.2.\n- Not an implementation spec for the adapter wire protocol,\n  dispatch-table construction, backpressure queuing, or\n  adapter handshake format. Runtime concerns, out of scope.\n  The runtime-side spec lives in\n  [RLOW].\n\n---\n\n",
+  "paired_with": [
+    "ADAPTER_CONTRACT.md",
+    "FACT_MODEL.md",
+    "GRAMMAR.md",
+    "HYDRATION.md",
+    "STORAGE.md"
+  ]
+}

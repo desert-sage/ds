@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.4.3.1_add_months_on_a_duration",
+    "category": "compiler",
+    "scenario": "LTIM.4.3.1 / LGRA.9.6.2: `add_months` and `add_years` are members of `Time` and `Date` only; on a `Duration` receiver `.add_months(1)` names no member, so it is DS_VALIDATE_UNKNOWN_MEMBER, and a span is added with `+`. Drives `lgra_9_6_2_member_call` in dsc.typecheck: `member_with_arguments` has no `Duration` row for the name, so `unknown_member` answers.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    span: Duration mutable\n\nrule r:\n    Ev e\n->\n    let later = e.span.add_months(1)\n    log info \"{later}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_MEMBER"
+    }
+}

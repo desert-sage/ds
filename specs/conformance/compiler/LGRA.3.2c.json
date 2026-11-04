@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.3.2c",
+    "category": "compiler",
+    "scenario": "A `use` preceded by a schema declaration is rejected with DS_VALIDATE_USE_NOT_FIRST per LGRA.3.2's position rule. Pin: the file declares `schema Trig` and then `use default`, and carries NO import — the absence is load-bearing, because an import ahead of the `use` routes the input to LIMP.2.3.3 and would pin the precedence rule instead of the position rule. PATH PINNED: `lgra_3_2_use_first` in `compiler/mercury/src/dsc.validate.m`, reached from `validate_file`. The grammar does not state the position — `dsc.parse` admits `use_decl` anywhere — so this post-parse walk is the only site that can refuse it, and removing the walk makes the fixture fail.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nuse default\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_USE_NOT_FIRST"
+    }
+}

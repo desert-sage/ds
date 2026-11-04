@@ -1,0 +1,15 @@
+{
+  "id": "NSTG.5.3",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.5",
+  "seq": 448,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Sample callback",
+  "text": "### Sample callback [NSTG.5.3]\n\nFires **once per absorbed sample**, during fact assertion and after the\nfiring decision has landed ([LSER.8.6]) — so a sample is delivered only\nwhen the assertion that produced it survived, never speculatively.\n\nEach sample identifies itself fully, so a receiver needs no prior state:\n\n| Field | Meaning |\n|---|---|\n| schema_name / slot_name | which declared series this belongs to |\n| identity_slot_name / identity_value | which series instance — **both empty under `by: none`**, where the series is not partitioned |\n| ts_ns | the engine clock at absorption |\n| value | the sampled value, typed to match the slot |\n\nTwo things follow. The empty-identity convention means a receiver must\ntreat empty as *unpartitioned* rather than as a missing field. And\nbecause the timestamp is the **absorption** instant from the engine\nclock, samples stay correctly ordered and replay-reproducible however the\nintegrator batches the writes.\n\nThe callback signature will be `ds_sample_cb_t` and the sample struct\n`ds_sample_t`, declared in `runtime/include/libds.h` when this section binds.\nNothing declares them in this edition.\n\n",
+  "deferred": true,
+  "refs": [
+    "LSER.8.6"
+  ]
+}

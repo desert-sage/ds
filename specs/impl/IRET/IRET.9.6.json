@@ -1,0 +1,80 @@
+{
+  "id": "IRET.9.6",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.9",
+  "seq": 796,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.9.6] **Ill-typed operations and renderings split three ways, and `null`\nis the first test.** Arithmetic on wrong types (e.g. adding a `String` to an\n`Int`) yields **no value**, and so does a format spec the value it is given\ncannot render (a numeric spec over a `Json` leaf holding a string). Both\nraise, and which fault they raise depends on the operand:\n\n- **An operand is `null` — `TypeError`.** A `null` in a slot declared `T?` is\n  a value the artefact **declared**, so absence is data and is never evidence\n  that the artefact lied. The activation is abandoned. This arm is reached\n  only where an operation refuses a `null` at all, which is a narrow set: a\n  conversion yields `null` for a null source rather than raising, and `null`\n  propagates through arithmetic and comparison ([LNUL.4.1]). What\n  remains is the builtins that demand a value of a particular kind — and a\n  `T?` slot cannot reach one, because a builtin's receiver and its arguments\n  are both concrete-value positions ([LNUL.5.1]) and an un-narrowed nullable\n  is refused there at compile time. The route that remains is a `Json`\n  projection whose leaf is a present JSON `null` ([LNUL.8.4]) — a value rather\n  than absence, carried by a slot whose shape is not schema-committed, and so\n  not refused before it runs. A narrowed `T?` ([LNUL.5.4]) meets this arm only\n  when the conjunct it narrows is evaluated before its guard; the guard is then\n  `false`, and absorbs the `TypeError` ([LNUL.4.2]).\n- **Neither operand is `null`, and one derives from a `Json` slot —\n  `TypeError`.** A wrong-typed `Json` value is data, whether it is a leaf a\n  projection reached or the whole slot read directly. `Json` is the one slot\n  type whose shape is not schema-committed ([LADP.5.5.3]), so this is expected\n  in normal operation and attributable to a node. The activation is abandoned.\n- **Otherwise — `EngineError`.** The load-time shape said one thing and the\n  value is another, so the artefact lied and nothing about it is trustworthy.\n  The tier halts.\n\n**Each disposition is that of a fault the expression yields.** A deciding\noperand of `and` / `or` absorbs any of the three ([LNUL.4.2]): an absorbed\n`TypeError` abandons nothing, an absorbed `EngineError` does not halt the tier,\nand neither reaches a surface ([LERR.1.4.11]). An `EngineError` the expression\nyields halts the tier, and that run is outside the determinism guarantee\n([LDET.1.11]).\n\n**The order of the first two tests is normative, not an implementation\ndetail.** A `null` reaching an operation through a `Json` projection is both\nnull and tainted, and both orderings classify it `TypeError`. The rule is that\n**absence decides before provenance**, because absence is data whatever\ncarried it, and provenance is only the question of whether a *present* value's\ntype can be trusted.\n\nProvenance starts at **every read of a `Json` slot**, a bare slot read as well\nas a projection. Provenance is **transitive** — `(j.a + 1) > 5` buries the\nprojection a level down — and a raising site sees only a tag and a union. So provenance is computed\nby the compiler and lowered onto the node as `Expr.json_tainted`\n(`proto/rete_expr.proto`); the evaluator reads it, it does not derive it.\n\nTaint **flows** through a `let` and **clears** at a `::` cast and at `??`: both\nestablish the type and carry their own disposition, so a later ill-typed\noperation on the far side means something else is wrong — the `EngineError`\ncriterion exactly. Taint is **rule-local**; a value reaching a slot has passed\nthrough `emit` into a schema-committed slot, so provenance ends at the fact\nboundary.\n\nAn absent flag means clean: proto3 has no presence for a scalar.\n\n**An interpolation segment carries the flag like any other node.** A segment\nreading a `Json` value is tainted, so a format spec that cannot render it\nabandons the activation rather than halting the tier — the same disposition\nthe same value gets one operator away ([LADP.5.5.3]). A null or absent value\nis not this case: it renders as the empty string ([LGRA.2.9.6.2]) and raises\nnothing.\n\n⚠ **`Json` path traversal is NOT one of these.** [LNUL.8.4] governs it: an\nunresolved path reads as `null`, and a path resolving to a JSON `null` reads as\n`null` **as a present value**. Both are `null`; `has(path)` is what tells them\napart, and it is the only absence test. An unresolved path is absence, not an\nill-typed operation, and it does not abandon the activation.\n\n",
+  "refs": [
+    "LADP.5.5.3",
+    "LDET.1.11",
+    "LERR.1.4.11",
+    "LGRA.2.9.6.2",
+    "LNUL.4.1",
+    "LNUL.4.2",
+    "LNUL.5.1",
+    "LNUL.5.4",
+    "LNUL.8.4"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_6__honest",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The artefact did not lie: no conjunct yields an EngineError, the third arm of [IRET.9.6]. The determinism guarantee is scoped to such runs ([LDET.1.11])."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_6__v5_lie_breaks_hoisting",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "WHY THE ARTEFACT MUST NOT LIE: a hoisted conjunct over a value the artefact lied about raises its EngineError alone and blocks the `no` pattern, where the whole `where` is false."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len_is_total_on_texts",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The first arm at a builtin's receiver: `len` of a `null` String is a trap, the TypeError that abandons the activation, and of every text an Int. Partial because the clause says an un-narrowed `String?` cannot reach a builtin's receiver ([LNUL.5.1]); the model answers for the form all the same, and a guard `is not null` before the `len` absorbs the trap ([LNUL.4.2]), as Main.idr runs."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lstr_2_1__len_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`len(<String>)` of `null`: the first arm, a TypeError, a trap here. Partial because the clause says the route is refused at compile time for an un-narrowed `String?` and is reached through a `Json` leaf alone; the model has no Json `len` of a String leaf (`lexp_6_1__len` counts an array) and answers for the slot form."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__faulting_filter_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHY NO FAULT: a filter raising an EngineError -- an artefact that lied, [IRET.9.6] -- raises it alone and blocks a `no` pattern where the `where` is false. So two engines may differ on an artefact that lies, which is why [LDET.1.11] scopes the guarantee to one that does not."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/rete_expr.proto",
+        "name": "Expr",
+        "tag": "spec"
+      }
+    ]
+  }
+}

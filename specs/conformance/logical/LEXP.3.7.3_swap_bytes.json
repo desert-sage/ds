@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.3.7.3_swap_bytes",
+    "clauses": ["LEXP.3.7.3", "LEXP.3.7.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.7.3]: `x.swap_bytes(w)` is the low w/8 bytes of the pattern in reverse order, read through int(). Rule `swapped` fires where `t.x.swap_bytes(t.w)` equals the fact's `want`; every operand is an `Int` slot. `w16`: 0x1234 (4660) at 16 is 0x3412 (13330). `w32`: 0x12345678 (305419896) at 32 is 0x78563412 (2018915346). `w64`: 0x0102030405060708 (72623859790382856) at 64 is 0x0807060504030201 (578437695752307201). `high_dropped`: 0xFF1234 (16716340) at 16 is 0x3412, the bits above the field not reaching the result. `sign`: 0x80 (128) at 64 is INT64_MIN, the byte moving into the sign position. A builtin that kept the high bits would get `high_dropped` wrong, and one that answered only non-negative values would get `sign` wrong. PATH PINNED: FN_SWAP_BYTES in libds (`builtins.c`, `int_ops.h` `ds_i64_swap_bytes`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    w: Int mutable\n    want: Int mutable\n\nrule swapped:\n    T t where t.x.swap_bytes(t.w) == t.want\n->\n    log info \"swapped {t.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "w16", "x": 4660, "w": 16, "want": 13330 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "w32", "x": 305419896, "w": 32, "want": 2018915346 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "w64", "x": 72623859790382856, "w": 64, "want": 578437695752307201 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "high_dropped", "x": 16716340, "w": 16, "want": 13330 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "sign", "x": 128, "w": 64, "want": -9223372036854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["swapped w16", "swapped w32", "swapped w64", "swapped high_dropped", "swapped sign"]
+    }
+}

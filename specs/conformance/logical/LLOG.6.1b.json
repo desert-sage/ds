@@ -1,0 +1,14 @@
+{
+    "id": "LLOG.6.1b",
+    "category": "logical",
+    "scenario": "`log error` action emits an action_log event per LLOG.6.1. A rule with `log error` fires and an action_log event appears in the stream.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log error \"critical failure\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

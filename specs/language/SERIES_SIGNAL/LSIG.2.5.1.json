@@ -1,0 +1,83 @@
+{
+  "id": "LSIG.2.5.1",
+  "prefix": "LSIG",
+  "doc": "SERIES_SIGNAL.md",
+  "parent": "LSIG.2.5",
+  "seq": 273,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSIG.2.5.1] Eviction of backing state is driven by new assertions, not by\nquery time, but every query returns a fresh answer as of the monotonic clock's\nsample `t` ([LTIM.2.8.2]): the\nquery walks and discounts the not-yet-evicted out-of-window portion without\nmutating stored state. `active_fraction`, `onset_rate`, and `integral`\ntherefore all evaluate as of the same instant `t` and may be combined in one\nrule without a freshness mismatch. Worst-case query cost is O(K), bounded by\nthe declared `.dsrt` capacity under `realtime` (§[LSIG.5]).\n\n",
+  "refs": [
+    "LTIM.2.8.2",
+    "LSIG.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "Lsig_2_5_1__store",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE STORE: the monotonic samples at which a series' values were absorbed and not yet evicted. What a value is is not modelled; which values take part in a query is."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__discount",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE DISCOUNT: what a query at a sample sees of the store for a window -- the members still in the window at that sample, the rest discounted, the store not mutated. 'The query walks and discounts the not-yet-evicted out-of-window portion without mutating stored state', reduced to membership."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__discount_after_eviction",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EVICTION IS DRIVEN BY ASSERTIONS, NOT BY QUERY TIME, AND THE QUERY'S ANSWER IS THE SAME: for every store, every window, every monotonic sample of an eviction and every later sample of a query, and whatever the wall clock read at either, the discount at the query of the store evicted at the assertion is the discount at the query of the store. Eviction may lag a query by any number of samples or run at every one. By induction on the store, from `lsig_2_5_1__out_stays_out`."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__evict",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "EVICTION, at the sample of a new assertion: the store keeps what is in the window at that sample. The same filter as the discount, applied to the store and kept; the clause's claim is that applying it early changes nothing a later discount sees, which is the theorem below."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__eviction_not_at_query_time",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "EXECUTED: values absorbed at 1, 2 and 3, a window of 2; an eviction at sample 3 drops the value of 1; a query at sample 4 sees the value of 3 alone, evicted or not."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__not_both",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A Boolean is not both `True` and `False`. A helper."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__out_stays_out",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "OUT STAYS OUT: a value out of the window at one monotonic sample is out at every later one, whatever the wall clock reads at either. The `in_window` instance of Rete/EntryStamp.idr's `ltim_2_7_1__within_falls`: membership is `within`'s formula, and `within` falls once on a clock that does not go back."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__query_before_eviction_differs",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE HYPOTHESIS IS NEEDED: an eviction at a sample after the query's drops a value the query would have seen. The theorem asks the eviction's sample to be at or before the query's, which [LTIM.2.8.2]'s clock gives between an assertion and a later query; a store evicted in the query's future is not the clause's case."
+      }
+    ]
+  }
+}

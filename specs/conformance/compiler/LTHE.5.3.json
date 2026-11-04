@@ -1,0 +1,11 @@
+{
+    "id": "LTHE.5.3",
+    "category": "compiler",
+    "scenario": "`within T` is mandatory on every `then` step per LTHE.5.3 / LGRA.8.5. A `then Foo f` without `within` parses as an error — required at the grammar level (pattern_then production hard-codes WITHIN_KW DUR_LIT). Pins that authors cannot accidentally write an unbounded sequence by omitting the bound.",
+    "rules_ds": "schema A scope ttl 1_h:\n    ts: Time\n\nschema B scope ttl 1_h:\n    ts: Time\n\nrule r:\n    A a\n    then B b\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 9
+    }
+}

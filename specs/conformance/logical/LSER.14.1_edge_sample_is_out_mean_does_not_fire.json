@@ -1,0 +1,42 @@
+{
+    "id": "LSER.14.1_edge_sample_is_out_mean_does_not_fire",
+    "category": "logical",
+    "dead_rules_expected": ["edge_mean"],
+    "scenario": "LSER.14.1 — a sliding window is the half-open (t−W, t], so a sample EXACTLY W old is outside it. One sample absorbed at t=0 into a `mean sliding 10_min`; the clock advances by exactly 600000000000 ns; an upsert of the same identity re-evaluates `where r.mean < 5.0` at assert. The only sample is exactly W old, so the window is empty, the read is cold ([LSER.19.8]) and `null < 5.0` does not fire ([LNUL.4.3]). A runtime keeping the closed [t−W, t] reads the mean 1.0 and fires. Path: libds `series_read_dispatch` → `series_window_emptied` (`>=`); Mercury `ds.series.in_window` (`Age < WindowNs`). The t=0 assert is cold (no instance yet) and must not fire either. Positive control: LSER.14.1_edge_sample_is_out_count_fires; the other side of the edge: LSER.14.1_inside_edge_sample_is_in_count_fires.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule edge_mean:\n    Reading r where r.mean < 5.0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 600000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "forbidden_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

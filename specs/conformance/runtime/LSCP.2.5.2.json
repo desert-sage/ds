@@ -1,0 +1,12 @@
+{
+    "id": "LSCP.2.5.2",
+    "category": "runtime",
+    "scenario": "LSCP.2.5.2 — a rule that matches a `scope ambient` schema loads AND fires on the native Rete engine. The loader registers an in-file ambient schema on BOTH the Rete side (so the alpha node binds) and the DS WM side (so the host can assert its facts). A compiler that emits no atoms for an ambient schema gets -101 from ds_engine_load_dsc. Pin: assert one MedSchedule ambient fact, pump; rule `due` emits a MedAlert; fact_count 2 (MedSchedule + MedAlert) confirms load + match + fire.",
+    "rules_ds": "schema MedSchedule scope logical ambient:\n    id: String key\n\nschema MedAlert scope logical:\n    note: String key\n\nrule due:\n    MedSchedule\n->\n    emit MedAlert logical note: \"due\"\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "MedSchedule", "slots": { "id": "m1" } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

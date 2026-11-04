@@ -1,0 +1,14 @@
+{
+    "id": "LCYC.1.1",
+    "category": "logical",
+    "scenario": "Rules that form no cycle compile and run correctly per LCYC.1.1. A chain A→B→C (each rule emits the next schema) fires in topological order.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nschema C scope logical:\n    v: Int key\n\nrule a_to_b:\n    A a\n->\n    emit B logical v: a.v\n\nrule b_to_c:\n    B b\n->\n    emit C logical v: b.v\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["a_to_b", "b_to_c"]
+    }
+}

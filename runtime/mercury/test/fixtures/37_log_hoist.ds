@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Trig scope logical:
+    v: Int key
+
+schema Out scope ttl 1_h:
+    v: Int
+
+rule alert_then_log:
+    Trig
+->
+    log critical "the alert"
+    log info "after the alert"
+
+rule cache_then_log:
+    Trig
+->
+    cache key: "k" value: 1
+    log info "after the cache set"
+
+rule interleaved:
+    Trig
+->
+    log critical "first"
+    log info "second"
+    emit Out v: 3
+    log info "fourth"

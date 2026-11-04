@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Three schemas side by side:
+#
+#   schema Plain:                     no scope: the engine does not manage
+#                                     its lifetime ([LSCP.2.1.1]). Accumulate.
+#   schema NoKey scope logical:       keyed identity ([LFAC.1.7]) with no key,
+#                                     so the whole schema is one identity.
+#                                     Supersede.
+#   schema Keyed scope logical:       the control: one live fact per tag.
+#
+# Every rule emits into one ttl schema tagged by source, so the counts read
+# from the trace.
+
+schema Plain:
+    tag: String
+    v: Int
+
+schema NoKey scope logical:
+    tag: String mutable
+    v: Int mutable
+
+schema Keyed scope logical:
+    tag: String key
+    v: Int mutable
+
+schema Out scope ttl 1_h:
+    src: String
+    v: Int
+
+rule see_plain:
+    Plain p
+->
+    emit Out src: "plain" v: p.v
+
+rule see_nokey:
+    NoKey n
+->
+    emit Out src: "nokey" v: n.v
+
+rule see_keyed:
+    Keyed k
+->
+    emit Out src: "keyed" v: k.v

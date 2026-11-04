@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Three rules writing three distinct literal cache keys: a cache key is a
+# literal (DS_VALIDATE_DYNAMIC_IDENT_KWARG), so one rule writes one key, and a
+# cap on live keys needs as many rules as keys. A `cache_cap` of one is crossed
+# by the second rule that fires. It also fires more times per pump than
+# `80_caps.ds`, for `max_fires_per_pump` and `token_pool_cap`.
+
+use realtime
+
+schema Zone scope logical:
+    name: String key
+    threshold: Float mutable
+
+schema Reading scope logical:
+    entity_id: String key
+    zone: String mutable
+    state: Float mutable
+
+rule warm_low:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 30.0
+->
+    log warning "low {r.entity_id}"
+    cache key: "k-low" value: r.zone
+
+rule warm_mid:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 34.0
+->
+    log warning "mid {r.entity_id}"
+    cache key: "k-mid" value: r.zone
+
+rule warm_high:
+    Zone z
+    Reading r where r.zone == z.name and r.state > 36.0
+->
+    log warning "high {r.entity_id}"
+    cache key: "k-high" value: r.zone

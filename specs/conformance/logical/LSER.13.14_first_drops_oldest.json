@@ -1,0 +1,23 @@
+{
+    "id": "LSER.13.14_first_drops_oldest",
+    "category": "logical",
+    "scenario": "[LSER.13.14]: at capacity a **drop** aggregation evicts the identity's oldest sample, so `first` moves forward. `first sliding 1_h` with `capacity: 2` takes 1, 2, 3, 4 one per pump inside the window, each read pre-sample ([LSER.8.6.1]): cold (no log), [1] -> 1, [1, 2] -> 1, then the third sample drops 1 and the read of [2, 3] is 2. Drives the FIFO-deque backing (SeriesBackendFifoDeque, which serves `first` / `last` on a window) in both runtimes: libds `series/fifo_deque.c`, which pops the oldest once the identity holds `max_samples`, and the Mercury `ds.series` deque kept to the newest N.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev, capacity: 2):\n    first sliding 1_h\n\nrule r:\n    Reading s where s.first is not null\n->\n    log info \"first {s.first}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["first 1", "first 1", "first 2"]
+    }
+}

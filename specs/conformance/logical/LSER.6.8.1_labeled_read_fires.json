@@ -1,0 +1,16 @@
+{
+    "id": "LSER.6.8.1_labeled_read_fires",
+    "category": "logical",
+    "scenario": "LSER.6.8.1 at runtime — a labelled series read resolves to a value a rule can match on. Positive control for RDSC.5a.8.1_two_windows_disagree: every other labelled-access fixture is compiler-category. One window, one label, so the only thing it can fail on is the labelled read itself. The second assert is load-bearing and not padding: LSER.8.6.1 makes the read in the pump that first asserts a fact a PRE-SAMPLE read, which answers cold — the value 100.0 is only in the backing by the pump that follows, and the slots differ so the reassert is not suppressed as a no-op.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Sensor.val:\n    mean sliding 10_min as recent\n\nrule recent_high:\n    Sensor s where s.recent.mean > 75.0\n->\n    log info \"recent high\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val":100.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val":100.5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["recent high"]
+    }
+}

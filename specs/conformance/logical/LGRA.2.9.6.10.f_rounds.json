@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.10.f_rounds",
+    "category": "logical",
+    "scenario": "`f` with a precision is the BINARY value correctly rounded to that many places, ties to even — Python's format(x, '.Nf'). Each value is chosen so truncation and rounding disagree: 0.129 at two places rounds to `0.13` where truncation keeps `0.12`; 1.999 at no places rounds to `2`, not `1`; the sign is kept on a rounded negative. The path is `ds_fmt_float_fixed`, reached through `render_value` in libds and through Mercury's renderer over the same C (`ds.float_text`), the two compared by the conformance gate's runtime differential.",
+    "rules_ds": "schema V scope logical:\n    id: Int key\n    a: Float mutable\n    b: Float mutable\n    c: Float mutable\n\nrule show:\n    V v\n->\n    log critical \"[{v.a:.2f}] [{v.b:.0f}] [{v.c:.2f}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "id": 1, "a": 0.129, "b": 1.999, "c": -0.129 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[0.13] [2] [-0.13]"]
+    }
+}

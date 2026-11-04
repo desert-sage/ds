@@ -1,0 +1,10 @@
+{
+    "id": "LINT.6.1_bad_component",
+    "category": "compiler",
+    "scenario": "LINT.6.1 — an interval has exactly three readable components: `start`, `end`, `duration`. Any other slot name on an IntervalConstruct target is a compile error. Pin: `(a..b).midpoint` rejects with DS_VALIDATE_BAD_INTERVAL_COMPONENT.",
+    "rules_ds": "schema W scope logical:\n    entity_id: String key\n    window_start: Time mutable\n    window_end: Time mutable\n\nrule r:\n    W m where (m.window_start..m.window_end).midpoint == m.window_start\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_INTERVAL_COMPONENT"
+    }
+}

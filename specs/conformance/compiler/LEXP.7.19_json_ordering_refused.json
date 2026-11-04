@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.19_json_ordering_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.19: a whole `Json` value has equality and no ordering, so `d.a >= d.b` on two `Json` slots read without a path is refused with DS_VALIDATE_UNORDERED_TYPE at the `>=`. PATH PINNED: the comparison-step check in the validator (Mercury: `dsc.typecheck` `adjacent_mismatches`), on the ordering operator; its twin LEXP.7.19_json_leaf_ordering_ok shows the refusal keys on the whole value and not on the slot.",
+    "rules_ds": "schema Doc scope logical:\n    id: String key\n    a: Json mutable\n    b: Json mutable\n\nrule r:\n    Doc d where d.a >= d.b\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LFCA.5_default_admits_series",
+    "clauses": ["LDIA.9.2", "LFCA.5.1"],
+    "category": "compiler",
+    "scenario": "LFCA.5 / LDIA.9.2 — `default` sets `series: true`, so a `series` declaration and a rule reading one of its aggregations compile under `use default` with no override. Drives `dsc.dialect`'s per-construct gate (`series_sites`) on the permitted side; LFCA.5_series_disabled_refuses pins the refused side.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n    ts: Time\n\nseries Sensor.val:\n    mean sliding 10_min\n\nrule check:\n    Sensor s where s.mean > 5.0\n->\n    log info \"high\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

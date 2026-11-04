@@ -1,0 +1,16 @@
+{
+  "id": "ISBK.2.1",
+  "prefix": "ISBK",
+  "doc": "SERIES_BACKINGS.md",
+  "parent": "ISBK.2",
+  "seq": 12,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[ISBK.2.1] `instance_new` receives a resolved `ds_series_decl_t`. Strings are\nborrowed for the call only — copy before retaining.\n\nThe declaration names the series' schema, its slot and its identity slot, which\nis the empty string for `by: none`. Its `window_ns` is `0` for an unwindowed\nseries and its `persist_ns` `0` for a live-only one. Its `atom_field` is the\nbacking atom's field number ([ISBK.1.1]). Its `element_type` is `UNSPECIFIED`\n(`0`) where the backing reads none, and its `max_samples` is `0` for the\nbackend's default. `time_model` and `gap_policy` are [ISBK.2.2]'s.\n\n```c\ntypedef struct ds_series_decl {\n    const char *schema_name;\n    const char *slot_name;\n    const char *identity_slot_name;   /* \"\" for `by: none` */\n    uint64_t    window_ns;            /* 0 = unwindowed */\n    uint64_t    persist_ns;           /* 0 = live-only */\n    uint32_t    atom_field;           /* the backing atom's field number ([ISBK.1.1]) */\n    ds_series_element_type_t element_type; /* 0 = unspecified */\n    uint32_t    max_samples;          /* 0 = backend default */\n    uint32_t    time_model;           /* ds_series_time_model_t; the numeric integral only */\n    uint32_t    gap_policy;           /* ds_series_gap_policy_t; the numeric integral only */\n} ds_series_decl_t;\n```\n\n`ds_series_element_type_t`, declared in libds's internal series header with the\nvtable, must mirror `proto/series_backend_ring_buffer.proto#SeriesElementType`\n([NSBK.5.3]) member for member and value for value, `UNSPECIFIED` included.\n\n",
+  "refs": [
+    "ISBK.1.1",
+    "ISBK.2.2",
+    "NSBK.5.3"
+  ]
+}

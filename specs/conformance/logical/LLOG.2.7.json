@@ -1,0 +1,20 @@
+{
+    "id": "LLOG.2.7",
+    "clauses": ["LLOG.2.7.2", "LLOG.2.7.3"],
+    "category": "logical",
+    "scenario": "Two rules emitting one logical schema with distinct slot values make two facts, not one coalesced fact (LLOG.2.7.2), and each keeps its own lifetime (LLOG.2.7.3). `rule_north` emits Zone(zone='north') and `rule_south` emits Zone(zone='south'). After North's trigger is retracted and pumped, a Probe makes `read_back` log every live Zone: exactly `zone south`. A runtime that coalesced the two, or withdrew south with north, logs nothing; one that kept north logs it too.",
+    "rules_ds": "schema North scope logical:\n    entity_id: String key\n\nschema South scope logical:\n    entity_id: String key\n\nschema Zone scope logical:\n    zone: String key\n    dummy: Int mutable\n\nschema Probe scope logical:\n    n: Int key\n\nrule rule_north:\n    North\n->\n    emit Zone logical zone: \"north\" dummy: 0\n\nrule rule_south:\n    South\n->\n    emit Zone logical zone: \"south\" dummy: 0\n\nrule read_back:\n    Probe\n    Zone z\n->\n    log info \"zone {z.zone}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "North", "slots": { "entity_id": "n1" }, "as": "hn" },
+            { "op": "assert", "schema": "South", "slots": { "entity_id": "s1" } },
+            { "op": "pump" },
+            { "op": "retract", "label": "hn" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zone south"]
+    }
+}

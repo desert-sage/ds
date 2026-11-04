@@ -1,0 +1,21 @@
+{
+  "id": "IRET.15.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.15",
+  "seq": 1105,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Wiring into libds",
+  "text": "### Wiring into libds [IRET.15.1]\n\nThe C Rete engine is one subsystem of `ds_engine_t`.\n`ds_engine_new` creates it (`ds_rete_engine_create`,\nstored as `engine->rete_engine`), registers the built-in\ncallable functions (`ds_register_builtins`), and calls\n`ds_engine_wire_rete_adapters`, which populates the\nengine's `ds_rete_adapter_config_t` with the action-verb\ncallbacks (log, call, publish, emit, cache). The Rete engine is libds's only rule-evaluation substrate,\nand nothing selects it.\n\nlibds drives the engine through these entry points:\n\n| libds operation | `ds_rete_*` entry point |\n|---|---|\n| Create engine | `ds_rete_engine_create(&rete_engine)` |\n| Destroy engine | `ds_rete_engine_destroy(rete_engine)` |\n| Load compiled network | `ds_rete_load(engine, atom bodies)` |\n| Before-fire hook | `ds_rete_set_before_fire(engine, hook, ctx)` |\n| After-fire hook | `ds_rete_set_after_fire(engine, hook, ctx)` |\n| Assert a fact | `ds_rete_wm_assert(engine, …)` |\n| Retract a fact | `ds_rete_wm_retract(engine, fact)` |\n| Run the agenda | `ds_rete_run(engine, max_fires, fires_out)` |\n| Register a callable | `ds_register_fn` / `ds_register_fn_rt` |\n| Agenda ordering | built into the agenda (no API) |\n\n",
+  "symbols": [
+    "ds_rete_engine_create",
+    "ds_rete_engine_destroy",
+    "ds_rete_load",
+    "ds_rete_run",
+    "ds_rete_set_after_fire",
+    "ds_rete_set_before_fire",
+    "ds_rete_wm_assert",
+    "ds_rete_wm_retract"
+  ]
+}

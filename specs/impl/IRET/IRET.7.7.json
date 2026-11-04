@@ -1,0 +1,726 @@
+{
+  "id": "IRET.7.7",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7",
+  "seq": 599,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Join algorithm",
+  "text": "### Join algorithm [IRET.7.7]\n\n**On right-activation (new fact added to alpha memory):**\n\n1. Iterate the beta node's left memory.\n2. For each token in left memory: build the candidate\n   extended token (left token + new fact).\n3. Evaluate all join tests. If all pass: propagate the\n   extended token to all beta children and terminal\n   children.\n\n**On left-activation (new token arrives from left parent):**\n\n1. Iterate the beta node's right alpha memory.\n2. For each fact in the alpha memory: build the candidate\n   extended token (left token + fact).\n3. Evaluate all join tests. If all pass: propagate.\n\n**On right-retraction (fact removed from alpha memory):**\n\n1. Iterate left memory; find all tokens whose facts[k]\n   (for the relevant pattern index k) equals the\n   retracted fact.\n2. For each such token: send a retraction downstream.\n\nNo join test is evaluated: a retraction ends these pairs, and a pair it ends\nrecords no fault ([LERR.1.4.12]).\n\n**On left-retraction (token removed from left parent):**\n\n1. For each extended token that was built from this token:\n   send retraction downstream.\n\n",
+  "refs": [
+    "LERR.1.4.12"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__activate_chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One chain's response to a fact admitted to an alpha."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__extend_front",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Left-activation's joins: every token of the front against the right memory."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__next",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same, read off the node."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__next_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a node passes on from the tokens it receives, by the negative flag and the join tests: their joins with its right memory, or, for a NOT node, those the memory leaves unblocked, unextended [IRET.7.9.5]."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__retract_chain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One chain's response to a fact removed from an alpha."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__right_activate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RIGHT-ACTIVATION of every node of a chain fed by the alpha, deepest first, for a fact just admitted: a positive node extends each left token the fact joins and sends the extensions down; a NOT node counts the fact against each left token it joins and retracts downstream the tokens it newly blocks [IRET.7.9.2]. Deepest first so that a token the shallower activation creates never meets its own fact twice: the reading the clause needs to produce each match once."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__right_retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RIGHT-RETRACTION of every node fed by the alpha, deepest first, for a fact just removed: a positive node retracts downstream each extension it had built from the fact; a NOT node uncounts it and releases the tokens it no longer blocks [IRET.7.9.3]."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__store",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The join algorithm's memory step: arrivals are stored before they are joined."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__view",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RECOMPUTE, node by node: the tokens each prefix of a chain should pass, from the nil token, over working memory alone. What the memories are proved to hold."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__wave",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "LEFT-ACTIVATION as a wave down the chain: each node stores the arrivals, joins them against its right memory, and the extended tokens flow on; what leaves the last node activates the terminal [IRET.8.1]."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_8__unwave",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "LEFT-RETRACTION as a wave: each node drops the departing tokens and their counts; every extension built from them leaves too, or, for a NOT node, the tokens it had passed; what leaves the last node ends the activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__extend_lengths",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Extending a front of prefixes of one length gives prefixes one longer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__view_from_front",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every token the chain passes is a guarded, unblocked tuple of the positive kinds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chain_consistent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A re-timed single positive node is consistent under its new test: its memory is what the clause's join gives at the new clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_chains_consistent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every chain, re-timed or not, is consistent after the re-time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Iret_7_9_1__clear",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The passage the four paths maintain, node by node."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_7__activate_chain_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_7__retract_chain_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_7__through_clear",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a chain passes came through it clear."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "Iret_28_0_1__engine",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The reading's engine: the clause's 'iterate the right alpha memory' taken as the order of the stamps."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "iret_28_0_1__assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Left-activation iterating the right memory in dense order, stamping as it goes: the reading the witness refutes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_7_7__consistent_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A consistent chain's activations are distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_7_7__consistent_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Consistency survives any change to the activations' flags: it reads the tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_7_7__consistent_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Consistency read through the alpha view is the recompute: the terminal holds exactly what the chain passes from the front over working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_7_7__next_of_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A node passes nothing on from nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_5__recompute_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE VIEW THEOREM, closed at the top: after any history from a loaded network -- every input pumped, in order [LFST.9.2.1] -- incremental propagation has left every alpha memory and every terminal exactly as the recompute over working memory would. Content only: the order theorem of [LDET.5.5] / [LDET.5.9] is the next increment."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME. From the loaded network, after any inputs applied with no pump between them, a pump that reaches quiescence fires a framed chain exactly as many times as it has matches when the pump begins: its activations are its distinct matches ([IRET.7.7], [IRET.11.1], in the view), each fires once and none twice ([IRET.11.3], [LDET.5.3], in the run), whatever the other rules emit and withdraw meanwhile. Rete/NetworkOnce.idr's theorem with the action-free frame replaced by this one; the plain network, so no cascade and no sweep. Every hypothesis is discharged by computation at `ltim_2_5_1__two_rules_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_7_7__activate_chain_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A chain with no node on the fed alpha is unchanged by right-activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_7_7__retract_chain_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And by right-retraction."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_7_7__right_activate_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The join algorithm's right-activation touches the beta nodes on the fed alpha and no other."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_7_7__right_retract_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And its right-retraction."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE AND THE CLOCK. From the loaded clocked network, after any inputs -- data events and ticks that sweep -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins, whatever the other rules emit and withdraw and whatever their endings cascade: a cascade's targets are emitted kinds, which a framed chain does not read. Rete/NetworkFrame.idr's theorem on the engine Rete/NetworkClocked.idr runs; a prepare that re-times is outside it and is Rete/NetworkFrameRetime.idr's. Every hypothesis is discharged by computation at `ltim_2_5_1__one_fact_is_an_instance_ttl`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE, THE CLOCK AND THE RE-TIME. From the loaded clocked network, after any inputs -- data events, and ticks that sweep and re-time every timed chain -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins: the matches the ticks made counted, the matches they ended not. Rete/NetworkFrameClocked.idr's theorem with Rete/NetworkClocked.idr's prepare. Every hypothesis is discharged by computation at `ltim_2_5_1__gated_is_an_instance` and `ltim_2_5_1__shut_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__fires_the_match_count",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The join algorithm's matches, counted, are the pump's firings."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE THEOREM. For an action-free program, from the loaded network, after any inputs applied with no pump between them, a pump with fuel enough halts `Quiescent`, fires exactly as many times as there are activations, leaves every activation fired with its tuple, and every chain's tuples are exactly its recompute over working memory, none twice: once per match, and each match once. [IRET.7.7] and [IRET.11.1] in the view; [IRET.11.3] and [LDET.5.3] in the run. The clauses a duplicate firing breaks, held together."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match_from",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The join algorithm builds each match once: under the view every chain's tuples are its recompute, none twice, so each fires once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__column",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Column `j` after the three rows: the issue's `where` on `f3`, `f4`, `f5`, as a join test on the letter table. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__letter",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WORDS of the six-pattern self-join, letter by position, indexed by the fact's payload: word 0 is fact 50's `4 0 6`, word 1 fact 1's `0 4 3`, word 2 fact 12's `6 3 2`, a symmetric grid; word 3, `1 2 3`, completes no square with them. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__letter_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A letter of a fact's word; 9 for no fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__row",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A row pattern: any `Word`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__square_inputs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE STREAM: the three words of the square and the fourth, asserted with no pump between them, keys as the issue's fact ids. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__square_interleaved",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RULE, interleaved: row 0, column 0, row 1, column 1, row 2, column 2, each `where` on the facts bound before it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__square_rows_first",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RULE, rows first: three rows then three columns, six positive nodes on one alpha -- the issue's `square`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__tok_letter",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Letter `i` of the fact bound at position `p` of the token. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A DUPLICATE DOES NOT HAPPEN, rows first: three `Word` facts whose letters make each a row and the matching column, with a fourth that completes nothing, under a six-pattern self-join; the pump fires once, and the one chain holds the one match, `50 1 12 50 1 12` by key, each fact filling a row and its column. Executed. That the join tests transcribe the self-join's `where` clauses onto a letter table keyed by the fact's payload is checked by reading."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_interleaved_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND INTERLEAVED, the issue's second pattern order (row, column, row, column, row, column): once, the one match with the columns beside their rows. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__consistent_through",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A consistent chain's terminal holds, as a set, what the chain passes from its front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__next_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes on from live tokens over a memory of live facts is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_activate_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-ACTIVATION KEEPS THE ORDER: the matches the fact completes are live and new to the terminal and take their timetags' places; the survivors keep theirs; what a NOT node newly blocks ends."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-RETRACTION KEEPS THE ORDER under the working memory the retraction found: the matches the fact had completed end, and the matches a NOT node releases -- live, not built on the fact -- take the places their keys give them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__through",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a chain passes from a front, node by node over the memories as they stand: the tokens left-activation delivers to the terminal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__through_disjoint",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Disjoint fronts pass through disjoint."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__through_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A distinct front passes through distinct, over distinct memories."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__through_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Live tokens pass through live, over memories of live facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__wave_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-ACTIVATION KEEPS THE ORDER: the arrivals activate at their timetags' places."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__wave_snd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The wave's terminal is the activation of exactly what the chain passes from the arrivals."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_new_disjoint",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Extensions by a fact not in the memory are new."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_new_fact",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Joining against a memory grown by one fact: the old extensions, plus the left tokens the new fact joins, extended by it -- exactly what right-activation builds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_remove",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A positive node's output after a right fact leaves: what it passed, less the extensions built from the fact -- exactly what right-retraction withdraws, with no facts[k] to search for."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_remove_bwd_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What was passed and not built from the leaving fact is still passed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_remove_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes after a fact leaves was passed and was not built from it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__extend_remove_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The extensions built from a fact of the memory were passed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__right_activate_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT ENTERS ONE ALPHA MEMORY: every chain consistent with the old memories is, after right-activating its nodes fed by that alpha deepest first, consistent with the new ones. A positive node's extensions by the fact reach the terminal through the nodes below; a NOT node's newly blocked tokens are withdrawn from them. The clause's right-activation, and [IRET.19.1] step 7 read as right- rather than left-activation: the step feeds an alpha memory, which is a join's right input."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__right_retract_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT LEAVES ONE ALPHA MEMORY: every chain consistent with the old memories is, after right-retracting its nodes fed by that alpha deepest first, consistent with the new ones. A positive node's extensions by the fact leave the nodes below; a NOT node releases the tokens the fact alone was blocking. The clause's right-retraction, read as 'each left token that joins the retracted fact' since a left token has no facts[k]."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__retime_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TICK KEEPS THE VIEW: a single positive node consistent under the old test is consistent under the new one after the tick -- the terminal holds exactly the matches at the new clock, none twice. Re-evaluation on every tick misses nothing and leaves nothing stale."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_7_7__right_activate_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Right-activation keeps a chain's shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_7_7__right_retract_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Right-retraction keeps a chain's shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_7_7__wave_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Left-activation keeps a chain's shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_activate_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Right-activation by a fact creates only matches holding it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_retract_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Right-retraction of a fact ends only matches holding it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__wave_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Left-activation creates the activations of what the chain passes, and ends none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_7__right_activate_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs a right-activation evaluates, deepest node first as `iret_7_7__right_activate` runs it: the new fact against every left token of every node on its alpha, then the extensions' wave down the deeper nodes. Deepest-first is what produces each positive match once, and what evaluates, at a positive node, tokens a shallower `no` node on the same fact is about to block (`lerr_1_4_12__transient_pair_records_nothing`)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_7__right_retract_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs a right-retraction evaluates that a record of evaluated pairs would carry: none it re-tests (those are the pairs it ends), only the wave of the tokens a `no` node releases."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_7__wave_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs a wave evaluates: every arriving token against every candidate of every node it reaches -- a `no` node to count its blockers, a positive node to extend."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "Iret_7_7__consistent",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CONSISTENCY RELATION, per chain suffix relative to the front it receives and the alpha memories as they stand: each node's left memory is that front, distinct; a NOT node's counts are its blockers; the terminal holds exactly what the last node passes, distinct. Stated node by node so that each propagation path is proved one node at a time."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__concat_map_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Concat-map distributes over append."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__consistent_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Consistency is about the front as a set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__distinct_extend",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Extending a distinct front over a distinct memory is distinct: extension is injective."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__elem_concat_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of the concat-map is a member of some image."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__extend_elem_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A front token plus a joining fact of the memory is in the extended front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__extend_elem_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A member of an extended front is a front token plus a joining fact of the memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__filter_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Filter distributes over append."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__next_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes on distributes over append of the front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__next_disjoint",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes on from disjoint fronts is disjoint."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__next_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes on from a distinct front over a distinct memory is distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__next_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a node passes on is a function of the front as a set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__store_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A NOT node's counts after storing arrivals are the recorded ones."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_7__wave_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-ACTIVATION KEEPS THE VIEW: a chain consistent with its front, given new arrivals not among it, is consistent with the front plus the arrivals after the wave -- every node stored them, every NOT node counted them, the terminal gained exactly the matches they complete."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_8__unwave_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-RETRACTION KEEPS THE VIEW: when tokens of the front leave, every node drops them and their counts and the terminal loses exactly the matches they completed."
+      }
+    ]
+  }
+}

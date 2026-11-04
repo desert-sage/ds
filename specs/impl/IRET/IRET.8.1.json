@@ -1,0 +1,685 @@
+{
+  "id": "IRET.8.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.8",
+  "seq": 718,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.8.1] **Activation.** When a terminal node receives\na token (from its parent beta node), it creates an\nactivation and inserts it into the agenda. When the token\nis retracted, the corresponding activation is removed.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "Iret_8_1__settled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A table is current: every token settled and every current match has a token -- the agenda [IRET.8.1] maintains."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "Iret_8_1__tok_settled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One token is current: its blocking is what the live `no` facts give and its tuple is a current match."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__added_ok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Added tokens are current matches."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__in_result",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A current match has a token in the result."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__kept_ok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Kept tokens are current matches."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__now_in_result",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every current match has a token after re-propagation."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__prop_with_settled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The result of re-propagation is settled."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "iret_8_1__settled_fixed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A settled table is a fixpoint of re-propagation: with nothing changed, nothing moves."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_8_1__added_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Match tuples not seen before become activations, appended in enumeration order; a token whose tuple no longer matches is dropped, which is the clause's removal on retraction."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_8_1__fresh_tok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A new match becomes a new, unfired, unblocked token."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_8_1__kept_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Tokens whose tuple still matches keep their activation, with its position and `fired`."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_8_1__act",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An activation: the match and whether it has fired."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__wave",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What leaves the last node activates the terminal."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_8_1__activate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "New matches become unfired activations, each at its timetag's place [LDET.5.5]."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_8_1__end",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "When the token is retracted the activation is removed, fired or not."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_8_1__tuples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A terminal's matches, in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__terminal_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A terminal's activations are FireLoop's unblocked tokens, as a set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_8_1__end_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending no match keeps every activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Iret_19__view",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE VIEW of an engine: working memory distinct; every alpha memory distinct and equal to its schema's facts passing its tests in working-memory order; every chain consistent from the nil token. Kept by every operation below."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Rarc_5_6_5__recomputed",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the view says of an engine: every alpha memory is its schema's admitted facts, and every terminal holds exactly its chain's recompute over working memory, without duplicates."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_5__recompute_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE VIEW THEOREM, closed at the top: after any history from a loaded network -- every input pumped, in order [LFST.9.2.1] -- incremental propagation has left every alpha memory and every terminal exactly as the recompute over working memory would. Content only: the order theorem of [LDET.5.5] / [LDET.5.9] is the next increment."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_8_1__activate_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Activating new matches adds one unfired activation per match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_8_1__filter_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Dropping activations from a terminal with nothing unfired leaves nothing unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_8_1__insert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Inserting an unfired activation raises the unfired count by one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "iret_8_1__activate_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Activating new matches keeps the terminal in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "iret_8_1__end_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing activations leaves the survivors live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "iret_8_1__end_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Removing activations keeps the terminal in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_8_2__activated_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Every activation a terminal gains is unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_8_2__insert_act_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An activation after an insert is the inserted one or an old one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__activate_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What activating yields is an old activation, or a new match unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__activate_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Activating new matches keeps every old activation, as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__activate_new",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every new match is there, unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__end_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending matches keeps every activation not among them, as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__end_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending matches adds nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__insert_here",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The inserted activation is there."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_8_1__insert_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What inserting yields is the one inserted or an old one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_8_1__kept_of_kept_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Kept by the smaller memory's matches after kept by the larger's is kept by the smaller's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_8_1__kept_of_map_refresh",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The kept tokens of a refreshed table are the refreshed kept tokens: keeping reads identities, which a refresh leaves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_8_1__kept_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token kept by the matches over a sub-memory was kept by the matches over the memory: a match over fewer facts is a match over more."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rdsc_4a_5__seed_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A SEEDED TERMINAL holds unfired activations only: the seeding wave creates, and what it creates is unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_8_1__acts_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two activation lists with the same tuples and the same flag on each tuple are one list."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_8_1__settled_unblocked_set",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A SETTLED, LIVE TABLE'S UNBLOCKED TUPLES are the unblocked matches: the ids of settledness identify facts under unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__prop_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE UNBLOCKED TOKENS AFTER A PROPAGATION ARE THE NETWORK'S ACTIVATIONS after the same change: the tuples agree because both sides hold exactly the unblocked matches in the key's order and two sorted lists with the same members are one list; the flags agree because an activation whose match survives is kept on both sides, and a released or new match is unfired on both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "Iret_8_1__evolves",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "HOW A TERMINAL EVOLVES through some ended and some created matches: every activation afterwards is an old one whose match did not end, or an unfired one for a match created; every old activation whose match did not end is still there. The clause's create-on-arrival and remove-on-retraction, stated as what persists."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_1__insert_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- an assertion creates only matches holding the new fact, so no old match is created anew."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_2__dispatch_retract_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT evolves every terminal ending only matches that hold the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_2__retract_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- a retraction ends only matches holding the fact, and no surviving match holds it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_6_4__dispatch_assert_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT evolves every terminal creating only matches that hold the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_activate_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-ACTIVATION by a fact creates only matches holding it: the extensions the fact makes, passed down the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_retract_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-RETRACTION of a fact ends only matches holding it: the extensions it had made, withdrawn down the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__wave_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-ACTIVATION ends nothing and creates what the chain passes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_8__unwave_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "LEFT-RETRACTION creates nothing and ends what leaves the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_8_1__evolves_activate",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Activating matches: nothing ends, the matches are created unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_8_1__evolves_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending matches: the ended leave, nothing is created."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_8_1__evolves_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A terminal evolves to itself through nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_8_1__evolves_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two evolutions compose."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Iret_8_1__well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A WELL-FORMED TABLE of Rete/FireLoop.idr: every token's facts live, and the tuples in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Rarc_5_6_5__tables_well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every table of a FireLoop state well-formed and settled against its rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__added_holds_new",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After a change that adds one fact, every added token holds it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__added_none",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After a change that adds no fact nothing is added: every current match was a match before, and held."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__added_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The added tokens' tuples: the current matches not yet held, in enumeration order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__fresh_toks",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Fresh tokens for a list of tuples; named so that no statement mentions the token builder unapplied."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__fresh_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Fresh tokens carry their tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__kept_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A kept token's facts are live afterwards: its ids are a current match's, and ids identify facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__kept_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The kept tokens stay well-formed under any memory in which they are live and ordered as before."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__new_latest",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A new activation's match completed at the new fact's position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__nil_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The nil match comes before every match of a fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__old_before_new",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An activation created earlier comes before one the new fact completes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_grow",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER A FACT ENTERS keeps the table well-formed: the kept tokens keep their order under the grown memory; the added tokens, all completed at the new fact's position, follow them in pattern order, which is the key's order among them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_shrink",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER A FACT LEAVES keeps the table well-formed: nothing is added, and the survivors keep their order under the shrunk memory -- a retraction reorders nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__refresh_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing flags keeps a table well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__init_table_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule's first table, propagated from nothing over empty working memory, is well-formed: at most the nil tuple."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "Iret_7_7__consistent",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The terminal holds exactly what the last node passes, in the consistency relation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__activate_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Activating distinct new matches not already held keeps the activations distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__activate_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Activating new matches adds exactly them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__end_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending matches keeps the activations distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__end_elem_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A held activation not ended survives."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__end_elem_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An activation surviving an ending was held and was not ended."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__end_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Ending matches removes exactly them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_8_1__insert_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Inserting an activation into a terminal keeps every activation it held, as it was."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_8_1__settled_unblocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "In a settled table of a rule without `no` patterns no token is blocked."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_8_1__Keys",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_8_1__fresh",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_8_1__ret",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_8_1__tok",
+        "tag": "spec"
+      }
+    ]
+  }
+}

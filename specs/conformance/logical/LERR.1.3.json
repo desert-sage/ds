@@ -1,0 +1,16 @@
+{
+    "id": "LERR.1.3",
+    "clauses": ["LERR.1.4.3"],
+    "category": "logical",
+    "scenario": "`Int` division by zero is a ComputationError fault (LERR.1.4.3), which abandons that activation and leaves the rest running: `p.x / p.y > 5` does not fire for y=0 and fires once for y=2. Named for the LERR.1.3 heading (absence), which it does not test; division by zero is not absence.",
+    "rules_ds": "schema Pair scope logical:\n    entity_id: String key\n    x: Int mutable\n    y: Int mutable\n\nrule safe_div:\n    Pair p where p.x / p.y > 5\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "zero", "x": 100, "y": 0 } },
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "ok", "x": 20, "y": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["safe_div"]
+    }
+}

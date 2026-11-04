@@ -1,0 +1,10 @@
+{
+    "id": "LREG.4.2",
+    "category": "compiler",
+    "scenario": "Capture/binding-form length match per LREG.4.2 — the number of binding-form names must equal the number of capturing groups in the pattern. Pin: a `where (a, b)` binding form against a pattern with three capturing groups rejects with DS_VALIDATE_REGEX_BINDING_LENGTH_MISMATCH. Path: `dsc.validate.lreg_4_1_where_capture`, counting RE2's groups (`ds.re2`).",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule trig:\n    Msg m where (a, b) = m.text ~ /(\\w+) (\\w+) (\\w+)/\n->\n    log info \"{a} {b}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_BINDING_LENGTH_MISMATCH"
+    }
+}

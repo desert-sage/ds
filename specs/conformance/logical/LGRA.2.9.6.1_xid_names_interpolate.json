@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.1_xid_names_interpolate",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.1]: an interpolation site's leading NAME is [LNAM.2]'s identifier -- XID_Start then XID_Continue, either case -- so a non-ASCII binding (`ñame`) and a capitalised one (`Big`) are sites and render their values. PATH PINNED: `dsc.strlit`'s site reader, whose `name_start` / `name_continue` are `dsc.uniname`'s pinned tables, shared by `dsc.validate` (the site check and the reference walk) and `dsc.rete` (the lowering). Read with Mercury's own `char.is_alpha`, `{ñame...}` is not a site, and an `[a-z]` path rule refuses both.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    v: Int mutable\n\nrule a:\n    Ev ñame\n->\n    log info \"a {ñame.v}\"\n\nrule b:\n    Ev Big\n->\n    log info \"b {Big.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "v": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "a 7", "b 7" ]
+    }
+}

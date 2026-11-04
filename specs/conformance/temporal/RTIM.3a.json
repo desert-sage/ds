@@ -1,0 +1,31 @@
+{
+    "id": "RTIM.3a",
+    "clauses": ["RTIM.3.2.2"],
+    "category": "temporal",
+    "scenario": "A clock move and pump retract nothing that carries no deadline (RTIM.3.2): on the mock clock, a logical fact asserted at 5 s is still present after an advance of 1 s and a pump. Drives the runner's set / assert / advance / pump steps; it does not exercise a clock-mode switch, and it pins no time-driven firing.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "set",
+                "now_ns": 5000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 1000000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 1
+    }
+}

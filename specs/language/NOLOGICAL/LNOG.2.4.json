@@ -1,0 +1,15 @@
+{
+  "id": "LNOG.2.4",
+  "prefix": "LNOG",
+  "doc": "NOLOGICAL.md",
+  "parent": "LNOG.2",
+  "seq": 123,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "When to use each",
+  "text": "### When to use each [LNOG.2.4]\n\n| Goal | Dialect | Overrides |\n|---|---|---|\n| Hard RT with logical derived facts | `realtime` | — |\n| Hard RT, no derived facts, smallest TMS cost | `realtime` | `logical: false` |\n| Maximum simplicity, stream-only processing | `default` | `logical: false` |\n| Stream-only, O(1) joins, O(1) retraction | `default` | `logical: false`, `linear_scan: false` |\n| Tightest possible T_wcet — all guarantees | `realtime` | `linear_scan: false`, `logical: false` |\n\nThe rows that use the `realtime` dialect are deferred with it, and the\ncompiler refuses them in this edition ([LCAP.2.1.5]).\n\nA combination that sets both `logical: false` and `linear_scan: false`\nconstrains the program to single-pattern rules that perform only\nalpha-level tests ([LCAP.3.1]).  Every fact lifecycle is `explicit`,\n`ttl`, `activation`, or `ambient`.  The retraction path has no TMS\nlookup, no cascade, and no join index traversal.  This is the\ntheoretical floor for a Rete engine: pure alpha-network stream\nprocessing.\n\n---\n\n",
+  "refs": [
+    "LCAP.2.1.5",
+    "LCAP.3.1"
+  ]
+}

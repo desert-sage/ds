@@ -1,0 +1,9 @@
+{
+    "id": "LRST.2.1",
+    "category": "compiler",
+    "scenario": "Supersedure per LRST.2.1 \u2014 `call ... as <expr>` uses the expression as the supersedure key; the `as` clause must appear after all action_args (cooldown, entity_id, etc.) in the call grammar. Pin: `call sensor.read entity_id: d.entity_id cooldown: 1_min as d.entity_id` compiles cleanly.",
+    "rules_ds": "service sensor.read:\n    kwarg entity_id: String\n    no response\n\nschema Device scope logical:\n    entity_id: String key\n    zone: String mutable\n\nrule scan:\n    Device d\n->\n    call sensor.read entity_id: d.entity_id cooldown: 1_min as d.entity_id\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

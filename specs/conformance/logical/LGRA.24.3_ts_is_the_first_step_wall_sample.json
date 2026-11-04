@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.24.3_ts_is_the_first_step_wall_sample",
+    "category": "logical",
+    "dead_rules_expected": ["other"],
+    "scenario": "[LGRA.24.3]: a block fact's `ts`, where its schema declares one, is the first step's wall sample ([LFAC.9.2]). `Seen` declares `ts`, and the block places one `Seen` without it (no item can write `ts`). The wall clock is set before the first step, the pump, and the pump's `now()` is that same sample ([LTIM.2.8.4]), so `same` (`s.ts == now()`) fires and `other` does not. Pin: `same` alone. A runtime that stamped `ts` at load, before any wall value, holds no `Seen` (or one with another `ts`) and logs nothing, or `other`. PATH PINNED: the block fact's `ts` slot filled from the step's wall sample -- libds `dsc/loader.c`'s `lgra_24_3_item` through `ds_clock_wall_ns`, the Mercury runtime's `ds.engine.initial_slot_value` through `clock_wall` -- then the `where` on `now()`.",
+    "rules_ds": "schema Seen scope explicit:\n    k: Int\n    ts: Time\n\ninitial:\n    Seen k: 1\n\nrule same:\n    Seen s where s.ts == now()\n->\n    log info \"same\"\n\nrule other:\n    Seen s where s.ts != now()\n->\n    log info \"other\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",      "now_ns": 0 },
+            { "op": "wall_set", "utc_ns": 1000000000000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["same"]
+    }
+}

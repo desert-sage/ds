@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Reading an integral without asserting to it. Under `gap hold` the open
+# interval is integrated forward to the read; under `gap zero` it advances
+# only on assertion ([LSIG.3.6]). The two differ only when the clock has moved
+# since the last sample, so the unrelated `Tick` fires the reading rules.
+use default
+
+schema Meter scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema MeterZ scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema Tick scope logical:
+    n: Int key
+
+schema Vol scope ttl 1_h:
+    label: String
+    total: Float
+
+series Meter.v (by: entity_id):
+    integral sliding 10_min gap hold
+
+series MeterZ.v (by: entity_id):
+    integral sliding 10_min gap zero
+
+rule read_hold:
+    Tick
+    Meter m
+->
+    emit Vol label: "hold" total: m.integral
+
+rule read_zero:
+    Tick
+    MeterZ m
+->
+    emit Vol label: "zero" total: m.integral

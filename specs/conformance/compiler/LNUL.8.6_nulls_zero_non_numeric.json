@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.8.6_nulls_zero_non_numeric",
+    "category": "compiler",
+    "scenario": "[LNUL.8.6]: the compiler must refuse `nulls: zero` unless the source is `Int?` or `Float?`, with `DS_VALIDATE_SERIES_NULLS_ZERO_NON_NUMERIC`: absorbing 0 has no meaning for any other kind. `nulls: zero` over a `String?` slot read by `count all_time`, which [LSER.17.2] admits on a String. PATH PINNED: `dsc.series.lnul_8_6_nulls`'s third arm, keyed on the slot's leaf kind through `slot_leaf`; the first two arms admit it (nullable source, policy present). A compiler that keyed `zero` on nothing compiles this and the vector goes red; `LNUL.8.6_nulls_zero_unit_typed_compiles` is the admitted side.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    dev: String key\n    tag: String? mutable\n\nseries Event.tag (by: dev, nulls: zero):\n    count all_time\n\nrule r:\n    Event e where e.count >= 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NULLS_ZERO_NON_NUMERIC"
+    }
+}

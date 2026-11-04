@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.4.6_local_const_collides_with_import",
+    "category": "compiler",
+    "scenario": "[LGRA.4.6]: \"The compiler must reject, with `DS_VALIDATE_IMPORT_NAME_COLLISION`, a program that brings two distinct constants into bare scope under one NFC name: a local `const` whose name a selective import ([LIMP.4.2.4]) binds to a library's constant\". Nothing rebinds, so the file's own constant does not win. Pin: library `ha` declares `const LIMIT = 5`; the importer does `from ha import LIMIT`, declares its own `const LIMIT = 10`, and a rule reads `LIMIT`. The two are distinct, so the file is refused, at the local declaration and naming `ha`. A compiler that lets the local constant win compiles it. PATH PINNED: `dsc.resolve.lgra_4_6_local_consts`, which reads the selective import's binding from `dsc.imports`' `im_const_origin`.",
+    "rules_ds": "from ha import LIMIT\n\nconst LIMIT = 10\n\nschema Reading scope logical:\n    id: Int key\n    v: Int mutable\n\nrule high:\n    Reading t where t.v > LIMIT\n->\n    log info \"high\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 5\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_NAME_COLLISION"
+    }
+}

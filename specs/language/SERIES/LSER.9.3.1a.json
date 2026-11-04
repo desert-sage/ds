@@ -1,0 +1,16 @@
+{
+  "id": "LSER.9.3.1a",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.9.3",
+  "seq": 1152,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.9.3.1a] **Default vs `realtime` divergence (cross-mode replay).**\nThe eviction above is the *default* backend's behaviour. Under\n`realtime` / `linear_scan: false` the row map is locked at `go_live` and\nbackings are pre-allocated, so a sliding/tumbling backing is **never\nevicted** — its state persists across a silence gap instead of\ncold-starting. The two modes therefore compute **different series\nvalues from the same event trace** after any window of silence: the\ndefault backend re-warms from empty (warm-up-biased), while\n`realtime` carries the pre-gap state forward. This is permitted —\nthe dialect is part of the compiled rule set, so it is a different\ninput under [LDET.1.1] — but it is a cross-mode **replay trap**: a\n`realtime` production recording replayed on a default-built engine\n(or vice versa) diverges on series-derived facts, so replay on a\nbuild of the same dialect. The three signal aggregations do not diverge:\nno mode evicts their state ([LSER.9.3.1], [LSIG.5.4]).\n\n",
+  "refs": [
+    "LDET.1.1",
+    "LSER.9.3.1",
+    "LSIG.5.4"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LSER.6.8.1_labeled_access_ok",
+    "category": "compiler",
+    "scenario": "LSER.6.8.1 — labeled series observations are accessed via `<binding>.<label>.<agg>`. Pin: a series with two labelled `mean` lines (`recent` / `hourly`) resolves both `s.recent.mean` and `s.hourly.mean` to the per-line window. Each path desugars to `mean(s.val, <line-window-ns>)`.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n    ts: Time\n\nseries Sensor.val:\n    mean sliding 10_min as recent\n    mean sliding 1_h as hourly\n\nrule check_recent:\n    Sensor s where s.recent.mean > 100.0\n->\n    log info \"recent high\"\n\nrule check_hourly:\n    Sensor s where s.hourly.mean > 50.0\n->\n    log info \"hourly high\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

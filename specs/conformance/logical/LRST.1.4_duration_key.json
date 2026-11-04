@@ -1,0 +1,25 @@
+{
+    "id": "LRST.1.4_duration_key",
+    "clauses": ["LRST.1.4"],
+    "category": "logical",
+    "scenario": "[LRST.1.4]: `Duration` is a legal `as` key, compared by value. Three Req facts (distinct `entity_id`) each arm a 100ms timer keyed on `r.span`: a and b with 1h30m at t=0, c with 1m at t=50ms. b's arming supersedes a's, so that timer fires once, at 100ms; c's key differs and its timer fires at 150ms. Exact messages: armed x3, then `timer fired` twice. A compiler that leaves `Duration` off its list leaves this rule unlowered, and nothing logs. PATH PINNED: `dsc.rete.lrst_1_4_leaf_kind`'s `lk_duration` row, the timer's Duration `corr` slot, and the supersedure sweep's key equality on it, libds `rete/adapters.c` `corr_key_eq` and Mercury `ds.exec`'s sweep.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    span: Duration mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.span:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "span": 5400000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "span": 5400000000000 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "span": 60000000000 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

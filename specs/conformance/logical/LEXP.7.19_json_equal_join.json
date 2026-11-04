@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.19_json_equal_join",
+    "category": "logical",
+    "scenario": "LEXP.7.19: `==` between whole `Json` values of two facts, as a join. A holds {x:1, y:2}; B b1 holds the same object with its members in the other order and joins; B b2 differs in one leaf and does not. The log is exactly `b1`. PATH PINNED: the join test, not the predicate inside one pattern. `eq_key_decided` (libds `rete/beta.c`) refuses a `Json` key, so the EQ index is not probed: every pair is SCANNED and the EQ evaluated by `val_cmp`. Mercury has no index and answers in `ds.eval` `compare_outcome`.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    j: Json mutable\n\nschema B scope logical:\n    id: String key\n    j: Json mutable\n\nrule r:\n    A a\n    B b where b.j == a.j\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "A", "slots": {"id": "a", "j": {"x": 1, "y": 2}}},
+            {"op": "assert", "schema": "B", "slots": {"id": "b1", "j": {"y": 2, "x": 1}}},
+            {"op": "assert", "schema": "B", "slots": {"id": "b2", "j": {"x": 1, "y": 3}}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["b1"]
+    }
+}

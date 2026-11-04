@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.9.2_bare_integral_in_where_ok",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: only the `let` is gated. A read of `integral` over the `meter` slot `q` in a `where` needs no annotation, and the rule compiles. PATH: dsc.validate's `luni_9_2_unannotated` is called only from `luni_8_4_let_binding`, so a `where` never reaches it; the read itself is typed by dsc.typecheck's `luni_9_1_agg_type`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f where f.integral > 1000.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

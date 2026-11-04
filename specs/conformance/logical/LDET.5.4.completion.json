@@ -1,0 +1,16 @@
+{
+  "id": "LDET.5.4.completion",
+  "clauses": ["RARC.13.11"],
+  "category": "logical",
+  "scenario": "Source order beats COMPLETION order per [LDET.5.4] — the case the sibling fixtures cannot distinguish. Both LDET.5.4.json and LDET.3.1.json state source order as their intent and are built so the two candidate models AGREE: their rules all match on the same propagation, or their asserts arrive in the same order the rules are declared, so completion order and source order coincide and either implementation passes. This fixture separates them. `late_rule` is declared FIRST and matches `Late`; `early_rule` is declared SECOND and matches `Early`. Both facts are asserted before a single pump, so both activations are on the agenda together when it drains — but `early_rule`'s match COMPLETED FIRST, on the earlier assert, and therefore carries the lower creation timetag. Under [LDET.5.4] the terminal ordinal is the FIRST key, so `late_rule` fires first because it is written first; the creation timetag orders activations only WITHIN one rule ([LDET.5.5]) and never between two. An implementation that ordered by completion time would emit the reverse, and that is precisely what [LTES.12.9] forbids when it requires the firing order to be spec-defined rather than implementation-defined: which match completed first is a property of propagation, not of the program.",
+  "rules_ds": "schema Early scope logical:\n    v: Int key\n\nschema Late scope logical:\n    v: Int key\n\nrule late_rule:\n    Late\n->\n    log info \"late_rule\"\n\nrule early_rule:\n    Early\n->\n    log info \"early_rule\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "Early", "slots": { "v": 1 } },
+      { "op": "assert", "schema": "Late", "slots": { "v": 1 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["late_rule", "early_rule"]
+  }
+}

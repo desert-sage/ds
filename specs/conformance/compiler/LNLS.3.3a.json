@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3a",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3a] — a cross-pattern equality on a NON-key slot is refused under +nolinscan: `zone` is `mutable` on both schemas, so several live facts can share a value and J_max > 1. PATH PINNED: `dsc.validate.anchor_body`'s middle arm — the pattern HAS a slot equality to an earlier one, and `full_key_anchor` rejects it because neither side's `key` is met.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n    zone: String mutable\n\nschema Reading scope logical:\n    reading_id: String key\n    zone: String mutable\n\nrule joined:\n    Device d\n    Reading x where x.zone == d.zone\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A"
+    }
+}

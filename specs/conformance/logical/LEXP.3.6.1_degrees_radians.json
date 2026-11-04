@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.3.6.1_degrees_radians",
+    "clauses": ["LEXP.3.6.1", "LIMP.3.3.4", "LEXP.8.8"],
+    "category": "logical",
+    "scenario": "[LEXP.3.6.1]: `math.degrees(x)` is x times the double nearest 180/math.pi (57.29577951308232), and `math.radians(x)` x times the double nearest math.pi/180 (0.017453292519943295), one correctly rounded multiply each. The expected values are computed in binary64. Facts carry the operand as a `Float` slot `x` or an `Int` slot `n`, so each call is evaluated by the runtime. `degrees pi`: degrees(3.141592653589793) is exactly 180.0. `degrees 11`: degrees(11.0) is 630.2535746439055; the two rounded steps (11.0 * 180.0) / math.pi give 630.2535746439056, one ulp above, so this operand tells the composition from the obvious alternative. `degrees int 11`: the `Int` 11 is converted to `Float` first and gives the same. `radians 180`: radians(180.0) is exactly math.pi. `radians 3`: radians(3.0) is 0.05235987755982989; (3.0 * math.pi) / 180.0 gives 0.05235987755982988. `folded`: the same two operands written as literals, which [LEXP.8.8] has the compiler fold by the same composition. PATH PINNED: FN_DEGREES / FN_RADIANS in libds (`builtins.c`) and Mercury (`ds.eval`), and the constant folder for the literal operands.",
+    "rules_ds": "import math\n\nschema A scope logical:\n    id: String key\n    x: Float mutable\n    n: Int mutable\n\nrule degrees_of_pi:\n    A a where a.id == \"pi\" and math.degrees(a.x) == 180.0\n->\n    log info \"degrees pi\"\n\nrule degrees_one_rounding:\n    A a where a.id == \"eleven\" and math.degrees(a.x) == 630.2535746439055\n->\n    log info \"degrees 11\"\n\nrule degrees_of_an_int:\n    A a where a.id == \"eleven\" and math.degrees(a.n) == 630.2535746439055\n->\n    log info \"degrees int 11\"\n\nrule radians_of_180:\n    A a where a.id == \"deg180\" and math.radians(a.x) == math.pi\n->\n    log info \"radians 180\"\n\nrule radians_one_rounding:\n    A a where a.id == \"three\" and math.radians(a.x) == 0.05235987755982989\n->\n    log info \"radians 3\"\n\nrule folded:\n    A a where a.id == \"fold\" and math.degrees(11.0) == 630.2535746439055 and math.radians(3.0) == 0.05235987755982989\n->\n    log info \"folded\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "pi", "x": 3.141592653589793, "n": 0 } },
+            { "op": "assert", "schema": "A", "slots": { "id": "eleven", "x": 11.0, "n": 11 } },
+            { "op": "assert", "schema": "A", "slots": { "id": "deg180", "x": 180.0, "n": 0 } },
+            { "op": "assert", "schema": "A", "slots": { "id": "three", "x": 3.0, "n": 0 } },
+            { "op": "assert", "schema": "A", "slots": { "id": "fold", "x": 0.0, "n": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["degrees pi", "degrees 11", "degrees int 11", "radians 180", "radians 3", "folded"]
+    }
+}

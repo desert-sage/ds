@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.3_time_known_not_whole",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.3]: a `time` quantity known at compile time that is not a whole number of the kwarg's unit is refused, never truncated or rounded. `timer.arm` declares `wait: minute`, and rule `go` writes `wait: 90_s`, 1.5 minutes: DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE. PATH PINNED: `ladp_8_5_3_not_whole` in dsc.validate, reached from `call_kwarg_value`, which folds the value with `dsc.quantity.known_quantity` and tests `ladp_8_5_2_in_unit`'s answer with `is_whole`. The break is dropping the test, which compiles the call and sends 1.",
+    "rules_ds": "service timer.arm:\n    kwarg wait: minute required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig\n->\n    call timer.arm wait: 90_s nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE"
+    }
+}

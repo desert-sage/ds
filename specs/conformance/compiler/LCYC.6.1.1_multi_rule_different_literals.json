@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.6.1.1_multi_rule_different_literals",
+    "category": "compiler",
+    "scenario": "LCYC.6.1.1 — a literal TOGGLE is not refutable by the per-edge literal-equality break (LCYC.6.1), so it is still rejected with DS_VALIDATE_RULE_CYCLE. This drives the break's negative direction: each emit here DOES satisfy the next rule's LHS (`emit B kind: \"y\"` against `B b where b.kind == \"y\"`, and back), so neither edge is dropped and the loop closes. Pin: `A: kind == \"x\" → emit B kind: \"y\"` paired with `B: kind == \"y\" → emit A kind: \"x\"` rejects. Its counterpart — two rules whose emits satisfy nothing — must compile.",
+    "rules_ds": "schema A scope logical:\n    kind: String key\n\nschema B scope logical:\n    kind: String key\n\nrule flip_to_b:\n    A a where a.kind == \"x\"\n->\n    emit B logical kind: \"y\"\n\nrule flip_to_a:\n    B b where b.kind == \"y\"\n->\n    emit A logical kind: \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

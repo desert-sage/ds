@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A host's malformed `CallError.code` is rewritten, and counted.
+# [LECC.1.2]'s wire format: a code is `[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*`.
+# A host-asserted `CallError` whose code breaks it enters working memory with
+# `internal.invariant` ([LECC.3.7.2]) instead, so no rule sees the malformed
+# code, and the rewrite counts `ds.errors.code_invariant_total{schema}`
+# ([NMET.4.1]). `seen` logs the code each CallError carries, so the log line
+# compares the rewrite itself, not only the count.
+
+service svc.a:
+    kwarg n: Int
+    no response
+
+schema Job scope explicit:
+    id: Int
+
+rule r:
+    Job j
+->
+    call svc.a n: j.id nocooldown as "c1"
+
+rule seen:
+    CallError e
+->
+    log info "code {e.code}"

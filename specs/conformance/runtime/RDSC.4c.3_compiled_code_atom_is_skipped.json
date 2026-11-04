@@ -1,0 +1,15 @@
+{
+    "id": "RDSC.4c.3_compiled_code_atom_is_skipped",
+    "category": "runtime",
+    "scenario": "[RDSC.4c.3]: in this edition a runtime skips every `CompiledCode` atom, whatever its `arch`, and must not map, wire or execute the code it carries; the rest of the artefact loads as it would without the atom, and every node is interpreted. No compiler of this edition writes the atom, so the harness compiles rule `on_t`, whose network is `T`'s `AlphaNode` (node 1), its `BetaNode` (2) and its `TerminalNode` (3), and `add_compiled_code: {node: 3}` ([RCTS.1.2.31]) appends four `CompiledCode` atoms after the network, one for each well-known `arch` (`amd64`, `arm64`, `rv64g`, `rv64gc`), each an RHS for terminal 3 whose body is 64 zero octets, and re-seals `dsc_sha256` ([RDSC.3.6]). Whatever the runtime runs on, one atom names its architecture. The harness asserts one `T` with `v` 1 and pumps: `on_t` fires through its interpreted action and emits one `U`, so two facts are live, as without the atoms. What it discriminates: a runtime that refuses the artefact (an AOT status, or a body or order refusal) fails at the load; one that wires an atom into terminal 3 runs 64 zero octets as the RHS, which emits no `U` or ends the process, and fails on the count or the run. The `dsc-load` line each runtime writes for the skip ([RDSC.9.4]) is not observed by this kind; libds's `test_rdsc_4c_3__compiled_code_atom_is_skipped` and test_ds's `test_no_aot` pin it. PATHS: libds's atom walk (`ds_engine_load_dsc`, `dsc/loader.c`'s field-298 arm); the Mercury runtime's `ds.dsc` walk (`skipped_code`), through test_behave.m's `compiled_code_added`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 0\n->\n    emit U logical v: t.v\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "add_compiled_code": {"node": 3},
+        "asserts": [
+            { "schema": "T", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

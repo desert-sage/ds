@@ -1,0 +1,11 @@
+{
+    "id": "LDET.5a",
+    "clauses": ["LDIA.3.4.2"],
+    "category": "compiler",
+    "scenario": "Under `use restricted_v1` (a test dialect with `call` off), a rule's `call` is refused with DS_VALIDATE_CAPABILITY_DISABLED: a construct the resolved settings do not permit is a compile error (LDIA.3.4.2). Named for the LDET.5 heading (rule-firing order), which it does not test.",
+    "rules_ds": "use restricted_v1\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

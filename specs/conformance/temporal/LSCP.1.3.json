@@ -1,0 +1,16 @@
+{
+    "id": "LSCP.1.3",
+    "category": "temporal",
+    "scenario": "TTL-scoped facts retract after their lifetime expires per LSCP.1.3 — engine manages the TTL automatically. Pin: assert a `scope ttl 5_s` fact, pump, advance clock 6_s, pump — fact auto-retracts. fact_count_after = 0.",
+    "rules_ds": "schema Alert scope ttl 5_s:\n    entity_id: String\n    msg: String\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Alert", "slots": { "entity_id": "a1", "msg": "x" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 0
+    }
+}

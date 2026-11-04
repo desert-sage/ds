@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.24.3_test_initial_overlays_block",
+    "category": "logical",
+    "dead_rules_expected": ["rw"],
+    "scenario": "[LGRA.24.3] and [NLFC.9.3]: a key the host seeded before the first step keeps the host's value, and the engine must not overwrite it with a cache item. This is how a `.dstest`'s own `initial` overlays the ruleset's block, because the test's cache entries are host seeds made before the first step. The block seeds `level` with 3 and `other` with 5. The host seeds `level` with 7 before any input, then asserts a `Trig`, the first step, and pumps. `rd` reads both keys. Pin: `level=7 other=5`. The host's value survives the block, and the block's item for a key the host did not seed still applies. A runtime that applied every cache item as an overwrite logs `level=3 other=5`. One that skipped the whole block once the host had seeded anything logs `level=7 other=`. PATH PINNED: the first step's application of ICAC atoms, which skips an item whose key the cache already holds when the step begins (libds `ds_engine_initial_apply` from `ds_engine_clock_step`; the Mercury runtime's `lgra_24_3_apply` from `clock_step`), and `cached()` on each runtime.",
+    "rules_ds": "schema Trig scope explicit:\n    tag: String\n\ninitial:\n    cache \"level\": 3\n    cache \"other\": 5\n\nrule rd:\n    Trig t where t.tag == \"read\"\n->\n    let v = cached(\"level\")\n    let w = cached(\"other\")\n    log info \"level={v} other={w}\"\n\nrule rw:\n    Trig t where t.tag == \"write\"\n->\n    cache key: \"third\" value: 1\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "cache_seed", "key": "level", "value": 7 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "read" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["level=7 other=5"]
+    }
+}

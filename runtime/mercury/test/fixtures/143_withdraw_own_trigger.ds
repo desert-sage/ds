@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A firing that withdraws its own trigger after emitting a logical fact
+# ([IRET.12.2], [IRET.10.5]). `r` emits `L` justified by its match on `t`,
+# then withdraws `t`, retracting the match whose firing is running; nothing
+# then supports `L(1)`, so truth maintenance withdraws it. `seen` shows a live
+# `L` as a firing. `t` is explicit, so the withdraw compiles ([LLOG.11.8]
+# refuses only a withdraw of a logical binding).
+
+schema Trig scope explicit:
+    v: Int
+
+schema L scope logical:
+    v: Int key
+
+rule r:
+    Trig t
+->
+    emit L logical v: t.v
+    withdraw t
+
+rule seen:
+    L l
+->
+    log info "L {l.v} is live"

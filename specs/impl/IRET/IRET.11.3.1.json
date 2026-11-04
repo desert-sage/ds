@@ -1,0 +1,291 @@
+{
+  "id": "IRET.11.3.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11.3",
+  "seq": 918,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.11.3.1] Refraction is applied at selection, to the\nactivation selected ([LDET.5.3]). A fired activation is not\nselected again: it left the agenda when it fired and stays on\nits terminal's list with the flag set. An activation selected\nwhose token identity has an entry in the current generation's\ntable is discarded unfired. When an activation fires, its token\nidentity (hash + fact-id tuple) is entered in the table at the\ncurrent generation.\n\n",
+  "refs": [
+    "LDET.5.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "idat_6_2_2__mark_fired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Firing marks the token's identity refracted; a flag on the token stands for the set entry, per [IRET.11]."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3_1__pending_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "How many of a table are eligible."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_3_1__pending_tok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Eligible = not fired and not blocked: refracted activations exist in the table and are skipped at selection, as the clause says."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "idat_6_2_2__mark_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Firing marks the activation's identity as refracted: its flag."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_3_1__first_unfired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Selection skips fired activations: the first not yet fired, in timetag order. In the tick-free fragment the `fired` flag is the whole of refraction."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "idat_6_2_2__mark_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Marking an activation fired keeps the view: it reads the tuples."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_3_1__first_unfired_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The first unfired activation is there, and unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_3_1__first_unfired_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A terminal with no first unfired activation has none unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_1__hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A set entry that tests equal to an identity is that identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_1__refracted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether an identity is in the set: the test the clause's filter applies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3_1__refracted_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An identity not in the set is not refracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__select_spec_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Under a sound ghost the clause's filtered selection is the model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__first_eligible",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Selection as the clause states it, over the model's terminal: the first activation neither popped -- `fired` is the pop -- nor in the set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__first_eligible_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Over a terminal where every refracted identity is fired, the clause's filter skips nothing the flag does not: its choice is the first unfired activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__mark_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Firing adds the token identity to the terminal's set, beside the flag the model sets."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__mark_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "MARKING keeps the ghost sound: the identity entering the set is the marked activation's, which carries `fired` and, identities being distinct, is the only activation with it; the identities already in the set keep their activations, marked or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_11_3_1__any_unblocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A test over the unblocked activations is the test over the tokens, unblocked and read as activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__first_unfired_no",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fired head is skipped: the first unfired activation is one position later."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__first_unfired_yes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unfired head is the first unfired activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__not_pending_free",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token that is not pending and not blocked has fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__pending_blocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A blocked token is not pending."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__pending_fired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fired token is not pending: refracted, so skipped at selection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__pending_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unblocked, unfired token is pending."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__pending_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A pending token is unblocked and unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__unblocked_cons_blocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A blocked head leaves the unblocked activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_3_1__unblocked_cons_free",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unblocked head is the first unblocked activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__first_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE FIRST PENDING TOKEN of a table is the first unfired activation among its unblocked tokens: both skip the blocked and the fired, so the selected positions name one match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__mark_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "MARKING THE SELECTED TOKEN marks the selected activation: the unblocked tokens after the mark are the terminal after its mark."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11_3_1__unblocked_acts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The unblocked tokens of a table, as activations, in table order: what selection sees."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11_3_1__unblocked_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unblocked token of the table is among the unblocked activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11_3_1__unblocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unblocked activation comes from an unblocked token of the table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_11_3_1__unblocked_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Tokens as activations carry their tuples."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_1__drain",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_1__gate",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_11_3_1__suppressed",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LREG.4.6",
+  "prefix": "LREG",
+  "doc": "REGEX.md",
+  "parent": "LREG.4",
+  "seq": 161,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LREG.4.6] **A capture-bearing match is part of the LHS, and the capture\nprofile does not decide the position.** A capture-bearing `~` appears in a\n`where` clause with a binding form ([LREG.4.1]); a capture-free `~` appears in a\n`where` clause without one. Both gate. `!~` remains capture-free\n([LREG.2.4]) — a match that must not happen has nothing to bind.\n\n**One `where` is enough to both gate and capture.** An author who needs both\nwrites one clause rather than two kept in step by hand — [LDIA.4.1] states the\ncost such duplication would carry in three words: *a second copy is what\ndrifts*.\n\n**The captures are ordinary bindings from the moment they are bound.** They\nfollow [LGRA.8.6]'s scope ladder exactly as a pattern binding does — referenceable\nin this pattern's own `where`, in a later pattern's `where`, in a `let` right-hand\nside, and in an action — and a capture that is never referenced is the same\ncompile error a never-referenced pattern binding is. That last part is not\nincidental: it is what catches a mistyped capture name, since the misspelling is\nthe binding nothing refers to.\n\n**Reaching a later pattern's `where` is the capability this buys**, not a side\neffect. `Event e where (dev) = e.msg ~ /(?<dev>\\w+)/` followed by\n`Device d where d.id == dev` is a join on a captured value, expressible without\nan intermediate fact. It is a legal join test under\n[LEXP.9.6.1] because a capture is a function of the matched fact and the pattern\n— it reads no state the network does not track.\n",
+  "refs": [
+    "LDIA.4.1",
+    "LEXP.9.6.1",
+    "LGRA.8.6",
+    "LREG.2.4",
+    "LREG.4.1"
+  ]
+}

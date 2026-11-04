@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.2.9.6.8.call_subst",
+    "category": "adapter",
+    "scenario": "LGRA.2.9.6.8 — a `call` kwarg string value interpolates at runtime: `{s.obj}` substitutes into the call body delivered to the integrator. Pin: `call svc.do line: \"cc {s.obj}\"` reaches the cb with body `{line: \"cc engine.o\"}`.",
+    "rules_ds": "service svc.do:\n    kwarg line: String\n    no response\n\nschema Src scope logical:\n    obj: String key\n\nrule r:\n    Src s\n->\n    call svc.do line: \"cc {s.obj}\" nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Src", "slots": { "obj": "engine.o" } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            { "service": "svc.do", "correlation": "$r_c0_g0", "body": { "line": "cc engine.o" } }
+        ]
+    }
+}

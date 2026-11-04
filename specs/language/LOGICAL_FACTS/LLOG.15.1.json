@@ -1,0 +1,112 @@
+{
+  "id": "LLOG.15.1",
+  "prefix": "LLOG",
+  "doc": "LOGICAL_FACTS.md",
+  "parent": "LLOG.15",
+  "seq": 358,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LLOG.15.1] **Justification linkage is established where the fact is asserted,\nnot inherited from where the fact came from.** A fact asserted against a\n`scope logical` schema (`emit X logical`) is TMS-linked,\n**at the asserting tier**, to its justifier activation(s) ([LLOG.1] /\n[LLOG.2]); the engine must retract it when the last justifier's LHS no longer\nmatches. \"No longer matches\" includes a positive pattern's `within`-recency\nwindow lapsing and a `no`-negation being broken (the cascade case) — the same\njustification withdrawal, whatever ends the match. The cross-tier *receiving*\nside takes its lifecycle from the receiving schema ([LTIE.9.4], [LLOG.11.7]);\nthis clause governs only the local assertion.\n\n**A match that ends inside its own firing ends its justification there.**\nAn action of the firing can end the activation's\nown match: a `withdraw` of one of its bindings, an emit that replaces a fact it\nmatched ([LFAC.2.5.3]), or an emit that breaks one of its `no` patterns. From\nthat action on the activation justifies nothing. A `logical` fact the firing\nemitted before that action loses this justification there, and the engine must\nretract it if no other holds it ([LLOG.2.5]). A `logical` fact the firing emits\nafter that action gains no justification from it, and the engine must retract\nit as it is made unless another justification already holds it. [LLOG.11.9]\nrefuses the shapes a compiler can see. This binds every other, such as an emit\nthat replaces the matched fact only because two values are equal at run time.\n\n**The `logical` flag restates the schema's lifecycle; it does not select it.**\nThe author must write the flag on an assertion against a `scope logical` schema\nand must not write it on any other ([LLOG.11.1]), so the assertion site carries\nno per-fact choice. What makes the linkage local is the tier the assertion\nhappens in, not anything the emit site decides.\n\n",
+  "refs": [
+    "LTIE.9.4",
+    "LFAC.2.5.3",
+    "LLOG.1",
+    "LLOG.11.1",
+    "LLOG.11.7",
+    "LLOG.11.9",
+    "LLOG.2",
+    "LLOG.2.5"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "llog_15_1__logical",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_7_2__lapsed_fact_retracted",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'No longer matches' includes a positive pattern's `within`-recency window lapsing: the justification is withdrawn and the fact retracted at the pump whose sample closes the window. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__queued_successor_removed_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The justification ends with its match, which a withdraw of the matched fact ends: 'no longer matches'. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__clock_where_retracts_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The justification ends with the match it was made for, and the fact goes with it, at that pump. Executed on the whole engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__cascade_drops",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The justification-linkage principle on the cascade: a logical fact whose every justification has ended is retracted, by the engine's cascade, under unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapsed_justification_retracted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The principle at a tick: a logical fact whose every justifying activation the re-time ended is retracted at that tick, for every program. [LTIM.2.7.2] cites this clause for the retraction; this is the retraction."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__retracted_at_the_fixture",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The principle executed through the theorem: the kind-2 fact, justified by B's ended activation alone, is gone."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_composed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: composed equals global on the two-strata instance."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__strata_upper",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: an upper stratum retracts what it derived from a lower stratum's retracted fact."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__stratified_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Justification linkage established stratum by stratum composes to the global linkage: the grounded reading of this clause survives recomputation in the SCC-DAG's order."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__well_founded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The clause's \"retract it when the last justifier's LHS no longer matches\", read well-foundedly: the least fixpoint of support from the base facts, which is what should be live. Tiers, `within` windows and the `logical` flag are not modelled."
+      }
+    ]
+  }
+}

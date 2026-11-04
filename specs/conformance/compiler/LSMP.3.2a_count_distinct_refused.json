@@ -1,0 +1,10 @@
+{
+    "id": "LSMP.3.2a_count_distinct_refused",
+    "category": "compiler",
+    "scenario": "[LSMP.3.2a]: the compiler rejects every aggregation [LSMP.3.2] lists under `sample` with DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH; each is a ✗ with no footnote in [LSER.18.1]. A uniform sample can omit a value, so the distinct count over the bag is not the stream's. Pin: `count_distinct sample 200` on an Int slot is refused with that code, not with the DS_VALIDATE_SERIES_NO_EXACT_BACKING that `count_distinct all_time` gets (`compiler/LSER.16.5.2_all_time_reject`). PATH PINNED: `dsc.series.undefined_combination(\"count_distinct\", \"sample\")`; `no_exact_backing` has no `sample` arm, so only that predicate can refuse it.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Int mutable\n\nseries Sensor.state:\n    count_distinct sample 200\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH"
+    }
+}

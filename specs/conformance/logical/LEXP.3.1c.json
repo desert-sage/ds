@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.3.1c",
+  "category": "logical",
+  "scenario": "Math builtins on a negative, non-integer input per LEXP.3.2 — abs, floor, ceil, trunc, sign. v=-3.5 separates floor (-4, largest int ≤ x) from trunc (-3, toward zero) and ceil (-3); abs preserves the Float type so |−3.5| == 3.5 (a type-losing impl would truncate to 3 and not fire); sign yields -1. −3.5 and 3.5 are exact dyadic floats, so the comparisons are exact. Companion to LEXP.3.1 (positive integer-valued v=4.0). `abs` is global; the four roundings are `math` members, called qualified after `import math` ([LIMP.3.3.4]), where LEXP.3.1 imports them bare.",
+  "rules_ds": "import math\n\nschema T scope logical:\n    v: Float key\n\nrule r_abs:\n    T t where abs(t.v) == 3.5\n->\n    log critical \"abs\"\n\nrule r_floor:\n    T t where math.floor(t.v) == -4\n->\n    log critical \"floor\"\n\nrule r_ceil:\n    T t where math.ceil(t.v) == -3\n->\n    log critical \"ceil\"\n\nrule r_trunc:\n    T t where math.trunc(t.v) == -3\n->\n    log critical \"trunc\"\n\nrule r_sign:\n    T t where math.sign(t.v) == -1\n->\n    log critical \"sign\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": -3.5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_abs", "r_floor", "r_ceil", "r_trunc", "r_sign"]
+  }
+}

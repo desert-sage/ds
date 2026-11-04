@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.15.float",
+    "clauses": ["LEXP.7.15.1"],
+    "category": "logical",
+    "scenario": "A division with a Float operand is IEEE 754's ([LEXP.7.15.1], [LDET.3.6.2]): a zero divisor gives ±Inf and does not trap; only an all-Int division traps. PATH PINNED: the FLOAT arm of `DS_RETE_BINOP_DIV` in `runtime/src/libds/rete/eval.c`, reached whenever `numeric_pair` promotes either operand to double, and `arith(op_div)` in ds.eval.m; sibling `LEXP.7.15` declares Int slots and drives the trapping Int arm. `100.0 / 0.0` is +Inf, so `t.x / t.y > 5.0` is TRUE and the rule fires for the zero divisor as well as for `20.0 / 2.0`. Pin: two firings of `r`, the zero divisor's first (it was asserted first).",
+    "rules_ds": "schema Pair scope logical:\n    entity_id: String key\n    x: Float mutable\n    y: Float mutable\n\nrule r:\n    Pair t where t.x / t.y > 5.0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "zero", "x": 100.0, "y": 0.0 } },
+            { "op": "assert", "schema": "Pair", "slots": { "entity_id": "ok",   "x": 20.0,  "y": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r", "r"]
+    }
+}

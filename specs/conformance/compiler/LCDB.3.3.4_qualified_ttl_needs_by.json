@@ -1,0 +1,13 @@
+{
+    "id": "LCDB.3.3.4_qualified_ttl_needs_by",
+    "category": "compiler",
+    "scenario": "LCDB.3.3.4 — a rule carrying `cooldown` and binding a ttl fact must declare its activation key, and the bound schema may be a library's: `plant.Hot` is `ttl`, reached through `import plant` by a qualified head. Omitting `by:` is DS_VALIDATE_RATE_KEY_REQUIRED, as for a local schema (LCDB.3.3.4_ttl_needs_by). A compiler that does not judge a qualified head compiles this with LCDB.3.3.3's empty key, one window for every activation, which is what LCDB.3.3.4 refuses. PATH PINNED: `dsc.validate.binds_unkeyed`, which resolves the head through `dsc.resolve.lgra_22_4_schema_of` (`rf_qualified_schemas`) rather than the type namespace alone. LCDB.3.3.4_qualified_ttl_by_ok is the control.",
+    "rules_ds": "import plant\n\nrule alert cooldown 5_min:\n    plant.Hot h\n->\n    log critical \"overheating: {h.entity_id}\"\n",
+    "libraries": {
+        "plant": "schema Hot scope ttl 5_min:\n    entity_id: String\n    celsius: Float\n    ts: Time\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RATE_KEY_REQUIRED"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.3.2.2_fma_null_operand",
+    "clauses": ["LEXP.3.2.2", "LNUL.4.1"],
+    "category": "logical",
+    "dead_rules_expected": ["type_fault", "computation_fault"],
+    "scenario": "[LEXP.3.2.2] with [LNUL.4.1]: a null operand of `math.fma` yields null, as it does for `x * y + z`, and raises no fault. That is unlike a builtin that demands a value of a particular kind, whose `T?` argument the compiler refuses ([LNUL.5.1]); here `z: Float?` is admitted as an operand. Rule `absent` fires where the call is null and `present` where it is 7.0. T 1 has no `z`; T 2 has `x` 2.0, `y` 3.0 and `z` 1.0. Rules `type_fault` and `computation_fault` log any TypeError or ComputationError and must stay silent. Messages, rule then assertion order: `absent 1`, `present 2`. A runtime that classed the null as a type mismatch would log `type_fault` and no `absent` line; a compiler that applied [LNUL.5.1] would refuse the program. PATH PINNED: the null arm of FN_FMA in libds (`builtins.c`) and Mercury (`ds.eval`), and the exemption of `math.fma` from `dsc.typecheck.lnul_5_1_builtin_arguments`.",
+    "rules_ds": "import math\n\nschema T scope logical:\n    id: Int key\n    x: Float mutable\n    y: Float mutable\n    z: Float? mutable\n\nrule absent:\n    T t where math.fma(t.x, t.y, t.z) is null\n->\n    log info \"absent {t.id}\"\n\nrule present:\n    T t where math.fma(t.x, t.y, t.z) == 7.0\n->\n    log info \"present {t.id}\"\n\nrule type_fault:\n    TypeError e\n->\n    log critical \"type {e.rule}\"\n\nrule computation_fault:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": 1, "x": 2.0, "y": 3.0 } },
+            { "op": "assert", "schema": "T", "slots": { "id": 2, "x": 2.0, "y": 3.0, "z": 1.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["absent 1", "present 2"]
+    }
+}

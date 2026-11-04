@@ -1,0 +1,18 @@
+{
+    "id": "LCRS.6.6.1_response_ttl_alive",
+    "category": "temporal",
+    "scenario": "LCRS.6.6.1: a response fact lives for its response schema's own TTL; no other retention applies to it. Low half of a discriminating pair. `Reply` is `svc.read`'s response schema, `ttl 30_s`. The rule calls `svc.read as \"c1\"` once; the host answers with a `Reply` of corr `c1` and nothing supersedes it. At 30 s minus 1 ns after the answer the `Reply` is still live: the working memory holds the `Trig` and the `Reply`. PATH PINNED: the response schema's TTL atom, lowered from its declaration and read by libds's TTL sweep for a schema the loader marks `call_response`; the Mercury runtime is compared against it by the runtime differential's `97_response_ttl` on `132_response_ttl`. With LCRS.6.6.1_response_ttl_dead this fixes the lifetime at exactly 30 s. This half's break is a response schema that expires early, as a retention shorter than its TTL would make it: the count is 1.",
+    "rules_ds": "schema Reply scope ttl 30_s:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig t\n->\n    call svc.read n: t.k nocooldown as \"c1\"\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 29999999999 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 2
+    }
+}

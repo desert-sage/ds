@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+const HEAT_THRESHOLD = 75
+const RETRY_INTERVAL = 30_s
+const SERVICE = "ha.switch.turn_on"
+const ENABLED = true
+
+schema Sensor scope logical:
+    """temperature sensor reading from an HA entity"""
+    state: Int key "current reading in degrees C"
+    entity_id: String mutable
+
+rule heat_alert:
+    """fires when a sensor reads above the threshold"""
+    Sensor s where s.state > HEAT_THRESHOLD
+->
+    log warning "overheat: {s.entity_id} at {s.state}"
+    log critical "{s.entity_id} too hot"

@@ -1,0 +1,17 @@
+{
+  "id": "LNOG.6.2",
+  "prefix": "LNOG",
+  "doc": "NOLOGICAL.md",
+  "parent": "LNOG.6",
+  "seq": 304,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Consequence: no multi-pattern rules",
+  "text": "### Consequence: no multi-pattern rules [LNOG.6.2]\n\nUnder `logical: false`, logical-lifecycle schemas are banned (LNOG.3.1).\nTherefore LNLS.3.3 can never be satisfied for any multi-pattern rule.\nAny multi-pattern rule in a program with `linear_scan: false` and\n`logical: false` is a compile error: LNLS.3.3 fires because no\nlogical-schema identity anchor exists.\n\nEffectively, the two settings together imply **single-pattern rules\nonly** — every rule's LHS references exactly one schema pattern.  The\nbeta network is absent.  Every operation is an alpha-level operation:\n\n| Operation | Cost |\n|---|---|\n| Assert | O(1): working-memory insert, alpha lookup, agenda insert |\n| Retract | O(1): working-memory remove, alpha-memory remove; no beta, no TMS |\n| Rule firing | per activation, linear in its rule's actions and their expressions |\n| TTL tick (default) | O(expired × log n_ttl_schemas + n_ttl_schemas) ([LDTL.6.1]) |\n\nWith `dynamic_ttl: false`, no cost per fact grows with the number of live\nfacts, and none has a beta or TMS term. This is the **alpha-only operating\nmode**. Under `dynamic_ttl: true`, an assert and the TTL tick each gain the\ndeadline heap's O(log N_ttl) term ([LCAP.2.4]).\n\n",
+  "refs": [
+    "LCAP.2.4",
+    "LDTL.6.1",
+    "LNLS.3.3",
+    "LNOG.3.1"
+  ]
+}

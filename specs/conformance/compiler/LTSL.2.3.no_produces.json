@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.2.3.no_produces",
+    "category": "compiler",
+    "scenario": "[LTSL.2.3]: a test block must contain a `produces` section, and the compiler refuses one that does not with DS_VALIDATE_TEST_NO_PRODUCES. The test here has `inputs` (so it is not also the no-inputs-or-until case) and no `produces`. Path: the Mercury compiler's `dsc.dstest.ltsl_2_3_block_shape`, run from `icom_26_1_lower_tests` after validate.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    log info \"cold\"\n\ntest \"no oracle\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_NO_PRODUCES"
+    }
+}

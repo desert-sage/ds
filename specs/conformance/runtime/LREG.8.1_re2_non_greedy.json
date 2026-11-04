@@ -1,0 +1,13 @@
+{
+    "id": "LREG.8.1_re2_non_greedy",
+    "category": "runtime",
+    "scenario": "[LREG.8.1] — non-greedy quantifiers are RE2 syntax, and POSIX does not REJECT them, it SILENTLY REINTERPRETS them. `a+?` is lazy one-or-more to RE2. POSIX ERE has no lazy repetition, so it reads the same characters as `(a+)?` — zero-or-one of a greedy plus — which can match the EMPTY STRING. Against \"bbb\" the two engines therefore disagree about whether the pattern matches at all: RE2 requires at least one `a` and does not match, POSIX matches empty at position 0 and does. The rule must NOT fire, so the expected count is 1 (the Log fact alone). This is the security-relevant direction of the divergence — a guard that should reject its input accepts it, with no error at any layer. Chosen over a match-shape test on purpose: DS compiles with REG_NOSUB and matching is boolean, so greedy-vs-lazy is unobservable unless it changes WHETHER a pattern matches.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    Log e where e.msg ~ /a+?/\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "Log", "slots": { "msg": "bbb" } } ],
+        "pump": true,
+        "fact_count_after": 1
+    },
+    "dead_rules_expected": ["r"]
+}

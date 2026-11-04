@@ -1,0 +1,28 @@
+{
+  "id": "LINT.4.1",
+  "prefix": "LINT",
+  "doc": "INTERVAL.md",
+  "parent": "LINT.4",
+  "seq": 139,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LINT.4.1] `i1 overlaps i2` is `Bool` and true iff the two\nintervals' intersection is non-empty. The intersection of two\nhalf-open intervals is itself half-open, running from the later\nstart to the earlier end, so the test is that one precedes the\nother:\n\n```\ni1 overlaps i2  iff  max(i1.start, i2.start) < min(i1.end, i2.end)\n```\n\n**This is the definition rather than a consequence of it**, which is\nwhy it is stated over the intersection bounds instead of as a pair\nof cross-interval comparisons. An implementation may evaluate the\nequivalent conjunction\n\n```\ni1.start < i1.end  and  i2.start < i2.end          # both non-empty\n    and  i1.start < i2.end  and  i2.start < i1.end\n```\n\nbut the two non-emptiness conjuncts are **not optional**: without\nthem the form admits an empty interval lying strictly inside a\nnon-empty one, which has no instant in common with it\n([LINT.7.1]) and therefore does not overlap it.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/interval_algebra.als",
+        "name": "lint_4_1__overlaps",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/interval_algebra.als",
+        "name": "lint_4_1__overlaps_symmetric",
+        "tag": "derives"
+      }
+    ]
+  },
+  "refs": [
+    "LINT.7.1"
+  ]
+}

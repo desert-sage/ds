@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dsc_diagnostics.schema.json",
+  "title": "dsc --diagnostics json",
+  "description": "What `dsc compile`, `dsc check` and `dsc dump-ast` write to stderr under `--diagnostics json` ([RCLI.3.2]): one document, the diagnostics in the order the text form renders them. `additionalProperties: false` throughout, so a field is added only by a change to this schema. The residue this schema cannot carry is [RCLI.3.2]'s.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["diagnostics"],
+  "properties": {
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "span", "related"],
+      "properties": {
+        "code": {
+          "description": "The diagnostic's code by name, never by number ([RCLI.5.1]). A reader keys on it: the message's wording is not a contract.",
+          "type": "string",
+          "pattern": "^DS_[A-Z0-9_]+$"
+        },
+        "severity": { "enum": ["error", "warning"] },
+        "message": { "type": "string" },
+        "hint": {
+          "description": "Absent when the diagnostic has no hint, never an empty string.",
+          "type": "string",
+          "minLength": 1
+        },
+        "span": { "$ref": "#/$defs/span" },
+        "related": {
+          "description": "Further locations the diagnostic names, in the order it names them; empty when it names none.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/related" }
+        }
+      }
+    },
+    "related": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message", "span"],
+      "properties": {
+        "message": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "span": {
+      "description": "A source range: `start` is its first code point, `end` the position just after its last. `file` is the name the compiler gives the source ([RCLI.1.9]).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "start", "end"],
+      "properties": {
+        "file": { "type": "string" },
+        "start": { "$ref": "#/$defs/position" },
+        "end": { "$ref": "#/$defs/position" }
+      }
+    },
+    "position": {
+      "description": "A 1-based line, and a 1-based column counted in Unicode code points.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

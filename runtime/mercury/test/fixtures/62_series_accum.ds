@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The two accumulating backings: `all_time` Welford
+# (`SeriesBackendWelfordEwma`), where the running form is the algorithm, and
+# the `sample N` reservoir (`SeriesBackendReservoir`), whose retention is a
+# fixed-seed `xorshift64` (seed `0x9e3779b97f4a7c15`) advanced only in the
+# replacement phase, so two runtimes retain the same samples. `sample 3`
+# against six values, so the draw decides something.
+use default
+
+# Two schemas, since both observations are `mean` and on one schema the
+# companion `g.mean` would be ambiguous between them.
+
+schema Gauge scope logical:
+    entity_id: String key
+    level: Float mutable
+
+schema Sampler scope logical:
+    entity_id: String key
+    level: Float mutable
+
+schema Snapshot scope ttl 1_h:
+    label: String
+    val: Float
+
+series Gauge.level (by: entity_id):
+    mean all_time
+
+series Sampler.level (by: entity_id):
+    mean sample 3
+
+# A cold `mean` is null ([LSER.19.8]); `-1.0` is below every asserted level.
+rule lifetime:
+    Gauge g
+->
+    emit Snapshot label: g.entity_id val: g.mean ?? -1.0
+
+rule from_sampler:
+    Sampler s
+->
+    emit Snapshot label: s.entity_id val: s.mean ?? -1.0

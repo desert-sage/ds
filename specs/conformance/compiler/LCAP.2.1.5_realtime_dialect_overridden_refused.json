@@ -1,0 +1,11 @@
+{
+    "id": "LCAP.2.1.5_realtime_dialect_overridden_refused",
+    "clauses": ["LDIA.3.2.3"],
+    "category": "compiler",
+    "scenario": "[LCAP.2.1.5] / [LDIA.3.2.3]: the `realtime` dialect is refused at its name whatever its block overrides. The block sets both deferred capabilities `false`, which leaves `default`'s settings, so a compiler that refuses only on the resolved settings compiles this program and reports compile_ok instead. PATH PINNED: dialect-name resolution in `dsc.dialect`, which runs before override resolution.",
+    "rules_ds": "use realtime:\n    realtime: false\n    constspace: false\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REALTIME_DEFERRED"
+    }
+}

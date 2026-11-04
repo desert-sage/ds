@@ -1,0 +1,16 @@
+# Three backings, two identities: `min`/`max` off a monotonic deque, whose
+# `window_ns` is at another field number from the ring buffer's; `kitchen` and
+# `garage` interleaved on one series, so a wrongly keyed row moves the other's
+# mean in the next Report; and `by: none` on `Meter`.
+assert Thermometer entity_id=kitchen temperature=20.0
+pump
+assert Thermometer entity_id=garage temperature=100.0
+pump
+assert Thermometer entity_id=kitchen temperature=30.0
+pump
+assert Thermometer entity_id=garage temperature=200.0
+pump
+assert Meter reading=1.0
+pump
+assert Meter reading=3.0
+pump

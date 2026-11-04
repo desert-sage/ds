@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.2_response_not_ttl",
+    "category": "compiler",
+    "scenario": "LCRS.4.3.2: a schema named in a `response_decl` is a response schema, and must be `ttl`; the compiler must reject one that is not (DS_VALIDATE_SERVICE_RESPONSE_NOT_TTL). Pin: `response Reply` where `Reply` is `scope logical` (its `corr: String` is present, so only the lifecycle is wrong). Path: the validator's service check reads the named schema's lifecycle.",
+    "rules_ds": "schema Reply scope logical:\n    corr: String key\n    ok: Bool mutable\n\nservice svc.get:\n    kwarg id: Int\n    response Reply\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_RESPONSE_NOT_TTL"
+    }
+}

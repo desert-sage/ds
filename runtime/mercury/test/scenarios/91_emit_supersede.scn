@@ -1,0 +1,22 @@
+# A rule's emit that gives a live keyed fact a new value replaces it.
+#
+# `make` derives Made(id 1) from every Seed, with `n` copied from the Seed.
+#
+#   pump 1   Seed n=4                   -> Made(1, 4)
+#   pump 2   Seed n=5, Seed n=4 still live -> Made(1, 5) supersedes Made(1, 4)
+#   pump 3   retract Seed n=5           -> Made(1, 5) loses its justifier
+#
+# Pump 2: the later assertion supersedes, its payload replacing the prior
+# ([LFAC.1.7.2]), as a retract-and-replace ([LFAC.2.5.3]): the new fact's
+# FACT_ASSERT, then the old one's FACT_RETRACT with cause SUPERSEDED
+# ([RFCS.6a.4]). The trace shows `assert Made` then `retract`, and `report`
+# logs the new n.
+#
+# Pump 3: the superseded fact's support left with it ([LLOG.2.7.5]), so
+# Made(1, 5) goes with Seed n=5 although Seed n=4's activation still matches.
+assert Seed n=4
+pump
+assert Seed n=5
+pump
+retract 1
+pump

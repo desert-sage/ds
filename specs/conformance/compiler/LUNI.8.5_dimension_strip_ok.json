@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.8.5_dimension_strip_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.8.5]: the `::Float` strip applies to a dimension-typed value ([LUNI.7.1]) as it does to a unit-typed one. `r.temp::Float` on a `temp: temperature` slot compiles, and the stripped value compares with a plain `Float`. PATH PINNED: `lcst_4_5_2_classify` in dsc.cast, its `ck_dimension(_)` / `ct_float` row (`cc_total`), reached through `luni_8_7_3_cast_kind`, which projects a dimension-typed slot to `ck_dimension`. Without that row the cast is refused with [LCST.4.5.3]'s closed rejection.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    temp: temperature mutable\n\nrule warm:\n    Reading r where r.temp::Float > 290.0\n->\n    log info \"warm: {r.sensor}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

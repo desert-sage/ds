@@ -1,0 +1,10 @@
+{
+  "doc": "FACT_STREAM.md",
+  "tree": "language",
+  "src": "docs/specs/language/FACT_STREAM.md",
+  "prefixes": [
+    "LFST"
+  ],
+  "title": "Event trace",
+  "preamble": "# Event trace\n\nThe canonical form for recording, replaying, and simulating\nDS sessions. The event trace is the single artefact through\nwhich DS's determinism, testability, and debuggability\nguarantees are realised.\n\nThe conformance surface is the **typed in-memory event\nsequence** every conforming runtime delivers through its\nstream callback. Every event has the same envelope shape\n(seq + clock_ns + source + event_id + kind-discriminated\npayload). On-disk capture format is integrator territory:\nthe integrator picks how the typed events get to bytes\n(protobuf, JSON-lines, CBOR, bespoke, nothing-at-all). The\ncontent the integrator records is fixed; the encoding is\ntheir choice.\n\n## What this is not\n\n- Not a wire protocol for adapter ↔ engine traffic at runtime.\n  Adapter ingest is integrator-driven; the event trace is\n  what the engine *emits* for observable events after they\n  enter or leave it.\n- Not an on-disk encoding spec. The runtime delivers a\n  typed event sequence to the integrator's callback;\n  recording format (protobuf, JSON, custom, none) is the\n  integrator's choice. A protobuf schema is provided as\n  an interoperability reference (see [LFST.2]) but is\n  not normative.\n- Not a metrics / telemetry surface. See §Out of stream\n  scope.\n- Not a debugger protocol — debugger bridges layer on top\n  of the existing stream callback.\n- Not prescriptive about how recordings are stored, rotated,\n  compressed, or archived — operational choices.\n\n---\n\n"
+}

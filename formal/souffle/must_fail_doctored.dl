@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// must_fail_doctored -- the refuted program unchanged, with a DOCTORED
+// expectation: must_fail_doctored.expected claims Derived is {3, 7}, and the
+// program derives {7}. The expectation opens with MUST_FAIL, so
+// the souffle check (private) passes this test only when the comparison FAILS. A
+// recipe that compared nothing, or compared loosely, would pass the
+// doctored file and fail here ([STYL.5.10.5]).
+//
+//@derives [LLOG.1.2] [STYL.5.10.5]
+#include "prelude.dl"
+
+.decl Base(x: DsInt)
+.decl Derived(x: DsInt)
+.decl Refuted(x: DsInt)
+.decl Violation(x: DsInt)
+.input Base(filename="must_fail_doctored.Base.facts")
+.input Refuted(filename="must_fail_doctored.Refuted.facts")
+
+Derived(x) :- Base(x), x > 5.
+Violation(x) :- Refuted(x), Derived(x).
+
+.output Derived
+.output Violation

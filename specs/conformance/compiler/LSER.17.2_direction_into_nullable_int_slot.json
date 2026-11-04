@@ -1,0 +1,9 @@
+{
+    "id": "LSER.17.2_direction_into_nullable_int_slot",
+    "category": "compiler",
+    "scenario": "LSER.17.2 / LSER.19.8 — `direction` returns `Int?`, so emitting `t.direction` into an `Int?` slot compiles with no rescue: the leaf agrees ([LEXP.7.3b]) and a nullable slot is not a concrete-value position ([LNUL.5.1]). The positive half of compiler/LSER.17.2_direction_into_string_slot. A compiler that types `direction` as `String` refuses this program; one that refuses every series read at an emit slot passes the negative half and fails here. PATH PINNED: `dsc.typecheck.luni_9_1_agg_type`'s `direction` arm and `dsc.validate.lexp_7_3b_kwarg_type` admitting an Int leaf into an Int slot.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nschema Out scope logical:\n    k: String key\n    d: Int? mutable\n\nseries Sensor.state:\n    direction sliding 10_s\n\nrule r:\n    Sensor t\n->\n    emit Out logical k: t.entity_id d: t.direction\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

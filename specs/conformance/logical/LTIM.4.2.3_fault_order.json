@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.4.2.3_fault_order",
+    "clauses": ["LTIM.4.2.3"],
+    "category": "logical",
+    "scenario": "[LTIM.4.2.3]'s order, where more than one outcome applies: a `null` operand yields `null`, then a `dur` that is not a whole number of days raises DOMAIN, then a value outside its range raises NOT_REPRESENTABLE. Rule `handler` logs each ComputationError's kind and rule ([LERR.9.1]). Pump 1: a Visit on 2262-04-11 (day 106751, [LTIM.1.2.2]'s last) with a `step` of 1 day and 1 hour (90 000 000 000 000 ns): rule `up` computes `v.due + v.step`, which is both sub-day and past the range, and logs `DOMAIN up`. Pump 2: a Visit on 1677-09-22 (day -106751, the first) with the same `step`: rule `down` computes `v.due - v.step` and logs `DOMAIN down`. Each renders its result through `::String`, so a result that wrapped or stayed unchecked would log. Pump 3: an Open with no `due` and a `step` of 1 h: rule `ahead` fires where `(o.due + o.step) is null` and rule `behind` where `(o.due - o.step) is null`, and nothing faults. Messages: `DOMAIN up`, `DOMAIN down`, `ahead 1`, `behind 1`. A runtime that checked the range first would log `NOT_REPRESENTABLE up` and `NOT_REPRESENTABLE down`; one that checked the whole-day rule before null would log `DOMAIN ahead` and `DOMAIN behind` and neither `ahead 1` nor `behind 1`. PATH PINNED: the check order in FN_DATE_ADD_DURATION and FN_DATE_SUB_DURATION in libds (`rete/adapters.c`, `date_shift`) and Mercury (`ds.eval.ltim_4_2_3_date_shift`). Pump 3's `behind` reaches FN_DATE_SUB_DURATION's null arm, which `LTIM.4.2.3_null_operand` does not.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n    step: Duration mutable\n\nschema Open scope logical:\n    id: Int key\n    due: Date? mutable\n    step: Duration mutable\n\nrule up:\n    Visit v where v.id == 1\n->\n    let a = (v.due + v.step)::String\n    log info \"up {a}\"\n\nrule down:\n    Visit v where v.id == 2\n->\n    let b = (v.due - v.step)::String\n    log info \"down {b}\"\n\nrule ahead:\n    Open o where (o.due + o.step) is null\n->\n    log info \"ahead {o.id}\"\n\nrule behind:\n    Open o where (o.due - o.step) is null\n->\n    log info \"behind {o.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 106751, "step": 90000000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "due": -106751, "step": 90000000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Open", "slots": { "id": 1, "step": 3600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN up", "DOMAIN down", "ahead 1", "behind 1"]
+    }
+}

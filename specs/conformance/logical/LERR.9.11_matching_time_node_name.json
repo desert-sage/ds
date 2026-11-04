@@ -1,0 +1,16 @@
+{
+    "id": "LERR.9.11_matching_time_node_name",
+    "clauses": ["LERR.9.2"],
+    "category": "logical",
+    "dead_rules_expected": ["div"],
+    "scenario": "A trap raised during matching -- in a single-pattern `where` test, before any activation exists -- carries the node-derived rule name `$beta_<id>` (LERR.9.11), on the fault fact's `rule` slot (LERR.9.2). The `where` divides, so it is a join test on the pattern's beta and not an alpha test (IRET.6.4: an alpha test compares a slot with a literal and cannot trap) -- the site LERR.1.4.3.not_type_or_engine_error pins. Int slots, because an Int division by zero traps and a Float one is IEEE. The handler matches the name with a regex, since the id is compiler-assigned and not written in the vector. Then the fault-fact queue at the end of propagation (LERR.9.7). Pin: assert S(a=1, b=0); pump. Messages are ['DIVIDE_BY_ZERO beta']; `div` never fires. A runtime that wrote the rule `div`, an empty name, `$engine`, an `$alpha_` name, or a `__beta_<id>__` spelling fails the regex and logs nothing. The `$` is escaped in the regex, where it would otherwise anchor the end.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule div:\n    S s where s.a / s.b > 1\n->\n    log critical \"fired\"\n\nrule handler:\n    ComputationError e where e.rule ~ /^\\$beta_[0-9]+$/\n->\n    log critical \"{e.kind} beta\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DIVIDE_BY_ZERO beta"]
+    }
+}

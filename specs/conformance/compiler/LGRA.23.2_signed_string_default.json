@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.23.2_signed_string_default",
+    "category": "compiler",
+    "scenario": "LGRA.23.2: a `-` before a `default`'s literal is admitted only before a number or a unit literal, and before any other literal the compiler refuses it. `kwarg s: String default -\"x\"` parses, because LGRA.23.1 takes the sign whatever literal follows, and is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE. PATH PINNED: `dsc.validate.default_literal_of`, whose `String` arm matches the expression itself and so no negated one; `lgra_23_2_default_type` raises the code. The break is letting the `String` arm read through unary minus as the numeric arms do, which lets the program compile.",
+    "rules_ds": "service svc.set:\n    kwarg s: String default -\"x\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

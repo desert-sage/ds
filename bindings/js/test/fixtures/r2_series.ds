@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# A series, read by the rule below: no public function reads one. It
+# needs the series backends, which ds_engine_new registers.
+
+use default
+
+schema Sensor scope logical:
+    entity_id: String key
+    state: Float mutable
+
+series Sensor.state:
+    count sliding 10_s
+
+rule trig:
+    Sensor t where count(t.state) > 0
+->
+    log info "x"

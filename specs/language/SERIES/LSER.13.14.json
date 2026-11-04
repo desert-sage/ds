@@ -1,0 +1,26 @@
+{
+  "id": "LSER.13.14",
+  "prefix": "LSER",
+  "doc": "SERIES.md",
+  "parent": "LSER.13",
+  "seq": 99,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LSER.13.14] **`capacity: N` caps the samples each identity retains.** `N`\nis a positive integer; the compiler must refuse one below 1\n(`DS_VALIDATE_CAPACITY_NOT_POSITIVE`). The cap applies per identity\n([LSER.7.6.1]), to every backing the block's lines select. A backing that\nretains no samples, such as the constant-state cumulative backing, is never\nbound by it. A series with no `capacity` is bounded by its window alone.\n\nWhen a sample reaches a backing whose identity already holds `N` samples, the\nengine must do what the \"At capacity\" column of [LSER.18.1] and [LSIG.1.1]\ngives for that backing's aggregation:\n\n- **drop** — evict that identity's oldest sample and retain the new one. The\n  fact is asserted, and the aggregation reads over the samples retained, which\n  may span less than the declared window.\n- **refuse** — a bounds refusal ([LERR.1.5]) naming `CAP_SERIES_CAPACITY`. The\n  fact's assert does not happen ([RTCT.7.2]), so no backing of the block\n  absorbs the sample, whether or not it would have dropped.\n\n**What the engine counts against `N`.** The samples the identity's backing\nretains inside the window, plus every sample admitted for that identity in the\ncurrent pump and not yet absorbed ([LSER.8.6]): the refusal is decided at the\nassert, absorption happens at the end of the pump, and a cap that read the\nbacking alone would let two facts in one pump pass a check only one of them can\nsatisfy. A step backing's carry, the newest sample older than the window start\nthat it keeps because its value holds into the window ([LSIG.2.5.1]), is the\nboundary value and not one of the `N`. A `null` reading counts when the\nseries' `nulls:` policy absorbs a value for it, and does not when the policy\nabsorbs nothing ([LNUL.8.6]).\n\nA `sample <n>` line retains `n` samples by construction; the compiler must\nrefuse a block whose `capacity` is below the `n` of any of its lines\n(`DS_VALIDATE_SERIES_CAPACITY_BELOW_SAMPLE`). Under `realtime`, [LSER.13.15]\nbounds it as well.\n\n",
+  "refs": [
+    "LERR.1.5",
+    "LNUL.8.6",
+    "LSER.13.15",
+    "LSER.18.1",
+    "LSER.7.6.1",
+    "LSER.8.6",
+    "LSIG.1.1",
+    "LSIG.2.5.1",
+    "RTCT.7.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_CAPACITY_NOT_POSITIVE",
+    "DS_VALIDATE_SERIES_CAPACITY_BELOW_SAMPLE"
+  ]
+}

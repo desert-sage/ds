@@ -1,0 +1,13 @@
+{
+    "id": "LADP.8",
+    "clauses": ["LADP.8.4.1"],
+    "category": "compiler",
+    "scenario": "An imported library declaring `light.turn_on` with `response TurnOnAck`, a schema declared in the same library (LADP.8.4.1), compiles. PINS ONLY THAT IT COMPILES: the ServiceDef atom is not read, and no rule calls the service. Named for the LADP.8 heading (service-dispatch resolution).",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "ha": "schema TurnOnAck scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    kwarg brightness: Int default 255\n    response TurnOnAck\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

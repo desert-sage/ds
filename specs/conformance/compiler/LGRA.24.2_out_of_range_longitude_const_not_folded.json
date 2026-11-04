@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.24.2_out_of_range_longitude_const_not_folded",
+    "category": "compiler",
+    "scenario": "[LGRA.24.2]: an `initial:` item that names a `const` with no compile-time value is refused with DS_VALIDATE_INITIAL_NOT_CONST. The `const` here is `distance.great_circle(0.0, 181.0, 0.0, 0.0)`: by [LEXP.5.11.3] a longitude outside [-180, 180] gives NaN, and a NaN does not fold. The latitudes are 0, inside their range, so the longitude is the only thing out of it. A folder that took 181 as -179, or ran the composition on it, would fold a number of about 19 900 km and the program would compile. PATH PINNED: `dsc.dstest.lexp_5_11_2_great_circle`'s domain check, reached through `ltsl_4_1_fold`'s `fold_builtin`.",
+    "rules_ds": "import distance\n\nconst GC = distance.great_circle(0.0, 181.0, 0.0, 0.0)::Float\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VF k: \"gc\" f: GC\n\nrule r:\n    VF v\n->\n    log info \"gc {v.k}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INITIAL_NOT_CONST"
+    }
+}

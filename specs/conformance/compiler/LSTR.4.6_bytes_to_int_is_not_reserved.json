@@ -1,0 +1,9 @@
+{
+    "id": "LSTR.4.6_bytes_to_int_is_not_reserved",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6]: `bytes_to_int` and `bytes_to_int_le` are not in the language as CALLS, and their NAMES are free: neither is a row of [LEXP.17.2] or of [LLEX.9.6]. So a pattern binding may take either name, and the program compiles. PATH PINNED: `dsc.resolve.add_pattern_binding`'s reserved-name check, `lgra_22_7_builtin_fn`, which is [LEXP.17.2]'s generated rows; the call `bytes_to_int(b, 4)` is still refused (`LSTR.4.6_bytes_to_int_refused`), by the hand-kept `lstr_4_6_retired_fn`.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    level: Int mutable\n\nrule high:\n    Sensor bytes_to_int where bytes_to_int.level > 1\n->\n    log info \"high\"\n\nrule low:\n    Sensor bytes_to_int_le where bytes_to_int_le.level < 0\n->\n    log info \"low\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

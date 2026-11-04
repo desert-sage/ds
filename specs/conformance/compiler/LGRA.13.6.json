@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.13.6",
+    "category": "compiler",
+    "scenario": "Bindings must be unique within a rule per LGRA.13.6. Declaring two patterns that bind the same name in the same rule rejects with DS_VALIDATE_DUPLICATE_BINDING. Pin: two patterns both binding `x` — even on different schema types — reject.",
+    "rules_ds": "schema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nrule r:\n    A x where x.v > 0\n    B x\n->\n    log info \"dup\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_BINDING"
+    }
+}

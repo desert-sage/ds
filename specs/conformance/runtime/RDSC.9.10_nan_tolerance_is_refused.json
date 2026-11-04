@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.10_nan_tolerance_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.10]: an artefact whose `Slot.tolerance` holds a NaN, quiet or signalling, is refused at load with DS_ERR_DSC_SEMANTIC (-504), on a slot of any kind. The harness compiles a program whose artefact carries at least one `Slot` atom (field 257). `runtime_error`'s `tamper: {set_field: {atom: [257, 0], path: [7], value: {f64: \"7ff0000000000001\"}}}` ([RCTS.1.2.21]) writes the first `Slot` atom's field 7, `tolerance`, as the signalling NaN 0x7FF0000000000001, and re-seals `dsc_sha256` ([RDSC.3.6]). Both loaders refuse a NaN tolerance whichever slot carries it, so which slot is first does not change the outcome. What it discriminates: a loader that takes the bits as the slot's tolerance, or reads a NaN as 0.0, loads, and the vector fails as unrefused. PATHS: libds's `handle_slot`; the Mercury runtime's `ds.dsc_schema` `decode_slot`, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"atom": [257, 0], "path": [7], "value": {"f64": "7ff0000000000001"}}},
+        "code": "-504"
+    }
+}

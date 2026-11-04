@@ -1,0 +1,17 @@
+# A response lives for its response schema's TTL, and no longer
+# ([LCRS.6.6.1]).
+#
+# `Reply` is `svc.read`'s response schema, `ttl 30_s`. One call, one answer,
+# nothing supersedes it. The answer is retracted by the TTL sweep exactly when
+# the clock reaches 30 s after it: still live at 30 s - 1 ns, gone at 30 s.
+# The trace shows the retraction on the second `advance`'s pump and not the
+# first's. The vectors LCRS.6.6.1_response_ttl_{alive,dead} pin it against
+# the clause.
+assert Trig k=1
+pump
+assert Reply corr="c1" v=1
+pump
+advance 29999999999
+pump
+advance 1
+pump

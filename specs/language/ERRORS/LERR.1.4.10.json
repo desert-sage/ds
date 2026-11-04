@@ -1,0 +1,83 @@
+{
+  "id": "LERR.1.4.10",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.1.4",
+  "seq": 217,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "",
+  "data": {
+    "columns": [
+      "kind",
+      "raised when",
+      "established by"
+    ],
+    "rows": [
+      [
+        "`DIVIDE_BY_ZERO`",
+        "an `Int` division, floor-division or modulo has a zero divisor. A `Float` division by zero does not trap ([LDET.3.6.2])",
+        "[LERR.1.4.3]"
+      ],
+      [
+        "`DOMAIN`",
+        "the operation is undefined at that input and is not an IEEE `Float` operation — a negative shift count, `now()` read while the wall clock has no value ([LTIM.2.8.3]), `local()` or `date()` with no `TimeZoneOffset` fact in force ([LTIM.10.5.3]), an interval whose endpoints are not `start <= end` ([LINT.7.2])",
+        "[LEXP.7.14.1]"
+      ],
+      [
+        "`NOT_REPRESENTABLE`",
+        "an operation has no representable result **and wrapping would destroy its meaning** — a **total** conversion (`Float :: Int` on a value non-finite, or finite and outside `Int`); a `Json` value a rule builds past a limit (LGRA.5.8.6); an operation on `Time` or `Date` operands whose result leaves its type's range ([LTIM.1.1.5], [LTIM.1.2.2], [LTIM.4.1.1], [LTIM.4.2.3]); a `Duration` scaled by a `Float` whose result is non-finite or outside `Int` ([LTIM.4.1.1])",
+        "[LCST.4.5.4]"
+      ]
+    ]
+  },
+  "refs": [
+    "LCST.4.5.4",
+    "LERR.1.4.3",
+    "LEXP.7.14.1",
+    "LDET.3.6.2",
+    "LINT.7.2",
+    "LTIM.1.1.5",
+    "LTIM.1.2.2",
+    "LTIM.10.5.3",
+    "LTIM.2.8.3",
+    "LTIM.4.1.1",
+    "LTIM.4.2.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_2__convert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The NOT_REPRESENTABLE row's conversion case: Float :: Int on a value non-finite, or finite and outside Int, is the trap. The money and Json cases are outside the fragment, and the evaluator has one trap kind."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_2__in_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The row's condition as one test: non-finite, or finite and outside Int, is `in_int = False`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_4__float_to_int_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The row for every Float: outside Int the trap, inside it the truncation."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dscast.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

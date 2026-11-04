@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.24.3_cache_bound_refuses_a_first_pump",
+    "category": "runtime",
+    "scenario": "[LGRA.24.3]: a bounds refusal refuses the step, and a pump can be the first step. The block places one `Seed` fact and then seeds two cache keys, and the engine's key bound is 1, so the block's second cache item would exceed it. The first step is a pump, input 0, with nothing asserted before it: it returns `DS_ERR_CONTRACT_BREACH` (-710), applies none of the block and fires no rule. A pump's input is its `PumpBoundary` ([RFCS.22]), so the stream records the boundary and then the `BoundsError`; its fault events are exactly one `bounds_error`. Pin: `fact_count_after` 0, where a runtime that applied the block up to the refusal holds `Seed`, and one that dropped the refused seed and carried on holds `Seed` and fires `seen`. The bound is given before the load through the harness's `cache_cap`. PATH PINNED: the first step's bounds check over the block's cache items, before any item is placed (libds `ds_engine_initial_apply` from `ds_engine_clock_step`, the refusal recorded by `engine_pump_body` after `ds_recorder_emit_pump`; the Mercury runtime's `lgra_24_3_apply` from `clock_step`, recorded by `pump_live` after its `se_pump_boundary`).",
+    "rules_ds": "schema Seed scope explicit:\n    k: Int\n\ninitial:\n    Seed k: 1\n    cache \"a\": 1\n    cache \"b\": 2\n\nrule seen:\n    Seed s\n->\n    log info \"seen {s.k}\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "cache_cap",
+        "fault_events": ["bounds_error"],
+        "cache_cap": { "keys": 1 },
+        "pump": true,
+        "fault_at": 0,
+        "fact_count_after": 0
+    }
+}

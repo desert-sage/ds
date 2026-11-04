@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.8.3.2_computed_unknown_format",
+    "category": "logical",
+    "scenario": "LTIM.8.3.2: an unknown COMPUTED format identifier raises a ComputationError and abandons its activation, and it does not halt the engine. `written` writes `e.t` in the format `e.fmt` names; `seen` logs every fact. Fact 1 names `ISO8601` (identifiers are case-insensitive, LTIM.8.2.2): both log. Fact 2 names `rfc3339`, which no runtime registers (LTIM.8.2.1): `written` is abandoned and `seen` still logs, on that pump and on the next fact's. Drives libds's `adapter_ds_to_string` unknown-format arm (DS_FAULT_NOT_REPRESENTABLE) and Mercury's `time_to_string` (`rf_not_representable`); the compile-time literal case is DS_VALIDATE_UNKNOWN_TIME_FORMAT, `dsc.typecheck.ltim_8_3_2_format_errors`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    t: Time mutable\n    fmt: String mutable\n\nrule written:\n    Ev e where e.t.to_string(e.fmt) is not null\n->\n    log critical \"written {e.id}\"\n\nrule seen:\n    Ev e\n->\n    log critical \"seen {e.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "t": 1705334400000000000, "fmt": "ISO8601" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "t": 1705334400000000000, "fmt": "rfc3339" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 3, "t": 1705334400000000000, "fmt": "iso8601" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["written 1", "seen 1", "seen 2", "written 3", "seen 3"]
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.10.1_emit_qualified_not_exported",
+    "category": "compiler",
+    "scenario": "LGRA.10.1 with [LIMP.4.3.2]: `emit ha.Nope` through `import ha`, where library `ha` loads and exports no schema `Nope`. Refused with DS_VALIDATE_UNKNOWN_SCHEMA, the code an unqualified unknown schema gets (`emit Nope`, LERR.1.1): [LIMP.4.3.2] sends an unknown qualified name to 'the same diagnostics that fire for any unknown imported name'. The qualifier is imported, so DS_VALIDATE_UNKNOWN_QUALIFIER does not fire. PATH PINNED: `dsc.validate`'s `lgra_22_4_schema_ref`, qualified arm, against the library's recorded surface.",
+    "rules_ds": "import ha\n\nrule r:\n    ha.Trig t\n->\n    emit ha.Nope logical v: t.v\n",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SCHEMA"
+    }
+}

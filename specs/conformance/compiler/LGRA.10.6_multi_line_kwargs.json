@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.6_multi_line_kwargs",
+    "clauses": ["LGRA.10.8"],
+    "category": "compiler",
+    "scenario": "[LGRA.10.8]: the call action's indented block, with kwargs, a modifier and the trailing `as` on lines under the call head. The file is named for [LGRA.10.6], which is about a computed kwarg and which no kwarg here uses; it is tied to LGRA.10.8, and keeps its name because a fixture's file name is its id (RCTS.1.2.2). compiler/LGRA.10.8_block_equals_head_line_call pins that the block means the same as the single-line call. The call action admits multi-line kwargs via an indented block after the call header. Each block line is either a kwarg, a flag, a trailing `as <expr>` line, or a continuation (on / timeout / error). PATH PINNED: `dsc.parse`'s `lcco_2_1_call_block` for the block lines, and `finish_action`, which joins them to the head line. Pin: a multi-line `call svc.samples` block (entity / field / window / cooldown / as) compiles cleanly and lowers the call.",
+    "rules_ds": "service svc.samples:\n    kwarg entity: String\n    kwarg field: String\n    kwarg window: Duration\n    no response\n\nschema TimeOfDay scope logical:\n    state: String key\n\nrule prepare:\n    TimeOfDay t where t.state == \"08:00\"\n->\n    call svc.samples\n        entity: \"sensor.living_temp\"\n        field: \"state\"\n        window: 1_h\n        cooldown: 1_h\n        as \"recent-temp\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

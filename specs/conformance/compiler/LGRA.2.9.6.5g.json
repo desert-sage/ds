@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.2.9.6.5g",
+    "category": "compiler",
+    "scenario": "A precision above 20 on `f` rejects with DS_VALIDATE_INTERP_BAD_FORMAT per LGRA.2.9.6.5. Pin: `{t.v:.21f}` on a Float slot parses under LGRA.2.9.6.1's grammar (`dsc.strlit.lgra_2_9_6_1_format`, which admits any precision up to the wire's uint32) and is refused by the precision-above-20 rule in `dsc.validate.lgra_2_9_6_5_refusals` -- the compiler's refusal, since neither loader checks a precision. LGRA.2.9.6.5h is the boundary twin at 20.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    v: Float mutable\n\nrule r:\n    Trig t\n->\n    log info \"v: {t.v:.21f}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERP_BAD_FORMAT"
+    }
+}

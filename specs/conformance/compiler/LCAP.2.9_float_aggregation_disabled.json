@@ -1,0 +1,10 @@
+{
+    "id": "LCAP.2.9_float_aggregation_disabled",
+    "category": "compiler",
+    "scenario": "LCAP.2.9 / LDIA.3.4.2 — negative: the program sets `float: false` and declares a series whose `mean` aggregation produces a `Float` whatever the source's type ([LSER.17]). The source slot is an Int, so the aggregation is the only site. Rejected with DS_VALIDATE_CAPABILITY_DISABLED. Drives dsc.dialect's series_sites (`float_aggregation`).",
+    "rules_ds": "use default:\n    float: false\n\nschema Sensor scope logical:\n    id: String key\n    state: Int mutable\n\nseries Sensor.state:\n    mean sliding 10_s\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

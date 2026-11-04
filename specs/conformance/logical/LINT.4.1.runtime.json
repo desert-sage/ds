@@ -1,0 +1,15 @@
+{
+    "id": "LINT.4.1.runtime",
+    "category": "logical",
+    "scenario": "interval `overlaps` fires when ranges share points per LINT.4.1. Two overlapping ranges (0..10) and (5..15) satisfy the overlaps predicate and trigger the log action. Non-overlapping ranges would not fire.",
+    "rules_ds": "schema Range scope logical:\n    entity_id: String key\n    start: Int mutable\n    end: Int mutable\n\nrule r:\n    Range a where a.entity_id == \"a\"\n    Range b where b.entity_id == \"b\" and (a.start..a.end) overlaps (b.start..b.end)\n->\n    log critical \"overlap\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Range", "slots": { "entity_id": "a", "start": 0, "end": 10 } },
+            { "op": "assert", "schema": "Range", "slots": { "entity_id": "b", "start": 5, "end": 15 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["overlap"]
+    }
+}

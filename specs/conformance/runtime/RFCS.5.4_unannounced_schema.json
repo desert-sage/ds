@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.5.4_unannounced_schema",
+    "category": "runtime",
+    "scenario": "[RFCS.5.4]'s first case: a replay stops with DS_ERR_SCHEMA_UNKNOWN (-101) at a FactAssert naming a schema no SchemaDef in the stream announced ([RFCS.5.3]), though the program being replayed into declares it. The harness ([RCTS.1.2.18]) records an Arrival assert, a pump, a clock advance, a Parcel assert and a pump, then removes Parcel's SchemaDef and Slot atoms and keeps its FactAssert (`drop_schema_def`). Arrival stays announced, so the recording opens well formed, and the runtime meets the unannounced Parcel only partway through, after the Arrival assert and a pump. The engine holds Parcel, from the loaded artefact, so this is not [RFCS.5.4]'s second case, which `RFCS.5.4_unheld_schema_*` pin with `rename_schema`. Each wrong reading fails: a runtime that types the fact from its engine's own schema replays the recording and fails as unrefused; a reader that cannot decode the fact without the announcement and stops there with any other status fails on the code. The unaltered recording must replay. Paths: libds's `ds_rfcs_replay` FactAssert arm (`rfcs/codec.c`), and the Mercury runtime's `ds.rfcs.decode_stream` with `ds.replay`.",
+    "rules_ds": "use default\n\nschema Arrival scope logical:\n    id: String key\n    n: Int mutable\n\nschema Parcel scope logical:\n    id: String key\n    w: Int mutable\n\nrule arrive:\n    Arrival\n->\n    log info \"a\"\n\nrule weigh:\n    Parcel\n->\n    log info \"w\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Arrival", "slots": { "id": "x", "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Parcel", "slots": { "id": "a", "w": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "drop_schema_def", "schema": "Parcel" },
+        "code": "-101"
+    }
+}

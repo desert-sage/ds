@@ -1,0 +1,10 @@
+{
+    "id": "LCAP.2.9_division_disabled",
+    "category": "compiler",
+    "scenario": "LCAP.2.9 / LDIA.3.4.2 — negative: the program sets `float: false` and writes `/` between two Int slots, which produces a `Float` ([LCAP.2.9]'s hint is `//`). `INT_LIT / INT_LIT` would be a Rational literal and not a site, so the operands are slots. Rejected with DS_VALIDATE_CAPABILITY_DISABLED. Drives dsc.dialect's own_sites (`bo_div`).",
+    "rules_ds": "use default:\n    float: false\n\nschema Trig scope logical:\n    v: Int key\n    w: Int mutable\n\nrule r:\n    Trig t where t.v / t.w > 1\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

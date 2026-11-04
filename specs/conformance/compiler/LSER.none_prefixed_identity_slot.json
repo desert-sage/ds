@@ -1,0 +1,11 @@
+{
+    "id": "LSER.none_prefixed_identity_slot",
+    "clauses": ["LSER.7.6.1"],
+    "category": "compiler",
+    "scenario": "A `by:` block option whose slot name starts with the `none` keyword (`nonexistent_slot`) must lex as an IDENT, not as the NONE_KW keyword + a parse error. It is a valid identifier that names no declared slot, so it reaches validation and rejects with DS_VALIDATE_SERIES_BAD_IDENTITY_SLOT — the same as any other undeclared `by:` slot (cf LSER.bad_identity_slot_v2), never a parse error.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state (by: nonexistent_slot):\n    mean all_time\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_BAD_IDENTITY_SLOT"
+    }
+}

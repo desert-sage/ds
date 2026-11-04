@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A negative: hydration is deferred, so `storage.hydrate_events` names no
+# service and `compile_corpus.py` expects this refused with
+# DS_VALIDATE_UNKNOWN_SERVICE. `55_hydr_base` declares the same schemas.
+
+schema Trig scope logical:
+    v: Int key
+
+schema AlarmTriggered scope logical:
+    entity_id: String key
+    severity: Int mutable
+    note: String mutable
+
+schema Untouched scope ttl 1_h:
+    entity_id: String
+    severity: Int
+    note: String
+
+rule load_history:
+    Trig
+->
+    call storage.hydrate_events
+        schema: "AlarmTriggered"
+        window: 24_h
+        retain: 10_min
+        cooldown: 23_h
+        as "overnight"

@@ -1,0 +1,50 @@
+{
+  "id": "LTIM.2.1.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.1",
+  "seq": 147,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.1.1] `now()` returns the wall-clock UTC instant as a\n`Time` with `tz_offset_ns = 0`. The runtime must populate `utc_ns`\nfrom the wall clock's current sample ([LTIM.2.8.3], [LTIM.2.8.4]) at full\nnanosecond width; it must not truncate to microseconds. `now()` makes no\nmonotonicity promise: a later sample may be earlier.\n\n",
+  "refs": [
+    "LTIM.2.8.3",
+    "LTIM.2.8.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_1_1__now_tracks_the_clock_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "`now()` TRACKS THE CLOCK THE HARNESS MOVES: the Ping under `now() > 5` is not fired at (0, 0) and is fired after an advance to 6 -- logical/LTIM.2.1's shape. Executed: `[[], [(0, True)]]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_leaf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`now()` as the `where` grammar carries it: the leaf `ReadNow`, substituted under the sample before the evaluator runs. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_leaf_reads_the_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "partial",
+        "note": "'`now()` returns the wall-clock UTC instant ... from the wall clock's current sample': the held wall sample, as an Int. LESS than the clause: the `Time` tag, `tz_offset_ns = 0` and the nanosecond width are the lowering's, which carries the sample in nanoseconds unmapped; the model's value is the sample's natural. A transcription."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_1_1__ReadWall",
+        "tag": "spec"
+      }
+    ]
+  }
+}

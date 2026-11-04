@@ -1,0 +1,22 @@
+{
+    "id": "LDET.3.2.7",
+    "category": "logical",
+    "scenario": "[LDET.3.2.7] (text/display plane) — a Float interpolated into a log message renders via the one canonical form ds_fmt_float produces (display == data-text), NOT bare %g. Finite discriminators: a whole Float keeps its \".0\" — 42.0 renders \"42.0\", never \"42\"; a full-precision irrational renders all 17 shortest-round-trip digits (bare %g's 6 sig-figs would truncate 3.141592653589793 to \"3.14159\"); and the 0.1+0.2 sum renders its exact shortest form \"0.30000000000000004\". Non-finite: Inf is a valid Float value (only NaN is rejected, LEXP.4.2) and renders \"inf\" / \"-inf\" (the ±Inf text form stated in [LDET.3.2.7]; [LCST.4.5.6] references it). This is the display-plane parallel of the adapter LDET.3.2.7 fixture (JSON data plane, which instead rejects Inf as a hard error). One rule interpolates each Float slot into a log message; the harness pins the rendered strings in assert order.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    v: Float mutable\n\nrule show:\n    Reading r\n->\n    log critical \"{r.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "v": 42.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "b", "v": 3.141592653589793 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "c", "v": 0.30000000000000004 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "d", "v": Infinity } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "e", "v": -Infinity } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["42.0", "3.141592653589793", "0.30000000000000004", "inf", "-inf"]
+    }
+}

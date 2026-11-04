@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.5.2b_narrowing_reaches_a_builtin_argument",
+    "category": "compiler",
+    "scenario": "[LNUL.5.2]: `x is not null and ...` narrows `x` to `T` in the conjunction's tail, so `abs(s.x)` -- whose argument is a concrete-value position, not a Kleene consumer -- compiles. With LNUL.5.2c_builtin_argument_unnarrowed, which is the same `where` without the guard and is refused, this pins that the narrowing reaches the tail: LNUL.5.2a cannot, because its arithmetic tail compiles either way. PATH PINNED: the Mercury compiler's narrowing pass (`dsc.narrow`, the `and` tail after an `is not null` operand) feeding the typechecker's builtin-argument check.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    x: Float? mutable\n\nrule r:\n    Sensor s where s.x is not null and abs(s.x) > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

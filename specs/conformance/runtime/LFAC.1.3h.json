@@ -1,0 +1,27 @@
+{
+    "id": "LFAC.1.3h",
+    "clauses": ["LNUL.3.4", "LFAC.1.7.2"],
+    "category": "runtime",
+    "scenario": "[LNUL.3.4] — a `Json?` slot holds the canonical null the ordinary way. Two asserts of Python None into a nullable Json payload both land; their `id` keys differ, so they are two entities (LFAC.1.7.2) and both facts stay live. Named for the LFAC.1.3 heading (`ttl` facts), which it does not test; its schema is `logical`. Dedup on null has no expressible schema: a root-null Json document is the canonical null ([LNUL.3.4]), so a `Json` slot refuses it as it refuses any null, and [LNUL.8.10] forbids a nullable identity key. A root-null Json document is not expressible from this harness (Python None is the canonical null itself), so that half is pinned in C, by runtime/tests/libds/spec/test_null_spec.c::test_lnul_3_4__root_null_json_is_the_canonical_null and runtime/tests/libds/impl/test_lnul_3_4_root_null_json.c, and in the Mercury runtime's test_ds: a root-null document is the canonical null, refused in `Json` and stored as null in `Json?`, and `{\"a\": null}` is still a legal document.",
+    "rules_ds": "schema Reading scope logical:\n    id: Int key\n    payload: Json? mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Reading",
+                "slots": {
+                    "id": 1,
+                    "payload": null
+                }
+            },
+            {
+                "schema": "Reading",
+                "slots": {
+                    "id": 2,
+                    "payload": null
+                }
+            }
+        ],
+        "fact_count_after": 2
+    }
+}

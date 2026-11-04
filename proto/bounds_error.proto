@@ -1,0 +1,72 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// BoundsError — atom body. A DECLARED limit was reached ([LERR.1.4.9],
+// [LERR.1.5]). The operation is rejected and the engine is intact — which is
+// the whole difference from EngineError, and why the cap name is REQUIRED
+// rather than advisory: "an allocation failed" is an EngineError, "an
+// allocation failed AGAINST wm_max" is this.
+//
+// STREAM-CLASS: compare ([RFCS.3.4]). Stream-only, as TypeError above.
+//
+// NO `disposition` AND NO `recoverable`: a BoundsError can not leave the engine
+// untrustworthy, so the disposition is the class and the field number carries
+// it.
+//
+// ⚠ THE TEST IS TRUSTWORTHINESS FIRST, THE CAP SECOND. This class is for a cap
+// the engine can decide BEFORE the work happens, leaving nothing begun to abandon
+// ([LERR.1.5]). The cap is the usual PROXY and not the rule.
+message BoundsError {
+  CapName cap        = 1;   // which declared cap ([RTCT.7.1])
+  uint64  limit      = 2;   // the declared value
+  uint64  observed   = 3;   // what the operation would have reached
+  // Activation context WHERE ONE EXISTS — a `max_fires_per_pump` trip has one;
+  // an `intern_cap` breach during load does not. Absence is MEANINGFUL here,
+  // and readable: the zero value is not a valid timetag.
+  string  rule_name  = 4;
+  int64   timetag    = 5;
+  uint64  clock_ns   = 6;
+  uint64  seq        = 7;
+}
+
+// [RTCT.7.1]'s caps, CLOSED. A breach of something not on this list is not a
+// BoundsError — it is an EngineError ([LERR.1.5]).
+//
+// A CLOSED ENUM AND NOT A STRING, because "is this a declared cap" IS the
+// classification test itself ([LERR.1.4.9]). A string lets a site invent a cap
+// name and land on the wrong side of that test with nothing noticing; the enum
+// makes the wrong side unrepresentable. It also gives [RTCT.7.1] a second
+// consumer, which is what would catch the table and this enum drifting apart.
+//
+// ⚠ CLOSED AGAINST A TABLE, NOT BY THE LANGUAGE, and the distinction sets the
+// cost of changing it. `TrapKind` is closed because the LANGUAGE fixes the trap
+// kinds, so a new member is new semantics and [LERR.1.4.9] rules it a
+// breaking change. This enum's membership is not chosen independently — it
+// IS [RTCT.7.1]'s table. Bringing it into agreement with that table is a REPAIR
+// and costs nothing. Do not read the `TrapKind` precedent across.
+enum CapName {
+  CAP_UNSPECIFIED        = 0;   // refused at load
+  CAP_WM_MAX             = 1;
+  CAP_AGENDA             = 2;
+  CAP_MAX_FIRES_PER_PUMP = 3;
+  CAP_TOKEN_POOL         = 4;
+  CAP_INTERN             = 5;
+  CAP_INTERN_BYTES       = 6;
+  CAP_PUMP_WCET_NS       = 7;
+  CAP_CACHE              = 8;
+  CAP_CACHE_BYTES        = 9;
+  // PER-INSTANCE, where the nine above are per-engine: a `cap` alone does not
+  // say WHICH node or WHICH series. `rule_name` carries the activation context.
+  // A dedicated index would be a field added later, which is additive
+  // ([LDET.1.10]).
+  CAP_NODE_CAPACITY      = 10;  // nodes[i].capacity
+  CAP_SERIES_CAPACITY    = 11;  // series[i].capacity
+  // A slot's declared `capacity` ([LSTR.11.3]). Per-value rather than
+  // per-engine, and declared in the source rather than in the contract; it is
+  // a cap in [RTCT.7.1]'s sense because the author declared it, which is the
+  // classification test above.
+  CAP_VALUE_CAPACITY     = 12;
+}

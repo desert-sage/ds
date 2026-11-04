@@ -1,0 +1,259 @@
+{
+  "id": "LNLS.3.3",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.3",
+  "seq": 196,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "Identity-slot join required on all multi-pattern rules",
+  "text": "### Identity-slot join required on all multi-pattern rules [LNLS.3.3]\n\nA `where` clause in a multi-pattern rule (one that references bindings\nfrom two or more patterns) must contain equality constraints that pin\nthe **full declared `key` ([LFAC.1.7]) of a `logical`-lifecycle schema\non one side** to that of a **`logical`-lifecycle schema on the other\nside** — one equality per `key` slot when the key is composite.\nAny other form of cross-pattern equality or inequality is a compile error.\n\nFormally: the required constraint is a conjunction of equalities, one per\n`key` slot:\n\n$\\bigwedge_{i} \\; A.k_i = B.k_i$\n\nwhere:\n- $A$ and $B$ are bindings from distinct patterns,\n- the schema of $A$ uses `logical` lifecycle and $A.k_i$ ranges over\n  its declared `key` slots,\n- the schema of $B$ uses `logical` lifecycle and $B.k_i$ ranges over\n  its declared `key` slots,\n- the anchor pins each side's complete key, so each side resolves to at\n  most one live fact.\n\n**A singleton is pinned by construction.** A `logical` schema whose key is\nempty holds at most one live fact ([LFAC.1.7.2]), so its side of a join resolves\nto at most one fact with no equality at all. Between a singleton and a keyed\n`logical` schema, the anchor pins the keyed schema's full key, each key slot\nequal to a slot of the singleton, and each such slot of the singleton must be\ndeclared non-nullable: it stands in for a key slot, and a key slot is never\nnull ([LNUL.8.10]). The compiler refuses an anchor on a nullable singleton slot\nwith `DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C`. Between two singletons, no equality\nis required.\n\n**Every pattern after the first is anchored to an earlier one, positive or\nnegated.** In pattern-declaration order, each pattern after the first must be\npinned this way to a pattern declared before it. A negated pattern whose\n`where` references no earlier binding is exempt: it asks only whether a matching\nfact exists, and when that answer changes, every token it blocks or releases is\npart of the result, not a scan. One anchored pair is not\nenough in a rule of three or more patterns: a pattern anchored to nothing\nbefore it joins by scan, and [LNLS.5.1]'s right-activation half — a new fact\nprobing for exactly one candidate token — needs a complete key on the side the\nfact arrives at.\n\nAdditional constraints (range comparisons, further equality tests\nbetween other slots) are allowed on top of this anchor.\nSingle-pattern `where` clauses (alpha tests) are unrestricted.\n\n**Why this is the complete no-linear-scan condition**: the index\n(lmem_idx / ralpha_idx) gives O(matched) where matched\nis the number of facts sharing the join-key value.  An EQ anchor alone\nonly guarantees an index exists — it does not guarantee O(1).\nAn EQ anchor on the full declared `key` of a `logical` schema\nguarantees O(1) because `logical` retract-and-replace semantics ensure\n**at most one live fact per key-tuple**.  J_max = 1 is enforced by the\nschema lifecycle, not by the programmer's discipline.\n\nJoining on a non-`key` slot, or on only part of a composite key, even\nof a `logical` schema, can produce J_max > 1 (multiple facts sharing\nthe matched value) and is therefore excluded.  Joining on any slot of a `ttl`-lifecycle\nschema is excluded because `ttl` facts accumulate — multiple events\nper key is the normal case.\n\nThe idiomatic `linear_scan: false` pattern for \"join entity state with the\nlatest event\" is a `logical` projection maintained by a separate rule.\n\nThe refusals and their codes are [LNLS.3.3a], [LNLS.3.3b] and [LNLS.3.3c].\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LFAC.1.7.2",
+    "LNLS.5.1",
+    "LNLS.3.3a",
+    "LNLS.3.3b",
+    "LNLS.3.3c",
+    "LNUL.8.10"
+  ],
+  "errors": [
+    "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "Lnul_8_10__same_typed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two non-null values of one type: what a `linear_scan: false` anchor compares, since it pins `key` slots ([LNLS.3.3]) and a `key` slot is never null ([LNUL.8.10])."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_5_1__typed_anchor_decided",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A NOLINSCAN ANCHOR IS DECIDED: an equality of two non-null values of one type answers true or false, never null and never a trap, so `iret_7_5_1__probe_negated`'s condition holds for every `no` node a `linear_scan: false` program can load."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnls_3_3__anchor_test",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "lnls_3_3__negated_anchor_probe",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A no node probes on its anchor without loss when both anchored slots are non-null and of one type on every candidate. The keyed form gives that premise ([LNUL.8.10]). The singleton form gives it through [LNLS.3.3]'s refusal of an anchor on a nullable singleton slot, which the model does not state, so there the theorem assumes what the clause guarantees."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lfac_1_7_2__singleton",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__anchor",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A FULL-KEY ANCHOR on the right pattern: the join test implies that the candidate is of an entity-lifecycle kind and carries the key the prefix pins; further constraints on top are allowed, as the clause allows them -- the test may be stronger, never weaker."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_actions",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_engine",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_events",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_program",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_wm",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__pinned",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__run_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_11_4__step_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__assert_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__insert_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_2__retract_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__boundary_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfst_9_2_1__replay_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__actions_of",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__anchor_pins",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__append_keyless",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__map_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__remove_keyless",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__singleton_pins",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "J_max = 1 is enforced by the lifecycle, as the clause says: two candidates joining one token under the anchor are one fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THEOREM 5, closed at the top: after any history from a loaded network, at every node whose join test is a full-key anchor on an entity-lifecycle kind, every token joins at most one fact of the node's memory. The clause's left-activation half. Its right-activation half -- exactly one left-memory token per key -- needs every pattern of the prefix anchored, not only the right one: with a pattern of the prefix unconstrained by the anchor, tokens differing in that pattern share the key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At any engine with the view, an anchored node offers each token at most one candidate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_singleton_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lscp_2_1_1__withdraw_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_4__apply_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_action_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_7__do_actions_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rdsc_4a_5__load_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.5.7.1_cosine_distance",
+    "clauses": ["LEXP.12.7"],
+    "category": "logical",
+    "scenario": "[LEXP.5.7.1]: `distance.cosine` is overloaded by arity (4 operands for 2D, 6 for 3D) and returns a distance, not a similarity, in [0, 2]. No live vector called it. One V(x: 2.0, y: 3.0, z: 6.0) is asserted and pumped once; every operand that varies is a slot, so nothing folds at compile time. Each answer is exact under [LEXP.5.7.3]'s composition, 1 - (a.b) / (sqrt(a.a) * sqrt(b.b)). `cos2_orthogonal` (2, 0) against (0, 3): 1 - 0/6 = 1.0. `cos2_opposite` (2, 0) against (-3, 0): 1 - (-6)/6 = 2.0, the top of the range, where a similarity would answer -1.0. `cos3_parallel` (2, 3, 6) against itself: 1 - 49/(7 * 7) = 0.0. All three fire, in source order.",
+    "rules_ds": "import distance\n\nschema V scope logical:\n    k: Int key\n    x: Float mutable\n    y: Float mutable\n    z: Float mutable\n\nrule cos2_orthogonal:\n    V v where distance.cosine(v.x, 0.0, 0.0, v.y) == 1.0\n->\n    log info \"cos2_orthogonal\"\n\nrule cos2_opposite:\n    V v where distance.cosine(v.x, 0.0, 0.0 - v.y, 0.0) == 2.0\n->\n    log info \"cos2_opposite\"\n\nrule cos3_parallel:\n    V v where distance.cosine(v.x, v.y, v.z, v.x, v.y, v.z) == 0.0\n->\n    log info \"cos3_parallel\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "k": 1, "x": 2.0, "y": 3.0, "z": 6.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["cos2_orthogonal", "cos2_opposite", "cos3_parallel"]
+    }
+}

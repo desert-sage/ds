@@ -1,0 +1,13 @@
+{
+  "id": "LGRA.8.6_unreferenced_binding_in_imported_library",
+  "category": "compiler",
+  "scenario": "[LGRA.8.6]: a pattern binding no part of the rule reads is DS_VALIDATE_UNREFERENCED_BINDING, and the check runs on an imported library's rules too: they join the importer's artefact whatever form the import takes ([LIMP.7.5], [LDET.5.4]). The library rule binds `e` and never reads it; the importer uses the qualified form (`import pack`) and declares its own schema, so it depends on nothing the library declares, and the library's error is the only error the program has. Pins that library rules pass through validation on the importer's compile rather than being skipped because the import named nothing; `logical/LIMP.7.5_library_rules_fire` pins that they reach the network.",
+  "rules_ds": "import pack\n\nschema Own scope logical:\n    k: Int key\n\nrule main_rule:\n    Own\n->\n    log info \"main\"\n",
+  "libraries": {
+    "pack": "schema Trig scope logical:\n    v: Int key\n\nrule pack_rule:\n    Trig e\n->\n    log info \"pack\"\n"
+  },
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_UNREFERENCED_BINDING"
+  }
+}

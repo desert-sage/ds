@@ -1,0 +1,14 @@
+{
+    "id": "IRET.11.3.2.same_pump_release_refires",
+    "category": "logical",
+    "scenario": "[IRET.11.3.2]: refraction is the flag on the activation, and a match blocked and released by a negated condition within ONE pump is re-created and fires again. `formal/tla/refraction_readings.tla`'s `same_pump_rel` stream, as DS source. `seen` fires on A (no B yet); `block` emits B `logical`, justified by its own match (A with no C), which blocks `seen`'s token; `stop` emits C, which ends `block`'s match, so truth maintenance retracts B ([IRET.12]) and `seen`'s token is released; `seen` fires a second time in the same pump. `stop` reads A, not B, so the rule graph has no cycle through the `no`. The per-pump reading fires `seen` once ([seen, block, stop]); the flag reading fires it twice. Source order fixes the sequence ([LDET.5.4]): seen, block, stop, seen. Path: libds's terminal refraction table, whose entry goes stale because B's assert and its truth-maintenance retract each advance the generation (rete/wm_rete.c) -- rete/engine.h's comment on cycle_generation; Mercury's ds.agenda.forget, which drops the identity the block removed.",
+    "rules_ds": "schema A scope logical:\n    k: Int key\n\nschema B scope logical:\n    v: Int key\n\nschema C scope logical:\n    v: Int key\n\nrule seen:\n    A\n    no B\n->\n    log info \"seen\"\n\nrule block:\n    A a\n    no C\n->\n    emit B logical v: a.k\n\nrule stop:\n    A a\n->\n    emit C logical v: a.k\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["seen", "block", "stop", "seen"]
+    }
+}

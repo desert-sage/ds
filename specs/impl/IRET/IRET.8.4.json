@@ -1,0 +1,35 @@
+{
+  "id": "IRET.8.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.8",
+  "seq": 738,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.8.4] **`logical: false` overlay — the retraction path.**\n`terminal_left_retract` is the engine function that runs when a rule's\nsupporting token is retracted. Normally it:\n\n1. Copies TMS IDs to a local stack array (re-entrancy safety).\n2. Withdraws from the TMS to retrieve the logical fact IDs.\n3. For each ID, retracts the WM fact — potentially triggering further\n   alpha/beta retractions (cascade).\n4. Frees the scratch buffer if `caller_must_free`.\n\nUnder `logical: false`, steps 1–4 are absent. `terminal_left_retract` only\nremoves the terminal token from the token pool. No WM retraction is\ntriggered from the TMS path.\n\nThis is the mechanism by which [LNOG.4.2]'s no-cascade guarantee\nholds: the observable consequence — a\nsupporting token's retraction withdraws nothing else — stays in\n[LNOG.4.2]; the named steps of this engine's function are\nimplementation.\n\n",
+  "refs": [
+    "IRET.8",
+    "LNOG.4.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "Iret_8_4__explicit_only",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A program emitting into no `logical` schema -- every `logical: false` program by [LNOG.3.2], and every witness the core proofs run."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__step_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "On such a program the engine with truth maintenance takes exactly the core engine's step with an empty table: the retraction path withdraws nothing else, which is [LNOG.4.2]'s guarantee on the model."
+      }
+    ]
+  }
+}

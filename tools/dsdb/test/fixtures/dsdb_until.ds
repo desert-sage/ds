@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# What batch mode's last row leaves undone: a timer past it, and a
+# series read, whose sample absorbs after the pump that asserted the row.
+# Compiled by the branch's own Mercury dsc in the js gate.
+
+use default
+
+schema Reading:
+    id: String
+    level: Float
+
+schema Done:
+    id: String
+    why: String
+
+series Reading.level (by: id, capacity: 10):
+    mean sliding 1_h
+
+rule delayed:
+    Reading r
+->
+    after 5_s:
+        publish Done id: r.id why: "timer"
+
+rule averaged:
+    Reading r where r.mean > 1.0
+->
+    publish Done id: r.id why: "series"

@@ -1,0 +1,10 @@
+{
+    "id": "RLOW.14.7_follow_up_continuation_follows_its_follow_up",
+    "category": "compiler",
+    "scenario": "[RLOW.14.7]: the order applies at every level, so the sibling a `call` continuation in a follow-up's body lowers to ([LTAC.6.1.3], [LCCO.10.1]) comes at once after that follow-up, before the next follow-up at the follow-up's own level. Rule `r` has two `after` clauses; the first one's body makes a `call` with an `on response` continuation, its correlation an author's `as` because a follow-up has no bind frame to mint a generated one in. Rule `next` follows `r` in source. The emitted sequence is `r`, the first follow-up `$r_after_0`, its continuation's sibling `$$r_after_0_response_0` (named, as every sibling is, from the rule it continues), the second follow-up `$r_after_1`, then `next`. PATH PINNED: `dsc.rete`'s `follow_up`, which pushes the follow-up's terminal and group and then its body's siblings (`siblings_of_calls`), and the parent-terminal push after `ltac_3_1_afters`, which keeps each follow-up's segment whole behind the rule's own terminal.",
+    "rules_ds": "schema SvcMethodReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"r\"\n    after 5_s:\n        call svc.method nocooldown as \"c1\"\n            on response.code == 200:\n                log info \"ok\"\n    after 10_s:\n        log info \"second\"\n\nrule next:\n    Trig\n->\n    log info \"next\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["r", "$r_after_0", "$$r_after_0_response_0", "$r_after_1", "next"]
+    }
+}

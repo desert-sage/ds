@@ -1,0 +1,10 @@
+{
+    "id": "LSER.13.14_capacity_below_sample",
+    "category": "compiler",
+    "scenario": "[LSER.13.14]: a `sample <n>` line retains `n` samples by construction, so the compiler must refuse a block whose `capacity` is below the `n` of any of its lines, with `DS_VALIDATE_SERIES_CAPACITY_BELOW_SAMPLE`. Here `capacity: 2` sits over `mean sample 5`. PATH PINNED: `dsc.series.lser_13_14_capacity`'s per-line comparison against the block's `abk_capacity`; the `N >= 1` arm admits `2`, so only the line can refuse it. A compiler that checked the bound alone compiles this and the vector goes red.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (capacity: 2):\n    mean sample 5\n\nrule r:\n    Reading s where s.mean is not null\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_CAPACITY_BELOW_SAMPLE"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.1.2.2_date_past_range_is_not_representable",
+    "category": "logical",
+    "scenario": "[LTIM.1.2.2]: an operation in a rule whose `Date` result falls outside the range raises a ComputationError of kind NOT_REPRESENTABLE ([LERR.1.4.10]), never a silent wrap, and the engine continues. Two Visits, each on an end day: id 1 on 2262-04-11 (day 106751) and id -1 on 1677-09-22 (day -106751). `shift` reads `v.due.add_months(v.id)` ([LTIM.4.3.1]) through `::String` and logs it: one month past either end, 2262-05-11 and 1677-08-22, both outside. `later` logs. Each pump raises the computation error from `shift`'s action and then fires `later`, so the stream holds computation_error, action_log twice. The discriminator: a runtime that bounds a day count only below INT64_MAX - 719468 renders the shifted day and logs it, with no computation_error. It reaches the range through the calendar shift; `d + 1_d` is LTIM.4.2.3_date_past_range. PATH PINNED: libds's `calendar_shift` Date arm (rete/adapters.c), Mercury's `ds.eval.ltim_4_3_shift` Date arm.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nrule shift:\n    Visit v\n->\n    let a = (v.due.add_months(v.id))::String\n    log info \"shift {a}\"\n\nrule later:\n    Visit\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 106751 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Visit", "slots": { "id": -1, "due": -106751 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log", "computation_error", "action_log"]
+    }
+}

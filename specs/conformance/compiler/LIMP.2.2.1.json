@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.2.2.1",
+    "category": "compiler",
+    "scenario": "Multi-line parenthesised selective-import form per LIMP.2.2.1, riding on LLEX.17.3 bracket-balanced line continuation. Pin: `from ha import (\\n    Light,\\n    Switch,\\n)` parses cleanly; both names enter the importer's bare scope. PATH PINNED: `dsc.parse`'s `limp_2_1_1_parse_list`, its `lparen` arm over `parse_import_items`; the lexer emits no NEWLINE inside the brackets ([LLEX.7.3]), so the names reach it as one run.",
+    "rules_ds": "from ha import (\n    Light,\n    Switch,\n)\n\nrule r:\n    Light l where l.is_on == true\n->\n    log info \"x\"\n\nrule r2:\n    Switch s where s.is_on == true\n->\n    log info \"y\"\n",
+    "libraries": {
+        "ha": "schema Light scope logical:\n    is_on: Bool key\n\nschema Switch scope logical:\n    is_on: Bool key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

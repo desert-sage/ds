@@ -1,0 +1,9 @@
+{
+    "id": "LCDB.7.9.keyed_window_is_quiet",
+    "category": "compiler",
+    "scenario": "LCDB.7.9's negative — the same rule on a schema that DECLARES a `key` slot has a non-empty activation key ([LCDB.3.3.3]), so no warning. Pinned so the check cannot fire on every rate-limited rule and still pass the positive fixture. Path: `dsc.validate.lcdb_7_9_rule_wide_window`, `contributes_no_key` failing on the `key` marker.",
+    "rules_ds": "schema ZoneTemp scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule hot cooldown 5_min:\n    ZoneTemp t where t.celsius > 30.0\n->\n    log info \"hot {t.zone}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

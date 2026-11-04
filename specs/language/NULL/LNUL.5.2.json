@@ -1,0 +1,16 @@
+{
+  "id": "LNUL.5.2",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.5",
+  "seq": 161,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.5.2] **Guard narrowing.** Inside `x is not null and <…>`, flow typing makes\n`x` a `T` (non-null) in the right operand. Same for the `where`-clause tail\nafter an `is not null` conjunct. The narrowing is scoped to the `where`-clause (the\nremaining conjuncts); it does **not** flow across the LHS→RHS boundary into the\naction body. An action referencing a binding guarded on the LHS still sees it as\n`T?` and must handle absence at each concrete-value position with `??` — there is\nno LHS→RHS data-flow analysis ([LNUL.5.4]). So `Sensor s where s.state is not null ->\nemit Out(value = s.state)` is a compile error (`value` is a non-nullable slot);\nthe author writes `value = s.state ?? 0.0`.\n\n**Narrowing is a typing rule, not an evaluation order.** It decides which\npositions type-check; the conjuncts may still be evaluated in any order\n([LNUL.4.2]). A narrowed conjunct evaluated before its guard meets the `null`\nthe guard excludes, and may raise; the guard is then `false` and absorbs what it\nraised, so the conjunction answers as though the guard had run first.\n\nThe guard is spelled `is not null` and not `!= null`: the latter is a compile\nerror ([LNUL.4.4]), and it could not have narrowed anything anyway, because a\npropagating comparison never establishes that the operand is present.\n\n",
+  "refs": [
+    "LNUL.4.2",
+    "LNUL.4.4",
+    "LNUL.5.4"
+  ]
+}

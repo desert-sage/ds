@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.5.floordiv_int64_min_by_minus_one",
+    "category": "runtime",
+    "scenario": "[LEXP.7.5] / [LEXP.7.6] at the one quotient with no Int representation: INT64_MIN // -1 is 2^63, which [LEXP.7.13.1]'s wrap makes INT64_MIN, and INT64_MIN % -1 is 0. [LDET.3.2.2] requires division and modulo on a non-zero divisor to agree across platforms, and C's `/` here traps on x86-64 and answers on arm64. The guard `t.x // t.y == t.x and t.x % t.y == 0` with x = INT64_MIN, y = -1 holds only for the wrap. Path: rete/eval.c IDIV / MOD into int_ops.h ds_i64_floordiv / ds_i64_floormod, which special-case this input; Mercury ds.eval arith(op_floordiv) / arith(op_rem) over int64 div / mod (audit finding I7, measured by the lockstep scenario 79_int_builtin_edges). fact_count 2 = T plus the Hit the rule emits.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    y: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where t.x // t.y == t.x and t.x % t.y == 0\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -9223372036854775808, "y": -1 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

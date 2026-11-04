@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// formal/souffle/prelude.dl -- the shared declarations of the `logical`
+// relation fragment, and the record of what this lane checks.
+//
+// THE SLICE. This lane
+// computes, from a DS program and its base facts alone, the stratified least
+// model of the program on Soufflé, an engine that has never seen libds. That
+// is derivation from source. The Mercury lane (runtime/mercury/src/ds.conform.m)
+// checks support ACCOUNTING over the engine's own justification table; it
+// trusts the table and cannot notice a derivation the engine should have made
+// and did not. Neither lane can do the other's job, and this header is where
+// the division is written down so it is not re-derived wrongly.
+//
+// WHY THE LEAST MODEL IS THE RIGHT REFERENCE FOR THE FRAGMENT. A key-all
+// `logical` relation coalesces identical tuples and keeps distinct ones
+// ([LFAC.1.7.2]); a derived fact lives while its LHS matches ([LLOG.1.1]);
+// `no` is stratified negation, since the compiler rejects every cycle in the
+// rule graph ([LCYC.3.1]). That is Datalog semantics, not a model of it. The
+// least model is also order-independent, so it stands outside the agenda
+// abstraction both runtimes share.
+//
+// WHAT THIS LANE DOES NOT CLAIM: nothing about firing order, refraction,
+// timetags or the event trace; nothing about `explicit` facts, which the
+// engine keeps as a bag; nothing about termination; nothing about cost.
+//
+// THE FRAGMENT is enumerated by the lowering (private tooling): every schema
+// `scope logical` with every slot `key` and typed Int / String / Bool; rules
+// with positive and `no` patterns and `where` guards over
+// == != < <= > >= and or not and + - * on Int; `emit ... logical` whose
+// values are literals or bound slot copies. Everything else is refused with
+// a reason keyed on the parsed field, and the census of refusals prints with
+// every run.
+//
+// THE TYPES. Equivalence types over the two Soufflé primitives the fragment
+// needs: DsInt is Soufflé `number`, a 64-bit signed integer in the image
+// (built with SOUFFLE_DOMAIN_64BIT=ON), which is DS Int; DsStr is `symbol`,
+// which is DS String verbatim; DsBool is `number` carrying 0 or 1, which is
+// how the lowering and the libds read-out both spell a DS Bool.
+//
+// THE TESTS beside this file are the lane teeth ([STYL.5.10.5]): the
+// unfounded shapes of formal/idris/Rete/Refcount.idr as programs whose derived
+// relations must come out empty, a refuted program whose Violation relation
+// must come out empty, and two doctored twins whose expectation is marked
+// MUST_FAIL so the recipe is seen to fail a wrong answer.
+//
+//@spec [LFAC.1.7.2] [LCYC.3.1]
+
+.type DsInt = number
+.type DsStr = symbol
+.type DsBool = number

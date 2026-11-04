@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The base artefact for `test_hydr`, which splices Hydration atoms into a real
+# artefact. It declares `55_hydrate`'s schemas without its hydration call,
+# which names no service in v1, and writes `hydrated_corr` by hand, so a
+# Hydration naming it on `Untouched` crosses schemas.
+
+schema Trig scope logical:
+    v: Int key
+
+schema AlarmTriggered scope logical:
+    entity_id: String key
+    severity: Int mutable
+    note: String mutable
+    hydrated_corr: String mutable
+
+schema Untouched scope ttl 1_h:
+    entity_id: String
+    severity: Int
+    note: String
+
+rule seen:
+    Trig
+->
+    log info "seen"

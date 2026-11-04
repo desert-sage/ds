@@ -1,0 +1,85 @@
+{
+  "id": "LCST.4.5.7",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.5",
+  "seq": 185,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.5.7] **`String → Int` accepted inputs.** `x::Int?` parses a string that\nis, in its entirety, an optional sign (`+` or `-`) followed by an `INT_LIT`\n([LLEX.11.1]): decimal, `0x` hexadecimal, `0b` binary or `0o` octal, with `_`\nseparators placed as a source literal may place them. The runtime must yield\nthe signed value when it lies in the 64-bit range, and `null` for every other\nstring: one outside that range, one with any surrounding whitespace, a decimal\npoint or exponent, a unit suffix, or any spelling a source `INT_LIT` would not\nadmit.\n\n",
+  "refs": [
+    "LLEX.11.1"
+  ],
+  "symbols": [
+    "FN_STRING_TO_INT"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__accepted_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The positive fixture's eight texts, executed, each to 31 or -31."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__digit",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One digit of a base, or nothing."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__digits_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The digits after the first, a `_` only where a source literal places one: before a digit ([LLEX.12.1])."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__in_range",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The 64-bit range: a value inside it stands; one outside it is nothing -- `null`, not a saturated value and not a fault."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__leading_space_and_empty_are_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Surrounding whitespace: a leading space is `null` for every tail, and so is the empty text."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__parse_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`String :: Int?`: the whole text an optional sign then an `INT_LIT` ([LLEX.11.1]), the signed value when it lies in the 64-bit range and nothing -- `null`, through `lnul_8_4__parsed` -- for every other text."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__parse_is_a_value_or_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "For every text, `s :: Int?` is an Int or `null`, the clause's two answers, never a trap."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__refused_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The negative fixture's spellings executed to `null`: `31.0`, `3e1`, `31 `, `31_s`, `31s`, `0x_1F`, `_31`, `31_`, `0X1F`, `0x1G`; the out-of-range magnitudes are run in Main.idr."
+      }
+    ]
+  }
+}

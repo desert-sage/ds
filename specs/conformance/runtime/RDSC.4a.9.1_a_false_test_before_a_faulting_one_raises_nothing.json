@@ -1,0 +1,16 @@
+{
+    "id": "RDSC.4a.9.1_a_false_test_before_a_faulting_one_raises_nothing",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.1]'s quiet half: an `AlphaTest` that faults is one conjunct of its node's tests, and a test of the node that answers `false` decides the fact wherever it stands, so the engine raises nothing ([LNUL.4.2]). Here the faulting test stands SECOND and no fault follows. The harness compiles rule `on_t`, whose `T t where t.v > 5 and t.v < 100` puts two CMP tests on `T`'s `AlphaNode` (node 1), in that order ([RLOW.5.2.1]), and `runtime_fact_count`'s `tamper: {set_field: {node: 1, path: [3, 1, 2], value: 1}}` ([RCTS.1.2.21]) writes the second test's `slot_index` as 1, which names no slot of `T`. The harness asserts one `T` with `v` 1 and pumps: the first test answers `false`, so the fact is rejected, nothing is raised, `on_t` never fires (`dead_rules_expected`), and working memory holds the one `T`. What it discriminates: a runtime that evaluates every test before deciding, and raises if any faults, halts at the assert, which refuses it, and the fixture fails. The same edit faults on a fact no test decides: its sibling `RDSC.4a.9.1_a_false_test_before_a_faulting_one_decides_the_fact` asserts `v` 50 after this one and halts there. PATHS: libds's `ds_rete_alpha_test_fact`, through pyds; the Mercury runtime's alpha test in `ds.engine`'s host assert, through test_behave.m's `fact_count_edited` and `field_set`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 5 and t.v < 100\n->\n    log info \"t\"\n",
+    "dead_rules_expected": ["on_t"],
+    "expect": {
+        "kind": "runtime_fact_count",
+        "tamper": {"set_field": {"node": 1, "path": [3, 1, 2], "value": 1}},
+        "asserts": [
+            { "schema": "T", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

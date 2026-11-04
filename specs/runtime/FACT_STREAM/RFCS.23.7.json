@@ -1,0 +1,27 @@
+{
+  "id": "RFCS.23.7",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.23",
+  "seq": 957,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.23.7] **Receiving a fact.** An engine asserting a `FactExternal` checks\nits `schema_hash` ([RFCS.23.3]), decodes it, asserts it, and resolves each\nnested fact-reference, innermost first:\n\n1. a live fact of that schema **equal** to the inlined copy is the same fact,\n   and the slot refers to it: nothing is asserted for the copy, and the fact\n   keeps its `event_id`. Of several equal live facts, it is the one with the\n   lowest `fact_id` ([RFCS.6.9]). With no equal live fact, an earlier inlined\n   copy in the same `FactExternal` equal to this one is the same fact, and the\n   slot refers to what that copy resolved to;\n2. otherwise, if no live fact of that schema has the same identity key, the\n   inlined copy is asserted and the slot refers to it;\n3. otherwise — a live fact with that key whose values differ — the engine must\n   refuse the whole `FactExternal`: nothing is asserted and nothing is replaced.\n\n**Equal** is the no-op reassertion's comparison ([LFAC.2.5.1], [LFAC.2.5.4]),\nslot by slot over the inlined copy's slots, and a fact-reference slot is equal\nwhen it resolves to the same fact. Resolving innermost first is what lets an\nouter copy compare equal: its references are already resolved to live facts.\nOn a `logical` schema `ts` is left out, as the no-op test leaves it out\n([LFAC.9.1]). On any other schema it is compared like any slot, so a copy that\ndiffers from a live fact only in `ts` is another fact.\n\n**`KIND_NULL` in a fact-reference slot is a reference with no target**\n([RFCS.23.4]). The engine must admit it whether or not the slot is nullable, and\nresolves and asserts nothing for it. In a nullable slot it is `null`. In any other\nfact-reference slot the slot refers to no fact, and a read of it finds the target\ngone ([NFCT.2.3]). It is equal to a live fact's slot that is `null` or whose target\nhas gone, so a live fact holding such a reference is the same fact as its own\ncopy, and a replay resolves it as the live run did ([RFCS.24.2]).\n\n**A reference is resolved once, before anything is asserted.** Steps 1\nto 3 judge every reference on working memory as the call finds it, and the engine\nmust not judge one again during the delivery. One of the delivery's own asserts\ncan remove a fact a reference resolved to, whether that fact was live or is an\ninlined copy the delivery asserted: an answer's supersede ([LCRS.6.2.4]) retracts\nit, or a retraction that supersede cascades into does. That refuses nothing and\nstops nothing. The slot refers to that fact, and a read of the slot finds the\ntarget gone ([NFCT.2.3]). No rule runs inside a delivery, so no rule can tell this\nfrom a target that left after it. The engine must do this without reading a\nremoved fact's storage ([RDSC.9.9]).\n\nEvery fact asserted here, the received fact and each inlined copy, gets this\nengine's own `event_id`, as any assert does ([LFST.5.6]). The received fact\nitself is an ordinary assert: a live fact equal to it makes it a no-op\nreassertion ([LFAC.2.5.1]).\n\n**One `FactExternal` is one input**, however many facts receiving it asserts.\nThe engine must sample its clocks once for it ([LTIM.2.8.4]), and every fact\nit asserts, each inlined copy and the received fact, takes that sample as its\nassertion time ([RFCS.23.5]).\n\nThe entry point and its result codes are the integration's ([NCBK.10]).\n\n",
+  "refs": [
+    "LCRS.6.2.4",
+    "LFAC.2.5.1",
+    "LFAC.2.5.4",
+    "LFAC.9.1",
+    "LFST.5.6",
+    "LTIM.2.8.4",
+    "NCBK.10",
+    "NFCT.2.3",
+    "RDSC.9.9",
+    "RFCS.23.3",
+    "RFCS.23.4",
+    "RFCS.23.5",
+    "RFCS.24.2",
+    "RFCS.6.9"
+  ]
+}

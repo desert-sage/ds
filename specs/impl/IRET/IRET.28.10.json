@@ -1,0 +1,28 @@
+{
+  "id": "IRET.28.10",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28",
+  "seq": 2345,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Determinism & bit-identity",
+  "text": "### Determinism & bit-identity [IRET.28.10]\n\nThis section is normative. Iteration order is deterministic, as cross-platform\nbit-identity requires (`[LDET.3.4]`), and it does not decide rule-firing\norder: `[LDET.5.5]` orders a rule's activations by a key computed from the\nmatch and working memory, so the engine **must not** derive a timetag from the\norder in which it traverses these tables (`[LDET.5.9]`).\n\n",
+  "refs": [
+    "LDET.3.4",
+    "LDET.5.5",
+    "LDET.5.9"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__dense_refuted",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Witnesses the prohibition: a timetag derived from the dense traversal order orders one rule's activations differently in a run and its replay by assertion, against [LDET.5.9]. Rule `A a, B b`; assert b1, b2, b3; retract b1; assert a1 -- the run's B memory is [b3, b2], the replay's [b2, b3]. Under the [LDET.5.5] key both give (a1, b2) then (a1, b3): `ldet_5_5__canonical_agrees`, `ldet_5_9__network_agrees`."
+      }
+    ]
+  }
+}

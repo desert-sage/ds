@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.9.8b",
+    "category": "compiler",
+    "scenario": "Bare-name namespace per LIMP.9.8 / LIMP.4.2 \u2014 rule importing. `from ha import some_rule` hoists the library's resolved rule into the importing file plus every schema it transitively references. Pin: a library declares `Trig` and a rule that emits a `Signal`; the importing file imports the rule and nothing else, and the program compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowered output.",
+    "rules_ds": "from ha import trig_to_signal\n",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n\nschema Signal scope logical:\n    out: Int key\n\nrule trig_to_signal:\n    Trig t\n->\n    emit Signal logical out: t.v\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "LCCO.3.7",
+  "prefix": "LCCO",
+  "doc": "CALL_CONTINUATION.md",
+  "parent": "LCCO.3",
+  "seq": 129,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCCO.3.7] **The correlation counter.** Each engine holds one counter, which is\n0 when the engine is created. Taking a value yields `g<k>`, with `k` the\ncounter's value in decimal, and advances the counter by one. The engine must\ntake values at these points only, and in this order:\n\n1. When a rule fires, before any of its actions runs: one value for each `call`\n   in its RHS that has no `as` or a computed `as` ([LRST.1.2]), in source order;\n   then one for each `after` clause with no `as` whose body reads a binding of\n   the rule ([LTAC.3.5], [LTAC.3.6]), in source order.\n2. When a synthesized terminal fires — an `after` follow-up or a continuation\n   sibling ([RLOW.14.7]) — before any of its actions runs: one value for each\n   `call` in its own body that has no `as` or a computed `as`, in source order.\n   A `call` with a continuation in that body takes none: it carries a literal\n   `as`, or the compiler refuses it ([LCCO.3.8]).\n\n**A value is taken whether or not it is used.** A computed `as` that evaluates\nto a non-empty key still takes one. A call that its `cooldown` gate holds back\n([RLOW.4.6.6.1]), or that a NaN argument refuses ([RLOW.7.3.1]), still takes\none, because the value is taken before the gate decides and before the\narguments are evaluated.\n\nThe counter is engine state and is not recorded. A replay re-derives it, taking\nthe same values in the same order from the same inputs ([LDET.2.2]).\n\n",
+  "refs": [
+    "LCCO.3.8",
+    "LDET.2.2",
+    "LRST.1.2",
+    "LTAC.3.5",
+    "LTAC.3.6",
+    "RLOW.14.7",
+    "RLOW.4.6.6.1",
+    "RLOW.7.3.1"
+  ]
+}

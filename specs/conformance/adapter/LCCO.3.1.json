@@ -1,0 +1,21 @@
+{
+    "id": "LCCO.3.1",
+    "clauses": ["LTES.12.4"],
+    "category": "adapter",
+    "scenario": "A `call` action emits an adapter call per LCCO.3.1. When a rule with a `call` action fires, the call is dispatched to the integrator-side callback with the correct service and body.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nservice svc.read:\n    \"stub service for conformance\"\n    kwarg entity_id: String\n    no response\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 30_s\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.read",
+                "correlation": "$r_c0_g0",
+                "body": { "entity_id": "t1" }
+            }
+        ]
+    }
+}

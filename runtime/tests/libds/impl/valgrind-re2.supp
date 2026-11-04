@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# RE2's sparse sets are not a memory bug. RE2's Briggs-Torczon sparse set, in
+# the pattern compiler (Prog::Optimize, Flatten, MarkSuccessors) and the DFA's
+# work queue (DFA::AddToQueue), reads a possibly uninitialised `sparse_[i]` and
+# validates it by `dense_[sparse_[i]] == i`. Memcheck cannot see the
+# validation, so it reports uninitialised reads on every compile and match.
+#
+# Each rule needs the top frame in libre2 and a DS frame on the stack, one set
+# per entry into RE2: compile, match, capture and the alpha REGEX test. A new
+# entry gets rules of its own. The compile rules match `ds_re2_compile*`:
+# ds_re2_compile tail-calls ds_re2_compile_n, so at -O2 the backtrace names
+# the latter alone. The match rules name `builtin_regex_match`: ds_re2_match
+# tail-calls RE2::PartialMatch, so its own frame is gone.
+#
+# Only Memcheck:Cond, Value8 and Value4 are suppressed. Invalid reads and
+# writes, leaks, and anything in libds's own frames still fail the lane. libds
+# hands RE2 every pattern and subject with its length (ds_re2_compile_n,
+# ds_re2_match_n, ds_re2_capture_n), so RE2 reads no byte past it.
+#
+# scripts/private/gate/gate.py's memcheck gates pass this file with
+# --suppressions.
+
+{
+   re2-sparse-set-cond-during-compile
+   Memcheck:Cond
+   obj:*libre2.so*
+   ...
+   fun:ds_re2_compile*
+}
+
+{
+   re2-sparse-set-value8-during-compile
+   Memcheck:Value8
+   obj:*libre2.so*
+   ...
+   fun:ds_re2_compile*
+}
+
+{
+   re2-sparse-set-value4-during-compile
+   Memcheck:Value4
+   obj:*libre2.so*
+   ...
+   fun:ds_re2_compile*
+}
+
+{
+   re2-sparse-set-cond-during-match
+   Memcheck:Cond
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_match
+}
+
+# The capture path: ds_re2_capture calls RE2::Match, which builds the reverse
+# program (ReverseProg -> Compiler::Finish -> Prog::Optimize). At -O2 GCC
+# splits the builtin, and the backtrace names `builtin_regex_capture.part.0`.
+
+{
+   re2-reverse-prog-cond-during-capture
+   Memcheck:Cond
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_capture*
+}
+
+{
+   re2-reverse-prog-value8-during-capture
+   Memcheck:Value8
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_capture*
+}
+
+{
+   re2-reverse-prog-value4-during-capture
+   Memcheck:Value4
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_capture*
+}
+
+{
+   re2-sparse-set-value8-during-match
+   Memcheck:Value8
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_match
+}
+
+{
+   re2-sparse-set-value4-during-match
+   Memcheck:Value4
+   obj:*libre2.so*
+   ...
+   fun:builtin_regex_match
+}
+
+# The alpha REGEX test: ds_rete_alpha_test_fact calls ds_re2_match_n for a
+# REGEX AlphaTest's pattern (rete/alpha.c), with no builtin frame on the
+# stack.
+
+{
+   re2-sparse-set-cond-during-alpha-test
+   Memcheck:Cond
+   obj:*libre2.so*
+   ...
+   fun:ds_rete_alpha_test_fact
+}
+
+{
+   re2-sparse-set-value8-during-alpha-test
+   Memcheck:Value8
+   obj:*libre2.so*
+   ...
+   fun:ds_rete_alpha_test_fact
+}
+
+{
+   re2-sparse-set-value4-during-alpha-test
+   Memcheck:Value4
+   obj:*libre2.so*
+   ...
+   fun:ds_rete_alpha_test_fact
+}

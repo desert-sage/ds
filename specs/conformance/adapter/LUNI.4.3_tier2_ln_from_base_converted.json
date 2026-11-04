@@ -1,0 +1,32 @@
+{
+    "id": "LUNI.4.3_tier2_ln_from_base_converted",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LUNI.4.3], [RLOW.7.3.9]: a tier-2 unit body that spells the natural log `ln` compiles, and its `from_base` is lowered on a kwarg and evaluated when the call is. `nep` is tier-2, `to_base: exp((x - 40.0) / 10.0)`, `from_base: 10.0 * ln(x) + 40.0`; `amp.set` declares `p: nep`, and rule `go` passes the `sone` slot `l.s`, asserted 1.0. The integrator receives p=40.0: ln(1) is exactly 0, which CORE-MATH returns, and the product and sum are exact. ⚠ x = 1 is the one point where ln is exact, and every logarithm is 0 there, so this pins that an `ln` body is admitted, lowered and evaluated, NOT that the call is FN_LN rather than another logarithm; `luni_4_3_tier2_fn`'s table is what maps the name. PATH PINNED: `dsc.validate`'s `luni_4_3_tier2_body` admits the body (`ln` is in `dsc.quantity.luni_4_3_tier2_fn`), and `kwarg_pairs` in dsc.rete lowers it through `luni_4_3_from_base`, with `x` the lowered argument.",
+    "rules_ds": "from math import exp, ln\n\nunit dimension loudness storage float64 base sone\nunit sone: loudness\nunit nep: loudness:\n    to_base:   exp((x - 40.0) / 10.0)\n    from_base: 10.0 * ln(x) + 40.0\n\nservice amp.set:\n    kwarg p: nep required\n    no response\n\nschema Level scope logical:\n    room: String key\n    s: sone mutable\n\nrule go:\n    Level l\n->\n    call amp.set p: l.s nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Level",
+                "slots": {
+                    "room": "hall",
+                    "s": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "amp.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "p": 40.0
+                }
+            }
+        ]
+    }
+}

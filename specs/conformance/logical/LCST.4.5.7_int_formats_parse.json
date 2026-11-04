@@ -1,0 +1,21 @@
+{
+    "id": "LCST.4.5.7_int_formats_parse",
+    "category": "logical",
+    "scenario": "[LCST.4.5.7]: `::Int?` parses every INT_LIT spelling with an optional sign. Rule `pos` matches strings that parse to 31, and rule `neg` those that parse to -31. Accepted: plain decimal, `_`-separated decimal, `0x` in both digit cases, `0b` with a separator, `0o`, a leading `+`, and a negative hex. PATH PINNED: FN_STRING_TO_INT's runtime adapter in both runtimes. The source is a slot read, so nothing is folded at compile time. A base-10-only parser (libds's strtoll today) logs only `31` and `+31`, and a parser that took no separators drops `3_1` and `0b1_1111`. `pos` fires before `neg` by terminal ordinal ([LDET.5.4]), and within a rule in assertion order.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule pos:\n    S s where (s.txt::Int? ?? 0) == 31\n->\n    log info \"{s.txt}\"\n\nrule neg:\n    S s where (s.txt::Int? ?? 0) == -31\n->\n    log info \"{s.txt}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "31" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "3_1" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "0x1F" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "0x1f" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "0b1_1111" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "0o37" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "+31" } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "-0x1F" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "31", "3_1", "0x1F", "0x1f", "0b1_1111", "0o37", "+31", "-0x1F" ]
+    }
+}

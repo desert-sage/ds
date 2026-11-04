@@ -1,0 +1,34 @@
+{
+  "id": "RFCS.22",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": null,
+  "seq": 943,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Pump boundaries — the `PumpBoundary` atom",
+  "text": "## Pump boundaries — the `PumpBoundary` atom [RFCS.22]\n\n[RFCS.22] A `PumpBoundary` atom marks one pump of the engine to quiescence\n([RARC.5.6.6]). The engine **must** emit one per pump, **including a pump that\nfired nothing** — that pump is exactly the one no other atom records, and it is\nthe case the atom exists for.\n\n**Container-legality `stream`, stream-class `inject`, band `1–127`** (field 4).\nA replayer **performs** a pump on meeting one, so it is an input the engine was\ngiven rather than an observable it produced, and it **must not** be compared\n([RFCS.17.5]).\n\n**The body carries no fire count** (`proto/pump_boundary.proto`). An inject\natom's body is delivered to the engine and never compared, so a count of what\nthe pump fired — engine output — would be a number a replayer must ignore while\nlooking like one it should check. What a pump fired is already on the trace, as\nthe atoms emitted between this boundary and the previous one.\n\n**Why a boundary.** Without one, a trace cannot distinguish\n`assert, assert, pump` from `assert, pump, assert, pump`, because a pump that\nfires nothing leaves no other trace. The engine records what it did, so a\nreplayer reproduces it ([LFST.9.2.1]).\n\n**The cadence is read off the trace and declared nowhere.** No header field\ncarries it; `StreamHeader` reserves field 15 and its name\n(`proto/stream_header.proto`, [STYL.2.8.7]).\n\n**A new inject-class atom is not additive** ([RFCS.3.4]): an older reader\ncannot skip it without losing an input it was handed, so it rejects the trace\nwith `DS_ERR_FS_UNKNOWN_INJECT` ([RFCS.18.8]) rather than replaying a different\nrun. It therefore lands with a minor release ([LDET.1.10]).\n\n---\n\n",
+  "refs": [
+    "LDET.1.10",
+    "LFST.9.2.1",
+    "RARC.5.6.6",
+    "RFCS.17.5",
+    "RFCS.18.8",
+    "RFCS.3.4"
+  ],
+  "atoms": [
+    "PumpBoundary"
+  ],
+  "errors": [
+    "DS_ERR_FS_UNKNOWN_INJECT"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/pump_boundary.proto",
+        "name": "PumpBoundary",
+        "tag": "spec"
+      }
+    ]
+  }
+}

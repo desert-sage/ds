@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.4.3.not_type_or_engine_error",
+    "category": "logical",
+    "dead_rules_expected": ["div"],
+    "scenario": "The negative half of the divide-by-zero classification, on the same program and steps. A classification claim is two claims — the right kind appears AND the other kinds do not — and the harness asserts one kind per fixture, so the pair is written as two. This one forbids `type_error` (the value is present and the operation is valid at the site; nothing is Json-sourced) and `engine_error` (the engine is intact, so the tier must not halt). Int operands, because only an all-Int division traps ([LEXP.7.15.1]). Same path as the sibling: the Int arm of `DS_RETE_BINOP_DIV`, via `ds_rete_fault`'s DS_FAULT_DIVIDE_BY_ZERO arm.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule div:\n    S s where s.a / s.b > 1.0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "engine_error", "rule_fire_begin"]
+    }
+}

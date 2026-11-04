@@ -1,0 +1,15 @@
+{
+    "id": "LADP.8.6.1_library_kwarg_schema_importer_binds_another",
+    "category": "compiler",
+    "scenario": "[LADP.8.6.1], [LIMP.1.5]: \"An importer's declarations, imports and aliases take no part.\" `lib`'s service has a kwarg typed `Reply`, its own import of `a`'s, and the program binds bare `Reply` to `b`'s. A binding of `b`'s is not the kwarg's schema. Its twin, `LADP.8.6.1_library_kwarg_schema_importer_binds_another_compiles`, passes `a`'s. PATH PINNED: `dsc.imports.limp_1_5_kwarg` giving the kwarg `a.Reply`, then `dsc.validate.ladp_8_6_1_fact_kwarg` reading that in the program's namespace.",
+    "rules_ds": "from b import Reply\nimport lib\n\nrule r:\n    Reply y\n->\n    call svc.x r: y nocooldown\n",
+    "libraries": {
+        "a": "schema Reply scope logical:\n    k: Int key\n",
+        "b": "schema Reply scope logical:\n    k: Int key\n    w: Int mutable\n",
+        "lib": "from a import Reply\n\nservice svc.x:\n    kwarg r: Reply\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_FACT_KWARG_NOT_BINDING"
+    }
+}

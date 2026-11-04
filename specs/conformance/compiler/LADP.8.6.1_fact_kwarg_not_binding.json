@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.6.1_fact_kwarg_not_binding",
+    "category": "compiler",
+    "scenario": "LADP.8.6.1: a kwarg declared with the kind `Schema` takes a fact -- its argument must be a pattern binding -- and any other argument is a compile error (DS_VALIDATE_FACT_KWARG_NOT_BINDING). Pin: `kwarg subject: Schema` passed `t.v`, a slot value, where `t` itself would be legal. Path: the validator's call-kwarg check reads the declared type and requires a bare binding.",
+    "rules_ds": "service svc.store:\n    kwarg subject: Schema\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.store subject: t.v nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_FACT_KWARG_NOT_BINDING"
+    }
+}

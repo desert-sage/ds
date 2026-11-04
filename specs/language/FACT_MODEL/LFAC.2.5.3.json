@@ -1,0 +1,300 @@
+{
+  "id": "LFAC.2.5.3",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.2.5",
+  "seq": 306,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LFAC.2.5.3] **The complement: a meaningful change\n  is a replace, never a second fact, and is never\n  silent.** A reassertion that is *not* a no-op under\n  [LFAC.2.5.1] — a `tolerance`-bearing slot whose value\n  moves outside the tolerance, or any exactly-compared\n  slot that changes — is a **meaningful change**. The\n  engine must apply it as a retract-and-replace per\n  [LFAC.1.2.2]: the prior fact for that identity key\n  ([LFAC.1.7]) is retracted and the new one asserted, so\n  **exactly one live fact per key remains** (the live\n  count is unchanged), the new fact is a fresh wrapper\n  with a new `fact_id` ([IDAT.4.4]), and `ts` advances.\n  The engine must surface this on the stream as\n  `FACT_ASSERT(new)` followed by `FACT_RETRACT(old)`,\n  whether a host assert or a rule's emit produced the\n  new fact: the successor is recorded before the\n  withdrawal it causes ([RFCS.6.7], [RFCS.6a.4]). `FACT_MODIFY` is reserved and not\n  emitted ([NCBK.2.4]). An\n  in-place same-wrapper mutation that emits no stream\n  event, and any path that leaves a second live fact for\n  the same key, are both non-conforming.\n\n",
+  "refs": [
+    "IDAT.4.4",
+    "LFAC.1.2.2",
+    "LFAC.1.7",
+    "LFAC.2.5.1",
+    "NCBK.2.4",
+    "RFCS.6.7",
+    "RFCS.6a.4"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "idat_4_4__reassert_outcome",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_2_5_3__meaningful_change_is_visible_replace",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/noop_reassert.als",
+        "name": "lfac_2_5_3__stream_event",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/WitnessProofs.idr",
+        "name": "lfac_2_5_3__churn_diverges",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed and checked: period 2 from the start. Each replace is a new fact, hence a new token, hence a firing -- the clause's retract-and-replace is a fresh production, and a rule that replaces what it matches never quiesces."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lfac_2_5_3__churn",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`C c where c.key == 1 -> emit C key: 1 pay: flip(c.pay)`: every firing is a meaningful change of the same identity."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lfac_2_5_3__churn0",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "From one live C(1, 0)."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lfac_2_5_3__churn_prog",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "That rule alone, with C an entity (one-slot key) kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lfac_2_5_3__flip_pay",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The payload change the churn rule makes: 0 <-> 1."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__assert_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An entity reassertion with a changed payload retracts the prior fact for the key and asserts a fresh one with a new id, chosen while the old fact is still live so the two ids differ: exactly one live fact per key remains, as the clause requires. The FACT_RETRACT / FACT_ASSERT stream pair is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lfac_2_5_3__fresh_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Smallest natural not used as a live id and not in the avoid list, by bounded search."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "lfac_2_5_3__fresh_id",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fresh id for the new wrapper, never one bound by the RHS currently running. DS mints monotonically ([IDAT.4.4]) where this reuses the smallest free id; only id equality is ever consulted, so no observable of this model separates the two, and reuse is what lets a looping run return to a literally equal state."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_1__assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A meaningful change is a replace: retract the old fact, insert a fresh wrapper."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WHAT AN ASSERT LEAVES LIVE: live before, or the fact minted, under any lifecycle -- a no-op, an insert, a replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__assert_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The replace of a meaningful change keeps one live fact per key: the old fact leaves before the new one enters."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_1__assert_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A replace keeps the view: the retraction of a live fact, then the insertion of a fresh one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "lfac_2_5_3__fresh_not_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The fresh wrapper is not a live fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retract-and-replace of a kind the chain does not read leaves the chain: the retracted entity has the kind, and so does its replacement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retract-and-replace keeps the shapes: a retraction then an insert."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_rows_emitted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's mint, fresh against a memory in which every row's target is live, keeps the row property; a replace retracts the old fact first, which only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's mint is fresh, so ids stay unique; a replace mints against the memory the old fact is still in."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_chain_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "After the clause's replace, A holds the new wrapper's match alone; the old wrapper's ended with it. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_inputs_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An entity re-asserted with a new payload: the clause's retract-and-replace, among the inputs. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's replace executed: the old wrapper retracted, the new one minted against the memory the old was still in (id 1, not 0), and its activation the new wrapper's. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rows_emitted_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The fresh id the clause mints is no row's target, given every row's target live: so it keeps the row property."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__assert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A meaningful change retracts the live fact and inserts a fresh one: the fresh wrapper's activation is unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_3__entity_replace_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The replace fires once, on the fresh wrapper, id 1 -- the new `fact_id` is new. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "lfac_2_5_3__replaced_is_unfired",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A fresh wrapper with a new `fact_id`': its activation is unfired before the pump. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_1__assert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A replace keeps the order: the retraction of a live fact, then the insertion of a fresh one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A replace retracts and inserts: the set is cleared twice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__replace_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "REPLACING AN ENTITY -- the retraction of the old fact then the insertion of the fresh one on the network, one propagation over the result on FireLoop -- keeps the agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_4_4__ids_identify",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A replacement is a fresh wrapper with a new id, so within one change an id names one fact."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "lfac_2_5_3__fresh_from_free",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The search invariant: with fuel at least the number of excluded values at or above the candidate, the search returns a free value; every excluded candidate passed drops one from that count."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "lfac_2_5_3__fresh_id_free",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The replacement's fresh wrapper has an id that is neither live nor bound: among the first |wm| + |avoid| + 1 naturals one qualifies and the search returns the first."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/lfac.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "lfac_2_5_3__chg",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "lfac_2_5_3__nextWrapper",
+        "tag": "spec"
+      }
+    ]
+  }
+}

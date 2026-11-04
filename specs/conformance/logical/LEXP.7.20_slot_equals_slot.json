@@ -1,0 +1,18 @@
+{
+    "id": "LEXP.7.20_slot_equals_slot",
+    "category": "logical",
+    "scenario": "LEXP.7.20: two schema-typed slot reads are equal exactly when they name the same fact. Parents 1 and 2; Specs ask for Child 1 and Child 2 under Parent 1 and Child 3 under Parent 2, and `make` emits each with its `parent` slot set ([LGRA.5.7a.2]). `sib` (`Child c, Child d where c.parent == d.parent and c != d`) fires for the two children of Parent 1, each way round, and never across parents or for a child with itself. Exactly [\"sib 1/2\", \"sib 2/1\"]: `make`'s terminal is first, so every child enters before `sib` fires; both of `sib`'s matches complete when Child 2 enters, and LDET.5.5 orders them lexicographically, Child 1 first. PATH PINNED: the join test, scanned; libds `rete/eval.c` `val_eq_unordered`'s FACT_REF arm on two slot values, Mercury `ds.eval` `compare_outcome` on two `fact_ref`s.",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Spec scope logical:\n    id: Int key\n    parent: Int mutable\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent mutable\n\nrule make:\n    Spec s\n    Parent p where p.id == s.parent\n->\n    emit Child logical id: s.id parent: p\n\nrule sib:\n    Child c\n    Child d where c.parent == d.parent and c != d\n->\n    log info \"sib {c.id}/{d.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Parent", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Parent", "slots": { "id": 2 } },
+            { "op": "assert", "schema": "Spec", "slots": { "id": 1, "parent": 1 } },
+            { "op": "assert", "schema": "Spec", "slots": { "id": 2, "parent": 1 } },
+            { "op": "assert", "schema": "Spec", "slots": { "id": 3, "parent": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["sib 1/2", "sib 2/1"]
+    }
+}

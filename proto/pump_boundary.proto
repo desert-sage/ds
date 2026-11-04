@@ -1,0 +1,25 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// PumpBoundary — atom body. Marks one pump of the engine to quiescence
+// ([RARC.5.6.6]), emitted whether or not that pump fired anything.
+//
+// STREAM-CLASS: inject ([RFCS.3.4]). A replayer PERFORMS a pump on meeting one,
+// so it is an input the engine was given and not an observable it produced.
+//
+// WHY THE BODY CARRIES NO FIRE COUNT. An inject atom's body is delivered to the
+// engine; it is never compared. A count of what the pump fired is engine
+// OUTPUT, and putting it here would hand a replayer a number it must ignore
+// while looking like one it should check. What the pump fired is already on the
+// trace as the atoms it emitted, between this boundary and the last.
+//
+// WHY IT EXISTS. Without it the trace cannot distinguish `assert, assert, pump`
+// from `assert, pump, assert, pump` — a pump that fires nothing leaves no other
+// mark. The boundary is the engine emitting what it did.
+message PumpBoundary {
+  uint64 seq      = 1;
+  int64  clock_ns = 2;   // the pump's clock sample ([LTIM.2.8.4]), taken before anything the pump does
+}

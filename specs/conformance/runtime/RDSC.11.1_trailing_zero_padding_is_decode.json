@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_trailing_zero_padding_is_decode",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] No padding is admitted: an artefact ends at the end of its last atom, every byte after an atom begins a frame, and a trailing 0x00 is a malformed frame, refused with DS_ERR_DSC_DECODE (-503). The loader must not stop at such a byte and load the atoms before it: a zeroed tail is a truncated rule bundle ([RDSC.9.7]). The program compiles to 40 atoms, so `runtime_error`'s `tamper: {insert_bytes: {at: 40, hex: \"0000\"}}` ([RCTS.1.2.21]) appends two 0x00 octets after the last atom, as zero-filled storage after an image would. A count other than 40 makes the tamper no site (fewer atoms) or puts the octets before the last atom (more). The walk reaches the DscHeader first, so `dsc_sha256` is re-sealed over the edited artefact and the refusal is the padding's, not the hash's. What it discriminates: a loader that stops at a zero byte loads the 40 atoms; one that answers it as truncation gives -500. PATHS: libds's `ds_dsc_load` atom walk (`ds_pbf_next_atom`: the byte is not 0x0A, MALFORMED); the Mercury runtime's `ds.atom.next_frame` (`ae_bad_outer_tag`) in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 40, "hex": "0000"}},
+        "code": "-503"
+    }
+}

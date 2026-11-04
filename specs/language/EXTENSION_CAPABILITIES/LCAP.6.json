@@ -1,0 +1,14 @@
+{
+  "id": "LCAP.6",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": null,
+  "seq": 416,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Recommended combinations",
+  "text": "## Recommended combinations [LCAP.6]\n\n| Goal | Dialect | Overrides |\n|---|---|---|\n| Stream processing, no special constraints | `default` | — |\n| Hard RT, logical derived facts allowed | `realtime` | — |\n| Hard RT, tightest T_wcet, joins O(1) | `realtime` | `linear_scan: false` |\n| Hard RT, no derived facts, smallest footprint | `realtime` | `logical: false` |\n| Tightest possible — alpha-only, hard RT | `realtime` | `linear_scan: false`, `logical: false` |\n| Bounded memory, no hard deadline (embedded baseline) | `default` | `constspace: true` |\n| Bounded memory + O(1) ops, no deadline | `default` | `constspace: true`, `linear_scan: false` |\n| Non-RT, O(1) joins at any scale | `default` | `linear_scan: false` |\n| Non-RT, no TMS overhead | `default` | `logical: false` |\n| Per-emit TTL with hard RT | `realtime` | `dynamic_ttl: true` |\n| Per-emit TTL, non-RT | `default` | `dynamic_ttl: true` |\n\nThe rows that use the `realtime` dialect or set `constspace: true` are\ndeferred with those capabilities, and the compiler refuses them in this\nedition ([LCAP.2.1.5]).\n\n**The most common RT deployment** is the `realtime` dialect with\n`linear_scan: false`: hard RT with O(1) joins, bounded strings, fixed\nT_wcet, and logical facts still available for derived-state patterns.\n\n**The minimum footprint deployment** adds `logical: false`: alpha-only\nmode, no TMS, no beta network, and T_wcet is a single constant number.\nAppropriate for high-frequency single-fact pattern detection with no\ncross-schema correlation.\n\n---\n\n",
+  "refs": [
+    "LCAP.2.1.5"
+  ]
+}

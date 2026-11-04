@@ -1,0 +1,28 @@
+{
+  "id": "LGRA.22.9_slot_chain_beside_import",
+  "category": "logical",
+  "scenario": "LGRA.22.9 step 1: a dotted name whose first segment is a pattern binding is slot access, whatever the file imports. `import ha`, where library `ha` exports a constant `x = 100`; a rule binds `P p` and reads `p.x` in its `where` and its log. `p` is no library, so `p.x` is the fact's slot: the log carries the asserted 5, not the library's 100, and a `where` of `p.x > 1` passes on the slot's value. PATH PINNED: `dsc.resolve`'s `lgra_22_9_library_member` FAILING for a chain rooted at a binding, so `dsc.typecheck` and `dsc.rete` take the slot-access path.",
+  "rules_ds": "import ha\n\nschema P scope logical:\n    id: Int key\n    x: Int mutable\n\nrule r:\n    P p where p.x > 1\n->\n    log critical \"x {p.x}\"\n",
+  "libraries": {
+    "ha": "const x = 100\n"
+  },
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "P",
+        "slots": {
+          "id": 1,
+          "x": 5
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "x 5"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.7.1.1",
+    "category": "compiler",
+    "scenario": "Regex on Bytes rejection per LSTR.7.1.1. Regex patterns operate on `String` at the codepoint level; applying a regex to a `Bytes` value is a compile error. The author must `decode` first. Pin: `r.raw ~ /^abc/` on a `Bytes` slot rejects with DS_VALIDATE_REGEX_ON_BYTES.",
+    "rules_ds": "schema Raw scope logical:\n    entity_id: String key\n    raw: Bytes mutable\n\nrule trig:\n    Raw r where r.raw ~ /^abc/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_ON_BYTES"
+    }
+}

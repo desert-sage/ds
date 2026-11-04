@@ -1,0 +1,11 @@
+{
+    "id": "LLOG.11.9_self_replacing_emit",
+    "category": "compiler",
+    "scenario": "LLOG.11.9: an emit of `A` whose identity-key slot is the bound `a`'s own (`id: a.id`) and which gives another slot a literal that differs from the literal the pattern requires (`kind: \"leave\"` against `a.kind == \"enter\"`, compared as LCYC.6.1.2 compares) replaces the fact `a` matched (LFAC.2.5.3), so the match ends at that emit. Being `logical`, it is refused with DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING at the emit, line 8. LCYC.6.1.2's literal break drops the self-edge, so the rule graph admits the rule and the refusal is this clause's. PATH PINNED: `dsc.validate`'s `llog_11_9_self_replacing`, comparing through `dsc.cycle`'s `llog_11_9_literal_breaks`. Control: LCYC.6.1_self_edge_kind_flip_ok, where `kind` is the key, so the emit makes another fact and replaces nothing, and it compiles. Twin: LLOG.11.9_logical_emit_after_self_replacing_emit.",
+    "rules_ds": "schema A scope logical:\n    id: String key\n    kind: String mutable\n\nrule flip:\n    A a where a.kind == \"enter\"\n->\n    emit A logical id: a.id kind: \"leave\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING",
+        "expected_line": 8
+    }
+}

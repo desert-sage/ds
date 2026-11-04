@@ -1,0 +1,16 @@
+{
+    "id": "IRET.10.5_withdraw_leaves_wm",
+    "category": "runtime",
+    "scenario": "IRET.10.5: `withdraw j` takes the fact bound to `j` out of working memory. Two explicit `Job` facts and a `Trig` matching the first: the rule fires once and withdraws Job 1, so the count after the pump is 2 (Trig + Job 2). Job 2 staying is the control that the withdraw is aimed: it removes the bound fact, not the schema's facts. PATH PINNED: the compiler lowers `withdraw j` to ACTION_WITHDRAW at `j`'s token position (`dsc.rete`, `dsc.encode`), libds's action loop retracts `token->facts[withdraw_pattern_index]` through `ds_engine_retract_rete_fact` with cause AUTHOR_WITHDRAWN (`rete/engine.c`), and Mercury's `ds.exec.iret_10_5_withdraw` does the same. A compiler that leaves the rule unlowered leaves the count at 3.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Trig t\n    Job j where j.id == t.v\n->\n    withdraw j\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Job", "slots": { "id": 1 } },
+            { "schema": "Job", "slots": { "id": 2 } },
+            { "schema": "Trig", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LLET.10.2",
+    "category": "compiler",
+    "scenario": "No shadowing per LLET.10.2 — a `let` name that collides with a `const` in the same file is a compile error. Pin: `const limit: 100` (lowercase), then `let limit = t.v` in a rule rejects with DS_VALIDATE_LET_SHADOWS_CONSTANT. Uppercase const names cannot be shadowed by let (let requires IDENT), so this test uses a lowercase const.",
+    "rules_ds": "const limit = 100\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    let limit = t.v\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_SHADOWS_CONSTANT"
+    }
+}

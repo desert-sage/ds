@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.1.1.5_emit_deadline_out_of_range",
+    "category": "logical",
+    "dead_rules_expected": ["leaked"],
+    "scenario": "[LTIM.1.1.5]: a rule's `emit` into a `ttl 1_h` schema at a clock of INT64_MAX - 1 s would give the fact a deadline past the `Time` range, so the deadline has no value: one ComputationError of kind NOT_REPRESENTABLE, named for the emitting rule, the activation abandoned, and no Out asserted. Never wrapped. Steps: `set` the mock clock to INT64_MAX - 1 s, assert a Trig (a `logical` schema, so its own assert has no deadline), pump. `emit_out` faults; `handler` matches the ComputationError fault fact ([LERR.9.1]) and logs its kind and rule; `leaked` would log an Out. Messages: `NOT_REPRESENTABLE emit_out`, and nothing else. A runtime that wrapped the deadline asserts the Out, so `leaked` logs (and the Out expires at once); one that refused the assert with a status rather than a fault logs nothing from `handler`. PATH PINNED: libds's action loop in `rete/engine.c` (`ds_rete_deadline_in_range` before the slots are judged) and `adapter_emit_inner` (`rete/adapters.c`) for `publish`; the Mercury runtime's `ds.exec.assert_verb`, `ltim_1_1_5_deadline_past_range` over `window_for`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Out scope ttl 1_h:\n    k: Int\n\nrule emit_out:\n    Trig t\n->\n    emit Out k: t.k\n\nrule handler:\n    ComputationError e\n->\n    log info \"{e.kind} {e.rule}\"\n\nrule leaked:\n    Out o\n->\n    log info \"leaked {o.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE emit_out"]
+    }
+}

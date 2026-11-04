@@ -1,0 +1,16 @@
+{
+  "id": "LREG.4.7",
+  "prefix": "LREG",
+  "doc": "REGEX.md",
+  "parent": "LREG.4",
+  "seq": 162,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LREG.4.7] **A capture is a function of the matched fact and the pattern\nalone, so how many times an implementation evaluates it is not observable.** An\nengine **may** compute a capture once and carry the result, or re-derive it\nwherever the value is used, or both in one artefact. No program can tell the\ndifference, so this document does not choose.\n\n**This is why the clause is about purity and not about caching.** It is the\nsame rule [RDSC.5a.1a] applies to aggregation reads, run in the opposite\ndirection: there, a read **must not** mutate state, *because* the number of reads\nis unfixed under any evaluation strategy and a non-idempotent read would make\nthe answer depend on how many rules referenced it. Here the idempotence is free —\nRE2 is deterministic and the fact is immutable while matched — and what it buys\nback is the engine's choice.\n\n**What that choice costs is worth knowing before it surprises someone.** The\nsingle-pattern case is free: the test and the fire happen in one pass, so the\nmatch is already in hand. A join is where re-derivation is reached, because the\ncapture is needed when the *other* side arrives, and it is paid per candidate\nfact examined rather than once per join — a constant factor on work the join\nalready does, not a new complexity class. An engine that carries the value\ninstead pays storage rather than time. Both conform.\n\n**Under `realtime` the cost lands where the contract already accounts for it.**\nRe-matching is bounded because RE2 is linear by construction ([LREG.7.1]) — it is\nthe reason that engine is mandated rather than a convenience — so the work is\npump work under `pump_wcet_ns` ([RTCT.7.1]) rather than an unbounded\nallocation. An engine that carries the value instead consumes the intern table,\nwhich `intern_cap` and `intern_bytes_cap` already bound. Neither strategy needs\na cap that does not exist.\n",
+  "refs": [
+    "LREG.7.1",
+    "RDSC.5a.1a",
+    "RTCT.7.1"
+  ]
+}

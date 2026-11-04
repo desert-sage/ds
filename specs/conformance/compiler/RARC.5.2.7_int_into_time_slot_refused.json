@@ -1,0 +1,11 @@
+{
+    "id": "RARC.5.2.7_int_into_time_slot_refused",
+    "clauses": ["RARC.5.2.6"],
+    "category": "compiler",
+    "scenario": "[RARC.5.2.7], [RARC.5.2.6]: an `Int` is not a `Time`, and nothing converts one into the other at a slot. `emit Out stamp: 5` into the `Time` slot `stamp` is refused with DS_VALIDATE_TYPE_MISMATCH. A compiler that compares only the five scalar kinds admits it, and a runtime that takes an `Int` in a `Time` slot stores it with no error at either stage. PATH PINNED: `dsc.validate.lexp_7_3b_kwarg_type` through `rarc_5_2_7_provable_mismatch`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Out scope ttl 1_h:\n    stamp: Time\n\nrule r:\n    Trig\n->\n    emit Out stamp: 5\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LRST.1.4",
+    "category": "compiler",
+    "scenario": "`as <expr>` type constraint per LRST.1.4 — the expression must evaluate to a scalar value that admits equality. `Json` is rejected: a `Json` value is a document, not a scalar key; project a typed leaf first. Pin: `after 5_min as r.payload:` where `payload: Json` rejects with DS_VALIDATE_AS_NON_EQUATABLE_TYPE.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    payload: Json mutable\n\nrule trig:\n    Req r\n->\n    log info \"trig\"\n    after 5_min as r.payload:\n        log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AS_NON_EQUATABLE_TYPE"
+    }
+}

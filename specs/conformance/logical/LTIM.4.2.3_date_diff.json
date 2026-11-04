@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.2.3_date_diff",
+    "clauses": ["LTIM.4.2.3", "RLOW.6.1.5"],
+    "category": "logical",
+    "scenario": "[LTIM.4.2.3]: `a - b` with two `Date` operands is the `Duration` of `a`'s day count minus `b`'s, times 86 400 · 10⁹ nanoseconds. One Span, `a` 2024-03-03 (day 19785) and `b` 2024-02-29 (day 19782). Rule `three` fires where `s.a - s.b == 3_d` and rule `back` where the signed difference from `a` to `b`, `(s.b - s.a)::Int - (s.a - s.b)::Int` ([LTIM.1.3.1], [LCST.4.5.2]), is -259200000000000 nanoseconds, three days back; both in a `where`. `s.b - s.a` alone is `0_s`, since a `Duration` is never negative (`logical/LTIM.4.2.3_date_minus_later_date_is_zero` pins that); rule `render` logs `(s.a - s.b)::String`, which is `72h` in [LTIM.8.4]'s compact form. A lowering to plain Int `-` reads the difference in days as nanoseconds: neither `where` holds, and `render` logs `3ns`. PATH PINNED: `dsc.rete`'s `rlow_6_1_5_date_arith` lowering to FN_DATE_DIFF, in a join test and in an action, and the builtin in libds (`rete/adapters.c`, `adapter_ds_date_diff`) and Mercury (`ds.eval.ltim_4_2_3_date_diff`).",
+    "rules_ds": "schema Span scope logical:\n    id: Int key\n    a: Date mutable\n    b: Date mutable\n\nrule three:\n    Span s where s.a - s.b == 3_d\n->\n    log info \"three\"\n\nrule back:\n    Span s where (s.b - s.a)::Int - (s.a - s.b)::Int == -259200000000000\n->\n    log info \"back\"\n\nrule render:\n    Span s\n->\n    let d = (s.a - s.b)::String\n    log info \"span {d}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Span", "slots": { "id": 1, "a": 19785, "b": 19782 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["three", "back", "span 72h"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.4.6_decode_refused",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6]: the byte/string conversions are not in the language, so `b.decode(\"utf-8\")` is refused with DS_VALIDATE_BYTES_CONVERSION_RETIRED at the call. The encoding is a valid one and the receiver is a declared `Bytes` slot, so neither an unknown-encoding nor a type refusal can pre-empt the retirement. PATH PINNED: the method-call arm of the validator, which names the retired method; `bytes_to_utf8(b)` takes the builtin arm and is pinned by the lane's unit test.",
+    "rules_ds": "schema Pkt scope ttl 1_h:\n    raw: Bytes\n\nschema Out scope ttl 1_h:\n    s: String\n\nrule r:\n    Pkt p\n->\n    emit Out s: p.raw.decode(\"utf-8\")\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BYTES_CONVERSION_RETIRED"
+    }
+}

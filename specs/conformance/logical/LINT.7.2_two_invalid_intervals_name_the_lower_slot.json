@@ -1,0 +1,17 @@
+{
+    "id": "LINT.7.2_two_invalid_intervals_name_the_lower_slot",
+    "clauses": ["RLOW.6.1.7", "LNUL.4.2", "LERR.9.12"],
+    "category": "logical",
+    "dead_rules_expected": ["forward", "mirror"],
+    "scenario": "[RLOW.6.1.7] with [LNUL.4.2]: an operation over two invalid intervals yields one DOMAIN fault, chosen within the kind by the fields of the ComputationError record in field-number order, and the offending operand's slot context is among them ([LERR.9.12]). The slot-pinning companion of LINT.7.2_two_invalid_intervals_raise_domain, which pins the kind only because both of its starts are slot `a` of `I`. Here the two pairs' starts are in differently named slots. I 2 (`c` 9, `d` 1) is asserted first and I 1 (`a` 5, `b` 3) second, so both pairs are inverted. Rule `forward` tests `(x.a .. x.b) overlaps (y.c .. y.d)`, and rule `mirror` tests `(y.c .. y.d) overlaps (x.a .. x.b)`; neither fires. Each test is its own node and records one fault. The two candidates in each tie on `kind` (DOMAIN), `rule_name` (the node), `timetag` (0, a trap raised while matching) and `schema_name` (`I`), and differ first at `slot_name`, where \"a\" < \"c\" by UTF-8 bytes, so both rules' faults name `a`. `handler` logs each fault fact's kind, schema and slot: `DOMAIN [I] [a]` twice. The two lines are the same, so the order of the two handler activations is not pinned. What it discriminates: a positional selector (the first pair's fault, or the last) logs `[c]` for one of the two rules; a selector that takes the higher record logs `[c]` for both; and one that compares `fact_id` before the slot picks the `c` pair, whose fact was asserted first and holds the lower id. PATH PINNED: the five-argument FN_INTERVAL_CHECK, each pair's DOMAIN taking the origin of the pair's start; libds `eval_interval_check` selecting with `ds_rete_held_select` (`fault_before`), and Mercury `ds.eval.rlow_6_1_7_interval_check` folding `located(Fault, Origin)` with `lnul_4_2_yielded`.",
+    "rules_ds": "schema I scope logical:\n    id: Int key\n    a: Int mutable\n    b: Int mutable\n    c: Int mutable\n    d: Int mutable\n\nrule forward:\n    I x where x.id == 1\n    I y where y.id == 2 and (x.a .. x.b) overlaps (y.c .. y.d)\n->\n    log info \"forward\"\n\nrule mirror:\n    I x where x.id == 1\n    I y where y.id == 2 and (y.c .. y.d) overlaps (x.a .. x.b)\n->\n    log info \"mirror\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "I", "slots": { "id": 2, "a": 0, "b": 0, "c": 9, "d": 1 } },
+            { "op": "assert", "schema": "I", "slots": { "id": 1, "a": 5, "b": 3, "c": 0, "d": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN [I] [a]", "DOMAIN [I] [a]"]
+    }
+}

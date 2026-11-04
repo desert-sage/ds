@@ -1,0 +1,19 @@
+{
+  "id": "RTCT.7.8",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.7",
+  "seq": 602,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.7.8] **Capability refusal is a load error.** An artefact whose rules can\nreach a builtin that is not `rt_safe` ([IRET.13.3]) **must be refused at load**\nunder `realtime`, with `DS_ERR_RT_UNSAFE`. It must not be accepted and then\ndeclined per-activation.\n\n**Why the load and not the activation.** A realtime contract is a promise made\nbefore the engine runs. An artefact accepted at load and refused mid-cycle has\nalready been promised for, and the integrator learns the promise was unkeepable\nat the first fact that reaches the rule — which may be long after go-live and\nis not reproducible from the artefact alone. Refusing at load makes the\ncontract checkable when it is offered.\n\n**Which component performs the check is not specified here.** The compiler\nknows every builtin a rule can reach and the loader holds the registration\ntable, so either can answer; what this clause fixes is that the answer arrives\n**before any fact is processed**, and that the artefact is rejected rather than\ndegraded.\n\nThis is rung 1 of `[LERR.1]` — nothing is abandoned because nothing has\nstarted. It is not a `TypeError`: a `TypeError` abandons one activation, and an\nartefact that cannot honour `realtime` is not a per-activation condition.\n\n",
+  "deferred": true,
+  "refs": [
+    "IRET.13.3",
+    "LERR.1"
+  ],
+  "errors": [
+    "DS_ERR_RT_UNSAFE"
+  ]
+}

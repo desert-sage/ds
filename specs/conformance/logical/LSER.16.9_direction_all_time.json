@@ -1,0 +1,26 @@
+{
+    "id": "LSER.16.9_direction_all_time",
+    "category": "logical",
+    "scenario": "[LSER.10.9] / [LSER.16.9] / [LSER.14.1]: `direction all_time` compares the two newest samples ever absorbed for the identity and answers `+1`, `0` or `-1`, `null` with fewer than two; on `all_time` it rides the running-stats backing (SeriesBackendWelfordEwma, [LSER.18.1]), where the two newest absorbed samples are the two newest in the series, rather than the ring buffer a sliding `direction` reads. Values 1, 3, 2, 4 then 5, one per pump, each read pre-sample ([LSER.8.6.1]): cold and one-sample reads are `null` (no log); [1, 3] -> 1; [1, 3, 2] -> -1; [1, 3, 2, 4] -> 1. Drives libds `welford_ewma.c`'s `typed_prev` pair and the Mercury `ds.series` `agg_direction` over the all-time samples.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    direction all_time\n\nrule r:\n    Reading s where s.direction is not null\n->\n    log info \"direction {s.direction}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["direction 1", "direction -1", "direction 1"]
+    }
+}

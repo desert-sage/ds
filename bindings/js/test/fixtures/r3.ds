@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The R3 fixture: a logical fact with two justifiers, for justifiers
+# (pyds's test_multi_justifier_enriched_via_pull_api), and a filtered rule, for
+# the Rete walks. Compiled by the branch's own Mercury dsc in the gate.
+
+use default
+
+schema A scope logical:
+    id: Int key
+
+schema B scope logical:
+    id: Int key
+
+schema L scope logical:
+    id: Int key
+
+rule from_a:
+    A a
+->
+    emit L logical id: a.id
+
+rule from_b:
+    B b
+->
+    emit L logical id: b.id
+
+schema Temp scope logical:
+    room: String key
+    c: Float mutable
+
+schema Hot scope logical:
+    room: String key
+
+rule too_hot:
+    Temp t where t.c > 30.0
+->
+    emit Hot logical room: t.room

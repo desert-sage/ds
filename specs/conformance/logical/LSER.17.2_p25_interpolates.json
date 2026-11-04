@@ -1,0 +1,26 @@
+{
+    "id": "LSER.17.2_p25_interpolates",
+    "category": "logical",
+    "scenario": "LSER.17.2: `p25` interpolates between the two bracketing order statistics (type 7), with the rank in exact integers, and a one-sample window reads its sample. Drives the companion read `s.p25` on a logical schema into the ring-buffer percentile of both runtimes (libds `ds_series_ring_buffer_percentile`, Mercury `ds.series` `aggregate(agg_percentile(25))`). Values 10, 20, 30, 40, 50 on an `Int` slot, one per pump, each read pre-sample (LSER.8.6.1): the first read is cold and does not log; then [10] reads 10.0 (n = 1); [10, 20]: num = 25, lo = 0, frac = 25, 12.5; [10, 20, 30]: num = 50, 15.0; [10, 20, 30, 40]: num = 75, 17.5. It does not discriminate a Float floor of the rank: no rank in it is near an integer boundary.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    p25 sliding 1_h\n\nrule r:\n    Reading s where s.p25 is not null\n->\n    log info \"p25 {s.p25}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 30 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 40 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 50 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["p25 10.0", "p25 12.5", "p25 15.0", "p25 17.5"]
+    }
+}

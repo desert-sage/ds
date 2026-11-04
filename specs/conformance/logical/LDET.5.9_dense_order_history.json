@@ -1,0 +1,21 @@
+{
+    "id": "LDET.5.9_dense_order_history",
+    "clauses": ["LDET.5.5"],
+    "category": "logical",
+    "scenario": "[LDET.5.9]: \"Two engines that agree on working memory and on the match set therefore agree on the order.\" Items 1, 2 and 3 are asserted and Item 1 retracted, leaving the working memory of `LDET.5.9_dense_order_fresh` -- Items 2 and 3 -- before the Anchor arrives. The order must be that fixture's: 2, then 3, which is [LDET.5.5]'s key -- the matches complete together and are ordered by their facts' entry ranks. PATH PINNED: the LEFT-activation of the join over the Item memory after a delete. libds's alpha memory is the `oa` dense vector, last-into-hole ([IRET.28.10.1], `rete/alpha.c`), so its walk visits 3 before 2; the completion is held at the join (`rete/beta.c` `forward_extension`) and stamped in key order at the end of the event (`ds_rete_beta_flush_completions`). Stamping in walk order logs 3, 2 and turns this red. It does NOT pin Mercury's sort: Mercury's memories stay in insertion order, so its walk already visits 2 before 3; `LDET.5.5_self_join` pins Mercury's. `LDET.5.5d` is the RIGHT-activation twin, and `runtime/mercury/test/scenarios/77_dense_order` runs this history through both runtimes.",
+    "rules_ds": "schema Anchor scope logical:\n    id: Int key\n\nschema Item scope logical:\n    id: Int key\n\nrule joined:\n    Anchor\n    Item b\n->\n    log info \"{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Item", "slots": {"id": 1}, "as": "first"},
+            {"op": "assert", "schema": "Item", "slots": {"id": 2}},
+            {"op": "assert", "schema": "Item", "slots": {"id": 3}},
+            {"op": "pump"},
+            {"op": "retract", "label": "first"},
+            {"op": "pump"},
+            {"op": "assert", "schema": "Anchor", "slots": {"id": 1}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["2", "3"]
+    }
+}

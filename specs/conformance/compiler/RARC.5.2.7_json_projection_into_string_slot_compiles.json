@@ -1,0 +1,10 @@
+{
+    "id": "RARC.5.2.7_json_projection_into_string_slot_compiles",
+    "clauses": ["RARC.5.2.6"],
+    "category": "compiler",
+    "scenario": "[RARC.5.2.7]: the compiler refuses only where the declared types prove the mismatch; otherwise the engine raises a TypeError. A projection into a `Json` document, `x.doc.name`, has a type only the engine learns, so `emit Out s: x.doc.name` into the `String?` slot `s` compiles. The slot is nullable so that [LNUL.5.1]'s concrete-value position is not what decides it. The unknown-type control for compiler/RARC.5.2.7_whole_json_into_string_slot_refused, which differs in reading `x.doc` whole. PATH PINNED: `dsc.validate.lexp_7_3b_kwarg_type`, where the value types as unknown and no check fires.",
+    "rules_ds": "schema Src scope logical:\n    k: Int key\n    doc: Json mutable\n\nschema Out scope ttl 1_h:\n    s: String?\n\nrule r:\n    Src x\n->\n    emit Out s: x.doc.name\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

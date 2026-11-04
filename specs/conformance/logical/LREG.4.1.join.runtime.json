@@ -1,0 +1,18 @@
+{
+    "id": "LREG.4.1.join.runtime",
+    "category": "logical",
+    "scenario": "A capture reaches a LATER pattern's `where` and joins on it — `Event e where (dev) = e.msg ~ /(\\w+)/` followed by `Device d where d.id == dev`, a join on a captured value with no intermediate fact ([LREG.4.1], [LGRA.8.6]). Only the device the message names fires. Path: the second pattern's beta join test lowers `dev` to FN_REGEX_CAPTURE over the first pattern's token fact (`dsc.rete.captures_through`), which a capture that lowered to anything but the value would fail.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    msg: String mutable\n\nschema Device scope logical:\n    id: String key\n\nrule matched:\n    Event e where (dev) = e.msg ~ /(\\w+) failed/\n    Device d where d.id == dev\n->\n    log critical \"device {d.id} failed\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Device", "slots": { "id": "pump" } },
+            { "op": "assert", "schema": "Device", "slots": { "id": "fan" } },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "e1", "msg": "fan failed" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "device fan failed"
+        ]
+    }
+}

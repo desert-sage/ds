@@ -1,0 +1,18 @@
+{
+    "id": "IRET.12.2_withdrawn_own_trigger_unsupports_the_emit",
+    "category": "logical",
+    "clauses": ["LLOG.15.1"],
+    "dead_rules_expected": ["live"],
+    "scenario": "[LLOG.15.1] and [IRET.12.2]: a logical fact's last justification ends when its justifier's LHS no longer matches, \"whatever ends the match\" ([LLOG.15.1]), and a `withdraw` of the rule's own trigger is one such end. \"The engine must retract exactly the logical facts [LLOG.2.5] leaves unsupported\" ([IRET.12.2]), and when an activation ends because a supporting fact in the LHS was retracted, each logical fact it supports loses that justification and is retracted at zero. Rule `arm` matches the explicit `Trig t`, logs, emits `L logical v: t.v` and then withdraws `t` (an emit before the `withdraw` is legal, [LLOG.11.9]). The withdraw ends the very activation that is firing, so `L(1)`'s only justification ends with it, and `L(1)` is retracted in the same pump. Rule `live` joins `L` with a `Probe` asserted in a later pump and would log if `L(1)` had survived. Expected: \"armed 1\" and nothing else. A runtime whose firing activation takes the not-yet-fired branch, which withdraws no justification, keeps `L(1)`, and `live` logs \"L 1 is live\". PATH PINNED: libds's `ds_rete_terminal_left_retract` (rete/terminal.c) taking the TMS branch for `engine->firing_act`, and the Mercury runtime's `ds.engine.end_justifications`. The lockstep scenario 111_withdraw_own_trigger (fixture 143_withdraw_own_trigger) holds the two runtimes to each other with fact ids.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nschema Probe scope explicit:\n    v: Int\n\nschema L scope logical:\n    v: Int key\n\nrule arm:\n    Trig t\n->\n    log info \"armed {t.v}\"\n    emit L logical v: t.v\n    withdraw t\n\nrule live:\n    L l\n    Probe p where p.v == l.v\n->\n    log info \"L {l.v} is live\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed 1"]
+    }
+}

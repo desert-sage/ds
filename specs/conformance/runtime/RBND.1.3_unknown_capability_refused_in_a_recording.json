@@ -1,0 +1,16 @@
+{
+    "id": "RBND.1.3_unknown_capability_refused_in_a_recording",
+    "category": "runtime",
+    "scenario": "[RBND.1.3]: each entry of a binding tuple's `capabilities` is a member of `proto/capabilities.proto#Capability`, and a reader must refuse a list that names anything else in a recording's header with DS_ERR_PARSE (-100). The harness ([RCTS.1.2.18]) records a Parcel assert and a pump with the runtime's own recorder, whose `StreamHeader` copies the program's `capabilities` ([RBND.3.1]), then writes 127, which `Capability` does not allocate, over the list's first entry (`unknown_capability`). The unaltered recording must replay, so the refusal is the edit's. What it discriminates: a reader that keeps an unknown number, or drops it, replays the recording; one that leaves the check to the binding comparison refuses it with another code. PATH: libds's `ds_rfcs_decode_header` (`rfcs/codec.c`), reached through `Engine.replay` and not through a Python decoder, which refuses under RBND.1.3 with DS_ERR_PARSE; the Mercury runtime's `ds.rfcs.decode_stream`, which ends the decode with `decode_failed(\"RBND.1.3\", _)` at the header.",
+    "rules_ds": "use default\n\nschema Parcel scope logical:\n    id: String key\n    w: Int mutable\n\nrule weigh:\n    Parcel\n->\n    log info \"w\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Parcel", "slots": { "id": "a", "w": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "unknown_capability" },
+        "code": "-100"
+    }
+}

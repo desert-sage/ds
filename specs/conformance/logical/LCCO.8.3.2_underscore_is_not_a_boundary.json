@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.8.3.2_underscore_is_not_a_boundary",
+    "category": "logical",
+    "scenario": "[LCCO.8.3.2] with [LECC.1.2]: a code's segments are separated by `.` alone, and `_` is a character inside a segment, so an `error adapter:` continuation matches `adapter.failed` and does not match `adapter_failed`. Two Req facts a and b each issue one call, correlated `c-<id>`; a's is answered by a CallError coded `adapter.failed`, b's by one coded `adapter_failed`, each asserted and pumped on its own. The rule's only continuation is `error adapter:`, which logs the request's id. Pin: exactly [\"adapter a\"]. A runtime that also breaks a segment at `_` logs `adapter b` too. The control, `a`, keeps the vector from passing on a run whose calls never reached the continuation. [LECC.6.4] admits `adapter`. PATH PINNED: libds `builtins.c` `error_code_matches`, Mercury `ds.eval.code_matches`, each reached through `FN_ERROR_CODE_MATCHES` in the continuation's join test.",
+    "rules_ds": "service svc.read:\n    kwarg entity_id: String\n    no response\n\nschema Req scope logical:\n    id: String key\n\nrule r:\n    Req q\n->\n    call svc.read entity_id: q.id nocooldown as \"c-{q.id}\"\n        error adapter:\n            log info \"adapter {q.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Req", "slots": { "id": "a" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c-a", "code": "adapter.failed", "message": "x", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c-b", "code": "adapter_failed", "message": "x", "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["adapter a"]
+    }
+}

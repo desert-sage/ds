@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.10.8_utc_plus_8_without_a_row_is_domain",
+    "clauses": ["LTIM.10.8", "LTIM.10.5.3"],
+    "category": "logical",
+    "scenario": "[LTIM.10.8]: \"UTC+8\" is a zone name, and with no row asserted under it, it has no answer: a ComputationError of kind DOMAIN ([LTIM.10.5.3]). The pair of LTIM.10.8_utc_plus_8_is_a_key, with no row. `zoned` reads `e.seen.local(\"UTC+8\") - e.seen` in a `let` and faults; `later` then logs, so the stream holds a computation_error before the action_log. PATH PINNED: libds's `adapter_ds_local` through `ds_rete_tz_resolve`, and Mercury's `ds.eval.ltim_3_2_local`.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule zoned:\n    Event e\n->\n    let d = e.seen.local(\"UTC+8\") - e.seen\n    log info \"zoned {d}\"\n\nrule later:\n    Event\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log"]
+    }
+}

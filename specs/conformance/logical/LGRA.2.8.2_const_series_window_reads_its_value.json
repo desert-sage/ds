@@ -1,0 +1,22 @@
+{
+    "id": "LGRA.2.8.2_const_series_window_reads_its_value",
+    "clauses": ["LGRA.2.8.1", "LSER.14.1"],
+    "category": "logical",
+    "scenario": "[LGRA.2.8.2]: a series window takes a `time_expr`, and a `time` const is the window its value names. The program is logical/LSER.14.1_rule_read_windows_at_now's with `const W = 10_s` for its literal: `mean` and `count` `sliding W` on `Reading.level` by `dev`. Samples 1.0 at 0 and 3.0 at 8 s, each pumped at its own instant; at 15 s a `Probe` arrives and `read` logs the binding's `mean` and `count`. The window (5 s, 15 s] holds the 8 s sample alone, so the message is exactly ['3.0 1']. A window lowered from anything but the const's value moves the answer: one longer than 15 s logs ['2.0 2'], one of 7 s or less logs no sample, and a window of 0, which the wire refuses ([RDSC.5a.5.4]), loads nothing. PATH PINNED: `dsc.rete.rlow_8_3_1_companion` and `line_backings` reading the NAME through `line_window_ns` and `dsc.dstest.lgra_2_8_1_time_value_ns`, then the backing's window in both runtimes.",
+    "rules_ds": "use default\n\nconst W = 10_s\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level (by: dev):\n    mean sliding W\n    count sliding W\n\nrule read:\n    Probe\n    Reading s\n->\n    log info \"{s.mean} {s.count}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 8000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 15000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["3.0 1"]
+    }
+}

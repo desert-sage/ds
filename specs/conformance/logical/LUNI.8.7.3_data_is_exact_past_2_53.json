@@ -1,0 +1,17 @@
+{
+    "id": "LUNI.8.7.3_data_is_exact_past_2_53",
+    "clauses": ["LUNI.8.5"],
+    "category": "logical",
+    "scenario": "[LUNI.8.7.3]: a quantity in an `int64` dimension is an `Int` with a dimension, and its arithmetic is `Int` arithmetic. `Blob.size` is a `bit` slot holding 2^60 bits; rule `r` adds `1_bit` and logs the sum stripped to `Int` (`::Int`, [LUNI.8.5]). The sum is 2^60 + 1 exactly; as a Float it rounds back to 2^60. Run by both runtimes. PATH PINNED: `dsc.types.luni_7_1_slot_type` gives the slot `lk_int` from `rf_unit_storage`; the `1_bit` literal lowers to `int(1)` through `dsc.rete.storage_literal`; the `+` is an `Int` add in both runtimes; and the `::Int` strip is `dsc.cast`'s `storage_strip(st_int, ct_int)`, lowered as an identity.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule r:\n    Blob b\n->\n    let grown = (b.size + 1_bit)::Int\n    log critical \"{grown}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": 1, "size": 1152921504606846976 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1152921504606846977"
+        ]
+    }
+}

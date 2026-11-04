@@ -1,0 +1,16 @@
+{
+  "id": "LFCA.10.2",
+  "prefix": "LFCA",
+  "doc": "FORM_CATALOG.md",
+  "parent": "LFCA.10",
+  "seq": 247,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LFCA.10.2] **Catalog is narrow.** Seven capabilities in four categories:\n  `actions` (4), `series_capability` (1), `call_modifiers` (1),\n  `expression_capability` (1). The deferred storage and samples-plane\n  capabilities ([LCAP.2.10]) are not counted.\n\n  Every entry corresponds to something a tier can genuinely lack — a\n  runtime capability, or a permission the tier withholds. The two are\n  not the same and both are admissible: `series` is gated because\n  a tier may have no registered backend, while `cache` is gated because\n  a tier may forbid rules from mutating cache state. What is **not**\n  admissible is gating something every engine inherently has, which is\n  why `cached(...)` is absent ([LFCA.2.4]) and why there is no\n  `cache_ttl_arg` — TTL support on an engine-owned cache cannot vary\n  by tier.\n\n  Three reasons to gate are legitimate, and they are not all the same\n  kind of thing:\n\n  1. **Runtime-subsystem absence.** The tier has no adapters, or no\n     series backend — gate off the capabilities that depend on those\n     subsystems.\n  2. **Latency budget.** The tier cannot afford the round-trip of an\n     async `call` — gate off `call` and everything downstream of it.\n     This one is neither a capability the tier lacks nor a permission\n     it withholds; it is a deployment choice, and it is admissible.\n  3. **Tier topology.** The tier is topmost and has nothing to\n     `publish` upward to — gate off `publish`.\n",
+  "refs": [
+    "LCAP.2.10",
+    "LFCA.2.4"
+  ]
+}

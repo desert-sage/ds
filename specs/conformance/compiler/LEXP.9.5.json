@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.9.5",
+    "clauses": ["LEXP.9.5.1"],
+    "category": "compiler",
+    "scenario": "`t.dwell` is a compile-time alias for the time `t`'s fact has been in working memory, `monotonic_ns()` minus its entry stamp, a `Duration` (LEXP.9.5.1). A logical-schema binding may use `.dwell` in a where clause without referencing the clock itself, and compares it with a `Duration` (`5_s`), since a cross-type comparison is refused (LTIM.5.5). Drives dsc.typecheck lser_10_4_dwell_read and dsc.rete lexp_9_5_2_dwell.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    ts: Time\n\nrule r:\n    Sensor s where s.dwell > 5_s\n->\n    log info \"stale\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

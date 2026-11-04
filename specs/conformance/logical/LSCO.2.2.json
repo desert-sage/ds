@@ -1,0 +1,17 @@
+{
+    "id": "LSCO.2.2",
+    "clauses": ["LSCO.2.2.1"],
+    "category": "logical",
+    "scenario": "A rule fires when its conditions become true (LSCO.2.2.1): Motion is asserted and pumped, then the matching Lock is asserted and pumped, and `secure_motion` fires exactly once over the run, so it fired when the second fact arrived and no other time.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nschema Lock scope logical:\n    entity_id: String key\n    locked: Bool mutable\n\nrule secure_motion:\n    Motion m where m.state == true\n    Lock l where l.locked == false and m.entity_id == l.entity_id\n->\n    log info \"motion in unlocked area\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Motion", "slots": { "entity_id": "zone1", "state": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Lock", "slots": { "entity_id": "zone1", "locked": false } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["secure_motion"]
+    }
+}

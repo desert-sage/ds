@@ -1,0 +1,14 @@
+{
+    "id": "LDET.3.6.1_geometric_unfused",
+    "category": "logical",
+    "scenario": "[LDET.3.6.1]: \"no two operations fused into one\", through the geometric builtins' own sums of squares. One V(x: 65545 * 2^-29, y: 1 - 2^-27) is asserted and pumped once. Every operand that varies is a slot, so nothing folds at compile time and each value is the runtime builtin's. x*x is exact. y*y is 1 - 2^-26 + 2^-54, a tie at its own ulp that rounds to even, 1 - 2^-26. Multiply then add, as [LDET.3.6.1] requires: x*x + round(y*y) = 1 + 18433.27 * 2^-52, rounded to 1 + 18433 * 2^-52, whose square root rounds to 1 + 9216 * 2^-52 = 1.000000000002046363078989088535308837890625. Fused into one multiply-add, the 2^-54 that y*y lost comes back: 1 + 18433.52 * 2^-52 rounds to 1 + 18434 * 2^-52, and its square root to 1 + 9217 * 2^-52, one ulp above. So both rules fire only on an engine that rounds the product before the sum. The sites: libds's builtin_hypot_2d and builtin_euclidean_2d, `sqrt(x * x + y * y)` (runtime/src/libds/builtins.c), and the Mercury runtime's geometric_value, the fold `A + X * X` (runtime/mercury/src/ds.eval.m). Over (0, 0) to (x, y), `distance.euclidean` squares the same two operands. IT CAN ONLY FAIL ON A TARGET WITH FMA: x86-64's baseline has none, so on amd64 it passes whatever the C compiler's flags. aarch64 has FMA as baseline, so the arm64 run is the one to read: without -ffp-contract=off on the C mmc generates, the Mercury runtime fuses here.",
+    "rules_ds": "import distance\n\nschema V scope logical:\n    k: Int key\n    x: Float mutable\n    y: Float mutable\n\nrule hypot_unfused:\n    V v where distance.hypotenuse(v.x, v.y) == 1.000000000002046363078989088535308837890625\n->\n    log info \"hypot_unfused\"\n\nrule euclid_unfused:\n    V v where distance.euclidean(0.0, 0.0, v.x, v.y) == 1.000000000002046363078989088535308837890625\n->\n    log info \"euclid_unfused\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "k": 1, "x": 0.00012208707630634307861328125, "y": 0.999999992549419403076171875 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["hypot_unfused", "euclid_unfused"]
+    }
+}

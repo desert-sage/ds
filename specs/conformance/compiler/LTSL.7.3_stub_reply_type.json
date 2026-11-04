@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.7.3_stub_reply_type",
+    "category": "compiler",
+    "scenario": "LTSL.7.3: a reply to a call of a service declaring `response T` is a fact of `T` or a `CallError`; the compiler must reject a reply of any other schema (DS_VALIDATE_TEST_STUB_REPLY_TYPE). Pin: a stub for `heater.on` (`response HeaterAck`) replying a `Reading`. Path: the test lowering's stub check reads the called service's response line.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema HeaterAck scope ttl 1_min:\n    corr: String\n\nservice heater.on:\n    kwarg zone: String\n    response HeaterAck\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    call heater.on zone: r.zone nocooldown as \"h1\"\n\ntest \"reply\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    responses:\n        for call heater.on as \"h1\":\n            Reading zone: \"b\" celsius: 2.0\n    produces:\n        called heater.on as \"h1\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_STUB_REPLY_TYPE"
+    }
+}

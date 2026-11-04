@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.4_emit_of_a_response_schema_is_refused",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: an `emit` whose schema is named in a `response_decl` is refused. `Reply` is `svc.read`'s response schema, and a rule emits it with a `corr`. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag` through `lcrs_4_3_4_answer_schema`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit Reply corr: \"c\" v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_ANSWER_EMIT_FORBIDDEN"
+    }
+}

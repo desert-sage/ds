@@ -1,0 +1,15 @@
+{
+    "id": "LTHE.2.2.2",
+    "category": "logical",
+    "scenario": "`then` pattern requires fact B to appear after fact A within the window per LTHE.2.2.2 (`Y.ts > X.ts` strictly after, `Y.ts - X.ts < T` within the bound). Assert A then B in order within the window; the rule fires. This pin confirms the temporal ordering requirement is enforced.",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n    ts: Time\n\nschema B scope logical:\n    id: Int key\n    ts: Time\n\nrule seq:\n    A\n    then B within 10_s\n->\n    log info \"sequence\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": 1, "ts": 0 } },
+            { "op": "assert", "schema": "B", "slots": { "id": 2, "ts": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "action_log", "rule_fire_end"]
+    }
+}

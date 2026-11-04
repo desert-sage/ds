@@ -1,0 +1,22 @@
+{
+  "id": "ISTS.7.1",
+  "prefix": "ISTS",
+  "doc": "SPEC_TESTING.md",
+  "parent": "ISTS.7",
+  "seq": 318,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[ISTS.7.1] Some spec claims are real but not\nunit-testable. They go in the impl-suite (where\napplicable), in static-analysis tooling, or in\nreview rules — never in `spec/`.\n\n| Claim | Why not spec-testable | Where it lives |\n|---|---|---|\n| `IARC.1.10` \"no threads, never blocks\" | Structural — can grep, can't unit-test absence | Code review; CI grep |\n| `IARC.1.11` \"no globals\" | Structural; can grep for non-`static` mutable file-scope decls | Code review |\n| `IARC.1.13` \"per-object malloc\" | Structural — same | Code review |\n| `IERR.4.1.1` \"detail valid until next libds call\" | Lifetime invariant — provable in specific scenarios but not in general | Impl tests for specific scenarios; doc |\n| `LDET.3.4.1` cross-platform byte-identical replay | Needs two platform signatures at once, so it is a calibration run rather than a suite case | A calibration run: one corpus replayed on two platforms, and the two replays compared byte for byte |\n| `LLOG.5` test CEs under logical | The test CE is already lowered correctly, and behavioural coverage rides on the `LLOG.1` obligation, whose fixture uses a `where` clause | [LLOG.14.2] |\n| `LLOG.8` explicit retract of a logical fact | Compile time: DS has no `retract` verb, so the case is rejected there. Runtime: `ds_engine_retract` works on any schema | [LLOG.14.2] |\n\n",
+  "refs": [
+    "IARC.1.10",
+    "IARC.1.11",
+    "IARC.1.13",
+    "IERR.4.1.1",
+    "LDET.3.4.1",
+    "LLOG.1",
+    "LLOG.14.2",
+    "LLOG.5",
+    "LLOG.8"
+  ]
+}

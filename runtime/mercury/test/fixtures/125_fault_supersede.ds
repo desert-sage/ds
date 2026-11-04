@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+from math import floor
+
+schema P scope logical:
+    entity_id: String key
+    n: Int mutable
+
+schema Q scope logical:
+    entity_id: String key
+    d: Int mutable
+    f: Float mutable
+
+rule ratio:
+    P p
+    Q q where (p.n // q.d) > floor(q.f)
+->
+    log info "ratio"

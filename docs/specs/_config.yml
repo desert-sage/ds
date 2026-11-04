@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# JupyterBook configuration — DS Specifications (unified normative spec book).
+#
+# Fidelity-first: smartquotes off, no MyST transforming extensions, raw-HTML
+# disabled so angle-bracket notation renders literally, unknown code fences fall
+# back to plain text. The four spec trees (language / runtime / impl /
+# integration) are parts of ONE book so their inter-spec cross-links resolve.
+title: The DS Specifications
+author: Dan Finster
+# The page footer reads "© Copyright <this>.": the year and the holder as
+# LICENSE's copyright line names them. A release test holds it there.
+copyright: "2026 Dan Finster and the Desert Sage Contributors"
+logo: ""
+
+execute:
+  execute_notebooks: "off"
+
+only_build_toc_files: true
+
+html:
+  use_issues_button: false
+  use_repository_button: false
+
+sphinx:
+  # ds_lexer — ```ds fence highlighting. ds_intersphinx — cross-book links
+  # (XBOOK1); it owns the book catalogue and pulls in sphinx.ext.intersphinx.
+  # ds_codefont — code is set in Fira Code, ligatures off, from the book's own files.
+  local_extensions:
+    ds_lexer: ../../tools/ds_lexer
+    ds_intersphinx: ../_ext
+    ds_banner: ../_ext
+    ds_codefont: ../_ext
+  config:
+    highlight_language: none
+    smartquotes: false
+    # Under `sphinx.config`, NOT `parse.myst_enable_extensions`. Jupyter Book reads
+    # an empty list there as UNSET and applies its own defaults, so the empty list
+    # this file used to carry never took effect and the book has been rendering with
+    # linkify, tasklist and substitution — the exact transforming extensions the
+    # header above says are off. `.md` is a real ccTLD, so linkify turned a bare
+    # `GRAMMAR.md` in clause prose into `<a href="http://GRAMMAR.md">`: a live link
+    # to a host that does not exist. All 80 of the site's linkify casualties were in
+    # this book and none in the five reference books, which enable it explicitly —
+    # only "empty list ignored, defaults applied" explains that split (SPECCFG1).
+    # `sphinx.config` passes straight to Sphinx and bypasses the parse-time merge.
+    myst_enable_extensions: []
+    myst_disable_syntax: ["html_inline", "html_block"]
+    suppress_warnings:
+      - myst.highlight

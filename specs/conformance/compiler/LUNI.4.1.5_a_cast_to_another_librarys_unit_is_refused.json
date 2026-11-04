@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.4.1.5_a_cast_to_another_librarys_unit_is_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.4.1.5], [LCST.4.5.1], [LCST.4.5.3]: `x.t` is `b`'s `mark`, and the program binds `mark` to `a`'s, so `x.t::mark` names another unit. It is no identity, and the closed table has no unit-to-unit row. A compiler comparing bare symbols reads it as an identity and compiles it. PATH PINNED: `dsc.typecheck.lcst_4_1_6_target_of` and `dsc.types.luni_8_7_3_cast_kind`, whose `decl_ref`s `dsc.cast.lcst_4_5_2_classify` compares.",
+    "rules_ds": "from a import mark\nimport b\n\nrule r:\n    b.S x where x.t::mark > 0.0\n->\n    log info \"x\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2\n",
+        "b": "from a import warmth\n\nunit mark: warmth = x * 3\n\nschema S scope logical:\n    k: Int key\n    t: mark mutable\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_UNDEFINED"
+    }
+}

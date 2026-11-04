@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3a_partial_key",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3a] — part of a composite key is not an anchor: both schemas key on (site, bay) and the `where` equates `site` alone, so every `bay` under one site matches. PATH PINNED: `dsc.validate.full_key_anchor`'s `all_true` over the key slots of BOTH sides; an `any` there would compile this.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    site: String key\n    bay: Int key\n\nschema Reading scope logical:\n    site: String key\n    bay: Int key\n    amount: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.site == d.site\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A"
+    }
+}

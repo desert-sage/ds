@@ -1,0 +1,23 @@
+{
+    "id": "IRET.10.7_response_and_timeout_withdraw_once",
+    "clauses": ["LGRA.10.1.4"],
+    "category": "adapter",
+    "scenario": "IRET.10.7 / LGRA.10.1.4: both the `on response` and the `timeout` bodies withdraw `j`, and only the response arrives. So the Job is withdrawn once, by the response body, and the timeout never runs: [\"reply\", \"gone 1\"]. PATH PINNED: two continuation siblings sharing one capture fact, each carrying its own ACTION_WITHDRAW_BY_ID over the same reference slot (`dsc.rete`). Only the response sibling fires.",
+    "rules_ds": "schema SvcReadReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg n: Int\n    response SvcReadReply\n\nschema Anchor scope explicit:\n    v: Int\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id cooldown: 1_min as \"c1\"\n        on response.ok == true:\n            log info \"reply\"\n            withdraw j\n        timeout 30_s:\n            log info \"timed out\"\n            withdraw j\n\nrule gone:\n    Anchor a\n    no Job\n->\n    log info \"gone {a.v}\"\n",
+    "expect": {
+        "kind": "adapter_mock",
+        "mocks": [
+            {
+                "service": "svc.read",
+                "respond_schema": "SvcReadReply",
+                "respond_slots": { "ok": true }
+            }
+        ],
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Anchor", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_logs": ["reply", "gone 1"]
+    }
+}

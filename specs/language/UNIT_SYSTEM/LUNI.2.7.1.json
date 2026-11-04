@@ -1,0 +1,11 @@
+{
+  "id": "LUNI.2.7.1",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.2.7",
+  "seq": 110,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.2.7.1] The compiler bakes `Rational`→`float64` conversions and the tier-2\nbuild-time round-trip test ([§4.3]) using **round-to-nearest-even** (IEEE 754\n`roundTiesToEven`) and a **fixed left-to-right evaluation order**. The same\n`.ds` source therefore yields **byte-identical baked factors** in the emitted\n`.dsc` on any IEEE-754-compliant build host — DSC reproducibility holds at the\nunit-system layer.\n\nConcretely: an affine factor `= <expr>` ([§4.3]) is folded as a Rational\noperand-by-operand left-to-right, then a single `roundTiesToEven` cast to\n`float64` produces the baked constant. A tier-2 `to_base`/`from_base` pair\napplies the same `roundTiesToEven` rule to every intermediate `float64`\noperation. No host-dependent transcendental enters the bake — irrational\nfactors (e.g. `year_tropical`, [§16.2]) are pre-rounded to their pinned\n`int64`-ns constant at spec-authoring time and committed as such, never\nre-derived from `float64` at build.\n\nThe device side carries the other half of the guarantee: a runtime **MUST**\nuse the baked constant as emitted and **MUST NOT** recompute the factor. A\ntier-1 conversion is then `a·x + b` in correctly-rounded basic operations, and\nso cross-platform bit-exact; recomputing the factor on-device forfeits that.\n\n---\n\n"
+}

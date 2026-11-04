@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.3.3.3",
+    "category": "compiler",
+    "scenario": "A rule whose RHS both `emit`s a schema and `withdraw`s a binding of that same schema is refused at the RHS with DS_VALIDATE_WITHDRAW_EMIT_SAME_SCHEMA per LCYC.3.3.3, before the graph-cycle check ever runs -- pins the targeted same-rule diagnostic, not LCYC.3.1's blanket cycle rejection.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Trig v: t.v\n    withdraw t\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHDRAW_EMIT_SAME_SCHEMA"
+    }
+}

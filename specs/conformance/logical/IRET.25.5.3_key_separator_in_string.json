@@ -1,0 +1,18 @@
+{
+    "id": "IRET.25.5.3_key_separator_in_string",
+    "category": "logical",
+    "scenario": "[IRET.25.5.3]: no separator a component can contain. The keys (\"a\\u0001b\", \"c\") and (\"a\", \"b\\u0001c\") are two keys; a repeat of the first is suppressed by the 10s cooldown, the control. `by: e.a, e.b` makes the two slots the key, in that order ([LCDB.3.3.4]). PATH PINNED: libds `rk_walk` length-prefixes each string and Mercury `ds.rate.activation_key` keeps one part per value; a text key that joins fields with an unescaped 0x01 renders both `a\\x01b\\x01c` and suppresses the second.",
+    "rules_ds": "schema Ev scope ttl 1_min:\n    a: String\n    b: String\n\nrule r cooldown 10_s by: e.a, e.b:\n    Ev e\n->\n    log info \"fire\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "a": "a\u0001b", "b": "c" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "a": "a", "b": "b\u0001c" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "a": "a\u0001b", "b": "c" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire", "fire" ]
+    }
+}

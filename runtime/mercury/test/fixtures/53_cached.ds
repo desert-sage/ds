@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The cache read, an expression ([LGRA.9.8]): `cached(key)` of a key that
+# was written, and of one that never was.
+
+schema Trig scope logical:
+    v: Int key
+
+schema Seen scope ttl 1_h:
+    label: String
+    got: Int
+
+rule writer:
+    Trig t where t.v == 1
+->
+    cache key: "counter" value: 42
+
+rule read_hit:
+    Trig t where t.v == 2
+->
+    let c = cached("counter")
+    emit Seen label: "hit" got: c
+
+rule read_miss:
+    Trig t where t.v == 3
+->
+    let c = cached("never-written")
+    emit Seen label: "miss" got: c

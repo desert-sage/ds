@@ -1,0 +1,10 @@
+{
+    "id": "LDTL.4.1_retain_non_ttl_rejects",
+    "category": "compiler",
+    "scenario": "LDTL.4.1 — a per-emit `retain:` override applies only to a ttl-lifecycle schema (it overrides the schema TTL). On a non-ttl target (here a `logical` schema) it has nothing to override and is rejected with DS_VALIDATE_RETAIN_NON_TTL, even with +dynamic_ttl declared.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\nschema Out scope logical:\n    k: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical k: t.k retain: 60_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RETAIN_NON_TTL"
+    }
+}

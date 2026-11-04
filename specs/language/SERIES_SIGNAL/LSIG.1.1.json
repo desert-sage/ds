@@ -1,0 +1,19 @@
+{
+  "id": "LSIG.1.1",
+  "prefix": "LSIG",
+  "doc": "SERIES_SIGNAL.md",
+  "parent": "LSIG.1",
+  "seq": 42,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LSIG.1.1] The v1 signal aggregations. Each is callable in any expression\nposition as `<agg>(cursor)` per [LSER.16.1], and readable through the\ncompanion-slot form per [LSER.6]. The time model and accuracy come from the\nseries declaration.\n\n| Aggregation | Semantics | Element type | Time model | Returns | Backing | At capacity |\n|---|---|---|---|---|---|---|\n| `active_fraction` | time-weighted fraction of the window the slot was `true` | `Bool` | `sliding` | `Float` | `SeriesBackendIntervalPulse` | refuse |\n| `onset_rate` | rising edges per second | `Bool` | `sliding` | `Float` | `SeriesBackendRingBuffer` | drop |\n| `integral` | time-weighted ∫x dt | `Float`, `Int` | `sliding`, `all_time` | `Float` | `SeriesBackendNumericIntegral` | refuse |\n\n\n**At capacity** is what a declared `capacity` ([LSER.13.14]) does when an\nidentity's backing is full. `active_fraction` and `integral` hold a step\nfunction over the window: a dropped sample would leave part of the window\nunaccounted for and the value silently wrong, so each **refuses**, as a bounds\nrefusal, and the fact is not asserted. Each has a backing of its own, so no\natom carries both policies. `onset_rate` counts edges in the ring buffer it\nshares with the sample-weighted aggregations of [LSER.18.1] and **drops** with\nthem: the oldest sample goes, and with it at most the edge the buffer started\non.\n\n**`Returns` is the representation, not the dimension.** `integral` changes\ndimension, and over a slot that carries a unit [LUNI.9.2] requires the author to\nstrip it in a `let`. A unit-typed value is an `Int`\nor a `Float` carrying a compile-time dimension ([LNUL.4.9]), so this column and\nthat requirement describe different axes of one value.\n\n",
+  "refs": [
+    "LNUL.4.9",
+    "LSER.13.14",
+    "LSER.16.1",
+    "LSER.18.1",
+    "LSER.6",
+    "LUNI.9.2"
+  ]
+}

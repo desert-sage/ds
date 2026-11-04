@@ -1,0 +1,18 @@
+{
+    "id": "LCCO.7.2_a_pump_long_past_the_deadline_fires_the_timeout",
+    "clauses": ["LCCO.7.2", "LCCO.7.1"],
+    "category": "logical",
+    "scenario": "[LCCO.7.2]: a `timeout` clause's timer carries a snapshot of every outer binding its body reads, and the timeout sibling joins no capture fact, so it fires at the first pump at or after `fire_at`, however late that pump is. A timer has no TTL ([LTAC.4.4]). Rule `r` binds `Job j` and calls `svc.get` with a generated correlation (no `as`, [LCCO.3.4]) and `timeout 10_min:` logging `late {j.id}`. The response schema `Reply` is `ttl 1_min`, and nothing answers the call. The clock is set to 0, a Job with id 7 is asserted and pumped, so the call is issued and its timer and capture fact are asserted; then the clock moves 3600 s in one step, long past the 10 min deadline, and is pumped. Expected: exactly ['late 7']. What it discriminates: the capture fact's lifetime is at most 10 min ([LCCO.5.3]), so by the pump at 3600 s it has expired and is swept first ([RARC.5.2.4]). A lowering whose sibling joins the capture finds nothing to join and logs nothing, whatever margin the capture's lifetime has. PATH PINNED: `dsc.rete`'s `timeout_sibling`, whose body reads `j.id` from the timer's `j_id` slot (`timer_views`), which `clause_timer` asserts with the timer.",
+    "rules_ds": "schema Reply scope ttl 1_min:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown\n        timeout 10_min:\n            log info \"late {j.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3600000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["late 7"]
+    }
+}

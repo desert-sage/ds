@@ -1,0 +1,14 @@
+# The read that finds an expired cache entry tells the host, during the
+# assert ([NSTG.2.4.2]).
+#
+# Pump 1    `rw` writes "k" with a 10_s TTL.
+# Advance   to exactly the deadline, with no pump, so no sweep has run.
+# Assert q  `rq1`'s and `rq2`'s join tests read `cached("k")`; the first read
+#           evicts it and tells the host, once.
+#
+# No pump follows the last assert, so the notification can come only from
+# the read.
+assert Trig tag=w
+pump
+advance 10000000000
+assert Trig tag=q

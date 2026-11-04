@@ -1,0 +1,10 @@
+{
+    "id": "LREG.4.1.capture_unreferenced",
+    "category": "compiler",
+    "scenario": "A capture is a binding ([LREG.4.1]), and a binding that is never referenced is a compile error ([LGRA.8.6]) — which is what catches a mistyped capture name, since the misspelling is the name nothing reads. Pin: `where (device, code) = ...` with only `device` read rejects with DS_VALIDATE_UNREFERENCED_BINDING on `code`. Path: `dsc.validate.lgra_8_6_unreferenced_bindings`, its `unreferenced_capture` arm.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nrule r:\n    Log e where (device, code) = e.msg ~ /(\\w+) on (\\d+)/\n->\n    log info \"{device}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNREFERENCED_BINDING"
+    }
+}

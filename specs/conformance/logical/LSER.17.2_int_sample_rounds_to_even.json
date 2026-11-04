@@ -1,0 +1,17 @@
+{
+    "id": "LSER.17.2_int_sample_rounds_to_even",
+    "category": "logical",
+    "scenario": "LSER.17.2: an `Int` sample converts to `Float` round-to-nearest-even before the percentile sorts it. 2^53 + 3 = 9007199254740995 has no `Float`; its neighbours are 9007199254740994 and 9007199254740996, it lies exactly between them, and round-to-nearest-even takes 9007199254740996, whose last significand bit is 0. Drives `s.p50` over a one-sample window (n = 1 reads x_0) into the ring-buffer percentile of both runtimes: the conversion in libds's `ring_sample_as_double` and Mercury's `numbers/1`. Two asserts on one key: the first read is cold; the second reads [9007199254740995] and logs 9007199254740996.0.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    p50 sliding 1_h\n\nrule r:\n    Reading s where s.p50 is not null\n->\n    log info \"p50 {s.p50}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 9007199254740995 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["p50 9007199254740996.0"]
+    }
+}

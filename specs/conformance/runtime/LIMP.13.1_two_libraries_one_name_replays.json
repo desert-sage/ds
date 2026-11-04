@@ -1,0 +1,23 @@
+{
+    "id": "LIMP.13.1_two_libraries_one_name_replays",
+    "clauses": ["LIMP.13.2"],
+    "category": "runtime",
+    "scenario": "[LIMP.13.2]: \"A recording carries it\": the program of `logical/LIMP.13.1_two_libraries_one_name`, recorded and verify-replayed by each runtime. `FactAssert.schema_name` and the `SchemaDef` announcements hold `a.Reply` and `b.Reply`, so a replay finds each fact's schema by its own name, and the two rules fire as they did. PATH PINNED: libds's recorder and `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`, runner.py `_run_replay_determinism`), and the Mercury runtime's `ds.rfcs` and `ds.replay` (`replay_stream`, test_behave.m).",
+    "rules_ds": "from a import Reply as AR\nfrom b import Reply as BR\n\nrule on_a:\n    AR x\n->\n    log info \"a {x.v}\"\n\nrule on_b:\n    BR y\n->\n    log info \"b {y.w}\"\n",
+    "libraries": {
+        "a": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n",
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    w: String\n"
+    },
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "a.Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c2", "w": "two" } },
+            { "op": "pump" }
+        ],
+        "min_events": 5,
+        "min_rule_fires": 2
+    }
+}

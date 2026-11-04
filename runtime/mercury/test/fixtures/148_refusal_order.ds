@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# [NFCT.2.11] / [NLFC.9.6]: where one host call breaks several refusals, the
+# first in the clause's order decides. `check_nfct_2_11_refusal_order` asserts
+# into `Mix` and the built-in `TimeZoneOffset` ([LIMP.12.2]), and seeds the
+# cache. `Mix`'s slots put each later step's value ahead of the earlier
+# step's, so judging slot by slot rather than step by step fails: a Date
+# (step 8), a String (7), a Json (6), a Float (5), an Int (a kind fault, 4).
+# It is `ttl`, so it has a deadline to judge. No rule.
+
+schema Mix scope ttl 1_s:
+    d: Date
+    s: String
+    j: Json
+    f: Float
+    n: Int

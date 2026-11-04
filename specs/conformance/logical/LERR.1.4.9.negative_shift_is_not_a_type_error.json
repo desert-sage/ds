@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.4.9.negative_shift_is_not_a_type_error",
+    "category": "logical",
+    "scenario": "The negative half of the DOMAIN row, on the same program and steps as LERR.1.4.9.negative_shift_is_a_computation_error. `type_error` is forbidden because the value is present and correctly typed — the ComputationError / TypeError split is about whether the OPERATION was valid at the site, not about whether it produced an answer — and `engine_error` because the engine stays intact. `rule_fire_begin` is forbidden too: rung 6 abandons the activation.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    x: Int mutable\n    n: Int mutable\n\nrule r:\n    S s where (s.x << s.n) > 1\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "x": 1, "n": -1 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "engine_error", "rule_fire_begin"]
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "id": "IDSP.8b",
+    "clauses": ["LSTO.4.3.2"],
+    "category": "adapter",
+    "scenario": "`cache_delete` reaches the integrator's delete cb with the right key. Pins IDSP.8 \u2014 cache_delete integrator dispatch.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    cache_delete key: \"stale\"\n",
+    "expect": {
+        "kind": "adapter_cache_deletes",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_keys": [
+            "stale"
+        ]
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "id": "RFCS.10.3_every_observed_clock_value",
+    "category": "runtime",
+    "scenario": "[RFCS.10.3]: the engine records a `ClockAdvance` for every clock value it observes, and must not coalesce or omit one. A value is observed when a sample reads it, not when a mock clock is set ([NTST.3.3]). Two host asserts at two clock values, 0 and 5_ms, are each preceded by their own ClockAdvance; the clock is set to 7_ms and then to 9_ms with no sample between, so 7_ms is never observed and is not recorded; the pump's sample observes 9_ms and records it once. Break: a recorder that coalesced the two asserts' samples drops a ClockAdvance; one that recorded each set adds one. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "set", "now_ns": 5000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "set", "now_ns": 7000000 },
+            { "op": "set", "now_ns": 9000000 },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert",
+            "ClockAdvance", "FactAssert",
+            "ClockAdvance", "PumpBoundary"
+        ]
+    }
+}

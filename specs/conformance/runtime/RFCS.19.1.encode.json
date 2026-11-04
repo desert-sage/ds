@@ -1,0 +1,12 @@
+{
+  "id": "RFCS.19.1.encode",
+  "category": "runtime",
+  "scenario": "[RFCS.19.1] / [RFCS.16.1] — protobuf-native atom framing (introduced at format_major 3, unchanged since), emit side. Every atom is wrapped twice: an outer `0x0A varint(len)` for the container's `repeated Atom atoms = 1`, then an inner `tag(N) varint(len) body` where N is the atom's oneof field number. No ASCII magic reaches the wire. Each vector's prefix is a hand-computed literal from PBF_FRAMING_VECTORS.json, checked against libds's encoder (`ds_rfcs_pack_atom`, through pyds.atoms.frame), whose bytes pin the prefix's width, and — where the body is a valid message — against protobuf's own serializer. The Mercury compiler's encoder is not driven here; the Mercury runtime's format vectors pin its framing. The `ds_source_body_*` rows walk the length-varint boundaries to 16 KB, including 126, where the OUTER length grows one byte of body before the inner one does.",
+  "rules_ds": "",
+  "expect": {
+    "kind": "pbf_framing",
+    "groups": [
+      "encode"
+    ]
+  }
+}

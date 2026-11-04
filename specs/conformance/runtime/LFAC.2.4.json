@@ -1,0 +1,19 @@
+{
+    "id": "LFAC.2.4",
+    "category": "runtime",
+    "scenario": "Logical truth-maintenance \u2014 an `emit logical` from a rule's RHS retracts when the justifying fact retracts. Pins LFAC.2.4 / LFAC.2.5 logical-fact lifecycle through the engine.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Local scope logical:\n    a: Int key\n\nrule r:\n    Trig\n->\n    emit Local logical a: 1\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Trig",
+                "slots": {
+                    "v": 42
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

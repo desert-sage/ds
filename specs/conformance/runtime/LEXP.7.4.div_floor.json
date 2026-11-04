@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.7.4.div_floor",
+    "category": "runtime",
+    "scenario": "`/` (true division, Float) and `//` (floor division, Int) are distinct (LEXP.7.4 vs LEXP.7.5): 7 / 2 == 3.5 while 7 // 2 == 3. The guard requires BOTH to hold, so it fires only if the two operators are not conflated. Companion to LEXP.7.4.div, guarding against a regression that makes `/` truncate like `//`.",
+    "rules_ds": "schema T scope logical:\n    a: Int key\n    b: Int mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.a / t.b) == 3.5 and (t.a // t.b) == 3\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "a": 7, "b": 2 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSMP.3.2a_bool_or_refused",
+    "category": "compiler",
+    "scenario": "[LSMP.3.2a]: the compiler rejects `bool_and` / `bool_or` under `sample` with DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH -- an exact predicate, which a uniform sample can answer wrongly by omitting the one value that decides it ([LSMP.3.2]). `bool_and` is pinned by `compiler/LSER.sample_bool_reject`; this is the `bool_or` half, which nothing pinned. Pin: `bool_or sample 200` on a Bool slot is refused with that code.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    active: Bool mutable\n\nseries Sensor.active:\n    bool_or sample 200\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TIME_MODEL_MISMATCH"
+    }
+}

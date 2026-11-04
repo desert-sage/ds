@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.2.9.6.11_f_precision_on_float_leaf_renders",
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "The positive twin of LGRA.2.9.6.11_f_precision_on_string_leaf_is_a_type_error: the same `{p.body.x:.3f}` on a Float leaf takes the spec and renders with three places (LGRA.2.9.6.10), and no TypeError is raised. PATH PINNED: the run-time spec check passing a leaf whose kind takes the spec. A check that refused every spec on a Json leaf would log `type error` instead.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.x:.3f}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": 1.5 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["v 1.500"]
+    }
+}

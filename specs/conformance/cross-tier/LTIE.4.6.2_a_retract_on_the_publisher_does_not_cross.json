@@ -1,0 +1,32 @@
+{
+    "id": "LTIE.4.6.2_a_retract_on_the_publisher_does_not_cross",
+    "clauses": ["LLOG.11.7", "LTIE.9.5"],
+    "category": "cross-tier",
+    "scenario": "[LTIE.4.6.2]: the receiving tier holds a published fact as an assertion of its own, with no justifier from the publishing tier, and a retraction in the publishing tier reaches it only if the integrator carries it, which [NCBK.10.1]'s bridge does not. Tier `edge` publishes Sig(v) for every Trig(v) and holds its Trig alone ([LTIE.4.3]); `hub` takes the forward (the harness's `forward` step) and holds 1 Sig. Then `edge`'s Trig is retracted, so `edge` holds 0 facts. A second forward carries nothing, because a retraction raises no ACTION_PUBLISH, and `hub` still holds its Sig: 1 fact. A runtime that let `edge`'s retraction reach `hub` leaves it at 0. PATH: the forward bridge over DS_EV_ACTION_PUBLISH ([RCTS.1.2.29]) on each runtime's publish path (libds's `bridge_publish`, the Mercury runtime's `se_publish`).",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "schema Sig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "v": 7 }, "as": "t" },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" },
+            { "engine": "edge", "op": "retract", "label": "t" },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 0,
+            "hub": 1
+        }
+    }
+}

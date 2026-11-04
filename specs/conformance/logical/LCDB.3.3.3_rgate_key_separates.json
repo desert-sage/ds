@@ -1,0 +1,17 @@
+{
+    "id": "LCDB.3.3.3_rgate_key_separates",
+    "category": "logical",
+    "scenario": "DS-source twin of the K vector formal/k/rgate.key_separates: a second key arriving inside the first key's cooldown window fires, because the window belongs to (r, 1) and not to (r, 2) (LCDB.3.3.3). Drives adapter_ds_rate_allow (rete/adapters.c): the lookup for (r, 2) at 5s finds no entry and allows, while an activation of (r, 1) at that instant would be suppressed (cool_suppress). Pins the per-key separation of windows across time; the same-instant case is cool_perkey.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "n": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire 1", "fire 2" ]
+    }
+}

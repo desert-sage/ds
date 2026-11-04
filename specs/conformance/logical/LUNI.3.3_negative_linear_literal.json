@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.3.3_negative_linear_literal",
+    "category": "logical",
+    "scenario": "[LUNI.3.3]: for a unit whose formula only scales, negating the literal's number and negating its base value agree. `-5_kilometer` is -5000 m. `x: meter` stores meters; position `a` is -5000 m and `b` is 5000 m, and the rule `Pos p where p.x == -5_kilometer` logs `a` and not `b`. PATH PINNED: `luni_4_3_negated_unit_literal` in dsc.rete, through `luni_4_3_unit_value`, over a scaling body. This vector has no break of its own, since both readings give the same number.",
+    "rules_ds": "unit kilometer: length = x * 1000\n\nschema Pos scope logical:\n    id: String key\n    x: meter mutable\n\nrule west:\n    Pos p where p.x == -5_kilometer\n->\n    log info \"{p.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Pos", "slots": {"id": "a", "x": -5000.0}},
+            {"op": "assert", "schema": "Pos", "slots": {"id": "b", "x": 5000.0}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a"]
+    }
+}

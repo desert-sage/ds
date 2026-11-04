@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_negated_anchored_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3]: the positive control for LNLS.3.3c_negated_unanchored. The negated pattern pins `R`'s full key (`x.id == d.id`), and a range comparison on top is allowed as it is for a positive pattern. Each new `D` token probes at most one `R`. PATH PINNED: `dsc.validate.lnls_3_3_anchors` judging a `no` pattern through `full_key_anchor`.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema D scope logical:\n    id: String key\n    level: Int mutable\n\nschema R scope logical:\n    id: String key\n    amount: Int mutable\n\nrule r:\n    D d\n    no R x where x.id == d.id and x.amount > d.level\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

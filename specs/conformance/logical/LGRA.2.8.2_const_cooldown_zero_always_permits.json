@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.2.8.2_const_cooldown_zero_always_permits",
+    "clauses": ["LCDB.5.6", "LCDB.7.6"],
+    "category": "logical",
+    "scenario": "[LGRA.2.8.2]: a `cooldown` written as a `time` const of zero is `cooldown 0_s`, which [LCDB.5.6] makes legal: a tracker whose window is zero always permits. `r cooldown W`, `const W = 0_s`, logs `t.n`. Pin: set 0; assert Trig k=1 n=0; pump (`fire 0`); set n=1, a mutable-slot change under the same key, so a new match with the same activation key ([LCDB.3.3.1]), with no time passing; pump (`fire 1`). Messages are exactly ['fire 0', 'fire 1']. A const refused as a zero window, as a `within` is, fails the compile; one lowered to any positive window suppresses the second firing and logs ['fire 0']. PATH PINNED: `dsc.rete.lgra_2_8_2_rate_window_ns` keeping its own `>= 0` over `dsc.dstest.lgra_2_8_1_time_expr_ns`, then `FN_RATE_ALLOW` with `cool_ns` 0 on the fire guard, in both runtimes.",
+    "rules_ds": "const W = 0_s\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown W:\n    Trig t\n->\n    log info \"fire {t.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",    "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fire 0", "fire 1"]
+    }
+}

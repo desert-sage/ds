@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.or_over_true_false_and_null",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]'s `or`, all nine cells over {true, false, null}, the dual of `and`: true wherever an operand is true, null included on the other side; false only for (false, false); null for (false, null), (null, false) and (null, null). One P fact holds t = true, f = false and n = null. Each cell `a or b` is two rules: `or_ab` fires only when the cell is true, and `or_ab_not`, `not (a or b)`, fires only when it is false, so a null cell fires neither. So the five true cells and `or_ff_not` fire, and `dead_rules_expected` requires the rest never to. A runtime answering `true or null` with null misses `or_tn` and `or_nt`. One answering `false or null` with false fires `or_fn_not`. Agenda order is source order ([LDET.5.4]). Path: each `where` is one join test over slots (nothing hoists); libds's rete/eval.c BINOP arm for DS_RETE_BINOP_OR, Mercury's ds.eval.lnul_4_2_absorbing with `true` deciding.",
+    "rules_ds": "schema P scope logical:\n    id: String key\n    t: Bool mutable\n    f: Bool mutable\n    n: Bool? mutable\n\nrule or_tt:\n    P p where p.t or p.t\n->\n    log info \"or_tt\"\n\nrule or_tt_not:\n    P p where not (p.t or p.t)\n->\n    log info \"or_tt_not\"\n\nrule or_tf:\n    P p where p.t or p.f\n->\n    log info \"or_tf\"\n\nrule or_tf_not:\n    P p where not (p.t or p.f)\n->\n    log info \"or_tf_not\"\n\nrule or_tn:\n    P p where p.t or p.n\n->\n    log info \"or_tn\"\n\nrule or_tn_not:\n    P p where not (p.t or p.n)\n->\n    log info \"or_tn_not\"\n\nrule or_ft:\n    P p where p.f or p.t\n->\n    log info \"or_ft\"\n\nrule or_ft_not:\n    P p where not (p.f or p.t)\n->\n    log info \"or_ft_not\"\n\nrule or_ff:\n    P p where p.f or p.f\n->\n    log info \"or_ff\"\n\nrule or_ff_not:\n    P p where not (p.f or p.f)\n->\n    log info \"or_ff_not\"\n\nrule or_fn:\n    P p where p.f or p.n\n->\n    log info \"or_fn\"\n\nrule or_fn_not:\n    P p where not (p.f or p.n)\n->\n    log info \"or_fn_not\"\n\nrule or_nt:\n    P p where p.n or p.t\n->\n    log info \"or_nt\"\n\nrule or_nt_not:\n    P p where not (p.n or p.t)\n->\n    log info \"or_nt_not\"\n\nrule or_nf:\n    P p where p.n or p.f\n->\n    log info \"or_nf\"\n\nrule or_nf_not:\n    P p where not (p.n or p.f)\n->\n    log info \"or_nf_not\"\n\nrule or_nn:\n    P p where p.n or p.n\n->\n    log info \"or_nn\"\n\nrule or_nn_not:\n    P p where not (p.n or p.n)\n->\n    log info \"or_nn_not\"\n",
+    "dead_rules_expected": ["or_tt_not", "or_tf_not", "or_tn_not", "or_ft_not", "or_ff", "or_fn", "or_fn_not", "or_nt_not", "or_nf", "or_nf_not", "or_nn", "or_nn_not"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": "p", "t": true, "f": false, "n": null } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["or_tt", "or_tf", "or_tn", "or_ft", "or_ff_not", "or_nt"]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.6.8.4",
+    "category": "compiler",
+    "scenario": "RuleDebugName template shape per RDSC.6.8.4 for one positive pattern over a schema keyed on `entity_id`: rule name, then `(s={s.entity_id})`. `test_conformance.m` reads the RuleDebugName atom's name_template out of the emitted `.dsc`; the expected string ends in `)`, so an extra entry would not match.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    level: Float mutable\n\nrule alert_high:\n    Sensor s where s.level > 90.0\n->\n    log info \"high: {s.entity_id}\"\n",
+    "expect": {
+        "kind": "dsc_dnam_templates",
+        "expected_dnam": {
+            "alert_high": "alert_high(s={s.entity_id})"
+        }
+    }
+}

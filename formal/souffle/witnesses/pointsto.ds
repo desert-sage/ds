@@ -1,0 +1,494 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# pointsto -- the `+recursive` witness.
+#
+# benchmarks/classic/suite/13-doop/pointsto.ds rewritten into the `logical`
+# relation fragment: every schema `scope logical` with every slot `key`, the six
+# derived relations emitted directly instead of through the `*Proposal` schemas
+# that run_pointsto.py de-duplicates and re-asserts from the host. The rule
+# graph has the cycles the host loop existed to cut -- reachability feeds
+# points-to feeds the call graph feeds reachability -- so the compiler refuses
+# this program today ([LCYC.3.1], DS_VALIDATE_RULE_CYCLE) and no libds can run
+# it. The witness lowering (private tooling) lowers it under the certificate's recursion
+# exception (Lcyc/Certificate.idr, `Lcyc_3_1_1__cert_emit` and `_range`),
+# computes its least model on Soufflé, judges each `produces` block against
+# that model, and writes two observables beside this file: the model of each
+# test's inputs (what `+recursive` would MEAN), and the models after retracting
+# each input in turn (what any TMS mechanism for it must reproduce -- the
+# refcount of [IRET.12.2] is already refuted on this shape by
+# Rete/Refcount.idr's `iret_12_2__reach_refcount`).
+#
+# THE TESTS STATE CLOSURE SEMANTICS, not the host loop's one-step semantics.
+# In the suite, "assignment propagates one step" is true because a proposal is
+# not a fact until the host re-asserts it; here the fixpoint carries H1 through
+# the whole chain, and the test says so. `activated <rule>` is judged as "the
+# rule has an instantiation in the least model", which on a monotone program
+# is exactly "fired at least once".
+
+use default
+
+schema RootMethod scope logical:
+    "An entry point. `main`, for these programs."
+    meth: String key
+
+schema AssignHeapAllocation scope logical:
+    "v = new T()"
+    heap: String key
+    v: String key
+    in_meth: String key
+
+schema AssignLocal scope logical:
+    "dst = src"
+    src: String key
+    dst: String key
+    in_meth: String key
+
+schema AssignCast scope logical:
+    "dst = (T) src. A value flows through only if T is a supertype of its runtime class."
+    cast_type: String key
+    src: String key
+    dst: String key
+    in_meth: String key
+
+schema LoadInstanceField scope logical:
+    "dst = base.fld"
+    base_var: String key
+    fld: String key
+    dst: String key
+    in_meth: String key
+
+schema StoreInstanceField scope logical:
+    "base.fld = src"
+    src: String key
+    base_var: String key
+    fld: String key
+    in_meth: String key
+
+schema LoadStaticField scope logical:
+    "dst = C.fld"
+    fld: String key
+    dst: String key
+    in_meth: String key
+
+schema StoreStaticField scope logical:
+    "C.fld = src"
+    src: String key
+    fld: String key
+    in_meth: String key
+
+schema VirtualMethodInvocation scope logical:
+    "base.sig(...) -- the target is resolved by the runtime class of what `base` points to."
+    invo: String key
+    base_var: String key
+    sig: String key
+    in_meth: String key
+
+schema StaticMethodInvocation scope logical:
+    "C.sig(...) -- the target is fixed at the call site."
+    invo: String key
+    target: String key
+    in_meth: String key
+
+schema ActualParam scope logical:
+    idx: Int key
+    invo: String key
+    v: String key
+
+schema FormalParam scope logical:
+    idx: Int key
+    meth: String key
+    v: String key
+
+schema ThisVar scope logical:
+    "The receiver variable inside an instance method."
+    meth: String key
+    v: String key
+
+schema ReturnVar scope logical:
+    v: String key
+    meth: String key
+
+schema AssignReturnValue scope logical:
+    invo: String key
+    dst: String key
+
+schema HeapType scope logical:
+    "The allocation site's runtime class -- what virtual dispatch keys on."
+    heap: String key
+    cls: String key
+
+schema MethodLookup scope logical:
+    "Dispatch resolution: in class `cls`, signature `sig` resolves to `meth`."
+    cls: String key
+    sig: String key
+    meth: String key
+
+schema SupertypeOf scope logical:
+    "`sup` is a supertype of `sub`, reflexively."
+    sup: String key
+    sub: String key
+
+schema ComponentType scope logical:
+    "The element type of an array type."
+    array_cls: String key
+    elem_cls: String key
+
+schema LoadArrayIndex scope logical:
+    "dst = base[i]. Index-insensitive: every element of one array is one location."
+    base_var: String key
+    dst: String key
+    in_meth: String key
+
+schema StoreArrayIndex scope logical:
+    "base[i] = src."
+    src: String key
+    base_var: String key
+    in_meth: String key
+
+schema ReachableMethod scope logical:
+    meth: String key
+
+schema VarPointsTo scope logical:
+    heap: String key
+    v: String key
+
+schema InstanceFieldPointsTo scope logical:
+    "base_heap.fld may point to heap."
+    heap: String key
+    base_heap: String key
+    fld: String key
+
+schema StaticFieldPointsTo scope logical:
+    heap: String key
+    fld: String key
+
+schema ArrayIndexPointsTo scope logical:
+    "The single element location of `base_heap` may point to `heap`."
+    heap: String key
+    base_heap: String key
+
+schema CallGraphEdge scope logical:
+    invo: String key
+    target: String key
+
+rule reachable_root:
+    RootMethod r
+->
+    emit ReachableMethod logical meth: r.meth
+
+rule reachable_via_call:
+    CallGraphEdge e
+->
+    emit ReachableMethod logical meth: e.target
+
+rule vpt_allocation:
+    "v = new T()"
+    AssignHeapAllocation a
+    ReachableMethod rm where rm.meth == a.in_meth
+->
+    emit VarPointsTo logical heap: a.heap v: a.v
+
+rule vpt_assign_local:
+    "dst = src"
+    AssignLocal a
+    ReachableMethod rm where rm.meth == a.in_meth
+    VarPointsTo vp where vp.v == a.src
+->
+    emit VarPointsTo logical heap: vp.heap v: a.dst
+
+rule vpt_assign_cast:
+    "dst = (T) src, for the values T actually admits"
+    AssignCast a
+    ReachableMethod rm where rm.meth == a.in_meth
+    VarPointsTo vp where vp.v == a.src
+    HeapType ht where ht.heap == vp.heap
+    SupertypeOf st where st.sup == a.cast_type and st.sub == ht.cls
+->
+    emit VarPointsTo logical heap: vp.heap v: a.dst
+
+rule ifpt_store:
+    "base.fld = src"
+    StoreInstanceField st
+    ReachableMethod rm where rm.meth == st.in_meth
+    VarPointsTo bp where bp.v == st.base_var
+    VarPointsTo vp where vp.v == st.src
+->
+    emit InstanceFieldPointsTo logical heap: vp.heap base_heap: bp.heap fld: st.fld
+
+rule vpt_load_instance_field:
+    "dst = base.fld"
+    LoadInstanceField ld
+    ReachableMethod rm where rm.meth == ld.in_meth
+    VarPointsTo bp where bp.v == ld.base_var
+    InstanceFieldPointsTo ifp where ifp.base_heap == bp.heap and ifp.fld == ld.fld
+->
+    emit VarPointsTo logical heap: ifp.heap v: ld.dst
+
+rule sfpt_store:
+    "C.fld = src"
+    StoreStaticField st
+    ReachableMethod rm where rm.meth == st.in_meth
+    VarPointsTo vp where vp.v == st.src
+->
+    emit StaticFieldPointsTo logical heap: vp.heap fld: st.fld
+
+rule vpt_load_static_field:
+    "dst = C.fld"
+    LoadStaticField ld
+    ReachableMethod rm where rm.meth == ld.in_meth
+    StaticFieldPointsTo sfp where sfp.fld == ld.fld
+->
+    emit VarPointsTo logical heap: sfp.heap v: ld.dst
+
+rule aipt_store:
+    "base[i] = src, if the array's component type admits the value"
+    StoreArrayIndex sa
+    ReachableMethod rm where rm.meth == sa.in_meth
+    VarPointsTo bp where bp.v == sa.base_var
+    VarPointsTo vp where vp.v == sa.src
+    HeapType bt where bt.heap == bp.heap
+    ComponentType ct where ct.array_cls == bt.cls
+    HeapType vt where vt.heap == vp.heap
+    SupertypeOf sup where sup.sup == ct.elem_cls and sup.sub == vt.cls
+->
+    emit ArrayIndexPointsTo logical heap: vp.heap base_heap: bp.heap
+
+rule vpt_load_array_index:
+    "dst = base[i]"
+    LoadArrayIndex ld
+    ReachableMethod rm where rm.meth == ld.in_meth
+    VarPointsTo bp where bp.v == ld.base_var
+    ArrayIndexPointsTo aip where aip.base_heap == bp.heap
+->
+    emit VarPointsTo logical heap: aip.heap v: ld.dst
+
+rule cge_virtual:
+    "Resolve base.sig() by the runtime class of what base points to."
+    VirtualMethodInvocation mi
+    ReachableMethod rm where rm.meth == mi.in_meth
+    VarPointsTo bp where bp.v == mi.base_var
+    HeapType ht where ht.heap == bp.heap
+    MethodLookup ml where ml.cls == ht.cls and ml.sig == mi.sig
+->
+    emit CallGraphEdge logical invo: mi.invo target: ml.meth
+
+rule cge_static:
+    StaticMethodInvocation mi
+    ReachableMethod rm where rm.meth == mi.in_meth
+->
+    emit CallGraphEdge logical invo: mi.invo target: mi.target
+
+rule vpt_this:
+    "The receiver flows into the callee's `this` -- only the objects whose runtime class selected this target."
+    CallGraphEdge e
+    VirtualMethodInvocation mi where mi.invo == e.invo
+    ThisVar tv where tv.meth == e.target
+    VarPointsTo bp where bp.v == mi.base_var
+    HeapType ht where ht.heap == bp.heap
+    MethodLookup ml where ml.cls == ht.cls and ml.sig == mi.sig and ml.meth == e.target
+->
+    emit VarPointsTo logical heap: bp.heap v: tv.v
+
+rule vpt_parameter:
+    "Actual i flows into formal i."
+    CallGraphEdge e
+    ActualParam ap where ap.invo == e.invo
+    FormalParam fp where fp.meth == e.target and fp.idx == ap.idx
+    VarPointsTo vp where vp.v == ap.v
+->
+    emit VarPointsTo logical heap: vp.heap v: fp.v
+
+rule vpt_return:
+    "The callee's return value flows back to the call site."
+    CallGraphEdge e
+    ReturnVar rv where rv.meth == e.target
+    AssignReturnValue ar where ar.invo == e.invo
+    VarPointsTo vp where vp.v == rv.v
+->
+    emit VarPointsTo logical heap: vp.heap v: ar.dst
+
+test "an allocation in a reachable method points to its heap object":
+    inputs:
+        at 0_s:
+            RootMethod meth: "main"
+            AssignHeapAllocation heap: "H1" v: "a" in_meth: "main"
+            AssignHeapAllocation heap: "H2" v: "b" in_meth: "unreached"
+    produces:
+        activated reachable_root
+        activated vpt_allocation
+        emitted ReachableMethod meth: "main"
+        emitted VarPointsTo heap: "H1" v: "a"
+        never emitted VarPointsTo heap: "H2"
+        wm count VarPointsTo == 1
+
+test "assignment propagates the points-to set through the whole chain":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            AssignLocal src: "a" dst: "b" in_meth: "main"
+            AssignLocal src: "b" dst: "c" in_meth: "main"
+            VarPointsTo heap: "H1" v: "a"
+    produces:
+        activated vpt_assign_local
+        emitted VarPointsTo heap: "H1" v: "b"
+        emitted VarPointsTo heap: "H1" v: "c"
+        wm count VarPointsTo == 3
+
+test "a field store and load carry an object through the heap":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            StoreInstanceField src: "x" base_var: "o" fld: "f" in_meth: "main"
+            LoadInstanceField base_var: "p" fld: "f" dst: "y" in_meth: "main"
+            VarPointsTo heap: "H1" v: "o"
+            VarPointsTo heap: "H1" v: "p"
+            VarPointsTo heap: "H2" v: "x"
+    produces:
+        activated ifpt_store
+        activated vpt_load_instance_field
+        emitted InstanceFieldPointsTo heap: "H2" base_heap: "H1" fld: "f"
+        emitted VarPointsTo heap: "H2" v: "y"
+        wm count InstanceFieldPointsTo == 1
+
+test "a cast admits only the values its type is a supertype of":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            AssignCast cast_type: "String" src: "s" dst: "d" in_meth: "main"
+            VarPointsTo heap: "H_Str" v: "s"
+            VarPointsTo heap: "H_Int" v: "s"
+            HeapType heap: "H_Str" cls: "String"
+            HeapType heap: "H_Int" cls: "Integer"
+            SupertypeOf sup: "String" sub: "String"
+            SupertypeOf sup: "Object" sub: "String"
+            SupertypeOf sup: "Object" sub: "Integer"
+            SupertypeOf sup: "Integer" sub: "Integer"
+    produces:
+        activated vpt_assign_cast
+        emitted VarPointsTo heap: "H_Str" v: "d"
+        never emitted VarPointsTo heap: "H_Int" v: "d"
+        wm count VarPointsTo == 3
+
+test "an array store is readable back through the same array only":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            StoreArrayIndex src: "v" base_var: "xs" in_meth: "main"
+            LoadArrayIndex base_var: "xs" dst: "got" in_meth: "main"
+            LoadArrayIndex base_var: "ys" dst: "other" in_meth: "main"
+            VarPointsTo heap: "A_xs" v: "xs"
+            VarPointsTo heap: "A_ys" v: "ys"
+            VarPointsTo heap: "H_Obj" v: "v"
+            HeapType heap: "A_xs" cls: "Object[]"
+            HeapType heap: "A_ys" cls: "Object[]"
+            HeapType heap: "H_Obj" cls: "Object"
+            ComponentType array_cls: "Object[]" elem_cls: "Object"
+            SupertypeOf sup: "Object" sub: "Object"
+    produces:
+        activated aipt_store
+        activated vpt_load_array_index
+        emitted ArrayIndexPointsTo heap: "H_Obj" base_heap: "A_xs"
+        never emitted ArrayIndexPointsTo base_heap: "A_ys"
+        emitted VarPointsTo heap: "H_Obj" v: "got"
+        never emitted VarPointsTo v: "other"
+
+test "an array rejects a value its component type does not admit":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            StoreArrayIndex src: "s" base_var: "ints" in_meth: "main"
+            VarPointsTo heap: "A_int" v: "ints"
+            VarPointsTo heap: "H_Str" v: "s"
+            HeapType heap: "A_int" cls: "Integer[]"
+            HeapType heap: "H_Str" cls: "String"
+            ComponentType array_cls: "Integer[]" elem_cls: "Integer"
+            SupertypeOf sup: "Integer" sub: "Integer"
+            SupertypeOf sup: "String" sub: "String"
+    produces:
+        never activated aipt_store
+        never emitted ArrayIndexPointsTo
+        wm count ArrayIndexPointsTo == 0
+
+test "virtual dispatch resolves on the runtime class of the receiver, and reaches the target":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            VirtualMethodInvocation invo: "i1" base_var: "b" sig: "foo()" in_meth: "main"
+            VarPointsTo heap: "H_Ext" v: "b"
+            HeapType heap: "H_Ext" cls: "Extension"
+            MethodLookup cls: "Extension" sig: "foo()" meth: "Extension.foo"
+            MethodLookup cls: "Base" sig: "foo()" meth: "Base.foo"
+    produces:
+        activated cge_virtual
+        activated reachable_via_call
+        emitted CallGraphEdge invo: "i1" target: "Extension.foo"
+        never emitted CallGraphEdge target: "Base.foo"
+        emitted ReachableMethod meth: "Extension.foo"
+        wm count CallGraphEdge == 1
+        wm count ReachableMethod == 2
+
+test "only the object that selected a target reaches that target's this":
+    inputs:
+        at 0_s:
+            ReachableMethod meth: "main"
+            VirtualMethodInvocation invo: "i1" base_var: "x" sig: "foo()" in_meth: "main"
+            VarPointsTo heap: "H_Base" v: "x"
+            VarPointsTo heap: "H_Ext" v: "x"
+            HeapType heap: "H_Base" cls: "Base"
+            HeapType heap: "H_Ext" cls: "Extension"
+            MethodLookup cls: "Base" sig: "foo()" meth: "Base.foo"
+            MethodLookup cls: "Extension" sig: "foo()" meth: "Extension.foo"
+            ThisVar meth: "Base.foo" v: "this_base"
+            ThisVar meth: "Extension.foo" v: "this_ext"
+    produces:
+        activated vpt_this
+        emitted CallGraphEdge invo: "i1" target: "Base.foo"
+        emitted CallGraphEdge invo: "i1" target: "Extension.foo"
+        emitted VarPointsTo heap: "H_Base" v: "this_base"
+        emitted VarPointsTo heap: "H_Ext" v: "this_ext"
+        never emitted VarPointsTo heap: "H_Ext" v: "this_base"
+        never emitted VarPointsTo heap: "H_Base" v: "this_ext"
+        wm count VarPointsTo == 4
+
+test "a parameter and a return value cross a static call both ways":
+    inputs:
+        at 0_s:
+            RootMethod meth: "main"
+            StaticMethodInvocation invo: "i1" target: "id" in_meth: "main"
+            ActualParam idx: 0 invo: "i1" v: "arg"
+            FormalParam idx: 0 meth: "id" v: "p"
+            AssignLocal src: "p" dst: "r" in_meth: "id"
+            ReturnVar v: "r" meth: "id"
+            AssignReturnValue invo: "i1" dst: "out"
+            AssignHeapAllocation heap: "H1" v: "arg" in_meth: "main"
+    produces:
+        activated cge_static
+        activated vpt_parameter
+        activated vpt_return
+        emitted ReachableMethod meth: "id"
+        emitted VarPointsTo heap: "H1" v: "p"
+        emitted VarPointsTo heap: "H1" v: "r"
+        emitted VarPointsTo heap: "H1" v: "out"
+        wm count VarPointsTo == 4
+
+test "reachability, points-to and the call graph close each other":
+    inputs:
+        at 0_s:
+            RootMethod meth: "main"
+            AssignHeapAllocation heap: "H_Ext" v: "b" in_meth: "main"
+            HeapType heap: "H_Ext" cls: "Extension"
+            VirtualMethodInvocation invo: "i1" base_var: "b" sig: "foo()" in_meth: "main"
+            MethodLookup cls: "Extension" sig: "foo()" meth: "Extension.foo"
+            AssignHeapAllocation heap: "H2" v: "x" in_meth: "Extension.foo"
+            AssignHeapAllocation heap: "H3" v: "y" in_meth: "Base.foo"
+    produces:
+        emitted ReachableMethod meth: "main"
+        emitted VarPointsTo heap: "H_Ext" v: "b"
+        emitted CallGraphEdge invo: "i1" target: "Extension.foo"
+        emitted ReachableMethod meth: "Extension.foo"
+        emitted VarPointsTo heap: "H2" v: "x"
+        never emitted ReachableMethod meth: "Base.foo"
+        never emitted VarPointsTo heap: "H3"
+        wm count ReachableMethod == 2
+        wm count VarPointsTo == 2

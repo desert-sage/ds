@@ -1,0 +1,22 @@
+{
+    "id": "LSER.16.2.1_sum_all_time_int",
+    "clauses": ["LSER.16.2.1", "LSER.18.1"],
+    "category": "logical",
+    "scenario": "Read by a rule: `sum all_time` over two observations in one `by:` group is their total. `Spend.v` is Int, so [LSER.16.2] makes the sum an Int and it renders `7`, where a Float sum renders `7.0`: the rule's log sees the type. Samples 3 and 4 at 1 s and 2 s, each pumped; at 3 s a `Probe` arrives and `read` logs the binding's `sum` ([NSBK.6.3]). `Spend` is a `ttl` schema, so each assert is a fact of its own and `read` fires once per `Spend` fact, both in group `g`: two messages. PATH PINNED: series_read_dispatch -> series_pick_backend_slot -> the backend's DS_SERIES_AGG_SUM query, the path a companion `s.sum` resolves to.",
+    "rules_ds": "use default\n\nschema Spend scope ttl 1_h:\n    k: String\n    v: Int\n\nschema Probe scope explicit:\n    k: Int\n\nseries Spend.v (by: k):\n    sum all_time\n\nrule read:\n    Probe\n    Spend s\n->\n    log info \"{s.sum}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Spend", "slots": { "k": "g", "v": 3 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Spend", "slots": { "k": "g", "v": 4 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["7", "7"]
+    }
+}

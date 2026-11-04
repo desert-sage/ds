@@ -1,0 +1,88 @@
+{
+  "id": "LCRS.4.2.2",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.4.2",
+  "seq": 220,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.4.2.2] Exactly one of the response fact ([LCRS.4.3.1]) or a\n`CallError` is asserted per call to a service declaring `response T`, a superseded\ncall aside ([LCRS.6.2.4]); a call to\na `no response` service produces at most a `CallError` ([LCRS.17.1]). Rules that\nneed both paths write two matcher rules.\n\n",
+  "refs": [
+    "LCRS.6.2.4",
+    "LCRS.17.1",
+    "LCRS.4.3.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_4_2_2__answers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE ANSWER KINDS: the response schemas' kinds and CallError's, the lowering's table. LESS than the clause: the adapter is not modelled, an answer is a host assert, and one answer per call is the adapter's contract."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_4_2_2__is_answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Whether a kind is an answer kind. LESS than the clause: exactly one answer per call is the adapter's contract, not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wanswers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A fixture. The adapter is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__is_answer_cases",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An answer kind is CallError's or a response schema's."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_17_1__silent",
+        "tag": "derives",
+        "note": "Which calls are to a `no response` service, fixed at Init and explored both ways: such a call's only answer is a CallError, the clause's second sentence."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__Kind",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__Respond",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__kind",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__one_kind_when_live",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "EXACTLY ONE KIND: at every reachable state every live answer is a response fact or a CallError, never neither, and a `no response` service's answer is a CallError. Bounded: two calls, two firings each, TTLs of 2 and 3 ticks, every assignment of `no response`; the kindless teeth engine violates it."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__owed",
+        "tag": "spec",
+        "note": "The requests issued and not yet answered, per call: the adapter's bookkeeping, which makes one answer per request a bound on the adapter. Any owed request may be answered next, so replies arrive in any order."
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LSTR.unknown_method",
+    "clauses": ["LEXP.7.18"],
+    "category": "compiler",
+    "scenario": "An unknown method on a typed receiver ([LEXP.7.18], [LGRA.9.6.2]): a method is a member, so `m.text.frobnicate()` on a `String` slot names no member of `String` and is refused with DS_VALIDATE_UNKNOWN_MEMBER. DS_VALIDATE_UNKNOWN_METHOD (1516) is allocated and not raised. Path: dsc.typecheck `member_call_type` -> `unknown_member`.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule r:\n    Msg m\n->\n    let x = m.text.frobnicate()\n    log info \"ok\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_MEMBER"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.22.4_qualified_publish_head",
+    "clauses": ["LGRA.22.4"],
+    "category": "compiler",
+    "scenario": "[LGRA.22.4]: a library-qualified schema reference is `p.NAME`, and in a type position \"every `.` in a schema reference separates the library path from the schema\". Library `plant.zone` declares `Trig`, `Alert` and `Mark`. A pattern head `plant.zone.Trig t`, `emit plant.zone.Alert logical` and `publish plant.zone.Mark` (a `publish` takes no modifier, [LTIE.4.9]): a two-segment path, schema last. Pinned as `dsc_term_order` so both rules have to LOWER, not only parse: a compiler that split the path anywhere but before the last name finds no schema and leaves the rule unlowered. PATH PINNED: `dsc.parse`'s `lgra_8_1_take_type_ref` (`tr_qualified`), resolved by `dsc.resolve`'s `lgra_22_4_pattern_head` and `dsc.rete`'s `action_schema`.",
+    "rules_ds": "import plant.zone\n\nrule raise_both:\n    plant.zone.Trig t\n->\n    emit plant.zone.Alert logical v: t.v\n    publish plant.zone.Mark v: t.v\n\nrule on_alert:\n    plant.zone.Alert a\n->\n    log info \"alert {a.v}\"\n",
+    "libraries": {
+        "plant.zone": "schema Trig scope logical:\n    v: Int key\n\nschema Alert scope logical:\n    v: Int key\n\nschema Mark scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["raise_both", "on_alert"]
+    }
+}

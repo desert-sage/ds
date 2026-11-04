@@ -1,0 +1,28 @@
+{
+  "id": "IRET.11.3.5",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11.3",
+  "seq": 940,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.11.3.5] **The edge-once set.** A clock-driven match — a token that\njoins `$ClockTick` for a time-dependent test ([IRET.19.5]) — is formed again on\nevery tick, with a new token. Each terminal keeps a set of the fact ids whose\nclock-driven match has fired. A re-formed activation for a fact in the set is\nsuppressed, tick after tick, until the match ends: the engine must remove the\nfact's id when the time-dependent test goes false, so that the next true is a\nnew match and fires ([LTIM.2.5.1]), and when the fact leaves working memory. A\nfact that is upserted takes a new id, which the set does not hold. Unlike the\ntable ([IRET.11.3]), the set survives a generation's turnover.\n\n",
+  "refs": [
+    "IRET.11.3",
+    "IRET.19.5",
+    "LTIM.2.5.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__retime_at_entry",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE EDGE-ONCE SET IS THE `fired` FLAG here: a match the re-time leaves in place is one activation, its flag kept, so it is not fired again tick after tick; a test that goes false ends it, and a fact that is replaced takes a new id and a new stamp, a new match. LESS than the clause: no per-terminal set and no re-formed token, since there is no tick fact to join."
+      }
+    ]
+  }
+}

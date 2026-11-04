@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.4_ambient_response_schema_keeps_the_ambient_code",
+    "category": "compiler",
+    "scenario": "[LCRS.4.3.4]: a response schema declared `ambient` is refused as [LSCP.2.5.1] states, with that clause's code. `Reply` is `scope ttl 1_h ambient` and is `svc.read`'s response. PATH PINNED: the validator's emit-target check, `dsc.validate`'s `llog_11_1_lifecycle_flag`, whose `ambient` arm precedes its answer arm.",
+    "rules_ds": "schema Reply scope ttl 1_h ambient:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    emit Reply corr: \"c\" v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AMBIENT_EMIT_FORBIDDEN"
+    }
+}

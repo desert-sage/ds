@@ -1,0 +1,63 @@
+{
+  "id": "IRET.28.0.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.0",
+  "seq": 1970,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.28.0.1] **Goals.** The structure:\n\n- **must** be a single data structure that every table of `[IRET.28.2]`\n  uses.\n- **must** centralize the probe, backward-shift delete, grow, and load\n  machinery so the bug class is fixed in one tested place.\n- **must** keep the hot path (the alpha join scan) a flat dense-array\n  walk with no per-element indirection, and **must** keep probing\n  cache-friendly.\n- **must** be deterministic and bit-identical across runs and platforms\n  (`[IRET.28.10]`, `[LDET.3.4]`). Its iteration order **must not** feed\n  timetag assignment (`[LDET.5.5]`).\n- **must** support pre-sizing and a grow-forbidden (\"locked\") mode for\n  real-time use (`[IRET.28.11]`, [RTCT]).\n- **must** be exhaustively property / fuzz / invariant tested\n  (`[IRET.28.16]`).\n\n",
+  "refs": [
+    "IRET.28.10",
+    "IRET.28.11",
+    "IRET.28.16",
+    "IRET.28.2",
+    "LDET.3.4",
+    "LDET.5.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "Iret_28_0_1__engine",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine under the reading 'iteration order feeds timetag assignment': dense memories and a counter-stamped agenda, for one rule `A a, B b`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "iret_28_0_1__assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An assertion under the reading: left-activation iterates the B memory in dense order and stamps in that order; right-activation iterates the left memory as appended."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "iret_28_0_1__empty",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The empty engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "iret_28_0_1__retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A retraction under the reading."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__dense_refuted",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Witnesses the goal's prohibition: an order fed by the dense iteration order depends on how the set was reached and fails [LDET.5.9] on a three-fact history. The timetag is a function of the match and of working memory, the key of [LDET.5.5], and Rete/NetworkOrderKeep.idr proves every history sorts by it."
+      }
+    ]
+  }
+}

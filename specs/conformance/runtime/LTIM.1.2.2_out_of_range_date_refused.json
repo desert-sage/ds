@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.1.2.2_out_of_range_date_refused",
+    "category": "runtime",
+    "scenario": "[LTIM.1.2.2]: a `Date` has the range of a `Time`, days -106751 (1677-09-22) through 106751 (2262-04-11). The host asserts a `Date` slot of -106752 (1677-09-21, the day before the first): the call returns `DS_ERR_TIME_RANGE` (-205), naming the Date range, and nothing is asserted (`fact_count_after` 0). It is a host refusal, so no fault event reaches the stream (`no_fault_events`), as with DS_ERR_NAN_REJECTED. Paired with LTIM.1.2.2_out_of_range_date_refused_above (106752), and with logical/LTIM.1.2.2_date_range_boundaries, which asserts both end days and is admitted. PATH PINNED: libds's `engine_assert_canonical` (wm.c), beside its NaN refusal and before the clock is sampled; the Mercury runtime's `ds.engine.host_assert_core`, after `ds.fact.slot_fault` and before the sample.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nrule seen:\n    Visit\n->\n    log info \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-205",
+        "message_contains": "Date range",
+        "no_fault_events": true,
+        "fact_count_after": 0,
+        "fault_at": 0,
+        "asserts": [
+            { "schema": "Visit", "slots": { "id": 1, "due": -106752 } }
+        ]
+    }
+}

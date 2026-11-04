@@ -1,0 +1,66 @@
+# lowered from the probe cast.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# cast.expected (scripts/formal/check_idris.py). The `where:Cast` rung's smoke pair:
+# [LCST.4.5.2], [LCST.4.5.4] and [LCST.4.3.4] over eight
+# facts, one rule per reading. `cast <target> <0|1> <e>` is `e :: T` with 0
+# and `e :: T?` with 1. Float :: Int truncates toward zero (rules 0 and 1),
+# the two doubles at the bounds convert (2 and 3), a null source is null and
+# rescued by `??` (4 and 5), a cast after `/` (6: 2.75 / 1.0 is 2; the Inf
+# and the NaN of a zero divisor trap), Int :: Float widens (7) and the
+# identity holds of every fact (8). The first trapping double, 2^63 (fact
+# 5), fires the identity alone: the trap is not a null and `?? 7` does not
+# rescue it. The keys are the codes of the eight entity ids (tokens 0 to 7:
+# the blocks 3, 11, 19, 27, 35, 43, 51, 59) and the payloads the codes of
+# (f, g, i): a Float is 8 * its bits + 4 -- 2.75 is 36906998946301214724,
+# -2.75 is 110693975241139421188, 2^63 - 1024 is 39127273562594869244, -2^63
+# is 112914249857433075716, 2^63 is 39127273562594869252, 1.0 is
+# 36857459350400139268 and 0.0 is 4 -- null is 0, and an Int n is
+# 8 * zigzag(n) + 2 (0, 1, 2, 3, 4 and 5 are 2, 18, 34, 50, 66 and 82). The
+# literals 2.0, 4.0 and 0.5 are their bits.
+schema 0 entity S
+alpha 0 0
+rule 0 truncates
+pattern 0 0 0
+where 0 0 eq cast int 1 slot 0 pay 0 lit i:2
+log 0 0 0
+rule 1 toward_zero
+pattern 1 0 0
+where 1 0 eq add cast int 1 slot 0 pay 0 lit i:2 lit i:0
+log 1 0 0
+rule 2 bound_hi
+pattern 2 0 0
+where 2 0 eq cast int 1 slot 0 pay 0 lit i:9223372036854774784
+log 2 0 0
+rule 3 bound_lo
+pattern 3 0 0
+where 3 0 and lt cast int 1 slot 0 pay 0 lit i:0 gt sub cast int 1 slot 0 pay 0 lit i:1 lit i:0
+log 3 0 0
+rule 4 null_source
+pattern 4 0 0
+where 4 0 is null cast int 1 slot 0 pay 0
+log 4 0 0
+rule 5 rescued
+pattern 5 0 0
+where 5 0 eq coalesce cast int 1 slot 0 pay 0 lit i:7 lit i:7
+log 5 0 0
+rule 6 quotient
+pattern 6 0 0
+where 6 0 eq cast int 1 div slot 0 pay 0 slot 0 pay 1 lit i:2
+log 6 0 0
+rule 7 widens
+pattern 7 0 0
+where 7 0 and eq cast float 0 slot 0 pay 2 lit f:4611686018427387904 eq div cast float 0 slot 0 pay 2 lit f:4616189618054758400 lit f:4602678819172646912
+log 7 0 0
+rule 8 identity
+pattern 8 0 0
+where 8 0 eq cast int 0 slot 0 pay 2 slot 0 pay 2
+log 8 0 0
+step assert _0 0 1000000000000000000003 1036906998946301214724036857459350400139268000000000000000000034
+step assert _1 0 1000000000000000000011 1110693975241139421188036857459350400139268000000000000000000050
+step assert _2 0 1000000000000000000019 1000000000000000000000036857459350400139268000000000000000000002
+step assert _3 0 1000000000000000000027 1039127273562594869244036857459350400139268000000000000000000018
+step assert _4 0 1000000000000000000035 1112914249857433075716036857459350400139268000000000000000000018
+step assert _5 0 1000000000000000000043 1039127273562594869252036857459350400139268000000000000000000018
+step assert _6 0 1000000000000000000051 1036906998946301214724000000000000000000004000000000000000000066
+step assert _7 0 1000000000000000000059 1000000000000000000004000000000000000000004000000000000000000082
+step pump

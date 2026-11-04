@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_null_point_with_invalid_interval_raises_domain",
+    "clauses": ["RLOW.6.1.7", "LNUL.4.10"],
+    "category": "logical",
+    "dead_rules_expected": ["inside"],
+    "scenario": "[LINT.7.2]: the DOMAIN fault is the `..` operation's own, so an operation on an invalid interval yields it whatever its other operand is, `null` included ([LNUL.4.10]). One N with `a` 5 and `b` 3 and no `t`: rule `inside` tests `n.t in (n.a .. n.b)`. The answer is the DOMAIN fault, not `null`: `inside` does not fire and rule `handler` logs `DOMAIN [N] [a]`: the kind, and the schema and slot of the pair's start ([LERR.9.12]); not the `rule`, which for a trap raised during matching is a node name ([LERR.9.2]). A runtime that let the `null` point prevent the check, as a `null` argument prevents a builtin's operation, would log nothing ([RLOW.6.1.7]: a `null` `v` does not prevent the check). PATH PINNED: FN_INTERVAL_CHECK(s, e, v) with `v` null, in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema N scope logical:\n    id: Int key\n    t: Int? mutable\n    a: Int mutable\n    b: Int mutable\n\nrule inside:\n    N n where n.t in (n.a .. n.b)\n->\n    log info \"inside {n.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "N", "slots": { "id": 1, "a": 5, "b": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN [N] [a]"]
+    }
+}

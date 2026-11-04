@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.8.2_recorded_retired",
+    "category": "compiler",
+    "scenario": "LTSL.8.2: `recorded` is not an assertion head; the compiler must reject it (DS_VALIDATE_TEST_RECORDED_RETIRED) with a message naming `called`, the head that asserts a call. Pin: a test whose `produces:` asserts `recorded audit`. Path: the test lowering's assertion switch in `dsc.dstest` refuses the head and emits no oracle (its atom, ORCE, is retired).",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    log info \"cold\"\n\ntest \"recorded\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        recorded audit\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_RECORDED_RETIRED"
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "id": "LGRA.13.11_a_published_omitted_nullable_slot_is_null",
+    "clauses": ["LGRA.13.11"],
+    "category": "cross-tier",
+    "scenario": "[LGRA.13.11] for `publish`: a nullable slot a `publish` omits is `null`. A `publish` asserts nothing in its own tier ([LTIE.4.3]), so the value is observed where it is received. Tier `edge`'s rule `make` publishes an Out giving only its key, omitting the `String?` slot `s` and the `Bool?` slot `b`. `hub` receives its FactExternal (the harness's `forward_external` step, [RCTS.1.2.29]), and its rule `seen` matches an Out `where o.s is null and o.b is null` and emits a `Seen`. So `hub` holds the Out and the Seen: 2 facts. Under a zero fill the two slots read \"\" and `false`, `is null` ([LNUL.4.9]) is false of both, `seen` does not fire, and `hub` holds 1. PATH: the compiler's `publish` lowering writes the `null` fill (`dsc.rete`'s `publish_args`, beside `lgra_13_11_null_fills` for `emit`); each runtime's publish view encodes the nulls in its FactExternal (libds's `ds_wm_publish_view`, the Mercury runtime's `ds.exec.publish_external`).",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    k: Int key\n    s: String? mutable\n    b: Bool? mutable\n\nrule make:\n    Trig t\n->\n    publish Out k: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "schema Out scope logical:\n    k: Int key\n    s: String? mutable\n    b: Bool? mutable\n\nschema Seen scope ttl 1_h:\n    k: Int\n\nrule seen:\n    Out o where o.s is null and o.b is null\n->\n    emit Seen k: o.k\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward_external", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 1,
+            "hub": 2
+        }
+    }
+}

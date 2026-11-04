@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.11b",
+    "category": "compiler",
+    "scenario": "[LNLS.3.11]: a series membership scan is allowed with `linear_scan: false` when the series declares `capacity: N` ([LSER.13.14]). `contains(t.state, 5)` over a series declared with `capacity: 100` scans at most 100 retained samples -- O(N), bounded by a compile-time constant, exactly as a capacity-bounded string operation is ([LNLS.3.10]). Companion to `LNLS.3.11.json`, the same program without the capacity, which is refused with `DS_VALIDATE_NOLINSCAN_SERIES_UNBOUNDED`. PATH PINNED: `dsc.typecheck.lnls_3_11_series_scan` through `lnls_3_11_bounded`, which requires every `series` declaration of the slot in the file to carry `capacity:`. A typecheck that keyed the bound on anything else -- a `max_samples:` kwarg, or a `sample <n>` line -- refuses this and the vector goes red.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Int mutable\n\nseries Sensor.state (by: entity_id, capacity: 100):\n    contains sliding 10_s\n\nrule trig:\n    Sensor t where contains(t.state, 5)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

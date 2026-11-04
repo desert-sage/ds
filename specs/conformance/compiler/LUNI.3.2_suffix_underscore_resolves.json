@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.3.2_suffix_underscore_resolves",
+    "clauses": ["LLEX.12", "LLEX.12.1", "LLEX.12.2"],
+    "category": "compiler",
+    "scenario": "LUNI.3.2 and LLEX.12: `UNIT_CONT` admits `_`, so a unit whose name has `_` in it can be written as a literal. `meter_squared` is one of about 110 such units in `stdlib/units/`, many with no alias without `_`. Both spellings are here: `5meter_squared`, and `500_meter_squared` with the separator. `_` never opens a suffix, so the separator is still the separator and the suffix is `meter_squared`. Each literal is compared with an `area` slot, so the rule compiles only if the whole suffix resolves to `meter_squared`. Read as `5meter` and then `_squared`, the lexer would name a unit nothing declares. The library is the shipped `stdlib/units/si.ds`, on every fixture's search path ([RCTS.1.2.14]).",
+    "rules_ds": "from units.si import meter_squared\n\nschema Plot scope logical:\n    id: String key\n    area: meter_squared mutable\n\nrule mid_sized:\n    Plot p where p.area > 5meter_squared and p.area < 500_meter_squared\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

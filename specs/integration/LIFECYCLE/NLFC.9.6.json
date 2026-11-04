@@ -1,0 +1,33 @@
+{
+  "id": "NLFC.9.6",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.9",
+  "seq": 326,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.9.6] **Where one seed breaks several refusals, the first in this order\ndecides.** `ds_engine_cache_seed` **must** return\nthe status of the first of these that refuses, and leave the cache as it was:\n\n1. The engine is halted: `DS_ERR_ENGINE_HALTED` ([NCBK.2.9]).\n2. The engine has emitted a stream event: `DS_ERR_STATE` ([NLFC.9.2]).\n3. `ttl_ns` is greater than $2^{63} - 1$: `DS_ERR_TIME_RANGE` ([NLFC.9.5]).\n4. The value is over one of its limits: `DS_ERR_JSON_LIMIT` ([LGRA.5.8.6]).\n5. The key, or a string or object key in the value, is not well-formed UTF-8:\n   `DS_ERR_ENCODING` ([LSTR.8.5]).\n6. Storing it would breach a bound `ds_engine_set_cache_cap` set:\n   `DS_ERR_CONTRACT_BREACH` ([LSTO.4.7.5]).\n\nA `NULL` engine, key or value is `DS_ERR_INVAL` before step 1. An allocation\nthat fails is `DS_ERR_OOM` at whichever step needs it, and leaves the cache as\nit was.\n\nThe order judges a value. A seed given as JSON text is judged as text first,\nand a refusal of the text comes before step 1 ([LSTR.8.5]). For the reason\n[NFCT.2.11] gives, a `libds.h` caller meets neither step 4 nor, for what is in\nthe value, step 5.\n\n",
+  "refs": [
+    "LGRA.5.8.6",
+    "LSTO.4.7.5",
+    "LSTR.8.5",
+    "NCBK.2.9",
+    "NFCT.2.11",
+    "NLFC.9.2",
+    "NLFC.9.5"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH",
+    "DS_ERR_ENCODING",
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INVAL",
+    "DS_ERR_JSON_LIMIT",
+    "DS_ERR_OOM",
+    "DS_ERR_STATE",
+    "DS_ERR_TIME_RANGE"
+  ],
+  "symbols": [
+    "ds_engine_cache_seed"
+  ]
+}

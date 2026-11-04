@@ -1,0 +1,44 @@
+# lowered from the probe coalesce.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# coalesce.expected (scripts/formal/check_idris.py). The `??` rung's smoke pair:
+# [LNUL.5.3] and [LNUL.8.9] over three facts, one rule per
+# reading. A null takes the default (rule 0), a present value keeps it (1),
+# the default is not looked at when n is present -- rule 2 fires on the fact
+# whose default `a // z` would trap (2), a null over a zero divisor is null
+# and so rescued (3), a trap is not rescued and rule 4 never fires (4), and a
+# Float default (5). `coalesce x d` is lowered with `d` after `x`; the Idris model
+# evaluates it only on a null `x`. The keys are the codes of the three entity
+# ids (tokens 0 to 2: the blocks 3, 11, 19) and the payloads the codes of
+# (n, a, z, f): null is 0, n = 3 is 50, a = 1 is 18, z = 0 is 2, z = 2 is 34,
+# f = 100.0 is 8 * its bits + 4, the block 37093898330837090308, and f = 50.0
+# is 37057869533818126340. The literal 85.0 is its bits 4635681760191971328.
+schema 0 entity S
+alpha 0 0
+rule 0 null_takes_the_default
+pattern 0 0 0
+where 0 0 eq coalesce slot 0 pay 0 lit i:7 lit i:7
+log 0 0 0
+rule 1 present_keeps_its_value
+pattern 1 0 0
+where 1 0 eq coalesce slot 0 pay 0 lit i:7 lit i:3
+log 1 0 0
+rule 2 default_not_looked_at
+pattern 2 0 0
+where 2 0 eq coalesce slot 0 pay 0 floordiv slot 0 pay 1 slot 0 pay 2 lit i:3
+log 2 0 0
+rule 3 null_over_zero_divisor_rescued
+pattern 3 0 0
+where 3 0 eq coalesce floordiv slot 0 pay 0 slot 0 pay 2 lit i:7 lit i:7
+log 3 0 0
+rule 4 trap_not_rescued
+pattern 4 0 0
+where 4 0 eq coalesce floordiv slot 0 pay 1 slot 0 pay 2 lit i:7 lit i:7
+log 4 0 0
+rule 5 float_default
+pattern 5 0 0
+where 5 0 gt coalesce slot 0 pay 3 lit f:0 lit f:4635681760191971328
+log 5 0 0
+step assert _0 0 1000000000000000000003 1000000000000000000000000000000000000000018000000000000000000002000000000000000000000
+step assert _1 0 1000000000000000000011 1000000000000000000050000000000000000000018000000000000000000034037093898330837090308
+step assert _2 0 1000000000000000000019 1000000000000000000050000000000000000000018000000000000000000002037057869533818126340
+step pump

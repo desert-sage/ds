@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.4.3.3_call_response_pattern_retired",
+    "category": "compiler",
+    "scenario": "`CallResponse` is a reserved name, and a pattern naming it is a compile error, DS_VALIDATE_CALL_RESPONSE_RETIRED, per LCRS.4.3.3. Path: the compiler injects no `CallResponse` builtin, so the pattern head resolves to no schema, and resolution names the retirement rather than reporting an unknown schema, directing the author to the service's response schema (LCRS.4.3.2). Pin: a sibling rule `CallResponse r where r.corr == \"corr1\"`, after a call to a library service.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule trigger:\n    Trig\n->\n    call svc.foo cooldown: 30_s as \"corr1\"\n\nrule on_response:\n    CallResponse r where r.corr == \"corr1\"\n->\n    log info \"got it\"\n",
+    "libraries": {
+        "ha": "service svc.foo:\n    kwarg dummy: Int\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CALL_RESPONSE_RETIRED"
+    }
+}

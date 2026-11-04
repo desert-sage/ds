@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.audio — audio, psychoacoustic, and musical pitch units
+#
+# Hz and watt are the other ends of the midi↔Hz and dBm↔watt formula pairs.
+from units.si import Hz, watt
+# The tier-2 bodies and formula lines call `math`'s `log2` and `log10`.
+from math import log2, log10
+#
+# dB variants are grouped into interconvertible scalar groups where a defined
+# reference allows affine conversion (power_db, voltage_db). Variants with
+# no meaningful mutual conversion are standalone scalars.
+#
+# Conversion note for affine dB formulas: `= x + c` means base = declared + c.
+#   0 dBW  = 30 dBm  (1 W = 1000 mW)
+#   0 dBk  = 60 dBm  (1 kW = 10⁶ mW)
+#   0 dBf  = -120 dBm (1 fW = 10⁻¹² mW)
+#   0 dBV  = 2.218 dBu (1 V vs 0.7746 V reference)
+
+# ── Power-referenced dB (interconvertible) ────────────────────────────────────
+# Base: dBm (reference: 1 milliwatt into 50 Ω or 600 Ω by convention)
+
+unit scalar power_db  storage float64
+
+unit dBm: power_db                    label "dBm"             # base (1 mW ref)
+unit dBW: power_db  = x + 30         label "dBW"             # 1 W ref
+unit dBk: power_db  = x + 60         label "dBk"             # 1 kW ref
+unit dBf: power_db  = x - 120        label "dBf"             # 1 fW ref
+
+# ── Voltage-referenced dB (interconvertible) ──────────────────────────────────
+# Base: dBu (reference: voltage producing 1 mW into 600 Ω ≈ 0.7746 V)
+
+unit scalar voltage_db  storage float64
+
+unit dBu: voltage_db                  label "dBu"             # base (0.7746 V ref)
+unit dBV: voltage_db  = x + 2.218    label "dBV"             # 1 V ref
+
+# ── Standalone dB scalars (no mutual conversion) ──────────────────────────────
+# Each is its own reference frame; arithmetic between them is meaningless. So
+# each unit is the single member of a scalar group of its own (LUNI.6.2): a group
+# names no unit, so a literal like 3_dB needs the member (LUNI.7.1).
+
+unit scalar generic_db  storage float64
+unit dB: generic_db                   label "generic decibel"
+
+unit scalar full_scale_db  storage float64
+unit dBFS: full_scale_db              label "dB relative to full scale"
+
+unit scalar carrier_db  storage float64
+unit dBc: carrier_db                  label "dB relative to carrier"
+
+unit scalar spl_db  storage float64
+unit dBSPL: spl_db                    label "dB SPL (re 20 µPa)"
+
+unit scalar antenna_gain_db  storage float64
+unit dBi: antenna_gain_db             label "dBi antenna gain"
+
+# ── Loudness ──────────────────────────────────────────────────────────────────
+# sone: ratio scale (2 sone is twice as loud as 1 sone)
+# phon: logarithmic loudness level; tier-2 non-affine conversion to sone.
+# The sone/phon relationship is approximate and valid for phon ≥ 40.
+# Below 40 phon the standard formula underestimates loudness; authors who need
+# precision below 40 phon should use tabulated values and explicit let bindings.
+
+unit dimension loudness  storage float64  base sone
+
+unit sone: loudness                   label "sone"            # base
+
+# Loudness: phon (logarithmic loudness level), valid for phon ≥ 40.
+unit phon: loudness:                  label "phon"
+    to_base:   2.0 ** ((x - 40.0) / 10.0)
+    from_base: 10.0 * log2(x) + 40.0
+
+# ── Musical pitch ─────────────────────────────────────────────────────────────
+# midi_note: integer 0–127 (stored as float64; fractional MIDI for tuning systems)
+# Formula pair for Hz↔MIDI conversion; A4 = 440 Hz = MIDI 69.
+
+unit scalar pitch  storage float64
+
+unit midi_note: pitch                 label "MIDI note"
+
+unit formula midi_hz:
+    midi_to_hz(x: midi_note): Hz   = 440.0 * 2.0 ** ((x - 69.0) / 12.0)
+    hz_to_midi(x: Hz): midi_note   = 69.0 + 12.0 * log2(x / 440.0)
+
+# ── dBm ↔ watt ────────────────────────────────────────────────────────────────
+# power_db ↔ power; implicit, so assignment boundaries convert ([LUNI.4.5]).
+
+unit formula dBm_watt  implicit:
+    dBm_to_watt(x: dBm): watt  = 10.0 ** (x / 10.0) / 1000.0
+    watt_to_dBm(x: watt): dBm  = 10.0 * log10(x * 1000.0)
+
+# Each conversion above is evaluated as written, one correctly rounded
+# operation at a time ([LDET.3.4.4]), so it is bit-identical on every engine
+# and is not to be reordered: [LUNI.16.2] states each in this order.

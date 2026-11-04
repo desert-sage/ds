@@ -1,0 +1,15 @@
+{
+    "id": "LSTO.4.3.1a.a_cache_miss_is_not_a_fault_kind",
+    "category": "logical",
+    "dead_rules_expected": ["rw"],
+    "scenario": "The negative half of the cache-miss row: none of the four fault kinds may appear for a key that was never written, and the action consuming the miss still runs. Same program and steps as the positive half.",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nrule rw:\n    Trig t where t.tag == \"w\"\n->\n    cache key: \"k\" value: 7\n\nrule rm:\n    Trig t where t.tag == \"m\"\n->\n    let m = cached(\"absent\")\n    log info \"m=[{m}]\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "m" } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "type_error", "engine_error", "bounds_error"]
+    }
+}

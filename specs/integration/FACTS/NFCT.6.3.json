@@ -1,0 +1,26 @@
+{
+  "id": "NFCT.6.3",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.6",
+  "seq": 282,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.6.3] **Iteration.** `ds_engine_for_each_fact(e, schema, visitor, user)`\nvisits every live fact (or, with a non-NULL `schema`, every fact of that\nschema). The engine must not visit, by schema or unfiltered, or count in\n`ds_engine_fact_count` ([NFCT.6.1]), a fact the lowering creates for its own\nuse, an `after` clause's timer or capture fact ([RFCS.6a.5]), or a fact the\nengine synthesises, the clock tick ([LDET.5.8]), as the stream carries none of\nthem ([NCBK.2.6]). A pending `after` deadline is therefore not read through the\nfact API. The visitor receives a borrowed\nread-only fact pointer; return `DS_OK_R` to continue or any non-OK result to abort (which becomes the call's\nreturn). Every `ds_engine_*` call the visitor makes on the engine being\nwalked, a read included, returns `DS_ERR_STATE` and does nothing\n([RARC.13.17]): capture into `user` and act after iteration returns. A call on\na different engine is unaffected. Order is unspecified (hash-keyed); sort\ncaptured results if you need stability.\n\n---\n\n",
+  "symbols": [
+    "DS_OK_R",
+    "ds_engine_fact_count",
+    "ds_engine_for_each_fact"
+  ],
+  "errors": [
+    "DS_ERR_STATE"
+  ],
+  "refs": [
+    "LDET.5.8",
+    "NCBK.2.6",
+    "NFCT.6.1",
+    "RARC.13.17",
+    "RFCS.6a.5"
+  ]
+}

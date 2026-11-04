@@ -1,0 +1,18 @@
+{
+  "id": "RCLI.1.11",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 22,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.11] **The bundled library sits beside the compiler.** A compiler finds the library it ships with ([LIMP.3.3.1]) at\n`../share/ds/stdlib`, resolved against the directory that holds its own\nexecutable, and searches it after every `-L` directory, in the order\n[RCLI.1.3] gives them. No option, environment variable or configuration names\nthat directory or removes it from the search path.\n\n**A symbolic link to the compiler is followed.** The directory that holds the\nexecutable is the one that holds the file itself, with every link on the way to\nit resolved, so a compiler invoked through a link finds the library beside the\nlink's target and not beside the link. A chain of links that ends nowhere, or\nthat does not end, is a compiler that does not find the library (below).\n\nEvery build of a compiler **must** lay the library out there, whatever the build\nis for. A compiler that runs with no file system of its own, such as one\ncompiled to WebAssembly, **must** present the library at that path in the file\nsystem it reads.\n\n**A compiler that does not find it resolves nothing.** `units.core` is read from\nthe library on every compilation ([LUNI.4.1.2]), so without it the compiler\nwould accept a different language. The compiler **must** refuse every\ninvocation that resolves a name with exit `2` ([RCLI.3.1]), naming the directory\nit looked in. `dump-ast`, which resolves none ([RCLI.1.10]), is unaffected.\n\n",
+  "refs": [
+    "LIMP.3.3.1",
+    "LUNI.4.1.2",
+    "RCLI.1.10",
+    "RCLI.1.3",
+    "RCLI.3.1"
+  ]
+}

@@ -1,0 +1,293 @@
+{
+  "id": "IRET.6.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.6",
+  "seq": 507,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.6.4] **Alpha test evaluation.** On fact assert, the\nengine evaluates all alpha tests for every alpha node\nregistered for `fact->schema->id`. Tests short-circuit:\nthe first failing test skips the fact for that node. A\nfact that passes all tests is inserted into the alpha\nmemory and the downstream beta inputs are notified.\n\nShort-circuiting is sound because every alpha test is **decided**: it answers\n`true` or `false` and cannot raise, the only conjuncts the compiler may take out\nof a `where` (RLOW.5.5). Rejecting a fact on one therefore cannot change what\nthe `where` yields ([LNUL.4.2]), for an artefact that does not lie\n([LDET.1.11]).\n\n**Two alpha tests are not decided:** one whose `slot_index` names no slot of\nthe fact's schema ([RDSC.4a.9.1]), and a REGEX test whose subject is not\na `String` ([RDSC.4a.6.2]). Each faults. The engine must not\nshort-circuit on either. The fact is rejected if another test of the node answers `false`, and\nthe fault is raised only if none does.\n\n",
+  "refs": [
+    "LDET.1.11",
+    "LNUL.4.2",
+    "RDSC.4a.6.2",
+    "RDSC.4a.9.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_6_4__fstop",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "What ends the filter phase, in the clause's order: the filters answering false, if any -- a false anywhere rejects, a faulting test beside it notwithstanding; else, with no false among them, the faulting filters T2I selects, [LNUL.4.2]'s pick between two faults the clause reaches through RLOW.5.5 (the tests are hoisted conjuncts); else the filters answering null, the model's own extension on an input the clause never presents (an alpha test is decided for an artefact that does not lie); else none, and every filter passed. Source order never enters; the short-circuit the clause's first paragraph allows over decided tests loses nothing."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_6_4__v5_false_rejects",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A false among the filters rejects, whatever else they answer -- a faulting test beside it included -- and nothing is recorded, over every set of filters, every order of the rest and every `where` of up to three conjuncts: the clause's first arm, restated as double entry on `iret_6_4__fstop`. Ending the phase at the first filter in source order that is not true breaks it (TEETH)."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_6_4__v5_fault_if_none_false",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "With no false among the filters and a fault among them, the evaluation ends on a fault one of the filters raised, whatever the rest would answer, and records that fault's atom: the clause's second arm, restated as double entry on `iret_6_4__fstop`."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_6_4__v5_fault_then_false_rejects",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S ORDER, DRAWN: a faulting alpha test first in the source and a false one after it, both hoisted, reject in every order and record nothing. Under a short-circuit at the first filter that is not true this run is UNSAT, which `RunAlloy` fails."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rlow_5_5__v5_hoist_sound",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND for an artefact that does not lie: filters on decided conjuncts leave the decision of a positive and of a `no` pattern, and the record, unchanged. Admitting a nullable filter breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_4__admits",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact of the node's schema passing all its tests; the short-circuit is a Bool `&&`."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_4__dispatch_assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT: for each alpha node, in position order, evaluate the tests; on pass insert the fact and right-activate every chain. The clause's 'every alpha node registered for the schema': the schema check is the first test, so visiting every node is the same dispatch."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_6_4__admits_kind",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_6_4__dispatch_assert_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Iret_6_4__dispatch_inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Midway through alpha dispatch: the memories of the alphas still to visit show the old working memory, the others the new; all distinct; every chain consistent with the memories as they stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_1__insert_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT keeps the view: working memory stays distinct, and the dispatch runs from every alpha showing the old working memory to every alpha showing the new."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_4__admits_some",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A dangling alpha reference admits nothing, so an admitting reference resolves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_4__dispatch_assert_hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON ASSERT, admitting the fact, keeps the invariant: the fact enters that memory, which now shows the new working memory, and every chain is right-activated from it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_4__dispatch_assert_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT keeps the invariant over any distinct list of alphas to visit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_4__dispatch_assert_miss",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON ASSERT, not admitting the fact, keeps the invariant: nothing changes, and that memory already shows the new working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_4__dispatch_finish",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After a dispatch every alpha memory shows the new working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_6_4__dispatch_assert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert-time evaluation over every alpha registered for the fact's schema leaves a chain whose alphas admit none of the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_6_4__frame_alpha",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An alpha that admits the fact is not one the chain has a node on, when none of the chain's alphas admit it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_6_4__reads_admit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The alpha test is on the schema first: a fact of another kind is admitted by no alpha of the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_6_4__dispatch_assert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_6_4__dispatch_assert_ordered_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One alpha visited on assert, admitting the fact, keeps every terminal in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_6_4__dispatch_inv_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Midway through a dispatch every alpha memory holds facts of the old or of the new working memory, so of any working memory containing both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_6_4__dispatch_assert_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The assert's dispatch keeps the number of chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_6_4__admits_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Alphas of one shape admit the same facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_6_4__dispatch_assert_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON ASSERT keeps every shape: the alphas', and each chain's nodes and actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_6_4__dispatch_assert_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The assert's dispatch creates only matches holding the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_6_4__dispatch_assert_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Alpha dispatch on assert, as `iret_6_4__dispatch_assert` runs it: per admitting alpha, every chain."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Iret_6_4__res",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a node does with a candidate: it evaluated the `where`, or a filter rejected it."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__false_rejects",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FALSE AMONG THE FILTERS REJECTS, whatever the others answer -- a fault among them included -- and nothing is recorded, for every list of filters and every rest: the clause's 'the fact is rejected if another test of the node answers false'. From `lnul_5_4__false_decides` over the filters' own fold."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__fault_then_false_rejects",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S ORDER, EXECUTED: a faulting alpha test beside a false one rejects whichever stands first in the source; two faulting tests with no false beside them raise the one T2I selects (the EngineError over the trap); a lone faulting test is raised there with a false in the REST of the `where` not evaluated -- only the node's own tests reject past it, which is what keeps `rlow_5_5__faulting_filter_differs` standing."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__filter_res",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the filter phase's answer does with the candidate: a false rejects it; a fault is raised there, and nothing of the rest is evaluated; a null rejects it, the model's own extension on an input the clause never presents (an alpha test is decided for an artefact that does not lie, RLOW.5.5); a true passes it to the rest."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__filtered",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FILTERS FIRST -- an alpha test, an index probe -- as a `where` of their own under V5, then the rest: the clause's order. A false among the filters rejects wherever it stands, a faulting test beside it notwithstanding; otherwise a fault among them is raised, [LNUL.4.2]'s T2I picking between two (the tests being hoisted conjuncts of the `where`, RLOW.5.5, which is how the clause reaches [LNUL.4.2]); otherwise null rejects, the model's own extension on an input the clause never presents; otherwise every filter passed and the rest is evaluated. Source order never enters (`iret_6_4__filters_order_free`), and the short-circuit the clause's first paragraph allows over decided tests loses nothing (`iret_9_5__seq_v5`)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_6_4__filters_order_free",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FILTER PHASE READS NO SOURCE ORDER: the filters in any order reject, raise and pass alike, so 'another test of the node' is any other, before or after the faulting one. From `lnul_4_2__v5_perm` over the filters' own fold."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rlow_5_5__hoist_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "HOISTING AND PROBING ARE SOUND under V5 for decided filters taken from ANYWHERE in the source: the decision of a positive and of a `no` pattern, and the record, are the whole `where`'s -- RLOW.5.5's 'a conjunct may leave the join test only when it is decided', for an artefact that does not lie ([LDET.1.11]). Admitting a nullable filter breaks it (TEETH T3). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ]
+  }
+}

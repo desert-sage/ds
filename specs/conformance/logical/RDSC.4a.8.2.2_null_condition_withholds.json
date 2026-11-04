@@ -1,0 +1,18 @@
+{
+    "id": "RDSC.4a.8.2.2_null_condition_withholds",
+    "category": "logical",
+    "dead_rules_expected": ["settled"],
+    "scenario": "[RDSC.4a.8.2.2], [LNUL.4.3]: a cooldown rule's clock-reading condition that evaluates to `null` withholds the activation, because the condition is a `where` test and not a guard. `settled cooldown 1_min` on `where m.dwell >= m.need`, with `need` a nullable Duration slot asserted `null`, so the comparison is `null` on every pump. `steady`, with no condition, fires, so the pump is shown to have run. Pin: set 0; assert Motion with limit null; pump; advance 3 s, pump. Messages are ['steady']. PATH PINNED: the guard is BINOP_AND(condition, FN_RATE_ALLOW(...)) and the condition is read alone at selection, where `null` withholds (libds rete/engine.c guard_condition; Mercury ds.exec.check_guard through rdsc_4a_8_2_1_guard_parts).",
+    "rules_ds": "schema Motion scope logical:\n    zone: String key\n    need: Duration? mutable\n\nrule settled cooldown 1_min:\n    Motion m where m.dwell >= m.need\n->\n    log critical \"settled\"\n\nrule steady:\n    Motion\n->\n    log critical \"steady\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Motion", "slots": { "zone": "hall", "need": null } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["steady"]
+    }
+}

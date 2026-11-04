@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.3.4.a_null_source_raises_no_fault",
+    "category": "logical",
+    "scenario": "The negative half of LCST.4.3.4: casting an absent value raises nothing. The break is handing the null to the conversion adapter, which type-checks the kind and answers a type mismatch with no Json provenance, recorded as an EngineError, which latches the engine. None of the four fault kinds may appear here.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    f: Float? mutable\n\nrule r:\n    S s where (s.f::String?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "type_error", "engine_error", "bounds_error"]
+    }
+}

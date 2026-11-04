@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.5.1_implicit_at_let_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.4.5.1] position 1: an `implicit` unit formula auto-applies at a typed `let` whose annotated dimension differs from its right-hand side's. `let period: nanosecond = s.freq` binds a frequency (Hz) to a time (nanosecond), and the program compiles because `hz_period`'s `hz_to_period` applies there. Without the formula the same `let` is DS_VALIDATE_LET_DIM_MISMATCH, which compiler/LUNI.4.5_non_implicit_no_apply pins.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period inverting implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nschema Signal scope logical:\n    freq: Hz key\n\nrule slow:\n    Signal s\n->\n    let period: nanosecond = s.freq\n    log info \"period via auto-apply\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

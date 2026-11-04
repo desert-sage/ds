@@ -1,0 +1,248 @@
+{
+  "id": "IRET.19.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.19",
+  "seq": 1381,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "TTL sweep",
+  "text": "### TTL sweep [IRET.19.3]\n\nThe engine must sweep expired facts once per pump, against the pump's\nmonotonic sample `now_ns` ([LTIM.2.8.2]), before any activation fires\n([IRET.19.4]):\n\n1. Iterate all live facts with `deadline_ns > 0`.\n2. For each fact where `now_ns >= deadline_ns`: call\n   `ds_rete_wm_retract`. The retraction cascades through\n   the Rete network and may enqueue new activations on the\n   agenda (rules that fire on absence of the expired fact).\n3. Continue until all expired facts are retracted.\n\nThe order in which expired facts are retracted is [LDTL.6.1] and [LDTL.6.2]'s.\n\n",
+  "refs": [
+    "IRET.19.4",
+    "LDTL.6.1",
+    "LDTL.6.2",
+    "LTIM.2.8.2"
+  ],
+  "symbols": [
+    "ds_rete_wm_retract"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_2__idle_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A clocked network with no deadline and no row. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The TTL sweep only removes: the expired ids' retraction and the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__expired_fact_cannot_reopen",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The sweep retracts the expired `Ping` at the tick to 2, before the re-time: the window opens at 3 on nothing. `[1, 0, 0, 0]`, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "rarc_5_6_3__sweep_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The TTL sweep's retractions keep the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The sweep's retractions, one expired fact at a time, fire nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_3__clocked_net_eta",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clocked engine is its engine, its deadline table and its clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_fires_once_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "After the clause's sweep A has one match, the surviving fact's, and fires once for it. Read off the literal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's sweep executed: the fact whose deadline is at the clock is retracted at the tick, the one whose deadline is ahead stays; the tick before, with every deadline ahead, retracted nothing. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ttl_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind with a TTL, so that the clause's sweep has a deadline to act on. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_3__sweep_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's sweep at a pump, retracting each expired fact and cascading, keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rdsc_4a_5__load_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clocked engine at load: no deadlines, the clock at the start."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__swept_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clocked network after a sweep: the deadline table keeps the swept row, the clock at the tick's sample. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ttl_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A TTL of 1 on kind 0: the deadline is the clock at the assert plus one. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_4__tick_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sweep against the sample, at the tick. LESS than the clause's 'once per pump' as `ltim_2_8_4__tick_timed`'s RARC.5.6.3 note says."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "rtim_3_2_6__one_move_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The two expiries swept at the tick whose sample passes both deadlines. Executed. LESS than the clause: the sweep's placement is this model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "Iret_19_3__clocked_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The network engine with truth maintenance, its deadline table and its clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_19_3__clocked_net_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Clocked network states with equal parts are equal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldtl_6_1__retract_order",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "BOTH SIDES EXPIRE THE SAME FACTS: retracting the expired ids in [LDTL.6.1]'s order removes exactly what Rete/TtlSweep.idr's batch removes. The order is visible only in the sequence of retractions -- the FACT_RETRACT events of [NFCT.5.4] -- since any order ends in the same state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_3__sweep_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SWEEP ON THE NETWORK: every live fact whose deadline is at or before the clock retracted one at a time through alpha dispatch -- [IRET.19.3] step 2, `ds_rete_wm_retract` per fact -- in [LDTL.6.1]'s order, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__sweep_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE SWEEP AGREES: the network's retractions one at a time in [LDTL.6.1]'s order and FireLoop's batch end in one working memory, and the cascades after them agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__transfer_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER WITH TICKS: a canonical replay with ticks from FireLoop's empty state is one from the loaded network, and at its end the two agree. Rete/TtlSweep.idr's theorems are theorems of the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__expired_fact_cannot_reopen_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "A fact whose deadline is at or before the clock is swept at the tick, before the pump that would have re-timed its chain (this model's placement; the two coincide at the pump boundary). Executed."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Iret_19_3__clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine with truth maintenance, its deadline table, and its clock RARC.5.5."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Iret_19_3__inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clocked state's invariant: the engine's run invariant and target kinds of Rete/TmsRun.idr and Lcyc/TmsTermination.idr, and the deadline table's well-formedness at the current clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_19_3__expired",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's step 1 and its test: the ids whose deadline is at or before now (`now_ns >= deadline_ns`); a fact without a row is never expired."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_19_3__sweep_cascade",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The sweep's cascade is an external change in Rete/PumpBoundary.idr's sense: the engine's invariants hold after it, the facts only shrink, and every explicit-kind survivor of the retraction is kept."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "lfst_9_2_1__canonical_ttl_from_input",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "With the sweep at every boundary -- this model's placement, as each input is consumed; the clause's is the pump's entry (RARC.5.6.3) -- a certified positive program replays any canonical stream with ticks from any input with unique ids, every pump quiescent, the clocked invariant at every boundary."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_3__sweep",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE SWEEP, the clause's steps 2 and 3: retract every live fact whose deadline is at or before the clock, propagate, and run the cascade the ended activations demand. One batch retracts them all: the deadlines are decided by the clock the sweep reads, and a retraction creates no new deadline, so the clause's loop to a fixpoint is one pass. Where it runs is `rarc_5_6_3__prepare`'s: as each input is consumed, where the clause runs it once per pump at the pump's entry (RARC.5.6.3). The sweep itself is the clause's; its placement is that tie's `partial`."
+      }
+    ]
+  }
+}

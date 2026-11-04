@@ -1,0 +1,12 @@
+{
+    "id": "RBND.1.3_repeated_capability_refused_at_load",
+    "category": "runtime",
+    "scenario": "[RBND.1.3]: a binding tuple's `capabilities` list is strictly ascending, and a reader must refuse a list that breaks the rule, at load with DS_ERR_DSC_SEMANTIC (-504), and must not cut, sort or de-duplicate it. No compiler writes a repeated capability, so the harness compiles the program under `use default`, which enables more than two, and `runtime_error`'s `tamper: {duplicate_capability: 0}` writes the header's first capability over its second, in place, then re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]). The load reaches the header check with the rest of the artefact intact. What it discriminates: a reader that de-duplicates the list, or checks only its length, loads the artefact; one that sorts it loads it too. PATH: libds's `ds_binding_capabilities_well_formed` in the header check (`dsc/loader.c`), after the length guard and before the self-hash; the Mercury runtime's `ds.dsc.check_header` through `rbnd_1_3_capabilities_malformed`, which refuses with `lek_semantic` under RBND.1.3.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"duplicate_capability": 0},
+        "code": "-504",
+        "message_contains": "RBND.1.3"
+    }
+}

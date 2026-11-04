@@ -1,0 +1,11 @@
+{
+    "id": "LREG.6.5",
+    "category": "compiler",
+    "scenario": "Newlines inside a regex literal are a lexer error per LREG.6.5. A regex pattern that spans a physical line break (an actual newline between `/` delimiters) is rejected at parse time. Patterns needing a newline character use `\\n` escape instead.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nrule r:\n    Log e where e.msg ~ /test\nnewline/\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 5
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.4_int_to_float_kwarg_refused",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.4]: an `Int` given to a `kwarg x: Float` is refused with DS_VALIDATE_TYPE_MISMATCH, not promoted, as at an `emit` slot ([LEXP.7.3b]; compiler/LEXP.7.3b_int_expr_into_float_slot pins that direction there). The value is an `Int` slot read with no unit, so [LADP.8.5.2]'s quantity conversion does not apply to it. PATH PINNED: the compiler's `call`-kwarg value check in `dsc.validate`, on the Int-into-Float case a promoting check would admit.",
+    "rules_ds": "service svc.method:\n    kwarg x: Float\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.method x: t.v nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

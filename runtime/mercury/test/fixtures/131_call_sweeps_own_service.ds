@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema ReplyA scope ttl 1_h:
+    corr: String
+    v: Int
+
+schema ReplyB scope ttl 1_h:
+    corr: String
+    v: Int
+
+service svc.a:
+    kwarg n: Int
+    response ReplyA
+
+service svc.b:
+    kwarg n: Int
+    response ReplyB
+
+schema Trig scope logical:
+    k: Int key
+    n: Int mutable
+
+schema Early scope explicit:
+    k: Int
+
+schema Late scope explicit:
+    k: Int
+
+rule r:
+    Trig t
+->
+    call svc.a n: t.n nocooldown as "c1"
+
+rule early_a:
+    Early
+    ReplyA x
+->
+    log info "early a {x.v}"
+
+rule early_b:
+    Early
+    ReplyB x
+->
+    log info "early b {x.v}"
+
+rule late_a:
+    Late
+    ReplyA x
+->
+    log info "late a {x.v}"
+
+rule late_b:
+    Late
+    ReplyB x
+->
+    log info "late b {x.v}"

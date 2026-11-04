@@ -1,0 +1,11 @@
+{
+  "id": "LFST.8.10",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.8",
+  "seq": 499,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.8.10] Deep payload inspection (schema-typed fact slot values,\ntyped response paths, etc.) requires a **description of the\nschema**, and there are two places to get one. They are\nequally sufficient to decode a payload.\n\n**From the artefact.** It ships the payload .proto\ndefinitions generated from the rule file's schema\ndeclarations; a tool fetches it by `ruleset_hash` and\ndecodes with those.\n\n**From the stream itself.** Every stream announces each\nschema — its name, then one entry per slot in declaration\norder — before the first fact that uses it, and a reader is\nrequired to record those announcements as they arrive. A\ntool may decode from them.\n\nThe two agree by construction rather than by luck: a\npayload's fields are numbered by slot position, so the\ndeclaration-ordered announcement determines the same field\nnumbers, names and types the generated definition has. The\nordering requirement in the stream format exists for this\nreason.\n\nWhere both are available the artefact is the source. A\ndisagreement between them means the stream and the artefact\ndo not belong together, which `ruleset_hash` should already\nhave caught.\n\n**What a stream does not describe.** A schema's lifecycle and\ndefault TTL are in the artefact (`proto/schema_logical.proto#SchemaLogical`,\n`proto/schema_ttl.proto#SchemaTtl`) and in no stream atom, and a\nunit-typed slot is announced, in both, by the kind its unit is\nstored as, with no unit. A reader that needs a schema's\nlifecycle takes the artefact. A slot's unit appears in neither.\n\n"
+}

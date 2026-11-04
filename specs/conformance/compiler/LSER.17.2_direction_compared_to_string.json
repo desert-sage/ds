@@ -1,0 +1,10 @@
+{
+    "id": "LSER.17.2_direction_compared_to_string",
+    "category": "compiler",
+    "scenario": "LSER.17.2 / LSER.10.9 — `direction` returns `Int?` (-1 / 0 / +1), and [LSER.17.2]'s Returns column is the static type of both call forms, so `t.direction == \"rising\"` compares an Int with a String and is a compile error ([LERR.1.1.5]). Admitted, a warm read would halt the tier at runtime as an untainted ill-typed compare ([IRET.9.6]). PATH PINNED: `dsc.typecheck.luni_9_1_agg_type` types `direction` as `Int?`, and `ltim_5_5_comparison` refuses it against a String; the positive counterpart is compiler/LSER.10.9, `t.direction > 0`.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    direction sliding 10_s\n\nrule trig:\n    Sensor t where t.direction == \"rising\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

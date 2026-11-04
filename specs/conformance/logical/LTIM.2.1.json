@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.2.1",
+    "clauses": ["LTIM.2.1.2", "LTIM.2.1.1"],
+    "category": "logical",
+    "scenario": "`now()` returns the engine clock per LTIM.2.1.1/2.1.2 — in mock mode, `now()` tracks the mock clock. A rule gated on `now()` after the instant 5_s past the epoch — built `calendar.time(1970, 1, 1, 0, 0, 5)` ([LTIM.14.1]), because `now()` is a `Time` and a bare integer is not ([LTIM.5.5]) — should not fire at t=0 but fires after clock advances to 6_s. Pin: advance clock, pump — rule fires exactly once.",
+    "rules_ds": "import calendar\n\nschema Sensor scope logical:\n    entity_id: String key\n\nrule after_5_s:\n    Sensor where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"time passed\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["after_5_s"]
+    }
+}

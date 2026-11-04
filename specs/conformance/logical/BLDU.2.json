@@ -1,0 +1,46 @@
+{
+  "id": "BLDU.2",
+  "category": "logical",
+  "dead_rules_expected": ["block_input"],
+  "scenario": "Build-unit recipe authoring: a graph rule assembles a command by interpolating per-file bindings into an emit String slot — emit Step argv: \"cc -O2 -c -o {s.obj} {s.src}\" — and that argv reaches the harness verbatim at dispatch (run logs s.argv). Pins interpolation-assembled recipes.",
+  "rules_ds": "schema Src scope logical:\n    obj: String key\n    src: String key\nschema Product scope logical:\n    name: String key\n    pathname: String mutable\n    digest: String mutable\nschema Step scope logical:\n    id: String key\n    argv: String mutable\nschema Output scope logical:\n    name: String key\n    step: String mutable\n    pathname: String mutable\nschema Consumes scope logical:\n    step: String key\n    product: String key\nschema Blocked scope logical:\n    step: String key\nschema Ready scope logical:\n    step: String key\nschema ActionKey scope logical:\n    step: String key\n    action_key: String mutable\nschema Dispatched scope logical:\n    step: String key\nservice cache.key:\n    kwarg step: String\n    no response\nservice exec.run:\n    kwarg step: String\n    kwarg argv: String\n    no response\nrule graph:\n    Src s\n->\n    emit Step logical id: s.obj argv: \"cc -O2 -c -o {s.obj} {s.src}\"\n    emit Output logical name: s.obj step: s.obj pathname: s.obj\n    emit Consumes logical step: s.obj product: s.src\nrule block_input:\n    Consumes c\n    no Product p where p.name == c.product\n->\n    emit Blocked logical step: c.step\nrule ready:\n    Step s\n    no Blocked b where b.step == s.id\n->\n    emit Ready logical step: s.id\nrule fetch_key:\n    Ready r\n    no ActionKey k where k.step == r.step\n->\n    call cache.key step: r.step nocooldown\nrule run:\n    ActionKey k\n    no Dispatched d where d.step == k.step\n    Step s where s.id == k.step\n->\n    call exec.run step: s.id argv: s.argv nocooldown\n    log critical \"{s.argv}\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "a.c",
+          "pathname": "src/a.c",
+          "digest": "Hac"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Src",
+        "slots": {
+          "obj": "a.o",
+          "src": "a.c"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "ActionKey",
+        "slots": {
+          "step": "a.o",
+          "action_key": "ka"
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "cc -O2 -c -o a.o a.c"
+    ]
+  }
+}

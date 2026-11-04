@@ -1,0 +1,45 @@
+{
+  "id": "NERR.4",
+  "prefix": "NERR",
+  "doc": "ERRORS.md",
+  "parent": null,
+  "seq": 102,
+  "depth": 1,
+  "kind": "table",
+  "heading": "Generic errors (-1..-99)",
+  "text": "## Generic errors (-1..-99) [NERR.4]\n\n| Code | Meaning |\n|---|---|\n| `DS_ERR_INVAL`       | NULL pointer to a non-optional argument; invalid enum; out-of-range integer |\n| `DS_ERR_OOM`         | allocation failed inside libds; its detail may be NULL ([NERR.2.3]) |\n| `DS_ERR_NOT_FOUND`   | required lookup miss (e.g. `ds_engine_schema_at` out of range) |\n| `DS_ERR_STATE`       | rejected by current engine state (e.g. `ds_engine_clock_set` in live mode; **any** call from inside a callback into the engine that invoked it, a pump's or an enumerating read's, [RARC.13.16], [RARC.13.17]; a second `ds_engine_load_dsc` on one engine, [NFCT.1.1]) |\n| `DS_ERR_OVERFLOW`    | a bounded queue / counter would overflow (internal boundaries) |\n| `DS_ERR_UNSUPPORTED` | an operation unavailable in this build (e.g. `ds_engine_mem` is RETE-only) |\n| `DS_ERR_INTERNAL`    | invariant violation inside libds — a bug; file an issue with the detail |\n| `DS_ERR_IO`          | an integrator callback (a recording sink, a storage backend, [NSTG.3.3]) reports a failure of its own I/O. libds performs no I/O and raises it nowhere itself; the call whose callback returned it returns it ([NCBK.1.5]) |\n| `DS_ERR_ENGINE_HALTED` | an `EngineError` halted the tier, or a load failed ([RDSC.9.8]). Returned by the call that raised the `EngineError`, and by every later call but the few [NCBK.2.9] leaves valid, which does nothing; a failed load returns its own code. Returned whatever caused the halt — the cause is carried by the `EngineError` or the failed load's status, not by this code ([NCBK.2.9]) |\n\n",
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INTERNAL",
+    "DS_ERR_INVAL",
+    "DS_ERR_IO",
+    "DS_ERR_NOT_FOUND",
+    "DS_ERR_OOM",
+    "DS_ERR_OVERFLOW",
+    "DS_ERR_STATE",
+    "DS_ERR_UNSUPPORTED"
+  ],
+  "defines": {
+    "errors": [
+      "DS_ERR_ENGINE_HALTED",
+      "DS_ERR_INTERNAL",
+      "DS_ERR_INVAL",
+      "DS_ERR_IO",
+      "DS_ERR_NOT_FOUND",
+      "DS_ERR_OOM",
+      "DS_ERR_OVERFLOW",
+      "DS_ERR_STATE",
+      "DS_ERR_UNSUPPORTED"
+    ]
+  },
+  "refs": [
+    "NCBK.1.5",
+    "NCBK.2.9",
+    "NERR.2.3",
+    "NFCT.1.1",
+    "NSTG.3.3",
+    "RARC.13.16",
+    "RARC.13.17",
+    "RDSC.9.8"
+  ]
+}

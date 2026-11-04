@@ -1,0 +1,20 @@
+{
+  "id": "LCYC.6.1.1",
+  "prefix": "LCYC",
+  "doc": "CYCLE_DETECTION.md",
+  "parent": "LCYC.6.1",
+  "seq": 297,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "  [LCYC.6.1.1] **A toggle is not refutable, and the rule\n  count is not what decides it.** The break drops an edge\n  only where the emit *cannot* satisfy the target's LHS.\n  In a literal toggle it can — `A: kind == \"x\" → emit B\n  kind: \"y\"`; `B: kind == \"y\" → emit A kind: \"x\"` — so\n  neither edge drops, the loop closes, and the compiler\n  rejects it with `DS_VALIDATE_RULE_CYCLE`. The cycle is\n  real: the toggle oscillates between two stable states\n  and the compiler has no termination proof. Neither a\n  `cooldown` nor a `ttl` breaks it ([LCYC.6.2], [LCYC.7.2]). A state\n  that holds while a condition holds is derived as a\n  logical fact, and a transition no condition justifies\n  enters from the host or an adapter ([LLOG.15.3]).\n\n  The test is whether the literals **close the loop**,\n  not how many rules span it. Two rules that both match\n  `val == \"A\"` and emit `val: \"B\"` and `val: \"D\"`\n  respectively close nothing — neither emit satisfies the\n  other's LHS, both edges drop, and there is no cycle.\n\n",
+  "refs": [
+    "LCYC.6.2",
+    "LCYC.7.2",
+    "LLOG.15.3"
+  ],
+  "errors": [
+    "DS_VALIDATE_RULE_CYCLE"
+  ]
+}

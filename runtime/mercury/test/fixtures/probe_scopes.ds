@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# One schema per `scope` value ([LSCP.1.5]); a bare `schema Foo:` is
+# `scope explicit` ([LSCP.1.4]). The rule matches all four, so none is
+# dead-stripped.
+
+schema Bare:
+    entity_id: String
+
+schema Exp scope explicit:
+    entity_id: String
+
+schema Log scope logical:
+    entity_id: String key
+
+schema Act scope activation:
+    entity_id: String
+
+schema Out scope ttl 1_h:
+    tag: String
+
+rule touch:
+    Bare
+    Exp
+    Log
+    Act
+->
+    emit Out tag: "seen"

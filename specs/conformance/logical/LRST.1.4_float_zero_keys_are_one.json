@@ -1,0 +1,25 @@
+{
+    "id": "LRST.1.4_float_zero_keys_are_one",
+    "clauses": ["LRST.1.4"],
+    "category": "logical",
+    "scenario": "[LRST.1.4]: two `as` keys are the same key exactly when `==` between them is `true`, so `0.0` and `-0.0` are one `Float` key ([LEXP.4.2]). Three Req facts (distinct `entity_id`) each arm a 100ms timer keyed on `r.x`: a (0.0) and b (-0.0) at t=0, c (1.5) at t=50ms. b's arming supersedes a's, so the zero-keyed timer fires once, at 100ms; c's key differs and its timer fires at 150ms. Pumps at 120ms and 200ms separate the two. Exact messages: armed x3, then `timer fired` twice. Keys compared by bit pattern keep both zero timers and give three firings. PATH PINNED: the supersedure sweep's key equality on a Float `corr` slot, libds `rete/adapters.c` `corr_key_eq` and Mercury `ds.exec`'s sweep, and the compiler's Float `corr` slot (`dsc.rete.lrst_1_4_leaf_kind`).",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    x: Float mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.x:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "x": 0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "x": -0.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "x": 1.5 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

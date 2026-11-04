@@ -1,0 +1,29 @@
+{
+    "id": "LEXP.7.19_json_not_equal_in_one_fact",
+    "category": "runtime",
+    "scenario": "LEXP.7.19: `!=` on two whole `Json` values is the negation of [LFAC.2.5.1]'s deep structural equality. Pair p1 holds the same object in both slots with its members in a different order, so `p.a != p.b` is false; pair p2 differs in one array element and fires. Two Pairs plus one Found. PATH PINNED: the predicate evaluator, as in LEXP.7.19_json_equal_in_one_fact: libds `rete/eval.c` `val_cmp`; Mercury `ds.eval` `compare_outcome`. A runtime that compared member order would fire on p1 as well and count 4.",
+    "rules_ds": "schema Pair scope logical:\n    id: String key\n    a: Json mutable\n    b: Json mutable\n\nschema Found scope logical:\n    id: String key\n\nrule r:\n    Pair p where p.a != p.b\n->\n    emit Found logical id: p.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p1",
+                    "a": { "x": 1, "y": "z" },
+                    "b": { "y": "z", "x": 1 }
+                }
+            },
+            {
+                "schema": "Pair",
+                "slots": {
+                    "id": "p2",
+                    "a": { "n": [1, 2] },
+                    "b": { "n": [2, 1] }
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LTAC.9.6",
+    "category": "compiler",
+    "scenario": "`after` capture mechanics are shared with LCCO.5 per LTAC.9.6 \u2014 the compiler reuses the `$CaptureBindings_…` fact pattern for `after` clauses. Pin: an `after` body reading the LHS binding `{s.zone}` compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so which mechanism carries the binding is not observed.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    zone: String mutable\n\nrule delayed_log:\n    Sensor s where s.zone == \"living_room\"\n->\n    log info \"triggered\"\n    after 30_s:\n        log info \"sensor {s.zone} delayed log\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

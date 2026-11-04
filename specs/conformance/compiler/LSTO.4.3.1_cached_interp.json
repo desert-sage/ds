@@ -1,0 +1,10 @@
+{
+    "id": "LSTO.4.3.1_cached_interp",
+    "clauses": ["LGRA.2.9.6.8"],
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.6.8] / [LSTO.4.3.1a]: `cached(\"<key>\")` admits `{<path>}` interpolation sites in the key string, in a `where` as anywhere the call is admitted. PATH PINNED: dsc.validate's inert_interpolation skips the string directly under `cached`, and lgra_2_9_6_8_cached_key finds `{d.device_id}` non-nullable, so neither DS_VALIDATE_INTERP_INERT_POSITION nor DS_VALIDATE_INTERP_NULLABLE_KEY is raised. The nullable twin is LGRA.2.9.6.8_cached_key_nullable. Pins the compile only, not what the key renders to at run time.",
+    "rules_ds": "schema DispatchCommand scope logical:\n    entity_id: String key\n    device_id: String mutable\n    revision: Int mutable\n\nrule dispatch:\n    DispatchCommand d where d.revision != cached(\"last-cmd-{d.device_id}\")\n->\n    log info \"dispatch\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

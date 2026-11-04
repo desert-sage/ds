@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.3.2.2_fma_null_json_leaf",
+    "clauses": ["LEXP.3.2.2", "LNUL.4.1"],
+    "category": "logical",
+    "dead_rules_expected": ["type_fault", "computation_fault"],
+    "scenario": "[LEXP.3.2.2] with [LNUL.4.1]: a null operand of `math.fma` yields null and raises no fault, \"a `Json` leaf's included\". This is the case where `fma` parts from every other builtin: [IRET.9.6] makes a present JSON `null` leaf at `abs` a TypeError. Doc 1's `j` is `{\"a\": null}`, so `d.j.a` is a present null leaf; Doc 2's is `{\"a\": 3.0}`, so `math.fma(d.j.a, 2.0, 1.0)` is 7.0. Rule `absent` fires where the call is null and `present` where it is 7.0. Rules `type_fault` and `computation_fault` log any TypeError or ComputationError and must stay silent. Messages, rule then assertion order: `absent 1`, `present 2`. A runtime that ran the kind test first, as `abs` does, would log `type absent` and `type present` from `type_fault` and no `absent 1`. PATH PINNED: the null arm before the kind test in libds's `builtin_fma` (`builtins.c`) and Mercury's `ds.eval.lexp_3_2_2_fma`, reached through a `Json` projection rather than a `T?` slot (`LEXP.3.2.2_fma_null_operand` pins that one).",
+    "rules_ds": "import math\n\nschema Doc scope logical:\n    id: Int key\n    j: Json mutable\n\nrule absent:\n    Doc d where math.fma(d.j.a, 2.0, 1.0) is null\n->\n    log info \"absent {d.id}\"\n\nrule present:\n    Doc d where math.fma(d.j.a, 2.0, 1.0) == 7.0\n->\n    log info \"present {d.id}\"\n\nrule type_fault:\n    TypeError e\n->\n    log critical \"type {e.rule}\"\n\nrule computation_fault:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "id": 1, "j": { "a": null } } },
+            { "op": "assert", "schema": "Doc", "slots": { "id": 2, "j": { "a": 3.0 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["absent 1", "present 2"]
+    }
+}

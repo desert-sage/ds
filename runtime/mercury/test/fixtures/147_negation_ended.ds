@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A justification that a `no` ends ([IRET.12.2]). `alarm` emits an Alarm
+# while no Ack names its Sensor's entity; an Ack ends the match, though the
+# Sensor stays live, so truth maintenance withdraws the Alarm. `seen` shows a
+# live Alarm as a firing.
+#
+# The TMS checker's negation evaluator decodes this artefact in its self-test
+# on every run, and refuses a kept Alarm beside a live Ack for its
+# entity and a token naming the wrong facts. `116_negation_ended` drives it
+# through both engines.
+
+schema Sensor scope logical:
+    entity_id: String key
+
+schema Ack scope logical:
+    entity_id: String key
+
+schema Alarm scope logical:
+    entity_id: String key
+
+rule alarm:
+    Sensor s
+    no Ack a where a.entity_id == s.entity_id
+->
+    emit Alarm logical entity_id: s.entity_id
+
+rule seen:
+    Alarm a
+->
+    log info "alarm {a.entity_id} is live"

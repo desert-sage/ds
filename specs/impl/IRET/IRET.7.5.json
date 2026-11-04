@@ -1,0 +1,127 @@
+{
+  "id": "IRET.7.5",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7",
+  "seq": 580,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Join tests",
+  "text": "### Join tests [IRET.7.5]\n\nJoin tests are predicates over the token (left side) and\nthe new fact (right side, the candidate for the current\npattern). They implement DS's `where` clause predicates\nand `within` / `then...within` temporal constraints.\n\n`ds_rete_join_test_t` is declared in `runtime/src/libds/rete/beta.h`.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Iret_7_5__cmp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six comparisons a join test may carry."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "Iret_7_5__expr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A join test's expression over the where fragment the production rules use: literals, slot reads, comparisons, Int and Float arithmetic (+ - * / // % and unary minus), and, or, not, is / is not, ??, the conversion cast, a path into a Json slot, has, len of a Json value and len of a String. No function call beyond those, no within or series read."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_bool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "An ordering on two Bools answers as a trap here. That is the model's, not DS's: the compiler refuses the form, and the fixture lowering refuses it rather than let it reach this function. Equality and inequality are exact."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Float compared with a Float, or with an Int promoted to one."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An Int compared with an Int, or promoted against a Float."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_json",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A Json value compared with a Json value, by deep structural equality, == and != alone ([LEXP.7.19]); an ordering answers as a trap here, a form the compiler refuses."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_str",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A String compared with a String, by [LSTR.3.1]'s equality codepoint by codepoint and [LSTR.3.2]'s order by codepoint value; a null right operand yields null; anything else is ill-typed."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__eq_only",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Equality and inequality on a type the model does not order, two Bools or two Json values; an ordering answers as a trap here, a form the compiler refuses and the fixture lowering refuses rather than let it reach this function."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__float_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six Float comparisons, IEEE 754's."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__int_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six Int comparisons."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__str_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six String comparisons: == and != [LSTR.3.1]'s equality codepoint by codepoint, < and > [LSTR.3.2]'s lexicographic order by codepoint value, <= and >= the order or the equality."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__cmp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The six comparisons over the fragment's kinds, like with like -- Int, Float, an Int promoted against a Float, String, Bool, Json -- else a trap. An ordering on two Bools or two Json values answers as a trap here, a form the compiler refuses and the fixture lowering refuses rather than let it reach this function."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_7_5__join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A node's join tests as one predicate over the positive prefix and the candidate [RDSC.4a.9.1]. The propagation lemmas are stated over this predicate and the negative flag, never over a node's stored memory. Rete/NetworkAnswer.idr projects a four-valued test onto this predicate per polarity (`iret_7_6__node_join`), so every lemma here survives a four-valued answer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "Iret_7_5__test",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A join test answers a (token, candidate) pair true, false, null or a trap."
+      }
+    ]
+  }
+}

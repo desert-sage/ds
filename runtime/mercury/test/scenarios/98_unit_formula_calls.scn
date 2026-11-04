@@ -1,0 +1,24 @@
+# A unit formula called explicitly and applied implicitly (130_unit_formula_calls),
+# across both runtimes.
+#
+#   e   Tone   note=69  freq=880    midi_to_hz(69) = 440 * 2 ** 0 = 440 and
+#                                   hz_to_midi(880) = 69 + 12 * log2(2) = 81,
+#                                   both exact; `a4` fires.
+#   n   Tone   note=60  freq=1000   neither result is exact, so the digits
+#                                   logged are CORE-MATH's rounding in each
+#                                   runtime; `a4` stays quiet.
+#   e   Level  p=30     w=1         dBm_to_watt(30) = 10 ** 3 / 1000 = 1 and
+#                                   watt_to_dBm(1) = 10 * log10(1000) = 30,
+#                                   both exact.
+#   n   Level  p=-3     w=0.002     neither exact.
+#
+# One fact per entity, never superseded, so no retraction re-fires a rule.
+# @spec [LGRA.9.8.11] [LUNI.4.5.1]
+assert Tone id=e note=69.0 freq=880.0
+pump
+assert Tone id=n note=60.0 freq=1000.0
+pump
+assert Level id=e p=30.0 w=1.0
+pump
+assert Level id=n p=-3.0 w=0.002
+pump

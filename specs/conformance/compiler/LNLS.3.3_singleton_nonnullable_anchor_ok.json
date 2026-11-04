@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_singleton_nonnullable_anchor_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] / [LNUL.8.10]: the twin of LNLS.3.3_singleton_nullable_anchor_refused, differing only in the `?`. `pcf` is declared `Int`, so the singleton slot the anchor `m.addr == cpu.pcf` rests on can stand in for a key slot, and the rule compiles under +nolinscan. PATH PINNED: `dsc.validate.anchored`, the singleton arm with `nullable_singleton_slot` failing; a nullability test that refused every singleton anchor would turn this red with DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Cpu scope logical:\n    pcf: Int mutable\n    running: Bool mutable\n\nschema Mem scope logical:\n    addr: Int key\n    amount: Int mutable\n\nrule fetch:\n    Cpu cpu where cpu.running == true\n    Mem m where m.addr == cpu.pcf\n->\n    log info \"fetch\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

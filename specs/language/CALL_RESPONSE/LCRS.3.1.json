@@ -1,0 +1,46 @@
+{
+  "id": "LCRS.3.1",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.3",
+  "seq": 147,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.3.1] **Every call carries a correlation.** It is the value of the\ncall's `as` binding ([LRST.1.1]), or, for a call with no `as` or whose `as`\nevaluates to `\"\"` ([LRST.1.2]), the value generated for each firing\n([LCCO.3.4]). A correlation is a `String`,\nnever `null` and never empty, whatever the call's service. It threads through\nto every answer the call receives: its response fact ([LCRS.4.3.1]) and its\n`CallError` ([LCRS.3.2]).\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LCRS.3.2",
+    "LCRS.4.3.1",
+    "LRST.1.1",
+    "LRST.1.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Every call has a correlation: the site's `as`, the lowering's literal. LESS than the clause: a computed `as` and the generated form are outside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__corr_c1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A fixture. An author's `as`; the generated form is outside."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_3_1__corr",
+        "tag": "spec",
+        "note": "The correlation of a call's request, as the engine compares it: an author's `as` is one value every firing of the call shares, and a generated correlation is unique to its firing, so it is the request's own number. Every call has one, and every answer carries its request's. Modelled as a value the sweeps compare, never as a String; that it is never null or empty is the clause's and not drawn."
+      }
+    ]
+  }
+}

@@ -1,0 +1,200 @@
+================================================================================
+A use line, both import forms and a constant (LGRA.3.1, LIMP.2.1.1, LGRA.4.1)
+================================================================================
+
+use default
+
+import units.si as u
+from math import pi, sqrt
+const N: Int? = 3
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (use_declaration
+    dialect: (identifier))
+  (import_declaration
+    path: (dotted_name
+      (identifier)
+      (identifier))
+    alias: (identifier))
+  (import_declaration
+    path: (dotted_name
+      (identifier))
+    (import_item
+      name: (identifier))
+    (import_item
+      name: (identifier)))
+  (const_declaration
+    name: (identifier)
+    type: (type
+      (identifier))
+    value: (integer)))
+
+================================================================================
+A schema with a docstring, markers, a tolerance and a field docstring (LGRA.5.1)
+================================================================================
+
+schema Reading scope ttl 60_s:
+    """A reading."""
+    sensor: String key
+    level: Float? mutable tolerance 0.5 "the level"
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (schema_declaration
+    name: (identifier)
+    (scope
+      (unit_literal))
+    (docstring
+      (string))
+    (field_declaration
+      name: (identifier)
+      type: (type
+        (identifier)))
+    (field_declaration
+      name: (identifier)
+      type: (type
+        (identifier))
+      (float)
+      doc: (string
+        (string_content)))))
+
+================================================================================
+A series, a unit and a service (LGRA.7.1, LUNI.4.3, LGRA.23.1)
+================================================================================
+
+series Sensor.state (by: entity_id):
+    mean, stdev sliding 10_s as recent
+
+unit celsius: temperature = x + 273.15 label "°C" alias °C, degC
+
+service svc.ping:
+    kwarg n: Int default -1 required
+    no response
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (series_declaration
+    slot: (dotted_name
+      (identifier)
+      (identifier))
+    (series_options
+      (kwarg
+        name: (identifier)
+        value: (identifier)))
+    (series_line
+      aggregation: (identifier)
+      aggregation: (identifier)
+      (time_model
+        (unit_literal))
+      name: (identifier)))
+  (unit_declaration
+    name: (type
+      (identifier))
+    dimension: (identifier)
+    to_base: (binary_operator
+      left: (identifier)
+      right: (float))
+    (unit_label
+      (string
+        (string_content)))
+    (unit_aliases
+      (type
+        (unit_symbol))
+      (type
+        (identifier))))
+  (service_declaration
+    name: (dotted_name
+      (identifier)
+      (identifier))
+    (kwarg_declaration
+      name: (identifier)
+      type: (type
+        (identifier))
+      (integer))
+    (response_declaration)))
+
+================================================================================
+A unit dimension and a tier-2 unit (LUNI.4.1, LUNI.4.3)
+================================================================================
+
+unit dimension loudness storage float64 base sone
+unit phon: loudness: label "phon"
+    to_base: 2.0 ** ((x - 40.0) / 10.0)
+    from_base: 10.0 * log2(x) + 40.0
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (unit_declaration
+    name: (identifier)
+    storage: (identifier)
+    base: (type
+      (identifier)))
+  (unit_declaration
+    name: (type
+      (identifier))
+    dimension: (identifier)
+    (unit_label
+      (string
+        (string_content)))
+    (unit_conversion
+      (binary_operator
+        left: (float)
+        right: (parenthesized_expression
+          (binary_operator
+            left: (parenthesized_expression
+              (binary_operator
+                left: (identifier)
+                right: (float)))
+            right: (float)))))
+    (unit_conversion
+      (binary_operator
+        left: (binary_operator
+          left: (float)
+          right: (call
+            function: (identifier)
+            (argument_list
+              (identifier))))
+        right: (float)))))
+
+================================================================================
+A unit scalar and a unit fx_pair (LUNI.4.2, LUNI.4.6)
+================================================================================
+
+unit scalar dB storage float64 label "generic decibel"
+unit fx_pair USD_to_EUR: currency_usd to currency_eur
+    via FxRate where base_code == "USD" and quote_code == "EUR"
+    field rate_num / rate_den
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (unit_declaration
+    name: (identifier)
+    storage: (identifier)
+    (unit_label
+      (string
+        (string_content))))
+  (unit_declaration
+    name: (type
+      (identifier))
+    from: (identifier)
+    to: (identifier)
+    (fx_via
+      schema: (identifier)
+      selector: (boolean_operator
+        left: (comparison_operator
+          left: (identifier)
+          right: (string
+            (string_content)))
+        right: (comparison_operator
+          left: (identifier)
+          right: (string
+            (string_content)))))
+    (fx_field
+      numerator: (identifier)
+      denominator: (identifier))))

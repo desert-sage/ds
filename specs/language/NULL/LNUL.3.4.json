@@ -1,0 +1,36 @@
+{
+  "id": "LNUL.3.4",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.3",
+  "seq": 55,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.3.4] **A `Json` document whose root is `null` is the canonical `null`,\nnot a document.** There is exactly one `null` ([LNUL.2.1]), so a JSON `null`\nread as a whole slot value **is** that null — it does not become a second,\ndistinct value that happens to live inside a `Json` slot. A slot declared\n`Json` therefore cannot hold it, for the same reason `Float` cannot hold null\n([LNUL.3.1]); a slot declared `Json?` can, and holds the canonical null.\n\n**The rule runs in both directions.** It does **not** touch nulls *inside* a\ndocument:\n`{\"a\": null}` is an object, a legal value in a `Json` slot, and a leaf-read of\nthat `null` yields the canonical null as a value rather than absence\n([LNUL.8.4]). What is forbidden is a whole slot value that is nothing but a\nJSON `null`, in a slot that declared it can never be null.\n\nAn implementation **must not** carry two representations of `null` reachable\nas a slot value. Two would defeat [LNUL.2.1]'s guarantee directly: they would\nneed to hash, encode, order and compare identically while being observably\ndifferent on read-back.\n\n",
+  "refs": [
+    "LNUL.2.1",
+    "LNUL.3.1",
+    "LNUL.8.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__present_null_reads_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The rule's second direction: a leaf-read of a `null` inside a document yields the canonical null as a value, the same `null` an unresolved path reads as, for every path and document -- never a second null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__read",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A JSON null leaf reads as the canonical null, the one `null` the model has; a document whose root is a JSON null is never a value here -- the fixture runner refuses one as the clause does, and the fixture lowering codes a `Json?` slot holding none as the canonical null."
+      }
+    ]
+  }
+}

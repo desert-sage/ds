@@ -1,0 +1,22 @@
+{
+  "id": "LLEX.11.2.4",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.11.2",
+  "seq": 501,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LLEX.11.2.4] **A float literal past the largest finite `Float` is a lexer\n  error.** A `FLOAT_LIT`, and the `DEC_PREFIX` of a `UNIT_LIT`\n  ([LLEX.12]), reads as the `Float` nearest its value, ties to even\n  ([LDET.3.2.8]). Where that value lies past the largest finite `Float`, so that\n  it would round to an infinity, the compiler **must** refuse the literal as a\n  lexer error, `\"float literal out of range\"`, with `DS_PARSE_FLOAT_RANGE`, as\n  it refuses an integer literal out of range ([LLEX.11.1.5]). The compiler\n  **must not** read such a literal as an infinity, and **must not** saturate it\n  to the largest finite `Float`. A literal whose value rounds to zero is that\n  zero. An infinity is written `inf` ([LEXP.4.2]).\n\n  So `1.7976931348623157e308` is a literal, and `1.8e308` and `1e400` are lexer\n  errors. So is the literal in `-1e400`, since a negative number is unary minus\n  applied to a non-negative literal ([LGRA.2.7.6]).\n\n",
+  "refs": [
+    "LDET.3.2.8",
+    "LEXP.4.2",
+    "LGRA.2.7.6",
+    "LLEX.11.1.5",
+    "LLEX.12"
+  ],
+  "errors": [
+    "DS_PARSE_FLOAT_RANGE"
+  ]
+}

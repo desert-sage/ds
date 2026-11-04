@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.5.8.6_text_limit_scope_cache_written",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.6]'s text limit binds JSON text a runtime is HANDED, not its own serialization of a value it holds. The rule caches a `String` slot of 16,384 U+0001 characters (the harness's `$repeat` form): as a `Json` string that is one node of 16,384 string bytes, within all three tree limits, but its canonical text escapes each character as six bytes, about 98 KB, four times the 24,576-byte text limit. The write lands: `action_cache_set` is on the stream. A runtime that applied the text limit to its own serialization would refuse it. The sibling LGRA.5.8.6_text_limit_scope_cache_no_fault pins that nothing is raised. PATH PINNED: on libds, `adapter_ds_cache_set`'s `ds_json_parse_limited(..., text_limit = false)` of `adapter_ds_json_value`'s text; on the Mercury runtime, `ds.exec.cache_set_verb`'s `json_over_limit`, which counts string bytes and no text.",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n    s: String mutable\n\nrule r:\n    T t\n->\n    cache key: \"k\" value: t.s\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "k": 1, "s": { "$repeat": "\u0001", "count": 16384 } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_cache_set"]
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "LDTL.4.1",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.4",
+  "seq": 166,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Per-emit TTL override enabled",
+  "text": "### Per-emit TTL override enabled [LDTL.4.1]\n\nWith `dynamic_ttl`, the author may write the `retain: <expr>` kwarg on\n`emit` for a `ttl`-lifecycle schema with any expression of type\n`Duration`.  The evaluated duration replaces the schema's declared TTL for\nthat specific fact.\n\nThe compiler must refuse a `retain:` expression whose type is not\n`Duration` with `DS_VALIDATE_TYPE_MISMATCH`, as it refuses a kwarg value of\nanother type than its slot's ([LEXP.7.3b]). The compiler must refuse an\nun-narrowed `Duration?` expression with `DS_VALIDATE_NULLABLE_UNNARROWED`:\n`retain:` demands a value, so it is a concrete-value position ([LNUL.5.1]). On a target of any other\nlifecycle `retain:` has nothing to override, and the compiler must refuse it with\n`DS_VALIDATE_RETAIN_NON_TTL`.\n\nThe engine must fix the deadline of a fact emitted with a per-emit TTL override when\nit asserts the fact:\n\n$\\mathit{deadline} = t_{\\mathit{assert}} + d$\n\nwhere $t_{\\mathit{assert}}$ is the fact's entry stamp ([LTIM.2.8.6]) and $d$\nthe evaluated `retain:` duration.\n\n**The engine evaluates `retain:` last.** The engine **must** evaluate the `retain:` expression only after it has\nevaluated every slot value of the action. So where a slot value and the\n`retain:` expression would both fault, the fault it records is the slot\nvalue's, and the `retain:` expression is not evaluated. The `ts` fill comes\nbefore both ([LFAC.9.2]).\n\n",
+  "refs": [
+    "LEXP.7.3b",
+    "LFAC.9.2",
+    "LNUL.5.1",
+    "LTIM.2.8.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_NULLABLE_UNNARROWED",
+    "DS_VALIDATE_RETAIN_NON_TTL",
+    "DS_VALIDATE_TYPE_MISMATCH"
+  ]
+}

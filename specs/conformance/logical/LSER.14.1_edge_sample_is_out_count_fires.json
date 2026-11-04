@@ -1,0 +1,41 @@
+{
+    "id": "LSER.14.1_edge_sample_is_out_count_fires",
+    "category": "logical",
+    "scenario": "LSER.14.1 — positive control for LSER.14.1_edge_sample_is_out_mean_does_not_fire, same steps. `count` keeps a concrete type ([LSER.19.8]), so the empty window's count is `0`. `where r.v > 1.5 and count(r.v) == 0` cannot fire at t=0 (v is 1.0) and fires at t=W only if the read is evaluated AND treats the sample exactly W old as outside the window. Under a closed [t−W, t] the count is 1 and it does not fire. Proves the negative vector's silence is the edge sample being out, not a read that never ran. Path: libds `series_window_emptied` (`>=`) → `series_zero_default` for COUNT; Mercury `in_window` → `cold_value(agg_count)`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    count sliding 10_min\n\nrule edge_count:\n    Reading r where r.v > 1.5 and count(r.v) == 0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 600000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 2.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

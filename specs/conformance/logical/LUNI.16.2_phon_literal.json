@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.16.2_phon_literal",
+    "clauses": ["LUNI.4.3"],
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `phon` in `units.audio`, tier-2 non-affine ([LUNI.4.3]): the literal `50_phon` converts to its base `sone` as 2.0 ** ((50.0 - 40.0) / 10.0) = 2.0 ** 1.0 = 2.0, exact, so a `sone` slot holding 2.0 matches it and `twice_as_loud` fires. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]); dsc.rete's `luni_4_3_tier2_literal`, which lowers the literal to the unit's `to_base` at its magnitude rather than folding it ([LDET.3.3a.7]); and both runtimes' evaluation of that expression through CORE-MATH, then their comparison of two equal doubles (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "from units.audio import sone, phon\n\nschema Loudness scope logical:\n    id: String key\n    level: sone mutable\n\nrule twice_as_loud:\n    Loudness l where l.level == 50_phon\n->\n    log info \"50 phon\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Loudness", "slots": { "id": "m", "level": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["50 phon"]
+    }
+}

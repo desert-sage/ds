@@ -1,0 +1,17 @@
+{
+  "id": "LUNI.3.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.3",
+  "seq": 217,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "3.2 Unit suffix token class",
+  "text": "### 3.2 Unit suffix token class [LUNI.3.2]\n\n`UNIT_SUFFIX`, `UNIT_START` and `UNIT_CONT` are [LLEX.12]'s productions.\n`UNIT_SUFFIX` is not constrained to the `NAME` identifier class. It starts with any\nASCII letter or one of the SI Unicode characters and contains letters, digits,\n`_`, or those same characters. Case-sensitive.\n\n`_` is in `UNIT_CONT` **only**: a `_` before the first character of a suffix is\nthe separator ([LUNI.3.1]), so `5_meter_squared` is `5`, the separator and\n`meter_squared`.\n\n`ₙ` is in `UNIT_CONT` **only**, deliberately: a subscript never begins a unit\nsymbol, it qualifies the letter before it. Admitting it to `UNIT_START` would\nlet a symbol open with a mark that modifies nothing.\n\nThe allowed non-ASCII characters in `UNIT_SUFFIX` are:\n- `°` (U+00B0 DEGREE SIGN) — for `°C`, `°F`, `°R`, and for degree itself\n- `′` (U+2032 PRIME) — for arcminute\n- `″` (U+2033 DOUBLE PRIME) — for arcsecond\n- `Ω` (U+03A9 GREEK CAPITAL OMEGA) — for ohm\n- `µ` (U+00B5 MICRO SIGN) — for `µs`, `µA`, `µm`, etc.\n- `Å` (U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE) — for ångström\n- `ₙ` (U+2099 LATIN SUBSCRIPT SMALL LETTER N) — for `gₙ`, standard gravity.\n  Continuation only, per the production.\n\nThe lexer normalises confusable look-alikes automatically:\n- μ (U+03BC GREEK SMALL LETTER MU) → µ (U+00B5)\n- Ω (U+2126 OHM SIGN) → Ω (U+03A9)\n- ʹ (U+02B9 MODIFIER LETTER PRIME) → ′ (U+2032); ʺ (U+02BA MODIFIER\n  LETTER DOUBLE PRIME) → ″ (U+2033)\n\nThe three **plane-angle glyphs** — `°` (`degree`), `′` (`arcminute`) and\n`″` (`arcsecond`) — are ordinary `UNIT_SUFFIX` characters ([LLEX.12.2]).\n`′`/`″` are Unicode-only: ASCII `'`/`\"` are not aliases, since `\"` is the\nstring delimiter. No other non-ASCII characters are permitted.\n\n",
+  "refs": [
+    "LLEX.12",
+    "LLEX.12.2",
+    "LUNI.3.1"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+    "id": "LRST.1.4_bool_key",
+    "clauses": ["LRST.1.4"],
+    "category": "logical",
+    "scenario": "[LRST.1.4]: `Bool` is a legal `as` key, and a key is compared by value. Three Req facts (distinct `entity_id`) each arm a 100ms timer keyed on `r.flag`: a (true) and b (true) at t=0, c (false) at t=50ms. b's arming supersedes a's, so the `true` timer fires once, at 100ms; c's key differs and its timer fires at 150ms. Exact messages: armed x3, then `timer fired` twice. No supersedure gives three firings; keys that collapsed `true` and `false` give one. PATH PINNED: the supersedure sweep's key equality on a Bool `corr` slot, libds `rete/adapters.c` `corr_key_eq` and Mercury `ds.exec`'s sweep.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    flag: Bool mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.flag:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "flag": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "flag": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "flag": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

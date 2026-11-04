@@ -1,0 +1,34 @@
+{
+    "id": "RFCS.6a.4_emit_upsert_assert_before_withdraw",
+    "clauses": ["LFAC.2.5.3"],
+    "category": "logical",
+    "scenario": "RFCS.6a.4 / [LFAC.2.5.3]: an emit that supersedes a live fact records its FactEmit -- on the stream callback, DS_EV_FACT_ASSERT -- and then the withdrawal of the fact it superseded, whatever produced the new fact. `copy` emits `Out logical` with the constant key 1 and the Reading's v, so two Readings of different `src` emit the same Out identity. Reading src 1 (v 1) is asserted and pumped: `copy` emits Out(1, 1). Reading src 2 (v 2) is asserted and pumped: `copy` fires for it and its emit replaces Out(1, 1) with Out(1, 2) while Out(1, 1) is still justified, so no truth-maintenance retraction removes it first and the supersedure is the emit's own. (An upsert of ONE Reading cannot drive this: its old activation ends, truth maintenance retracts the old Out, and the new emit supersedes nothing.) Exactly, strict: the first clock sample's tick; the first input, its pump and firing; the second input and pump; the firing whose emit records fact_assert(Out 2) then fact_retract(Out 1) and only then its action_emit. PATH PINNED: libds's rule-emit path (rete/adapters.c adapter_ds_emit, through ds_rete_wm_wrap_emitted_fact) and Mercury's ds.exec assert_verb `replaced` arm, held to each other by the runtime differential. NOT COVERED: an `as`-keyed re-fire's supersedure ([LRST.2.2]). It is a separate sweep action (libds do_retract_corr_sweep, Mercury's ds.exec corr sweep) over a fact of another identity, and it keeps action order, its FactWithdraw ahead of the FactEmit (RFCS.6a.4, [LCRS.6.2.1]); this vector drives one-identity supersedure only.",
+    "rules_ds": "schema Reading scope logical:\n    src: Int key\n    v: Int mutable\n\nschema Out scope logical:\n    id: Int key\n    v: Int mutable\n\nrule copy:\n    Reading r\n->\n    emit Out logical id: 1 v: r.v\n",
+    "expect": {
+        "kind": "event_sequence_strict",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "src": 1, "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "src": 2, "v": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "tick",
+            "fact_assert",
+            "pump",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end",
+            "fact_assert",
+            "pump",
+            "rule_lhs_facts",
+            "rule_fire_begin",
+            "fact_assert",
+            "fact_retract",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

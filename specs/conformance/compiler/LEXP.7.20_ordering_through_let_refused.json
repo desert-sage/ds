@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.20_ordering_through_let_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.20 with [LLET.12.5]: a `let` is its right-hand side inlined, so `let x = a` makes `x` the pattern binding `a`, and an ordering on it is refused as one on `a` would be. `Reading a, Reading b`, then `let x = a` and `x < b` as the value of an emit's `Bool` slot, is refused with DS_VALIDATE_UNORDERED_TYPE at the `<`. PATH PINNED: the comparison-step check in the validator (Mercury: `dsc.typecheck` `adjacent_mismatches`, keyed on an operand typed `lk_fact`; `x` has that type through `llet_12_5_bound_binding`, which follows a `let` whose right-hand side is a pattern binding). `b` is a pattern binding too, so this source is refused even by a check that typed `x` as unknown; LEXP.7.20_ordering_between_lets_refused is the vector where both operands are `let`s.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nschema Before scope logical:\n    id: String key\n    earlier: Bool mutable\n\nrule r:\n    Reading a\n    Reading b\n->\n    let x = a\n    emit Before logical id: a.id earlier: x < b\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

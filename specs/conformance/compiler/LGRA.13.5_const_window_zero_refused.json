@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.13.5_const_window_zero_refused",
+    "clauses": ["LGRA.2.8.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.13.5]: a series window is positive, and one that is not is DS_VALIDATE_SERIES_NONPOSITIVE_WINDOW. [LGRA.2.8.2] makes the window a `time_expr`, so a `time` const is judged by its value, as `sliding 0_s` is judged by its digits. `const Z = 0_s` and `count sliding Z` is refused. Paired with compiler/LGRA.13.5_const_window_positive_compiles, which differs only in the const's value, so a refusal of every const window fails there. A validator that checks only a literal admits this program and lowers the window as 0. PATH PINNED: `dsc.validate.lgra_13_5_line` through `nonpositive_measure`, which folds the NAME with `dsc.dstest.lgra_2_8_1_time_value_ns`.",
+    "rules_ds": "use default\n\nconst Z = 0_s\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    count sliding Z\n\nrule trig:\n    Sensor t where count(t.state) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NONPOSITIVE_WINDOW"
+    }
+}

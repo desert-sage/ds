@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.6_seed_string_bytes_over_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6] at the cache-seed host site ([NSTG.9.1]): a seeded value one byte past the string-bytes limit, one JSON string of 16,385 ASCII `a`s (the harness's `$repeat` form), is refused with `DS_ERR_JSON_LIMIT` (-221). The cache is untouched, and NO fault event reaches the stream: the status is the whole host refusal, and a seed writes nothing on any outcome. Paired with LGRA.5.8.6_seed_string_bytes_at_limit. PATH PINNED: on libds, `ds_json_parse` refuses the seed's text in pyds's `cache_seed` before `ds_engine_cache_seed` is called; on the Mercury runtime, `ds.engine.seed_cache` answers `seed_json_limit`. Every libds refusal of one names `DS_JSON_MAX_`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-221",
+        "message_contains": "DS_JSON_MAX_",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "value": { "$repeat": "a", "count": 16385 } }
+        ]
+    }
+}

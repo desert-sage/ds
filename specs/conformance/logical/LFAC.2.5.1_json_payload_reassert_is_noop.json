@@ -1,0 +1,20 @@
+{
+    "id": "LFAC.2.5.1_json_payload_reassert_is_noop",
+    "clauses": ["LFAC.2.5.1"],
+    "category": "logical",
+    "scenario": "[LFAC.2.5.1]: a reassertion whose mutable slots are equal to the live fact's is a no-op, and a `Json` slot is equal by deep structure. Doc `a` is asserted with body {\"k\": 1, \"n\": [1, 2]} and `seen` fires; the same body with its members in the other order is reasserted, which is a no-op, so `seen` does not fire again; a body differing in one leaf ({\"k\": 2, \"n\": [1, 2]}) is a change, so it does. Exactly [\"seen\", \"seen\"]. A `Json` payload never found equal fires three times; one compared by member order fires three times too. PATH PINNED: the no-op test, libds `rete/wm_rete.c` `slots_equal` through `json.c` `ds_json_deep_equal`, and the Mercury runtime's `ds.wm` no-op test over its `ds.json` term, whose members are stored sorted.",
+    "rules_ds": "schema Doc scope logical:\n    id: String key\n    body: Json mutable\n\nrule seen:\n    Doc\n->\n    log info \"seen\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Doc", "slots": { "id": "a", "body": { "k": 1, "n": [1, 2] } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "id": "a", "body": { "n": [1, 2], "k": 1 } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "id": "a", "body": { "k": 2, "n": [1, 2] } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen", "seen"]
+    }
+}

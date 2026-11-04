@@ -1,0 +1,19 @@
+{
+    "id": "LGRA.2.9.6.10_bare_temporal_sites",
+    "category": "logical",
+    "scenario": "LGRA.2.9.6.10: an interpolation site with no type renders a Time as `to_string()`'s default, iso8601 in UTC; a Date as iso8601; a Duration as the compact form of LTIM.8.4. A site that renders the Int representation, nanoseconds or days, fails it. Fact 1: Time 2024-01-15T16:00:00.5Z (1705334400500000000 ns), Date 2024-02-29 (day 19782), Duration 1h30m (5400000000000 ns). Fact 2: Time 1969-12-31T23:59:59Z (-1000000000 ns, before the epoch), Date 1969-12-31 (day -1), Duration zero, which is `0s`. Drives `lgra_2_9_6_10_temporal_text` in dsc.rete, which lowers each bare site onto FN_TO_STRING (the Time through `utc(...)`) or FN_DURATION_TO_STRING, and in the runtimes the arms `to_string` takes: libds's `adapter_ds_to_string` / `adapter_ds_duration_to_string`, Mercury's `time_to_string` / `duration_to_string`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    stamp: Time mutable\n    cal: Date mutable\n    span: Duration mutable\n\nrule r:\n    Ev e\n->\n    log critical \"{e.id}|{e.stamp}|{e.cal}|{e.span}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "stamp": 1705334400500000000, "cal": 19782, "span": 5400000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "stamp": -1000000000, "cal": -1, "span": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "1|2024-01-15T16:00:00.5Z|2024-02-29|1h30m",
+            "2|1969-12-31T23:59:59Z|1969-12-31|0s"
+        ]
+    }
+}

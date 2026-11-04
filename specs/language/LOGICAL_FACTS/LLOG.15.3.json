@@ -1,0 +1,24 @@
+{
+  "id": "LLOG.15.3",
+  "prefix": "LLOG",
+  "doc": "LOGICAL_FACTS.md",
+  "parent": "LLOG.15",
+  "seq": 369,
+  "depth": 2,
+  "kind": "observation",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LLOG.15.3] **A rule ends a justification it depends on only by a flip the\ncycle check refutes.** A logical fact is retracted when its last justifier's\nmatch ends ([LLOG.15.1]). A rule that reads the logical fact and ends that\nmatch has an edge back into the justifying rule unless the check drops it:\n\n- **An emit the literal break refutes compiles,** unless it replaces a fact\n  the rule itself matched, which [LLOG.11.9] refuses. It cannot trigger the justifier, so the edge drops ([LCYC.6.1]). What\n  its firing leaves is [LLOG.15.1]'s, and the rule reads the fact whose\n  justification it ends.\n- **Any other way of ending the match is refused.** A `withdraw` of the fact\n  the justifier matches ([LCYC.3.2.2]), or an emit whose value the break cannot\n  compare, keeps the edge. Both rules are then in one SCC with the logical fact\n  emitted and matched inside it, and the compiler refuses the program with\n  `DS_VALIDATE_RULE_CYCLE` ([LCYC.3.1.1]). Truth maintenance earns no exception:\n  that the retraction would end the loop is not an argument the cycle check\n  takes ([LCYC.3.5.1]).\n\nA refused program, and a transition that must outlast the rule that makes it,\nhave two shapes that compile. **A state that holds exactly\nwhile a condition holds is itself a logical fact**: emitted `logical` from the\ncondition, it is retracted when the condition stops matching, and no rule\nturns it off. **A transition no condition justifies enters from outside the\nengine**: the host or an adapter asserts the changed fact, which is no edge of\nthe rule graph, and the cascade follows it as it follows any input. A loop\nclosed through an adapter is the adapter's to keep finite ([LCYC.7.1]).\n\n---\n\n",
+  "refs": [
+    "LCYC.3.1.1",
+    "LCYC.3.2.2",
+    "LCYC.3.5.1",
+    "LCYC.6.1",
+    "LCYC.7.1",
+    "LLOG.11.9",
+    "LLOG.15.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_RULE_CYCLE"
+  ]
+}

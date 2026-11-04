@@ -1,0 +1,12 @@
+{
+    "id": "LREG.8.1_re2_digit_class",
+    "category": "runtime",
+    "scenario": "[LREG.8.1] — `\\d` is a DIGIT CLASS. RE2 is the language definition, not a backend choice: any engine that reads `\\d` differently is nonconformant, full stop. On a POSIX ERE engine, where `\\d` is not a digit class, `\"123\"` does not match and the rule does not fire. Expected count 2 = the Log fact plus the emitted Hit.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    Log e where e.msg ~ /^\\d+$/\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "Log", "slots": { "msg": "123" } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

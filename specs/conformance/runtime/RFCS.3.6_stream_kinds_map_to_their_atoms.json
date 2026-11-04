@@ -1,0 +1,42 @@
+{
+    "id": "RFCS.3.6_stream_kinds_map_to_their_atoms",
+    "clauses": ["RFCS.3.6", "RFCS.27.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.3.6]: the stream callback is the one channel, and a recorder writes for each stream event kind the atom [RFCS.3.6]'s table gives it, or none. This vector holds both channels of one run to the table ([STYL.5.10.8]): `expected_stream_kinds` is what the stream callback heard, `expected_atoms` what the recording holds ([RCTS.1.2.23]). Rule `r` on a logical Trig emits a logical Out, publishes a Pub, calls `svc.put`, writes and deletes a cache key and logs. Steps: `set` the clock to 0; a host assert of Trig (tick: ClockAdvance; fact_assert: FactAssert); a pump (pump: PumpBoundary), in which `r` fires once: rule_lhs_facts (none), rule_fire_begin (RuleFireAnnotation), Out's fact_assert (none: its action_emit records it, [RFCS.6a]) and action_emit (FactEmit), action_publish (FactPublish, [RFCS.27.1]; a publish delivers no fact_assert, [IDSP.4.6]), action_call (CallIssued, [RFCS.15.2]), action_cache_set, action_cache_delete and action_log (none), rule_fire_end (RuleFireAnnotation); a clock advance of 1 us, then a host retract of Trig: the retract's tick (ClockAdvance), its fact_retract (FactRetract: the integrator withdrew it), and the fact_retract of the engine withdrawing Out, Trig having been its one justification (FactWithdraw, [RFCS.7a]). Nothing withdraws a Pub: the publish put none in working memory ([LTIE.4.3]). Then a second pump (PumpBoundary). The stream's head announces six schemas before any event: `CallError` (four slots), which a program with a `call` carries ([LIMP.12.2]); the two fault schemas; `TimeZoneOffset` (four slots, [LIMP.12.2]); then Trig, Out and Pub, in the artefact's order. Every event of each kind `expected_stream_kinds` names is stated, so the projection is the whole stream. The table's other none kinds (timer_armed, fact_modify, action_cache_get, timer_fired) do not occur in this run. Break: a recorder that writes an atom for rule_lhs_facts, action_cache_set, action_cache_delete, action_log or an emitted fact's fact_assert adds an atom to `expected_atoms`; one that records the publish as a FactEmit, or drops a mapped kind (the CallIssued, the FactEmit, the FactPublish, the second ClockAdvance), changes one or removes one; one that writes an engine withdrawal as a FactRetract changes one. A runtime that still asserted the published fact adds a fact_assert and a fact_retract to `expected_stream_kinds` and a FactWithdraw to `expected_atoms`. PATH PINNED: libds's recorder (`ds_rfcs_record_to`, `rfcs/codec.c`'s stream-event switch, `ds_rfcs_encode_fpub` for ACTION_PUBLISH) through pyds `Engine.record`, with the stream callback beside it (runner.py's `_run_rfcs_roundtrip`); the Mercury runtime's `ds.rfcs.recordable` and writer (`fpub`), with the effect list beside the encoded recording (test_behave.m).",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nschema Pub scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n    publish Pub v: t.v\n    call svc.put id: t.v nocooldown\n    cache key: \"k\" value: t.v\n    cache_delete key: \"old\"\n    log info \"fired {t.v}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000 },
+            { "op": "retract", "label": "t" },
+            { "op": "pump" }
+        ],
+        "expected_stream_kinds": [
+            "tick", "fact_assert", "pump",
+            "rule_lhs_facts", "rule_fire_begin",
+            "fact_assert", "action_emit",
+            "action_publish",
+            "action_call", "action_cache_set", "action_cache_delete", "action_log",
+            "rule_fire_end",
+            "tick", "fact_retract", "fact_retract",
+            "pump"
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "SchemaDef", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "FactEmit", "FactPublish", "CallIssued", "RuleFireAnnotation",
+            "ClockAdvance", "FactRetract", "FactWithdraw",
+            "PumpBoundary"
+        ]
+    }
+}

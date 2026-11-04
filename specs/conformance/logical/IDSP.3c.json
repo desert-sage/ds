@@ -1,0 +1,29 @@
+{
+    "id": "IDSP.3c",
+    "clauses": ["RARC.5.8.12"],
+    "category": "logical",
+    "scenario": "An emit in a rule body produces the action_emit stream event AND a follow-up fact_assert for the emitted fact (the local-only assert per IDSP.3). Pins ordering.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Local scope logical:\n    a: Int key\n\nrule r:\n    Trig\n->\n    emit Local logical a: 1\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

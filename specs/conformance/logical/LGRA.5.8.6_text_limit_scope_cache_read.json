@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.5.8.6_text_limit_scope_cache_read",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.6]'s text limit binds JSON text a runtime is HANDED, not its own serialization of a value it holds: the READ half of LGRA.5.8.6_text_limit_scope_cache_written. Rule `w` caches a `String` slot of 16,384 U+0001 characters (the harness's `$repeat` form): one node of 16,384 string bytes, inside all three tree limits, whose canonical text is about 98 KB, four times the 24,576-byte text limit. A second fact then matches rule `rd`, an unbound `R` pattern gated by `where cached(\"k\") is not null`. Pin: `rd` fires after `w`, so the read returned the value, not null and not a fault. A runtime that re-read its own stored text under the text limit would fault in the join test or answer null, and `rd` would not fire. PATH PINNED: on libds, `adapter_ds_cache_get`, which hands back the stored text with no parse; on the Mercury runtime, `ds.eval`'s `fn_cache_get` arm through `ds.cache.cache_get_live`.",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n    s: String mutable\n\nschema R scope logical:\n    k: Int key\n\nrule w:\n    T t\n->\n    cache key: \"k\" value: t.s\n\nrule rd:\n    R where cached(\"k\") is not null\n->\n    log info \"read\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "k": 1, "s": { "$repeat": "\u0001", "count": 16384 } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "R", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["w", "rd"]
+    }
+}

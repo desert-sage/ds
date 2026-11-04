@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `test_ds`'s `op_rewritten` rewrites the two `t.floor(d)` calls ([LTIM.7.1],
+# FN_FLOOR_TIME = 41) to an op with no handler and expects DS_ERR_FN_NOT_FOUND
+# ([RDSC.4a.9.3]); as compiled this loads in both runtimes, and
+# `44_where_unsupported` pins the run. A Time floored to the hour is never
+# later than itself, so `guarded` matches and `negated`'s blocker blocks;
+# `control` has no `where`. Every declaration sits below compiled line 41, so
+# none encodes the pair 0x18 41 that `op_rewritten` searches for.
+
+schema Sensor scope logical:
+    entity_id: String key
+    seen: Time mutable
+
+schema Blocker scope logical:
+    entity_id: String key
+    seen: Time mutable
+
+schema Fired scope ttl 1_h:
+    who: String
+
+rule control:
+    Sensor
+->
+    emit Fired who: "control"
+
+rule guarded:
+    Sensor s where s.seen.floor(1_h) <= s.seen
+->
+    emit Fired who: "guarded"
+
+rule negated:
+    Sensor
+    no (Blocker b where b.seen.floor(1_h) <= b.seen)
+->
+    emit Fired who: "negated"

@@ -1,0 +1,14 @@
+{
+    "id": "LCRS.10.4.4",
+    "clauses": ["LCRS.10.4.2"],
+    "category": "compiler",
+    "scenario": "[LCRS.10.4.2] / [LGRA.10.1.6]: a bare service name that no declaration in the import closure carries is DS_VALIDATE_UNKNOWN_SERVICE, even when its first segment reads like a library. `import ha` brings in `light.turn_on`; the rule calls `x.light.turn_on`, and no service of that exact name is declared, so the lookup misses. PATH PINNED: dsc.validate's ladp_8_2_3_service, its bare arm, against the closure's service table.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call x.light.turn_on entity_id: \"foo\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SERVICE"
+    }
+}

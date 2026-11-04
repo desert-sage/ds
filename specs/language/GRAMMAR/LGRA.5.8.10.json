@@ -1,0 +1,35 @@
+{
+  "id": "LGRA.5.8.10",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5.8",
+  "seq": 649,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.5.8.10] **A `Json` float is finite.** A `Json` value holds no `±Inf` and\nno NaN. Wherever a `Json` value comes into being, at each place\n[LGRA.5.8.6] lists and in a host call that builds one, a runtime **must** refuse\na non-finite float, and **must not** hold one:\n\n- **JSON text.** A number literal written with a fraction or an exponent reads\n  as the `Float` nearest its value, ties to even ([LDET.3.2.8]). Text holding\n  such a literal whose value lies past the largest finite `Float`, so that it\n  would round to an infinity, is malformed. A runtime **must** refuse such text\n  wherever it parses JSON text, whoever supplies it, as it refuses any other\n  malformed text: a host call that parses it returns `DS_ERR_PARSE` ([NERR.5])\n  and changes nothing. A runtime **must not** read the literal as an infinity,\n  and **must not** saturate it to the largest finite `Float`. A recording read\n  on replay whose `Json` text holds such a literal is a malformed atom body, and\n  the runtime refuses the stream.\n- **A host call that builds a value.** A host call that would put a non-finite\n  `Float` into a `Json` value returns `DS_ERR_JSON_NONFINITE` ([NERR.6]) and\n  changes nothing. The status is the whole refusal: the runtime records no\n  event for it, since the call that refuses may hold no engine.\n- **A rule.** A `Json` value a rule builds refuses a non-finite `Float` already\n  ([LCST.4.5.2], [LDET.3.2.7]).\n\nA literal whose value rounds to zero is a zero, which a `Json` value holds as\n`+0.0` ([LGRA.5.8.8]). So `1.7976931348623157e308` is a float a `Json` value\nholds, `1e-400` is `+0.0`, and `1.8e308` and `-1e400` are malformed text.\n\nEvery `Json` value therefore has the text [LGRA.5.8.7a] gives it, so a value a\nruntime holds can always be recorded, published to another tier and compared\nby its text.\n\n",
+  "refs": [
+    "LCST.4.5.2",
+    "LDET.3.2.7",
+    "LDET.3.2.8",
+    "LGRA.5.8.6",
+    "LGRA.5.8.7a",
+    "LGRA.5.8.8",
+    "NERR.5",
+    "NERR.6"
+  ],
+  "errors": [
+    "DS_ERR_JSON_NONFINITE",
+    "DS_ERR_PARSE"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "lgra_5_8_10__json_float_is_finite",
+        "tag": "spec",
+        "note": "'A `Json` float is finite', as a source of Float operands: a number read from JSON text is finite, a literal past the largest double being malformed and RFC 8259 spelling no NaN. What [NDET.1.4]'s signalling-NaN exclusion takes from this clause."
+      }
+    ]
+  }
+}

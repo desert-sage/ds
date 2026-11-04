@@ -1,0 +1,10 @@
+{
+    "id": "LREG.2.2a",
+    "category": "compiler",
+    "scenario": "A match is written in `where`, never in `let` ([LREG.4.1]), whatever its capture profile. Pin: `let x = m.text ~ /abc/` — a capture-free match bound to a plain `let` name — rejects with DS_VALIDATE_REGEX_CAPTURE_IN_LET. Path: `dsc.validate.lreg_4_1_let` over every match in the `let`'s right-hand side.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule trig:\n    Msg m\n->\n    let x = m.text ~ /abc/\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_CAPTURE_IN_LET"
+    }
+}

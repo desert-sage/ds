@@ -1,0 +1,16 @@
+{
+  "id": "LLSU.7.1",
+  "prefix": "LLSU",
+  "doc": "LANGUAGE_SURFACE.md",
+  "parent": "LLSU.7",
+  "seq": 194,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LLSU.7.1] Service invocation via the (domain, method) dispatch table.\nA response arrives as a fact of the service's response schema\n([LCRS.4.3.1]) the rule can match in a sibling rule.\n\n| Name | Explanation | Dependencies | Refactor hint |\n|---|---|---|---|\n| `call` | `call <domain>.<method> args ...` action | | not generally avoidable; this is the fundamental external-effect primitive |\n| `service_response_decl` | `response T` or `no response` as a service declaration's last line | `call` | not avoidable; every service declares its response |\n| `call_response_fact` | the response fact, a `ttl` fact of the service's response schema matched on `corr` in a sibling rule | `service_response_decl` | requires re-designing around cache-based polling; usually a sign the tier is wrong |\n| `call_error_fact` | `CallError e where e.corr == \"<id>\"` matchable in a sibling rule | `call` | silently swallow errors (usually wrong) |\n| `call_correlation_explicit` | `as \"<id>\"` on `call` to set correlation id | `call` | accept compiler-generated corr ids (harder to grep in logs) |\n| `call_cooldown_required` | `cooldown: <dur>` mandatory on every `call` (compile error if omitted) | `call` | not generally avoidable; this is the rate-limit safety |\n| `nocooldown` | the bare `nocooldown` flag, the explicit opt-out for naturally-bounded calls | `call` | use a minimum cooldown value the tier's rate budget tolerates |\n| `call_retain` | `retain: <dur>` on a call — refused on every call in this edition ([LCRS.6.3.3]) | `call` | none: a response's lifetime is its schema's TTL ([LCRS.6.6.1]) |\n| `call_batch_coalescing` | adapter-side opportunistic batching of multi-entity calls | `call` | write per-entity calls; adapter coalescing is transparent, so disabling here just disables the optimisation |\n\n",
+  "refs": [
+    "LCRS.4.3.1",
+    "LCRS.6.3.3",
+    "LCRS.6.6.1"
+  ]
+}

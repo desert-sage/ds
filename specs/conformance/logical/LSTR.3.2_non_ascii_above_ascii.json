@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.3.2_non_ascii_above_ascii",
+    "category": "logical",
+    "scenario": "[LSTR.3.2] A non-ASCII codepoint orders by its value. \"é\" is U+00E9, above \"z\" (U+007A); \"y\" is below. Against `i.label > \"z\"` only \"é\" fires. A locale collation sorts \"é\" with \"e\", before \"z\", and logs nothing; a signed-char byte comparison reads 0xC3 as negative and logs nothing either.",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label > \"z\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "accent", "label": "é" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "plain", "label": "y" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["é"]
+    }
+}

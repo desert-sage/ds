@@ -1,0 +1,31 @@
+{
+    "id": "LGRA.10.1_a_publish_names_a_qualified_schema",
+    "clauses": ["LGRA.10.1", "LGRA.8.1"],
+    "category": "cross-tier",
+    "scenario": "[LGRA.10.1]: `emit` and `publish` name a schema as a pattern does, so `emit ha.Alert` and `publish ha.Mark` take the qualified reference ([LGRA.8.1]) through `import ha`. Tier `edge`'s `raise_both` emits an Alert and publishes a Mark for its Trig; a `publish` asserts nothing there ([LTIE.4.3]), so `edge` holds the Trig and the Alert: 2 facts. `hub`, which also imports `ha`, receives the Mark's FactExternal (the harness's `forward_external` step, [RCTS.1.2.29]) under the library's schema, by its own name `ha.Mark` and that name's `schema_hash` ([RFCS.23.3]): 1 fact. A compiler that resolved `ha.Mark` to a schema not in the artefact is refused with DS_VALIDATE_RULE_NOT_LOWERED; one that published under another schema leaves `hub` refusing the record, which `forward_external` fails on. PATH PINNED: `dsc.rete`'s `action_schema` for the `publish`; libds's `ds_engine_assert_external` (through pyds `Engine.assert_external`) and the Mercury runtime's `ds.fact_receive.assert_external` on the receiving side.",
+    "rules_ds": "",
+    "libraries": {
+        "ha": "schema Trig scope logical:\n    v: Int key\n\nschema Alert scope logical:\n    v: Int key\n\nschema Mark scope logical:\n    v: Int key\n"
+    },
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "import ha\n\nrule raise_both:\n    ha.Trig t\n->\n    emit ha.Alert logical v: t.v\n    publish ha.Mark v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "import ha\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "ha.Trig", "slots": { "v": 1 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward_external", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 2,
+            "hub": 1
+        }
+    }
+}

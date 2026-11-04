@@ -1,0 +1,18 @@
+{
+    "id": "LCON.4.5.empty_justifier_chain",
+    "clauses": ["LCON.4.5.1"],
+    "category": "logical",
+    "scenario": "LCON.4.5.1 introspection surface — non-logical facts have no justifiers. A directly-asserted fact is not derived by any rule, so its justifier chain is empty. Here the single asserted Trigger (fact_id 1, no rule fires because there is no matching rule) reports zero justifiers — the negative companion to LCON.4.5.1, confirming the surface distinguishes derived from asserted facts.",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 7 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 1 },
+            { "surface": "justifier_count", "fact_id": 1, "count": 0 }
+        ]
+    }
+}

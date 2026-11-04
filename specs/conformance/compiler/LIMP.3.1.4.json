@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.3.1.4",
+    "category": "compiler",
+    "scenario": "When a library file fails to parse, the importing file's import resolution surfaces DS_VALIDATE_LIBRARY_PARSE_FAILED naming the library identifier (and a count of inner errors). The importer's own pipeline halts; downstream resolution against the failed library never proceeds. Pin: a library file with a syntactically broken declaration causes the importer's `import` to surface the failure.",
+    "rules_ds": "from ha import Light\n\nschema Local scope logical:\n    v: Int key\n\nrule r:\n    Local\n->\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "schema Light logical\n    is_on: Bool\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LIBRARY_PARSE_FAILED"
+    }
+}

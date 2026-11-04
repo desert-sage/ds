@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.9.3.2.a_chain_is_the_conjunction_of_its_steps",
+    "category": "logical",
+    "scenario": "[LGRA.9.3.2]: `a < b < c` is `(a < b) and (b < c)`, and comparison operators may be mixed in one chain. One P fact holds a = 1, b = 2, c = 3, t = true and f = false.\n- `ascending`, `p.a < p.b < p.c`, fires.\n- `mixed`, `p.a < p.c > p.b`, is `(1 < 3) and (3 > 2)` and fires.\n- `second_step_false`, `p.a < p.b > p.c`, is `(1 < 2) and (2 > 3)`, false, and must not fire.\n- `bool_equalities` is the case that separates a chain from left-associative grouping. `p.f == p.f == p.t` as a chain is `(f == f) and (f == t)`, false. Grouped, it is `(f == f) == t`, which is `true == true`, true. So it must not fire.\n- `bool_equalities_true`, `p.t == p.t == p.t`, is the control, true either way.\n`dead_rules_expected` names the two that must not fire. Agenda order is source order ([LDET.5.4]). Path: the compiler expands the chain into its steps (`dsc.parse`'s chain production, [LGRA.9.3.1]). Both runtimes evaluate the expanded conjunction (libds rete/eval.c, Mercury ds.eval).",
+    "rules_ds": "schema P scope logical:\n    id: String key\n    a: Int mutable\n    b: Int mutable\n    c: Int mutable\n    t: Bool mutable\n    f: Bool mutable\n\nrule ascending:\n    P p where p.a < p.b < p.c\n->\n    log info \"ascending\"\n\nrule mixed:\n    P p where p.a < p.c > p.b\n->\n    log info \"mixed\"\n\nrule second_step_false:\n    P p where p.a < p.b > p.c\n->\n    log info \"second_step_false\"\n\nrule bool_equalities:\n    P p where p.f == p.f == p.t\n->\n    log info \"bool_equalities\"\n\nrule bool_equalities_true:\n    P p where p.t == p.t == p.t\n->\n    log info \"bool_equalities_true\"\n",
+    "dead_rules_expected": ["second_step_false", "bool_equalities"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": "p", "a": 1, "b": 2, "c": 3, "t": true, "f": false } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["ascending", "mixed", "bool_equalities_true"]
+    }
+}

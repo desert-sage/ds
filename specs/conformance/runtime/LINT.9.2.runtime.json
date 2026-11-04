@@ -1,0 +1,16 @@
+{
+    "id": "LINT.9.2.runtime",
+    "clauses": ["LINT.3.1.1"],
+    "category": "runtime",
+    "dead_rules_expected": ["in_range"],
+    "scenario": "`t in i` iff `i.start <= t < i.end` ([LINT.3.1.1]; LINT.9.2, the id, is a tombstone). A probe equal to `end` is outside the interval (end is exclusive). probe=20 on (10..20) does NOT fire.",
+    "rules_ds": "schema Window scope logical:\n    start_t: Int key\n    end_t: Int mutable\n    probe: Int mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule in_range:\n    Window w where w.probe in (w.start_t..w.end_t)\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Window", "slots": { "start_t": 10, "end_t": 20, "probe": 20 } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

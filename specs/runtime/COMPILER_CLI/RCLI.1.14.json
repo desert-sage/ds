@@ -1,0 +1,36 @@
+{
+  "id": "RCLI.1.14",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 16,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.14] **`dump-schemas --json` writes the schemas as data.** With\n`--json`, `dump-schemas` must write one JSON document, and nothing else, that\nvalidates against `compiler/dsc_schemas.schema.json`, in place of the proto3\nfile ([RCLI.1.5]), to standard output or to the file `-o` names. It covers the\nschemas [RCLI.1.5] covers, those the input declares, in declaration order, and\neach schema's slots in declaration order. What the schema cannot carry:\n\n- **A slot is unit-typed** when its declared type is a unit symbol, or a\n  dimension or scalar-group name ([LUNI.7.1]). Its `unit` names its dimension\n  or scalar group, that group's base unit ([LUNI.4.3]) and its storage type\n  ([LUNI.4.1.1]). Any other slot's `unit` is `null`.\n- **`declared` is the unit the slot names**, which is the unit's canonical\n  symbol, since a slot type names no alias ([LUNI.7.5]). It is `null`\n  for a slot typed by its dimension or scalar group, which holds base-unit\n  values ([LUNI.7.1]). `label` is the declared unit's `label`, and `null` when\n  it declares none or the slot names no unit.\n- **`conversion` is the one the compiler bakes** ([LUNI.2.7.1]). For a base or\n  tier-1 unit it is `affine`, with the constants `a` and `b` of\n  base = `a` × declared + `b`, each written as the Float's canonical text\n  ([LDET.3.2.7]), so a reader that parses each as an IEEE-754 double has the\n  baked constant bit for bit. A base unit's are `1.0` and `0.0`. For a tier-2\n  unit it is `tier2` and carries no constants, since its conversion is not\n  affine ([LUNI.4.3]). It is `null` when `declared` is.\n- **An input `dump-schemas` refuses writes no document.** It is refused as\n  the proto3 form refuses it.\n\n",
+  "refs": [
+    "LDET.3.2.7",
+    "LUNI.2.7.1",
+    "LUNI.4.1.1",
+    "LUNI.4.3",
+    "LUNI.7.1",
+    "LUNI.7.5",
+    "RCLI.1.5"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "json_form",
+        "tag": "spec"
+      }
+    ],
+    "jsonschema": [
+      {
+        "path": "compiler/dsc_schemas.schema.json",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

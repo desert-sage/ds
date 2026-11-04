@@ -1,0 +1,15 @@
+{
+    "id": "LINT.1.1.runtime",
+    "category": "runtime",
+    "scenario": "Interval `in` operator evaluated at runtime per LINT.1.1, as a `where` predicate over slots of one binding. Two Windows with distinct keys: probe=15 in (10..20) fires, probe=45 in (30..40) does not. Two Windows and one Hit leave 3 live facts.",
+    "rules_ds": "schema Window scope logical:\n    start_t: Int key\n    end_t: Int mutable\n    probe: Int mutable\n\nschema Hit scope logical:\n    dummy: Int key\n\nrule in_range:\n    Window w where w.probe in (w.start_t..w.end_t)\n->\n    emit Hit logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Window", "slots": { "start_t": 10, "end_t": 20, "probe": 15 } },
+            { "schema": "Window", "slots": { "start_t": 30, "end_t": 40, "probe": 45 } }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

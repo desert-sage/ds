@@ -1,0 +1,17 @@
+{
+  "id": "LUNI.4.6.1",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.4.6",
+  "seq": 672,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.4.6.1] **A `unit fx_pair` whose selector matches no live fact\nconverts at 1:1.** It does not raise, and it does not short-circuit the rule's\ncontinuation.\n\nThis follows from the determinism contract ([LDET.1]): a conversion that\nfaults in one deployment and succeeds in another makes behaviour a property of\nthe environment rather than of the rules.\n\nTwo facts bound what 1:1 means here. **DS never validates a supplied rate** —\na stale or wrong `FxRate` fact produces a wrong result and raises nothing — and\n**rate freshness is the integrator's concern**, so a ruleset written by someone\nwho cares about currency must still run for someone who does not.\n\n**1:1 is the defined semantic for \"no rate supplied\", not a substitute for a\nknowable value.** No rate exists to compute; where a correct value *is*\ncomputable and the runtime declines to compute it, that is a defect.\n\n**The fallback must be observable** ([LUNI.13.8] is the house pattern — the\ndev-default adapter ships a loud do-not-settle warning rather than failing).\nAn implementation must surface that a conversion ran unconverted, through the\nmetric surface or a one-shot warning. Observability does not affect the\ncomputed value or control flow, so it does not qualify the rule above — but\nwithout it, \"converted at 1:1\" and \"converted correctly\" are\nindistinguishable from outside.\n\nRates that ARE published are consumed unchanged ([LUNI.13.3]): 1:1 is the\nfallback when the selector matches nothing, never a replacement for the\nlookup.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "LDET.1",
+    "LUNI.13.3",
+    "LUNI.13.8"
+  ]
+}

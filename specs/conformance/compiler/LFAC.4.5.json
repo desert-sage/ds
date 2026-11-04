@@ -1,0 +1,10 @@
+{
+    "id": "LFAC.4.5",
+    "category": "compiler",
+    "scenario": "Compile-time enforcement per LFAC.4.5 — `emit X logical` requires X's schema lifecycle to be `logical` (covered by LFAC.1.2.5 + LLOG.11.1); `t.dwell` on `ttl`-schema bindings is a compile error. The dwell-on-ttl direction is blocked: v1 compiler has no special `dwell` recognition; `t.dwell` on a TTL schema rejects via the generic no-such-slot path, not the LFAC.4.5-specific dwell-on-ttl diagnostic. Pin uses the covered emit/lifecycle direction.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Bar scope ttl 1_h:\n    a: Int\n\nrule r:\n    Trig\n->\n    emit Bar logical a: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_LIFECYCLE_FLAG"
+    }
+}

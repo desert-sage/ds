@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_short_final_frame_is_truncated",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: where the bytes run out before a frame is complete, because a declared length is longer than the bytes that remain, the code is DS_ERR_DSC_TRUNCATED (-500), at any position and whatever the length. The program compiles to 40 atoms, so `runtime_error`'s `tamper: {insert_bytes: {at: 40, hex: \"0a05\"}}` ([RCTS.1.2.21]) appends, after the last atom, an outer tag 0x0A and an outer length of 5 with no byte after it. A count other than 40, from a compiler that writes this program differently, makes the tamper no site (fewer atoms) or puts the frame before the last atom (more), and the vector fails rather than passing over nothing. The walk reaches the DscHeader first, so `dsc_sha256` is re-sealed over the edited artefact and the refusal is the frame's, not the hash's. What it discriminates: a loader that ignores a partial trailing frame, as a stream reader may ([RFCS.19.2]), loads the 40 atoms before it; one that answers it as a malformed frame gives -503. PATHS: libds's `ds_dsc_load` atom walk (`ds_pbf_next_atom` EOF, the [RDSC.9.7] arm); the Mercury runtime's `ds.atom.next_frame` in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 40, "hex": "0a05"}},
+        "code": "-500"
+    }
+}

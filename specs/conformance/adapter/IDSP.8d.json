@@ -1,0 +1,28 @@
+{
+    "id": "IDSP.8d",
+    "clauses": ["IDSP.13.4"],
+    "category": "adapter",
+    "scenario": "cache value of a bool literal \u2014 pins the Bool row of FN_JSON_VALUE (IDSP.13): TRUE/FALSE \u2192 JSON true/false. Pins IDSP.8 \u2014 cache Bool branch via FN_JSON_VALUE.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    cache key: \"flag\" value: true\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_sets": [
+            {
+                "key": "flag",
+                "value": true
+            }
+        ]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "LFST.8.10_strip_null_slot",
+    "category": "runtime",
+    "scenario": "[LFST.8.10], [RFCS.5.1], [RFCS.6.3]: a nullable slot holding null decodes as null from the stream's own Slot announcement and from the artefact, and a nullable slot holding zero decodes as zero. `val` is left out, which asserts it null ([LNUL.4.1]); `n` is given 0. A nullable slot's field has presence ([RFCS.6.3]): the writer omits it for null and writes it for every value, zero included, and the Slot atom carries the slot's nullability so that a stripped reader can tell an absent field (null) from an absent non-nullable one (its zero). A reader or writer that drops that flag reads `val` as 0.0, or `n` as null. Same driver as LFST.8.2. test_behave.m `artefact_strip_result` decodes the Mercury runtime's recording with the artefact and without it, and both decodes must equal the values asserted. runner.py `_run_rfcs_artefact_strip` decodes libds's recording with the artefact (`Engine.decode_fact_body`) against the values asserted; pyds binds no decoder without an artefact, so libds's announcement-typed decode (`ds_rfcs_decode_announced_fact_body`) is pinned in C by test_rfcs_announced_body.c.",
+    "rules_ds": "schema Reading scope logical:\n    sensor: String key\n    val: Float? mutable\n    n: Int? mutable\n",
+    "expect": {
+        "kind": "rfcs_artefact_strip",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "sensor": "dev1", "n": 0 } }
+        ]
+    }
+}

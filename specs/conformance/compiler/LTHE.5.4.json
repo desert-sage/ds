@@ -1,0 +1,10 @@
+{
+    "id": "LTHE.5.4",
+    "category": "compiler",
+    "scenario": "`latest` modifies only the first pattern per LTHE.5.4 — interior `latest` (per-step) not in v1. Pin: a `then latest B b within 30_s` interior-position usage rejects with DS_VALIDATE_INTERIOR_LATEST. (Anchor-position `latest` parses; lowering's anchor-pinning is a follow-up — LTHE.5.1's default-cardinality test still passes via the un-prefixed first-pattern path.)",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n    ts: Time\n\nschema B scope logical:\n    id: Int key\n    ts: Time\n\nrule r:\n    A\n    then latest B within 30_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERIOR_LATEST"
+    }
+}

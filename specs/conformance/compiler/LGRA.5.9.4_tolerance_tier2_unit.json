@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.5.9.4_tolerance_tier2_unit",
+    "category": "compiler",
+    "scenario": "[LGRA.5.9.4]: a tolerance is legal on `Float`, `Int`, and a slot typed by a base or tier-1 unit, and the compiler must refuse it on any other slot with DS_VALIDATE_TOLERANCE_BAD_TYPE: a tier-2 unit has no scale to convert a difference by ([LUNI.7.4]). `pH` is a tier-2 unit of `acidity` (a `to_base` / `from_base` body, [LUNI.4.3]), and `S`'s `t: pH mutable tolerance 1` is refused. A validator that admits every unit symbol lets the lowering write the literal unscaled. PATH PINNED: `dsc.validate`'s `tolerance_refusal`, whose `lgra_5_9_4_typed` fails on a unit `dsc.quantity.lgra_5_9_4_scaled_unit` finds no line for.",
+    "rules_ds": "from math import log10\n\nunit dimension acidity storage float64 base molar_h\nunit molar_h: acidity\nunit pH: acidity:\n    to_base:   10.0 ** (-x)\n    from_base: -log10(x)\n\nschema S scope logical:\n    e: Int key\n    t: pH mutable tolerance 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TOLERANCE_BAD_TYPE"
+    }
+}

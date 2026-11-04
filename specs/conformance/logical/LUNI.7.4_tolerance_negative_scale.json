@@ -1,0 +1,20 @@
+{
+    "id": "LUNI.7.4_tolerance_negative_scale",
+    "clauses": ["LFAC.2.5.1", "RDSC.9.11"],
+    "category": "logical",
+    "scenario": "[LUNI.7.4]: the written tolerance is `|a| * declared`, a magnitude, so a negative scale writes a positive tolerance, and the artefact loads ([RDSC.9.11] refuses a negative one). [LUNI.4.3]'s affine check admits `unit neg: warmth = -2 * x` (degree 1 in `x`), so `a = -2` and `t: neg mutable tolerance 1` is 2 therm. The steps assert base-unit values ([LUNI.7.2]): 0.0 establishes the fact and `saw` fires; 1.8 is within 2 and is SUPPRESSED ([LFAC.2.5.1]); 2.2 goes through, and `saw` fires. Two firings. What it discriminates: a compiler that writes `a * declared` (-2) has its artefact refused by both loaders with DS_ERR_DSC_SEMANTIC, so nothing runs; one that writes the literal unscaled (1) lets 1.8 through and gives three. PATH PINNED: `dsc.quantity.luni_7_4_tolerance_base`'s magnitude of the slope, through `dsc.lower`'s `tolerance_of`, then both runtimes' `Slot` decode (libds `handle_slot`, Mercury `ds.dsc_schema.decode_slot`, each refusing a negative tolerance) and their tolerance compare.",
+    "rules_ds": "unit dimension warmth storage float64 base therm\nunit therm: warmth\nunit neg: warmth = -2 * x\n\nschema S scope logical:\n    e: Int key\n    t: neg mutable tolerance 1\n\nrule saw:\n    S\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 1.8 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 2.2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "fired"]
+    }
+}

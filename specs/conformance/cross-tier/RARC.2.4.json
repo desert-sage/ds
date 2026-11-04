@@ -1,0 +1,41 @@
+{
+    "id": "RARC.2.4",
+    "clauses": ["RARC.3.2.3", "RARC.6.2.1"],
+    "category": "cross-tier",
+    "scenario": "Two engines coexist without sharing working memory: each has its own (RARC.3.2.3), and separate engines are independent (RARC.6.2.1), so facts asserted in engine A do not appear in engine B. Named for the RARC.2.4 heading (process-boundary tradeoffs), which it does not test.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "engine_a": {
+                "rules_ds": "schema Signal scope logical:\n    entity_id: String key\n    val: Int mutable\n\nrule alert_r:\n    Signal s where s.val > 10\n->\n    log info \"alert: {s.entity_id}\"\n"
+            },
+            "engine_b": {
+                "rules_ds": "schema Signal scope logical:\n    entity_id: String key\n    val: Int mutable\n\nrule alert_r:\n    Signal s where s.val > 10\n->\n    log info \"alert: {s.entity_id}\"\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "engine_a",
+                "op": "assert",
+                "schema": "Signal",
+                "slots": {
+                    "entity_id": "sensor_1",
+                    "val": 50
+                }
+            },
+            {
+                "engine": "engine_a",
+                "op": "pump"
+            },
+            {
+                "engine": "engine_b",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "engine_a": 1,
+            "engine_b": 0
+        }
+    }
+}

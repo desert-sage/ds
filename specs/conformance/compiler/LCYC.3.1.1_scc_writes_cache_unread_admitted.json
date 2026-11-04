@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.3.1.1_scc_writes_cache_unread_admitted",
+    "category": "compiler",
+    "scenario": "[LCYC.3.1.1]: a cache write whose product no rule of the SCC consumes does not stop the SCC being admitted. Rule `r` matches a `Trig`, writes `cache key: \"k\"` and withdraws its match, a one-rule SCC through its own withdraw edge ([LCYC.3.2.2]). No schema is emitted, and no rule of the SCC reads `cached()`, so the SCC is admitted and the program compiles. PATH PINNED: `dsc.cycle.lcyc_3_1_1_consumes_cache` finding a write and no read. Twin: LCYC.3.1.1_scc_reads_its_cache_write_refused, which adds the `cached(\"k\")` read and is refused; a check that refused every SCC carrying a `cache` would refuse this one too.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    cache key: \"k\" value: t.v\n    withdraw t\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

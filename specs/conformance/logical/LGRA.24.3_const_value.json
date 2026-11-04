@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.24.3_const_value",
+    "category": "logical",
+    "scenario": "[LGRA.24.2]: a fact item's value may be the name of a `const` ([LGRA.4]); [LTSL.4.1] has the compiler fold it to its value. The block places one `Cfg` whose `v` is the const `LIMIT`, and the rule logs it. Pin: `limit 42`, the const's value, read from the fact the block placed. A compiler that carried the name rather than the value, or refused it, fails here. PATH PINNED: the compiler's fold of a `const` name into the IFCT slot literal, then each runtime's application of that IFCT at the first step, here the pump ([LGRA.24.3]).",
+    "rules_ds": "const LIMIT = 42\n\nschema Cfg scope explicit:\n    v: Int\n\ninitial:\n    Cfg v: LIMIT\n\nrule r:\n    Cfg c\n->\n    log info \"limit {c.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["limit 42"]
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LCDB.3.2.1_rgate_cool_refire",
+    "category": "logical",
+    "scenario": "DS-source twin of the K vector formal/k/rgate.cool_refire: a cooldown rule fires again on an activation that arrives once the window has elapsed. The second activation is a meaningful change to the mutable slot n under the same key (a retract+assert, LFAC.2.5.3), so it is a fresh token and the activation key, composed of the key slot alone (LCDB.3.3.1), is the same (r, 1). Drives adapter_ds_rate_allow (rete/adapters.c) on the has_fired path: last_fire 0, now 10s, window 10s -- the boundary is inclusive, now >= last_fire + window fires. Pins the two fires and the inclusive boundary; does not pin what happens at 10s minus one tick (that is cool_suppress).",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 10000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire 1", "fire 1" ]
+    }
+}

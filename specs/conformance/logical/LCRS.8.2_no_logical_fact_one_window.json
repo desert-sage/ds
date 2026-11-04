@@ -1,0 +1,31 @@
+{
+    "id": "LCRS.8.2_no_logical_fact_one_window",
+    "clauses": ["LCDB.3.3.3", "RLOW.4.6.6.1"],
+    "category": "logical",
+    "scenario": "[LCRS.8.2]: a `ttl` fact contributes no slot to a cooled call's key ([LCDB.3.3.3]), so where the activation binds no `logical` fact with a `key` slot the key is empty, and the call site has one window across all its activations. `r` calls `svc.read n: p.n cooldown: 10_s` over a `ttl` Ping. At 0 s Ping n=1 is asserted and pumped: the gate admits, so the call is issued. At 2 s Ping n=2, a different fact with a different payload, is asserted and pumped: the rule fires and brackets, and its call is suppressed, because both activations share the empty key. At 12 s, past the window, Ping n=3 is issued. A key taken from the fact or its payload would issue the second call. Kinds stated: rule_fire_begin, action_call, rule_fire_end; every event of these kinds is stated ([RCTS.1.2.10]). PATH PINNED: `rlow_4_6_6_1_call_gates`' empty key in the compiler, over `key_vars`, and each runtime's per-call gate on it: `FN_RATE_ALLOW` wrapping the call, evaluated by libds and by the Mercury runtime's `call_verb_admitted`.",
+    "rules_ds": "service svc.read:\n    kwarg n: Int\n    no response\n\nschema Ping scope ttl 1_h:\n    n: Int\n\nrule r:\n    Ping p\n->\n    call svc.read n: p.n cooldown: 10_s\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Ping", "slots": { "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 12000000000 },
+            { "op": "assert", "schema": "Ping", "slots": { "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end"
+        ]
+    }
+}

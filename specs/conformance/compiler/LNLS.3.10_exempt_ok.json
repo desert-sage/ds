@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.10_exempt_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.10]'s exemptions: `len(s)` reads a stored byte count and `==` / `!=` compare interned strings, so neither needs `max_length`, and this rule compiles under `+nolinscan`. PATH PINNED: `dsc.validate.bounded_string_op` names `upper` and `lower` only, and `lnls_compare` acts on ordering operators only.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Line scope logical:\n    k: Int key\n    text: String mutable\n\nrule r:\n    Line l where len(l.text) > 3 and l.text != \"x\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

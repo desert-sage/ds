@@ -1,0 +1,219 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The DS status dictionary — the single registry of `ds_status_t` values.
+//
+// WHY THIS IS A PROTO AND NOT A TABLE. Proto enum semantics ARE the rule the
+// dictionary needs: the NUMBER is the identity and the name is a label
+// ([STYL.2.13.3]). A conforming implementation is not obliged to use these
+// spellings — it should pick names that suit its own language — but it must use
+// these numbers to mean these things. `protoc` then enforces that no value is defined
+// twice and no reserved value is reused.
+//
+// WHAT ENGLISH STILL CARRIES, because an enum cannot: the numeric BANDS below
+// and the rule that a new code must fit its band's theme; the statement that
+// the names are suggestive; and the recovery disposition of each family. Those
+// live in the spec corpus ([IERR.2], [NERR.3.1]).
+//
+// BANDS
+//        0        success
+//       -1..  -99 generic
+//     -100.. -199 parse / compile
+//     -200.. -299 runtime
+//     -300.. -399 reserved
+//     -400.. -499 storage / integrator callbacks
+//     -500.. -549 artefact load (DSC container; -508..-527 reserved)
+//     -550.. -599 AOT code load
+//     -600.. -699 native Rete loader, realtime, series-backend ABI
+//     -700.. -799 dialect binding, realtime contract, fact stream
+//     -800..-9999 reserved for future categories, claimed by amendment
+//   -10000 and below  integrator-defined; libds never returns one
+enum DsStatus {
+  DS_OK = 0;
+
+  // ---- generic (-1..-99) — [IERR.2.3] ----
+  DS_ERR_INVAL       = -1;   // bad argument
+  DS_ERR_OOM         = -2;   // allocation failed
+  DS_ERR_NOT_FOUND   = -3;   // lookup miss
+  DS_ERR_STATE       = -4;   // wrong engine state
+  DS_ERR_OVERFLOW    = -5;   // bounded queue / buffer full
+  // -6 is reserved.
+  DS_ERR_UNSUPPORTED = -7;   // feature unavailable in this build
+  DS_ERR_INTERNAL    = -8;   // invariant violation — a bug in the runtime
+  DS_ERR_IO          = -9;   // local I/O failure
+  DS_ERR_ENGINE_HALTED = -10; // an EngineError halted the tier, during this call or before it — [NCBK.2.9]
+
+  // ---- parse / compile (-100..-199) — [IERR.2.4] ----
+  DS_ERR_PARSE               = -100;
+  DS_ERR_SCHEMA_UNKNOWN      = -101;
+  // -102 is reserved.
+  DS_ERR_SLOT_UNKNOWN        = -103;
+  DS_ERR_SLOT_TYPE_MISMATCH  = -104;
+  // -105 to -108 are reserved.
+
+  // ---- runtime (-200..-299) — [IERR.2.5] ----
+  DS_ERR_FACT_INVALID        = -200;
+  // -201 is reserved.
+  DS_ERR_ACTION_FAILED       = -202;
+  // -203 is reserved.
+  DS_ERR_TIME_RANGE          = -205;  // Time outside the representable ns range
+  DS_ERR_NAN_REJECTED        = -216;  // NaN must not enter working memory
+  DS_ERR_JSON_NONFINITE      = -217;
+  DS_ERR_SERIES_NO_BACKING   = -218;
+  DS_ERR_SCHEMA_HASH_MISMATCH = -219;  // a FactExternal from a changed schema (NCBK.10.4)
+  DS_ERR_FACT_REF_CONFLICT    = -220;  // a nested fact reference whose key another live fact holds (NCBK.10.4)
+  DS_ERR_JSON_LIMIT          = -221;  // a Json value over a limit of [LGRA.5.8.6]; refused, never truncated
+  DS_ERR_ENCODING            = -222;  // host text that is not well-formed UTF-8 ([LSTR.8.5]); refused, never repaired
+
+  // ---- storage / callbacks (-400..-499) — [IERR.2.7] ----
+  DS_ERR_STORAGE_UNAVAILABLE  = -400;
+  DS_ERR_STORAGE_QUERY_FAILED = -401;
+  DS_ERR_STORAGE_NOT_FOUND    = -402;  // the peer said "no such key"
+
+  // ---- DSC container load (-500..-507, -514) — [IERR.2.8a] ----
+  DS_ERR_DSC_TRUNCATED  = -500;
+  DS_ERR_DSC_BAD_MAGIC  = -501;
+  DS_ERR_DSC_VERSION    = -502;
+  DS_ERR_DSC_DECODE     = -503;
+  DS_ERR_DSC_SEMANTIC   = -504;
+  // -505 is reserved.
+  DS_ERR_DSC_DANGLING   = -506;
+  DS_ERR_DSC_DECOMPRESS = -507;
+  DS_ERR_DSC_CAPABILITY_ABSENT = -514;  // the build lacks a capability's code — [RDSC.16.2.7]
+
+  // ---- -520..-527 are out of use, see the reserved block ----
+
+  // ---- AOT code load (-550..-553) — reserved ----
+
+  // ---- native Rete loader / realtime (-600..-610) — [NERR.10.1] ----
+  // -600 is reserved.
+  DS_ERR_RETP_INVALID     = -601;
+  DS_ERR_RETP_INDEX_OOB   = -602;
+  // -603 is reserved.
+  DS_ERR_FN_NOT_FOUND     = -604;
+  DS_ERR_BUDGET_EXCEEDED  = -605;
+  DS_ERR_WM_FULL          = -606;
+  DS_ERR_TOKEN_BUDGET     = -607;
+  DS_ERR_RT_UNSAFE        = -608;
+  DS_ERR_RT_LIVE          = -609;
+  DS_ERR_RT_PRECOND       = -610;
+
+  // ---- series-backend ABI (-620..-623) — [NERR.10.2] ----
+  DS_ERR_BACKEND_ABI_VERSION     = -620;
+  DS_ERR_BACKEND_BAD_MAGIC       = -621;
+  DS_ERR_BACKEND_BAD_AGGS        = -622;
+  DS_ERR_BACKEND_NOT_REGISTERED  = -623;
+  // -624 and -625 are reserved.
+
+  // ---- dialect / artefact binding (-700..-704) — [RBND.7.1] ----
+  DS_ERR_BND_DSC_MISMATCH       = -700;
+  DS_ERR_BND_DIALECT_MISMATCH   = -701;
+  // -702 is reserved.
+  DS_ERR_BND_INCOMPLETE         = -703;
+  DS_ERR_BND_RT_CONFIG_MISMATCH = -704;
+
+  // ---- realtime contract (-710..-714) — [RTCT.9.2] ----
+  DS_ERR_CONTRACT_BREACH           = -710;
+  DS_ERR_CONTRACT_MISSING          = -711;
+  DS_ERR_CONTRACT_INVALID          = -712;
+  DS_ERR_RTCT_PROFILE_REFUSES_DSRT = -713;
+  // The pump overran pump_wcet_ns. Unlike CONTRACT_BREACH, which refuses one
+  // operation and leaves the engine usable, this halts the tier and is
+  // returned by every call after it ([RTCT.7.3]).
+  DS_ERR_CONTRACT_WCET_HALT        = -714;
+
+  // ---- fact stream (-720..-730) — [NERR.13] ----
+  DS_ERR_FS_VERSION             = -720;
+  // -721 is reserved.
+  // -722..-724 are reserved.
+  DS_ERR_FS_DIVERGENCE          = -725;
+  // [NERR.13] — an inject-band atom ([RFCS.16.2]: field 1..127) the
+  // reader has no table entry for. A DROPPED INPUT, which is why it has a code
+  // of its own rather than sharing the version reject: the version reject is
+  // the ordinary forward-compat floor, this one names a writer bug.
+  DS_ERR_FS_UNKNOWN_INJECT      = -726;
+  // -727 and -728 are held for checkpoints, which are deferred.
+  DS_ERR_FS_RECORDING_INCOMPLETE = -729;  // first event's seq is not 0: attached late (LTIM.2.8.5)
+  DS_ERR_FS_UNKNOWN_FACT_ID      = -730;  // replay: a FactRetract names no earlier fact (RFCS.7.3)
+
+  // RESERVED — never reused ([STYL.2.8.7]). Nothing returns these values.
+  reserved -505;
+  reserved -6;
+  reserved -105;
+  reserved -603;
+  reserved -215;
+  reserved -204;
+  reserved -206;
+  reserved -399 to -300;
+  reserved -513 to -508;
+  reserved -527 to -520;
+  reserved -724 to -722;
+  reserved -721;
+  reserved -102;
+  reserved -108 to -106;
+  reserved -201;
+  reserved -203;
+  reserved -625 to -624;
+  reserved -702;
+  reserved -553 to -550;
+  reserved -600;
+
+  reserved "DS_ERR_DSC_DUPLICATE";
+  reserved "DS_ERR_DUPLICATE";
+  reserved "DS_ERR_SLOT_MARKER_INVALID";
+  reserved "DS_ERR_SCHEMA_DUPLICATE";
+  reserved "DS_ERR_CLIPS_ERROR";
+  reserved "DS_ERR_FX_RATE_UNAVAILABLE";
+  reserved "DS_ERR_SLOT_SOFT_FAIL";
+  reserved "DS_ERR_PEER_UNKNOWN";
+  reserved "DS_ERR_PIR_FAMILY";
+  reserved "DS_ERR_PIR_UNKNOWN_KIND";
+  reserved "DS_ERR_PIR_BAD_REF";
+  reserved "DS_ERR_PIR_TERM_NOT_FOUND";
+  reserved "DS_ERR_PIR_DECODE";
+  reserved "DS_ERR_PIR_OOM";
+  reserved "DS_ERR_PIR_ARITY";
+  reserved "DS_ERR_PIR_EXPR_ID";
+  reserved "DS_ERR_PIR_EXPR_ORDER";
+  reserved "DS_ERR_PIR_EXPR_DUP";
+  reserved "DS_ERR_PIR_TERM_ID";
+  reserved "DS_ERR_PIR_SLOT";
+  reserved "DS_ERR_PIR_TYPE";
+  reserved "DS_ERR_PIR_TMS";
+  reserved "DS_ERR_FS_SEAL_ALG_UNKNOWN";
+  reserved "DS_ERR_FS_SEAL_KEYID_MISMATCH";
+  reserved "DS_ERR_FS_SEAL_VERIFY_FAILED";
+  reserved "DS_ERR_FS_HEADER_INCOMPLETE";
+  reserved "DS_ERR_SCHEMA_REDEFINED";
+  reserved "DS_ERR_RULE_CONFLICT";
+  reserved "DS_ERR_RULE_SEMANTIC";
+  reserved "DS_ERR_CLP_MALFORMED";
+  reserved "DS_ERR_FACT_RETRACTED";
+  reserved "DS_ERR_RULE_FIRE_FAILED";
+  reserved "DS_ERR_BACKEND_DLOPEN_FAILED";
+  reserved "DS_ERR_BACKEND_NO_REGISTER_SYM";
+  reserved "DS_ERR_BND_VERSION_MISMATCH";
+  reserved "DS_ERR_AOT_NODE_ID";
+  reserved "DS_ERR_AOT_NODE_MISSING";
+  reserved "DS_ERR_AOT_KIND";
+  reserved "DS_ERR_AOT_MPROTECT";
+  reserved "DS_ERR_RETP_MISSING";
+
+  // DS_ERR_ is the prefix for `ds_status_t` values an integrator
+  // receives from a C call, and these name compiler diagnostics no C caller
+  // can receive, in the DS_VALIDATE_* family. Reserved so protoc enforces the
+  // never-reuse guarantee ([STYL.2.8.7]).
+  reserved "DS_ERR_DIALECT_AFTER_LOAD";
+  reserved "DS_ERR_DIALECT_BAD_IMPLIED_EXTENSION";
+  reserved "DS_ERR_DIALECT_BAD_NAME";
+  reserved "DS_ERR_DIALECT_DEPENDENCY";
+  reserved "DS_ERR_DIALECT_DUPLICATE_NAME";
+  reserved "DS_ERR_DIALECT_FORM_OVERLAP";
+  reserved "DS_ERR_DIALECT_INCOMPLETE";
+  reserved "DS_ERR_DIALECT_UNKNOWN_EXTENSION";
+  reserved "DS_ERR_DIALECT_UNKNOWN_FORM";
+  reserved "DS_ERR_DIALECT_VERSION_MISMATCH";
+}

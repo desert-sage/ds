@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.15.2.guard_after_the_division",
+    "category": "logical",
+    "scenario": "[LEXP.7.15.2]: the capacity guard protects the division on EITHER side of it. `s.a / s.b > 1.0 and s.b != s.z` with Int a, b, z and b = 0 and z = 0 is `false` (Int operands, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf and there would be nothing to guard): the guard written after the division still decides the `and`, so no ComputationError is recorded and the rule does not fire. The guard compares two slots rather than a slot and the literal `0.0`, because the compiler hoists a non-nullable slot compared with a literal into the alpha test, where the fact would be filtered before the division ever ran. Path: nothing hoists, so the `where` is one join test on the pattern's beta; libds evaluates it in rete/eval.c's AND arm with the division's trap held (ds_rete_eval_holding) and dropped, Mercury in ds.eval.lnul_4_2_absorbing.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    z: Int mutable\n\nrule r:\n    S s where s.a / s.b > 1.0 and s.b != s.z\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

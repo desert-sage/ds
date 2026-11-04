@@ -1,0 +1,42 @@
+{
+    "id": "IDSP.8c",
+    "clauses": ["LSTO.4.3.2"],
+    "category": "adapter",
+    "scenario": "Same cache key written twice with different values \u2014 both calls reach the integrator's cb (cache layer is integrator's responsibility, libds doesn't dedup writes). Pins IDSP.8 \u2014 cache layer is integrator-owned, no dedup.",
+    "rules_ds": "schema Trig scope ttl 1_h:\n    v: Int\n\nrule r:\n    Trig t\n->\n    cache key: \"k\" value: t.v\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_sets": [
+            {
+                "key": "k",
+                "value": 1
+            },
+            {
+                "key": "k",
+                "value": 2
+            }
+        ]
+    }
+}

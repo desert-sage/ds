@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.8",
+    "category": "compiler",
+    "scenario": "Shift amounts must be non-negative integers per LEXP.7.8. Negative literal shifts are a compile-time error. Pin: `where t.v << -1 > 0` rejects at validate with a literal-shift-amount diagnostic. The check is statically determinable (the right-hand operand is a literal), so the error is compile-time, not soft-fail.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v << -1 > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NEGATIVE_SHIFT"
+    }
+}

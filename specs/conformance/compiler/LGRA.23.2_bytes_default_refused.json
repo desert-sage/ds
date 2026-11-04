@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.23.2_bytes_default_refused",
+    "clauses": ["LGRA.23.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: only an `Int`, `Float`, `String` or `Bool` kwarg takes a builtin `default`; a kwarg of any other builtin type -- `Bytes`, `Date`, `Duration`, `Interval`, `Json` or `Time` -- takes none. `kwarg b: Bytes default \"ab\"` is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE, though a String literal is one the parser takes after `default`. `LGRA.23.2_time_default_refused` is the same rule on a `Time` kwarg with a number. PATH PINNED: `lgra_23_2_default_misfit`'s `te_builtin(_)` arm for a type that is not one of the four, in dsc.validate. Without that arm the program compiles and the encoder writes `has_default` with an empty `default_value`.",
+    "rules_ds": "service svc.foo:\n    kwarg b: Bytes default \"ab\"\n    no response\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

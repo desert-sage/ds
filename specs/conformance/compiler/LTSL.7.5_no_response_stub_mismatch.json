@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.7.5_no_response_stub_mismatch",
+    "category": "compiler",
+    "scenario": "LTSL.7.5: a stub for a call of a service that declares `no response` must contain only `no response`; the compiler must reject one that contains a reply (DS_VALIDATE_TEST_STUB_NO_RESPONSE_MISMATCH). Pin: a stub for `heater.off` (`no response`) that replies an `Ack` fact. Path: the test lowering's stub check reads the called service's response line.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Ack scope ttl 1_min:\n    corr: String\n\nservice heater.off:\n    kwarg zone: String\n    no response\n\nrule warm:\n    Reading r where r.celsius > 25.0\n->\n    call heater.off zone: r.zone nocooldown as \"h2\"\n\ntest \"reply\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 30.0\n    responses:\n        for call heater.off as \"h2\":\n            Ack corr: \"h2\"\n    produces:\n        called heater.off as \"h2\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_STUB_NO_RESPONSE_MISMATCH"
+    }
+}

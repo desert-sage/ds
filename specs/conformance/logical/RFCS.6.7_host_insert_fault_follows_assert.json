@@ -1,0 +1,15 @@
+{
+    "id": "RFCS.6.7_host_insert_fault_follows_assert",
+    "category": "logical",
+    "scenario": "[RFCS.6.7]: the arriving assert precedes everything its evaluation produces, and a fault its propagation raises is part of that. A host assert of an S with a = 1, b = 0 enters working memory, and `r`'s join test `s.a / s.b > 1.0` traps on its propagation (an all-Int division, the only kind that traps [LEXP.7.15.1]), so the activation never forms. The stream holds the input's tick, then its fact_assert, then the computation_error, then the fault fact's fact_assert, then the pump. PATH PINNED: libds's host-assert bridge (wm_rete_bridge.c ds_rete_wm_assert_bridge), whose recorder holds a fault raised inside the hand-off (ds_recorder_hold_faults) until the FactAssert is out; Mercury's `inserted` arm of ds.engine's host assert, held to the same order by the runtime differential (70_match_faults) and test_ds's check_match_fault_node.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    S s where s.a / s.b > 1.0\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["tick", "fact_assert", "computation_error", "fact_assert", "pump"]
+    }
+}

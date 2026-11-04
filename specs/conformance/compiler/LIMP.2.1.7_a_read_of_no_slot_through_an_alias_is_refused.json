@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.2.1.7_a_read_of_no_slot_through_an_alias_is_refused",
+    "category": "compiler",
+    "scenario": "The control of `LIMP.2.1.7_a_slot_read_through_an_alias_is_typed`: the alias reaches the schema, and the schema has no slot `missing`, so the read is refused with DS_VALIDATE_UNKNOWN_SLOT. A compiler that leaves an alias's reads untyped admits it. PATH PINNED: `dsc.typecheck.schema_slot`, whose `find_field` fails on the schema `fact_schema` found.",
+    "rules_ds": "from lib import Sensor as LS\n\nrule r:\n    LS x where x.missing > 1\n->\n    log info \"high\"\n",
+    "libraries": {
+        "lib": "schema Sensor scope ttl 1_h:\n    level: Int\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SLOT"
+    }
+}

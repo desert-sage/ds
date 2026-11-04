@@ -1,0 +1,15 @@
+# The `within` boundary, to the nanosecond. `DoorOpen d then Motion m within
+# 30_s` matches when `Y.ts - X.ts < T` ([LTHE.2.2.2]). DoorOpen is at ts=1s,
+# so the edge is ts=31_000_000_000:
+#
+#   pump 2   Motion ts=30_999_999_999   one ns inside      -> fires
+#   pump 3   Motion ts=31_000_000_000   exactly the edge   -> silent
+#   pump 4   Motion ts=31_000_000_001   one ns outside     -> silent
+assert DoorOpen ts=1000000000 zone=kitchen
+pump
+assert Motion ts=30999999999 location=kitchen
+pump
+assert Motion ts=31000000000 location=kitchen
+pump
+assert Motion ts=31000000001 location=kitchen
+pump

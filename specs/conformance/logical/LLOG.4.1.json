@@ -1,0 +1,25 @@
+{
+    "id": "LLOG.4.1",
+    "category": "logical",
+    "scenario": "Logical wraps negation CEs with expected semantics per LLOG.4.1 — a rule using `no X` to justify a logical fact. When X is NOT present: Quiet emits. When X appears: Quiet retracts automatically. Pin: assert Noise → Quiet disappears; retract Noise → Quiet re-appears. The stream's asserts and retracts, in order: Quiet emitted, Noise asserted, Quiet retracted, Noise retracted, Quiet emitted again.",
+    "rules_ds": "schema Noise scope logical:\n    entity_id: String key\n\nschema Quiet scope logical:\n    dummy: Int key\n\nrule silence_rule:\n    no Noise\n->\n    emit Quiet logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "pump" },
+            { "op": "assert", "schema": "Noise", "slots": { "entity_id": "n1" }, "as": "hn" },
+            { "op": "pump" },
+            { "op": "retract", "label": "hn" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "action_emit",
+            "fact_assert",
+            "fact_retract",
+            "fact_retract",
+            "fact_assert",
+            "action_emit"
+        ]
+    }
+}

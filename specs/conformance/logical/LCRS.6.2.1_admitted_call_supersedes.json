@@ -1,0 +1,24 @@
+{
+    "id": "LCRS.6.2.1_admitted_call_supersedes",
+    "clauses": ["RLOW.7.3.8"],
+    "category": "logical",
+    "dead_rules_expected": ["seen_late"],
+    "scenario": "[LCRS.6.2.1], RLOW.7.3.8: a call that is issued retracts the prior answer to its correlation. The rule of `LCRS.6.2.1_cooldown_suppressed_retracts_nothing`, firing again 11s later, after its 10s window: the gate admits the call, and the engine retracts the live reply of corr `c1` before it issues the request. The probe before the second firing logs [\"before 1\"], so the reply was live; the probe after logs nothing. PATH PINNED: the call's own supersede inside the `FN_CALL` handler -- `lcrs_6_2_1_call_supersede` from `ds_dispatcher_call_typed` (libds), `ds.exec.lcrs_6_2_1_call_supersede` from `call_verb_admitted` (Mercury) -- reading the response schema `Reply` from the service's `ServiceDef`. No new reply is asserted, so the host-assert supersede of [LCRS.6.2.4] cannot be what retracts it. The break is an `FN_CALL` that does not sweep: the reply stays and the second probe logs [\"after 1\"].",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nschema Early scope explicit:\n    k: Int\n\nschema Late scope explicit:\n    k: Int\n\nrule r:\n    Trig t\n->\n    call svc.read n: t.k cooldown: 10_s as \"c1\"\n\nrule seen_early:\n    Early\n    Reply x\n->\n    log info \"before {x.v}\"\n\nrule seen_late:\n    Late\n    Reply x\n->\n    log info \"after {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "Early", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 11000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Late", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before 1"]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "RDSC.5.4.5.bare_schema_accumulates",
+    "category": "runtime",
+    "scenario": "RDSC.5.4.5 -- a bare `schema Foo:` is `scope explicit` (LSCP.1.4) and its facts accumulate. The SchemaLogical atom carries lifecycle = EXPLICIT, so a loader does not infer the lifecycle from the slots' absent identity roles. A runtime that reads the absent roles as MUTABLE builds a logical schema with an empty identity key, and the second assert silently replaces the first. Pin: two Reading facts with different slot values, pump; both live, fact_count 2. The rule exists so the artefact has a reachable terminal and the schema is not dead-stripped.",
+    "rules_ds": "schema Reading:\n    sensor: String\n    reading: Int\n\nschema Seen scope ttl 1_h:\n    sensor: String\n\nrule touch:\n    Reading r\n->\n    emit Seen sensor: r.sensor\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Reading", "slots": { "sensor": "a", "reading": 1 } },
+            { "schema": "Reading", "slots": { "sensor": "b", "reading": 2 } }
+        ],
+        "pump": true,
+        "fact_count_after": 4
+    }
+}

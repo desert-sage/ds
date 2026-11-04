@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.5.1c",
+    "category": "compiler",
+    "scenario": "CV-5 ([LNUL.5.1]) \u2014 an un-narrowed `T?` arithmetic operand inside a `where` COMPILES. Arithmetic is a Kleene consumer ([LNUL.4.1]), not a concrete-value position: the computed value never escapes the predicate, so there is nothing for [LNUL.5.1] to refuse. PATH PINNED: `dsc.typecheck`'s type walk carries `Float?` through `+` and the comparison, and neither is a position that calls `lnul_5_1_concrete`; an argument of `len` is one (LNUL.5.1d), which is why one fixture cannot cover both. The runtime counterpart is LNUL.5.1d; the concrete-boundary counterpart is LNUL.5.1e.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Out scope logical:\n    k: String key\n    val: Float mutable\n\nschema OutN scope logical:\n    k: String key\n    maybe: Float? mutable\n\nrule r:\n    Sensor s where s.state + 1 > 5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,499 @@
+{
+  "id": "IRET.19.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.19",
+  "seq": 1333,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Assert",
+  "text": "### Assert [IRET.19.1]\n\n`ds_rete_wm_assert(engine, schema_id, slots, fact_out)`:\n\n1. Determine the schema's identity key — the slots whose\n   `identity_role` is KEY (IRET.4.1, [LFAC.1.7]). Search\n   working memory for an existing fact of the same schema\n   whose KEY-slot tuple matches exactly. Key = ∅ (no KEY\n   slot) is a singleton: any existing fact of the schema\n   matches. Key = all slots is a relation: only an identical\n   tuple matches.\n2. If found: compare the MUTABLE slots under per-slot\n   tolerance rules (IRET.3.4) — the KEY slots already matched\n   exactly. If all compare equal: suppress the assertion\n   (no-op); set `*fact_out` to the existing fact; return\n   `DS_OK`.\n3. If found but a MUTABLE slot differs (update): retract the\n   old fact (IRET.19.2), then fall through to insert.\n4. Allocate a new `ds_rete_fact_t` with a fresh monotonic\n   ID. Populate `assert_ns` with the held\n   monotonic sample ([LTIM.2.8.6]).\n5. For TTL-scoped schemas: set\n   `deadline_ns = assert_ns + schema->default_ttl_ns`.\n6. For logical-scoped schemas: initialise `justif_count = 0`.\n7. For each alpha node registered for `schema_id`: evaluate\n   all alpha tests against the new fact (IRET.6.4). On\n   pass: insert the fact into the alpha memory and\n   left-activate each downstream beta input.\n8. Emit `DS_EV_FACT_ASSERT` stream event.\n9. Set `*fact_out`; return `DS_OK`.\n\n",
+  "refs": [
+    "IRET.19.2",
+    "IRET.3.4",
+    "IRET.4.1",
+    "IRET.6.4",
+    "LFAC.1.7",
+    "LTIM.2.8.6"
+  ],
+  "symbols": [
+    "DS_EV_FACT_ASSERT",
+    "ds_rete_wm_assert"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "iret_19_1__identity_key",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Step 1's key: the schema's KEY slots. The engine's ts carries ENGINE, so it is outside the key (RDSC.5.5.7, LFAC.9.1)."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "iret_19_1__key_and_payload_partition_slots",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "KEY and MUTABLE partition a logical schema's author slots, every slot but ts: assert matches on the one and compares the other. Bounded: six slots, six schemas."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "iret_19_1__payload",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Step 2's compared slots: the MUTABLE slots. The engine's ts carries ENGINE, so the no-op comparison leaves it out (LFAC.2.5.1)."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "iret_19_1__ts_outside_key_and_payload",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A ts slot is in neither the key nor the payload assert reads, on every schema: no part in the match, no part in the comparison. Bounded: six slots, six schemas; fails if the partition's ENGINE line is dropped."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "iret_19_1__find_relation_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No match found means the value is not live."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "iret_19_1__emit_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An assert of kind k changes no other kind's facts."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "iret_19_1__emit_shape",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A successful assert appends one fresh fact of the kind after removing at most one fact of the same kind (the entity replace)."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "iret_19_1__entity_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The entity match has the kind searched for."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "iret_19_1__relation_assert_shape",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A successful relation assert appended, and the value was not live before."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__assert_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Steps 1-4 for the three lifecycles the model has: key = all (relation) suppresses an identical tuple, key = one slot (entity) suppresses a same-payload reassert and otherwise retracts the old fact and inserts a fresh one, explicit always inserts. Not modelled: per-slot tolerance (step 2), TTL deadlines (5), `justif_count` (6), alpha evaluation (7), stream events (8)."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__find_entity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1 for a one-slot key: the live fact with that key."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__find_relation",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1 for key = all slots: only an identical tuple matches."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_1__assert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ASSERT under the kind's lifecycle, exactly as Rete/FireLoop.idr's `iret_19_1__assert_fact` decides it: a no-op reassertion changes nothing (steps 1-2); a meaningful change retracts the old fact then inserts the new one, whose id was chosen while the old was live (step 3, [LFAC.2.5.3]); step 7's 'left-activate' is read as right-activation, since the step feeds an alpha memory, a join's right input."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_1__insert",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Insert a fresh fact: append to working memory, then dispatch to every alpha in order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a host assert leaves live: live before, or the fact minted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WHAT AN ASSERT LEAVES LIVE: live before, or the fact minted, under any lifecycle -- a no-op, an insert, a replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__assert_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__assert_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__assert_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Assert keeps one live fact per key on every path."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__entity_key",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The entity an assert finds has the key asked for."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__find_entity_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "When an assert finds no entity, no live fact has the kind and key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__insert_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__insert_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_1__insert_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Inserting a fact fresh for its kind's lifecycle keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__acquire",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The insert of a fresh fact leaves no activation whose NOT node the fact satisfies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_1__assert_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps the view: a no-op changes nothing, an insert is of a fresh fact, and a replace retracts a live fact then inserts a fresh one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_1__insert_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Inserting a fresh fact keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert of a kind the chain does not read leaves the chain, under any lifecycle."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert keeps the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__assert_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert under any lifecycle keeps the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__insert_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's insert of a kind the chain does not read leaves the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_1__insert_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's insert keeps the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_rows_emitted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert keeps the row property, from a state in which every row's target is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__assert_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert keeps ids unique under any lifecycle."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_1__insert_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's insert of a fresh fact keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_ready_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's assert executed under all three lifecycles: an entity's insert, replace and no-op, a relation's insert and no-op. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__life_entity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The lifecycles the clause's assert decides by, for the entity fixture. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_rules_entity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The program whose kind 0 the clause's assert treats as an entity. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_tms_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An input's assert mints against a state in which every row's target is live; the cascade follows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__assert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert under each lifecycle creates nothing fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__insert_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An insert creates activations unfired and fires none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_19_1__one_row_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule the lifecycle witnesses assert into. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_1__assert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps the order: a no-op changes nothing, an insert is of a fresh fact, and a replace retracts a live fact then inserts a fresh one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_1__insert_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Inserting a fresh fact keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Assert with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_r",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The set through assert, path by path as the clause decides them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_19_1__assert_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps the ghost sound: a suppressed reassertion changes neither engine nor set; every other path changes working memory and clears the set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_6__record_action",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Step 4's `assert_ns` from the held monotonic sample, for an emit: the net's clock at the firing. LESS than the clause: the stamp alone; the rest of the assert is Rete/NetworkTtl.idr's and Rete/FireLoop.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__explicit_mint_is_stamped",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 4's mint, stamped with the held sample, for the explicit lifecycle."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__stamp_is_fire_at",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A fact the parent's firing mints is stamped with the held sample (step 4), through the stamped RHS's record of the emit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_19_1__assert_state_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The named assert-then-propagate, when the assert changed working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_19_1__assert_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FireLoop's assert under the kind's lifecycle, then one propagation when working memory changed: what the Emit action and the asserted input both do, named so that a statement can mention it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__assert_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ASSERT UNDER THE LIFECYCLE keeps the agreement: the network's assert and FireLoop's assert-then-propagate decide alike on the same working memory -- fresh insert, suppressed no-op, or retract-and-replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__insert_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT keeps the agreement, against FireLoop's one propagation over the grown working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_1__insert_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "INSERTING A FRESH FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- an assertion creates only matches holding the new fact, so no old match is created anew."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_19_1__assert_fact_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What an assert that changes working memory produces: the fresh wrapper appended to working memory, or to working memory less the entity it replaces."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_assert",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The assert keeps the state well-formed: fresh insert or retract-and-replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_grow",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The fresh insert keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_19_1__insert_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs inserting a fresh fact evaluates."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_19_1__emit_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A successful assert: the invariant holds after propagation, and the change keeps ids identifying, adds only the new fact -- whose id is fresh and unbound -- and keeps ids unique. Append and entity replace alike."
+      }
+    ]
+  }
+}

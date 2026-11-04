@@ -1,0 +1,21 @@
+{
+  "id": "LGRA.5.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.5",
+  "seq": 551,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.5.1] Schema productions:\n\n```\nschema_decl ::= 'schema' NAME schema_lifecycle? ':' NEWLINE\n                INDENT\n                    docstring?\n                    field_decl+\n                DEDENT\n\nschema_lifecycle ::= 'scope' scope_value\nscope_value      ::= 'explicit'\n                  |  'activation'\n                  |  'logical' 'ambient'?\n                  |  'ttl' time_expr 'ambient'?\n\nfield_decl ::= NAME ':' field_type NULLABLE? field_capacity? slot_marker* field_tolerance? STRING_LIT? NEWLINE\n\nfield_capacity ::= 'capacity' INT_LIT                          # String slots only; see [LSTR.11]\n\nfield_type ::= TYPE_SYM\n            # TYPE_SYM resolves in the type namespace (LGRA.22): a scalar builtin\n            # (String/Int/Float/Bool/Bytes), Json, a unit symbol, a\n            # dimension or scalar-group name (LUNI.7.1), or a schema reference. Nullable slot: field_type NULLABLE? (`state: String?`).\n\nslot_marker ::= 'retained' | 'key' | 'mutable'     # retained per SCOPE / FORM_CATALOG; key/mutable per LFAC.1.7\n\nfield_tolerance ::= 'tolerance' (INT_LIT | FLOAT_LIT)          # unsigned, no unit; see [LGRA.5.9]\n\ndocstring ::= STRING_LIT NEWLINE\n```\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LGRA.22",
+    "LGRA.5.9",
+    "LSTR.11",
+    "LUNI.7.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_LEGACY_SCHEMA_LIFECYCLE"
+  ]
+}

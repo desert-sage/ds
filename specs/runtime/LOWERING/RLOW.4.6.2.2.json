@@ -1,0 +1,236 @@
+{
+  "id": "RLOW.4.6.2.2",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.4.6.2",
+  "seq": 478,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.4.6.2.2] The compiler emits the gate per [RLOW.4.6.1] and a `RuleCooldown` atom\ncarrying `(rule_name, window_ns)` per [RDSC.6.5]. At gate evaluation, for a key\nwith a recorded `last_fire_ns`, if `mono_ns - last_fire_ns < window_ns` the\ngate returns false (suppress); otherwise, and always for a key with no recorded\nfiring, it returns true and records `last_fire_ns = mono_ns`. Every instant,\nzero included, is a valid `last_fire_ns`. `mono_ns` is the pump's monotonic\nsample: `cooldown` reads the monotonic clock and no other ([LTIM.2.8.2]).\n\n",
+  "refs": [
+    "LTIM.2.8.2",
+    "RDSC.6.5",
+    "RLOW.4.6.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_4_6_6_1__lookup",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The recorded stamp of a tracker key: Rete/RateGate.idr's `Maybe Nat`, absence for a site that never issued."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "iret_10_4__allow",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gate at evaluation: Rete/RateGate.idr's `rlow_4_6_2_2__allows` over the key's recorded stamp and nothing else; on `true` the instant is recorded as `last_fire_ns`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_first",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "No recorded firing: true. Executed, rgate.cool_first's schedule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_refire",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "`mono_ns - last_fire_ns < window_ns` false at equality: true, restamped. Executed, rgate.cool_refire's schedule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_suppress",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Every instant, zero included, is a valid `last_fire_ns`': a stamp of 0 suppresses at 5. Executed, rgate.cool_suppress's schedule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__window_suppresses",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`mono_ns - last_fire_ns < window_ns`: the gate returns false and records nothing, over every window, stamp, instant and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__allow_admits",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gate's `true` applied: the key is stamped with the instant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__allow_refuses",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gate's `false` applied: nothing moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__boundary_is_inclusive",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE BOUNDARY IS INCLUSIVE: at exactly c0 + window the key fires, since `mono_ns - last_fire_ns < window_ns` is false at equality -- the instant rgate.cool_refire and logical/LCDB.3.2.1_rgate_cool_refire pin. Over every window, stamp and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__decide",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The verdict applied: `true` records `last_fire_ns = mono_ns` in front; `false` moves nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__decide_false",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A refused verdict leaves the trackers, whichever verdict it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__decide_once",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A verdict stamps the key or leaves the trackers, and nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__first_firing_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Always for a key with no recorded firing, it returns true and records `last_fire_ns = mono_ns`': admitted and stamped, over every window, instant and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__lookup",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'A key with a recorded `last_fire_ns`' and 'a key with no recorded firing': the stamp as an option over the table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__lookup_stamped",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A stamp is read back: the key just stamped looks up its instant -- 'records `last_fire_ns = mono_ns`'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__lt_irrefl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No natural is below itself: the Nat fact the boundary needs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__refires_at_the_boundary",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'If `mono_ns - last_fire_ns < window_ns` ... suppress; otherwise ... true and records': an instant not inside the window is admitted and restamped, over every window, stamp, instant and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "rlow_4_6_2_2__refused_keeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A REFUSED GATE MOVES NO TRACKER, over every window, instant, key and table."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "Rlow_4_6_2_2__stamp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The recorded `last_fire_ns` as an option: absence is not an instant, so 'every instant, zero included, is a valid `last_fire_ns`'. What both runtimes keep: libds's `has_fired` flag beside the instant (rete/adapters.c), the Mercury runtime's `maybe(uint64)` (ds.rate.m)."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__allows",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's gate: a key with no recorded firing admits; otherwise suppress while `now < last + window`. The clause's `mono_ns - last_fire_ns < window_ns` is this test whenever the stamp is at or before the instant, which a stamp always is -- an earlier sample of the monotonic clock, which never runs back ([LTIM.2.8.2])."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__allows_sentinel",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE REFUSED SPELLING: the gate over one `Nat` where zero means 'never fired', which the clause's 'every instant, zero included, is a valid `last_fire_ns`' rules out. Partial because it models a reading the clause does not admit; with `rlow_4_6_2_2__encode` it shows why the clause says that sentence."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__encode",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The option collapsed onto the refused sentinel: absence becomes zero, and `Nothing` and `Just 0` have one image. The collapse the clause forbids, written down because it is the defect the three results below measure."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__faithful_above_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The refused spelling agrees with the clause's gate for every stamp strictly above zero, every window and every instant, so a test whose clock has moved cannot tell them apart. Proves the concrete instance rather than the parameterised claim: equality on a variable does not reduce, and `Nat` makes `Z` versus `S k` a structural split."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__faithful_on_absence",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And agrees where there is no recorded firing: both admit."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's gate over a schedule of instants, each allowed instant recorded as the next stamp: 'records `last_fire_ns = mono_ns`'."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__run_sentinel",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The same schedule under the refused field, so the two spellings can be compared over a run rather than at a point (Main.idr runs the schedule of `67_rate` under both). Partial as `rlow_4_6_2_2__allows_sentinel` is."
+      },
+      {
+        "path": "formal/idris/Rete/RateGate.idr",
+        "name": "rlow_4_6_2_2__zero_stamp_is_lost",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WHERE THE TWO SPELLINGS DIFFER, the one instant: a firing recorded at instant zero, which the clause's gate suppresses inside its window and the refused spelling reads as 'never fired' and admits. The clause's 'zero included' is this witness. `logical/LCDB.3.2.1_rgate_cool_suppress` pins the flag against both runtimes at this instant."
+      }
+    ]
+  }
+}

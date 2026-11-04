@@ -1,0 +1,17 @@
+{
+  "id": "IARC.1.15",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 318,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.15] **Compiled artefacts are bytes libds owns;\n  cross-process surfaces are not.** The \"no wire, no\n  protocol\" stance ([IARC.1.14]) governs **runtime\n  interactions across libds's process boundary** —\n  telemetry, action dispatch, fact assertion from the\n  outside, debug subscription, peer bridging. The DS\n  compiler artefact (`.dsc`, specified at [RDSC]) is a different category: it is a\n  one-way compiler-to-runtime artefact loaded once at\n  engine setup, not a continuing communication channel.\n  libds owns its decoder (protobuf-c per\n  [IARC.7.4]) the same way it owns the Rete network —\n  internal machinery, not a surface.\n  This narrowly authorises libds to read structured\n  bytes from disk while preserving the invariant that\n  every **runtime** boundary remains a typed C\n  callback. libds **must not** use the DSC dependency\n  (protobuf-c) for any other purpose: wire\n  encoding for cross-engine bridging, telemetry\n  serialisation, debug protocol, peer transport.\n  Schema-typed cross-boundary serialisation by the\n  integrator (each schema has a generated `.proto`\n  shipped inside the artefact per\n  [LFAC.8] and\n  [RDSC.5.8]) is\n  enabled by the artefact, not performed by libds: the\n  integrator who wants to encode a fact reads the\n  schema's `.proto` from the loaded engine and runs\n  their own protobuf encoder. libds supplies the\n  shape; the integrator owns the bytes.\n\n---\n\n",
+  "refs": [
+    "IARC.1.14",
+    "IARC.7.4",
+    "LFAC.8",
+    "RDSC.5.8"
+  ]
+}

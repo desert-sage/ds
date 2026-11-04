@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.2.2_fma_special_values",
+    "clauses": ["LEXP.3.2.2", "LERR.1.4.1", "LDET.3.6.2"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LEXP.3.2.2]: `math.fma`'s special values are IEEE 754's, and nothing traps ([LERR.1.4.1]), where Python's `math.fma` raises. +Inf is `t.big * t.big` (1e300 squared), -Inf its negation; a NaN is read through `is NaN` and -Inf through `is -inf` ([LNUL.4.9]). `zero_times_inf`: `fma(0.0, inf, 1.0)` is NaN. `inf_minus_inf`: `fma(inf, 1.0, -inf)` is NaN. `overflow_then_neg_inf`: `fma(1e308, 10.0, -inf)` is -inf, because the exact product 1e309 is finite before the one rounding and adding -inf to it gives -inf; `unfused_overflow` shows the two-rounding answer, the product rounded to +Inf and then NaN against -Inf. Rule `handler` logs any ComputationError and must stay silent. PATH PINNED: FN_FMA in libds (`builtins.c`, `ds_libm_fma`, libds's own [IARC.7.14]) and Mercury (`ds.eval`, through `ds.core_math.fma`, the same compiled function).",
+    "rules_ds": "import math\n\nschema T scope logical:\n    id: String key\n    z: Float mutable\n    one: Float mutable\n    ten: Float mutable\n    huge: Float mutable\n    big: Float mutable\n\nrule zero_times_inf:\n    T t where math.fma(t.z, t.big * t.big, t.one) is NaN\n->\n    log info \"zero_times_inf\"\n\nrule inf_minus_inf:\n    T t where math.fma(t.big * t.big, t.one, -(t.big * t.big)) is NaN\n->\n    log info \"inf_minus_inf\"\n\nrule overflow_then_neg_inf:\n    T t where math.fma(t.huge, t.ten, -(t.big * t.big)) is -inf\n->\n    log info \"overflow_then_neg_inf\"\n\nrule unfused_overflow:\n    T t where (t.huge * t.ten - t.big * t.big) is NaN\n->\n    log info \"unfused_overflow\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "t", "z": 0.0, "one": 1.0, "ten": 10.0, "huge": 1e308, "big": 1e300 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zero_times_inf", "inf_minus_inf", "overflow_then_neg_inf", "unfused_overflow"]
+    }
+}

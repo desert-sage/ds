@@ -1,0 +1,9 @@
+{
+    "id": "LINT.1.1",
+    "category": "compiler",
+    "scenario": "Interval containment is half-open `[start, end)` per LINT.1.1. Pin: `w.probe in (w.start_t .. w.end_t)` over Int slots compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the half-open comparison pair is not observed. The half-open bounds at runtime are logical/LINT.3.1's.",
+    "rules_ds": "schema Window scope logical:\n    start_t: Int key\n    end_t: Int mutable\n    probe: Int mutable\n\nrule check:\n    Window w where w.probe in (w.start_t .. w.end_t)\n->\n    log info \"in window\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LUNI.4.5.2_inverting_flips_the_operator",
+    "clauses": ["LUNI.4.5.1"],
+    "category": "logical",
+    "scenario": "[LUNI.4.5.2]: at a `where` comparison between two dimensions one `implicit` formula bridges ([LUNI.4.5.1] boundary 2), the LEFT operand converts into the right's dimension, and for an `inverting` formula the operator flips. `a.freq > b.p` with `a.freq` = 4 Hz is `hz_to_tick(4) < b.p`, that is 0.25 < b.p. Against `b1` (p = 0.5) that holds and against `b2` (p = 0.1) it does not, so only `b1` matches. Unconverted (4 > p) both would match; converted without the flip (0.25 > p) only `b2` would. PATH PINNED: `luni_4_5_2_step` in dsc.rete, called from `rlow_6_2_1_chain`, which lowers the left operand through `lgra_9_8_11_formula_call` and flips the operator with `luni_4_5_2_flip`.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\nunit dimension period storage float64 base tick\nunit tick: period\n\nunit formula hz_tick inverting implicit:\n    hz_to_tick(x: Hz): tick  = 1.0 / x\n    tick_to_hz(x: tick): Hz  = 1.0 / x\n\nschema A scope logical:\n    id: String key\n    freq: Hz mutable\n\nschema B scope logical:\n    id: String key\n    p: tick mutable\n\nrule cmp:\n    A a\n    B b where a.freq > b.p\n->\n    log info \"match {b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "a", "freq": 4.0 } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b1", "p": 0.5 } },
+            { "op": "assert", "schema": "B", "slots": { "id": "b2", "p": 0.1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["match b1"]
+    }
+}

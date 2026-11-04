@@ -1,0 +1,11 @@
+{
+    "id": "LIMP.3.3.4_floor_without_import_unresolved",
+    "clauses": ["LIMP.3.3.4", "LEXP.3.1"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.1]: `floor`, `ceil`, `trunc` and `sign` are members of `math`, reached only through its import ([LIMP.3.3.4]); `abs`, `round`, `min` and `max` stay global. A file with no import calls `floor(s.v)` in a `where`, and the compiler rejects it as it rejects any call to a name nothing resolves, DS_VALIDATE_UNKNOWN_FUNCTION, with no hint toward `math`. PATH PINNED: `dsc.libcall`'s rewrite, which leaves a bare `floor` with no import as it is, then `dsc.typecheck`'s unknown-function arm, which finds no [LEXP.17.2] row named `floor`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Sensor s where floor(s.v) > 2\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

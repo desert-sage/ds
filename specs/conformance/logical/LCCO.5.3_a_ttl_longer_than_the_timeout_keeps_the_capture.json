@@ -1,0 +1,21 @@
+{
+    "id": "LCCO.5.3_a_ttl_longer_than_the_timeout_keeps_the_capture",
+    "clauses": ["LCCO.5.3", "LCCO.7.2", "LCCO.7.1"],
+    "category": "logical",
+    "scenario": "[LCCO.7.2]: a `timeout` clause's timer carries the parent bindings its body reads, and its sibling joins the timer and no capture fact; [LCCO.7.1]: a `timeout` clause fires when no response and no `CallError` for the call's correlation arrives within its duration. The control for `LCCO.5.3_a_timeout_longer_than_every_ttl_fires`: the same program and steps, with the response schema `Reply` at `ttl 1_h`, so the capture's lifetime ([LCCO.5.3]) is 1 h and outlives the 10 min timeout. Rule `r` binds `Job j` and calls `svc.get` with a generated correlation (no `as`, [LCCO.3.4]) and `timeout 10_min:` logging `late {j.id}`, which the body reads from the timer's `j_id` slot. A Job with id 7 is asserted and pumped; nothing answers the call. The clock moves 600 s, onto the deadline, and is pumped; then 1 s more, a `Mark` is asserted, and it is pumped, so rule `m` logs `tick`. Expected: ['late 7', 'tick'], the timeout firing on its deadline and before the mark. What it discriminates: a timeout that fires only after its deadline logs ['tick', 'late 7']; one that never fires logs ['tick']. Read with its pair, it shows the capture's lifetime does not move when a timeout fires: both fire on the deadline. PATH PINNED: `dsc.rete`'s `clause_timer`, which asserts the timer with the body's capture slots, and `timeout_sibling`, whose `timer_views` gives the body its bindings from the timer at token position 0, joining no capture, run by each runtime.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nschema Mark scope explicit:\n    n: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown\n        timeout 10_min:\n            log info \"late {j.id}\"\n\nrule m:\n    Mark\n->\n    log info \"tick\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 600000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Mark", "slots": { "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["late 7", "tick"]
+    }
+}

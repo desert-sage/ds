@@ -1,0 +1,22 @@
+{
+  "id": "LNUL.5.1",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.5",
+  "seq": 143,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.5.1] **Using a `T?` where a *concrete* `T` is required is a compile error**\nunless narrowed. A concrete `T` is required in a **concrete-value position** — an\n`emit` / `publish` slot value into a non-nullable slot, a `call` / function\nargument, the receiver or an argument of a builtin that demands a value of a\nparticular kind, a typed `let` RHS, or a series source ([LNUL.8.6]) — anywhere a\n`null` would corrupt a *computed value*.\n\n**The basis is the Kleene domain, and the predicate boundary is not the test.**\nThe list is exhaustive on that basis rather than by enumeration: a `null` is\nrefused exactly where it passes to a consumer that does not propagate it. The\nKleene consumers are the operators: every operator [LNUL.4.1] makes propagate,\nand `and` / `or` ([LNUL.4.2]). One builtin is among them, `math.fma`, which\ntakes its operands as `x * y + z` does ([LEXP.3.2.2]). Every other consumer\ndemands a value, and refuses one that may be absent.\n\n**So a builtin is refused inside a `where`, and that is an instance of the rule\nrather than an exception to it.** A builtin that demands a value of a particular\nkind raises on the wrong kind instead of propagating, so a `null` reaching one\nhas left the Kleene domain without leaving the predicate. Its **receiver** is\nrefused on the same terms as its arguments: method form and function form denote\none builtin, and a rule that turned on which the author wrote would make a\n`null` legal or illegal by punctuation.\n\n**String interpolation is *not* a concrete-value position:** a null / absent\ninterpolated value renders as the **empty string** ([LGRA.2.9.6.2]), so\n`\"{s.state}\"` on a `Float?` slot compiles and renders a `null` as `\"\"`. This\nis the property that makes absence un-ignorable (the one win worth keeping from\n`Maybe`): the compiler forces handling there, so an unexpectedly absent slot\ncan't silently feed a wrong value into an action. It does **not** apply to\nthe operators, which are the Kleene consumers ([LNUL.4.1] / [LNUL.4.2]): they\naccept a `T?`, propagate `null`, and the `where` fires iff `true` ([LNUL.4.3]). The single rule: **a `T?`\noutside a narrowing site is a compile error wherever its consumer demands a\nvalue, and Kleene-evaluated (null-propagating) wherever its consumer\npropagates.** So a bare\n`s.state > 85` on a `Float?` slot **compiles** and simply does not fire on a\n`null` reading ([LNUL.4.3]) — the safe default, not an error — and so does\n`s.state + 1 > 5`, for the same reason and by the same mechanism.\n\n",
+  "refs": [
+    "LEXP.3.2.2",
+    "LGRA.2.9.6.2",
+    "LNUL.4.1",
+    "LNUL.4.2",
+    "LNUL.4.3",
+    "LNUL.8.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_NULLABLE_UNNARROWED"
+  ]
+}

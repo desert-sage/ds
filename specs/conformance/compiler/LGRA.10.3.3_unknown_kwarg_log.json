@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.10.3.3_unknown_kwarg_log",
+    "clauses": ["LGRA.10.3.2", "LGRA.10.3.4"],
+    "category": "compiler",
+    "scenario": "LGRA.10.3.3 — the action-argument inventory is closed. `log` takes a level and a message and NO kwargs, so `category:` is DS_VALIDATE_BAD_KWARG. ActionLog's proto comment says the executor supplies the log category from the TerminalNode's rule_name, so an author-supplied one would be silently OVERRIDDEN.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hello\" category: \"net\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BAD_KWARG"
+    }
+}

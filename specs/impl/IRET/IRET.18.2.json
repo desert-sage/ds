@@ -1,0 +1,73 @@
+{
+  "id": "IRET.18.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.18",
+  "seq": 1288,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Load",
+  "text": "### Load [IRET.18.2]\n\nThe artefact loader (`dsc/rete_loader.c`) decodes the `AlphaNode` /\n`BetaNode` / `TerminalNode` atom bodies (IRET.16), and `ds_rete_load_network`\nbuilds the in-memory node graph from them. Steps, in order:\n\n1. Decode each `AlphaNode` / `BetaNode` / `TerminalNode` atom body via the\n   chosen protobuf library (IRET.23.6). Return\n   `DS_ERR_DSC_DECODE` on decode failure, before any other check of the body\n   ([RDSC.11.4]).\n2. Validate all `node_id` cross-references resolve before\n   constructing any pointer (IRET.16.8). Return\n   `DS_ERR_RETP_INDEX_OOB` on first violation.\n3. Schemas are **already registered** — the SCHEMA atom\n   family (`SchemaTtl`/`SchemaLogical`/`Slot`/`SchemaDef`/`SchemaSource`) loads and\n   registers into the rete schema reg (`dsc_register_rete_schemas`)\n   *before* the network atoms.\n4. Construct alpha nodes from the `AlphaNode` atoms —\n   compile regex test patterns (IRET.6.3); wire into the\n   schema's alpha-dispatch entry.\n5. Construct beta nodes from the `BetaNode` atoms —\n   allocate join-test expression trees recursively; set\n   `is_negative`; wire left-parent and right-alpha links by\n   `node_id`.\n6. Construct terminal nodes from the `TerminalNode` atoms —\n   allocate RHS action expression trees.\n7. Wire all downstream links (beta children, terminal\n   children, beta inputs on alpha nodes) using the `node_id`\n   references encoded in the atoms.\n\nIf any step fails, the load returns the error and sets the halt latch: a\nfailed load spends the engine ([RDSC.9.8]). The loader undoes nothing it\napplied. There is no reload: an engine loads one artefact for its life\n([RARC.10.1]).\n\n---\n\n",
+  "refs": [
+    "IRET.16",
+    "IRET.16.8",
+    "IRET.23.6",
+    "IRET.6.3",
+    "RARC.10.1",
+    "RDSC.11.4",
+    "RDSC.9.8"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DECODE",
+    "DS_ERR_RETP_INDEX_OOB"
+  ],
+  "symbols": [
+    "ds_rete_load_network"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "BetaNode",
+    "SchemaDef",
+    "SchemaLogical",
+    "SchemaSource",
+    "SchemaTtl",
+    "Slot",
+    "TerminalNode"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rdsc_4a_5__load",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "LOAD: alphas from their schemas and tests, chains from their nodes and actions, every memory empty, then every root seeded [RDSC.4a.5]. Cross-reference validation and expression construction are out of scope."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rdsc_4a_5__load_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOADED NETWORK HAS THE VIEW: empty working memory, empty memories, and every chain the nil token's wave."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rdsc_4a_5__load_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOADED NETWORK IS ORDERED: empty working memory, empty memories, and every terminal the nil token's activation or nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__init_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded engine agrees with FireLoop's empty state under the program it lowers to."
+      }
+    ]
+  }
+}

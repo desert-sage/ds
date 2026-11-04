@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.9_sin_is_correctly_rounded",
+    "clauses": ["LEXP.3.9.2"],
+    "category": "logical",
+    "scenario": "The runtime half of LEXP.3.9_sin_in_a_where_compiles: `sin` evaluates to the correctly rounded value ([LEXP.3.9.2]), compared with `==` to the last bit. RN(sin 1) is 0.8414709848078965 (0x1.aed548f090ceep-1). PATH PINNED: the DS_FN_SIN handler in `runtime/src/libds/builtins.c` calling CORE-MATH's `ds_cm_sin`, and the Mercury runtime's sin arm calling the same vendored C. One point, so this is substitution detection rather than a proof of correct rounding (the E1 vectors and the probe carry that); a `sin` from a platform libm that rounds this argument differently fails it. Pin: x=1.0 fires `r`, x=2.0 does not.",
+    "rules_ds": "from math import sin\n\nschema T scope logical:\n    entity_id: String key\n    x: Float mutable\n\nrule r:\n    T t where sin(t.x) == 0.8414709848078965\n->\n    log info \"sin\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "one", "x": 1.0 } },
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "two", "x": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r"]
+    }
+}

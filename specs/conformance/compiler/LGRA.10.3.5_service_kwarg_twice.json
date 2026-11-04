@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.3.5_service_kwarg_twice",
+    "category": "compiler",
+    "scenario": "LGRA.10.3.5: a kwarg is named at most once per action, so a `call` naming the declared service kwarg `alpha` twice is DS_VALIDATE_DUPLICATE_KWARG. Drives `dsc.validate`'s `lgra_10_3_5_duplicate_kwarg` over the call's inline arguments, the user-declared namespace of LGRA.10.3.4. Both occurrences are declared and well-typed, so neither the undeclared-kwarg check (`call_kwarg_known`) nor a value type check can refuse the program in its place.",
+    "rules_ds": "use default\n\nservice svc.body:\n    kwarg alpha: Int\n    no response\n\nschema In scope logical:\n    id: Int key\n\nrule out:\n    In i\n->\n    call svc.body alpha: i.id alpha: 2 nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_KWARG"
+    }
+}

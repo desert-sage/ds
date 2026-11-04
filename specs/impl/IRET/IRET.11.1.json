@@ -1,0 +1,228 @@
+{
+  "id": "IRET.11.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11",
+  "seq": 891,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Ordering",
+  "text": "### Ordering [IRET.11.1]\n\nThe agenda is a min-heap (or sorted structure) ordered by\nthe comparison key `(terminal ordinal, creation_timetag)` —\nlower ordinal first, and among activations of the SAME rule,\nearliest-created first. Both keys are read directly off the\nactivation and its terminal; neither needs a lookup.\n\nTwo keys suffice, and neither has to be assumed unique. The\nordinal is unique per rule, so it separates activations of\ndifferent rules outright. Two activations of one rule share\nan ordinal but cannot share a timetag, because a timetag is\nassigned per token and a token reaches exactly one terminal.\n\n**The timetag never decides between two rules**, and that is\nthe point: which match completed first is a property of\npropagation order, and [LTES.12.9] requires the firing order\nto be spec-defined rather than implementation-defined.\n\n",
+  "refs": [
+    "IRET.8",
+    "LDET.5.4",
+    "LTES.12.9"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_1__select",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The activation that fires next: the lowest ordinal with an unfired activation, then its earliest in timetag order. Two keys and no hash order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__selected_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selected chain is at its ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_1__select_cases",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection, as the two cases a proof splits on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_1__select_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What is selected is there, and unfired: the lowest ordinal with an unfired activation, its first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_1__select_map_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selection's successor map, undone: the tail selected `(r', j)` and the whole selected `(S r', j)`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "iret_11_1__select_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "When nothing is selected, nothing is unfired: the agenda is drained."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_1__unfired_count_zero_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An agenda with nothing unfired has nothing unfired at any ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME. From the loaded network, after any inputs applied with no pump between them, a pump that reaches quiescence fires a framed chain exactly as many times as it has matches when the pump begins: its activations are its distinct matches ([IRET.7.7], [IRET.11.1], in the view), each fires once and none twice ([IRET.11.3], [LDET.5.3], in the run), whatever the other rules emit and withdraw meanwhile. Rete/NetworkOnce.idr's theorem with the action-free frame replaced by this one; the plain network, so no cascade and no sweep. Every hypothesis is discharged by computation at `ltim_2_5_1__two_rules_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE AND THE CLOCK. From the loaded clocked network, after any inputs -- data events and ticks that sweep -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins, whatever the other rules emit and withdraw and whatever their endings cascade: a cascade's targets are emitted kinds, which a framed chain does not read. Rete/NetworkFrame.idr's theorem on the engine Rete/NetworkClocked.idr runs; a prepare that re-times is outside it and is Rete/NetworkFrameRetime.idr's. Every hypothesis is discharged by computation at `ltim_2_5_1__one_fact_is_an_instance_ttl`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE, THE CLOCK AND THE RE-TIME. From the loaded clocked network, after any inputs -- data events, and ticks that sweep and re-time every timed chain -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins: the matches the ticks made counted, the matches they ended not. Rete/NetworkFrameClocked.idr's theorem with Rete/NetworkClocked.idr's prepare. Every hypothesis is discharged by computation at `ltim_2_5_1__gated_is_an_instance` and `ltim_2_5_1__shut_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_1__act_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The agenda, counted over every terminal ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__distinct_same_set_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'Two activations of one rule cannot share a timetag': a terminal holding each match once has as many activations as matches, no second record of one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE THEOREM. For an action-free program, from the loaded network, after any inputs applied with no pump between them, a pump with fuel enough halts `Quiescent`, fires exactly as many times as there are activations, leaves every activation fired with its tuple, and every chain's tuples are exactly its recompute over working memory, none twice: once per match, and each match once. [IRET.7.7] and [IRET.11.1] in the view; [IRET.11.3] and [LDET.5.3] in the run. The clauses a duplicate firing breaks, held together."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match_from",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The agenda holds each match of a rule once, as 'a timetag is assigned per token and a token reaches exactly one terminal' requires, and the pump fires it once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__unfired_count_is_act_count",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Before any pump the agenda is entirely unfired, so the unfired count is its size."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The square's one match reaches the terminal once: one activation, one firing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_7_7__word_square_interleaved_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "And in the interleaved order. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_5__before_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The second key is a total order on one rule's live activations, so selection within a rule is determined."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_4_9__keys_distinct",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The second key never ties among one rule's activations."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_4_9__unique_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After any history, selection within a rule is by a key with no ties."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_from",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1a's lowest-ordinal search, from ordinal r on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_from_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The two selections agree from any ordinal on when every refracted identity is fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__select_spec",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The spec's selection: ordinal, then the first eligible activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_1__select_none",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A head terminal with no unfired activation and nothing after it selects nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_1__select_skip",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A head terminal with no unfired activation is skipped: the selection after it, one ordinal later."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_1__select_yes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Selection over the chains, one at a time: a head terminal with an unfired activation is selected at it."
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LSER.16.5.2_all_time_reject",
+    "category": "compiler",
+    "scenario": "count_distinct is exact only over a bounded `sliding` window in v1 (LSER.16.5.2). The `all_time` form would need an unbounded exact distinct-value set, which v1 does not ship — so it is reserved for v2 and rejected at compile. Pin: `count_distinct all_time` rejects with DS_VALIDATE_SERIES_NO_EXACT_BACKING; the diagnostic points at the bounded `sliding` form.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Int mutable\n\nseries Sensor.state:\n    count_distinct all_time\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+    }
+}

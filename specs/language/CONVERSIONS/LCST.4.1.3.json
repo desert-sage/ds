@@ -1,0 +1,15 @@
+{
+  "id": "LCST.4.1.3",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.1",
+  "seq": 59,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.1.3] **`NULLABLE` binds to the target.** The optional `?` in `cast_suffix` must\nbind to the immediately preceding `TYPE_SYM` and must be consumed as part of the cast\nbefore any following operator is considered — `x::Int?` is a fallible cast whose `?`\ncannot be stolen by a following operator. Because `??` (COALESCE) is a single token under\nmaximal munch ([LLEX.10.8.5]), `x::Int??d` lexes as `x :: Int ?? d` and parses as\n`(x::Int) ?? d` — a **total** cast then coalesce, with no `NULLABLE` on `Int`. The\nfallible-then-coalesce idiom is therefore written with the target `?` separated from the\n`??`: `x::Int? ?? d` → `(x::Int?) ?? d`. *(No whitespace-free spelling of the fallible\nidiom exists — `x::Int???d` mis-munches — so a fallible cast that then coalesces must\nseparate the target `?` from the `??`; a total cast on a nullable source is instead the\n`[LCST.4.3]` missing-`?` error, which guides the author to the spaced form.)*\n\n",
+  "refs": [
+    "LCST.4.3",
+    "LLEX.10.8.5"
+  ]
+}

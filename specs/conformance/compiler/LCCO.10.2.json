@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.10.2",
+    "category": "compiler",
+    "scenario": "Chain depth cap per LCCO.10.2 \u2014 a `call` with continuations nested inside an inner continuation body is rejected. Chains deeper than two outer/inner pairs require the two-sibling form per LCCO.10.4. Pin: a third-level continuation rejects with DS_VALIDATE_CONTINUATION_CHAIN_TOO_DEEP naming the offending call.",
+    "rules_ds": "schema SvcAReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.a:\n    kwarg entity_id: String\n    response SvcAReply\n\nschema SvcBReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.b:\n    kwarg entity_id: String\n    response SvcBReply\n\nschema SvcCReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.c:\n    kwarg entity_id: String\n    response SvcCReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule deep_chain:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call svc.a entity_id: \"x\" cooldown: 1_min\n        on response.code == 200:\n            call svc.b entity_id: \"y\" cooldown: 1_min as \"b\"\n                on response.code == 200:\n                    call svc.c entity_id: \"z\" cooldown: 1_min as \"c\"\n                        on response.code == 200:\n                            log info \"too deep\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONTINUATION_CHAIN_TOO_DEEP"
+    }
+}

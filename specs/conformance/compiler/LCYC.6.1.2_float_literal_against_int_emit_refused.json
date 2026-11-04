@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.6.1.2_float_literal_against_int_emit_refused",
+    "category": "compiler",
+    "scenario": "LCYC.6.1.2, the pair the other way round: `A` matches `S a where a.n == 1.0` on an Int slot and emits `S n: 1`, which satisfies its own pattern, since `1 == 1.0` with the Int promoted (LEXP.7.3). The self-edge stays and the program is refused with DS_VALIDATE_RULE_CYCLE. PATH PINNED: `dsc.cycle.lcyc_6_1_2_differ`, its Float-against-Int arm, which LCYC.6.1.2_int_literal_against_float_emit_refused does not reach. A break that compares literals as terms drops this edge and compiles the program.",
+    "rules_ds": "schema S scope explicit:\n    n: Int\n\nrule A:\n    S a where a.n == 1.0\n->\n    emit S n: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "LUNI.3.1.8",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.3.1",
+  "seq": 211,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LUNI.3.1.8] **A unit literal's numeric prefix is decimal. Hex, binary and\n  octal prefixes are excluded**, and the exclusion is forced rather than\n  chosen: the based form is **ambiguous with the integer literal it is built\n  from**, provably and from the clause text alone.\n\n  `[LLEX.11.1]` makes `_` an internal digit separator in `HEX_LIT`, and a\n  `UNIT_SUFFIX` may be spelled entirely from characters that are also hex\n  digits. Whenever it is, both productions match the same input at the same\n  length:\n\n  | input | as `HEX_LIT` | as a based unit literal |\n  |---|---|---|\n  | `0xFF_FF` | `0xFFFF` = 65535 | `0xFF` with unit `FF` |\n  | `0xFF_A` | `0xFFA` = 4090 | `0xFF` with unit `A` — 255 amperes |\n\n  **The two readings are opposite and a lexer has one priority ordering**, so\n  either setting is wrong for one of these rows. `A` is the SI symbol for the\n  ampere; the collision is not contrived on either side.\n\n  `0xFF_FF` is the spelling the numeric-literal examples use and `[LLEX.11.1]`\n  grants it directly, so any resolution reading it as a unit literal breaks a\n  documented integer form.\n\n  A decimal prefix has no such overlap: `DEC_LIT` admits no letters, so no\n  `UNIT_SUFFIX` can continue it.\n\n",
+  "refs": [
+    "LLEX.11.1",
+    "LLEX.12",
+    "LUNI.3.1"
+  ]
+}

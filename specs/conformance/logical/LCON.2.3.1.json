@@ -1,0 +1,19 @@
+{
+    "id": "LCON.2.3.1",
+    "category": "logical",
+    "scenario": "LCON.2.3.1 — within-platform firing order: the terminal ordinal (source order), then activation-creation order within one rule. Three rules on the same trigger fact fire in declaration order. Same property pinned at LFST.7.3.4 under the fact-stream spec. THIS FIXTURE CANNOT TELL THE TWO ORDERS APART: three rules on ONE assert complete in a single propagation, so source order and completion order coincide and either model passes. The teeth are in LDET.5.4.completion.json — NOT in LDET.5.4.json, which is coincidental for the same reason.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r_first:\n    Trig\n->\n    log info \"first\"\n\nrule r_second:\n    Trig\n->\n    log info \"second\"\n\nrule r_third:\n    Trig\n->\n    log info \"third\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": [
+            "r_first",
+            "r_second",
+            "r_third"
+        ]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LSIG.3.4_golden_in_3",
+    "clauses": ["LSIG.3.4"],
+    "category": "logical",
+    "scenario": "Golden vector IN-3 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: IN-1's stream under `gap zero`. q held at 2.0 over [0, 4 s), then 5.0 at 4 s and never again, read at 10 s over a 10 s window. The gap is the open interval since the last sample, so [4 s, 10 s] contributes zero and the answer is the closed interval alone, 2*4 = 8.0, where IN-1's `gap hold` gives 38.0. The read is a rule firing at 10 s with no sample there, the only configuration in which the two policies differ: at 10 s a `Probe` arrives and `read` logs the binding's `integral` ([NSBK.6.3]). PATH PINNED: the query-time integral of the open interval under the zero policy, libds's numeric_integral backend and the Mercury runtime's ds.series gp_zero.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Flow.q:\n    integral sliding 10s gap zero\n\nrule read:\n    Probe\n    Flow f\n->\n    log info \"{f.integral}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 2.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 5.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["8.0"]
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.9.6.3_math_floor_of_time_bare_import_refused",
+    "clauses": ["LGRA.9.6.3", "LTIM.7.1", "LIMP.3.3.4"],
+    "category": "compiler",
+    "scenario": "[LGRA.9.6.3]: `math.floor(t, d)`, in either form of its import, with a `Time` or `Date` first argument, is refused with DS_VALIDATE_RETIRED_BUILTIN_SPELLING, naming `t.floor(d)` ([LTIM.7.1]). This is the BARE form: `from math import floor` ([LIMP.3.3.4]), and the rule writes `floor(e.seen, 1_h)` on a `Time` slot. `LGRA.9.6.3_math_floor_of_time_refused` is the qualified form. PATH PINNED: `dsc.typecheck.lgra_9_6_3_retired`'s floor arm keys on the `math.floor` row, which `dsc.libcall` rewrites the bare call to by the file's own import, not on the spelling written. A check keyed on the qualified spelling would refuse that vector and let this one reach the arity check.",
+    "rules_ds": "from math import floor\n\nschema Event scope logical:\n    id: String key\n    seen: Time mutable\n\nrule r:\n    Event e where floor(e.seen, 1_h) <= e.seen\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RETIRED_BUILTIN_SPELLING"
+    }
+}

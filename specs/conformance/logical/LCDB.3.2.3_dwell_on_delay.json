@@ -1,0 +1,21 @@
+{
+    "id": "LCDB.3.2.3_dwell_on_delay",
+    "category": "logical",
+    "scenario": "An on-delay is a `where` condition on `dwell` (LCDB.3.2.3): the rule fires on the first tick at which the Motion fact has been in working memory for 2_s, once. Drives the time-dependent test CE that `dwell` lowers to, re-evaluated on each pump's tick (LTIM.2.4.2), and edge-once firing (LTIM.2.5.1). Pin: set 0; assert Motion; pump (0 s); advance 1_s, pump (1 s, no fire); advance 1_s, pump (2 s, fires); advance 5_s, pump (no second fire). Messages are ['settled']. `ts` equals the entry time, so the vector holds whichever of the two `dwell` readings the runtime implements.",
+    "rules_ds": "schema Motion scope logical:\n    zone: String key\n    ts: Time\n\nrule settled:\n    Motion m where m.dwell >= 2_s\n->\n    log critical \"settled\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Motion", "slots": { "zone": "hall", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["settled"]
+    }
+}

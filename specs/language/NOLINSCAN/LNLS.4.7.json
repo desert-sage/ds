@@ -1,0 +1,20 @@
+{
+  "id": "LNLS.4.7",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.4",
+  "seq": 573,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Fact model — schema dedup constraint",
+  "text": "### Fact model — schema dedup constraint [LNLS.4.7]\n\nOverlays retract-and-replace ([LFAC.1.2.2]).\n\nUnder `linear_scan: false` the engine **must** find the fact an assertion supersedes in\nO(1) amortized, for every `logical` schema. No further constraint on the\nschema is needed: the lookup reads the declared key ([LFAC.1.7.5]), and a\nschema whose key is empty holds at most one live fact ([LFAC.1.7.2]).\n`tolerance` does not enter it, because a tolerance is admissible only on a\n`mutable` slot, never a `key` slot ([LFAC.1.7.1]).\n\n**Removal is O(1) amortized as well.** Under `linear_scan: false` the engine **must** remove\na fact from working memory in O(1) amortized in the live facts of its schema,\nwhatever removes it: the supersedure above, a retraction, a withdrawal or an\nexpiry. The bound covers every structure the removal itself updates, not only\nthe indexes over live facts: bookkeeping a rule keeps per fact, such as the\nfacts a rule has already fired on, and the release of the values the fact\nheld. Two terms are outside the bound. A fact with a deadline also leaves\n`dynamic_ttl`'s deadline heap, at the O(log N_ttl) [LDTL.1.2] states. A\n`TimeZoneOffset` fact also leaves its zone's index ([LTIM.10.7]), at O(log r)\nin the live facts of that zone.\nWhat the removal sets off downstream is bounded where it is stated: the beta\njoins by [LNLS.5.1], and each fact a cascade removes by this clause.\n\n",
+  "refs": [
+    "LDTL.1.2",
+    "LFAC.1.2.2",
+    "LFAC.1.7.1",
+    "LFAC.1.7.2",
+    "LFAC.1.7.5",
+    "LNLS.5.1",
+    "LTIM.10.7"
+  ]
+}

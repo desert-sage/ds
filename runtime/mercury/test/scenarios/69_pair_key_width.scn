@@ -1,0 +1,15 @@
+# runtime/LFAC.1.7.2_key_all_relation's four asserts, in its order, against
+# fixture 73's key = one slot schema.
+#
+# (1,"x") enters. (1,"x") again is a no-op reassert [LFAC.2.5.1] and must emit
+# nothing. (1,"y") is a meaningful change on the same key, which [LFAC.2.5.3]
+# makes a FACT_RETRACT(old) + FACT_ASSERT(new) pair and not a second fact.
+# (2,"x") is a new identity.
+#
+# Two facts live at the end. The conformance vector, whose schema keys both
+# slots, leaves three.
+assert Pair a=1 b=x
+assert Pair a=1 b=x
+assert Pair a=1 b=y
+assert Pair a=2 b=x
+pump

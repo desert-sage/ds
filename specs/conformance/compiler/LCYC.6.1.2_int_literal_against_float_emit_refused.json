@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.6.1.2_int_literal_against_float_emit_refused",
+    "category": "compiler",
+    "scenario": "LCYC.6.1.2: `different literals` means unequal under DS's `==`, and an Int and a Float are a comparable pair, the Int promoted (LEXP.7.3). `A` matches `S a where a.kind == 1` on a Float slot and emits `S kind: 1.0`, which satisfies its own pattern, since `1 == 1.0`. The self-edge stays and the program is refused with DS_VALIDATE_RULE_CYCLE. On this `explicit` schema each firing would mint a fresh fact, so a compiler that admits it ships a rule that never quiesces. PATH PINNED: `dsc.cycle.lcyc_6_1_2_differ`, the literal break's comparison. A break that compares literals as terms reads `1` and `1.0` as two literals, drops the edge and compiles this. Twin: LCYC.6.1.2_int_literal_against_float_emit_differs_ok, the same rule emitting `kind: 2.0`, which the break drops. Mirror: LCYC.6.1.2_float_literal_against_int_emit_refused, the pair the other way round.",
+    "rules_ds": "schema S scope explicit:\n    kind: Float\n\nrule A:\n    S a where a.kind == 1\n->\n    emit S kind: 1.0\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

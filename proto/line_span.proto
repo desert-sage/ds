@@ -1,0 +1,26 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// LineSpan — atom body: a Rete node's DS source span. Per [RDSC.14.3].
+//
+// The atom records a source *range*, not a single line, keyed by the
+// bundle-global Rete node id (the alpha / beta / terminal node index): native
+// Rete has no generated text, so source attribution hangs off the node a
+// diagnostic surfaces at.
+//
+// Emission scope (which nodes carry a LineSpan atom — beta + terminal,
+// never alpha; an alpha's source is the schema declaration via SchemaSource)
+// is normative in [RDSC.14.3.6]; this atom does not restate it.
+//
+// `module_id` attributes the span to its module; the runtime derives the
+// display path at view time via DsSource[module_id].file.
+message LineSpan {
+  uint32 node_id = 1;   // alpha / beta / terminal node index (bundle-global)
+  reserved        2, 3;
+  uint32 ds_line = 4;   // 1-based DS source line
+  uint32 ds_col  = 5;   // 1-based DS source column
+  uint32 module_id = 10;
+}

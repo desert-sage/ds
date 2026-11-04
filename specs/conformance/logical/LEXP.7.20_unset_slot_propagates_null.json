@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.7.20_unset_slot_propagates_null",
+    "category": "logical",
+    "dead_rules_expected": ["eq", "ne"],
+    "scenario": "LEXP.7.20 with [LNUL.4.1]: a nullable schema-typed slot left unset is `null`, and a `null` operand of `==` or `!=` propagates, so the `where` is not satisfied either way. The host asserts Parent 1 and Child 1 with `parent` null, and pumps once. Neither `eq` (`c.parent == p`) nor `ne` (`c.parent != p`) fires; `unset` (`c.parent is null`) fires, so the Child was matched and the slot read was `null`. Exactly [\"unset 1\"]. A runtime that compared a null reference as an id (rete id 0, or a fact that is never live) would answer `!=` true and log `ne 1/1`. PATH PINNED: the join test's comparison, scanned, with one `null` operand; libds `rete/eval.c` BINOP comparison arm (Kleene null before `val_eq_unordered`), Mercury `ds.eval` `compare_outcome`.",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent? mutable\n\nrule eq:\n    Child c\n    Parent p where c.parent == p\n->\n    log info \"eq {c.id}/{p.id}\"\n\nrule ne:\n    Child c\n    Parent p where c.parent != p\n->\n    log info \"ne {c.id}/{p.id}\"\n\nrule unset:\n    Child c where c.parent is null\n->\n    log info \"unset {c.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Parent", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "Child", "slots": { "id": 1, "parent": null } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["unset 1"]
+    }
+}

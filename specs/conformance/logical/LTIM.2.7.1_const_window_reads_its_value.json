@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.2.7.1_const_window_reads_its_value",
+    "clauses": ["LGRA.2.8.1"],
+    "category": "logical",
+    "scenario": "[LTIM.2.7.1], [LGRA.2.8.1]: a `within` written as a `time` const is the window the const's value names. `fresh` on `Ping p within W`, `const W = 3_s`, logs `p.k`. Pin: set 0; assert Ping a; advance 2 s; assert Ping b; advance 2 s; pump. At the pump (+4 s) a is 4 s past its entry stamp and outside the window, and b is 2 s past it and inside, so the messages are exactly ['b'] ([LTIM.2.5.3]: the window is read under the pump's sample). A window lowered from anything but the const's value moves the answer: one of 2 s or less logs nothing, one of more than 4 s logs ['a', 'b']. PATH PINNED: `dsc.rete.spec_pats` lowering the NAME through `duration_tokens_ns` and `dsc.dstest.lgra_2_8_1_time_expr_ns`, then the window on the fire guard (`now_reeval_plan`, no `logical` emit), in both runtimes.",
+    "rules_ds": "const W = 3_s\n\nschema Ping scope logical:\n    k: String key\n\nrule fresh:\n    Ping p within W\n->\n    log critical \"{p.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Ping", "slots": { "k": "a" } },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert",  "schema": "Ping", "slots": { "k": "b" } },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["b"]
+    }
+}

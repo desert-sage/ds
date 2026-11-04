@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.type_error_and_false_is_false",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: a deciding operand absorbs a TypeError, not only a trap. `p.body.name > 5 and p.ok` with body.name = \"alice\" and ok = false is `false`: the Json leaf is a String where `>` wants a number, which is a TypeError ([IRET.9.6], tainted), and the `false` beside it decides the `and`, so the TypeError reaches no surface ([LERR.1.4.11]) and the rule does not fire. formal/k/dswhere.json.prog's program. A runtime that does not absorb a TypeError records one. Path: neither conjunct is a slot compared with a literal, so nothing hoists and the `where` is one join test; libds evaluates it in rete/eval.c's AND arm with the TypeError HELD (ds_rete_fault under hold_faults) and dropped, Mercury in ds.eval.lnul_4_2_absorbing.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    ok: Bool mutable\n\nrule r:\n    Payload p where p.body.name > 5 and p.ok\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" }, "ok": false } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["type_error", "rule_fire_begin"]
+    }
+}

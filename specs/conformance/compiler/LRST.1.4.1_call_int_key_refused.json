@@ -1,0 +1,11 @@
+{
+    "id": "LRST.1.4.1_call_int_key_refused",
+    "clauses": ["LRST.1.4.1"],
+    "category": "compiler",
+    "scenario": "[LRST.1.4.1]: a `call`'s key is a `String`; the compiler refuses any other type, the other seven [LRST.1.4] admits included, with DS_VALIDATE_CALL_AS_NOT_STRING. Pin: `call svc.x n: r.n nocooldown as r.n`, where `n` is an `Int` slot, is refused with that code. PATH PINNED: `dsc.validate.lrst_1_4_as_key`'s `as_call` arm, reached through `lrst_1_4_call_key`. compiler/LRST.1.4.1_after_int_key_ok is the control: the same key on `after` compiles.",
+    "rules_ds": "service svc.x:\n    kwarg n: Int\n    no response\n\nschema Req scope logical:\n    entity_id: String key\n    n: Int mutable\n\nrule trig:\n    Req r\n->\n    call svc.x n: r.n nocooldown as r.n\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CALL_AS_NOT_STRING"
+    }
+}

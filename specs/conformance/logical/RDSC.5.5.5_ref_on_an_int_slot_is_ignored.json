@@ -1,0 +1,18 @@
+{
+    "id": "RDSC.5.5.5_ref_on_an_int_slot_is_ignored",
+    "category": "logical",
+    "scenario": "[RDSC.5.5.5]: \"For other kinds the compiler must leave `schema_ref` empty, and a runtime must ignore it\". No compiler writes such an artefact, so the harness makes one: `add_schema_ref` gives the compiled Slot atom for `Probe.n`, an Int slot, the `schema_ref` \"Probe\", a schema the artefact does declare, and re-seals it. The artefact must load, the slot must report no reference ([NFCT.1.4.1]: a descriptor holds one exactly when its slot is a schema slot), and an asserted Probe must still take an Int in `n`. PATH PINNED: each loader's Slot handler, libds `dsc/loader.c` `handle_slot` (read back through pyds's `Engine.schemas`) and the Mercury runtime's `ds.dsc_schema.kind_of` (read back by test_behave's `slot_reference`). The edit is `dsc_seal.add_slot_schema_ref` for libds and test_behave's `schema_ref_added` for Mercury, each with its own walk. A loader that refuses the reference fails the load; one that keeps it reports \"Probe\".",
+    "rules_ds": "schema Probe scope logical:\n    id: Int key\n    n: Int mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "add_schema_ref": { "schema": "Probe", "slot": "n", "ref": "Probe" },
+        "steps": [
+            { "op": "assert", "schema": "Probe", "slots": { "id": 1, "n": 5 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "slot_schema_ref", "schema": "Probe", "slot": "n", "equals": null },
+            { "surface": "fact_count", "equals": 1 }
+        ]
+    }
+}

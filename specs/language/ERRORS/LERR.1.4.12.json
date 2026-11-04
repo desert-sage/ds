@@ -1,0 +1,226 @@
+{
+  "id": "LERR.1.4.12",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.1.4",
+  "seq": 219,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LERR.1.4.12] **A fault raised while matching reaches a surface once per\nderivation of its pair.** A join test answers a pair: a token in the node's left\nmemory and a candidate fact in its right memory ([IRET.7.6]). A pair is **live**\nwhile both are there. An assertion or a retraction of a fact, with the\npropagation it causes, **derives** the pairs that are live after it and were not\nlive before it, the pairs below a negated pattern it releases included\n([IRET.7.9.3]).\n\nFor a `TypeError` or a `ComputationError`, the engine **must** record the fault a\npair's tests yield ([LERR.1.4.11]) for each pair the operation derives, and for\nno other pair. A pair the engine evaluates that is not live when the operation\ncompletes, and a pair the operation ends, record nothing, whatever their tests\nyield. A pair that ends and is later derived again records again.\n\nThe engine **must** record the faults one operation derives once its\npropagation has completed, ordered by:\n\n1. the terminal ordinal of the rule the node belongs to ([LDET.5.4],\n   [LDET.5.10]);\n2. the pair's facts, as [LDET.5.5] orders a rule's matches: the token's facts\n   and then the candidate, pattern by pattern, each ranked by when it entered\n   working memory;\n3. the node's position in the rule's chain, the shallower first.\n\nWhich faults one operation records, and their order, are therefore a function of\nworking memory before and after it. How the engine traverses its memories,\nwhether it indexes a join, and the order in which it visits alpha memories\n**must not** change them ([LDET.5.9]).\n\nAn `EngineError` raised while matching halts the tier where it is raised\n([IRET.9.6]); a run that raises one is outside the determinism guarantee\n([LDET.1.11]).\n\n",
+  "refs": [
+    "IRET.7.6",
+    "IRET.7.9.3",
+    "IRET.9.6",
+    "LDET.1.11",
+    "LDET.5.10",
+    "LDET.5.4",
+    "LDET.5.5",
+    "LDET.5.9",
+    "LERR.1.4.11"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__a1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: `a1`, kind 0, key 7."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__append_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending respects membership on both sides."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__b1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: `b1`, kind 1, key 7, payload 1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__chain_live_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A chain's live pairs recomputed from the program and working memory: each node's front against its alpha's view of working memory, the front advanced by the node's own propagation. Reads no memory of the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__chain_live_recomputed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A consistent chain's live pairs are the recompute's, node by node: the left memory is the front it receives, as a set, and the right memory the alpha's view of working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__chain_pair_in_wm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live pair of the recompute is over live facts: the token's and the candidate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__cross_same_set",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two fronts with the same members pair alike with one memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__derived",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE DERIVED PAIRS of a state change, the clause's 'derives': live after, not before, over the network's live pairs -- the pairs below a released negated pattern included, since a released token's pairs are live after. What a match-time TypeError or ComputationError is recorded for, once per derivation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__evaluated_pairs_vary_with_alpha_order_derived_do_not",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The two alpha orders evaluate different transients and derive the same nothing: no alpha order makes the evaluated pairs the derived ones, and the clause's record over derived pairs does not see the order ([LDET.5.9]). Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__front_in_wm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A node's propagation keeps a front's facts live: a `no` node filters the front, a positive node extends its tokens by candidates of the alpha's view of working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__key_eq",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: two keys compared, decided."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__live_is_a_function_of_wm",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "(b) THE LIVE PAIRS ARE A FUNCTION OF WORKING MEMORY: under the view a network's live pairs are, as a set, their recompute from the program and working memory. The derived pairs are the filter of the recompute after by the recompute before, so which pairs an operation derives -- and which faults it records -- is a function of working memory before and after it, whatever the engine's traversal, index or alpha order ([LDET.5.9]). Sets, not lists: the order of one operation's records, the clause's three keys, is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__net_live_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The live pairs of a network recomputed from its working memory, chain by chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__net_pair_in_wm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Over every chain, from the empty token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__per_chain_recomputed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Chain by chain, with the rule ordinals."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__retraction_derives_no_pair_of_its_fact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "(c) A RETRACTION DERIVES NO PAIR CONTAINING ITS FACT: a pair derived by retracting `f` is live after, so its facts are in the working memory after, from which `f` is gone. The pairs a retraction ends record nothing, whatever the engine evaluates on the way."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__retraction_evaluates_but_derives_not_its_fact",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A retraction of `b1` evaluates a pair containing `b1` -- the released `(a1)`'s wave meets `b1` in the second alpha before dispatch reaches it -- and derives no such pair: (c) at an instance, a trap the clause does not record. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: `A a, no B b where b.k == a.k, B c where <traps>` over two alpha indices."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__same_key",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: the `no` pattern's test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__same_key_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: `b.k == a.k` over the token's one fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__shared",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: one `B` alpha shared by both patterns ([IRET.6.6])."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__split",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: a second `B` alpha for `c`, after the `no` pattern's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__split_other",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: the same two alphas the other way round."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__transient_pair_records_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "TRANSIENT ON ASSERT RECORDS NOTHING: with `a1` live, asserting `b1` evaluates `((a1), b1)` at the trapping `c` node and then blocks `(a1)`; the pair is live neither before nor after and is not derived, so the clause records no trap. Computed; the lockstep scenario 113_transient_trap and the vector logical/LERR.1.4.12_transient_pair_records_nothing run it against both runtimes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "lerr_1_4_12__traps",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture: `c`'s test, a trap on every pair."
+      }
+    ]
+  }
+}

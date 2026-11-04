@@ -1,0 +1,44 @@
+{
+    "id": "RFCS.23.7_of_several_equal_live_facts_the_lowest_fact_id",
+    "clauses": ["RFCS.23.7"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7] step 1: a live fact equal to an inlined copy is the same fact, and the slot refers to it; \"Of several equal live facts, it is the one with the lowest `fact_id`\" ([RFCS.6.9]). `T` is `ttl` and keyless, so two asserts of one value are two facts ([LFAC.9.1]: only a `logical` schema has a no-op test). Two receivers, `early` and `late`, run the same steps: at t = 0 a host `T v: 1`, the lower `fact_id`, which the receiver's `ttl 10_s` ends at 10 s; at 2 s a second `T v: 1`, which ends at 12 s. The sender holds its own `T v: 1` and publishes an `R` referring to it, so the record inlines a copy equal to both. Each receiver takes it at 2 s ([RFCS.23.1]) and pumps: nothing is asserted for the copy, `R` refers to the first `T`, and rule `hit` (`R r, T x where r.t == x`, [LEXP.7.20]) emits a `Hit` justified by that pair. `early` stops there and holds 4 facts: both `T`, `R` and `Hit`. `late` advances to 11 s and pumps: the first `T` has expired, so the pair ends and `Hit` with it, and it holds 2: the second `T` and `R`. What it discriminates: a runtime that takes the latest equal fact leaves `late` at 3, `Hit` still joined to the live `T`; one that asserts the copy leaves `early` at 5; one that refuses the record leaves `early` at 2. PATH PINNED: libds's `fx_live_equal` (rfcs/codec.c), which keeps the equal fact with the lowest `fact_id`, through `fx_resolve` and pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.live_equal_fact`, folding by `earlier`, through test_behave.m's `receive_on_tier`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema T scope ttl 1_h:\n    v: Int\n\nschema R scope ttl 1_h:\n    k: Int\n    t: T\n\nschema Go scope logical:\n    k: Int key\n\nrule up:\n    Go g\n    T y\n->\n    publish R k: g.k t: y\n"
+            },
+            "early": {
+                "rules_ds": "schema T scope ttl 10_s:\n    v: Int\n\nschema R scope ttl 1_h:\n    k: Int\n    t: T\n\nschema Hit scope logical:\n    k: Int key\n\nrule hit:\n    R r\n    T x where r.t == x\n->\n    emit Hit logical k: r.k\n"
+            },
+            "late": {
+                "rules_ds": "schema T scope ttl 10_s:\n    v: Int\n\nschema R scope ttl 1_h:\n    k: Int\n    t: T\n\nschema Hit scope logical:\n    k: Int key\n\nrule hit:\n    R r\n    T x where r.t == x\n->\n    emit Hit logical k: r.k\n"
+            }
+        },
+        "steps": [
+            { "engine": "early", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "early", "op": "advance", "delta_ns": 2000000000 },
+            { "engine": "early", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "early", "op": "pump" },
+            { "engine": "late", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "late", "op": "advance", "delta_ns": 2000000000 },
+            { "engine": "late", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "late", "op": "pump" },
+            { "engine": "sender", "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "early", "op": "forward_external", "from": "sender" },
+            { "engine": "early", "op": "pump" },
+            { "engine": "late", "op": "forward_external", "from": "sender" },
+            { "engine": "late", "op": "pump" },
+            { "engine": "late", "op": "advance", "delta_ns": 9000000000 },
+            { "engine": "late", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "early": 4,
+            "late": 2
+        }
+    }
+}

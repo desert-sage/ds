@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.9.5_slot_body_does_not_decode_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.5] a `.dsc` with an atom whose body fails to decode is refused with DS_ERR_DSC_DECODE (-503). The path: the harness (`runtime_error`'s `tamper: {bad_wire_type: 257}`) gives the first field tag in the first `Slot` atom's body wire type 7, which no protobuf field has. The atom's frame and every other byte are as the compiler wrote them, and `dsc_sha256` is re-sealed so the hash check at the header passes ([RDSC.3.6]). libds's `Slot` decode refuses the body; the Mercury runtime's `Slot` decoder reports a wire error (`lek_decode`), which its harness maps to -503. The clause's second sentence, that the error names the atom, the byte offset and the decoder's reason, is three `message_contains` checks, one per part, since the runtimes word the text between them apart ([RCTS.1.2.25]): `Slot body`, the atom by its `proto/atom.proto` message; \" at offset \", before the atom frame's start in decimal (the number depends on the compiled layout and is not pinned); and `: wire type 7 is not one DS writes`, the first wire error in the body's top-level fields. libds says `dsc: Slot body protobuf decode failed at offset <N>: wire type 7 is not one DS writes (RDSC.9.5)`; the Mercury runtime's harness writes its error `dsc: Slot body failed to decode at offset <N>: wire type 7 is not one DS writes`. Break: a runtime that names the atom by a four-letter magic (`SLOT`), or gives no decoder reason, fails the first or the third check. PATH PINNED: libds's `ds_dsc_decode_at_offset` (dsc/rete_loader.c), with the wire walk that names the first error, applied in `ds_engine_load_dsc`'s atom walk; the Mercury runtime's `ds.dsc.rdsc_9_5_names_atom` and `rdsc_9_5_reason`.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"bad_wire_type": 257},
+        "code": "-503",
+        "message_contains": ["Slot body", " at offset ", ": wire type 7 is not one DS writes"]
+    }
+}

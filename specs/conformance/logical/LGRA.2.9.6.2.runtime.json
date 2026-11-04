@@ -1,0 +1,22 @@
+{
+    "id": "LGRA.2.9.6.2.runtime",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.2] — a `let` bound to a sync-impure builtin interpolates its bound VALUE end-to-end through the runtime's message path (cached() lowers to the FN_CACHE_GET cache-read op). Pins: now() renders the bound instant as a `Time` renders with no spec, [LTIM.8.2.1]'s `iso8601` in UTC ([LGRA.2.9.6.10]; `now()` is a `Time`, [LGRA.9.8.10]; the `let` has its right-hand side's type, [LLET.3.6]); a cached() hit renders the stored value; a cached() miss renders the empty string (null/absent bound value). Bound once per activation (LGRA.9.8.4), deterministic under the mock clock. now() reads the WALL clock ([LTIM.2.8.3]), which `set` does not move, so the instant is fixed with `wall_set`.",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nrule rn:\n    Trig t where t.tag == \"n\"\n->\n    let n = now()\n    log critical \"now={n}\"\n\nrule rw:\n    Trig t where t.tag == \"w\"\n->\n    cache key: \"k\" value: 7\n\nrule rc:\n    Trig t where t.tag == \"c\"\n->\n    let v = cached(\"k\")\n    log critical \"v={v}\"\n\nrule rm:\n    Trig t where t.tag == \"m\"\n->\n    let m = cached(\"absent\")\n    log critical \"m=[{m}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "wall_set", "utc_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "n" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "w" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "c" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "m" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["now=1970-01-01T00:00:01Z", "v=7", "m=[]"]
+    }
+}

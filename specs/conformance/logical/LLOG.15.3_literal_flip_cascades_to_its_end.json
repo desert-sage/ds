@@ -1,0 +1,26 @@
+{
+    "id": "LLOG.15.3_literal_flip_cascades_to_its_end",
+    "category": "logical",
+    "clauses": ["LLOG.15.1", "IRET.12.2"],
+    "dead_rules_expected": ["politician_live"],
+    "scenario": "The run of LLOG.15.3_literal_flip_admitted's program: [LLOG.15.3] \"What its firing leaves is [LLOG.15.1]'s\". A host `Politician(alice, honest: true)` makes `hope` emit `Hope(alice)`; `hope_live` reads it beside `ProbeHope(1)`. A `Bribe(alice)` then fires `corrupt` over that `Bribe` and `Hope`, which logs and emits `Politician logical name: \"alice\" honest: false`. That emit replaces the host `Politician` ([LFAC.2.5.3]), which ends `hope`'s match, so `Hope(alice)` loses its only justification and is retracted ([LLOG.15.1]), and with it `corrupt`'s own match ends inside its firing, at that emit. So the emitted `Politician(alice, false)` gains no justification and is retracted as it is made ([LLOG.15.1], [IRET.12.2]); nothing else holds it. Afterwards no `Politician` and no `Hope` is live, and the `Bribe` stays: `hope_live` beside `ProbeHope(2)` and `politician_live` beside `ProbePolitician(3)` would log a survivor, and `bribe_live` beside `ProbeBribe(4)` logs the `Bribe`. Each probe has its own pump, so no two rules fire in one pump. Expected: \"hope alice at 1\", \"corrupt alice\", \"bribe alice at 4\". Unlike LLOG.15.1_self_ending_match_justifies_nothing_after, the firing's match ends through the truth-maintenance cascade (`Hope` withdrawn), not through the emit replacing a fact the rule bound. PATH PINNED: libds's `ds_rete_terminal_justify` (rete/terminal.c) reading `firing_act_freed`, which `withdraw_justification`'s cascade sets when `Hope`'s retraction reaches `corrupt`'s terminal, from `eval_actions`' logical assert; the Mercury runtime's `ds.tms.activation_ended` noting the firing activation inside the action's settle, then `ds.tms.resolve_deferred` (`ds.exec.llog_15_1_justify_settled`). A runtime that entered the emit against `corrupt`'s ended activation keeps `Politician(alice, false)` live, and `politician_live` logs \"politician alice at 3\".",
+    "rules_ds": "schema Politician scope logical:\n    name: String key\n    honest: Bool mutable\n\nschema Hope scope logical:\n    name: String key\n\nschema Bribe scope ttl 1_h:\n    target: String\n\nschema ProbeHope scope explicit:\n    n: Int\n\nschema ProbePolitician scope explicit:\n    n: Int\n\nschema ProbeBribe scope explicit:\n    n: Int\n\nrule hope:\n    Politician p where p.honest == true\n->\n    emit Hope logical name: p.name\n\nrule corrupt:\n    Bribe b\n    Hope h where h.name == b.target\n->\n    log info \"corrupt {b.target}\"\n    emit Politician logical name: b.target honest: false\n\nrule hope_live:\n    ProbeHope q\n    Hope h\n->\n    log info \"hope {h.name} at {q.n}\"\n\nrule politician_live:\n    ProbePolitician q\n    Politician p\n->\n    log info \"politician {p.name} at {q.n}\"\n\nrule bribe_live:\n    ProbeBribe q\n    Bribe b\n->\n    log info \"bribe {b.target} at {q.n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Politician", "slots": { "name": "alice", "honest": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeHope", "slots": { "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Bribe", "slots": { "target": "alice" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeHope", "slots": { "n": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbePolitician", "slots": { "n": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ProbeBribe", "slots": { "n": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hope alice at 1", "corrupt alice", "bribe alice at 4"]
+    }
+}

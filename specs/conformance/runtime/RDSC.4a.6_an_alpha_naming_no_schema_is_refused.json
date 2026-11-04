@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.4a.6_an_alpha_naming_no_schema_is_refused",
+    "clauses": ["RDSC.4a.6.3"],
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6]: an `AlphaNode` names the schema whose facts it filters, and one whose `schema_name` is empty names none: its body's shape is refused at load with DS_ERR_DSC_SEMANTIC (-504), as [RDSC.8.7] counts it a body fault and not a dangling name. No compiler writes one, so the harness compiles rule `on_t`, whose `AlphaNode` for `T` is node 1, and `runtime_error`'s `tamper: {set_field: {node: 1, path: [2], value: \"\"}}` ([RCTS.1.2.21]) writes the alpha's field 2, `schema_name`, as the empty string and re-seals `dsc_sha256` ([RDSC.3.6]). What it discriminates: a loader that looks the empty name up as a schema refuses it as dangling (-506), and one that admits it loads an alpha no fact reaches; either fails the vector. Its sibling `RDSC.8.7_an_alpha_naming_no_schema_is_refused_before_a_dangling_schema` holds it before a name. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 0\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [2], "value": ""}},
+        "code": "-504"
+    }
+}

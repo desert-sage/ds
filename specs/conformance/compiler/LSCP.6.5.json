@@ -1,0 +1,7 @@
+{
+    "id": "LSCP.6.5",
+    "category": "compiler",
+    "scenario": "Activation-scoped facts are real facts per LSCP.6.5 — queryable by other rules' LHSs. Pin: one rule emits a `scope activation` fact and a second rule matches it as an ordinary positive pattern; this compiles OK.",
+    "rules_ds": "schema ProcessLock scope activation:\n    entity_id: String\n\nschema Job scope logical:\n    entity_id: String key\n\nrule process:\n    Job j\n->\n    emit ProcessLock entity_id: j.entity_id\n    log info \"processing\"\n\nrule observe:\n    ProcessLock p\n->\n    log info \"lock {p.entity_id}\"\n",
+    "expect": { "kind": "compile_ok" }
+}

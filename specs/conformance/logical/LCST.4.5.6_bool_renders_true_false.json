@@ -1,0 +1,15 @@
+{
+    "id": "LCST.4.5.6_bool_renders_true_false",
+    "category": "logical",
+    "scenario": "[LCST.4.5.6]: `Bool -> String` is `\"true\"` / `\"false\"`, the inverse of [LCST.4.5.5] ([LCST.4.5.2]: total). Rule `render` logs `s.b::String` for both values; rule `round_trip` fires only where `(s.b::String)::Bool?` parses back to `s.b`, which [LCST.4.5.5]'s case-sensitive parse does only for exactly those two texts (`True` or `1` would not round-trip). The source is a slot read, so nothing is folded at compile time. `render` fires before `round_trip` by terminal ordinal ([LDET.5.4]), and within a rule in assertion order. PATH PINNED: FN_BOOL_TO_STRING in both runtimes and the compiler's `cast_fn` row for `ck_bool -> ct_string`.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    b: Bool mutable\n\nrule render:\n    S s\n->\n    let t = s.b::String\n    log info \"{t}\"\n\nrule round_trip:\n    S s where (s.b::String)::Bool? == s.b\n->\n    log info \"{s.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "b": true } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "b": false } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "true", "false", "a", "b" ]
+    }
+}

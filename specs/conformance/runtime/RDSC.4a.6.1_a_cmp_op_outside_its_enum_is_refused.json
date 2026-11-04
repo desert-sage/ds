@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.4a.6.1_a_cmp_op_outside_its_enum_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.6.1]: an `AlphaTest` of kind `ALPHA_TEST_CMP` whose `op` is no member of `AlphaCmpOp` is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles rule `on_t`, whose `T t where t.v > 5` puts one CMP test, op `ALPHA_CMP_GT`, on `T`'s `AlphaNode` (node 1), and `runtime_error`'s `tamper: {set_field: {node: 1, path: [3, 0, 3], value: 6}}` ([RCTS.1.2.21]) writes that test's field 3, `op`, as 6, one past `ALPHA_CMP_GTE`, and re-seals `dsc_sha256` ([RDSC.3.6]). What it discriminates: a loader that reads an unknown op as `ALPHA_CMP_EQ` (the proto3 default) or as any op it knows loads, and the vector fails as unrefused. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`); the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nrule on_t:\n    T t where t.v > 5\n->\n    log info \"t\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 1, "path": [3, 0, 3], "value": 6}},
+        "code": "-504"
+    }
+}

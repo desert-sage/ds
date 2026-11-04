@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A delivery's plan refuses the whole record on a value ([NCBK.10.4]). Each `With*` refers to a `Ref` and then to the fact under test, so a record of
+# one is the Ref's copy, that fact's copy, then the holder: a stop part-way
+# would leave the Ref asserted. `Line.text` holds three codepoints ([LSTR.11.1]),
+# `Lease` has a TTL for [RFCS.6.7], and `TimeZoneOffset` is the built-in
+# ([LIMP.12.2]) for [LTIM.10.9].
+
+schema Ref scope logical:
+    id: String key
+    note: String mutable
+
+schema Line scope logical:
+    k: Int key
+    text: String capacity 3 mutable
+
+schema Lease scope ttl 30_s:
+    id: String
+
+schema WithLine scope logical:
+    k: Int key
+    a: Ref mutable
+    b: Line mutable
+
+schema WithLease scope logical:
+    k: Int key
+    a: Ref mutable
+    b: Lease mutable
+
+schema WithZone scope logical:
+    k: Int key
+    a: Ref mutable
+    b: TimeZoneOffset mutable
+
+rule seen:
+    WithLine w
+->
+    log info "held {w.k}"

@@ -1,0 +1,27 @@
+{
+  "id": "LUNI.9.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.9",
+  "seq": 1036,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "9.2 Unit-changing aggregations — strip and assert",
+  "text": "### 9.2 Unit-changing aggregations — strip and assert [LUNI.9.2]\n\n`integral`, `variance`, `pvariance` and `rate` change dimension. Over a slot of\ndimension $U$, `integral` is $U \\cdot \\mathrm{s}$ ([LSIG.1.5.1]), `variance` and\n`pvariance` are $U^2$, and `rate` is $U / \\mathrm{s}$ ([LSER.16.9]). The compiler\n**must** reject a `let` whose value reads one of them over a slot that carries a\nunit, a `Duration` slot included ([LTIM.1.3.5]), annotated or not, with\n`DS_VALIDATE_DIM_AGG_UNANNOTATED`, unless the value strips the read. The strip,\n`integral(f)::Float` or, for the nullable three, `variance(f)::Float?`\n([LCST.4.3.1]), is a bare number in the slot's base unit: times\nseconds for `integral`, squared for `variance` and `pvariance`, per second for\n`rate`. The author may assert a unit on it with `::<unit>` ([LUNI.8.5]), such as a\ncompound `unit dimension`'s `degree_second`, declared by the author. The\ndiagnostic names the slot's unit and the aggregation, since the compound unit\nitself has no name until the author declares one.\n\nOnly the `let` is gated. A read of these four in a `where`, an `emit` slot or an\ninterpolation needs no strip. Over a slot with no unit there is no dimension to\nstate, and the `let` needs none: the read carries no dimension.\n\n`onset_rate` is never gated. It reads only a `Bool`\nslot ([LSIG.1.4.3]), which carries no unit, so a `let` over it needs no\nstrip.\n\nThis is [LUNI.8.4]'s rule reached by a second route: each of the four multiplies\nor divides the slot's dimension, by time or by itself, and the result has no\ndimension DS can state.\n\n**The dimension is not the representation.** [LSIG.1.1]'s `Returns` column gives\n`integral` `Float`, and [LSER.17.2]'s gives the other three `Float?`; that is\ntheir **representation**, and the dimension they carry is this clause's subject. A unit-typed value is an `Int` or a `Float`\ncarrying a compile-time dimension ([LNUL.4.9]), so the two statements describe\ndifferent axes of one value and neither constrains the other.\n\n",
+  "errors": [
+    "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+  ],
+  "refs": [
+    "LCST.4.3.1",
+    "LNUL.4.9",
+    "LSER.16.9",
+    "LSER.17.2",
+    "LSIG.1.1",
+    "LSIG.1.4.3",
+    "LSIG.1.5.1",
+    "LTIM.1.3.5",
+    "LUNI.8.4",
+    "LUNI.8.5"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.9.5_an_undecodable_body_is_refused_before_a_dangling_schema",
+    "category": "runtime",
+    "scenario": "[RDSC.9.5] before [RDSC.8.7]: an artefact carrying both defects is refused for the body that does not decode, with DS_ERR_DSC_DECODE (-503) and its offset, not for the name no atom defines (DS_ERR_DSC_DANGLING, -506). [RDSC.8.7] is a condition over the parsed stream, and a body that does not decode was never parsed. The harness compiles a two-pattern rule, then `runtime_error`'s `tamper` list ([RCTS.1.2.21]) makes two edits in order and re-seals `dsc_sha256` once ([RDSC.3.6]): `drop_schema_group: Reading` removes `Reading`'s group, so `pair`'s `AlphaNode` for `Reading` names a schema the artefact does not declare, and `bad_wire_type: 269` gives the first field tag of the first `BetaNode`'s body wire type 7, so that body cannot decode. Each defect alone has its own vector: `RDSC.8.7_alpha_schema_group_dropped_is_dangling` (-506) and `RDSC.9.5_slot_body_does_not_decode_is_refused` (-503). What it discriminates: a loader that runs [RDSC.8.7]'s checks before it decodes the network's bodies refuses with -506. `message_contains` checks the refusal carries \" at offset \"; the number depends on the compiled layout and is not pinned. PATHS: libds's atom walk (`ds_engine_load_dsc`), which decodes each node body at its frame (`ds_dsc_rete_body_decodes`) before the cross-atom checks; the Mercury runtime's `ds.dsc` walk, whose `network_decoder` decodes each node body as it reaches it, mapped to -503 by test_behave.m's `libds_load_status`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nschema Sensor scope logical:\n    id: String key\n\nrule pair:\n    Reading r\n    Sensor s where s.id == r.id\n->\n    log info \"p\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": [{"drop_schema_group": "Reading"}, {"bad_wire_type": 269}],
+        "code": "-503",
+        "message_contains": " at offset "
+    }
+}

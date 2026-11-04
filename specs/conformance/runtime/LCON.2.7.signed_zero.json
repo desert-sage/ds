@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.7.signed_zero",
+    "clauses": ["LCON.2.7.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 float determinism — signed zero. IEEE 754 negative zero `-0.0` compares equal to `+0.0` (the two zeros are distinct bit patterns but `==` treats them as equal). The guard `t.x == 0.0` fires for an asserted `-0.0`; fact_count 2 confirms the comparison follows IEEE, not bit equality.",
+    "rules_ds": "schema T scope logical:\n    x: Float key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where t.x == 0.0\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -0.0 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

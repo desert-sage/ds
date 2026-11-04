@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.5.11.1_angle_argument_converts",
+    "clauses": ["LEXP.5.11.1"],
+    "category": "logical",
+    "scenario": "[LEXP.5.11.1]: an `angle` argument to `distance.great_circle` is first converted to `degree` by its unit, so `45_degree` and the `Float` `45.0` are one argument. Rule `same` fires where the call with `45_degree` as the first latitude equals the call with `45.0`, the other three arguments the fact's. One A at latitude 10, longitude 20: `same` logs once. A compiler that passed the angle's stored base value (radians, about 0.785) would compute a different distance, and the rule would not fire. PATH PINNED: `dsc.rete`'s lowering of a great_circle argument whose static type is an `angle` quantity, converted to `degree` before FN_GREAT_CIRCLE; `degree` from `units.si`.",
+    "rules_ds": "from units.si import degree\nimport distance\n\nschema A scope logical:\n    id: String key\n    lat: Float mutable\n    lon: Float mutable\n\nrule same:\n    A a where distance.great_circle(45_degree, a.lon, a.lat, 0.0) == distance.great_circle(45.0, a.lon, a.lat, 0.0)\n->\n    log info \"same\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": "a", "lat": 10.0, "lon": 20.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["same"]
+    }
+}

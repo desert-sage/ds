@@ -1,0 +1,69 @@
+{
+  "id": "RARC.5.6.8",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.6",
+  "seq": 620,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "7. [RARC.5.6.8] Delivers the input's event and every derived event,\n   internal and action alike, to the stream callback in the order they were\n   processed ([RARC.5.8]).\n\n   **Processed means propagated, per action.** Each RHS action's change to\n   working memory is propagated through the network, truth-maintenance\n   retractions included, before the change is recorded and before the next\n   action of the same firing runs. A cascade retraction is therefore\n   recorded ahead of the assert that caused it, and a firing that emits\n   twice, where only the second emit invalidates a `no (...)`, records the\n   retraction between its two asserts. Stream order is processing order,\n   not causal order; a reader that takes precedence for causation\n   attributes every cascade to the wrong cause.\n\n   This is a rule's action. A host input is recorded on arrival, before\n   what its evaluation produces ([RFCS.6.7]), and an engine withdrawal\n   before the withdrawals it cascades into ([RFCS.7a.4], [LFST.7.3.6]).\n\n",
+  "refs": [
+    "LFST.7.3.6",
+    "RARC.5.8",
+    "RFCS.6.7",
+    "RFCS.7a.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "Rarc_5_6_8__event",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two recorded events the cascade question turns on: a fact asserted by an action, and a fact retracted by truth maintenance because of one."
+      },
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "rarc_5_6_8__cascade_is_per_action",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "PROPAGATION IS PER ACTION. A firing emitting twice, where only the second invalidates a `no (...)`, interleaves the retraction BETWEEN the two asserts. This is 18_cascade_point's trace, and it is what tells the two apart: a single-emit firing cannot distinguish per-action from per-firing propagation, because both put the retract adjacent to the assert. Two emits separate them."
+      },
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "rarc_5_6_8__cascade_precedes_its_cause",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "PRECEDENCE IS NOT CAUSATION. The retraction an assert caused is recorded BEFORE that assert. What this rules out is the reading a consumer naturally brings to \"in the order they were processed\" -- that if X precedes Y in the stream, X did not come from Y. An operator log, a debugger and a replayer all read this clause; taking precedence for causation attributes every cascade to the wrong cause."
+      },
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "rarc_5_6_8__is_not_per_firing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The retraction does not wait for the firing's effects to finish. Stated as a mechanism rather than a trace deliberately: reordering a finished effect list would have matched the recorded bytes for a fraction of the work, and left two runtimes propagating against DIFFERENT working memories while agreeing on every observable the harness reads. A difference that can no longer be seen is worse than one that is pinned."
+      },
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "rarc_5_6_8__record_action",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Propagate first, announce second: the clause's 'processed means propagated, per action'."
+      },
+      {
+        "path": "formal/idris/RecordOrder.idr",
+        "name": "rarc_5_6_8__record_firing",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each action recorded in turn. This much the clause does settle -- the recorder emits in processing order and does not re-sort."
+      }
+    ]
+  }
+}

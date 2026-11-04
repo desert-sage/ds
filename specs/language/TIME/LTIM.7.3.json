@@ -1,0 +1,15 @@
+{
+  "id": "LTIM.7.3",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.7",
+  "seq": 430,
+  "depth": 2,
+  "kind": "observation",
+  "heading": null,
+  "text": "[LTIM.7.3] **`floor` consults no timezone, so a DST transition moves no\nboundary.** A `Time` carries an offset, not a zone ([LTIM.1.1.1]), and `floor`\ntruncates at that offset ([LTIM.7.1]). For a receiver resolved in a zone that\nobserves DST:\n\n- **Spring-forward.** A receiver resolved after the transition carries the new\n  offset, so flooring it to `1_d` returns midnight at that offset, an hour\n  before the zone's own midnight on the transition day. America/Los_Angeles,\n  2026-03-08: 12:00 at −7 h floors to 00:00 at −7 h (07:00Z); the zone's\n  midnight that day is 00:00 at −8 h (08:00Z).\n- **Fall-back.** The second 1:30 AM carries the standard offset, so flooring it\n  to `1_h` returns 1:00 at that offset, the second 1 AM rather than the first.\n  America/Los_Angeles, 2026-11-01: 1:30 at −8 h floors to 1:00 at −8 h\n  (09:00Z).\n\nAn author who wants a zone's own boundary floors a value resolved with\n`.local(tz)` at an instant on the same side of the transition as that\nboundary.\n\n",
+  "refs": [
+    "LTIM.1.1.1",
+    "LTIM.7.1"
+  ]
+}

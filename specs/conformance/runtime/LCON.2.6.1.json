@@ -1,0 +1,12 @@
+{
+    "id": "LCON.2.6.1",
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 within-platform integer determinism — floor division. `-7 // 2` is -4 (rounds toward negative infinity per LEXP.7.5), not -3 (C truncation). The inline guard `(t.x // 2) == -4` fires only if floor-division is correct, gating the emit; fact_count 2 (Trig + Hit) confirms the bit-exact value.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x // 2) == -4\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -7 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

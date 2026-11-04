@@ -1,0 +1,163 @@
+{
+  "id": "IRET.7.9.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7.9",
+  "seq": 649,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.9.2] **On right-activation (new fact in alpha):**\n- For each token in left memory: re-evaluate join tests\n  with this new fact.\n- For each token that now matches: increment its block\n  count. If block count was 0 before: retract the\n  downstream token (the absence no longer holds).\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__right_activate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "On right-activation a NOT node counts the fact against each left token it joins and retracts downstream the tokens whose count was zero before."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_9_2__block",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A new blocking fact: every left token it joins gains a blocker."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Iret_7_9_2__rejects",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's retraction of the downstream token, read as its effect: no activation remains whose NOT node the new fact satisfies."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__acquire",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Right-activation of the NOT nodes by a newly asserted fact retracts every activation it blocks, before the next selection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__acquire_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Theorem 6, closed at the top: after any history every live fact is rejected by every activation's NOT nodes that admit it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__live_rejected",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Under the view every NOT node's block counts are exact, so no live fact a NOT node admits joins an activation's prefix."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_activate_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The tokens a NOT node newly blocks end downstream; the terminal loses them and gains nothing out of place."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_7__right_activate_consistent",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT ENTERS ONE ALPHA MEMORY: every chain consistent with the old memories is, after right-activating its nodes fed by that alpha deepest first, consistent with the new ones. A positive node's extensions by the fact reach the terminal through the nodes below; a NOT node's newly blocked tokens are withdrawn from them. The clause's right-activation, and [IRET.19.1] step 7 read as right- rather than left-activation: the step feeds an alpha memory, which is a join's right input."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_2__block_ok",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Counting a new fact against the tokens it joins gives the blockers of the grown memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_2__newly_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The tokens a new fact newly blocks were passed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_2__pass_block",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A NOT node's output after a new right fact: what it passed, less the tokens the fact newly blocks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_2__pass_block_bwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What was passed and is not newly blocked is still passed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "iret_7_9_2__pass_block_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a NOT node passes after a new right fact was passed before and is not newly blocked."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_7_7__right_activate_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A NOT node's right-activation withdraws only matches the fact now blocks: matches holding it, read as the blocker."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_7_7__right_activate_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs a right-activation evaluates, deepest node first as `iret_7_7__right_activate` runs it: the new fact against every left token of every node on its alpha, then the extensions' wave down the deeper nodes. Deepest-first is what produces each positive match once, and what evaluates, at a positive node, tokens a shallower `no` node on the same fact is about to block (`lerr_1_4_12__transient_pair_records_nothing`)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_9_2__block_hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Blocking adds one to the count of each token hit, given the hits are distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkView.idr",
+        "name": "iret_7_9_2__block_miss",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Blocking leaves the count of a token not among those hit."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_7_9_2__block",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "iret_7_9_2__blocker",
+        "tag": "spec"
+      }
+    ]
+  }
+}

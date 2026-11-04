@@ -1,0 +1,323 @@
+{
+  "id": "IRET.19.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.19",
+  "seq": 1364,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Retract",
+  "text": "### Retract [IRET.19.2]\n\n`ds_rete_wm_retract(engine, fact)`:\n\n1. For each alpha node whose memory contains this fact:\n   remove it and right-retract each downstream beta input\n   (IRET.7.7 right-retraction path).\n2. Token retraction propagates depth-first to terminal\n   nodes (IRET.7.8). At each terminal, pending activations\n   for the retracted token are removed from the agenda.\n3. For logical-scoped facts: the TMS path handles\n   `justif_count` bookkeeping (IRET.12). Plain retract of\n   a logical fact (not via TMS) is allowed; it acts as an\n   unconditional removal.\n4. Emit `DS_EV_FACT_RETRACT` stream event.\n5. Free the fact.\n\n",
+  "refs": [
+    "IRET.12",
+    "IRET.7.7",
+    "IRET.7.8"
+  ],
+  "symbols": [
+    "DS_EV_FACT_RETRACT",
+    "ds_rete_wm_retract"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_2__dispatch_retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT: for each alpha whose memory holds the fact -- the nodes admitting it, by the view -- remove it and right-retract every chain."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_2__retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Retract a live fact: remove from working memory, then dispatch to every alpha whose tests admit it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_retract_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A host retraction only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__sweep_ids_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sweep on the clocked network: the ids retracted one at a time through alpha dispatch, then the cascade; nothing to sweep is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__swept_not_live",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WHAT A SWEEP WAS ASKED TO REMOVE IS GONE: under unique ids a fact live after a sweep carries none of its ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__retract_ids_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Each retraction by id is the clause's retract, which keeps the view; an id no live fact carries is skipped."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_2__dispatch_retract_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_2__retract_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_2__retract_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_19_2__retract_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Retract keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Iret_6_4__dispatch_inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Midway through alpha dispatch: the memories of the alphas still to visit show the old working memory, the others the new; all distinct; every chain consistent with the memories as they stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_2__dispatch_retract_hit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON RETRACT, admitting the fact, keeps the invariant: the fact leaves that memory, which now shows the new working memory, and every chain is right-retracted from it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_2__dispatch_retract_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT keeps the invariant over any distinct list of alphas to visit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_2__dispatch_retract_miss",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON RETRACT, not admitting the fact, keeps the invariant: the fact was never in that memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_19_2__retract_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps the view: working memory stays distinct, and step 2's terminal removals are the unwaves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_2__dispatch_retract_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The retract's dispatch leaves a chain whose alphas admit none of the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_2__retract_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract of a kind the chain does not read leaves the chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_2__retract_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract keeps the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_19_2__retract_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract keeps the shapes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract of a kind the chain does not read leaves the chain, once per cascaded id."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade retracts live facts through the clause's retract, which keeps the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_2__retract_rows_emitted",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract keeps the row property: fewer facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_19_2__retract_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract keeps ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_tms_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An input's retraction retracts a live fact; the cascade follows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__retract_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's retract creates nothing fired and keeps what survives as it was."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_19_2__retract_between_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A retraction of a live fact by id, and a retraction of an id no fact carries: the survivor fires once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__dispatch_retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT keeps the order, stamped against the working memory it found."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__dispatch_retract_ordered_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One alpha visited on retract, admitting the fact, keeps every terminal in agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps the order: step 2's terminal removals are the unwaves, and the survivors keep their places."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__retract_ids_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Each retraction of the cascade is the clause's retract: alpha memories, right-retraction, the terminals."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_19_2__dispatch_retract_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The retraction's dispatch keeps the number of chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__retract_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps the agreement, against FireLoop's one propagation over the shrunk working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_19_2__dispatch_retract_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT keeps every shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_2__dispatch_retract_evolves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The retraction's dispatch ends only matches holding the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferFlags.idr",
+        "name": "iret_19_2__retract_flags",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT: every activation afterwards is an old one or unfired, and every old activation whose match survives is still there, flag and all -- a retraction ends only matches holding the fact, and no surviving match holds it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_shrink",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The retraction keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_19_2__dispatch_retract_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Alpha dispatch on retract, as `iret_19_2__dispatch_retract` runs it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraps.idr",
+        "name": "iret_19_2__retract_pairs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The pairs retracting a live fact evaluates."
+      }
+    ]
+  }
+}

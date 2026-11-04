@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.8.4_emitted_where_compiles",
+    "clauses": ["LTSL.8.4"],
+    "category": "compiler",
+    "scenario": "[LTSL.8.4]: an `emitted` test head may match by `<binding> where <predicate>`, a rule over the facts the run emitted ([RTIM.14.7]). The control to `LTSL.8.4_published_where_refused`: the same program with the rule's `publish` an `emit` and the head `emitted Heater h where h.level > 0`, which compiles. A compiler that refused every head `where` passes the refusal and fails this. PINS ONLY THAT IT COMPILES. PATH: `dsc.dstest`'s `ltsl_8_2_assertion` on an `emitted` head, and `oracle_rules_of`, which builds its oracle rule.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Heater scope logical:\n    zone: String key\n    level: Int mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    emit Heater logical zone: r.zone level: 2\n\ntest \"emitted where\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        emitted Heater h where h.level > 0\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

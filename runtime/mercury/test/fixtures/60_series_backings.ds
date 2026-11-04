@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Three backings spanning the field layouts. `min`/`max` over a sliding
+# window is `SeriesBackendMonotonicDeque`, with `window_ns` at field 4; `mean`
+# is `SeriesBackendRingBuffer`, with `element_type` at 4 and `window_ns` at 5.
+# Every field is a varint or a string, so a misread tag lands a plausible
+# value rather than failing to parse. The two windows differ (10_min and
+# 5_min) so neither can be read for the other.
+use default
+
+schema Thermometer scope logical:
+    entity_id: String key
+    temperature: Float mutable
+
+schema Meter scope logical:
+    reading: Float mutable
+
+schema Report scope ttl 1_h:
+    label: String
+    avg: Float
+    lo: Float
+    hi: Float
+
+# Two backings over one slot, by [RDSC.5a.2]'s triple-driven selection: a
+# ring buffer for `mean` and a monotonic deque for the extremes.
+series Thermometer.temperature (by: entity_id):
+    mean, min, max sliding 10_min
+
+series Meter.reading (by: none):
+    mean sliding 5_min
+
+# A cold `mean`, `min` or `max` is null ([LSER.19.8]); `-1.0` is below every
+# asserted value.
+rule report:
+    Thermometer t
+->
+    emit Report label: t.entity_id avg: t.mean ?? -1.0
+        lo: min(t.temperature) ?? -1.0
+        hi: max(t.temperature) ?? -1.0
+
+# The `by: none` read, without which the `Meter` series emits no atom. It
+# covers [LSER.7.6.2]'s empty identity: one row per (schema, slot, module),
+# keyed on the empty string.
+rule meter_report:
+    Meter m
+->
+    emit Report label: "meter" avg: m.mean ?? -1.0 lo: 0.0 hi: 0.0

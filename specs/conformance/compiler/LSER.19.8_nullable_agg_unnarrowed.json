@@ -1,0 +1,11 @@
+{
+    "id": "LSER.19.8_nullable_agg_unnarrowed",
+    "clauses": ["LNUL.7.2"],
+    "category": "compiler",
+    "scenario": "LSER.19.8 / LSER.16.2 — `mean` returns `Float?`, so emitting `t.mean` into a non-nullable `avg: Float` slot is a concrete-value position holding an unnarrowed `T?` ([LNUL.5.1]) and is refused with DS_VALIDATE_NULLABLE_UNNARROWED. PATH PINNED: `dsc.typecheck`'s `lser_19_8_cold_nullability`, which gives `mean` a nullable type, and `lnul_5_1_concrete`, which refuses it at the slot. Positive half: LSER.19.8_nullable_agg_rescued.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Out scope logical:\n    k: String key\n    avg: Float mutable\n\nseries Reading.v:\n    mean sliding 10_min\n\nrule r:\n    Reading t\n->\n    emit Out logical k: \"x\" avg: t.mean\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

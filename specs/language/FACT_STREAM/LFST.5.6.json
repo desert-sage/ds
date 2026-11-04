@@ -1,0 +1,74 @@
+{
+  "id": "LFST.5.6",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.5",
+  "seq": 233,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LFST.5.6] **`event_id`** — a **deterministic** UUID stamped on **every**\n  `FactAssert`, derived from the run identifier and the tier identifier the\n  integrator gave the engine ([NLFC.1.2]), either of which may be absent, and the\n  `FactAssert`'s `seq`. All three are replay-reproducible, so `event_id`\n  reproduces on replay ([RARC.5.8.8]). The fact keeps that `event_id` for as long\n  as it is in working memory. What the two identifiers mean, and whether\n  they are unique, is the integrator's; with neither given, `seq` alone\n  distinguishes one `event_id` from another.\n\n  **An `event_id` means nothing outside the engine that stamped it.** It\n  identifies a fact within that engine's stream and the stream's replay. A fact\n  that arrives from another tier is a new `FactAssert` on the receiving engine\n  and gets that engine's own `event_id`; an engine **must not** take an\n  `event_id` from outside, and no `event_id` correlates two streams. A program\n  that must recognise one fact on two tiers gives the fact an identifier of its\n  own, in a slot the author fills and maintains ([LFST.7.2.4]).\n\n",
+  "refs": [
+    "LFST.7.2.4",
+    "NLFC.1.2",
+    "RARC.5.8.8"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__coords",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__coords_are_their_key",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__derive",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__derive_injective",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__event_id",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__run",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__seq",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__seq_alone_distinguishes",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "With neither identifier given, two events at different seq carry distinct event_ids. Rests on the stamp rule and the injective derivation jointly."
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__tier",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/event_correlation.als",
+        "name": "lfst_5_6__tiers_never_share_an_event_id",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Two tiers sharing a run carry distinct event_ids at any seq, the tier identifier being in the key. Rests on the stamp rule and the injective derivation jointly."
+      }
+    ]
+  }
+}

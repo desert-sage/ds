@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.6.2.len_of_a_non_array_is_a_type_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "`len()` of a non-array Json value is a TypeError. LEXP.6.2a already pins the VALUE half — the rule does not fire — and passes unchanged under either classification, which is exactly the trap §6 of the workorder describes: same observable, stale vocabulary, green test. This pins the kind that reaches the stream, which is what the two runtimes have to agree on for a recording to replay.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where len(p.body.obj) == 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "obj": { "a": 1 } } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

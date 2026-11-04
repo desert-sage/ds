@@ -1,0 +1,39 @@
+{
+  "id": "LCST.4.2.1",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.2",
+  "seq": 87,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.2.1] **`::T` is total.** `<expr>::T` denotes a conversion that must succeed; its\nresult type is `T`. **Total means cannot-fail, not lossless:** `Float → Int` truncates and\nis total. The compiler should warn on a lossy total conversion but must not require `?` for\nit.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_2__cast",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A total `::T` over the fragment's conversions yields a value or [LCST.4.5.4]'s trap and never null. Less than the clause: the String, Bool and unit conversions, which the clause says succeed, are a trap in the model because they are outside the fragment, and the lossy-conversion warning is the compiler's."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_2__int_to_float_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Int :: Float is a value for every Int, under either form."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_4__float_to_int_is_total",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Float :: Int is the truncation inside Int and the trap outside it, in no case null, for every Float under either form: total means cannot-fail, not lossless."
+      }
+    ]
+  }
+}

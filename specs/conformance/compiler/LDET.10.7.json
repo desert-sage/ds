@@ -1,0 +1,12 @@
+{
+    "id": "LDET.10.7",
+    "clauses": ["LDET.5.4", "RLOW.13.2", "RLOW.14.3"],
+    "category": "compiler",
+    "scenario": "Rule-firing order is spec-defined ([LDET.5.4]; LDET.10.7, the id, is a tombstone) — the terminal ordinal (source order), then activation-creation order within one rule. Total order; no runtime latitude. Refraction is a suppression applied after selection, not an ordering key. The compiler encodes none of this in a number — it emits terminals in canonical source order ([RLOW.14.3]) and the loader takes the ordinal from that sequence, so the order rides the artefact's STRUCTURE. This pins both halves compile-side: the TerminalNode sequence matches source order, and no TerminalNode carries field 9, which is reserved.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule hot:\n    Trig t where t.v > 100\n->\n    log info \"hot\"\n\nrule warm:\n    Trig t where t.v > 50\n->\n    log info \"warm\"\n\nrule cold:\n    Trig\n->\n    log info \"cold\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["hot", "warm", "cold"],
+        "forbidden_term_fields": [9]
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LNUL.4.7c",
+    "category": "runtime",
+    "scenario": "N1 \u2014 with NO sensor the negation is satisfied and AllCool fires. Facts: Tick + AllCool = 2.",
+    "rules_ds": "schema Tick scope logical:\n    id: Int key\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema AllCool scope logical:\n    id: Int key\n\nrule all_cool:\n    Tick t\n    no Sensor s where s.state > 85.0\n->\n    emit AllCool logical id: t.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Tick",
+                "slots": {
+                    "id": 1
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

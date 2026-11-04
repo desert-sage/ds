@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.27.2_a_publish_replays",
+    "clauses": ["RFCS.27.2"],
+    "category": "runtime",
+    "scenario": "[RFCS.27.2]: a `FactPublish` is compare class: a replay never delivers it, its own firing re-derives the `publish`, and the re-derived atom is compared with the recorded one, which names the schema, the rule, the clock, the seq and the firing's timetag. Rule `r` publishes a Pub for each Trig. Two Trigs are asserted, a pump after each, so the recording holds two FactPublish atoms, each in its own firing. The run verify-replays with no divergence. What it discriminates: a replayer that delivered a FactPublish, or a recorder whose FactPublish its own replay could not re-derive (another rule, another schema, another place in the firing), diverges. A replayer that did not compare a FactPublish passes here too, since skipping a comparison cannot diverge; that the comparison is made is pinned by runtime/RFCS.27.2_a_recorded_publish_by_another_rule_diverges and runtime/RFCS.27.2_a_recorded_publish_of_another_schema_diverges ([STYL.5.10.8]). PATHS: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds Engine.record / Engine.replay), whose FactPublish arm calls `verify_match`; the Mercury runtime records through `ds.rfcs` (`fpub`) and replays through `ds.replay`, comparing it as `lfst_9_3_1_compared` admits.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Pub scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    publish Pub v: t.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 2
+    }
+}

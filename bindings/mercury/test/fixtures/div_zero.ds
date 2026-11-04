@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: a fault raised in a rule's body, for its payload.
+#
+# `100 / r.divisor` with a divisor of 0 is a ComputationError
+# (DIVIDE_BY_ZERO). Its payload names the firing, the rule's terminal node,
+# which the artefact's spans map back to this rule, the Reading it read, the
+# slot `divisor`, and the value's tag.
+
+use default
+
+schema Reading scope logical:
+    id: Int key
+    divisor: Int mutable
+
+schema Result scope ttl 1_h:
+    val: Float
+
+rule divide:
+    Reading r
+->
+    emit Result val: 100 / r.divisor

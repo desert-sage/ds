@@ -1,0 +1,31 @@
+{
+    "id": "LUNI.3.3_negative_offset_default",
+    "category": "adapter",
+    "scenario": "[LUNI.3.3] with LGRA.23.1 and LGRA.23.2: a `default` may be a negated unit literal, and it means what a negated unit literal means anywhere: the literal's number is negated, then converted. `hvac.set` declares `t: celsius default -10_celsius`; rule `go` omits `t`, so the default is supplied ([LADP.8.5.1]) and the integrator receives -10 in the kwarg's unit (LADP.8.5.2). PATH PINNED: `dsc.parse.lgra_23_1_default_value` takes the sign, and `dsc.quantity.quantity_base` negates the number before the affine body; `ladp_8_5_2_default` in dsc.rete then folds the base value back into celsius. Both runtimes render the body the compiler emits, so libds and the Mercury runtime take the same path. The break is negating the base value instead, which sends -556.3; a parser that takes no sign refuses the program.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nservice hvac.set:\n    kwarg zone: String literal required\n    kwarg t: celsius default -10_celsius\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig g where g.v == 1\n->\n    call hvac.set zone: \"hall\" nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$go_c0_g0",
+                "body": {
+                    "t": -10.0,
+                    "zone": "hall"
+                }
+            }
+        ]
+    }
+}

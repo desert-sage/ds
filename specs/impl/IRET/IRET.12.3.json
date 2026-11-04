@@ -1,0 +1,237 @@
+{
+  "id": "IRET.12.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.12",
+  "seq": 1001,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.12.3] **Multiple justifiers.** A logical fact F\nasserted by two activations A1 and A2 has\n`justif_count = 2`. When A1 ends, `justif_count` drops\nto 1; F is not retracted. When A2 also ends,\n`justif_count` drops to 0 and F is retracted.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "iret_12_3__multi_justifier_survives",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_3__boundary_ranked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ON ACYCLIC SUPPORT the live set at a boundary is exactly the well-founded set: recompute-and-diff would change nothing, as the refcount is exact there."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__ante_bound",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An antecedent of a live row ranks no higher than the row's stratum: a dead id ranks zero, and a live one is a fact the row's rule read, whose every emitter is in a lower stratum."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__certified_ranked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "THE KIND-LEVEL CERTIFICATE GIVES ACYCLIC SUPPORT: at every state between actions of a run of a positive program certified over the kind graph, the engine's table is ranked, so the refcount is exact there (`iret_12_3__ranked_agree`). `partial`: a program [LCYC.3.1.1] admits only through [LCYC.6.1]'s literal break has no such certificate."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_down",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A bound on every emitter's stratum bounds the kind's level."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_from",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A kind's level: one more than the highest stratum of a rule emitting it, zero for a kind no rule emits."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_of",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What one rule contributes to a kind's level: one more than its stratum if it emits the kind."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_of_bound",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A bound on an emitting rule's contribution bounds the rule's contribution."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_of_emit",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emitting rule contributes one more than its stratum."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__level_up",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An emitter's stratum is below the kind's level."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__max",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The larger of two naturals, by structure."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__max_left",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "It bounds its left argument."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__max_lub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And is the least such bound."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__max_right",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And its right."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__rank",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rank of an id against a working memory."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__rank_of",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact's rank: its kind's level; zero for an id no live fact carries."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "Iret_12_3__self_free",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No justification of a stratum reads a fact the stratum derives: what [LCYC.3.1.1] makes of every SCC it admits."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_3__self_free_ranked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A SELF-FREE STRATUM IS RANKED, so the refcount is exact on it -- why the hybrid may keep justif_count outside the recursive strata."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_3__self_rank",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Rank one for a fact the stratum derives, zero otherwise."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_3__self_rank_ante",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An antecedent of a self-free stratum ranks zero: it is no target."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_3__self_rank_target",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A target ranks one."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_3__targets",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A stratum's targets."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Iret_12_3__ranked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A ranking of the support graph (every antecedent strictly below its target), which a graph admits iff it is acyclic. The theorem it is for is `iret_12_3__ranked_exact`: under a ranking the cascade equals the well-founded set, of which tms_cascade.tla's `no_unsupported_forever` is an instance."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__tla_retract_f1",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: retracting f1 leaves f2 with one justifier and live, as the clause says; f3 stays with it."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__ranked_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The two fixpoints agree on every ranked instance, not only the one tms_cascade.tla draws."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__ranked_exact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Strong induction on rank: a survivor is a base fact or kept alive by a justification whose antecedents survive and rank lower, hence are well-founded, so the same justification derives it. The clause's multiple-justifier fact is the ranked case."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__tla_js",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "tms_cascade.tla's instance: f2 justified by {f1} and by {f4}, f3 by {f2} -- the clause's two-justifier fact."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12_3__multi_justifier_survives",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "RARC.5.4.9",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.4",
+  "seq": 545,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RARC.5.4.9] **The order key is unique, and a duplicate is a defect in\nthe runtime.** [RARC.5.4.7]'s comparator is a **total** order only while the\npair (ordinal, creation timetag) is unique. Under [LDET.5.5]'s timetag it is:\nno rule holds two activations with one timetag after any history, so a correct\nruntime never meets a duplicate. A runtime may check for one, and on finding it\nmust treat it as an unrecoverable fault and halt the tier ([LERR.1.4.7]),\nbecause the agenda then has no defined next activation and the firing order\n[LDET.5] commits to is not determined by the artefact.\n\n**The engine must not break the tie by any other means.** A\ntiebreak the comparator does not specify is a hash-order\ndependence under another name, which [RARC.5.4.8] forbids —\nand it would be worse than the fault it conceals, because the\nrun would complete and its output would look ordinary while\nbeing unreproducible on any other implementation.\n\n",
+  "refs": [
+    "LDET.5",
+    "LDET.5.5",
+    "LERR.1.4.7",
+    "RARC.5.4.7",
+    "RARC.5.4.8"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_4_9__keys_distinct",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NO TWO ACTIVATIONS OF ONE RULE SHARE A TIMETAG: distinct live matches have distinct keys, since over distinct working memory a key determines its match -- the uniqueness under [LDET.5.5]'s timetag the clause rests its total order on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_4_9__unique_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After any history from a loaded network no terminal holds two activations with one timetag: 'no rule holds two activations with one timetag after any history', proved. So the duplicate the clause calls a defect in the runtime cannot occur, the check it permits a runtime to make never finds one, [RARC.5.4.7]'s comparator is total, and the tiebreak the clause forbids is never needed."
+      }
+    ]
+  }
+}

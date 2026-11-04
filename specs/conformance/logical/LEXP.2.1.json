@@ -1,0 +1,15 @@
+{
+  "id": "LEXP.2.1",
+  "category": "logical",
+  "scenario": "Comparison chains per LEXP.2.1 — a < b < c desugars to (a < b) and (b < c). rule_in fires when v is strictly between 1 and 10; rule_out does not fire for v=15.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule rule_in:\n    T t where 1 < t.v < 10\n->\n    log critical \"in\"\n\nrule rule_out:\n    T t where 10 < t.v < 5\n->\n    log critical \"out\"\n",
+  "dead_rules_expected": ["rule_out"],
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["rule_in"]
+  }
+}

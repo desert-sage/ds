@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.1.1",
+    "category": "compiler",
+    "scenario": "DS's no-unbounded-computation stance per LCYC.1 — a well-formed DAG rule graph (no cycles) compiles without error. Pin: three rules where A emits X, B matches X and emits Y, and C matches Y form a linear chain; this is accepted.",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nschema Intermediate scope logical:\n    v: Int key\n\nschema Result scope logical:\n    v: Int key\n\nrule stage_a:\n    Trigger t\n->\n    emit Intermediate logical v: t.v\n\nrule stage_b:\n    Intermediate i\n->\n    emit Result logical v: i.v\n\nrule stage_c:\n    Result\n->\n    log info \"done\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

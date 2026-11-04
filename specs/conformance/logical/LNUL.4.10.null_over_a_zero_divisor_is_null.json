@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.4.10.null_over_a_zero_divisor_is_null",
+    "category": "logical",
+    "scenario": "[LNUL.4.10]'s last paragraph: a `null` operand prevents the operation ([LNUL.9.3]), so `s.n // s.z` with `n` null and `z` zero is `null`, not DIVIDE_BY_ZERO — no operand faults, and the division is never performed. `?? 7` rescues the `null` and the rule fires. The divisor is a slot, not a literal, so the compiler cannot see it. Path: the non-connective BINOP arm's null test — libds rete/eval.c (null test before every zero check), Mercury ds.eval.m apply_binop (null test before arith).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int? mutable\n    z: Int mutable\n\nrule r:\n    S s where ((s.n // s.z) ?? 7) == 7\n->\n    log info \"rescued\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "n": null, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

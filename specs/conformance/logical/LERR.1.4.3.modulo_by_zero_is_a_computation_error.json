@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.4.3.modulo_by_zero_is_a_computation_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "`%` by zero is a ComputationError, the same rung and the same trap family as `/` by zero — §2's disposition table names the two together. Both operands are slot reads, so the zero is a runtime value: a literal zero divisor is refused at compile time ([LEXP.10.2.2]), which is why this cannot be written with a literal. Raised in the beta join test, not the action path.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    S s where s.a % s.b == 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 7, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

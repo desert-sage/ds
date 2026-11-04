@@ -1,0 +1,11 @@
+{
+  "id": "IALC.4.3",
+  "prefix": "IALC",
+  "doc": "ALLOCATOR.md",
+  "parent": "IALC.4",
+  "seq": 196,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IALC.4.3] The owned-raw-buffer set is closed and complete: exactly two\nAPIs and three buffer shapes — a string, a scalar array, and a pointer\narray — across four freeable allocations (the `ds_json_serialize`\nstring; and `ds_engine_get_justifiers`' `*out_timetags` scalar array,\n`*out_rule_names` pointer array, and each `*out_rule_names[i]` string).\n\n| API | buffer(s) the caller releases |\n|---|---|\n| `ds_json_serialize` | the NUL-terminated `*out` string |\n| `ds_engine_get_justifiers` | the `*out_timetags` array; the `*out_rule_names` array; **and each** `*out_rule_names[i]` string |\n\nBoth APIs' documentation must state release with `ds_free` (for\n`rule_names`, each string then the array). No other public API returns\nan owned raw buffer: `void **out_state` (`instance_new`) is backend-owned\nand freed by `instance_free`; the `const char *` callback fields are\nintegrator borrows.\n\n"
+}

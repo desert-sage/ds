@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.7.1_dimension_slot_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.7.1]: a dimension name is a field type. The slot holds the base-unit value and keeps its dimension, so [LUNI.8]'s rules apply to it. A `temp: temperature` slot compiles, and a `where` comparing it with a `celsius` literal compiles: same dimension ([LUNI.8.1]). PATH PINNED: `luni_7_1_slot_type` in dsc.types, which builds `dim(\"temperature\", no)` for a `te_unit(uk_dimension, _)` entry, and `dsc.typecheck`'s comparison, which finds the two dimensions equal. The break is mapping a dimension-typed slot to `dimensionless`, which refuses the comparison with DS_VALIDATE_DIM_MISMATCH.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    temp: temperature mutable\n\nrule warm:\n    Reading r where r.temp > 20_celsius\n->\n    log info \"warm: {r.sensor}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

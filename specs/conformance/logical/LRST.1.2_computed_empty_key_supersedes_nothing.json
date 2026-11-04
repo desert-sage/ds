@@ -1,0 +1,20 @@
+{
+    "id": "LRST.1.2_computed_empty_key_supersedes_nothing",
+    "clauses": ["LRST.1.2"],
+    "category": "logical",
+    "scenario": "[LRST.1.2]: a computed `as` key that evaluates to `\"\"` is no key, and the engine supersedes nothing for it, exactly as for a declaration with no `as`. Two Req facts (distinct `entity_id`) each arm a 100ms timer keyed on `r.n`, and both `n`s are `\"\"`: b's arming does not supersede a's, so both timers fire at 120ms. Exact messages: armed twice, then `timer fired` twice. A runtime that keyed on the empty string as on any other would supersede a's timer and log `timer fired` once (logical/LTAC.2.2.1_as_keyed_supersedure_string is that case for a non-empty key). PATH PINNED: the absent-key test ahead of the supersedure sweep, libds `rete/adapters.c` `corr_key_absent` and Mercury `ds.exec.lrst_1_4_absent_key`.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    n: String mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.n:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "n": "" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "n": "" } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "timer fired", "timer fired"]
+    }
+}

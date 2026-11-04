@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.an_unresolved_json_path_is_not_a_type_error",
+    "category": "logical",
+    "scenario": "The negative half of the unresolved-path row. `type_error` is forbidden, which is the whole content: the same document, read one field over, DOES produce a TypeError, so a runtime that classified absence and wrong-type alike would pass the positive half and fail here.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where p.body.missing is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "present": 1 } } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "type_error", "engine_error", "bounds_error"]
+    }
+}

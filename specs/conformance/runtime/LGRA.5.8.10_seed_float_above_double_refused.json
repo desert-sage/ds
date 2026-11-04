@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.5.8.10_seed_float_above_double_refused",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.10]: JSON text holding the float literal 1e400, whose value lies past the largest finite Float and so would round to +infinity, is malformed, and a host parse of it returns `DS_ERR_PARSE` (-100) and changes nothing. A `Json` value holds no non-finite float. The site is the cache seed ([NSTG.9.1]), as LGRA.5.8.9_seed_int_above_int64_refused is written. The seed is given as `text` ([RCTS.1.2.25]), so both harnesses hand the runtime these exact digits. `message_contains` is libds's text for this refusal and no other, so a refusal for another reason, the integer's included, fails the vector, and `no_fault_events` pins that a host refusal reaches no stream event. Break tests: a runtime that reads the literal as +infinity admits the seed and the vector fails; so does one that saturates it to the largest finite Float. PATH PINNED: on libds, `json.c` `parse_number`'s float arm, its `isfinite` test after `ds_parse_float_json`, under pyds's `cache_seed` (`ds_json_parse`); on the Mercury runtime, `ds.engine.seed_cache_text` -> `ds.json_text.parse`'s `jr_float_outside_double`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-100",
+        "message_contains": "JSON float literal outside the double range",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text": "1e400" }
+        ]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "UNIT5_two_imports_collide",
+    "clauses": ["LIMP.5.1.5"],
+    "category": "compiler",
+    "scenario": "LIMP.5.1.5 — class 2 collision: two imports bringing in the same unit symbol from different libraries rejects with DS_VALIDATE_UNIT_IMPORT_COLLISION, even where both declare the same conversion. The validator detects when imported_unit_symbol_origins[name] disagrees with the new import's library_name and surfaces the conflict before letting the second import silently overwrite the first. The symbol is `celsius`, a derived unit on `units.core`'s `temperature`.",
+    "rules_ds": "from lib_a import celsius\nfrom lib_b import celsius\n",
+    "libraries": {
+        "lib_a": "unit celsius: temperature = x + 273.15\n",
+        "lib_b": "unit celsius: temperature = x + 273.15\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNIT_IMPORT_COLLISION"
+    }
+}

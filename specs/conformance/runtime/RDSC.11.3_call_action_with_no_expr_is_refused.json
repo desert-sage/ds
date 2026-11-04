@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.11.3_call_action_with_no_expr_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s third shape: an artefact carrying an `Action` of kind `ACTION_CALL` with no `expr` is refused at load with DS_ERR_DSC_SEMANTIC (-504). `ACTION_CALL` is the one kind that reads `expr` ([RDSC.4a.8]) and the kind's zero, so an `Action` with nothing set is one. No source produces one, so the harness compiles rule `r`, whose one action is `log`, and `runtime_error`'s `tamper: {drop_action_expr: r}` removes that action's `expr` and re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]). Break: a loader that loads it and faults when the rule fires, or refuses it as a decode failure (-503), fails, the first as unrefused and the second on the code. Paths: libds's action decoder (`dsc/rete_loader.c`), whose `ACTION_CALL` arm refuses an absent `expr`; the Mercury runtime's `ds.dsc_action`, which refuses with `lek_semantic` under RDSC.11.3.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"drop_action_expr": "r"},
+        "code": "-504",
+        "message_contains": "RDSC.11.3"
+    }
+}

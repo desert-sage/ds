@@ -1,0 +1,22 @@
+{
+  "id": "RLOW.5.2.2",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.5.2",
+  "seq": 623,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.5.2.2] The compiler **must** compile a `where` conjunct `s.x ~ /p/f`,\nwhere `s.x` is a slot of the pattern's own schema and the conjunct is decided\n([IRET.6.4]), to an alpha regex test on that slot\n(`proto/alfa.proto#AlphaTest`, `ALPHA_TEST_REGEX`). Under `linear_scan: false` it\ndoes so only when the slot also declares a `capacity` ([LSTR.11.1],\n[IRET.6.2.1]); otherwise the conjunct stays in the join test.\n\nThe test's `pattern` is `p` when `f` is empty, and otherwise RE2's scoped flag\ngroup `(?f:p)`, with `f`'s letters. An alpha test carries no flags field, and\nthe group means exactly what the flags mean: DS's three flags are RE2's inline\nflags of the same letters ([LREG.5.2], [LREG.8.2]). The group does not capture,\nand an alpha test reads no capture.\n\nA valid `p` does not make `(?f:p)` valid: an unterminated `\\Q` quotes to the\nend of the pattern and takes the group's closing `)` with it. The compiler\n**must** validate the wrapped pattern, and where RE2 refuses it the conjunct\nstays in the join test, so the artefact never carries an alpha test its loader\nwould refuse ([IRET.6.3]).\n\nA `!~` conjunct is not compiled to an alpha test: an alpha test has no\nnegation, so it stays in the join test.\n\n",
+  "refs": [
+    "IRET.6.2.1",
+    "IRET.6.3",
+    "IRET.6.4",
+    "LREG.5.2",
+    "LREG.8.2",
+    "LSTR.11.1"
+  ],
+  "symbols": [
+    "ALPHA_TEST_REGEX"
+  ]
+}

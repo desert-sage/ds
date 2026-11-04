@@ -1,0 +1,34 @@
+{
+  "id": "RCLI.3.2",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.3",
+  "seq": 32,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.3.2] **Diagnostics as data.** `--diagnostics` chooses how `compile`, `check`\n([RCLI.1.12]) and `dump-ast` ([RCLI.1.10]) write their diagnostics to stderr: `text`, the\ndefault, renders them for a person; `json` writes them as one document, and\nnothing else, that validates against `compiler/dsc_diagnostics.schema.json`.\nUnder `json` the compiler must write that document whenever it reports a\ndiagnostic, a refused program's errors and an accepted program's warnings\nalike, holding every diagnostic the text form would render, in the order the\ntext form renders them; when it reports none, it writes no document.\n\nWhat the schema cannot carry:\n\n- **The format does not move the exit code.** A refused program exits `1`\n  and an accepted one `0`, under either format ([RCLI.3.1]). A usage error exits `2` and an internal\n  compiler error `3`. Neither is a diagnostic of the program, so the document\n  never carries one, and a compiler that exits `3` writes no document.\n- **A reader keys on `code` and `span`.** A diagnostic's `code` is its\n  registered name ([RCLI.5.1]); its `message` and `hint` are wording, which a\n  compiler may change without notice.\n- **`file` is the name the compiler gives the source** ([RCLI.1.9]):\n  `--filename` when given, else the input path as given, else `<stdin>`.\n\n",
+  "refs": [
+    "RCLI.1.10",
+    "RCLI.1.12",
+    "RCLI.1.9",
+    "RCLI.3.1",
+    "RCLI.5.1"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "diagnostics",
+        "tag": "spec"
+      }
+    ],
+    "jsonschema": [
+      {
+        "path": "compiler/dsc_diagnostics.schema.json",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

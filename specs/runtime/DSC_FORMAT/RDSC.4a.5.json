@@ -1,0 +1,239 @@
+{
+  "id": "RDSC.4a.5",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a",
+  "seq": 430,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.5] **Load ordering.** The loader processes atoms in a\nsingle forward pass. `AlphaNode` atoms must precede any `BetaNode` that\nreferences them via `right_alpha_id` — the compiler guarantees\nthis by emitting all `AlphaNode` atoms before any `BetaNode`. `BetaNode`-to-`BetaNode`\nparent references and `BetaNode`-to-`TerminalNode` leaf wiring are accumulated\nas pending references and resolved in one sweep after the\nstream ends. After the sweep the loader seeds root betas\n(`left_parent_id == 0`) with nil tokens (IRET.19). No second\npass through the stream is required.\n\n**Every `left_parent_id` chain ends at a root beta.** The compiler must not emit\nan artefact whose `left_parent_id` references form a cycle, and a loader must\nrefuse one with `DS_ERR_RETP_INVALID` ([RDSC.11.1]). The check belongs to the\nsweep: it is a cheap structural need of the loader ([RDSC.9.9]), since a walk up\nthe chain has no end on such an artefact.\n\n---\n\n",
+  "refs": [
+    "IRET.19",
+    "RDSC.11.1",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_RETP_INVALID"
+  ],
+  "atoms": [
+    "AlphaNode",
+    "BetaNode",
+    "TerminalNode"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rdsc_4a_5__load",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loader's single pass, as its result: alphas, chains, then the seeding sweep."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rdsc_4a_5__seed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Seed a root with the nil token: the wave it starts over the empty memories runs to the terminal, so a rule of only NOT patterns is active from the start. [IRET.7.4]'s 'working memory the left source' is read as this."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "rdsc_4a_5__load4",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Load, with four-valued tests."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__loaded_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded called state has the invariant: the view and its own shapes, no fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rdsc_4a_5__load_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rdsc_4a_5__load_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rdsc_4a_5__load_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded network's empty working memory is unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rdsc_4a_5__seed_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__net",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The witness rule `A a, B b` loaded and seeded."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rdsc_4a_5__load_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded, seeded network has the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rdsc_4a_5__seed_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SEEDING keeps the view: the nil token's wave over the loaded chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "From the loaded network, with its root betas seeded, after any inputs with no pump between them: the first pump fires a framed chain once per match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "From the loaded clocked network, after any inputs prepared with no run between them: the first run fires a framed chain once per match, through every cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rdsc_4a_5__load_clocked",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loaded network with its root betas seeded, an empty dependency table, no deadlines, the clock at the start."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rdsc_4a_5__load_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded clocked network has the invariant: the view, its own shapes, no facts, no rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "From the loaded clocked network, after any inputs prepared with no run between them, re-times included: the first run fires a framed chain once per match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "From the loaded network, after any inputs with no pump between them, the first pump fires once per match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rdsc_4a_5__load_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded network holds unfired activations only."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rdsc_4a_5__load_unfired_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loader's seeding of root betas with nil tokens creates unfired activations only."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rdsc_4a_5__load_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded, seeded network is ordered."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rdsc_4a_5__seed_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "SEEDING keeps the order: the nil token's wave over the loaded chain, from an empty terminal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rdsc_4a_5__load_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loaded network with the empty set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rdsc_4a_5__load_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The loaded, seeded network with the empty set is sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_sampled",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "From the loaded clocked network, after any sampled inputs with no run between them: the first run fires a framed chain once per match."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rdsc_4a_5__seed_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A SEEDED TERMINAL holds unfired activations only: the seeding wave creates, and what it creates is unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__init_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE LOADED NETWORK AND THE EMPTY FIRELOOP STATE AGREE under the program the loaded network lowers to: the rules reflexively, the tables by the seeding, order and well-formedness from nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__init_tables_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "AT THE START the tables agree: FireLoop's first propagation from nothing over empty working memory and the network's seeding hold the same unblocked matches, all unfired."
+      }
+    ]
+  }
+}

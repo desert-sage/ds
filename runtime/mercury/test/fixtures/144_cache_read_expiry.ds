@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A host assert's matching reads an expired cache entry ([NSTG.2.4.2]). `rw`
+# writes "k" with a 10-second TTL; `rq1` and `rq2` read it in a join test
+# ([RLOW.5.2.1]), so an assert of `Trig tag=q` evaluates it during the assert.
+# The first read evicts the entry and tells the host, once.
+
+schema Trig scope logical:
+    tag: String key
+
+rule rw:
+    Trig t where t.tag == "w"
+->
+    cache key: "k" value: 7 ttl: 10_s
+
+rule rq1:
+    Trig t where t.tag == "q" and cached("k") == 7
+->
+    log critical "rq1 hit"
+
+rule rq2:
+    Trig t where t.tag == "q" and cached("k") == 7
+->
+    log critical "rq2 hit"

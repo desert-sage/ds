@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.a_failed_parse_is_null_not_a_fault",
+    "category": "logical",
+    "scenario": "A failed FALLIBLE conversion is `null` and raises nothing. `\"abc\"::Int?` cannot parse, and [LCST.4.5.2] classes String->Int fallible, so the answer feeds the Kleene stack instead of the fault taxonomy: the `is null` rule fires and no fault kind reaches the stream. The source is a slot read, so the parse happens at runtime in FN_STRING_TO_INT's adapter rather than being folded.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule r:\n    S s where (s.txt::Int?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "abc" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

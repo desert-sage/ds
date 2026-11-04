@@ -1,0 +1,21 @@
+{
+  "id": "LNLS.3.11",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.3",
+  "seq": 434,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "Series membership / frequency scan without a sample bound",
+  "text": "### Series membership / frequency scan without a sample bound [LNLS.3.11]\n\nA `contains(s, v)` or `count_of(s, v)` read over a **series** `s` whose\ndeclaration carries no `capacity` ([LSER.13.14]) is a compile error\n(`DS_VALIDATE_NOLINSCAN_SERIES_UNBOUNDED`) in a program with\n`linear_scan: false`. The same applies to any series read whose cost is linear in\nthe window's sample depth.\n\n| Read | Without `capacity` | With `capacity N` |\n|---|---|---|\n| `contains(cursor, value)` | O(D) window scan | O(N) = O(1) |\n| `count_of(cursor, value)` | O(D) window scan | O(N) = O(1) |\n\n**Rationale**: these reads scan the window's stored samples — O(D), where D is\nthe series depth.  On a `sliding` (or other time-windowed) backing with no\n`capacity`, D is O(window × event-rate): it grows with the event trace, is\nnot a compile-time constant, and the read is a linear scan in series depth\n([LNLS.1.1]).  The O(1)-incremental reads — `count`, `sum`, `mean`, `min`,\n`max`, `first`, `last`, `bool_and`, `bool_or` — do not scan and are unaffected.\n\nWith `capacity N` the scan is O(N), bounded by a compile-time constant —\nexactly the discipline `linear_scan: false` applies to bounded strings ([LNLS.3.10]) —\nand is allowed.\n\nThis is the same cut `realtime` makes from the WCET side ([LNLS.2.3]).\n\n---\n\n",
+  "refs": [
+    "LNLS.1.1",
+    "LNLS.2.3",
+    "LNLS.3.10",
+    "LSER.13.14"
+  ],
+  "errors": [
+    "DS_VALIDATE_NOLINSCAN_SERIES_UNBOUNDED"
+  ]
+}

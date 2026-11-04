@@ -1,0 +1,14 @@
+{
+    "id": "LDET.3.3a.8_negzero_reaches_initial",
+    "clauses": ["LDET.3.3a.8", "LDET.3.2.7"],
+    "category": "logical",
+    "scenario": "[LDET.3.3a.8] with [LDET.3.2.7]: a value the compiler folds is the value the engine would compute, the sign of a zero included. An `initial:` item's Float slot is folded to its literal at compile time, from a literal `-0.0` or from a `const` that names one, and the fact reaches working memory carrying that literal. Each rule logs its fact's key and value, and [LDET.3.2.7] renders a negative zero `-0.0`. A fold that negates by subtracting from zero turns `-0.0` into `+0.0` and logs `0.0`, on either path. The loss then looks like a runtime's, since each runtime receives the `+0.0` it is handed. The sign is display, not identity: these slots are no key, so no identity normalization ([LFAC.1.7.1]) is in play. PATH PINNED: `dsc.dstest`'s `ltsl_4_1_literal` (the literal) and `constant_leaf` (the `const`), each negating through `neg`.",
+    "rules_ds": "const NZ = -0.0\n\nschema VL scope explicit:\n    k: String\n    f: Float\n\nschema VN scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VL k: \"lit\" f: -0.0\n    VN k: \"nz\" f: NZ\n\nrule r_lit:\n    VL v\n->\n    log info \"{v.k} {v.f}\"\n\nrule r_nz:\n    VN v\n->\n    log info \"{v.k} {v.f}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["lit -0.0", "nz -0.0"]
+    }
+}

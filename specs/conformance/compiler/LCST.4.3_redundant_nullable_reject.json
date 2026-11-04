@@ -1,0 +1,8 @@
+{
+    "id": "LCST.4.3_redundant_nullable_reject",
+    "clauses": ["LCST.4.3.2", "LCST.4.3.1"],
+    "category": "compiler",
+    "scenario": "LCST.4.3.2 — the `?`-bijection is strict in BOTH directions: a REDUNDANT `?` on a total non-null cast (a `T?` that can never be null) is equally a compile error. Pin: `s.x::Float?` (Int->Float is a total widening) rejects with DS_VALIDATE_CAST_NULLABILITY. Any total pair pins the same rule.",
+    "rules_ds": "schema Sample scope logical:\n    x: Int key\n\nschema Out scope ttl 1_h:\n    v: Float?\n\nrule r:\n    Sample s\n->\n    emit Out v: s.x::Float?\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_CAST_NULLABILITY" }
+}

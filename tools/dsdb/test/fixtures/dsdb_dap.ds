@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# `ds dap`'s program (tools/dsdb/lib/dap/): one rule or schema per thing the
+# debug adapter has to show. A high Reading derives High, which derives Alert
+# (a chain to step in and out of, and logical facts with justifiers); Reading
+# and Note live by TTL; Note's slot is Json, and `noted` binds it, for an
+# `evaluate` to reach; Trig's tags write, read and delete
+# the cache, divide by zero, call a service and arm a cooldown. Compiled by the
+# branch's own Mercury dsc in the js gate, beside @ds-lang/ds's fixtures.
+
+use default
+
+schema Reading scope ttl 60_s:
+    sensor: String
+    level: Float
+
+schema High scope logical:
+    sensor: String key
+
+schema Alert scope logical:
+    sensor: String key
+
+schema Note scope ttl 1_min:
+    doc: Json
+
+schema Trig scope logical:
+    tag: String key
+    x: Int mutable
+    y: Int mutable
+
+schema PingReply scope ttl 1_min:
+    corr: String
+    ok: Bool
+
+service svc.ping:
+    "test stub"
+    response PingReply
+
+rule high:
+    Reading r where r.level > 80.0
+->
+    emit High logical sensor: r.sensor
+
+rule alert:
+    High h
+->
+    emit Alert logical sensor: h.sensor
+
+rule noted:
+    Note n where n.doc is not null
+->
+    log info "noted"
+
+rule remember:
+    Trig t where t.tag == "set"
+->
+    cache key: "last" value: t.x ttl: 30_s
+
+rule recall:
+    Trig t where t.tag == "get"
+->
+    let v = cached("last")
+    log info "recall {v}"
+
+rule forget:
+    Trig t where t.tag == "del"
+->
+    cache_delete key: "last"
+
+rule divide:
+    Trig t where t.tag == "div"
+->
+    let q = t.x / t.y
+    log info "q={q}"
+
+rule ping:
+    Trig t where t.tag == "ping"
+->
+    call svc.ping nocooldown as t.tag
+
+rule pong:
+    PingReply p
+->
+    log info "pong {p.ok}"
+
+# A rule that reads CallError registers it, so a call can be failed.
+rule ping_failed:
+    CallError e
+->
+    log warning "ping failed {e.code}"
+
+rule cooled cooldown 10_s:
+    Trig t where t.tag == "cool"
+->
+    log info "cooled"

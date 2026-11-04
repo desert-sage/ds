@@ -1,0 +1,10 @@
+{
+    "id": "LADP.8.5.3_data_known_not_whole",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.3]: on a kwarg whose dimension stores `int64`, a quantity known at compile time that is not a whole number of the kwarg's unit is refused. `store.put` declares `size: byte` (`= x * 8` over `bit`), and rule `go` writes `size: 12_bit`, 1.5 bytes: DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE. PATH PINNED: `ladp_8_5_3_not_whole` in dsc.validate, through `dsc.quantity.whole_number_dimension`, which reads `rf_unit_storage`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nservice store.put:\n    kwarg size: byte required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig\n->\n    call store.put size: 12_bit nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE"
+    }
+}

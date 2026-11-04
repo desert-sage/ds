@@ -1,0 +1,10 @@
+{
+    "id": "LDTL.4.1_retain_not_duration_rejects",
+    "category": "compiler",
+    "scenario": "[LDTL.4.1]: with `dynamic_ttl`, `retain:` takes \"any expression of type `Duration`\", and the compiler must refuse one of another type with DS_VALIDATE_TYPE_MISMATCH, as it refuses a kwarg value of another type than its slot's ([LEXP.7.3b]). The program is LDTL.4.1_retain_with_dynamic_ttl_ok's, with `retain: 30`, an `Int`, in place of `60_s`; that vector is the control, and it compiles. A compiler that checked only the target's lifecycle and the capability compiles this one. PATH PINNED: `dsc.validate.ldtl_3_2_retain`'s type check under the extension.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: 30\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

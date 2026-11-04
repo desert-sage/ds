@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A match that ends inside its own firing justifies nothing after
+# ([LLOG.15.1], [IRET.12.2]). When `k.target` is `a.id`, `flip`'s emit
+# replaces the very `A` the activation matched ([LFAC.2.5.3]). The compiler
+# cannot see it, the key coming from `k`, so [LLOG.11.9] admits the rule and
+# [LLOG.15.1] governs it: the `A` the emit made and the `C` after it are
+# justified by nothing and retracted as they are made.
+#
+# `a_live` and `c_live` show a surviving fact as a firing beside a later
+# `Probe`, and `verify tms` judges every pump's state. `117_self_ending_match`
+# drives it through both engines.
+
+schema A scope logical:
+    id: String key
+    kind: String mutable
+
+schema K scope explicit:
+    target: String
+
+schema C scope logical:
+    id: String key
+
+schema Probe scope explicit:
+    n: Int
+
+rule flip:
+    A a where a.kind == "enter"
+    K k
+->
+    log info "flip {k.target}"
+    emit A logical id: k.target kind: "leave"
+    emit C logical id: k.target
+
+rule a_live:
+    A a where a.kind == "leave"
+    Probe
+->
+    log info "A {a.id} is live"
+
+rule c_live:
+    C c
+    Probe
+->
+    log info "C {c.id} is live"

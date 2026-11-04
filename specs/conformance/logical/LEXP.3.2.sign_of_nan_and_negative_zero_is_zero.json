@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.3.2.sign_of_nan_and_negative_zero_is_zero",
+    "category": "logical",
+    "scenario": "[LEXP.3.2]: `sign` of a NaN is 0, whatever the NaN's sign bit, and `sign` of -0.0 is 0. The operands are built from a Float slot holding 0.0: `t.z / t.z` is NaN ([LDET.3.6.2]), `-(t.z / t.z)` the same NaN with its sign bit flipped, `-t.z` is -0.0. x86_64's default NaN (0/0) carries the sign bit and aarch64's does not, so across the two CI rows the two NaN rules see both signs. PATH PINNED: libds's DS_FN_SIGN handler in runtime/src/libds/builtins.c and the Mercury runtime's `sign` arm in ds.eval, each deciding by comparison rather than by the sign bit. Pin: one fact, all three rules fire, in source order.",
+    "rules_ds": "import math\n\nschema T scope logical:\n    entity_id: String key\n    z: Float mutable\n\nrule sign_of_nan_is_zero:\n    T t where math.sign(t.z / t.z) == 0\n->\n    log info \"a\"\n\nrule sign_of_negated_nan_is_zero:\n    T t where math.sign(-(t.z / t.z)) == 0\n->\n    log info \"b\"\n\nrule sign_of_negative_zero_is_zero:\n    T t where math.sign(-t.z) == 0\n->\n    log info \"c\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "t", "z": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["sign_of_nan_is_zero", "sign_of_negated_nan_is_zero", "sign_of_negative_zero_is_zero"]
+    }
+}

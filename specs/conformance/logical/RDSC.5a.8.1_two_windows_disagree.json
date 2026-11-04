@@ -1,0 +1,20 @@
+{
+    "id": "RDSC.5a.8.1_two_windows_disagree",
+    "category": "logical",
+    "dead_rules_expected": ["hourly_high"],
+    "scenario": "RDSC.5a.8.1 at runtime — one slot observed at two windows must answer each read from its own window. LSER.6.8.1_labeled_access_ok is compile_ok and cannot see this; this drives lower_series' (backing, window) split, the series_state row key, and the reading line's window at the read. A 0.0 sample, then 11 minutes, then a 100.0 sample: the 10-minute `recent` window holds only the second (mean 100), the 1-hour `hourly` window holds both (mean 50), and the 75.0 thresholds sit between them so exactly one rule fires. Both sharing failures land in the message list rather than in a value: sharing the 10-minute row fires both rules, sharing the 1-hour row fires neither. A MISSING second row does not: `hourly` then reads cold and stays silent, as it should here, so this vector passes over that defect. RDSC.5a.8.1_second_window_has_its_own_row pins it. The trailing assert+pump is load-bearing — LSER.8.6.1 makes the read in the pump that asserts a fact a PRE-SAMPLE read, so the 100.0 is only in the backing by the pump after it, and 100.5 differs from 100.0 so the reassert is not suppressed as a no-op.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Sensor.val:\n    mean sliding 10_min as recent\n    mean sliding 1_h as hourly\n\nrule recent_high:\n    Sensor s where s.recent.mean > 75.0\n->\n    log info \"recent high\"\n\nrule hourly_high:\n    Sensor s where s.hourly.mean > 75.0\n->\n    log info \"hourly high\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val":0.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 660000000000 },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val":100.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val":100.5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["recent high"]
+    }
+}

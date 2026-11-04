@@ -1,0 +1,21 @@
+{
+    "id": "LSER.16.3.3_var_stdev_null_at_one_all_time",
+    "clauses": ["LSER.16.3.1"],
+    "category": "logical",
+    "scenario": "[LSER.16.3.3] / [LSER.16.3.1]: on `all_time` (SeriesBackendWelfordEwma, [LSER.18.1]) the sample forms `variance` and `stdev` are `null` when one sample is held, and `pvariance` / `pstdev` are +0. Values 1.0, 3.0, 4.0, one per pump; each read is pre-sample ([LSER.8.6.1]), so pump 1 is cold, pump 2 reads one sample and pump 3 two. The guards make one message per warm read: `null at one` from pump 2 (warm: `count` is 1; `variance` and `stdev` null; `pvariance` and `pstdev` +0, which compares equal to 0.0), then `warm at two` from pump 3, where `variance` and `stdev` have a value again (over [1, 3]: `variance` 2.0). PATH PINNED: libds `series/builtin_backends.c` `sbwe_query`'s `DS_SERIES_AGG_VARIANCE` / `_STDEV` arms over `welford_ewma.c`, and Mercury `ds.series.moment`'s `mf_accumulator` form.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nseries Reading.level (by: dev):\n    count, variance, stdev, pvariance, pstdev all_time\n\nrule at_one:\n    Reading s where s.count == 1 and s.variance is null and s.stdev is null and s.pvariance == 0.0 and s.pstdev == 0.0\n->\n    log info \"null at one\"\n\nrule at_two:\n    Reading s where s.count == 2 and s.variance == 2.0 and s.stdev is not null\n->\n    log info \"warm at two\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 4.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["null at one", "warm at two"]
+    }
+}

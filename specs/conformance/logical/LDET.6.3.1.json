@@ -1,0 +1,14 @@
+{
+    "id": "LDET.6.3.1",
+    "category": "logical",
+    "scenario": "Integers are 64-bit signed per LDET.6.3.1 — overflow wraps in two's complement. Pin: INT64_MAX + 1 wraps to INT64_MIN (-9223372036854775808). Rule fires when the wrapped result equals the expected negative value.",
+    "rules_ds": "schema Big scope logical:\n    n: Int key\n\nrule r:\n    Big b where b.n + 1 == -9223372036854775808\n->\n    log info \"wrapped\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Big", "slots": { "n": 9223372036854775807 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

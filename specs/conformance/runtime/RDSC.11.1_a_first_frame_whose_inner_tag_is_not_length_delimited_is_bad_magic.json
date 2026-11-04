@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_first_frame_whose_inner_tag_is_not_length_delimited_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose inner tag is not a length-delimited field is malformed, and a malformed FIRST frame is refused with DS_ERR_DSC_BAD_MAGIC (-501). `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a020800\"}}` ([RCTS.1.2.21]) puts a complete frame before the compiled artefact's first atom: outer tag 0x0A, outer length 2, and an `Atom` holding field 1 with wire type 0 (key 0x08) and the varint 0. The frame is whole, so this is no short read, and an atom's oneof member is always a sub-message ([RFCS.16.1]). The walk from the first byte stops at that inner tag and reaches no DscHeader, so nothing is re-sealed. What it discriminates: a loader that reads the varint as an atom, or skips the frame by its length and loads the rest, accepts the artefact; one that reports it as DECODE gives -503. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom`: the inner field's wire type is not LEN, MALFORMED with no short body); the Mercury runtime's `ds.atom.next_frame` (`ae_bad_inner_type`) in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a020800"}},
+        "code": "-501"
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "id": "LDET.3.2.7",
+    "category": "adapter",
+    "scenario": "[LDET.3.2.7] the canonical Float text form on the JSON data plane. A finite Float serializes to the shortest decimal that reparses to the identical IEEE-754 double, shaped like the compiler's lowering of a Float literal ([LUNI.2.7]): bare %g (6 sig-figs) would render 3.141592653589793 as \"3.14159\" and fail, and a whole Float keeps its \".0\" — 42.0 serializes to \"42.0\", never \"42\" (\"42\" reparses as an Int, silently collapsing the value's kind, FINDING §1). The raw JSON text is pinned via value_json so the Float->Int collapse is caught; a parsed-number compare (value) cannot tell \"42\" from \"42.0\". A non-finite Float is the separate case A7 folds in here: Inf is a valid working-memory value (it asserts fine — only NaN is rejected, LEXP.4.2), but \"inf\" is not valid JSON, so an Inf cache value is a NOT_REPRESENTABLE trap at the verb (LDET.3.2.7_a_nonfinite_cache_value_is_a_trap; ds.json.nonfinite_total{verb=cache}) and the write is suppressed rather than emitting a corrupt token. This fixture asserts three finite values (full-precision irrational, the whole float 42.0, the 17-digit 0.1+0.2 sum) with an Inf between them: the Inf produces no cache_set, and the finite value after it still serializes — proving the guard is non-finite-only and the engine recovers.",
+    "rules_ds": "schema Trig scope ttl 1_h:\n    v: Float\n\nrule r:\n    Trig t\n->\n    cache key: \"k\" value: t.v\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 3.141592653589793 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 42.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": Infinity } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 0.30000000000000004 } },
+            { "op": "pump" }
+        ],
+        "expected_sets": [
+            { "key": "k", "value": 3.141592653589793, "value_json": "3.141592653589793" },
+            { "key": "k", "value": 42.0, "value_json": "42.0" },
+            { "key": "k", "value": 0.30000000000000004, "value_json": "0.30000000000000004" }
+        ]
+    }
+}

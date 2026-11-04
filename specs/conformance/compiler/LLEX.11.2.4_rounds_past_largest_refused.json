@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.11.2.4_rounds_past_largest_refused",
+    "category": "compiler",
+    "scenario": "[LLEX.11.2.4]: the literal \"reads as the `Float` nearest its value, ties to even ([LDET.3.2.8])\", and is refused where that value would round to an infinity. `1.7976931348623159e308` is below `1e309` but at or above the rounding threshold 2^1024 - 2^970 (1.797693134862315807937...e308), so it rounds to +inf: DS_PARSE_FLOAT_RANGE. Its twin LLEX.11.2.4_largest_double_compiles is one lower in the last digit and below the threshold. What it discriminates: a range check that reads the digits or the exponent (anything below e309 passes) admits this literal; one that refuses everything above the largest Float's own decimal refuses the twin. PATH PINNED: `dsc.lex`'s `finish_float` through `dsc.exact.llex_11_2_4_past_largest`, which compares the literal's exact value with the threshold in integers.",
+    "rules_ds": "const X = 1.7976931348623159e308\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_FLOAT_RANGE"
+    }
+}

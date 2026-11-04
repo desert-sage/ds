@@ -1,0 +1,278 @@
+{
+  "id": "LDET.5.8",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 584,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.5.8] **An engine-synthesised fact is not a working-memory fact.** An\nengine **may** synthesise a fact to carry its own state — the clock tick that\nre-drives a time-dependent LHS is the standing case ([RARC.12.4]). Such a fact\n**must not** be a working-memory fact: it is not counted by the fact count, it\nis not delivered to the fact callbacks, and — the part that decides an\nobservable — **cycling it is not a change to the LHS** for [LDET.5.3]'s\nrefraction rule.\n\n**The observable.** A rule whose LHS became true only because a\ntime-dependent test changed fires **once**. Take a rule `late` whose one\npattern matches a `Ping` fact `p` under the guard\n`now() > calendar.time(1970, 1, 1, 0, 0, 5)` ([LTIM.14.1]), which opens once\nthe clock passes 5 s after the epoch, and whose RHS only logs. Assert one `Ping`, pump twice with the gate shut, advance the clock past it,\nand pump twice more. `late` fires exactly once, in the third pump. It **must\nnot** fire again in the fourth, or in every pump thereafter.\n\n**Why the alternative is refused, and it is not a near miss.** The tick has to\nbe somewhere a join can bind against, and putting it in working memory is the\nobvious place. Do that and the rule above fires forever, for two independent\nreasons either of which is sufficient: the tick's fact id enters the token\ntuple refraction is keyed on, so a fresh id each pump means the suppression\nnever matches; and cycling a working-memory fact is a working-memory change, so\nthe \"discard refraction on a change\" rule clears the memory every pump as well.\nA runtime that puts synthetic facts in working memory therefore needs a\nseparate filter at the fact count, at the fact callbacks, **and at refraction**\n— and the third is the one that gets missed.\n\n**The `after` follow-up meets the same trap.** It escapes it by retracting its\nown timer as the last action\nof its RHS — no timer, no match, no re-fire — and the reason recorded there is\nexactly this one: without the self-retraction, refraction is per-(timer, tick)\nand each new tick re-fires it forever. A `now()` `where` has nothing to\nretract, so it has no such escape and needs the rule stated instead.\n\n**What this does not say** ([STYL.2.15.4]). It does not say where a synthetic\nfact lives, how it is represented, or whether its schema appears in any\nregistry. Those are an implementation's to choose. It says only that whatever\nan engine does there is invisible to the fact count, to the fact callbacks and\nto refraction — which is what makes the firing count above a property of the\nlanguage rather than of a runtime.\n",
+  "refs": [
+    "LDET.5.3",
+    "LTIM.14.1",
+    "LTIM.2.6.2",
+    "RARC.12.1",
+    "RARC.12.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_clocked_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A2. THE COMPOSED TICK KEEPS THE VIEW: after any tick on the clocked network every alpha memory and every terminal are what the recompute over working memory gives, none twice -- Rete/NetworkDispatch.idr's view theorem across ticks that sweep, re-time and cascade. The sweep and the cascade are retractions, which keep the view; the re-time keeps it chain by chain by Tick's `iret_19_5__retime_consistent`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_19_5__tick_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time touches neither working memory nor the alpha memories: the synthesised tick is not a working-memory fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__late_fires_once_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S OBSERVABLE ON THE COMPOSED ENGINE: assert one `Ping`, pump twice with the gate shut, advance the clock past it, pump twice more. `late` fires exactly once, in the third pump, and not in the fourth: `[0, 0, 1, 0]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__late_program",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `rule late`, lowered. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__late_start",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's `rule late` loaded with one `Ping`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__open_stays_open_unmoved",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A1's hypothesis inhabited with the `Ping`'s match fired and the gate open at both ends of the tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__quiet_tick_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A1. A TICK THAT EXPIRES NOTHING AND MOVES NO VERDICT MOVES ONLY THE CLOCK, on the one engine with both kinds of test: from a state between actions, when no row ends, no deadline is at or before the new clock and every timed test answers at the new clock what the node's test answered on every live pair, the composed tick leaves working memory, every chain's activations (tuples and `fired` flags) and left memories, the dependency table and the deadline table as they were, and moves the clock. Stated on those parts and not on the node records: a re-timed node carries a new function that is only pointwise the old one. The hypothesis is inhabited with a fact live by `ldet_5_8__shut_stays_shut_unmoved` and `ldet_5_8__open_stays_open_unmoved`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__quiet_tick_is_retime",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A quiet tick is the re-time alone: the engine-synthesised tick changes nothing of working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__shut_stays_shut_unmoved",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A1's hypothesis inhabited with the `Ping` live and the gate shut at both ends of the tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__shut_tick_moves_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The tick to 1 under the shut gate leaves the chain's activations as they were, none, with the `Ping` live: cycling the tick changed nothing, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__tick_keeps_activation_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Cycling it is not a change to the LHS': an activation whose match the new clock still admits is the same record after the tick, `fired` flag included, on the engine with both kinds of test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__edge_once_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "EDGE-ONCE ACROSS TWO SUCCESSIVE TICKS of this engine, for any gate: no match is made by both the tick to `c1` and the tick to `c2`, because the chain re-timed at `c1` carries the test at `c1` and the next tick re-times from it -- a match the second tick makes was refused at `c1`, which the first tick admitted. No hypothesis on the gate: Tick's `ltim_2_5_1__edge_once` needs `Ltim_2_5_1__rising` to carry a verdict from one tick's end to the next's start, and here the two are one clock. The clause's claim over a history -- a rising gate fires once per wrapper, the pump counts are the gate's rising edges -- is `ltim_2_5_1__rising_fires_at_most_once` (Rete/NetworkTwoClocks.idr) and `ltim_2_5_1__counts_are_edges` (Rete/NetworkEdges.idr)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A match the tick made is a new activation, unfired: the once-only firing of the clause's observable is the flag's, not a memory of the tick's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_shapes",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Cycling the tick is not a change to the LHS: the alphas, the chains' kinds and the actions are as loaded; only the timed tests' values and the matches they decide move."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__tick_unfired_all",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Cycling the tick fires nothing; what it makes true is left for the pump to fire once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__tick_leaves_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Cycling the tick is not a change to the LHS: with no time-dependent test it changes nothing at all."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__not_ended",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A match the new test admits is not one the tick ended."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__retime",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RE-EVALUATION AT A TICK: the node takes the test at the new clock; the matches the tick ends leave the terminal, the matches it makes become unfired activations, every other activation is left as it is. The tick's effect, not its representation: the model has no tick fact ([LDET.5.8]), which [IRET.19.5] leaves to libds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "iret_19_5__tick",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tick: working memory untouched, every time-dependent test re-evaluated at the new clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gate of `rule late`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__late",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's gate, the clock past 5 s after the epoch, as a comparison on the model's clock count in small units."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__late_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S OBSERVABLE, on the network: assert one Ping, pump twice with the gate shut, advance the clock past it, pump twice more -- `late` fires exactly once, in the third pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__loaded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule loaded at clock 0: one alpha for Ping, one positive node carrying the gate, an RHS that only logs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__ping",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one Ping."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__tick_keeps_activation",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A TICK IS NOT A CHANGE TO THE LHS: an activation whose match the new test still admits is the same record after the tick, its `fired` flag included. A fired match stays refracted across every tick that leaves it matching -- Rete/NetworkRefraction.idr's theorem, restated under ticks."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__edge_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Cycling the tick is not a change to the LHS: a match the first tick made is not made again by a later one while the gate stays true, so the one firing is the flag's and no tick re-creates it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__reopening_is_unfired",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A match the tick made is a new activation, unfired: the once-only firing of the clause's observable is the flag's, not a memory of the tick's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "ldet_5_8__quiet_tick_net",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A TICK THAT EXPIRES NOTHING MOVES ONLY THE CLOCK, on the network: working memory, terminals with their `fired` flags, dependency table and deadline table unchanged, so no activation is created, ended or re-armed by it. That is this clause's 'cycling the tick is not a change to the LHS' for the tests this engine has, which are predicates of facts: the clause's observable is a `now()` gate, which they do not read. On the one engine with both kinds of test, Rete/NetworkClocked.idr's `ldet_5_8__quiet_tick_clocked` is the statement, and Rete/NetworkTick.idr's `ldet_5_8__tick_keeps_activation` and `ldet_5_8__late_fires_once` carry the observable, on the flag reading."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ldet_5_8__late_fires_once_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S OBSERVABLE ON THE IDRIS MODEL'S ENGINE: assert one Ping, pump twice with the gate shut, advance both clocks past it, pump twice more. `late` fires exactly once, in the third pump, and not in the fourth -- logical/LDET.5.8_late_fires_once's shape, with the wall the advance moved. Executed: `[[], [], [(0, True)], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ldet_5_8__late_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S `late`: `now() > 5`, in the witnesses' units. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ldet_5_8__tick_is_not_counted_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND THE TICK IS NOT COUNTED: after the Ping, a pump, an advance to 6 and two pumps, working memory holds the Ping alone -- temporal/LDET.5.8_tick_is_not_counted's shape. 'It is not counted by the fact count.' Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__now_edge_once_multipump_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'It must not fire again in the fourth, or in every pump thereafter': two more ticks, nothing. Executed."
+      }
+    ]
+  }
+}

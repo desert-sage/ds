@@ -1,0 +1,33 @@
+{
+  "id": "LFAC.1.7.4",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.1.7",
+  "seq": 123,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LFAC.1.7.4] **Require-all.** Every slot of a `logical`\nschema must be marked `key` or `mutable`. The compiler rejects\nan unmarked slot on a `logical` schema. Require-all is the\nforcing function: no slot is unmarked, so there is no\ndefault-direction question and no silent guess. The one slot it\ndoes not reach is `ts`, which is the engine's and carries no marker\n([LFAC.9.1]).\n\n",
+  "refs": [
+    "LFAC.9.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "lfac_1_7_4__logical_slots_all_marked",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Require-all over the author slots: every slot of a logical schema but ts is KEY or MUTABLE, and ts is the one slot it does not reach (LFAC.9.1). Bounded: six slots, six schemas."
+      },
+      {
+        "path": "formal/alloy/identity_slots.als",
+        "name": "lfac_9_1__ts_unmarked",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A ts slot carries no KEY or MUTABLE marker on any schema: ENGINE on a logical schema, UNSPECIFIED elsewhere. Bounded: six slots, six schemas; fails if the partition's ENGINE line is dropped."
+      }
+    ]
+  }
+}

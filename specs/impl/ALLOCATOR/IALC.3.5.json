@@ -1,0 +1,16 @@
+{
+  "id": "IALC.3.5",
+  "prefix": "IALC",
+  "doc": "ALLOCATOR.md",
+  "parent": "IALC.3",
+  "seq": 177,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IALC.3.5] **The regex engine is not routed.** RE2, Abseil, libds's C++\nseam over them, and the C++ standard library they use allocate through C++'s\nglobal `operator new` and `operator delete`, not through the layer. Neither\nmode of [IALC.1.2] reaches that memory. libds must not define a global\n`operator new` or `operator delete` to reach it: either would replace the\nintegrator's for their whole program. This is the documented coverage gap of\n[IALC.3.3].\n\nThe engine allocates there in three places:\n\n| When | What allocates |\n|---|---|\n| Loading an artefact | One compiled pattern per distinct regex, freed with the engine |\n| A match, during a pump | RE2's match cache. libds sets no budget for it, so RE2's default per-pattern budget bounds it |\n| A capture, during a pump | The submatch array, freed before the capture returns |\n\nA build without an RE2-class engine ([LNRE.4.1]) has no such gap.\n\n",
+  "refs": [
+    "IALC.1.2",
+    "IALC.3.3",
+    "LNRE.4.1"
+  ]
+}

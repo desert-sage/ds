@@ -1,0 +1,17 @@
+{
+    "id": "RFCS.27.2_a_recorded_publish_by_another_rule_diverges",
+    "clauses": ["RFCS.27.2"],
+    "category": "runtime",
+    "scenario": "[RFCS.27.2]: \"A replayer re-derives it by firing the same rule and compares it against the record ([LFST.9.3.1])\", so a passing replay shows \"that the same rule published the same schema\". The harness ([RCTS.1.2.18]) records the session with the runtime's own recorder: one Trig is asserted and pumped, rule `r` publishes a Pub, and rule `q` logs. `publish_name` then writes `q` over that FactPublish's `rule_name`, `r`: a rule of the program, and of the same length, so nothing but the comparison can tell. The unaltered recording must replay, so the refusal is the edit's. The altered one must be refused with DS_ERR_FS_DIVERGENCE (-725): the replay's firing of `r` re-derives a FactPublish naming `r`, and the recorded one names `q`. What it discriminates: a replayer that did not compare a FactPublish, or compared it without its `rule_name`, replays the altered recording clean; one that delivered it as an input, or looked the name up as something to resolve, refuses with another status. PATHS: libds's `Engine.replay` in verify mode, whose capture sink keeps the re-derived FactPublish and byte-compares it with the recorded one (`rfcs/codec.c`'s `verify_match`); the Mercury runtime's `ds.replay`, which compares a FactPublish as `lfst_9_3_1_compared` admits and ends the replay `diverged` (`replay_refusal_code` -725). runtime/RFCS.27.2_a_recorded_publish_of_another_schema_diverges pins the `schema_name` half.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Pub scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    publish Pub v: t.v\n\nrule q:\n    Trig\n->\n    log info \"q\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "publish_name", "index": 0, "field": "rule_name", "to": "q" },
+        "code": "-725"
+    }
+}

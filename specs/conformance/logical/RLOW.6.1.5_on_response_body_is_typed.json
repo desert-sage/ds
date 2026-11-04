@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.5_on_response_body_is_typed",
+    "clauses": ["RLOW.6.1.5", "LTIM.4.2.3", "LGRA.2.9.6.10", "LCCO.5.2"],
+    "category": "logical",
+    "scenario": "An `on response` body lowers with its rule's types, as the rule's own body does. Rule `plan` calls `svc.read` for a Visit on 2024-02-29 (day 19782), with no `as`; the host answers with `ok: true` on the call's own correlation (`corr_from_call: 0`). The `on` sibling logs `due {v.due}`, a bare Date interpolation ([LGRA.2.9.6.10]), and emits a Shifted with `next: v.due + 1_d` ([RLOW.6.1.5]'s FN_DATE_ADD_DURATION) and `text: (v.due - 7_d)::String` (FN_DATE_SUB_DURATION, then a cast that dispatches on its operand's static type), reading `v` through the capture fact ([LCCO.5.2]). Rule `show` logs the Shifted. Messages: `due 2024-02-29`, `1 2024-03-01 2024-02-22`. The breaks: a sibling lowered with no typing environment leaves the cast unlowered, so the rule is skipped and nothing is logged; were the cast removed, `v.due + 1_d` would be Int `+` on a day count and nanoseconds, and `{v.due}` would render `19782`. PATH PINNED: `dsc.rete`'s continuation sibling context, whose `cx_env` carries the rule's `type_env`, read by `rlow_6_1_5_date_arith`, `cast_fn` and `lgra_2_9_6_10_temporal_text`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nschema Shifted scope ttl 1_h:\n    id: Int\n    next: Date\n    text: String\n\nrule plan:\n    Visit v\n->\n    call svc.read n: v.id cooldown: 1_h\n        on response.ok == true:\n            log info \"due {v.due}\"\n            emit Shifted id: v.id next: v.due + 1_d text: (v.due - 7_d)::String\n\nrule show:\n    Shifted s\n->\n    log info \"{s.id} {s.next} {s.text}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 19782 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["due 2024-02-29", "1 2024-03-01 2024-02-22"]
+    }
+}

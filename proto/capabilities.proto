@@ -1,0 +1,65 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The capability registry of [LCAP.1]. A member's stable name, as written in
+// a `use` block and a dialect definition, is its enum name without the
+// `CAPABILITY_` prefix, in lower case.
+//
+// Public: the capability query and the admission policy of [NLFC.10] are
+// keyed by it, so under [STYL.5.9.7] this enum is the definition and the
+// `libds.h` enumeration mirrors it.
+enum Capability {
+  // `record_event` is not in the language ([LGRA.10.1.5]). Reserved, never
+  // reused ([STYL.2.8.7]).
+  reserved 12;
+  reserved "CAPABILITY_RECORD_EVENT";
+  // 20 is named for the service it gates, `hydrate_facts` ([LSTO.13.1]). This
+  // name is reserved, never reused ([STYL.2.8.7]).
+  reserved "CAPABILITY_STORAGE_HYDRATE_EVENTS";
+  // Storage queries that are not in the language, in this edition or the
+  // deferred storage layer ([LSTO.13.1]). Reserved, never reused ([STYL.2.8.7]).
+  reserved 17 to 19;
+  reserved "CAPABILITY_STORAGE_SAMPLE_LATEST";
+  reserved "CAPABILITY_STORAGE_SAMPLE_AGG";
+  reserved "CAPABILITY_STORAGE_EVENT_QUERY";
+
+  CAPABILITY_UNSPECIFIED             = 0;
+  CAPABILITY_REALTIME                = 1;
+  CAPABILITY_CONSTSPACE              = 2;
+  CAPABILITY_LINEAR_SCAN             = 3;
+  CAPABILITY_LOGICAL                 = 4;
+  CAPABILITY_DYNAMIC_TTL             = 5;
+  CAPABILITY_REGEX                   = 6;
+  CAPABILITY_FLOAT                   = 7;
+  CAPABILITY_CALL                    = 8;
+  CAPABILITY_PUBLISH                 = 9;
+  CAPABILITY_CACHE                   = 10;
+  CAPABILITY_CACHE_DELETE            = 11;
+  CAPABILITY_NOCOOLDOWN              = 13;
+  CAPABILITY_SERIES                  = 14;
+  // 15, 16, 20 and 21 are deferred in this edition ([LCAP.2.10]): every
+  // program and dialect sets them false, so no artefact enables or requires
+  // one.
+  CAPABILITY_SAMPLED_SLOTS           = 15;
+  CAPABILITY_PERSIST_ON_SERIES       = 16;
+  CAPABILITY_STORAGE_HYDRATE_FACTS   = 20;
+  CAPABILITY_STORAGE_HYDRATE_SAMPLES = 21;
+}
+
+// CapabilityInfo atom body ([RDSC.16.2]).
+message CapabilityInfo {
+  reserved 1;
+  reserved "tags";
+
+  // The program's resolved settings ([LDIA.1.3]): every capability whose
+  // setting is `true`. Every capability absent from this list is `false`.
+  repeated Capability enabled = 2;
+
+  // The capabilities whose code the artefact's content needs, computed by the
+  // compiler from what the artefact contains ([RDSC.16.2.8]). A subset of
+  // `enabled`: a capability can be on and unused, never used and off.
+  repeated Capability requires = 3;
+}

@@ -1,0 +1,193 @@
+{
+  "id": "LNUL.4.1",
+  "prefix": "LNUL",
+  "doc": "NULL.md",
+  "parent": "LNUL.4",
+  "seq": 58,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LNUL.4.1] **Value level — null propagates.** Every operator other than\n`and` / `or` ([LNUL.4.2]), `??` ([LNUL.8.9]) and `is` ([LNUL.4.9]) propagates\n`null`: the arithmetic, bitwise ([LEXP.7.7]) and comparison operators, the\ninterval relational operators ([LINT.4.5]) and the regex match operators\n([LREG.1.1]). Such an operator with a `null` operand, and no operand that faults\n([LNUL.4.10]), yields `null` (\"unknown\"): with `s.state` absent, `s.state + 1`,\n`s.state & 1`, `s.state > 85` and `s.state == 5` all evaluate to `null`. A regex\nmatch on an absent string neither matches nor fails to match, so the activation\ncontinues for neither `~` nor `!~` ([LNUL.4.3]).\n\n**There is no exception.** `is null` / `is not null` ([LNUL.4.9]) are a\n**different operator**, not a special case of this one, which is what makes\npropagation uniform rather than nearly-uniform.\n\nThe examples are written with a **binding** whose value is absent rather than a\n`null` literal, because a literal operand of `==` / `!=` is a compile error\n([LNUL.4.4]).\n\n",
+  "refs": [
+    "LEXP.7.7",
+    "LINT.4.5",
+    "LNUL.4.10",
+    "LNUL.4.2",
+    "LNUL.4.3",
+    "LNUL.4.4",
+    "LNUL.4.9",
+    "LNUL.8.9",
+    "LREG.1.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_1__value_op",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "One abstract operator over the tri-valued domain stands for every value-level operator the clause names -- arithmetic, bitwise, comparison, interval relational, regex match -- so the propagation law is stated for all of them at once; the operators themselves are not drawn, and the tie carries the law, not the operator set."
+      },
+      {
+        "path": "formal/alloy/kleene_logic.als",
+        "name": "lnul_4_1__value_propagates_null",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The law restated as a check over the abstract operator: a null operand yields null. A transcription of the fact above, for every operator class at once."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_bool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of a Bool comparison yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of a Float comparison yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of an Int comparison yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_json",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of a Json comparison yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_str",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of a String comparison yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_2__int_right",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of Int arithmetic yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_2__negate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Unary minus of null is null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_right",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A null right operand of Float arithmetic yields null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__arith",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Arithmetic with a null operand yields null, over the fragment's six arithmetic operators (`Lexp_7_2__arith`: + - * / // %). The clause names more operators: the bitwise operators ([LEXP.7.7]) are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__arith_null_left",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Quantified over every operator of `Lexp_7_2__arith` and every right operand."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__arith_null_right",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Quantified over every operator of `Lexp_7_2__arith` and every left operand."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__cmp",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A comparison with a null operand yields null -- == included, with no exception -- over the six comparison operators (`Iret_7_5__cmp`). The clause names more operators: the interval relational operators ([LINT.4.5]) and the regex match operators ([LREG.1.1]) are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__cmp_null_left",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Quantified over every operator of `Iret_7_5__cmp` and every right operand, == included."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__cmp_null_right",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Quantified over every operator of `Iret_7_5__cmp` and every left operand."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__null_or_trap",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The right operand once the left has no answer to give: null propagates, anything else is ill-typed."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_3__null_comparison_never_fires",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Propagation is what makes the comparison null, and not null is null."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_7__null_comparison_blocks",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Propagation is what makes the comparison null under no."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_8_4__path",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A path read on a `null` root (a `Json?` slot holding none) yields `null`: read as the clause's propagation, which it states of arithmetic and comparison operators and not of a path."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

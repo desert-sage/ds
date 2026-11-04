@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.23.2_kwarg_type_unknown",
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a kwarg's `TYPE_SYM` must resolve in the type namespace, and one that resolves to nothing is refused as a slot's is, with DS_VALIDATE_UNKNOWN_TYPE ([LGRA.5.7.1]). `kwarg wait: fortnight default 90_s` in a file that declares no `fortnight` and imports nothing is refused. Without this, the kwarg is untyped and its `default` admitted unchecked. PATH PINNED: `lgra_23_2_kwarg_type` in dsc.validate, which finds `fortnight` in neither `rf_types` nor `rf_unit_alias`. Without that check the program compiles.",
+    "rules_ds": "service timer.arm:\n    kwarg wait: fortnight default 90_s\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_TYPE"
+    }
+}

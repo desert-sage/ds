@@ -1,0 +1,21 @@
+{
+  "id": "RTCT.3.3",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.3",
+  "seq": 238,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.3.3] **`contract:` field requirements** (compile-time\nenforced):\n\n  - All scalar fields listed in [RTCT.3.2] under `contract:`\n    MUST be present and ≥ 1 (zero is rejected as\n    `DS_ERR_CONTRACT_INVALID`; the engine has no zero-sized\n    legitimate state).\n  - There MUST be exactly one entry in `contract.nodes:` for\n    each alpha, beta, and terminal node in the loaded rule\n    network; `node_id` values MUST match the compiler-assigned\n    IDs; missing entry or unknown node_id is\n    `DS_VALIDATE_COMPILE_CONTRACT_INCOMPLETE`.\n  - There MUST be exactly one entry in `contract.series:` for\n    each series backend in the rule set.\n  - `kind` MUST be one of `alpha`, `beta`, `term`.\n  - All capacity fields are uint32; values exceeding 2^31-1\n    are rejected (`DS_ERR_CONTRACT_INVALID`).\n\nThese requirements are **compile-time** only (the source-level\n`.dsrt` contract); the per-node coverage rule above is *not* a\nruntime check and MUST NOT be cited for load-time rejection\n(see [RTCT.6.7.6]). The `.dsrt` **source** schema is unchanged\nby the compact encoding: an author still writes one\n`contract.nodes:` entry per node. The compiler MAY compact the\n*compiled* `RealtimeContract` atom per [RTCT.6.7]; this is invisible\nat the source level and changes neither the logical contract\nnor its hash.\n\n",
+  "deferred": true,
+  "refs": [
+    "RTCT.3.2",
+    "RTCT.6.7",
+    "RTCT.6.7.6"
+  ],
+  "errors": [
+    "DS_VALIDATE_COMPILE_CONTRACT_INCOMPLETE",
+    "DS_ERR_CONTRACT_INVALID"
+  ]
+}

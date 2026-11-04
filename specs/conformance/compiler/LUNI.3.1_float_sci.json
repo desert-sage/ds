@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.3.1_float_sci",
+    "category": "compiler",
+    "scenario": "LUNI.3.1.5 \u2014 float and scientific numeric prefixes are admitted as UNIT_LIT. `1.5h`, `0.5_min`, `1e6s` and `1.0e3_ms` all parse as `time`-dimensioned values, so the program compiles. PINS ONLY THAT IT COMPILES: `compile_ok` does not read the integer-nanosecond constants or the truncation. The asymmetric `e`/`E`-start suffix rule keeps `1e6` (no trailing letter) as FLOAT_LIT while `1e6s` (trailing letter `s`) becomes UNIT_LIT with suffix `s`.",
+    "rules_ds": "schema Sensor scope ttl 1.5h:\n    entity_id: String\n    val: Int\n    ts: Time\n\nrule trig_float cooldown 0.5_min by: s.entity_id:\n    Sensor s within 1e6s where s.val > 0\n->\n    log info \"float-sci unit literals\"\n\nrule trig_sci cooldown 1.0e3_ms by: s.entity_id:\n    Sensor s within 2_s where s.val > 0\n->\n    log info \"float-sci unit literals (sci form)\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

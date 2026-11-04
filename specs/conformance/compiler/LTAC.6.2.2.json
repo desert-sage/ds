@@ -1,0 +1,9 @@
+{
+    "id": "LTAC.6.2.2",
+    "category": "compiler",
+    "scenario": "Nested `after` per LTAC.6.2.2 \u2014 an `after` body may contain further `after` clauses (the inner timer schedules from the outer's firing). Pin: a rule with `after 10_min:` nested inside `after 5_min:` compiles. PINS ONLY THAT IT COMPILES. That the inner fires at outer-fire plus 10_min needs a run.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule cascading:\n    Motion m where m.state == true\n->\n    log info \"step 0\"\n    after 5_min:\n        log info \"step 1\"\n        after 10_min:\n            log info \"step 2\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

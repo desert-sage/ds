@@ -1,0 +1,24 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "fact_external.proto";
+
+// ExternalAssert — atom body ([RFCS.24]). A host input whose fact holds
+// a fact reference: the fact body FactAssert carries has no encoding for one,
+// so the input is recorded as the FactExternal it is, with the referenced
+// facts inlined ([RFCS.23.4]), and replay delivers it through [RFCS.23.7].
+//
+// Inject class: delivered to the engine on replay and never compared. It
+// carries no event_id: each fact the delivery asserts takes the one its
+// position in the stream derives ([LFST.5.6]), as any assert does.
+message ExternalAssert {
+  FactExternal    fact     = 1;  // the input; references inlined
+  repeated uint64 fact_ids = 2;  // handles of the facts the input asserted, in
+                                 // [RFCS.23.7]'s order; echoed in FactRetract ([RFCS.24.3])
+  int64           ttl_ns   = 3;  // TTL override on the received fact; 0 = the schema's default
+  uint64          clock_ns = 4;  // engine clock at the input (ns), as FactAssert's ([RFCS.6.6])
+  uint64          seq      = 5;  // optional stream sequence number; 0 if not set
+}

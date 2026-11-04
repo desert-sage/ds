@@ -1,0 +1,19 @@
+{
+  "id": "LEXP.4.1",
+  "clauses": ["LEXP.4.1", "LIMP.3.3.4"],
+  "category": "logical",
+  "scenario": "Math constants per LEXP.4.1 and LIMP.3.3.4 — `math.pi`, `math.e` and `math.tau`, declared by `math`'s source, are inlined at compile time. tau = 2*pi. PATH PINNED: `dsc.rete`'s `lgra_13_3_const`.",
+  "rules_ds": "import math\n\nschema T scope logical:\n    v: Float key\n\nrule r_pi:\n    T t where t.v > math.pi - 0.001 and t.v < math.pi + 0.001\n->\n    log critical \"pi\"\n\nrule r_e:\n    T t where t.v > math.e - 0.001 and t.v < math.e + 0.001\n->\n    log critical \"e\"\n\nrule r_tau:\n    T t where t.v > math.tau - 0.001 and t.v < math.tau + 0.001\n->\n    log critical \"tau\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 3.14159265358979 } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "T", "slots": { "v": 2.71828182845905 } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "T", "slots": { "v": 6.28318530717959 } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["pi", "e", "tau"]
+  }
+}

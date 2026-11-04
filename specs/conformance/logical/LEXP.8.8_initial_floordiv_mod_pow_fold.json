@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_initial_floordiv_mod_pow_fold",
+    "category": "logical",
+    "scenario": "[LEXP.8.8]: `//`, `%` and `**` in a `const` fold, and an `initial:` item may name one. Each `initial` fact carries one `const`'s folded value, and its rule compares that slot with the same `const` inlined and evaluated by the engine; the rule fires only if the two agree to the bit. `IFD = -7 // 2` is `-4` and `IMOD = -7 % 3` is `2`, flooring ([LEXP.7.5], [LEXP.7.6]); `FFD = -7.5 // 2` is `-4.0`, `FMOD = -7.5 % 2` is `0.5` and `FFD3 = 0.3 // 0.1` is `2.0`, by the engine's composition, not `floor(a / b)`; `IPOW = 3 ** 4` is `81` and `IPOW64 = 2 ** 64` wraps to `0` ([LEXP.7.3a]); `FPOW = 2 ** -3` is the `Float` `0.125` and `FPOW2 = 1.5 ** 2` is `2.25`, both exactly representable. Pin: all nine rules log, in source order. A compiler that does not fold these refuses the program with DS_VALIDATE_INITIAL_NOT_CONST. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `fold_int_binary`, `f_divmod` and `float_pow`, against the rule's inlined `const` evaluated by each runtime's `//`, `%` and `**`.",
+    "rules_ds": "const IFD = -7 // 2\nconst IMOD = -7 % 3\nconst FFD = -7.5 // 2\nconst FMOD = -7.5 % 2\nconst FFD3 = 0.3 // 0.1\nconst IPOW = 3 ** 4\nconst IPOW64 = 2 ** 64\nconst FPOW = 2 ** -3\nconst FPOW2 = 1.5 ** 2\n\nschema VI scope explicit:\n    k: String\n    i: Int\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VI k: \"ifd\" i: IFD\n    VI k: \"imod\" i: IMOD\n    VF k: \"ffd\" f: FFD\n    VF k: \"fmod\" f: FMOD\n    VF k: \"ffd3\" f: FFD3\n    VI k: \"ipow\" i: IPOW\n    VI k: \"ipow64\" i: IPOW64\n    VF k: \"fpow\" f: FPOW\n    VF k: \"fpow2\" f: FPOW2\n\nrule r_ifd:\n    VI v where v.k == \"ifd\" and v.i == IFD\n->\n    log info \"ifd\"\n\nrule r_imod:\n    VI v where v.k == \"imod\" and v.i == IMOD\n->\n    log info \"imod\"\n\nrule r_ffd:\n    VF v where v.k == \"ffd\" and v.f == FFD\n->\n    log info \"ffd\"\n\nrule r_fmod:\n    VF v where v.k == \"fmod\" and v.f == FMOD\n->\n    log info \"fmod\"\n\nrule r_ffd3:\n    VF v where v.k == \"ffd3\" and v.f == FFD3\n->\n    log info \"ffd3\"\n\nrule r_ipow:\n    VI v where v.k == \"ipow\" and v.i == IPOW\n->\n    log info \"ipow\"\n\nrule r_ipow64:\n    VI v where v.k == \"ipow64\" and v.i == IPOW64\n->\n    log info \"ipow64\"\n\nrule r_fpow:\n    VF v where v.k == \"fpow\" and v.f == FPOW\n->\n    log info \"fpow\"\n\nrule r_fpow2:\n    VF v where v.k == \"fpow2\" and v.f == FPOW2\n->\n    log info \"fpow2\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["ifd", "imod", "ffd", "fmod", "ffd3", "ipow", "ipow64", "fpow", "fpow2"]
+    }
+}

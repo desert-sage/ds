@@ -1,0 +1,139 @@
+{
+  "id": "IRET.12.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.12",
+  "seq": 976,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.12.1] **Justification.** When a firing runs an\n`ACTION_LOGICAL_ASSERT` ([RLOW.7.1.3]) and so emits a logical fact F\n([LLOG.15.1]), the engine:\n\n1. Asserts F into working memory (may be a no-op if F\n   already exists with matching slot values).\n2. Increments `F->justif_count`.\n3. Records the pair `(activation_id → fact_id)` in the\n   dependency table.\n\n",
+  "refs": [
+    "LLOG.15.1",
+    "RLOW.7.1.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_1__reach_input",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One seed and the two edges of a 2-cycle."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_1__reach_prog",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Seed, then `gap__grow` closing Reach over the edges, then the seed's withdrawal; Reach a `logical` relation, the rest explicit. The `+recursive` proposal's shape."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_1__seed_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`Seed s -> emit Reach(1,2) logical`: the seed justification of the reach witness."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_2__reach_engine_run",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed and checked firing by firing: the seed justifies Reach(1,2), `grow` justifies Reach(1,1), the no-op re-emit justifies Reach(1,2) a second time as step 2 says, the seed's withdrawal ends its activation and Reach(1,2) keeps one justification. Both Reach facts are live at the end."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_10_2__record",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Steps 1-3 for one logical emit: the row is added whether or not the assert was a no-op, since the clause increments the count either way, and targets the fact live afterwards (the fresh one on an entity replace)."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_1__count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`justif_count`: the rows of the table targeting the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__kept_count_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`justif_count` against the kept rows, for an id every row of which has lapsed: zero. The count the clause defines, at the value the retraction keys on."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "Iret_12_1__justif",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's dependency-table pair: the antecedents a rule activation matched and the `logical` fact it emitted."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_1__supported_append_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support under two lists together comes from one of them."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_1__supported_append_l",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support under a justification list survives appending another."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_1__supported_append_r",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support under the appended list, likewise."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_1__supported_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support taken apart: `justif_count > 0` exhibits the justification that provides it, with every antecedent live."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_1__supported_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Support put together: a recorded justification with every antecedent live supports its target."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12__supported",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 2's `justif_count`, as the predicate \"positive against the live set\"."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_1__count_row",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A nonzero `justif_count` exhibits a row with the target."
+      }
+    ]
+  }
+}

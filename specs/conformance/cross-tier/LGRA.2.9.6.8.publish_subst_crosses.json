@@ -1,0 +1,29 @@
+{
+    "id": "LGRA.2.9.6.8.publish_subst_crosses",
+    "clauses": ["LGRA.2.9.6.8"],
+    "category": "cross-tier",
+    "scenario": "[LGRA.2.9.6.8]: `publish` String-slot interpolation substitutes at runtime, as `emit`'s does (`LGRA.2.9.6.8.emit_subst`), and `{{`/`}}` escape to literal braces. A `publish` asserts nothing in its own tier ([LTIE.4.3]), so the value is observed where it is received. Tier `edge`'s `r1` publishes Step{argv} from Src{obj} with `\"p-{s.obj} {{flag}}\"`. `hub` declares Step with `argv` its key, and the host first asserts a Step whose `argv` is the expected text, `p-engine.o {flag}`; then `hub` takes the forward (the harness's `forward` step, [RCTS.1.2.29]). The forwarded Step has the same key, so it is a no-op reassertion ([LFAC.2.5]) and `hub` holds 1 fact. A value with `{s.obj}` unsubstituted, or `{{flag}}` not collapsed, is another key, and `hub` holds 2. `edge` holds its Src alone: 1. Path: `dsc.rete`'s `publish_args`, `luni_4_5_1_slot_value` to `rlow_6_4_1_message`, then each runtime's `FN_PUBLISH`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Src scope logical:\n    obj: String key\n\nschema Step scope logical:\n    argv: String key\n\nrule r1:\n    Src s\n->\n    publish Step argv: \"p-{s.obj} {{flag}}\"\n"
+            },
+            "hub": {
+                "rules_ds": "schema Step scope logical:\n    argv: String key\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Src", "slots": { "obj": "engine.o" } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "assert", "schema": "Step", "slots": { "argv": "p-engine.o {flag}" } },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 1,
+            "hub": 1
+        }
+    }
+}

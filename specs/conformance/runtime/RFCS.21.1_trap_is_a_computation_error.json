@@ -1,0 +1,23 @@
+{
+    "id": "RFCS.21.1_trap_is_a_computation_error",
+    "clauses": ["LERR.9.8"],
+    "category": "runtime",
+    "scenario": "[RFCS.21.1]: a trap is recorded as a `ComputationError` atom, the first of [LERR.9.1]'s two steps: record the event, then assert the fault fact, which is itself recorded as a `FactEmit` ([LERR.9.8]). A host assert of an S with a = 1, b = 0 enters working memory, and `r`'s join test `s.a // s.b > 1` divides an Int by zero on its propagation, which traps ([LEXP.7.15.1]), so the activation never forms and nothing fires. The ComputationError follows the FactAssert of the input whose propagation raised it ([RFCS.6.7]), and the fault fact's FactEmit follows the ComputationError. Break: a recorder that dropped the trap, wrote it ahead of the assert, or put the fault fact before it changes the list. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n\nrule r:\n    S s where s.a // s.b > 1\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot",
+            "ClockAdvance", "FactAssert", "ComputationError", "FactEmit", "PumpBoundary"
+        ]
+    }
+}

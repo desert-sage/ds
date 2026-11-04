@@ -1,0 +1,24 @@
+(* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors *)
+(* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later *)
+
+(* ds_series_storage_mode — an enumeration registry ([STYL.2.15.6]).
+
+   The storage mode a series declaration reports ([NSTG.5.5.4], deferred). No
+   C type mirrors it in this edition: `ds_series_storage_mode_t` will, in
+   libds.h, when NSTG.5 binds, and the reconciliation gate holds no mirror for
+   it until then. It travels nowhere, so it is an EBNF registry rather than a protobuf
+   ([STYL.5.9.7]). Its consumers are generated from it; never hand-write them
+   ([STYL.5.9.6]).
+
+   The alternation below is the closure: these names and no others.
+   Each production is an allocation. A production that is NOT a member
+   of the alternation is out of use — the number stays allocated to that
+   name ([STYL.2.8.7]). *)
+
+ds_series_storage_mode = DS_SERIES_ACCUMULATOR
+                       | DS_SERIES_RING_BUFFER ;
+
+(* allocations *)
+
+DS_SERIES_ACCUMULATOR = "0" ;
+DS_SERIES_RING_BUFFER = "1" ;

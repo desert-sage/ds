@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.4.1",
+    "category": "compiler",
+    "scenario": "A `call` with `on`, `timeout` and `error` clauses compiles. PINS ONLY THAT IT COMPILES. LCCO.4.1 names the synthetic rules this generates: `<rule>#call0`, `$<rule>_response_0`, `$<rule>_timeout_0` and `$<rule>_error_0`. `compile_ok` reads none of those names.",
+    "rules_ds": "schema SvcMethodReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Trig scope logical:\n    v: Int key\n\nrule my_rule:\n    Trig\n->\n    call svc.method cooldown: 30_s\n        on response.code == 200:\n            log info \"ok\"\n        timeout 5_s:\n            log info \"timeout\"\n        error:\n            log info \"error\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.9_const_shadows_library_refused",
+    "category": "compiler",
+    "scenario": "LGRA.22.9's refusal, the constant case: `import ha` and a file-level `const ha = 1`, read in a `where`. A constant named like the first segment of an imported library is refused with DS_VALIDATE_BINDING_SHADOWS_LIBRARY. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, over the file's own `const` declarations.",
+    "rules_ds": "import ha\n\nconst ha = 1\n\nschema Door scope logical:\n    id: Int key\n\nrule r:\n    Door d where d.id > ha\n->\n    log info \"door\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 3\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

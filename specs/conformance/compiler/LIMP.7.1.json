@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.7.1",
+    "category": "compiler",
+    "scenario": "A library file's importable surface includes its schemas per LIMP.7.1. The imported schema is available in the importer's rules: `from ha import Light` and a rule matching `Light l where l.state == \"on\"` compile, which an unresolved schema or slot would refuse. `compile_ok` does not read the lowering.",
+    "rules_ds": "from ha import Light\n\nrule turn_on:\n    Light l where l.state == \"on\"\n->\n    log info \"light on\"\n",
+    "libraries": {
+        "ha": "schema Light scope logical:\n    entity_id: String key\n    state: String mutable\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

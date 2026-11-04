@@ -1,0 +1,19 @@
+{
+    "id": "LCRS.6.2.1_empty_corr_retracts_nothing",
+    "category": "logical",
+    "scenario": "[LCRS.6.2.1] with [LRST.1.2]: a call whose computed key evaluates to `\"\"` is issued with the correlation a call with no `as` gets ([LCCO.3.4]), which is unique to its firing, so its supersede retracts nothing. A rule calls `svc.read` `as j.tag`, a computed key the Job carries as `\"\"` (the literal `as \"\"` is refused with DS_VALIDATE_AS_EMPTY_KEY); the host answers with a reply of corr `\"\"` (v 1); the rule fires again, and the second call, issued with its own generated correlation, must leave that reply live, so `probe` logs [\"live 1\"]. PATH PINNED: the call-side sweep, keyed on the generated correlation the compiler substitutes for the empty key and each runtime evaluates at dispatch -- libds's `do_retract_corr_sweep` and Mercury's call-side victim choice in `ds.exec`, run as the second call is issued. The arrival supersede ([LCRS.6.2.4]) is not reached: only one reply is asserted, before the second call. The break is a second call swept on `\"\"`: it retracts the reply and `probe` logs nothing. `adapter/LRST.1.2_empty_key_call_gets_generated_correlation` pins the issued correlation itself, which this vector's log cannot tell apart.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n    tag: String\n\nschema Probe scope explicit:\n    k: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id nocooldown as j.tag\n\nrule probe:\n    Probe\n    Reply x\n->\n    log info \"live {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1, "tag": "" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "", "v": 1 } },
+            { "op": "assert", "schema": "Job", "slots": { "id": 2, "tag": "" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["live 1"]
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.7.5",
+    "category": "compiler",
+    "scenario": "Floor-division `//` rounds toward negative infinity per LEXP.7.5. `7 // 2 == 3`, `-7 // 2 == -4` (not -3). Distinct from `trunc(a/b)` which rounds toward zero. Pin: `where t.v // 3 > 0` compiles. PINS ONLY THAT IT COMPILES: `compile_ok` has no `lowered_contains`, so the lowering is not read. Rounding toward negative infinity is pinned at runtime by runtime/LCON.2.6.1.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v // 3 > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

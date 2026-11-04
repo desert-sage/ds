@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.5.1d",
+    "category": "compiler",
+    "scenario": "[LNUL.5.1] — an argument of a builtin that demands a value of a particular kind is a concrete-value position, so a bare `T?` argument is a compile error even inside a `where`. `len` is not a Kleene consumer: it counts the code points of a `String` value ([LSTR.2.1]), so the value leaves the Kleene domain at the argument. A `String` has no member ([LTIM.14]), so the position is a builtin's argument, which [LNUL.5.1] names beside the receiver. PATH PINNED: `dsc.typecheck.lnul_5_1_builtin_arguments`, which calls `lnul_5_1_concrete` on each argument of a builtin other than `has` and `math.fma`; arithmetic calls nothing of the kind, and LNUL.5.1c is the fixture that pins that difference. Sitting inside a `where` is what makes this distinct from LNUL.5.1a's emit-slot boundary: the predicate boundary is not the test.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    stamp: String? mutable\n\nrule r:\n    S s where len(s.stamp) > 1\n->\n    log info \"matched\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

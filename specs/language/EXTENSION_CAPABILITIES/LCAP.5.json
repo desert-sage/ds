@@ -1,0 +1,139 @@
+{
+  "id": "LCAP.5",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": null,
+  "seq": 366,
+  "depth": 1,
+  "kind": "heading",
+  "heading": "Combination matrix",
+  "text": "## Combination matrix [LCAP.5]\n\nThe combinations of the five settings with engine consequences for cost —\n`realtime`, `constspace`, `linear_scan`, `logical` and `dynamic_ttl`\n([LCAP.2]). Of their 32 combinations, the 8 with `realtime: true` and\n`constspace: false` violate [LCAP.3.7]; the 24 others are listed. This\nedition admits only the 8 with both `realtime` and `constspace` `false`\n([LCAP.2.1.5]); the matrix states the algebra of the settings, not what\nthis edition admits.\nProperties:\n- **Alloc-free**: zero `malloc`/`realloc` in pump after go_live\n- **Join O(1)**: J_max=1 proven; no left/right memory scan. The bound is\n  [LNLS.5.1]'s, which does not bind this edition; its engine meets [LNLS.5.8]\n- **No TMS**: TMS not allocated; no cascade\n- **TTL O(1)**: the TTL tick has no term in N_ttl; its one log factor is in\n  the number of TTL schemas, which is fixed at compile time ([LCAP.3.3]). Whether the tick's total is a compile-time constant\n  depends on a bounded `N_max` ([LDTL.7.1]), which is the T_wcet column's\n  question and footnote ¹'s. The bound is [LDTL.6.3]'s, which does not bind\n  this edition; its engine meets [LDTL.6.4]\n- **String O(1)**: all string ops bounded by `capacity`\n- **T_wcet fixed**: the entire formula evaluates to a single number from the\n  program and its declared bounds ([LCAP.4])\n- **Alpha-only**: no beta network (single-pattern rules only)\n\n| `realtime` | `constspace` | `linear_scan` | `logical` | `dynamic_ttl` | Alloc-free | Join O(1) | No TMS | TTL O(1) | String O(1) | T_wcet fixed | Alpha-only |\n|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n| false | false | true | true | false | ✗ | ✗ | ✗ | ✓ | ✗ | ✗¹ | ✗ |\n| false | false | true | true | true | ✗ | ✗ | ✗ | ✗² | ✗ | ✗¹ | ✗ |\n| false | false | true | false | false | ✗ | ✗ | ✓ | ✓ | ✗ | ✗¹ | ✗ |\n| false | false | true | false | true | ✗ | ✗ | ✓ | ✗² | ✗ | ✗¹ | ✗ |\n| false | false | false | true | false | ✗ | ✓ | ✗ | ✓ | ✓ | ✗¹ | ✗ |\n| false | false | false | true | true | ✗ | ✓ | ✗ | ✗² | ✓ | ✗¹ | ✗ |\n| false | false | false | false | false | ✗ | ✓ | ✓ | ✓ | ✓ | ✗¹ | **✓** |\n| false | false | false | false | true | ✗ | ✓ | ✓ | ✗² | ✓ | ✗¹ | **✓** |\n| false | true | true | true | false | ✓³ | ✗ | ✗ | ✓ | ✗ | ✗¹ | ✗ |\n| false | true | true | true | true | ✓³ | ✗ | ✗ | ✗² | ✗ | ✗¹ | ✗ |\n| false | true | true | false | false | ✓³ | ✗ | ✓ | ✓ | ✗ | ✗¹ | ✗ |\n| false | true | true | false | true | ✓³ | ✗ | ✓ | ✗² | ✗ | ✗¹ | ✗ |\n| false | true | false | true | false | ✓³ | ✓ | ✗ | ✓ | ✓ | ✗¹ | ✗ |\n| false | true | false | true | true | ✓³ | ✓ | ✗ | ✗² | ✓ | ✗¹ | ✗ |\n| false | true | false | false | false | ✓³ | ✓ | ✓ | ✓ | ✓ | ✗¹ | **✓** |\n| false | true | false | false | true | ✓³ | ✓ | ✓ | ✗² | ✓ | ✗¹ | **✓** |\n| true | true | true | true | false | ✓ | ✗ | ✗ | ✓ | ✗ | ✓⁴ | ✗ |\n| true | true | true | true | true | ✓ | ✗ | ✗ | ✗² | ✗ | ✓⁴ | ✗ |\n| true | true | true | false | false | ✓ | ✗ | ✓ | ✓ | ✗ | ✓⁴ | ✗ |\n| true | true | true | false | true | ✓ | ✗ | ✓ | ✗² | ✗ | ✓⁴ | ✗ |\n| true | true | false | true | false | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✗ |\n| true | true | false | true | true | ✓ | ✓ | ✗ | ✗² | ✓ | ✓⁴ | ✗ |\n| true | true | false | false | false | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | **✓** |\n| true | true | false | false | true | ✓ | ✓ | ✓ | ✗² | ✓ | ✓⁴ | **✓** |\n\n¹ Not fixed without `realtime`, on every row that lacks it. Without it `N_max` is unbounded, so `T_wcet`\n  cannot be computed to a number even when every per-operation cost is O(1).\n  `constspace` does **not** lift this: it bounds the pools, so `N_max` is\n  bounded under it, but `[LCSP.3.1]` declines a WCET claim outright — pump\n  time is unbounded because expression depth, RHS action-sequence length and\n  series-backend behaviour are unbounded under `constspace` alone. A bounded\n  `N_max` is necessary for a fixed `T_wcet` and not sufficient.\n\n² `dynamic_ttl: true` reintroduces O(expired × log N_ttl) in the TTL tick,\n  removing the O(1) TTL guarantee, on every row that has it. Under `realtime`\n  with `linear_scan: false` the compiler should warn ([LCAP.3.9]).\n\n³ **Alloc-free under `constspace` without `realtime` is the pooled\n  guarantee, not the total one.** `[LCSP.2.1]` binds assert, pump and fire to\n  pools sized at boot, and names three paths that sit outside it: the\n  string-intern table, which `constspace` cannot freeze because it has no\n  `go_live` to freeze at ([LCSP.3.5]); series identity cardinality, which the\n  event trace drives and nothing caps ([LCSP.3.6]); and a `String`-typed\n  series, rejected outright for that reason ([LCSP.4.5]). The column's own\n  definition above says *after go_live* — a milestone these rows do not have.\n  Where `realtime` is also present the guarantee is the unqualified one and\n  the mark is plain ✓.\n\n⁴ **Fixed, but not O(1) in `N_max`.** `realtime` bounds every parameter\n  ([LCAP.4]), so the formula still evaluates to a number. Some terms in it\n  grow with the bounds:\n  - with `linear_scan: true`, a join may scan, at `N_max × T_j` ([LCAP.2.1]);\n  - with `linear_scan: true`, a string test costs up to the longest interned\n    string. The intern table is locked ([RTCT.12.4]), so that length is known\n    once the program loads, but not when it compiles;\n  - with `dynamic_ttl: true`, the TTL tick is the deadline heap's\n    O(expired × log N_ttl) ([LCAP.3.3]).\n\n  Only the rows with plain ✓ have a `T_wcet` that is O(1) in `N_max`.\n\n---\n\n",
+  "refs": [
+    "LCAP.2",
+    "LCAP.2.1",
+    "LCAP.2.1.5",
+    "LCAP.3.3",
+    "LCAP.3.7",
+    "LCAP.3.9",
+    "LCAP.4",
+    "LCSP.2.1",
+    "LCSP.3.1",
+    "LCSP.3.5",
+    "LCSP.3.6",
+    "LCSP.4.5",
+    "LDTL.6.3",
+    "LDTL.6.4",
+    "LDTL.7.1",
+    "LNLS.5.1",
+    "LNLS.5.8",
+    "RTCT.12.4"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__a_cross_footnote_marks_every_cross_it_explains",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__a_fixed_wcet_needs_realtime",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__a_fixed_wcet_row_is_alloc_free",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__a_footnote_qualifies_the_mark_it_sits_on",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__admissible",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__columns",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The clause prints cells, not column rules; each rule here is a clause's, and none rests on the rows: alloc-free LCAP.2.6; join O(1) and string O(1) LCAP.2.2 with LCAP.4; no TMS LCAP.2.3; TTL O(1) LCAP.2.4 and LDTL.1.1 with LCAP.3.3; T_wcet fixed LCAP.4's realtime row with the column's own definition; alpha-only LCAP.3.1."
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__combination",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__dynamic_ttl_loses_the_ttl_bound",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__each_cell_follows_its_column",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__each_footnote_follows_its_rule",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__every_admissible_combination_is_listed",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__every_row_is_admissible",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__footnote",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__footnote_4_marks_a_term_that_grows",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__footnotes",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Each footnote is placed by its own first sentence, on every row that has the cause: 1 without realtime, 2 with dynamic_ttl, 3 with constspace and not realtime, 4 with realtime and linear_scan or dynamic_ttl. Footnote 2's second sentence, the warning under realtime and linear_scan false, is LCAP.3.9's and places no mark."
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__no_combination_is_listed_twice",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__property",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__row",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__setting",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/capability_matrix.als",
+        "name": "lcap_5__table",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.4.4a",
+    "category": "compiler",
+    "scenario": "[LNUL.4.4] — a `null` LITERAL as an operand of `==` is refused with DS_VALIDATE_NULL_LITERAL_COMPARISON. PATH PINNED: `dsc.typecheck.lnul_4_4_null_literals`, which refuses a `null` literal on either side of each `==` / `!=` step of a comparison chain. This is the RIGHT-operand position, the form a sweep matching only `== null` would find; `LNUL.4.4b` pins the left. The rule is otherwise well-formed, so a failure here is the diagnostic and nothing else.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nrule offline:\n    Sensor s where s.state == null\n->\n    log warning \"no reading\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULL_LITERAL_COMPARISON"
+    }
+}

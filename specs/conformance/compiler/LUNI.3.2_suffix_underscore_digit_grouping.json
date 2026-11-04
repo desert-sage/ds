@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.3.2_suffix_underscore_digit_grouping",
+    "clauses": ["LLEX.12", "LLEX.12.1", "LLEX.12.2"],
+    "category": "compiler",
+    "scenario": "LUNI.3.2 and LLEX.12 with LLEX.11.1's digit grouping: in `1_000_meter_squared`, the `_` between digits is a group separator, the `_` before the first letter is the unit separator, and the `_` inside the suffix is part of the unit's name. The literal is 1000 of `meter_squared`, one token. It is compared with an `area` slot, so the rule compiles only if the whole suffix resolves; stopping at `meter` would leave `_squared` naming nothing. The library is the shipped `stdlib/units/si.ds`, on every fixture's search path ([RCTS.1.2.14]).",
+    "rules_ds": "from units.si import meter_squared\n\nschema Plot scope logical:\n    id: String key\n    area: meter_squared mutable\n\nrule large:\n    Plot p where p.area > 1_000_meter_squared\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

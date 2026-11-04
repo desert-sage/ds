@@ -1,0 +1,15 @@
+{
+    "id": "LSCO.3.1",
+    "clauses": ["LSCP.2.4.1"],
+    "category": "runtime",
+    "scenario": "scope activation facts per LSCO.3.1. A rule emits a `scope activation` Lock and a logical Result. The firing has no async tail -- no `after`, no `call` continuation -- so the synchronous end of its RHS is its one completion path and the Lock is retracted there (LSCP.2.4.1, LSCP.3.2): fact_count 2 (Trig + Result). The SchemaLogical atom's `lifecycle` (RDSC.5.4.5) is what lets both runtimes retract it.",
+    "rules_ds": "schema Lock scope activation:\n    entity_id: String\n\nschema Trig scope logical:\n    entity_id: String key\n\nschema Result scope logical:\n    entity_id: String key\n\nrule gated:\n    Trig t\n->\n    emit Lock entity_id: \"x\"\n    emit Result logical entity_id: t.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Trig", "slots": { "entity_id": "t1" } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

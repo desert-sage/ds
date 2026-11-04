@@ -1,0 +1,12 @@
+{
+    "id": "LREG.8.1_re2_inline_icase",
+    "category": "runtime",
+    "scenario": "[LREG.8.1] — the inline flag group `(?i)` is RE2 syntax and must fold case. POSIX ERE has no inline flags and rejects the pattern. Under RE2 `\"ABC\"` matches. Expected count 2 = the Log fact plus the emitted Hit.",
+    "rules_ds": "schema Log scope logical:\n    msg: String key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    Log e where e.msg ~ /(?i)abc/\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "Log", "slots": { "msg": "ABC" } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

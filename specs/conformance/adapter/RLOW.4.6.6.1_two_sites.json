@@ -1,0 +1,22 @@
+{
+    "id": "RLOW.4.6.6.1_two_sites",
+    "clauses": ["LCRS.8.2"],
+    "category": "adapter",
+    "scenario": "Two `cooldown:` calls in one rule have independent trackers (`r#call0`, `r#call1`), each with its own window. `a` fires both; after 11 s, past the 10 s window of `svc.fast` and inside the 60 s window of `svc.slow`, `a` fires again (a new `level`). Expected: `svc.slow` and `svc.fast` for the first firing, then `svc.fast` alone. A tracker shared by the two sites would hold `svc.fast` back too, and one keyed by the rule's window would release `svc.slow` with it. PATH PINNED: the compiler's per-call gate numbering (`dsc.rete.rlow_4_6_6_1_call_gates`, N counting the rule's `cooldown:` calls) and `adapter_ds_rate_allow`'s tracker per name, in libds's action loop (`rete/engine.c`, ACTION_CALL).",
+    "rules_ds": "schema Dev scope logical:\n    id: String key\n    level: Int mutable\n\nservice svc.slow:\n    kwarg id: String\n    no response\n\nservice svc.fast:\n    kwarg id: String\n    no response\n\nrule r:\n    Dev d\n->\n    call svc.slow id: d.id cooldown: 60_s\n    call svc.fast id: d.id cooldown: 10_s\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 1}},
+            {"op": "pump"},
+            {"op": "advance", "delta_ns": 11000000000},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 2}},
+            {"op": "pump"}
+        ],
+        "expected_calls": [
+            {"service": "svc.slow", "correlation": "$r_c0_g0", "body": {"id": "a"}},
+            {"service": "svc.fast", "correlation": "$r_c1_g1", "body": {"id": "a"}},
+            {"service": "svc.fast", "correlation": "$r_c1_g3", "body": {"id": "a"}}
+        ]
+    }
+}

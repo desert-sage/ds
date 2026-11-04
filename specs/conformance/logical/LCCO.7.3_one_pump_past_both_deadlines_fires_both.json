@@ -1,0 +1,17 @@
+{
+    "id": "LCCO.7.3_one_pump_past_both_deadlines_fires_both",
+    "clauses": ["LCCO.7.3", "LDET.5.1"],
+    "category": "logical",
+    "scenario": "[LCCO.7.3]: several `timeout` clauses on one call are independent, each with its own timer and sibling. Rule `r` binds `Job j` and calls `svc.get` as `c1` with `timeout 30_s:` written first, logging `30s {j.id}`, then `timeout 5_s:`, logging `5s {j.id}`; each body reads the binding from its own timer ([LCCO.7.2]). A Job with id 7 is asserted and pumped; the clock moves 31 s in one step, past both deadlines, and is pumped. Both siblings are activated by the same pump and fire in source order, the terminal ordinal ([LDET.5.1]'s first key, [LDET.5.4]): the messages are exactly ['30s 7', '5s 7']. The break: siblings ordered by deadline rather than by source give ['5s 7', '30s 7']. Neither sibling joins the capture fact, so whether a firing keeps it is not observed here; `LCCO.7.3_a_late_answer_cancels_the_later_timeout` pins that a firing leaves it for a late answer. PATH PINNED: `dsc.rete`'s `timeout_sibling`, one terminal per clause in source order, each on its own timer.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        timeout 30_s:\n            log info \"30s {j.id}\"\n        timeout 5_s:\n            log info \"5s {j.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 31000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["30s 7", "5s 7"]
+    }
+}

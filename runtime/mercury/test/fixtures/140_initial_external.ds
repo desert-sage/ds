@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# An `initial:` block whose cache bound refuses a first step that is an
+# external delivery ([LGRA.24.3]). The block seeds two cache keys, so an
+# engine bounded to one key refuses the first step that applies it.
+# `check_initial_external` makes that step an `assert_external`, raises the
+# bound, and makes the next a host assert. libds's `test_assert_external.c`
+# builds the same program by hand.
+
+schema Ref scope explicit:
+    id: String
+    note: String
+
+schema Seed scope explicit:
+    k: Int
+
+initial:
+    Seed k: 1
+    cache "a": 1
+    cache "b": 2
+
+rule seen:
+    Ref r
+->
+    log info "ref {r.id}"

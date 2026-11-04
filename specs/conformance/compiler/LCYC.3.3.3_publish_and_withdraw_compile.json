@@ -1,0 +1,9 @@
+{
+    "id": "LCYC.3.3.3_publish_and_withdraw_compile",
+    "category": "compiler",
+    "scenario": "[LCYC.3.3.3] refuses a rule that `emit`s a schema and `withdraw`s a binding of it, a one-rule SCC [LCYC.3.1.1] never admits. A `publish` is no `emit`: it asserts nothing in the current tier ([LTIE.4.3]), so a rule that publishes `X` and withdraws a binding of `X` matches nothing it makes. Rule `r` matches `X x`, writes `publish X v: x.v` and `withdraw x`; its one internal edge is the withdraw's, which LCYC.3.1.1 admits (LCYC.3.1.1_withdraw_only_scc_admitted). Compiles. A compiler that read `publish` as `emit` refuses it with DS_VALIDATE_WITHDRAW_EMIT_SAME_SCHEMA. PATH PINNED: `dsc.validate`'s `lcyc_3_3_3_withdraw_emit`, whose `emitted_schema` takes an `emit` only. Twin: LCYC.3.3.3, the same rule with `emit`, refused.",
+    "rules_ds": "schema X scope explicit:\n    v: Int\n\nrule r:\n    X x\n->\n    publish X v: x.v\n    withdraw x\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

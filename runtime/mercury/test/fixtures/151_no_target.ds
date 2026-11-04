@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# KIND_NULL in a fact-reference slot is a reference with no target
+# ([RFCS.23.7]). `F` refers to a `U`, `Fn` to a `U` or nothing, and `Fk`'s key is its reference.
+# `R`, `Rn` and `Rk` refer to them, so a record of one inlines the copy the
+# tests are about, and `Rr` and `Rrn` refer to one fact twice, so theirs inlines
+# it twice. `Rrk` refers to two `Fk`s, so its record inlines two copies of one
+# no-target key. `Num` is the control: KIND_NULL in its `Int` slot stays a
+# mismatch. `Doc` and `DocN` are [NCBK.10.4]'s root-null Json, in a slot not
+# declared `T?` and in one that is.
+
+schema U scope logical:
+    k: Int key
+
+schema F scope logical:
+    k: Int key
+    u: U mutable
+
+schema Fn scope logical:
+    k: Int key
+    u: U? mutable
+
+schema Fk scope logical:
+    u: U key
+    v: Int mutable
+
+schema R scope logical:
+    k: Int key
+    f: F mutable
+
+schema Rn scope logical:
+    k: Int key
+    f: Fn mutable
+
+schema Rk scope logical:
+    k: Int key
+    f: Fk mutable
+
+schema Rr scope logical:
+    k: Int key
+    a: F mutable
+    b: F mutable
+
+schema Rrn scope logical:
+    k: Int key
+    a: Fn mutable
+    b: Fn mutable
+
+schema Rrk scope logical:
+    k: Int key
+    a: Fk mutable
+    b: Fk mutable
+
+schema Num scope logical:
+    k: Int key
+    i: Int mutable
+
+schema Doc:
+    body: Json
+
+schema DocN:
+    body: Json?

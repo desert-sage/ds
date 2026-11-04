@@ -1,0 +1,88 @@
+{
+  "id": "LCST.4.5.8",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.5",
+  "seq": 186,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.5.8] **`String → Float` accepted inputs.** `x::Float?` parses a string\nthat is, in its entirety, an optional sign (`+` or `-`) followed by either an\n`INT_LIT` ([LLEX.11.1]) or a `FLOAT_LIT` ([LLEX.11.2]), with `_` separators\nplaced as a source literal may place them, or by `inf`. The runtime must yield\nthe value rounded to the nearest `Float`, ties to even ([LDET.3.2.7]); a zero\nkeeps the sign it is spelt with, as an `INT_LIT` (`-0`, `-0x0`) or a\n`FLOAT_LIT` (`-0.0`) alike, and `inf` with its sign yields that infinity. It must yield\n`null` for every other string: a finite spelling whose value rounds to an\ninfinity, one with any surrounding whitespace, a unit suffix, a NaN spelling,\nor any spelling a source literal would not admit.\n\nEvery canonical rendering of a `Float` ([LCST.4.5.6]) is accepted here, so a\n`Float → String → Float` round trip returns the value it started from.\n\n",
+  "refs": [
+    "LCST.4.5.6",
+    "LDET.3.2.7",
+    "LLEX.11.1",
+    "LLEX.11.2"
+  ],
+  "symbols": [
+    "FN_STRING_TO_FLOAT"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "lcst_4_5_8__parse_yields_no_nan",
+        "tag": "spec",
+        "note": "The parse as a source of Float operands: the accepted spellings denote a finite value or `inf`, and 'a NaN spelling' is among the strings that yield `null`, which is no operand. What [NDET.1.4]'s signalling-NaN exclusion takes from this clause."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__negative",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether the text opens with a `-`: the sign of the clause's optional sign."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__null_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The sixteen texts of LCST.4.5.8_float_non_literals_are_null parse to nothing, each `Refl` and each decided before a double is built: the NaN spellings, surrounding whitespace, a unit suffix with and without its `_`, one side of the point, a bare exponent marker, a hex float, `1e400` (past the largest double, by its digit count), a separator beside the point, the empty text, and an integer spelling outside the 64-bit range ([LLEX.11.1.5])."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__parse_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause: the whole text an optional sign then an `INT_LIT` in the 64-bit range, a `FLOAT_LIT` or `inf`, to the nearest double, ties to even ([LDET.3.2.8]), a zero keeping the sign it is spelt with as an `INT_LIT` (`-0`, `-0x0`) or a `FLOAT_LIT` (`-0.0`) alike, as the clause states, `inf` with its sign the infinity, and `null` for every other text -- a spelling that rounds past the largest double, whitespace, a unit suffix, a NaN spelling, any spelling a source literal would not admit. logical/LCST.4.5.8_signed_zero_in_every_base spells the zero in every base and agrees with libds under idris-libds. The rounding is exact Integer arithmetic, run and not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__parse_is_a_value_or_null",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`s :: Float?` is a Float or `null` for every text, never a trap: the clause's two `must`s have no third outcome."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_8__unsigned",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The text after the clause's optional sign, `+` or `-`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_2_8__of_decimal",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A signed decimal to the nearest double, ties to even, a zero keeping its spelt sign: the magnitude settled by the digit count before any arithmetic -- past `10^310` nothing, the clause's `null` for a finite spelling that rounds to an infinity; below `10^-324` the signed zero -- and `ldet_3_2_8__nearest` between. Run, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__accepted_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The seven `FLOAT_LIT` spellings of LCST.4.5.8_float_formats_parse read to their decimals, each `Refl` (`1500.0`, `1.5e3`, `1.5E3`, `1.5e+03`, `15e2`, `1_500.0` as 1500, and `1e1_0`, a separator in an exponent); the fixture's integer spellings take the `INT_LIT` path."
+      }
+    ]
+  }
+}

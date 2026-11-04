@@ -1,0 +1,39 @@
+{
+    "id": "RLOW.4.6.6",
+    "clauses": ["RLOW.4.6.6.1"],
+    "category": "adapter",
+    "scenario": "Per-call `cooldown:` modifier (not rule-level) \u2014 first call dispatches, second call within window suppresses. `Trig` is a `ttl` schema, so the activation binds no `logical` fact and the call site has one tracker, whatever `v` is. Expected: one call. This expectation kind sees only calls, so the rule's `emit` running on the suppressed firing is NOT checked here; that a held-back call stops none of the firing's other actions is pinned in both runtimes by scenario 89_call_cooldown's log lines. PATH PINNED: the compiler's per-call gate (`dsc.rete.rlow_4_6_6_1_call_gates`), `IF(FN_RATE_ALLOW(\"r#call0\", 30_s), FN_CALL(...), null)`, evaluated in libds's action loop (`rete/engine.c`, ACTION_CALL).",
+    "rules_ds": "schema Trig scope ttl 1_h:\n    v: Int\n\nservice svc.x:\n    \"stub service for conformance\"\n    no response\n\nrule r:\n    Trig t\n->\n    call svc.x cooldown: 30_s\n    emit Marker logical n: t.v\n\nschema Marker scope logical:\n    n: Int key\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {}
+            }
+        ]
+    }
+}

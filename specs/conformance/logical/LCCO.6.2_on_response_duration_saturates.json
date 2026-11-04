@@ -1,0 +1,17 @@
+{
+    "id": "LCCO.6.2_on_response_duration_saturates",
+    "clauses": ["LCCO.6.2", "RLOW.6.1.6", "LTIM.4.1.1"],
+    "category": "logical",
+    "scenario": "[LCCO.6.2]: an `on` predicate has a `where` clause's typing rules with `response` bound to the response fact, and the body sees the same fact. So `response.x - response.y` is `Duration - Duration` in both, which [RLOW.6.1.6] lowers through FN_MAX and which is `0_s` when the right operand is the larger ([LTIM.4.1.1]). Rule `plan` calls `svc.read` for a Visit; the host answers on the call's own correlation (`corr_from_call: 0`) with `x` 2 s and `y` 5 s. The predicate `response.x - response.y == 0_s` holds, and the body emits a Gap with `text: (response.x - response.y)::String`; rule `show` logs it. The messages are exactly ['1 0s']. Each wrong reading fails: a predicate lowered with no typing environment is Int `-`, -3 s, which is not `0_s`, so nothing fires; a body lowered so leaves the cast unlowered, so the sibling is skipped and nothing is logged. PATH PINNED: `dsc.rete`'s `sibling_rules`, whose `on` arm lowers the predicate and the body with `response` bound (`cx_env`), read by `rlow_6_1_6_saturating` and `cast_fn`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    x: Duration\n    y: Duration\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Visit scope logical:\n    id: Int key\n\nschema Gap scope ttl 1_h:\n    id: Int\n    text: String\n\nrule plan:\n    Visit v\n->\n    call svc.read n: v.id cooldown: 1_h\n        on response.x - response.y == 0_s:\n            emit Gap id: v.id text: (response.x - response.y)::String\n\nrule show:\n    Gap g\n->\n    log info \"{g.id} {g.text}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "x": 2000000000, "y": 5000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1 0s"]
+    }
+}

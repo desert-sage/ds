@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# Every function libds.h declares, and what reaches the same capability in
+# mercury_ds (bindings/MERCURY_BINDING.md). One row per function,
+# tab-separated: the C name, the Mercury that reaches it (or why nothing
+# does), and its state. The `mercury` gate lists the
+# header's functions with the compiler and fails on a function with no row, a
+# row for a function the header does not declare, or a state that is not one
+# of these:
+#
+#   done  reached, as the second column says
+#   gap   it should be, and is not yet
+#   none  deliberately not, for the reason the second column gives
+#
+# mercury_ds binds the Mercury runtime, not libds, so a row says which
+# Mercury reaches the capability the C function gives a C integrator.
+c_function	mercury	state
+ds_engine_get_run_id	run_id(S)	done
+ds_engine_get_tier_id	tier_id(S)	done
+ds_engine_new	load(Bytes, Config, Outcome, Reports); the run and tier ids are session_config's	done
+ds_engine_free	none: a session is a value, and there is nothing to free	none
+ds_engine_clone	a copy of the session, which carries no host	done
+ds_engine_clock_mode	clock_mode(S)	done
+ds_engine_clock_set_mode	none: the mode is chosen at load (session_config's session_config_clock), where libds's switch to mock is admitted; a host wanting live time loads live	none
+ds_engine_clock_now	now(S)	done
+ds_engine_clock_set	set_clock(At, Step, !S)	done
+ds_engine_clock_advance	advance(D, Step, !S)	done
+ds_engine_wall_clock_set	set_wall_clock(UtcNs, Outcome, !S)	done
+ds_engine_schema_count	schema_names(S)	done
+ds_engine_schema_find	search_schema(S, Name, Schema), or lookup_schema(S, Name)	done
+ds_engine_schema_at	schema_names(S), then search_schema	done
+ds_schema_get_name	the runtime's schema, from search_schema; schema_names(S)	done
+ds_schema_get_lifecycle	the runtime's schema's s_lifecycle	done
+ds_schema_get_ttl_ns	the runtime's schema's s_lifecycle: a ttl lifecycle carries its TTL	done
+ds_schema_get_slot_count	the runtime's schema's s_lifecycle carries its slots	done
+ds_schema_get_slot	slot_names(S, Schema) for the names; the runtime's schema's s_lifecycle carries each slot, its kind, role and tolerance	done
+ds_schema_get_source	search_schema_source(S, Name, Loc), or lookup_schema_source(S, Name): it fails where libds answers no file, line 0 and column 0, and its source_loc_file is no where libds's file is NULL	done
+ds_schema_get_proto_source	proto_text(Schema)	done
+ds_engine_rule_meta_count	rules(S)	done
+ds_engine_rule_meta_at	rules(S)	done
+ds_engine_rule_meta_find	search_rule(S, Name, Info), or lookup_rule(S, Name)	done
+ds_engine_service_count	services(S), from the runtime's declared_services (NDBG.2.4)	done
+ds_engine_service_at	services(S), from the runtime's declared_services (NDBG.2.4)	done
+ds_engine_service_find	nothing yet: the runtime has search_service, which the binding does not export	gap
+ds_engine_get_justifiers	justifiers(S, Id)	done
+ds_engine_rete_network	session_program(S), the runtime's program	done
+ds_engine_rete_match_trace	match_trace(S, Id)	done
+ds_engine_refracted_activations	refracted_activations(S, Rule)	done
+ds_engine_ds_source_count	sources(S)	done
+ds_engine_ds_source_at	sources(S)	done
+ds_engine_line_span_count	line_spans(S)	done
+ds_engine_line_span_at	line_spans(S)	done
+ds_engine_line_span_find	search_line_span(S, Node, Span), or lookup_line_span(S, Node)	done
+ds_engine_load_dsc	load(Bytes, Config, Outcome, Reports): the reports are the load's dsc-load log lines (RDSC.9.4)	done
+ds_build_capabilities	the runtime's ds.dsc.build_capabilities	done
+ds_engine_set_admission	session_config's session_config_admission	done
+ds_engine_set_cache_cap	set_cache_cap(Keys, Bytes, Outcome, !S)	done
+ds_engine_fact_count	fact_count(S)	done
+ds_engine_fact_find	search_fact(S, Id, View), or lookup_fact(S, Id)	done
+ds_engine_mem	memory_usage(S)	done
+ds_engine_assert	assert_fact(Schema, Values, Step, !S)	done
+ds_engine_assert_external	assert_external(Bytes, Step, !S)	done
+ds_fact_get_id	a fact_view's fact_view_id	done
+ds_fact_get_schema	a fact_view's fact_view_schema	done
+ds_fact_get_asserted_ns	a fact_view's fact_view_asserted	done
+ds_fact_get_ttl_deadline_ns	a fact_view's fact_view_deadline	done
+ds_fact_get_slot_count	a fact_view's fact_view_slots	done
+ds_fact_get_slot	a fact_view's fact_view_slots	done
+ds_fact_get_slot_ref_id	a fact_view's fact_view_slots: a fact-ref slot is the runtime's fact_ref value, its target's id	done
+ds_engine_for_each_fact	facts(S)	done
+ds_json_parse	json_from_text(Text)	done
+ds_json_free	none: a Json value is a Mercury term, and nothing is freed	none
+ds_json_clone	none: a Json value is a Mercury term, and a copy is the value	none
+ds_json_serialize	json_to_text(Json)	done
+ds_free	none: nothing the binding hands out is freed	none
+ds_json_get_path	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_get_kind	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_get_bool	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_get_int	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_get_float	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_get_string	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_array_len	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_array_at	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_object_len	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_object_get	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_object_at	none: a Json value is the runtime's ds.json term, read as a Mercury value	none
+ds_json_new_null	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_bool	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_int	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_float	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_string	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_array	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_new_object	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_array_append	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_json_object_set	none: a Json value is the runtime's ds.json term, built as a Mercury value	none
+ds_engine_halted	halted(S)	done
+ds_engine_set_stream_callback	each call's streamed(integrator_event) reports, in order	done
+ds_engine_set_metric_callback	each call's measured(metric) reports	done
+ds_engine_set_log_callback	each call's logged(log_line) reports	done
+ds_engine_set_call_callback	a pump's issued calls, each answered with answer(Call, Answer, Step, !S); pump_serving for the loop	done
+ds_engine_cache_callbacks	a pump's write_cache and remove_cache duties, another step's remove_cache duty for an expiry its own reads met (step_duties, assert_step_duties), and a cache_expired report where each expiry happened	done
+ds_engine_cache_seed	cache_seed(Key, Value, Ttl, Outcome, !S)	done
+ds_engine_get_platform_signature	the runtime's ds.platform.platform_signature	done
+ds_engine_get_session_header	session_header(S)	done
+ds_engine_retract	retract_fact(Id, Step, !S)	done
+ds_engine_pump	pump(Pumped, !S)	done

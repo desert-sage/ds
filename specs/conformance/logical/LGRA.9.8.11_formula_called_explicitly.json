@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.9.8.11_formula_called_explicitly",
+    "clauses": ["LIMP.7.7"],
+    "category": "logical",
+    "scenario": "[LGRA.9.8.11]: a `unit formula`'s function is callable in a file that imports the formula ([LIMP.7.7]: by its formula name), checked as any unit-typed operand and evaluated as the function's expression at the call site. `pitch_lib` declares `midi_hz`, not `implicit`, so it applies only where called. `midi_to_hz(t.note)` on a `midi_note` slot holding 57 is 440.0 * 2.0 ** ((57.0 - 69.0) / 12.0) = 440.0 * 2.0 ** -1.0 = 220.0, exact under correct rounding, and it is emitted into an `Hz` slot; the second rule matches that slot against 220_Hz. PATH PINNED: dsc.typecheck lgra_9_8_11_formula_call types the call as `Hz`; dsc.rete lgra_9_8_11_formula_call lowers the body with its parameter bound to the argument; libds and the Mercury runtime evaluate `**` through CORE-MATH.",
+    "rules_ds": "from pitch_lib import midi_note, Hz, midi_hz\n\nschema Tone scope logical:\n    id: String key\n    note: midi_note mutable\n\nschema Pitch scope logical:\n    id: String key\n    freq: Hz mutable\n\nrule to_pitch:\n    Tone t\n->\n    emit Pitch logical id: t.id freq: midi_to_hz(t.note)\n\nrule a3:\n    Pitch p where p.freq == 220_Hz\n->\n    log info \"a3 is 220\"\n",
+    "libraries": {
+        "pitch_lib": "from math import log2\n\nunit dimension frequency storage float64 base Hz\nunit Hz: frequency\nunit scalar pitch storage float64\nunit midi_note: pitch\n\nunit formula midi_hz:\n    midi_to_hz(x: midi_note): Hz   = 440.0 * 2.0 ** ((x - 69.0) / 12.0)\n    hz_to_midi(x: Hz): midi_note   = 69.0 + 12.0 * log2(x / 440.0)\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Tone", "slots": { "id": "a", "note": 57.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a3 is 220"]
+    }
+}

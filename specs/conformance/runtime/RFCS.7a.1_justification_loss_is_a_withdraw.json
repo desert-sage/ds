@@ -1,0 +1,28 @@
+{
+    "id": "RFCS.7a.1_justification_loss_is_a_withdraw",
+    "clauses": ["RFCS.7.1", "RFCS.6a.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.7a.1]: a `FactWithdraw` records the engine taking back a fact it was holding; its integrator-side counterpart is `FactRetract` ([RFCS.7.1]). `r` emits a logical Out from Trig, a FactEmit ([RFCS.6a.1]) inside the firing's RuleFireAnnotation pair. The host then retracts Trig, Out's only justification, so the engine withdraws Out. The stream records the host's FactRetract first, then the engine's FactWithdraw: the cause precedes its consequence ([RFCS.7a.4]). Both come at the retract, before the second pump's PumpBoundary. Break: a recorder that wrote the withdrawal as a FactRetract, put it ahead of its cause or dropped it changes the list. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    emit Out logical v: t.v\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+            { "op": "pump" },
+            { "op": "retract", "label": "t" },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "RuleFireAnnotation", "FactEmit", "RuleFireAnnotation",
+            "FactRetract", "FactWithdraw", "PumpBoundary"
+        ]
+    }
+}

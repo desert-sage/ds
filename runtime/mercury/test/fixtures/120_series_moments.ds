@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `mean` and the four dispersion stats on each of the three backings that
+# serve them, over data that is not dyadic. [LSER.16.2] and [LSER.16.3.1] fix
+# no order of computation, and this runtime computes as libds does, one form
+# per backing: Welford for SeriesBackendWelfordEwma (`all_time`) and
+# SeriesBackendReservoir (`sample`), two-pass oldest-first for
+# SeriesBackendRingBuffer (`sliding`), all in `ds.series.moment`. The values
+# are not representable in binary, so the forms round differently.
+#
+# `sample 8` against six values keeps every sample. `-1.0` is the cold read:
+# the first pump reads cold on every backing ([LSER.8.6]); the second reads
+# one sample, where `variance` and `stdev` are null ([LSER.16.3.3]) and
+# `pvariance` and `pstdev` are +0.
+use default
+
+schema Acc scope logical:
+    k: String key
+    v: Float mutable
+
+schema Win scope logical:
+    k: String key
+    v: Float mutable
+
+schema Bag scope logical:
+    k: String key
+    v: Float mutable
+
+# The slots are not named for the aggregations: `<binding>.mean` reads the
+# companion form ([LSER.6.6.1], DS_VALIDATE_COMPANION_SLOT_COLLISION).
+schema Moments scope ttl 1_h:
+    label: String
+    mu: Float
+    s2: Float
+    ps2: Float
+    sd: Float
+    psd: Float
+
+series Acc.v (by: k):
+    mean all_time
+    variance all_time
+    pvariance all_time
+    stdev all_time
+    pstdev all_time
+
+series Win.v (by: k):
+    mean sliding 1_h
+    variance sliding 1_h
+    pvariance sliding 1_h
+    stdev sliding 1_h
+    pstdev sliding 1_h
+
+series Bag.v (by: k):
+    mean sample 8
+    variance sample 8
+    pvariance sample 8
+    stdev sample 8
+    pstdev sample 8
+
+rule from_acc:
+    Acc a
+->
+    emit Moments label: "acc" mu: a.mean ?? -1.0 s2: a.variance ?? -1.0 ps2: a.pvariance ?? -1.0 sd: a.stdev ?? -1.0 psd: a.pstdev ?? -1.0
+
+rule from_win:
+    Win w
+->
+    emit Moments label: "win" mu: w.mean ?? -1.0 s2: w.variance ?? -1.0 ps2: w.pvariance ?? -1.0 sd: w.stdev ?? -1.0 psd: w.pstdev ?? -1.0
+
+rule from_bag:
+    Bag b
+->
+    emit Moments label: "bag" mu: b.mean ?? -1.0 s2: b.variance ?? -1.0 ps2: b.pvariance ?? -1.0 sd: b.stdev ?? -1.0 psd: b.pstdev ?? -1.0

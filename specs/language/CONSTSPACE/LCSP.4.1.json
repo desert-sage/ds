@@ -1,0 +1,23 @@
+{
+  "id": "LCSP.4.1",
+  "prefix": "LCSP",
+  "doc": "CONSTSPACE.md",
+  "parent": "LCSP.4",
+  "seq": 138,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCSP.4.1] **Validation subset.** The compiler runs the same\nbounded-memory validation pass as `realtime` on `constspace`\nprograms. This covers the LNLS.3 subset that gates against\nunbounded allocation:\n\n- LNLS.3.2 — novel strings a rule PRODUCES (an interpolated string).\n  Note this does not lock the intern table under `constspace`, which\n  has no phase boundary to lock at ([LCSP.3.5]); strings arriving on\n  asserted facts are a different population and are not gated.\n- LNLS.3.5 — sketch backends (v1 ships none)\n- LNLS.3.7 — `regex` without `capacity`\n- LNLS.3.8 — string ordering in cross-pattern position\n- LNLS.3.9 — `JSON_PATH` (unbounded allocation)\n- LNLS.3.11 — series scan without a sample cap\n\nThe same constraints apply for the same reason: each violates\n\"steady-state allocation is zero\" if permitted at pump time. The\nreference compiler reuses `_check_realtime` for `constspace`.\n\n**This subset is not the whole of the `constspace` check.**\n`linear_scan: false` excludes features for their *algorithmic shape*, and the\noverlap with bounded memory is real but partial: an obligation that is\npurely about allocation has no `LNLS.3` clause to correspond to,\nbecause a per-sample copy is O(1) and `linear_scan: false` has no objection to\nit. [LCSP.4.5] is such an obligation, and a validator that runs only\nthe list above misses it.\n\n",
+  "deferred": true,
+  "refs": [
+    "LCSP.3.5",
+    "LCSP.4.5",
+    "LNLS.3",
+    "LNLS.3.11",
+    "LNLS.3.2",
+    "LNLS.3.5",
+    "LNLS.3.7",
+    "LNLS.3.8",
+    "LNLS.3.9"
+  ]
+}

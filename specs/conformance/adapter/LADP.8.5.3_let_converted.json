@@ -1,0 +1,33 @@
+{
+    "id": "LADP.8.5.3_let_converted",
+    "clauses": ["LLET.3.6", "RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[LADP.8.5.3], [LLET.3.6], [LLET.12.5]: a quantity reached through a `let` arrives in the kwarg's unit, whether the compiler knows it or not. `timer.arm` declares `a: minute` and `b: minute`. Rule `arm` binds `let w = 120_s`, a known value, and `let d = g.wait`, a read, and writes `a: w` and `b: d + 60_s`. The fact holds wait = 120 s. The integrator receives a=2, folded at compile time, and b=3, (120 s + 60 s) / 1 min, converted when the call is evaluated. PATHS PINNED: for `a`, `written_in_unit` in dsc.rete folds `w` with `dsc.quantity.known_quantity`, which reads it through `let_rhs_of` (the rule scope's `rsc_let_exprs`), and `in_unit_literal` emits `2`. For `b`, `argument_quantity_of` types `d + 60_s` as a `Duration`, because dsc.typecheck types the unannotated `d` by its right-hand side (`llet_3_6_let_type`), and `kwarg_pairs` wraps it in FN_INT_DIV_EXACT by 60000000000. The break is `d + 60_s` typed as unknown, which reaches the service in nanoseconds, 180000000000.",
+    "rules_ds": "service timer.arm:\n    kwarg a: minute required\n    kwarg b: minute required\n    no response\n\nschema Gate scope logical:\n    k: Int key\n    wait: Duration mutable\n\nrule arm:\n    Gate g\n->\n    let w = 120_s\n    let d = g.wait\n    call timer.arm a: w b: d + 60_s nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Gate",
+                "slots": {
+                    "k": 1,
+                    "wait": 120000000000
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "timer.arm",
+                "correlation": "$arm_c0_g0",
+                "body": {
+                    "a": 2,
+                    "b": 3
+                }
+            }
+        ]
+    }
+}

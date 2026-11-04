@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# An arriving answer supersedes ([LCRS.6.2.4]). `r` calls under the fixed
+# correlation `c1` once per Job, so two Jobs put two requests in flight with
+# nothing to retract ([LCRS.6.2.1]). The answers arrive as host asserts: a
+# reply retracts its response schema's live answers and the live CallErrors
+# with its correlation; a CallError, which names no service, retracts the live
+# CallErrors and every response schema's answers. Two response schemas show a
+# reply leaving the other's answer alone. The `seen_*` rules log what is live.
+
+schema ReplyA scope ttl 1_h:
+    corr: String
+    v: Int
+
+schema ReplyB scope ttl 1_h:
+    corr: String
+    v: Int
+
+service svc.a:
+    kwarg n: Int
+    response ReplyA
+
+service svc.b:
+    kwarg n: Int
+    response ReplyB
+
+schema Job scope explicit:
+    id: Int
+
+schema Probe scope explicit:
+    k: Int
+
+rule r:
+    Job j
+->
+    call svc.a n: j.id nocooldown as "c1"
+
+rule seen_a:
+    Probe p
+    ReplyA x
+->
+    log info "a {x.v} at {p.k}"
+
+rule seen_b:
+    Probe p
+    ReplyB y
+->
+    log info "b {y.v} at {p.k}"
+
+rule seen_error:
+    Probe p
+    CallError
+->
+    log info "error at {p.k}"

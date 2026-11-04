@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_initial_float_rounds_per_operation",
+    "category": "logical",
+    "scenario": "[LEXP.8.8] with [LDET.3.3a.8]: a `const` named in an `initial:` item folds to the value the engine computes for the same `const` in a rule, operation by operation. Each `initial` fact carries one `const`'s folded value, and its rule compares that slot with the same `const`, which a rule inlines and the engine evaluates ([LEXP.7.3], [LDET.3.6.2]); the rule fires only if the two agree to the bit. `A = 0.1 + 0.2 + 0.3` rounds after each `+` to 0.6000000000000001, where one rounding of the exact sum gives 0.6. `B = 9007199254740993 + 0.5` converts the `Int` to the nearest double, 9007199254740992.0, before it adds, and that sum, 9007199254740992.5, rounds to 9007199254740992.0, where the exact sum 9007199254740993.5 rounds to 9007199254740994.0. `C = 7 / 2` is a `Float` ([LEXP.7.4]), and `D = 3 * 0.1` converts the `Int` before it multiplies. Pin: all four rules log, in source order. A fold that rounded once at the end misses `a` and `b`. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `Float` arithmetic, rounded per operation (`fold_float_binary`, `float_operand`), against the rule's inlined `const` (`dsc.rete.lgra_13_3_const`) evaluated by each runtime.",
+    "rules_ds": "const A = 0.1 + 0.2 + 0.3\nconst B = 9007199254740993 + 0.5\nconst C = 7 / 2\nconst D = 3 * 0.1\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VF k: \"a\" f: A\n    VF k: \"b\" f: B\n    VF k: \"c\" f: C\n    VF k: \"d\" f: D\n\nrule ra:\n    VF v where v.k == \"a\" and v.f == A\n->\n    log info \"a\"\n\nrule rb:\n    VF v where v.k == \"b\" and v.f == B\n->\n    log info \"b\"\n\nrule rc:\n    VF v where v.k == \"c\" and v.f == C\n->\n    log info \"c\"\n\nrule rd:\n    VF v where v.k == \"d\" and v.f == D\n->\n    log info \"d\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a", "b", "c", "d"]
+    }
+}

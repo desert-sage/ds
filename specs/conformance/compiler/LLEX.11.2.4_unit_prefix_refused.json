@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.11.2.4_unit_prefix_refused",
+    "category": "compiler",
+    "scenario": "[LLEX.11.2.4]: \"the `DEC_PREFIX` of a `UNIT_LIT` ([LLEX.12]) reads as the `Float` nearest its value\", so a unit literal whose prefix lies past the largest finite Float is the same lexer error: `1e400_m`, DS_PARSE_FLOAT_RANGE. The refusal is lexical, so it holds whatever unit the suffix names. What it discriminates: a check made only at `finish_float` misses a scientific prefix that carries a unit, which [LLEX.11.3.1]'s ladder sends to the unit rung instead. PATH PINNED: `dsc.lex`'s `scan_unit_suffix`, refusing on `dsc.exact.llex_11_2_4_past_largest` before it emits `unit_lit`, mapped by `dsc.driver.lex_front_code`.",
+    "rules_ds": "const X = 1e400_m\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_FLOAT_RANGE"
+    }
+}

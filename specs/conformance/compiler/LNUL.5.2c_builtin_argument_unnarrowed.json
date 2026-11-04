@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.5.2c_builtin_argument_unnarrowed",
+    "category": "compiler",
+    "scenario": "[LNUL.5.1] with [LNUL.5.2]: the argument of a builtin that demands a value is a concrete-value position, so a bare `T?` there is refused with DS_VALIDATE_NULLABLE_UNNARROWED even inside a `where`. The `where` is LNUL.5.2b_narrowing_reaches_a_builtin_argument's without its `s.x is not null and` guard; the pair pins that the guard, and nothing else, is what admits the argument. PATH PINNED: the Mercury compiler's builtin-argument nullability check in `dsc.typecheck`, with no narrowing in force.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    x: Float? mutable\n\nrule r:\n    Sensor s where abs(s.x) > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `withdraw` ([IRET.10.5]) of the explicit Job a Trig names, logged before and
+# after so the trace shows the firing goes on past it. Job 2 has no Trig and
+# stays. The recording carries FactWithdraw AUTHOR_WITHDRAWN (cause 6).
+
+schema Trig scope logical:
+    v: Int key
+
+schema Job scope explicit:
+    id: Int
+
+rule done:
+    Trig t
+    Job j where j.id == t.v
+->
+    log info "withdrawing {j.id}"
+    withdraw j
+    log info "withdrew one"

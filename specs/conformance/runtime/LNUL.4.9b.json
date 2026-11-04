@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9b",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] the null subject answers TRUE on null, which is the control for LNUL.4.9a. Same eval arm, subject IS_SUBJECT_NULL, un-negated, over a slot holding null. The rule fires, so `is null` is not merely `not (is <tag>)` — the two subjects are read independently off the value's tag. Paired with LNUL.4.9a deliberately: 4.9a proves the operator answers on absence at all, this proves it answers the RIGHT way for the one subject absence satisfies. fact_count 2.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Sensor s where s.state is null\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": null
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

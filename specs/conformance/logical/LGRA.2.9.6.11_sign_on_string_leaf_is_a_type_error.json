@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_sign_on_string_leaf_is_a_type_error",
+    "category": "logical",
+    "scenario": "`{p.body.x:+}` on a String leaf. A sign is refused on a String (LGRA.2.9.6.5), so at run time it is a TypeError (LGRA.2.9.6.11) and `handler` logs. PATH PINNED: the sign-or-zero check in the interpolation renderer (libds `render_value`, Mercury `ds.format.render_value`). A renderer that ignores the sign logs `v ab`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.x:+}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "x": "ab" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

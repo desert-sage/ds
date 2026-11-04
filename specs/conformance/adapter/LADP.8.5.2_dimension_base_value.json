@@ -1,0 +1,49 @@
+{
+    "id": "LADP.8.5.2_dimension_base_value",
+    "category": "adapter",
+    "scenario": "[LADP.8.5.2]: on a dimension-typed kwarg ([LUNI.7.1]) the service receives the quantity in the dimension's base unit, from a written argument and from a `default` alike. `hvac.set` declares `t: temperature default 68_fahrenheit`. Rule `written` writes `t: 68_fahrenheit` and rule `defaulted` omits it; the integrator receives 293.15 (kelvin) from both. PATH PINNED: the written literal's own lowering, `luni_4_3_unit_literal` in dsc.rete; `ladp_8_5_2_default`, which folds a dimension-typed kwarg's default to its base value; and `ladp_8_5_2_written_dimension` in dsc.validate, which admits the same-dimension value. The break is converting a dimension-typed default as though the dimension name were a unit, which fails to find a body and refuses the program, or applying a unit's offset to it.",
+    "rules_ds": "unit fahrenheit: temperature = (x - 32) * 5/9 + 273.15\n\nservice hvac.set:\n    kwarg zone: String literal required\n    kwarg t: temperature default 68_fahrenheit\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule written:\n    Trig g where g.v == 1\n->\n    call hvac.set zone: \"hall\" t: 68_fahrenheit nocooldown\n\nrule defaulted:\n    Trig g where g.v == 2\n->\n    call hvac.set zone: \"porch\" nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "hvac.set",
+                "correlation": "$written_c0_g0",
+                "body": {
+                    "t": 293.15,
+                    "zone": "hall"
+                }
+            },
+            {
+                "service": "hvac.set",
+                "correlation": "$defaulted_c0_g1",
+                "body": {
+                    "t": 293.15,
+                    "zone": "porch"
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LTIM.2.5.3_true_at_assert_fires_once",
+    "category": "logical",
+    "witnesses": [
+        "formal/idris/Rete/NetworkTick.idr#ltim_2_5_3__true_at_assert"
+    ],
+    "scenario": "[LTIM.2.5.3]: a time-dependent condition already true when its fact is asserted fires on the next pump, if it still holds under that pump's sample. The program is the witness's: `late` on a Ping under `now() > 5 s`, the instant built `calendar.time(1970, 1, 1, 0, 0, 5)` ([LTIM.14.1]). Steps: advance 6 s (an advance, not a `set`: `set` moves the monotonic clock alone, and `now()` reads the wall clock, [LTIM.2.8.3]); pump with no fact; assert Ping; advance 1 s and pump; advance 1 s and pump. These are the witness's pump at 6, then the insert, then its counts at 7 and 8, which it proves `[1, 0]`. The tick from 6 s to 7 s finds the gate already true, so it makes no new match, and the firing is the activation the assert made. Pin: the stream's pumps and rule_fire_begin events are pump, pump, rule_fire_begin, pump. So `late` fires once, in the first pump after the assert. Break: a runtime that waited for a false-to-true edge before firing never fires `late`; one that re-fired on each tick fires it in the last pump too. Its sibling logical/LTIM.2.5.3_true_at_assert_false_at_pump pins the other half: true at the assert and false under the pump's sample, so nothing fires.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    v: Int key\n\nrule late:\n    Ping where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"late fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["pump", "pump", "rule_fire_begin", "pump"]
+    }
+}

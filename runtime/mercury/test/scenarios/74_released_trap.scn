@@ -1,0 +1,18 @@
+# See fixtures/105_released_trap.ds.
+#
+#   pump 1  `a1` alone. The NOT node passes, so `(a1)` reaches the C node,
+#           which has no right fact: nothing evaluated.
+#   pump 2  `b1` with the same key blocks `(a1)`, which leaves the C node.
+#   pump 3  `c1` with `y = 0` arrives while the C node holds no left token:
+#           the pair `((a1), c1)` is complete and not live.
+#   pump 4  `b1` is retracted. `(a1)` is released, `((a1), c1)` is derived
+#           for the first time, and `c1.x / c1.y` traps, recorded at the
+#           retraction; `r` does not fire.
+assert A k=k1
+pump
+assert B k=k1
+pump
+assert C id=c1 x=1 y=0
+pump
+retract 1
+pump

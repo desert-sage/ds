@@ -1,0 +1,92 @@
+================================================================================
+A test: initial facts, until, and assertions (LGRA.21.1)
+================================================================================
+
+test "fires":
+    initial:
+        Sensor id: "a" v: 42
+    until 1_s
+    produces:
+        activated detect
+        never emitted Hot id: "b"
+        wm count Hot == 1
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    name: (string
+      (string_content))
+    (initial_block
+      (test_fact
+        type: (type_ref
+          (identifier))
+        (kwarg
+          name: (identifier)
+          value: (string
+            (string_content)))
+        (kwarg
+          name: (identifier)
+          value: (integer))))
+    (test_until
+      (unit_literal))
+    (test_produces
+      (assertion
+        rule: (identifier))
+      (assertion
+        type: (type_ref
+          (identifier))
+        (kwarg
+          name: (identifier)
+          value: (string
+            (string_content))))
+      (assertion
+        type: (type_ref
+          (identifier))
+        (integer)))))
+
+================================================================================
+Absolute coordinates are calendar.time calls (LGRA.21.1, LTSL.3.2)
+================================================================================
+
+test "absolute":
+    inputs:
+        at calendar.time(2026, 1, 1):
+            Sensor id: "a"
+    until calendar.time(2026, 1, 1, 0, 0, 5)
+
+--------------------------------------------------------------------------------
+
+(source_file
+  (test_declaration
+    name: (string
+      (string_content))
+    (test_inputs
+      (test_at
+        (call
+          function: (attribute
+            object: (identifier)
+            attribute: (identifier))
+          (argument_list
+            (integer)
+            (integer)
+            (integer)))
+        (test_fact
+          type: (type_ref
+            (identifier))
+          (kwarg
+            name: (identifier)
+            value: (string
+              (string_content))))))
+    (test_until
+      (call
+        function: (attribute
+          object: (identifier)
+          attribute: (identifier))
+        (argument_list
+          (integer)
+          (integer)
+          (integer)
+          (integer)
+          (integer)
+          (integer))))))

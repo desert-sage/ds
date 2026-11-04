@@ -1,0 +1,17 @@
+{
+    "id": "LINT.7.2_two_invalid_intervals_raise_domain",
+    "clauses": ["RLOW.6.1.7", "LNUL.4.2"],
+    "category": "logical",
+    "dead_rules_expected": ["one_two", "two_one"],
+    "scenario": "[LINT.7.2] and [RLOW.6.1.7]: an operation with two interval operands lowers to FN_INTERVAL_CHECK(s1, e1, s2, e2, v), and with both pairs invalid it yields one fault, chosen as [LNUL.4.2] chooses. I 1 is `5 .. 3` and I 2 is `9 .. 1`. Rule `one_two` tests `(x.a .. x.b) overlaps (y.a .. y.b)` with x the first and y the second, and rule `two_one` the same with the operands swapped; neither fires. Each test is its own node, so each records one ComputationError fault fact ([LERR.9.2]: identity `(node, rule)`), and rule `handler` fires once on each and logs its kind: `DOMAIN`, `DOMAIN`. The two lines are the same, so the order the two handler activations fire in is not pinned, and neither is the `rule`, which for a trap raised during matching is the node's name ([LERR.9.2]). THIS VECTOR PINS THE KIND ONLY. Which pair's start the recorded fault names is LNUL.4.2's within-kind order, which compares the slot context; here both starts are slot `a` of `I`, so only `fact_id`, which the fault fact does not carry, separates the two faults, and schema and slot are not logged. LINT.7.2_two_invalid_intervals_name_the_lower_slot puts the starts in differently named slots and pins which one the fault names. A lowering that guarded only the first pair, or put the check beside `overlaps` in an `and`, would let one rule or both answer false with no fault, and `handler` would log once or not at all. PATH PINNED: the five-argument FN_INTERVAL_CHECK in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema I scope logical:\n    id: Int key\n    a: Int mutable\n    b: Int mutable\n\nrule one_two:\n    I x where x.id == 1\n    I y where y.id == 2 and (x.a .. x.b) overlaps (y.a .. y.b)\n->\n    log info \"one_two\"\n\nrule two_one:\n    I x where x.id == 1\n    I y where y.id == 2 and (y.a .. y.b) overlaps (x.a .. x.b)\n->\n    log info \"two_one\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "I", "slots": { "id": 1, "a": 5, "b": 3 } },
+            { "op": "assert", "schema": "I", "slots": { "id": 2, "a": 9, "b": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN", "DOMAIN"]
+    }
+}

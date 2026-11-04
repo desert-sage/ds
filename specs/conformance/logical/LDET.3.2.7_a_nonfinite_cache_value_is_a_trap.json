@@ -1,0 +1,18 @@
+{
+    "id": "LDET.3.2.7_a_nonfinite_cache_value_is_a_trap",
+    "clauses": ["LDET.3.2.7", "NERR.6", "IDSP.13.4"],
+    "category": "logical",
+    "dead_rules_expected": ["reader"],
+    "scenario": "[LDET.3.2.7], [NERR.6]: on a rule's path a non-finite `Float` forced into a `cache` value is a `NOT_REPRESENTABLE` trap at the verb, not the status `DS_ERR_JSON_NONFINITE`. Rule `writer` logs `before`, caches a `Float` slot holding +Inf, then logs `after`; `[LEXP.4.2]` admits the Inf in the slot, and JSON has no spelling for it. Steps: assert Trig 1 with v = +Inf and pump, then assert Trig 2 with a finite v and pump. In the first pump `writer` fires first, by source order ([LDET.5.4]): `before` stands and `after` does not run, by [LNUL.11.1]'s prefix rule. Rule `other` matches the same fact and still fires: only the one activation is abandoned. Then `handler` matches the ComputationError fault fact ([LERR.9.1]) and logs its kind and rule. In the second pump `reader` logs `hit` on any value `cached(\"k\")` reads, through the total null test ([LNUL.4.4]), so the key is absent. Messages: `before`, `other`, `NOT_REPRESENTABLE writer`. Neither pump may return -217: on libds, pyds raises a pump's status and the harness fails the step ([RCTS.1.2.28]). NOT PINNED on the Mercury runtime: test_behave.m judges pump statuses for `adapter_calls` alone. A runtime that wrote the entry logs `hit`, under any spelling of the value and whether or not it then trapped, and logs `after` if it did not trap; one that refused the write with a status and no fault logs nothing from `handler`. The sibling LDET.3.2.7_a_nonfinite_cache_value_writes_nothing pins that no `action_cache_set` is on the stream. It is in `logical` rather than `runtime` because `log_message_sequence` is a logical kind ([RCTS.1.2.10]); both runtimes run it. PATH PINNED: libds's `adapter_ds_json_value` → `jt_refuse` (`rete/adapters.c`), whose `FAULT(DS_FAULT_NOT_REPRESENTABLE)` makes `adapter_ds_cache_set`'s value argument a fault, the refusal [IDSP.13.4] states for `FN_JSON_VALUE`; the Mercury runtime's `ds.exec.cache_set_verb`, through `first_uncacheable`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    v: Float mutable\n\nrule writer:\n    Trig t where t.k == 1\n->\n    log info \"before\"\n    cache key: \"k\" value: t.v ttl: 1_h\n    log info \"after\"\n\nrule other:\n    Trig t where t.k == 1\n->\n    log info \"other\"\n\nrule handler:\n    ComputationError e\n->\n    log info \"{e.kind} {e.rule}\"\n\nrule reader:\n    Trig t where t.k == 2 and cached(\"k\") is not null\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "v": Infinity } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "v": 1.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before", "other", "NOT_REPRESENTABLE writer"]
+    }
+}

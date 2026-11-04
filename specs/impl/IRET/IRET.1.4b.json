@@ -1,0 +1,17 @@
+{
+  "id": "IRET.1.4b",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.1",
+  "seq": 110,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "  - [IRET.1.4b] **Counted-string storage: recycling freelist\n    (Rung γ, x-ref [RTCT.1] / [NRTM.1]).** A counted `String`/\n    `Bytes` block is drawn from a **size-classed recycling\n    freelist** (classes 8 … 4096 bytes) and returned to it on\n    release, so a steady-state assert / retract cycle reuses\n    blocks: **zero steady-state allocation**, bounded by the peak\n    live count per class. This restores the `realtime`\n    steady-state-zero-malloc property. A per-size-class **warmup**\n    allocation (and any oversized-string allocation) remains — a\n    one-time, bounded event before steady state; it is tolerated,\n    not a hard failure (`String`/`Bytes` facts function in RT,\n    bounded by the intern contract caps [RTCT.7.1]; go_live does\n    not forbid it). Eliminating the warmup entirely (a freelist\n    presz before go_live) is an optional further refinement where\n    a contract requires a strictly allocation-free pump. The\n    freelist changes only the allocation *source*, never the\n    refcount semantics ([IRET.1.4]), so reclamation balance is\n    identical with or without it.\n\n",
+  "refs": [
+    "IRET.1.4",
+    "NRTM.1",
+    "RTCT.1",
+    "RTCT.7.1"
+  ]
+}

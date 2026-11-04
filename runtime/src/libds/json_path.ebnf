@@ -1,0 +1,20 @@
+(* The path ds_json_get_path takes.
+ *
+ * SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+ * SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+ *
+ * Cited by [IDAT.3.3.10], which states the residue: when a path is judged, and
+ * what each step reads. Beside the code it describes, not under specs/registry/:
+ * this is a grammar, not an enumeration ([STYL.5.2.7]).
+ *)
+
+json_path = first_step , { next_step } ;
+
+first_step = key | index ;
+next_step  = "." , key | index ;
+
+key      = key_byte , { key_byte } ;
+key_byte = ? any byte of the path but "." and "[" ? ;
+
+index = "[" , digit , { digit } , "]" ;
+digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;

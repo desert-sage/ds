@@ -1,0 +1,36 @@
+{
+    "id": "RTIM.6.13d",
+    "clauses": ["RTIM.6.13.1", "LFST.7.1.1"],
+    "category": "logical",
+    "scenario": "Per-engine `seq` increments by exactly 1 per fact_assert for a known sequence (3 asserts \u2192 3 fact_asserts with consecutive seqs). Pins the per-event step value without baking in the absolute starting seq (which depends on engine setup events that fire before the test cb registers). Pins RTIM.6.13 \u2014 per-engine seq increments by exactly 1 per event.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "filter_kind": "fact_assert",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 3
+                }
+            }
+        ],
+        "min_events": 3,
+        "expected_seq_step": 1
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "LINT.1.1",
+  "prefix": "LINT",
+  "doc": "INTERVAL.md",
+  "parent": "LINT.1",
+  "seq": 46,
+  "depth": 2,
+  "kind": "definition",
+  "heading": null,
+  "text": "[LINT.1.1] An `Interval` value is a half-open range\n`[start, end)` over one element type `T`:\n\n```\nInterval<T>: (start: T, end: T)\n```\n\n`T` is one of the types whose values `<` orders, and no other: `Int` and\n`Float` ([LEXP.7.3]), `String` ([LSTR.3.2]), `Time`, `Date` and `Duration`\n([LTIM.5]). `Interval<Time>` and `Interval<Date>` are the time windows\nthe rest of this document mostly speaks of; every rule here that does not name\nan element type holds for all of them.\n\n",
+  "refs": [
+    "LEXP.7.3",
+    "LSTR.3.2",
+    "LTIM.5"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/interval_algebra.als",
+        "name": "lint_1_1__instant",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The element type as one set of atoms under util/ordering's total order, named `instant` for the time windows the document mostly speaks of. Nothing in the model reads anything of the type but `lt` / `lte` of that order, so every check holds for each of the clause's six element types alike -- Int and Float as one numeric type ([LINT.1.2]), String, Time, Date, Duration -- wherever `<` is a strict total order on the values. Not modelled: a Float NaN, on which `<` is not total; [LEXP.4.2] keeps one out of every slot, and whether one an expression computes may reach `..` is [LINT.2.2]'s question, not the algebra's."
+      },
+      {
+        "path": "formal/alloy/interval_algebra.als",
+        "name": "lint_1_1__interval",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A half-open `[start, end)` with `start <= end` over one element type, as the clause defines it; which type is the order's business, above."
+      }
+    ]
+  }
+}

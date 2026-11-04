@@ -1,0 +1,51 @@
+{
+    "id": "IARC.1.11d",
+    "category": "cross-tier",
+    "scenario": "Per-engine stream subscription independence \u2014 events fired on engine A only reach A's stream cb, not B's. Pins that engines are isolated all the way through observability per IARC.1.11.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_per_engine_event_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "b": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 2
+                }
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            }
+        ],
+        "expected_event_counts": {
+            "a": {
+                "fact_assert": 2
+            },
+            "b": {
+                "fact_assert": 1
+            }
+        }
+    }
+}

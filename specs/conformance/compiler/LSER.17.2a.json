@@ -1,0 +1,10 @@
+{
+    "id": "LSER.17.2a",
+    "category": "compiler",
+    "scenario": "Per-type aggregation applicability per LSER.17.2 / LSER.17.3. Numeric aggregations (`mean`, `stdev`, `sum`, `pXX`, etc.) require numeric slot types. Pin: `mean sliding 10_min` declared on a `String`-typed slot rejects with DS_VALIDATE_SERIES_AGG_TYPE_MISMATCH; the diagnostic should name the slot, the aggregation, and the slot's actual type, and point at admissible aggregations (`count`, `count_distinct`, `first`, `last`).",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    label: String mutable\n\nseries Event.label:\n    mean sliding 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_TYPE_MISMATCH"
+    }
+}

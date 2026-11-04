@@ -1,0 +1,38 @@
+{
+    "id": "LSER.17.2_infinite_neighbours",
+    "category": "logical",
+    "scenario": "LSER.17.2: an infinite bracketing neighbour reads its limit -- the answer is x_lo when the pair is equal, or when x_lo is -inf under anything but +inf -- so only a [-inf, +inf] pair reaches the formula's NaN. Drives `s.p50` over a `ttl` schema (every assert absorbs, LSER.7.6.3, so two equal infinities are two samples) into the ring-buffer percentile of both runtimes. Three rows, one per `dev`, each two samples and a third assert whose pre-sample read (LSER.8.6.1) sees the pair: a = [inf, inf] reads inf (the formula alone: inf - inf is NaN); b = [-inf, 5] reads -inf (the formula alone: -inf + inf is NaN); c = [5, inf] reads inf (the formula agrees; the control). The one-sample reads before each pair read that sample. THE `where` READS A SERIES, SO IT IS RE-READ EVERY PUMP ([LTIM.2.4.1]) and each live fact fires once, on the pump its condition first holds ([LTIM.2.5.1]): each row's first fact, cold when it arrived, reads the one-sample value with the second, so each row's first message logs twice.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Float\n\nseries Sample.level (by: dev):\n    p50 sliding 1_h\n\nrule r:\n    Sample s where s.p50 is not null\n->\n    log info \"{s.dev} {s.p50}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": Infinity } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": Infinity } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 0.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": -Infinity } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": 0.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "c", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "c", "level": Infinity } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "c", "level": 0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a inf", "a inf", "a inf", "b -inf", "b -inf", "b -inf", "c 5.0", "c 5.0", "c inf"]
+    }
+}

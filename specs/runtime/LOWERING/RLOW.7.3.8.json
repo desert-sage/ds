@@ -1,0 +1,226 @@
+{
+  "id": "RLOW.7.3.8",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.7.3",
+  "seq": 927,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.7.3.8] A call compiles to no supersedure sweep of its own. The\nretraction [LCRS.6.2.1] requires is the engine's: it performs it while\nevaluating the call's `FN_CALL` ([RDSC.4a.9.4]), on that call's correlation and\nbefore it issues the request, taking the response schema from the service's\n`ServiceDef` (`proto/service_def.proto#ServiceDef`, [LCRS.4.3.2]).\n\nSo the call's `cooldown` gate ([RLOW.4.6.6.1]) covers the sweep as it covers\nthe call: a gate that denies the call leaves its `FN_CALL` unevaluated, and the\ncall retracts nothing. A correlation the compiler generates for a call with no\n`as` ([LCRS.3.1]) is swept as an `as` value is; it is unique within the engine\n([LCCO.3.4]), so no earlier call's answer carries it.\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LCRS.3.1",
+    "LCRS.4.3.2",
+    "LCRS.6.2.1",
+    "RDSC.4a.9.4",
+    "RLOW.4.6.6.1"
+  ],
+  "symbols": [
+    "FN_CALL"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Rlow_7_3_8__acc",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The accumulator of the RHS with calls: the net and stamps, the call trackers, the records so far."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__admitted_call_supersedes",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The call's own sweep retracting the prior answer, computed. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__cooldown_suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "The gate denying the call and the sweep with it, computed. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__empty_corr_call_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A call whose `as` evaluates to \"\" supersedes nothing: its issue is the identity on the net. The generated correlation a call takes for an `as` that evaluates to \"\" is not modelled: the model has the empty text sweeping nothing, and the record carries it. LESS than the clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issue",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The issue: the sweep on the site's correlation over the kinds its service answers with, before the request. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issue_if",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sweep inside the evaluation of the call, before the request, under the gate. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issued_call_sweeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "After an admitted firing's sweep no live answer of the service carries the firing's correlation. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__run_if_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sweep inside the evaluation of the call, before the request, under the gate. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The clause's second paragraph: the gate covers the sweep as it covers the call. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__swept_by_call",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The kinds a call sweeps, from the site's response kind. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_acc_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One emit or withdraw on the accumulator keeps the invariant when it mints no answer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_actions_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The RHS with calls keeps the invariant when its actions mint no answer. By induction on the actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__run_sites_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The sites of a position keep the invariant, one after the other."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__call_site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sweep inside the evaluation of the call, before the request, under the gate. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_decided",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sweep inside the evaluation of the call, before the request, under the gate. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_refused",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A gate that denies the call leaves the sweep unrun, as the clause places it inside the call's evaluation. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__at_position",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__do_action_acc",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One emit or withdraw on the accumulator: Rete/NetworkTimed.idr's stamped action; the trackers and the records stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__do_actions_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls: at each position the sites there, then the action there; the sites past the last action after it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__no_site_is_the_stamped_rhs",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "With no call the RHS is the stamped RHS. LESS than the clause: that the call compiles to no sweep and the engine reads the response schema off the ServiceDef is the lowering's; the model takes the site's response kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__run_sites",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sites of one position run in order, each on the accumulator the last left: two calls in one rule cool independently, a suppressed one stops nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__sites_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sites at a position, in site order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__with_stamped",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__issued_call_sweeps",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The sweep on the call's correlation before the request: after an admitted firing no live answer carries the firing's correlation. A generated correlation is swept as an `as` value is and, unique within the engine, the sweep finds nothing under it -- the clause's last sentence; the nosweep teeth engine, which issues without sweeping, violates it. The lowering itself is not modelled."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_1__suppressed_retracts_nothing",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The gate covers the sweep as it covers the call: a cooled call's firing inside its window leaves every live answer of its correlation live. The model has the sweep and the request as one step behind the gate, which is this clause's placement of the sweep inside the evaluation of the call; the ungated teeth engine, with the sweep ahead of the gate, violates it. The lowering itself -- that the call compiles to no sweep and the engine reads the response schema from the service's ServiceDef -- is not modelled."
+      }
+    ]
+  }
+}

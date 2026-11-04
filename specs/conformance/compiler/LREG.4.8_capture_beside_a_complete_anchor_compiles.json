@@ -1,0 +1,9 @@
+{
+    "id": "LREG.4.8_capture_beside_a_complete_anchor_compiles",
+    "category": "compiler",
+    "scenario": "[LREG.4.8]: \"A capture read in a further constraint on top of a complete anchor is not a join key either ([LNLS.3.3]).\" Under `linear_scan: false`, `Device d where d.id == e.entity_id and d.kind == dev` anchors Device on its `key` slot `id` against Event's `key` slot `entity_id`, a complete [LNLS.3.3] anchor, so the pattern resolves to at most one fact whatever else its `where` tests. `dev`, captured from `e.msg`, is read only by `d.kind == dev`, a further constraint on a slot that is not `key`: it stands in for no `key` slot, so it is no join key, and the program compiles. Its counterpart is LREG.4.8_capture_join_key_refused_without_linear_scan, where `d.id == dev` makes the capture stand in for Device's `key` slot and the pattern has no slot anchor. Together they pin that the refusal is that narrow: a compiler that refuses any cross-pattern read of a capture fails this vector with DS_VALIDATE_NOLINSCAN_CAPTURE_JOIN_KEY. `Event.msg` and `Device.kind` declare `capacity 64`, so [LNLS.3.7] stays quiet. PATH PINNED: `dsc.validate.lnls_3_3_anchors`, whose capture-key arm (`lreg_4_8_capture_key_slot`) is not reached for a pattern with a complete slot anchor.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Event scope logical:\n    entity_id: String key\n    msg: String capacity 64 mutable\n\nschema Device scope logical:\n    id: String key\n    kind: String capacity 64 mutable\n\nrule r:\n    Event e where (dev) = e.msg ~ /([a-z]+) failed/\n    Device d where d.id == e.entity_id and d.kind == dev\n->\n    log info \"{d.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

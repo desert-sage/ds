@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A negative zero through `**` ([LEXP.7.3a], IEEE `pow`): `pow(-0.0, y)` keeps
+# the base's sign for an odd integer `y`, and a negative base's odd power
+# keeps it when its magnitude underflows to zero. The exponent is the Int 3: a
+# Float exponent is refused as transcendental ([LDET.3.4.4]).
+#
+# `==` cannot tell the two zeros apart, so the sign is read through
+# `Float :: String` ([LCST.4.5.6], [LDET.3.2.7]). Every reading fires exactly
+# one of the two rules. The guards are in `where` position, the channel
+# the runtime differential compares.
+
+use default
+
+
+schema Reading scope logical:
+    entity_id: String key
+    x: Float mutable
+
+rule negative_zero:
+    Reading r where (r.x ** 3)::String == "-0.0"
+->
+    log info "negative zero"
+
+rule positive_zero:
+    Reading r where (r.x ** 3)::String == "0.0"
+->
+    log info "positive zero"

@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.24.2_second_block_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.24.2]: a file holds at most one `initial_block`, and the compiler must reject a second with DS_VALIDATE_INITIAL_PLACEMENT. Both blocks are well formed and precede the only rule, so the second block is the only thing wrong. PATH PINNED: the placement check over the file's declaration list in `dsc.validate`; the parser admits the second block, as [LGRA.3.1]'s `top_level_decl*` does.",
+    "rules_ds": "schema S scope explicit:\n    v: Int\n\ninitial:\n    S v: 1\n\ninitial:\n    S v: 2\n\nrule r:\n    S s\n->\n    log info \"v {s.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INITIAL_PLACEMENT"
+    }
+}

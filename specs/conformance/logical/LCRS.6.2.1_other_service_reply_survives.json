@@ -1,0 +1,23 @@
+{
+    "id": "LCRS.6.2.1_other_service_reply_survives",
+    "category": "logical",
+    "dead_rules_expected": ["late_a"],
+    "scenario": "[LCRS.6.2.1]: a call sweeps its own service's response schema and `CallError`, and \"responses of other services are untouched\". Two services, `svc.a` answering `ReplyA` and `svc.b` answering `ReplyB`. A rule calls `svc.a ... as \"c1\"`. The host then asserts a `ReplyA` (v 1) and a `ReplyB` (v 2), both with corr `c1`; an arriving answer supersedes only its own schema and `CallError` (LCRS.6.2.4), so both stay live, and the early probes log [\"early a 1\", \"early b 2\"] in source order. The rule fires again (a mutable slot changes) and the call is issued: it retracts the `ReplyA`, and the `ReplyB` of the same corr survives, so the late probes log [\"late b 2\"] alone. PATH PINNED: the call-side sweep inside the `FN_CALL` handler -- `lcrs_6_2_1_call_supersede` from `ds_dispatcher_call_typed` (libds), reading `svc.a`'s response schema from its `ServiceDef`; the Mercury runtime's `ds.exec.lcrs_6_2_1_call_supersede` is compared against it by the runtime differential's `96_call_sweeps_own_service` on `131_call_sweeps_own_service`. The break is a sweep over every response schema, as an arriving `CallError` does: the `ReplyB` goes too and the late probes log nothing.",
+    "rules_ds": "schema ReplyA scope ttl 1_h:\n    corr: String\n    v: Int\n\nschema ReplyB scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.a:\n    kwarg n: Int\n    response ReplyA\n\nservice svc.b:\n    kwarg n: Int\n    response ReplyB\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nschema Early scope explicit:\n    k: Int\n\nschema Late scope explicit:\n    k: Int\n\nrule r:\n    Trig t\n->\n    call svc.a n: t.n nocooldown as \"c1\"\n\nrule early_a:\n    Early\n    ReplyA x\n->\n    log info \"early a {x.v}\"\n\nrule early_b:\n    Early\n    ReplyB x\n->\n    log info \"early b {x.v}\"\n\nrule late_a:\n    Late\n    ReplyA x\n->\n    log info \"late a {x.v}\"\n\nrule late_b:\n    Late\n    ReplyB x\n->\n    log info \"late b {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "ReplyA", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "ReplyB", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "Early", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Late", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["early a 1", "early b 2", "late b 2"]
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LSTR.3.2_ordering_fires",
+    "category": "logical",
+    "scenario": "[LSTR.3.2] String ordering at runtime, the ASCII case. Three Items with labels \"A\", \"M\" and \"Z\" against `i.label > \"M\"`: only \"Z\" is strictly greater, so exactly one message, naming it. A runtime that compared the strings numerically, or as equal, logs \"A\" or \"M\" too. It runs in `logical/` so both runtimes read it.",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label > \"M\"\n->\n    log info \"{i.label}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "a", "label": "A" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "m", "label": "M" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "z", "label": "Z" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["Z"]
+    }
+}

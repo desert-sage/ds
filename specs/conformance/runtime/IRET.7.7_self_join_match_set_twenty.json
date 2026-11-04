@@ -1,0 +1,193 @@
+{
+  "id": "IRET.7.7_self_join_match_set_twenty",
+  "category": "runtime",
+  "scenario": "The match SET of IRET.7.7_self_join_twenty, separated from how often each match fires: every firing emits a logical Fired fact keyed by all six fact ids, which deduplicates, so the fact count after the pump is 20 Words plus the number of DISTINCT tuples that fired: 39 when the matches are exactly the 19 a conforming engine finds, whatever the firing count. Read beside its twin: the twin red and this green means right matches fired more than once ([IRET.11.3]); this red means wrong matches ([IRET.7.7]).",
+  "rules_ds": "schema Word scope logical:\n    id: Int key\n    c0: Int mutable\n    c1: Int mutable\n    c2: Int mutable\n\nschema Fired scope logical:\n    a: Int key\n    b: Int key\n    c: Int key\n    d: Int key\n    e: Int key\n    f: Int key\n\nrule square:\n    Word f0\n    Word f1\n    Word f2\n    Word f3 where f3.c0 == f0.c0 and f3.c1 == f1.c0 and f3.c2 == f2.c0\n    Word f4 where f4.c0 == f0.c1 and f4.c1 == f1.c1 and f4.c2 == f2.c1\n    Word f5 where f5.c0 == f0.c2 and f5.c1 == f1.c2 and f5.c2 == f2.c2\n->\n    emit Fired logical a: f0.id b: f1.id c: f2.id d: f3.id e: f4.id f: f5.id\n",
+  "expect": {
+    "kind": "runtime_fact_count",
+    "asserts": [
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 1,
+          "c0": 0,
+          "c1": 4,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 2,
+          "c0": 4,
+          "c1": 6,
+          "c2": 4
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 3,
+          "c0": 4,
+          "c1": 2,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 4,
+          "c0": 5,
+          "c1": 3,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 5,
+          "c0": 1,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 6,
+          "c0": 0,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 7,
+          "c0": 6,
+          "c1": 0,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 8,
+          "c0": 4,
+          "c1": 2,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 9,
+          "c0": 1,
+          "c1": 3,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 10,
+          "c0": 3,
+          "c1": 5,
+          "c2": 1
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 11,
+          "c0": 0,
+          "c1": 1,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 12,
+          "c0": 6,
+          "c1": 3,
+          "c2": 2
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 13,
+          "c0": 0,
+          "c1": 1,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 14,
+          "c0": 2,
+          "c1": 2,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 15,
+          "c0": 1,
+          "c1": 0,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 16,
+          "c0": 0,
+          "c1": 0,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 17,
+          "c0": 0,
+          "c1": 0,
+          "c2": 3
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 18,
+          "c0": 2,
+          "c1": 2,
+          "c2": 5
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 19,
+          "c0": 3,
+          "c1": 4,
+          "c2": 6
+        }
+      },
+      {
+        "schema": "Word",
+        "slots": {
+          "id": 20,
+          "c0": 1,
+          "c1": 0,
+          "c2": 4
+        }
+      }
+    ],
+    "pump": true,
+    "fact_count_after": 39
+  }
+}

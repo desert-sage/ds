@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.3.2.int_rounding_is_identity",
+    "category": "runtime",
+    "scenario": "[LEXP.3.2]: floor, ceil, trunc and round of an Int are that Int -- it is already the largest integer <= itself, the nearest, and so on -- and [LDET.3.2.2] makes it exact. Two facts, each of which must fire: x = 2^53+1, which a round trip through double turns into 2^53, and x = INT64_MAX, which through double is 2^63, a value no int64 holds, so converting it back is undefined in C (x86-64 gives INT64_MIN, arm64 saturates). Each emits Hit keyed on its own x, so fact_count 4 = two T plus two Hit and a miss on either shows as 3. Path: builtins.c builtin_floor / builtin_ceil / builtin_trunc / builtin_round, which went through to_double for an Int -- audit finding I3; Mercury ds.eval to_integer, which returns an Int unchanged.",
+    "rules_ds": "from math import floor, ceil, trunc\n\nschema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where floor(t.x) == t.x and ceil(t.x) == t.x and trunc(t.x) == t.x and round(t.x) == t.x\n->\n    emit Hit logical d: t.x\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "T", "slots": { "x": 9007199254740993 } },
+            { "schema": "T", "slots": { "x": 9223372036854775807 } }
+        ],
+        "pump": true,
+        "fact_count_after": 4
+    }
+}

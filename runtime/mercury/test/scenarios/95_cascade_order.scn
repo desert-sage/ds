@@ -1,0 +1,24 @@
+# A TMS cascade withdraws in cause order ([RFCS.7a.4]). See
+# fixtures/128_cascade_order.ds.
+#
+#   pump 1   Seed k1 (fact 0) derives Made (1), which derives Shipped (2)
+#   pump 2   G k1 is blocked by `no Shipped`
+#   pump 3   C c1 with y = 0 arrives while `watch`'s C node has no left token
+#   retract  the Seed: Made loses its justifier and is withdrawn; that ends
+#            Shipped's, so Shipped is withdrawn; that releases (g), and
+#            `c.x / c.y` traps
+#
+# The retract is the case: each cascaded withdrawal is recorded before what
+# its own evaluation produces, so Made's FactWithdraw precedes Shipped's and
+# Shipped's precedes the fault. The recordings check compares the
+# FactWithdraw fact ids, which the trace's bare `retract` lines cannot. The
+# vector RFCS.7a.4_cascade_withdraws_in_cause_order pins the order against
+# the clause.
+assert Seed k="k1"
+pump
+assert G k="k1"
+pump
+assert C id="c1" x=1 y=0
+pump
+retract 0
+pump

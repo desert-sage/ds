@@ -1,0 +1,12 @@
+{
+    "id": "LGRA.21.1_published_slots_and_where_refused",
+    "clauses": ["LGRA.21.1", "LTSL.8.4"],
+    "category": "compiler",
+    "scenario": "[LGRA.21.1]: `test_match ::= where_binding | kwarg*`, so a `published` head matches by slot arguments or by `<binding> where <predicate>`, never both ([LTSL.8.4]), and the pair is a syntax error. Pin: line 20, `published Heater zone: \"a\" h where h.level > 0`, is refused with DS_PARSE_GENERIC on that line. Every line before it parses: the schemas, the rule, the inputs, and line 19's `activated cold`. LGRA.21.1_emitted_slots_and_where_refused pins the same pair on `emitted`. PATH PINNED: `dsc.parse.matched_head` refuses a binding after one or more kwargs (`pe_test_match_both`), reported by `parse_front_code` as DS_PARSE_GENERIC.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Heater scope logical:\n    zone: String key\n    level: Int mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    publish Heater logical zone: r.zone level: 2\n\ntest \"both\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        activated cold\n        published Heater zone: \"a\" h where h.level > 0\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 20
+    }
+}

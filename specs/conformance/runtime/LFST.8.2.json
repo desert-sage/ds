@@ -1,0 +1,12 @@
+{
+    "id": "LFST.8.2",
+    "category": "runtime",
+    "scenario": "LFST.8.2/8.3/8.10 inspection without the rule artefact — a recorded RFCS stream's envelope (seq, clock_ns, schema_name, fact_id) is read with no artefact, by value: fact_ids non-zero and distinct, seqs strictly ascending, each clock_ns the clock at its assert, each schema_name the one asserted (LFST.8.2); the opaque fact payload is there to a reader that cannot type it (LFST.8.3). The Mercury harness (test_behave.m `artefact_strip_result`) decodes its recording's typed slots with the artefact and without it; runner.py decodes libds's with the artefact (`Engine.decode_fact_body`), and libds's announcement-typed decode is pinned in C by test_rfcs_announced_body.c, since pyds binds no decoder without an artefact. Each decode is held to the values asserted. Typed slot values may come from either source: LFST.8.10 accepts either source, the artefact or the stream's own SchemaDef+Slot announcement (RFCS.5.1). The two must AGREE: a payload's fields are numbered by slot position and the stream announces slots in declaration order, so the announcement determines the same field numbers, names and types the generated definition has. A programmatically-registered schema (NFCT.1.1 path 2) is never in an artefact, and its announcement is the only account of its shape. LFST.8.13's envelope-only degrade describes a stream carrying neither source, which the format does not permit.",
+    "rules_ds": "schema Reading scope logical:\n    sensor: String key\n    val: Float mutable\n    ok: Bool mutable\n",
+    "expect": {
+        "kind": "rfcs_artefact_strip",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "sensor": "dev1", "val": 21.5, "ok": true } }
+        ]
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "id": "IDSP.1.4d",
+    "category": "logical",
+    "scenario": "Two rules at the same priority firing on one fact emit two pairs of rule_fire_begin/end events. Pins that the rule engine fires every matching activation, not just the first. Pins IDSP.1.4 \u2014 every matching activation fires (rule_fire pair per match).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule a:\n    Trig\n->\n    log info \"a\"\n\nrule b:\n    Trig\n->\n    log info \"b\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.4.2",
+    "category": "runtime",
+    "scenario": "[LEXP.4.2] a NaN Float is rejected at the assert ingress (DS_ERR_NAN_REJECTED, -216). NaN must never enter working memory: NaN != NaN, so it never self-matches and would corrupt no-op-reassert identity ([LFAC.2]), beta joins, and refraction. This completes the rule the engine already half-follows (NaN-producing ops like sqrt of a negative and division-by-zero already error). Inf is a *valid* value (its data-plane hard error and ±Inf text form are [LDET.3.2.7]); only NaN is rejected, and the nan constant is reserved-not-usable. The harness asserts a NaN Float slot and expects the fault to carry code -216 and mention NaN.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Float mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-216",
+        "message_contains": "NaN",
+        "asserts": [
+            { "schema": "Reading", "slots": { "id": "a", "x": NaN } }
+        ]
+    }
+}

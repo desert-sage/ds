@@ -1,0 +1,76 @@
+{
+  "id": "LTIM.2.8.1",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.8",
+  "seq": 243,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.8.1] The engine holds two clocks, the **monotonic clock**\n([LTIM.2.8.2]) and the **wall clock** ([LTIM.2.8.3]). Both read in integer\nnanoseconds, and both are inputs to the engine: the engine **must not** read a\nplatform clock except through its clock source or to measure `pump_wcet_ns`\n([RTCT.7.3]), and **must** record every value either clock yields\n([LTIM.2.8.5]).\n\nThe `pump_wcet_ns` measurement ([RTCT.7.3]) is not a read of either engine\nclock: no expression sees it, and the trace carries only the fault it raises.\n\n",
+  "refs": [
+    "LTIM.2.8.2",
+    "LTIM.2.8.3",
+    "LTIM.2.8.5",
+    "RTCT.7.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_8_1__sampled_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine with both clocks as inputs: the monotonic one is the composed engine's clock, the wall one is held beside it, and a tick history is a list of samples of both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_1__held_sample",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Both clocks, read together from the state."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "Ltim_2_8_1__sample",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One sample of both clocks, taken together: (monotonic, wall), in the clause's integer nanoseconds as `Nat`."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "Ltim_2_8_1__source",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clock source: what its n-th call returns, any function of the call count at all. A source that is a function of the count is what makes a second call visible in a result; the wall component may go down between calls ([LTIM.2.8.3]) and nothing here needs the monotonic one to go up."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_1__still",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A clock source that does not move: every call returns (0, 0). A fixture."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_1__ticking",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A clock source that moves at every call: the n-th call returns (n, n). A fixture."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_1__Samples",
+        "tag": "spec"
+      }
+    ]
+  }
+}

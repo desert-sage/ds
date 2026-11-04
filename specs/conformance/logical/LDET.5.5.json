@@ -1,0 +1,15 @@
+{
+  "id": "LDET.5.5",
+  "category": "logical",
+  "scenario": "Activation-creation order within a rule per LDET.5.5 — when the same rule has multiple activations, the one whose binding tuple was completed earliest fires first. Trig(v=1) is asserted before Trig(v=2); rule r fires twice, first for v=1 then v=2, producing log messages in that order.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    log critical \"{t.v}\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+      { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["1", "2"]
+  }
+}

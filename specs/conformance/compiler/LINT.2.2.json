@@ -1,0 +1,10 @@
+{
+    "id": "LINT.2.2",
+    "category": "compiler",
+    "scenario": "Mixed-type interval construction per LINT.2.2 — both operands of `..` must be the same type, either both `Time` or both `Date`. Pin: `some_date .. some_time` rejects with DS_VALIDATE_INTERVAL_MIXED_OPERANDS.",
+    "rules_ds": "schema Window scope logical:\n    entity_id: String key\n    when_d: Date mutable\n    when_t: Time mutable\n\nrule trig:\n    Window w\n->\n    let bad = w.when_d .. w.when_t\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_INTERVAL_MIXED_OPERANDS"
+    }
+}

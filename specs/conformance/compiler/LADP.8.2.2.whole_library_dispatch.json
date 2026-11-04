@@ -1,0 +1,12 @@
+{
+    "id": "LADP.8.2.2.whole_library_dispatch",
+    "category": "compiler",
+    "scenario": "[LADP.8.2.2] / [LGRA.10.1.6]: a call names a service bare, and it resolves to the one declaration in the import closure whatever form imported the declaring library. Pin: `import ha` (a whole-library import) followed by `call light.turn_on entity_id: ... cooldown: ...` resolves to ha's `light.turn_on`. PATH PINNED: dsc.imports' lgra_10_1_6_global_services fills the service table from the closure under each service's own name, and dsc.validate's ladp_8_2_3_service finds it there, so an unresolved service would refuse the program. Compiling observes the resolution. It does not observe the lowered call, so the `default 255` the omitted `brightness:` takes is not pinned here.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"light.foyer\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg brightness: Int default 255\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

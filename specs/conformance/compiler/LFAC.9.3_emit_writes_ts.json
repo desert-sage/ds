@@ -1,0 +1,10 @@
+{
+    "id": "LFAC.9.3_emit_writes_ts",
+    "category": "compiler",
+    "scenario": "[LFAC.9.3]: a rule's `emit` supplies `ts: now()`. `ts` is read-only to authors, so the compiler refuses it with DS_VALIDATE_TS_READ_ONLY. The value supplied is exactly the one the engine would fill ([LFAC.9.2]), so a check that compared values instead of refusing the write would pass this rule.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nschema Marker scope logical:\n    k: Int key\n    ts: Time\n\nrule mark:\n    Trig t\n->\n    emit Marker logical k: t.k ts: now()\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TS_READ_ONLY"
+    }
+}

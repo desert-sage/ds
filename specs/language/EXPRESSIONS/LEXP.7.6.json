@@ -1,0 +1,106 @@
+{
+  "id": "LEXP.7.6",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 445,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.6] `%` follows the operand rule: `Int % Int` is `Int`,\n  `Float % Float` or mixed is `Float`. A nonzero result takes the divisor's\n  sign: `5.5 % 2 == 1.5`, `-7 % 3 == 2`, `-7.5 % 2 == 0.5`.\n\n  **With a `Float` operand the `Int` one promotes ([LEXP.7.3]), and for a\n  nonzero divisor $b$ the result is this composition and no other:**\n\n  1. $r = a - b \\cdot \\operatorname{trunc}(a / b)$, computed **exactly**: the\n     remainder of the quotient truncated toward zero, which always has a\n     representable value and carries $a$'s sign. It is NaN when $a$ is\n     infinite or either operand is NaN, and $a$ when $b$ is infinite and $a$\n     finite.\n  2. If $r \\ne 0$ and its sign differs from $b$'s, $r \\leftarrow r + b$,\n     rounded once.\n  3. If $r = 0$, the result is a zero with $b$'s sign; otherwise it is $r$.\n\n  A zero divisor is [LEXP.7.15.1]'s.\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__float_divmod_never_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "With a Float operand `%` yields a Float for every pair of operands, a zero, infinite or NaN one included, and never a trap; an Int on either side promotes and takes the Float's rows."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "With a Float operand `%` is the composition (`lexp_7_6__float_mod`), the Int one promoted first."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_5__divmod",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Int half: a nonzero remainder takes the divisor's sign, run on the clause's own example (-7 % 3) and INT64_MIN % -1 in Main.idr. The Float half is `lexp_7_6__float_mod`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__abs",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The magnitude step 1's loop runs on, -0.0 made +0.0 by the addition."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__exact_remainder",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1: a - b * trunc(a / b) computed exactly, as the magnitudes' loop with a's sign put back, never through a rounded quotient; the clause's rows for an infinite or NaN operand. That every subtraction of the loop is exact is Sterbenz's lemma, argued in the element's documentation and not proved here; the values are run (the fixtures' vectors in Main.idr, 0.3 % 0.1 among them, where a rounded quotient would miss)."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__float_mod",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Float half: [LEXP.7.15.1]'s row on a zero divisor (NaN), else steps 1 to 3 over the exact remainder. Run on the clause's 5.5 % 2 and -7.5 % 2, LEXP.7.6.float_composition's vectors (CPython 3.12's answers) and LEXP.7.6.float_special_operands' in Main.idr; formal/k/dsexpr.k carries the same steps."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__mod_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Steps 2 and 3 as the clause states them, over the exact remainder: a nonzero remainder of the wrong sign moved by b, rounded once; a zero one a zero with b's sign; otherwise itself."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__reduce",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1's outer loop on magnitudes: subtract while at or above the divisor, the fuel the exponent span of binary64, which each round lowers."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__sign_as",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1's sign: the remainder carries a's sign, -0.0 told from +0.0 by the reciprocal."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_6__strip",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1's inner loop: the largest |b| * 2^k not above what is left, found by doubling, subtracted exactly (Sterbenz: the two are within a factor of two)."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "LEXP.7.15.1",
+    "LEXP.7.3"
+  ]
+}

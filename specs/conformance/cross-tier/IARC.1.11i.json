@@ -1,0 +1,45 @@
+{
+    "id": "IARC.1.11i",
+    "category": "cross-tier",
+    "scenario": "Engine-A retract is invisible to engine-B even when the same logical fact was asserted in both. Pins per-engine retract isolation. Pins IARC.1.11 \u2014 per-engine retract isolation.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "x": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "y": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "x",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                },
+                "as": "h"
+            },
+            {
+                "engine": "y",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "x",
+                "op": "retract",
+                "label": "h"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "x": 0,
+            "y": 1
+        }
+    }
+}

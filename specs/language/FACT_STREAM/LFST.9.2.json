@@ -1,0 +1,15 @@
+{
+  "id": "LFST.9.2",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.9",
+  "seq": 525,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What replay does with each event kind",
+  "text": "### What replay does with each event kind [LFST.9.2]\n\n| Kind class | Replay action |\n|---|---|\n| Inputs | Inject into the engine exactly as the original recorded them. `FactAssert` asserts; `ClockAdvance` restores both clocks; etc. |\n| Engine internals | Do not drive. The engine produces these itself as it processes the inputs. Compare the replay-produced event to the recorded event; divergence = determinism failure. |\n| Engine-initiated actions | Intercept. The engine \"produces\" these as it fires rules, but they're captured by the replayer and compared against the recorded events. **Do not actually execute externally**: no real adapter calls, no real cache persistence, no real storage writes. `CacheGet` is **not** among these — a cache read is a pure internal read of the engine's own cache ([LSTO.4.7]), re-derived on replay, where the rules that wrote the cache fire again, never injected. Which of these a recording carries is [RFCS.3.6]'s. |\n\n",
+  "refs": [
+    "LSTO.4.7",
+    "RFCS.3.6"
+  ]
+}

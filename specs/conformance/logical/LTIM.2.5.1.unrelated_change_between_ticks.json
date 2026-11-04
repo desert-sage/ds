@@ -1,0 +1,21 @@
+{
+    "id": "LTIM.2.5.1.unrelated_change_between_ticks",
+    "category": "logical",
+    "scenario": "[LTIM.2.5.1] / [IRET.19.5]: a clock tick never re-creates an activation, and an UNRELATED working-memory change does not clear refraction either. A now()-gated rule matures and fires once; then a fact the rule never matches is asserted and pumped, and the clock advances with the condition still true. The rule must not fire again. `formal/tla/refraction_readings.tla`'s `tick_reeval` stream: the literal clear-on-any-assert reading fires a second time here, the flag reading does not. Path: libds's per-fact one-shot, which survives the generation advance the unrelated assert causes (rete/engine.c); Mercury's refraction key with the synthetic tick excluded (ds.agenda.refraction_key) and the tick exempt from the forget (ds.engine.settle_fact_split).",
+    "rules_ds": "import calendar\n\nschema Sensor scope logical:\n    entity_id: String key\n\nschema Other scope logical:\n    v: Int key\n\nrule after_5_s:\n    Sensor where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"time passed\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Sensor", "slots": { "entity_id": "s1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "assert",  "schema": "Other", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["after_5_s"]
+    }
+}

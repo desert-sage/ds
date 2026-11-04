@@ -1,0 +1,14 @@
+{
+    "id": "LOPQ.2.3_two_libraries_one_name_are_two",
+    "category": "compiler",
+    "scenario": "[LOPQ.2.3]: an opaque type is its declaration. `a` and `b` each declare an opaque `Key`, and a rule compares a slot of each. A compiler comparing bare names sees one type and compiles it. PATH PINNED: `dsc.imports.limp_1_5_decl`, which stamps each `Key` with the library declaring it, then `dsc.typecheck`'s comparison of the two `lk_opaque` leaves.",
+    "rules_ds": "import a\nimport b\n\nrule r:\n    a.Ba x\n    b.Bb y where x.token == y.token\n->\n    log info \"x\"\n",
+    "libraries": {
+        "a": "opaque type Key over Bytes\n\nschema Ba scope logical:\n    k: Int key\n    token: Key mutable\n",
+        "b": "opaque type Key over Bytes\n\nschema Bb scope logical:\n    k: Int key\n    token: Key mutable\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_OPAQUE_TYPE_MISMATCH"
+    }
+}

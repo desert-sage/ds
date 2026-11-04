@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.customary — US customary units
+#
+from units.si import volume, pressure, power, velocity
+# length / mass / temperature are baked units.core base axes (ambient via the
+# implicit preload, [LUNI.4.1.2]); no si import needed.
+#
+# Length units here are shared with UK (inch/foot/yard/mile are identical in
+# both systems since the International Yard and Pound Agreement, 1959).
+#
+# Gauge pressure (psig) is not representable as a unit — it requires a
+# reference datum. psi here is absolute (psia). Authors who receive gauge
+# readings must add atmospheric pressure before storing:
+#   let abs_pressure: pascal = gauge_pa + 101_325_pascal
+
+# ── Length ────────────────────────────────────────────────────────────────────
+
+unit thou:   length  = x * 25.4e-6               label "thou" alias mil
+unit inch:   length  = x * 25.4e-3               label "in"   alias in
+unit foot:   length  = x * 304.8e-3              label "ft"   alias ft
+unit yard:   length  = x * 914.4e-3              label "yd"   alias yd
+unit mile:   length  = x * 1609.344              label "mi"   alias mi
+
+# ── Mass (avoirdupois) ────────────────────────────────────────────────────────
+# Declared here for convenience; canonical definitions are in units.avoirdupois.
+
+unit grain:               mass  = x * 64.79891e-6       label "gr"
+unit dram:                mass  = x * 1.7718451953125e-3 label "dr"
+unit ounce:               mass  = x * 28.349523125e-3   label "oz"  alias oz
+unit pound:               mass  = x * 453.59237e-3      label "lb"  alias lb
+unit short_hundredweight: mass  = x * 45.359237         label "cwt"
+unit short_ton:           mass  = x * 907.18474         label "tn"
+
+# ── Temperature ───────────────────────────────────────────────────────────────
+# Affine (offset) conversions from kelvin base.
+# tolerance arithmetic uses scale only ([LUNI.7.4]: the 32 and 459.67 offsets drop).
+
+unit fahrenheit: temperature  = (x - 32) * 5/9 + 273.15   label "°F"  alias °F, degF
+unit rankine:    temperature  = x * 5/9                    label "°R"  alias °R, degR
+
+# ── Volume (liquid) ───────────────────────────────────────────────────────────
+# All exact values per NIST Handbook 44.
+
+unit fluid_ounce: volume  = x * 29.5735295625e-6  label "fl oz"
+unit cup:         volume  = x * 236.5882365e-6    label "cup"
+unit pint:        volume  = x * 473.176473e-6     label "pt"   alias pt
+unit quart:       volume  = x * 946.352946e-6     label "qt"   alias qt
+unit gallon:      volume  = x * 3.785411784e-3    label "gal"  alias gal
+
+# ── Volume (dry) ──────────────────────────────────────────────────────────────
+# The same volume dimension as liquid measure, with distinct names and values:
+# 1 US dry pint = 550.6104713575 mL, not 473.176473 mL.
+
+unit dry_pint:  volume  = x * 550.6104713575e-6   label "dry pt"
+unit dry_quart: volume  = x * 1101.220942715e-6   label "dry qt"
+unit peck:      volume  = x * 8810.56754172e-6    label "pk"
+unit bushel:    volume  = x * 35242.2701669e-6    label "bu"    alias bu
+
+# ── Pressure ──────────────────────────────────────────────────────────────────
+# psi = absolute pressure only (see file header note on gauge).
+
+unit psi:    pressure  = x * 6894.757293168       label "psi"
+unit ksi:    pressure  = x * 6_894_757.293168     label "ksi"
+
+# ── Power ─────────────────────────────────────────────────────────────────────
+# Mechanical horsepower — distinct from metric hp (units.metric) and
+# electrical hp (units.electrical).
+
+unit mechanical_horsepower: power  = x * 745.69987158227022  label "hp"  alias hp
+
+# ── Velocity ──────────────────────────────────────────────────────────────────
+
+unit miles_per_hour: velocity  = x * 1609.344 / 3600  label "mph"  alias mph

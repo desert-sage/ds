@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.10.8_no_block_under_withdraw",
+    "category": "compiler",
+    "scenario": "[LGRA.10.8]: under `withdraw` an indented block is a syntax error, and the compiler must refuse it, though `withdraw` shares `emit`'s head shape. `withdraw t` followed by an indented argument line is refused with DS_PARSE_GENERIC; `withdraw t` alone on an explicit-scope schema compiles (the head of compiler/LGRA.10.1.3_read_after_withdraw, which is refused only for what follows it), so the refusal is the block's. A parser that grouped `withdraw` with `emit` and `publish` would accept the line as an argument and fail here. PATH PINNED: `dsc.parse`'s `lcco_2_1_action_block`, the `withdraw` head in its refusing arm (`pe_action_block`).",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    withdraw t\n        reason: \"done\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.16.2_db_literal",
+    "category": "logical",
+    "scenario": "[LUNI.16.2]'s `dB` in `units.audio`, a unit with a scalar group of its own ([LUNI.6.2]): the literal `3_dB` has a unit, so a `dB` slot holding 5.0 compares greater and `loud` fires. A `dB` declared as a group with no member leaves the literal naming no unit ([LUNI.7.1]), and the source is refused with DS_VALIDATE_UNKNOWN_UNIT. PATH PINNED: the shipped library, read in place (`stdlib`, [RCTS.1.2.14]), then dsc's `luni_3_1_7_unit_of`, then both runtimes' comparison of two doubles (libds in the corpus, the Mercury runtime through the behaviour suite).",
+    "rules_ds": "from units.audio import dB\n\nschema Level scope logical:\n    id: String key\n    v: dB mutable\n\nrule loud:\n    Level l where l.v > 3_dB\n->\n    log info \"loud\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Level", "slots": { "id": "m", "v": 5.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["loud"]
+    }
+}

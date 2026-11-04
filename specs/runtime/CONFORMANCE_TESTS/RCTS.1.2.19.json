@@ -1,0 +1,17 @@
+{
+  "id": "RCTS.1.2.19",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 117,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCTS.1.2.19] **`field_order`: a recording's fields in the order its\nwriter must write them.** A fixture whose `expect.kind` is `field_order`\ncarries two more fields: `steps`, the session's inputs as [RCTS.1.2.28] states\nthem; and `atoms`, a list of names of messages the `Atom` oneof holds. A\nharness must fail the fixture when its recording holds no atom of a name\n`atoms` lists, so that each is shown to be walked. A harness must record the session with the runtime's own recorder and\nwalk the recording from its `Stream` message by the field types `proto/`\ndeclares: each length-delimited field whose type is a message is walked as\nthat message, and each fact body (`FactAssert.fact`, `FactEmit.fact`) is\nwalked as a message of one scalar field per slot ([RDSC.5.8.3]). The runtime\npasses only when, in every message the walk reaches, each field's number is\nat least the number of the field before it, and a field that is not repeated\nappears at most once ([RFCS.19.5]).\n\nBefore it judges the recording, a harness must alter a copy of it: in the\nfirst atom body whose first two fields have different numbers, those two\nfields swap places, which keeps every length. A harness must fail the fixture\nwhen its walk does not refuse that copy, or when no atom body has two such\nfields.\n\nA fixture whose `expect.kind` is `dsc_field_order` binds the other container\n([RFCS.19.1]) and the compiler: it carries `atoms` and no `steps`. A harness\nmust compile `rules_ds` with the compiler under test and judge the `.dsc` it\nwrites as this clause judges a recording, walked from its `Dsc` message in\nplace of `Stream`, and with the same altered copy refused first. The compiler\npasses only when every message the walk reaches keeps both rules above.\n\n",
+  "refs": [
+    "RCTS.1.2.28",
+    "RDSC.5.8.3",
+    "RFCS.19.1",
+    "RFCS.19.5"
+  ]
+}

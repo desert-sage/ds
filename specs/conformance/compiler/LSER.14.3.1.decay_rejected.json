@@ -1,0 +1,12 @@
+{
+    "id": "LSER.14.3.1.decay_rejected",
+    "clauses": ["LGRA.7.1"],
+    "category": "compiler",
+    "scenario": "The `decay` time model (EWMA forgetting) is not in v1: exponential forgetting weights each sample by exp(-Δt/τ) on a data-dependent Δt, which is within-platform-deterministic only, not cross-platform bit-exact, so v1 has no exact backing for it. `decay` lexes as a bare identifier the observation time-model grammar cannot match. Pin: `max decay 10_min` is a parse error (DS_PARSE_GENERIC); the satisfiable alternatives are `max sliding 10_min` or `max all_time`.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    max decay 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 6
+    }
+}

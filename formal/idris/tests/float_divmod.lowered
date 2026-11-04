@@ -1,0 +1,89 @@
+# lowered from the probe float_divmod.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# float_divmod.expected (scripts/formal/check_idris.py). The smoke pair of the Float `//`
+# and `%` rung: [LEXP.7.5] / [LEXP.7.6]'s compositions over
+# the exact truncated remainder, one rule per reading on one fact -- the
+# clauses' examples, an Int promoted on either side, [LEXP.7.15.1]'s zero
+# divisor never trapping, an infinite divisor, and the sign of a zero
+# remainder. Rule 1's emit codes the computed -4.0 as the Q's key: its bits
+# 13839561654909534208, the block 8 * bits + 4 = 110716493239276273668. Hand
+# derived: a Float literal is its bits (`f:<bits>`: 1.5 is 4609434218613702656,
+# 4.0 is 4616189618054758400, 0.5 is 4602678819172646912, 2.0 is
+# 4611686018427387904, 1.0 is 4607182418800017408, 0.0 is 0), and so is a Float
+# slot in the payload, tag 4: five_half = 5.5 is the block 036943027743320178692,
+# two = 2.0 is 036893488147419103236, n75 = -7.5 is 110748018436667867140,
+# two_half = 2.5 is 036902495346673844228, z = 0.0 is 000000000000000000004,
+# beside seven = 7's 8 * ZigZag + 2, 000000000000000000114; the key "t" is
+# token 0, the block 3. No negative literal appears, by design: the negative
+# values are slots or negations, so the file does not depend on how the
+# tree spells one.
+schema 0 entity T
+schema 1 relation Q
+alpha 0 0
+alpha 1 1
+rule 0 mod_float_float
+pattern 0 0 0
+where 0 0 eq mod slot 0 pay 0 slot 0 pay 1 lit f:4609434218613702656
+log 0 0 0
+rule 1 floordiv_float_float
+pattern 1 0 0
+where 1 0 eq add floordiv slot 0 pay 2 slot 0 pay 1 lit f:4616189618054758400 lit f:0
+emitx 1 1 1 0 floordiv slot 0 pay 2 slot 0 pay 1
+rule 2 mod_negative_dividend
+pattern 2 0 0
+where 2 0 eq mod slot 0 pay 2 slot 0 pay 1 lit f:4602678819172646912
+log 2 0 0
+rule 3 floordiv_int_float
+pattern 3 0 0
+where 3 0 eq floordiv slot 0 pay 3 slot 0 pay 4 lit f:4611686018427387904
+log 3 0 0
+rule 4 mod_int_float
+pattern 4 0 0
+where 4 0 eq mod slot 0 pay 3 slot 0 pay 4 lit f:4611686018427387904
+log 4 0 0
+rule 5 floordiv_float_int
+pattern 5 0 0
+where 5 0 eq add floordiv slot 0 pay 2 lit i:2 lit f:4616189618054758400 lit f:0
+log 5 0 0
+rule 6 mod_float_int
+pattern 6 0 0
+where 6 0 eq mod slot 0 pay 0 lit i:2 lit f:4609434218613702656
+log 6 0 0
+rule 7 floordiv_by_zero_is_inf
+pattern 7 0 0
+where 7 0 is inf floordiv slot 0 pay 0 slot 0 pay 5
+log 7 0 0
+rule 8 floordiv_negative_by_zero_is_neg_inf
+pattern 8 0 0
+where 8 0 is neginf floordiv slot 0 pay 2 slot 0 pay 5
+log 8 0 0
+rule 9 floordiv_zero_by_zero_is_nan
+pattern 9 0 0
+where 9 0 is nan floordiv slot 0 pay 5 slot 0 pay 5
+log 9 0 0
+rule 10 mod_by_zero_is_nan
+pattern 10 0 0
+where 10 0 is nan mod slot 0 pay 0 slot 0 pay 5
+log 10 0 0
+rule 11 int_mod_float_zero_is_nan
+pattern 11 0 0
+where 11 0 is nan mod slot 0 pay 3 slot 0 pay 5
+log 11 0 0
+rule 12 mod_by_inf_takes_the_divisors_sign
+pattern 12 0 0
+where 12 0 is inf mod slot 0 pay 2 div lit f:4607182418800017408 slot 0 pay 5
+log 12 0 0
+rule 13 floordiv_by_inf
+pattern 13 0 0
+where 13 0 eq add floordiv slot 0 pay 2 div lit f:4607182418800017408 slot 0 pay 5 lit f:4607182418800017408 lit f:0
+log 13 0 0
+rule 14 mod_negative_zero_by_two_is_pos_zero
+pattern 14 0 0
+where 14 0 and eq mod neg slot 0 pay 5 slot 0 pay 1 lit f:0 is inf div lit f:4607182418800017408 mod neg slot 0 pay 5 slot 0 pay 1
+log 14 0 0
+rule 15 mod_zero_by_negative_two_is_neg_zero
+pattern 15 0 0
+where 15 0 and eq mod slot 0 pay 5 neg slot 0 pay 1 lit f:0 is neginf div lit f:4607182418800017408 mod slot 0 pay 5 neg slot 0 pay 1
+log 15 0 0
+step assert _0 0 1000000000000000000003 1036943027743320178692036893488147419103236110748018436667867140000000000000000000114036902495346673844228000000000000000000004
+step pump

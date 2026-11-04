@@ -1,0 +1,31 @@
+{
+    "id": "LSER.16.9_rate_all_time",
+    "category": "logical",
+    "scenario": "LSER.16.9: `rate` is (last - first) / elapsed_seconds over the first and last samples, and `null` when no time elapses between them, one sample included. Drives the companion read `s.rate` of an `all_time` declaration, which the compiler puts on the accumulator backing (SeriesBackendWelfordEwma): libds's `ds_series_welford_ewma_rate`, Mercury's `aggregate(agg_rate)` over an unwindowed row. A `ttl` schema, so every assert is a sample (LSER.7.6.3). Row a: 10 at 0 s, 50 at 1 s, 20 at 2 s, then a fourth assert; reads pre-sample (LSER.8.6.1): cold, then [10] null (no log), [10, 50] 40.0, [10, 50, 20] (20 - 10) / 2 = 5.0. Row b: 10 and 30 asserted at ONE instant, then a third assert after time moves; [10, 30] has no elapsed time and reads null, so b never logs. THE `where` READS A SERIES, SO IT IS RE-READ EVERY PUMP ([LTIM.2.4.1]) and each live fact fires once, on the pump its condition first holds ([LTIM.2.5.1]): at the third pump the two a facts asserted before read 40.0 with the third, so `a 40.0` logs three times; at the fourth they stay true and do not fire again.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Int\n\nseries Sample.level (by: dev):\n    rate all_time\n\nrule r:\n    Sample s where s.rate is not null\n->\n    log info \"{s.dev} {s.rate}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 50 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "a", "level": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": 10 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": 30 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "b", "level": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a 40.0", "a 40.0", "a 40.0", "a 5.0"]
+    }
+}

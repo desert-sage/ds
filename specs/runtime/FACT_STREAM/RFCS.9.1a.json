@@ -1,0 +1,25 @@
+{
+  "id": "RFCS.9.1a",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.9",
+  "seq": 462,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.9.1a] **Scope: working memory and the cache.** A `Checkpoint`\nsnapshots live facts (the `FactAssert` atoms of [RFCS.9.3]) **and the\nengine's cache** ([RFCS.9.3a]) — the cache is engine state ([LSTO.4.7])\nthat rules read inside the fire loop (`cached()` in `where`,\n[LSTO.4.3.1a]), so a seek that restored WM but not the cache would\ndiverge on the first cache-keyed rule. It does **not** snapshot series\nbacking state — running stats, sketches, deques, and signal backings\nare engine state outside WM and are not serialised ([LSER.9.2],\n[LDET.2.2a]). A reader that seeks to a `Checkpoint` and drives forward\nrestores WM and the cache exactly but **cold-starts every series**, so\nseries-derived facts are warm-up-biased until the backings re-warm and\ndiverge from the original run. Faithful replay of series-reading rules\nrequires a full drive from a recording that began at engine-cold, where\nthe backings rebuild identically from the stream.\n\n⚠ **This clause states the snapshot's scope, not its correctness, and the\nmechanism is unsettled.** A snapshot re-emits live working\nmemory as `FactAssert` ([RFCS.9.3]), which is inject class. A fact the engine\nproduced is a `FactEmit`, which is compare class ([RFCS.6a.3]). A replayer\ngiven the snapshot is therefore handed as input what it was to re-derive, so a\ntrace carrying a `Checkpoint` does not support the determinism check. The two\ncandidate resolutions — a distinct snapshot class, or declaring such a trace\nunreplayable — differ by an atom allocation, and neither is settled here.\n\n",
+  "deferred": true,
+  "refs": [
+    "LDET.2.2a",
+    "LSER.9.2",
+    "LSTO.4.3.1a",
+    "LSTO.4.7",
+    "RFCS.6a.3",
+    "RFCS.9.3",
+    "RFCS.9.3a"
+  ],
+  "atoms": [
+    "Checkpoint",
+    "FactAssert"
+  ]
+}

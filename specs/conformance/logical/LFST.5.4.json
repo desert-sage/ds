@@ -1,0 +1,17 @@
+{
+    "id": "LFST.5.4",
+    "category": "logical",
+    "scenario": "LFST.5.4 — clock_ns is the engine's clock at emit time; two events can share clock_ns and still be ordered by `seq`. With mock clock held at 1s for the duration of a single pump, both `fact_assert` and the rule's `action_log` carry clock_ns=1_000_000_000 but their seqs differ. Pins the seq-breaks-ties-when-clock-coincides invariant.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"tick\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "expected_seq_step": 1,
+        "expected_clocks": [1000000000, 1000000000, 1000000000]
+    }
+}

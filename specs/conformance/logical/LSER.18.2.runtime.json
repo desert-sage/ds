@@ -1,0 +1,24 @@
+{
+    "id": "LSER.18.2.runtime",
+    "category": "logical",
+    "scenario": "Sliding descriptive stats are EXACT over the window's raw samples, not an EWMA estimate (LSER.18.2 / LSER.16.2.1). A series carries `mean sliding 5_s`; a large outlier (100000) is observed at t=0, then three small samples (10, 20, 30) at t=6/7/8_s. The exact ring buffer (SeriesBackendRingBuffer) evicts the outlier once it falls outside the 5_s window, so `mean` drops below 1000 and the rule fires. An EWMA backing never evicts: it retains a decayed outlier contribution and keeps `mean` near ~7500 across the whole sequence, so the rule would never fire. Pin: action_log appears, proving the exact-over-raw-samples backing. It appears twice, at the 7_s and 8_s pumps: a firing reads the series as it stood when its pump began (LSER.8.6), so at 6_s the window is empty and at 7_s it holds the 6_s sample alone.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Reading.val:\n    count sliding 5_s\n    mean sliding 5_s\n\nrule recent_mean_exact:\n    Reading r where count(r.val) >= 1 and mean(r.val) < 1000.0\n->\n    log info \"exact windowed mean\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 100000.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 6000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 7000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 8000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log", "action_log"]
+    }
+}

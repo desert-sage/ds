@@ -1,0 +1,31 @@
+{
+    "id": "ICOM.22.4a",
+    "clauses": ["LGRA.10.6", "NCBK.6.2", "RLOW.7.3.1"],
+    "category": "adapter",
+    "scenario": "A `call` kwarg with a runtime expression (binding-slot arithmetic) reaches the integrator's cb as a typed argument holding the computed value: the compiler lowers it to a name/value operand pair on FN_CALL (RDSC.4a.9.4), and libds's call bridge hands it over as a `ds_arg_t`. A call with no `as` carries the correlation the compiler generates per activation, `$r_c0_g0` for this rule's first call firing once (LCRS.3.1, LCCO.3.4). Pins [LGRA.10.6] (a computed kwarg), [RLOW.7.3.1] (the runtime evaluates each argument to its kind) and [NCBK.6.2] / [NCBK.6.10] (one typed argument per kwarg): t.v = 21 reaches the callback as x = 42. The ICOM.22.4 in its id is no clause: no document carries the ICOM prefix.",
+    "rules_ds": "service svc.do:\n    kwarg x: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.do x: (t.v * 2) nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 21
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.do",
+                "correlation": "$r_c0_g0",
+                "body": {
+                    "x": 42
+                }
+            }
+        ]
+    }
+}

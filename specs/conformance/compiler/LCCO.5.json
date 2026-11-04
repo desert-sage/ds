@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.5",
+    "clauses": ["LCCO.5.1"],
+    "category": "compiler",
+    "scenario": "The outer rule's LHS binding `t` is in scope inside the continuation (LCCO.5.1): an `on response` body logging `{t.entity_id}` compiles. PINS ONLY THAT IT COMPILES: the capture bindings are not read.",
+    "rules_ds": "schema SvcProcessReply scope ttl 1_h:\n    corr: String\n    result: String\n\nservice svc.process:\n    kwarg entity_id: String\n    response SvcProcessReply\n\nschema Trig scope logical:\n    entity_id: String key\n    val: Int mutable\n\nrule with_capture:\n    Trig t where t.val > 0\n->\n    call svc.process entity_id: t.entity_id cooldown: 1_min\n        on response.result == \"ok\":\n            log info \"processed {t.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

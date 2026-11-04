@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.10_nan_f_val_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.10]: an artefact whose `TestSlotLiteral.f_val`, carried by an `InitialFact` ([RDSC.17]), holds a NaN, quiet or signalling, is refused at load with DS_ERR_DSC_SEMANTIC (-504). The harness compiles a program whose `initial:` block places `V f: 1.5`, one `InitialFact` (field 131) whose one slot literal is `f`, `f_val` 1.5. `runtime_error`'s `tamper: {set_field: {atom: [131, 0], path: [3, 0, 3], value: {f64: \"7ff0000000000001\"}}}` ([RCTS.1.2.21]) writes that literal's field 3, `f_val`, as the signalling NaN 0x7FF0000000000001 (`slots` 0, field 3), and re-seals `dsc_sha256` ([RDSC.3.6]). It is the last member of the literal's `value` oneof, so the decoded atom holds it, and the body decodes, so the refusal is SEMANTIC and not DECODE. What it discriminates: a loader that places the fact with the bits as its Float, or reads a NaN as 0.0, loads, and the vector fails as unrefused. PATHS: libds's `handle_initial`, judging the literals `initial_literal` decoded (`rdsc_9_10_held_nan`); the Mercury runtime's `ds.dsc` `lgra_24_3_decode_ifct` over `test_slot_literal`, through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema V scope explicit:\n    f: Float\n\ninitial:\n    V f: 1.5\n\nrule seen:\n    V\n->\n    log info \"v\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"atom": [131, 0], "path": [3, 0, 3], "value": {"f64": "7ff0000000000001"}}},
+        "code": "-504"
+    }
+}

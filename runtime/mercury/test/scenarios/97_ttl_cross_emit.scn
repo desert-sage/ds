@@ -1,0 +1,14 @@
+# 96_ttl_cross_host with the Fast fact emitted by a rule rather than asserted
+# by the host ([LDET.5.11], [LDTL.6.1]). Src 2 enters at 1.5 s and `spawn`
+# emits Fast 2 in that pump, deadline 2.5 s; Slow 1, a host assert at 0, has
+# 3 s. The sweep at 3 s expires Fast 2, then Slow 1. A rule-emitted fact
+# reaches the sweep by another path from a host's. Pinned by the recordings
+# cross-read.
+# @spec [LDET.5.11]
+assert Slow id=1
+pump
+advance 1500000000
+assert Src id=2
+pump
+advance 1500000000
+pump

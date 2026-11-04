@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Seed scope logical:
+    k: String key
+
+schema Made scope logical:
+    k: String key
+
+schema Shipped scope logical:
+    k: String key
+
+schema G scope logical:
+    k: String key
+
+schema C scope logical:
+    id: String key
+    x: Int mutable
+    y: Int mutable
+
+rule make:
+    Seed s
+->
+    emit Made logical k: s.k
+
+rule ship:
+    Made m
+->
+    emit Shipped logical k: m.k
+
+rule watch:
+    G g
+    no Shipped s where s.k == g.k
+    C c where c.x / c.y > 1.0
+->
+    log info "watch fired"

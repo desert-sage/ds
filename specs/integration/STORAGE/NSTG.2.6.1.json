@@ -1,0 +1,26 @@
+{
+  "id": "NSTG.2.6.1",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.2.6",
+  "seq": 216,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NSTG.2.6.1] `ds_engine_set_cache_cap(engine, cap_keys, cap_bytes)` sets\n[LSTO.4.7.5]'s two bounds: `cap_keys` on the live keys and `cap_bytes` on the\ntotal value bytes. `0` leaves that bound unset. The integrator should call it\nbefore the artefact is loaded, and before any cache seed ([NSTG.9.1]) that the\nbound is to count.\n\nA later call is accepted. It binds the writes and seeds that follow it and\nevicts nothing: a cache already past a new, lower bound keeps its entries, and\nrefuses each write of a new key until it is back under the bound. A call from\ninside a callback is re-entry and is refused with `DS_ERR_STATE`, so a bound\nnever changes during a pump.\n\nA rule's write past a bound is refused as [LSTO.4.7.5] states, and the\n`ds_engine_pump` that ran it returns `DS_ERR_CONTRACT_BREACH`. A\n`ds_engine_cache_seed` past a bound returns `DS_ERR_CONTRACT_BREACH` and stores\nnothing. A null `engine` is `DS_ERR_INVAL`.\n\nThe bounds are a setting a replaying engine must be given as the recording one\nhad them, a later change included, between the same two inputs ([NDET.8.1]).\n\n---\n\n",
+  "refs": [
+    "LSTO.4.7.5",
+    "NDET.8.1",
+    "NSTG.9.1"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH",
+    "DS_ERR_INVAL",
+    "DS_ERR_STATE"
+  ],
+  "symbols": [
+    "ds_engine_cache_seed",
+    "ds_engine_pump",
+    "ds_engine_set_cache_cap"
+  ]
+}

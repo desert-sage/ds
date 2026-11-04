@@ -1,0 +1,254 @@
+{
+  "id": "LCRS.8.2",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.8",
+  "seq": 429,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.8.2] The engine suppresses a `call` carrying `cooldown: <dur>` when the\nsame call site has issued the call within `<dur>` for the same key: the values of\nthe declared `key` slots of each `logical` fact the activation binds, as\nrule-level cooldown is keyed ([LCDB.3.3.1]). A `ttl` or event fact contributes\nno slot ([LCDB.3.3.3]) and a `call` takes no `by:` ([LCRS.8.1]), so where the\nactivation binds no `logical` fact with a `key` slot the key is empty, and the\ncall site has one window across all its activations. An author who needs\na window per entity over such a fact writes a rule-level `cooldown` with `by:`\n([LCDB.3.3.4]). Each call site has its own window,\nso two calls in one rule cool independently, and a suppressed call does not stop\nthe rule's other actions. `nocooldown` issues the call every time the rule fires;\nthe adapter's own argument-dedup LRU still fires as a safety net.\n\n---\n\n",
+  "refs": [
+    "LCDB.3.3.1",
+    "LCDB.3.3.3",
+    "LCDB.3.3.4",
+    "LCRS.8.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_1__site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The site's gate: the window and the activation key as a function of the fired match. LESS than the clause: the key is the lowering's composition -- the `logical` facts' key slots, the empty key and one window per site where the activation binds none with a `key` slot, as the clause has it -- and the model proves nothing of how it is composed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Rlow_4_6_6_1__trackers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Each call site has its own window: its own tracker, keyed (rule, site, key); one window across the activations of a site whose key is empty, as the clause has it. LESS than the clause: the key is the lowering's composition."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__admitted_call_supersedes",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AN ISSUED CALL SUPERSEDES: past its window the call retracts the live reply of its correlation before it is issued; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__cooldown_suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A SUPPRESSED CALL RETRACTS NOTHING: inside the window the rule fires, the site is refused, no call is recorded and the reply stays; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__site_cooled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The witnesses' cooled site, keyed on the trigger's identity key, [LCDB.3.3.1]'s rule-level default. LESS than the clause: the trigger is an entity and not a `logical` fact, so the clause's key for this site is empty and its window one across the site's activations; the fixture keys per trigger, the key being a function of the match the model takes as given and proves nothing of. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__suppressed_retracts_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A CALL ITS COOLDOWN SUPPRESSES IS NOT ISSUED AND RETRACTS NOTHING: inside the window the accumulator is left exactly as it was. The gate covers the sweep as it covers the call."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__call_site_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A call site keeps the invariant: admitted, its issue is a correlation sweep; refused, the net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__admit_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The site's gate: `nocooldown` admits with the trackers untouched; a window decides at the clock on the key of the fired match under (rule, site)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The per-call rate-allow: Rete/RateGate.idr's gate over the site's key at the instant, recording `key -> now` on allow."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow_admits",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gate's `true` applied: the site's key is stamped with the instant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__allow_refuses",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gate's `false` applied: nothing moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__call_site",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A call site run: the gate at the net's clock on the site's tracker, then the issue under the verdict; the gate covers the sweep as it covers the call."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__first_call_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A SITE WITH NO RECORDED ISSUE IS ADMITTED and stamped, over every window, instant and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__refires_at_the_boundary_call",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AT OR PAST THE BOUNDARY THE SITE ISSUES AGAIN and is restamped, the boundary itself included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_admitted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ADMITTED SITE SWEEPS, RECORDS AND STAMPS: the issue on its net, the stamps kept, the trackers the gate's, the call recorded after the ones before."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_decided",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A site decided: the trackers take the gate's, then the issue under its verdict."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_refires_at_the_boundary",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The site's boundary is inclusive: suppressed at 5, issued at exactly 10, the reply then swept. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__site_refused",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A REFUSED SITE LEAVES THE NET, THE STAMPS AND THE RECORDS: only the trackers are the gate's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_8_2__window_suppresses_call",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE WINDOW SUPPRESSES THE CALL: a site's key stamped inside the window is refused and the trackers do not move."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_4_6_6_6__no_gate_admits",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`nocooldown` is no gate: admitted every time, the trackers untouched. A transcription, said so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__do_actions_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The RHS with calls: at each position the sites there, then the action there; the sites past the last action after it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "rlow_7_3_8__run_sites",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sites of one position run in order, each on the accumulator the last left: two calls in one rule cool independently, a suppressed one stops nothing else."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__Attempt",
+        "tag": "spec",
+        "note": "The rule firing with the call in its RHS: the gate admits it (Fire) or suppresses it (Deny). What the two cooldown properties quantify over."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__DENIALS",
+        "tag": "spec",
+        "note": "How many times a cooled call may be suppressed in a run, at most; 1 in every config. A bound on the state and nothing in the clause."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__Deny",
+        "tag": "spec",
+        "note": "The gate suppresses a cooled call whose window has not elapsed: not issued, retracts nothing, only the count of denials moves. The ungated teeth engine, with the sweep compiled ahead of the gate, has it retract what an admitted firing would."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__WINDOW",
+        "tag": "spec",
+        "note": "The cooldown window in ticks, one for every cooled call; 1 in every config, the smallest window a tick can elapse. The clause's `<dur>`, counted in the model's ticks."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__admits",
+        "tag": "spec",
+        "note": "The gate: a call with no cooldown, or one whose window has elapsed, is admitted. The nogate teeth engine admits every firing. Transcribes the clause's 'issued within <dur>' as 'fewer than WINDOW ticks since the last admitted firing'; the key, the stamp and the clock the gate reads are formal/k/rgate.k's and Rete/RateGate.idr's, not this model's."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__denied",
+        "tag": "spec",
+        "note": "Per cooled call, how many times the gate has suppressed it."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__since",
+        "tag": "spec",
+        "note": "Per cooled call, the ticks since its last admitted firing, saturating at the window and starting there, since a call that has never fired is admitted."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_8_2__suppressed_not_issued",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A cooled call's firing inside its window issues no request: the adapter is owed nothing new. Bounded: two calls, the one with an author's `as` cooled with a one-tick window, one denial per run; the nogate teeth engine violates it, and the readmitted probe shows the window elapse and the call fire again."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "rarc_5_2_4__Tick",
+        "tag": "derives",
+        "note": "The tick is what elapses a cooled call's window: the gate reads the pump's monotonic sample, which moves with the clock the TTL reads."
+      }
+    ]
+  }
+}

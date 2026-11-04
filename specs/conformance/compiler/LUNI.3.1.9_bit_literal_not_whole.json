@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.3.1.9_bit_literal_not_whole",
+    "category": "compiler",
+    "scenario": "[LUNI.3.1.9]: a literal in a dimension that stores `int64` is a whole number of its base unit, or it is refused, never truncated. `data` declares `storage int64 base bit`, so `1.5_bit` is DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE. PATH PINNED: `luni_3_1_7_literal_type` in dsc.typecheck, which reads the dimension's storage through `dsc.types.luni_3_1_9_whole_dimension` and tests `dsc.quantity.luni_4_3_base_value` with `is_whole`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule r:\n    Blob b where b.size > 1.5_bit\n->\n    log info \"big\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE"
+    }
+}

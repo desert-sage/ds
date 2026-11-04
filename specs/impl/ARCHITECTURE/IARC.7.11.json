@@ -1,0 +1,15 @@
+{
+  "id": "IARC.7.11",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.7",
+  "seq": 784,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IARC.7.11] **Where there is no double FPU, libds carries its own double\narithmetic.** On the RP2350, RP2040 and nRF52833 every `double` operation in\nlibds and in CORE-MATH compiles to a helper call that a static archive would\nleave for the integrator's link to resolve. libds must instead link its own:\n\n- the double helpers LLVM compiler-rt's builtins select for that target, at one\n  pinned release, compiled unmodified;\n- the libm functions CORE-MATH calls (`fma`, `sqrt`, `roundeven`, `floor`,\n  `ceil`, `round`, `trunc`, `fmin`, `fmax`), from a pinned source admitted on\n  that target ([NDET.1.4]).\n\nThe build renames these symbols, and the matching references in libds's and\nCORE-MATH's objects, to names private to libds; only link names change, never\nsource. Neither the integrator's runtime nor an SDK that intercepts double\nhelpers can then reach libds's arithmetic, and the integrator's own `double`\ncode is untouched. Targets with a hardware double FPU need none of this.\n\n",
+  "deferred": true,
+  "refs": [
+    "NDET.1.4"
+  ]
+}

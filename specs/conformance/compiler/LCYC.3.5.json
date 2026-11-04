@@ -1,0 +1,11 @@
+{
+    "id": "LCYC.3.5",
+    "clauses": ["LCYC.3.5.1", "LCYC.6.1"],
+    "category": "compiler",
+    "scenario": "Cycles are compile errors (LCYC.3.5.1): `tick` matches `Counter c where c.n < 10` and emits `Counter n: 11`, a one-rule cycle refused with DS_VALIDATE_RULE_CYCLE. The emitted 11 cannot satisfy `< 10`, but the literal break drops an edge only for a `binding.slot == X` constraint, and every other comparison stays strict (LCYC.6.1), so the edge stays. Only the rejecting case is stepped.",
+    "rules_ds": "schema Counter scope logical:\n    n: Int key\n\nrule tick:\n    Counter c where c.n < 10\n->\n    emit Counter logical n: 11\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

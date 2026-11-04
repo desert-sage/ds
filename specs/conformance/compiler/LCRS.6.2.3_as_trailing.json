@@ -1,0 +1,11 @@
+{
+    "id": "LCRS.6.2.3_as_trailing",
+    "category": "compiler",
+    "scenario": "LCRS.6.2.3 — `as <expr>` is the trailing clause of every `call` action. A kwarg appearing after `as` is a parse error (DS_PARSE_GENERIC). Pin: `call light.turn_on entity_id: \"x\" as \"k\" cooldown: 30_s` rejects because `cooldown:` appears after `as`.",
+    "rules_ds": "service light.turn_on:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call light.turn_on entity_id: \"x\" as \"k\" cooldown: 30_s\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 11
+    }
+}

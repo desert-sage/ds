@@ -1,0 +1,15 @@
+{
+    "id": "LCRS.14.9",
+    "clauses": ["LIMP.5.3.1"],
+    "category": "compiler",
+    "scenario": "[LCRS.14.9]: two declarations of one service name anywhere in a compilation's import closure are a compile error, so the bare dotted name a call carries always names one handler. Libraries `hi` and `lo` each declare `svc.method`, each a well-formed `no response` service (LGRA.23.1); the root file imports a schema from each and no service, so neither declaration is bound by name in the file and the check must run over the closure's declarations, not its bindings. PATH PINNED: dsc.driver.lcrs_14_9_duplicate_services over two libraries, DS_VALIDATE_DUPLICATE_SERVICE.",
+    "rules_ds": "from hi import High\nfrom lo import Low\n",
+    "libraries": {
+        "hi": "schema High scope logical:\n    v: Int key\n\nservice svc.method:\n    \"\"\"hi's\"\"\"\n    no response\n",
+        "lo": "schema Low scope logical:\n    v: Int key\n\nservice svc.method:\n    \"\"\"lo's\"\"\"\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_SERVICE"
+    }
+}

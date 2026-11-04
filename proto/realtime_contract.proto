@@ -1,0 +1,83 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// RealtimeContract atom body. Per [RTCT.6] and [RDSC.16.3].
+//
+// Realtime contract values supplied by the author in a sibling
+// <basename>.dsrt file at compile time. Embedded into the .dsc when
+// the program's resolved settings have realtime: true; prohibited
+// otherwise. Exactly one RealtimeContract atom per realtime .dsc; zero in any
+// other .dsc.
+//
+// Cap values are enforced at runtime per RTCT.7; breach surfaces as
+// DS_ERR_CONTRACT_BREACH from the API call that attempted the
+// breaching operation.
+message RealtimeContract {
+  uint32 wm_max              = 1;   // max simultaneous facts
+  uint32 agenda_cap          = 2;   // max queued activations
+  uint32 max_fires_per_pump  = 3;   // ds_rete_run upper bound
+  uint32 token_pool_cap      = 4;   // total tokens across all betas
+  uint32 intern_cap          = 5;   // interned-string slots
+  uint32 intern_bytes_cap    = 6;   // interned-string byte capacity
+  uint64 pump_wcet_ns        = 7;   // per-pump wall-clock ceiling
+
+  // LEGACY per-node capacity list; ascending node_id. One of two encodings
+  // (see [RTCT.6.7]); emitted only when a producer chooses the legacy form.
+  repeated NodeCap   nodes   = 8;
+  repeated SeriesCap series  = 9;   // ascending series_id
+
+  // SHA-256 of the canonical contract serialization per [RBND.4b]. 32 raw
+  // bytes. The runtime materializes the LOGICAL contract (legacy or compact,
+  // [RBND.4b.8]), recomputes this over it, and refuses on mismatch
+  // (DS_ERR_CONTRACT_INVALID).
+  bytes  rt_config_sha256    = 10;
+
+  // Compact node-cap encoding (gated on realtime: true; [RTCT.6.7]). A contract
+  // carries its per-node caps in EXACTLY ONE of: the legacy `nodes` list (8),
+  // or the compact fields below. Both hash identically over the expanded
+  // logical (node_id, kind, capacity) list ([RBND.4b.8]) — no wire
+  // change. The compact form carries no `kind`; the runtime derives it from
+  // the AlphaNode/BetaNode/TerminalNode atoms.
+  uint32 node_count          = 11;  // covered network nodes (cross-check)
+  uint32 default_node_cap    = 12;  // capacity for every covered node not overridden
+  // sparse per-node caps, strictly ascending node_id (used with default_node_cap)
+  repeated NodeCapOverride node_overrides   = 13;
+  // dense fallback: one capacity per covered node, ascending node_id order
+  // (used INSTEAD of default+overrides; then default_node_cap MUST be 0)
+  repeated uint32          node_caps_packed = 14 [packed = true];
+
+  // [RTCT.6.8] / [RDSC.16.3.7a] — engine-owned cache bounds. Both
+  // OPTIONAL; 0 (proto3 default, omitted on the wire) = unbounded. Enforced at runtime in
+  // ds_cache_set (breach ⇒ DS_ERR_CONTRACT_BREACH, no mutation).
+  uint32 cache_cap           = 15;  // max live cache keys
+  uint64 cache_bytes_cap     = 16;  // max total cache value bytes
+
+  // Json caps ([RTCT.6.10]): each LOWERS one fixed limit of [LGRA.5.8.6] for
+  // the tier. 0 (proto3 default, omitted on the wire) = the fixed maximum; a
+  // value above it is DS_ERR_CONTRACT_INVALID.
+  uint32 json_depth_cap        = 17;  // nesting levels, fixed maximum 16
+  uint32 json_node_cap         = 18;  // nodes per value, fixed maximum 256
+  uint32 json_string_bytes_cap = 19;  // string + key UTF-8 bytes, fixed maximum 16384
+  uint32 json_text_bytes_cap   = 20;  // JSON text bytes per parse, fixed maximum 24576
+}
+
+message NodeCap {
+  uint32 node_id   = 1;
+  string kind      = 2;  // "alpha" | "beta" | "term"
+  uint32 capacity  = 3;
+}
+
+// Compact-encoding per-node override: a single node whose capacity differs
+// from RealtimeContract.default_node_cap. See [RTCT.6.7.3].
+message NodeCapOverride {
+  uint32 node_id   = 1;
+  uint32 capacity  = 2;
+}
+
+message SeriesCap {
+  uint32 series_id = 1;
+  uint32 capacity  = 2;
+}

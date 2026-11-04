@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.22.9_binding_shadows_bare_member",
+    "clauses": ["LGRA.22.9"],
+    "category": "compiler",
+    "scenario": "[LGRA.22.9]'s second refusal: a binding may not take the name of a `math` or `distance` member the file imports bare. The file has `from math import sin`, and a rule binds `let sin = s.v * 2.0`. The compiler refuses the `let` with DS_VALIDATE_BINDING_SHADOWS_LIBRARY, so a later `sin(x)` keeps its one reading. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, over the rule's `let` names, against the members a selective import of `math` or `distance` binds.",
+    "rules_ds": "from math import sin\n\nschema Sensor scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Sensor s\n->\n    let sin = s.v * 2.0\n    log info \"v {sin}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

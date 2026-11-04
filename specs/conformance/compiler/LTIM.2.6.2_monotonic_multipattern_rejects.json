@@ -1,0 +1,10 @@
+{
+  "id": "LTIM.2.6.2_monotonic_multipattern_rejects",
+  "category": "compiler",
+  "scenario": "[LTIM.2.6.2]: a `monotonic_ns()` read in a `where` on a rule with two positive patterns is DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. `monotonic_ns()` is a clock read ([LTIM.2.4.1]), so the condition is time-dependent, and v1 re-evaluates one only on a single-positive-pattern rule. PATH: `dsc.validate.ltim_2_6_2_clock_where`, its `time_read` clock arm. [LEXP.9.6.1] keeps `cached()` alone.",
+  "rules_ds": "use default\n\nschema Arm scope logical:\n    k: Int key\n\nschema Event scope logical:\n    k: Int key\n\nrule late:\n    Arm a\n    Event e where e.k == a.k and monotonic_ns() > 1_s\n->\n    log info \"late\"\n",
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+  }
+}

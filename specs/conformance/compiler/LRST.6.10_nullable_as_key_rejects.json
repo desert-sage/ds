@@ -1,0 +1,10 @@
+{
+    "id": "LRST.6.10_nullable_as_key_rejects",
+    "category": "compiler",
+    "scenario": "[LRST.6.10] — \"Keys must be non-nullable. The compiler rejects `as <expr>` whose type can soft-fail.\" `zone` is `String?`, so `as d.zone` is a supersedure key that can evaluate to null. The consequence is why the rule is strict rather than tidy: a null key collapses every soft-failing activation into one identity, so unrelated calls supersede each other, and the surviving one is whichever fired last. THE CODE IS THE GENERAL ONE: the validator treats the supersedure key as a concrete-value position, so a plain nullable `as` trips DS_VALIDATE_NULLABLE_UNNARROWED before any LRST-specific check. DS_VALIDATE_AS_SOFTFAIL_EXPRESSION exists but is reachable only for the INTERPOLATED `as` form, where the string is always type String and each interpolated binding inherits LRST.1.5 separately. The refusal LRST.6.10 promises does happen; the author is told about narrowing rather than about supersedure keys, and `?? \"none\"` is a real fix, so the message is actionable either way.",
+    "rules_ds": "service svc.method:\n    kwarg entity_id: String\n    no response\n\nschema Device scope logical:\n    entity_id: String key\n    zone: String? mutable\n\nrule scan:\n    Device d\n->\n    call svc.method entity_id: d.entity_id cooldown: 30_s as d.zone\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

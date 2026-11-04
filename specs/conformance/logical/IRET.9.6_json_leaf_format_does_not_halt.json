@@ -1,0 +1,16 @@
+{
+    "id": "IRET.9.6_json_leaf_format_does_not_halt",
+    "category": "logical",
+    "scenario": "[IRET.9.6], the half with teeth: the render refusal on a Json leaf abandons ONE activation and the tier keeps running. `render` fires first (source order) and its `.2f` cannot render the String leaf `\"abc\"`; `survivor` fires on the same fact in the same pump and logs. A SECOND fact is then asserted and pumped, and both rules fire again. If the interpolation node were not tainted the fault would be an EngineError, which stops the pump where it is raised ([LERR.1.4.7]): `survivor` would not log, and the first pump would return DS_ERR_ENGINE_HALTED ([NCBK.2.9]), which fails the fixture as a refused step ([RCTS.1.2.28]). The second fact and pump show the tier still running after the TypeError. PATH PINNED: dsc.rete.iret_9_6_interp_stamp.",
+    "rules_ds": "schema Msg scope logical:\n    body: Json key\n\nrule render:\n    Msg m\n->\n    log info \"count {m.body.count:.2f}\"\n\nrule survivor:\n    Msg\n->\n    log info \"alive\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Msg", "slots": { "body": { "count": "abc" } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Msg", "slots": { "body": { "count": "xyz" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["alive", "alive"]
+    }
+}

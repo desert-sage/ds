@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.5.5_unknown_slot_of_a_response_schema",
+    "category": "compiler",
+    "scenario": "A rule reads a response as it reads any fact, and \"the compiler must check those reads as it checks any slot access ([LGRA.13.8])\" (LCRS.5.5). Pin: library `ha` declares `response HALightResponse`; a sibling rule matches `ha.HALightResponse r where r.corr == \"corr1\"` and reads `r.foo`, which the schema does not declare. Rejects with DS_VALIDATE_UNKNOWN_SLOT. Path: the ordinary slot-access check on a pattern binding.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule trigger:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s as \"corr1\"\n\nrule check:\n    ha.HALightResponse r where r.corr == \"corr1\" and r.foo == true\n->\n    log info \"y\"\n",
+    "libraries": {
+        "ha": "schema HALightResponse scope ttl 1_h:\n    corr: String\n    success: Bool\n    error_code: String\n\nservice light.turn_on:\n    kwarg entity_id: String literal required\n    response HALightResponse\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_SLOT"
+    }
+}

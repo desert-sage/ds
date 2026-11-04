@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.trap_and_true_traps",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: a trap stands when nothing decides the `and`. `s.a / s.b > 1.0 and s.ok` with Int a, b and b = 0, and ok = true (Int operands, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf): the right conjunct is `true`, which does not decide an `and`, so the division's ComputationError is recorded and the activation is abandoned. The control for `trap_and_false_is_false`: the same rule, and only `ok` differs.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    ok: Bool mutable\n\nrule r:\n    S s where s.a / s.b > 1.0 and s.ok\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

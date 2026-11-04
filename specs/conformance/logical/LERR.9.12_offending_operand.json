@@ -1,0 +1,17 @@
+{
+    "id": "LERR.9.12_offending_operand",
+    "category": "logical",
+    "scenario": "[LERR.9.12]: a `ComputationError` fault fact's `schema` and `slot` are its offending operand's, filled when that operand is a slot read and the empty string otherwise. One `D` fact (num 7, z 0) fires two rules whose Int floor division traps DIVIDE_BY_ZERO; neither operand is `null`, so at a division the offending operand is the divisor (the clause's second choice). `computed_divisor` divides by `(d.num - d.num)`: no fact or slot supplied that zero, so `schema` and `slot` are \"\". `slot_divisor` divides 100 by `d.z`, a slot read, so they name `D` and `z`. A handler for each logs its fault fact's fields, in source order ([LDET.5.4]). A runtime that named the first operand at a division would log `[D] [num]` for the first and `[] []` for the second; one that named nothing would log `[] []` for both. A literal divisor (`n // 0`) is refused at compile time ([LEXP.10.2.2], DS_VALIDATE_DIV_BY_ZERO), so the computed divisor stands in for it, as the clause's own `100 / (x - x)` does. A `null` operand is not a trap: arithmetic propagates `null` ([LNUL.4.1], [LNUL.4.2]), so there is no fault to name it in. PATH PINNED: libds `origin_at` (rete/eval.c), whose division arm takes `binop.right` and names a slot only for a `DS_RETE_EXPR_VAR`; the Mercury runtime's `ds.eval.fault_origin`, through `site_origin`.",
+    "rules_ds": "schema D scope logical:\n    id: Int key\n    num: Int mutable\n    z: Int mutable\n\nrule computed_divisor:\n    D d\n->\n    let q = d.num // (d.num - d.num)\n    log info \"q {q}\"\n\nrule slot_divisor:\n    D d\n->\n    let q = 100 // d.z\n    log info \"q {q}\"\n\nrule on_computed:\n    ComputationError e where e.rule == \"computed_divisor\"\n->\n    log info \"{e.rule} {e.kind} [{e.schema}] [{e.slot}]\"\n\nrule on_slot:\n    ComputationError e where e.rule == \"slot_divisor\"\n->\n    log info \"{e.rule} {e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "D", "slots": { "id": 1, "num": 7, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "computed_divisor DIVIDE_BY_ZERO [] []",
+            "slot_divisor DIVIDE_BY_ZERO [D] [z]"
+        ]
+    }
+}

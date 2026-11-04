@@ -1,0 +1,14 @@
+{
+    "id": "LIMP.1.5_library_kwarg_opaque_importer_binds_another",
+    "category": "compiler",
+    "scenario": "[LIMP.1.5], [LOPQ.2.3]: `vault`'s service has a kwarg typed by `vault`'s opaque `Key`, and the program binds `Key` to `other`'s. The program's own value is `other`'s `Key`, which is another type. The break is the kwarg read in the program's scope, which finds `other`'s and compiles. Its twin, `LIMP.1.5_library_kwarg_opaque_importer_binds_another_compiles`, passes `vault`'s. PATH PINNED: `dsc.imports.limp_1_5_kwarg` recording `vault`'s `Key`, `dsc.resolve.kwarg_scope` reading it, then `dsc.validate.call_kwarg_value`'s `lk_opaque` comparison.",
+    "rules_ds": "from other import (Key)\nimport vault\n\nschema Mine scope logical:\n    k: Int key\n    pubkey: Key mutable\n\nrule r:\n    Mine m\n->\n    call svc.x secret: m.pubkey nocooldown\n",
+    "libraries": {
+        "other": "opaque type Key over Bytes\n",
+        "vault": "opaque type Key over Bytes\n\nschema Box scope logical:\n    k: Int key\n    pubkey: Key mutable\n\nservice svc.x:\n    kwarg secret: Key\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_OPAQUE_TYPE_MISMATCH"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.5_local_schema_collides_with_import",
+    "category": "compiler",
+    "scenario": "[LGRA.22.5]: \"The compiler must reject a program that brings two distinct schemas into scope under the same NFC name without an alias, with `DS_VALIDATE_IMPORT_NAME_COLLISION`\" ([LIMP.2.1.7] the same, by schema-object identity). Nothing rebinds, so a file's own schema does not win over an imported one. Pin: library `ha` declares `schema X` with one slot; the importer does `from ha import X` and declares its own `schema X` with a different slot. The two are distinct, so the file is refused, at the local declaration and naming `ha`. PATH PINNED: `dsc.resolve.lgra_22_5_local_schemas`, which reads the selective import's binding from `dsc.imports`' `im_schema_origin`.",
+    "rules_ds": "from ha import X\n\nschema X scope logical:\n    local_only: Bool key\n\nrule r:\n    X x where x.local_only == true\n->\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "schema X scope logical:\n    imported_only: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_NAME_COLLISION"
+    }
+}

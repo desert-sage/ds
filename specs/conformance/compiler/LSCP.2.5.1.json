@@ -1,0 +1,10 @@
+{
+    "id": "LSCP.2.5.1",
+    "category": "compiler",
+    "scenario": "Ambient permissions boundary per LSCP.2.5.1 — rule RHSs must not `emit` or `retract` an `ambient` schema (the boundary keys on the `ambient` overlay modifier, so `scope logical ambient` is read-only too). The compiler must reject any such action; the diagnostic names the schema and points the author at emitting a request schema instead. Pin: an `emit Light ...` against a `scope logical ambient` `Light` rejects with DS_VALIDATE_AMBIENT_EMIT_FORBIDDEN.",
+    "rules_ds": "schema Light scope logical ambient:\n    entity_id: String key\n    state: String mutable\n\nschema Switch scope logical:\n    state: String key\n\nrule force_light_on:\n    Switch sw where sw.state == \"pressed\"\n->\n    emit Light entity_id: \"kitchen\" state: \"on\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AMBIENT_EMIT_FORBIDDEN"
+    }
+}

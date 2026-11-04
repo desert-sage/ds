@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.4.2",
+    "clauses": ["LCRS.4.2.1"],
+    "category": "compiler",
+    "scenario": "`CallError` is the spec-mandated error fact schema per LCRS.4.2 \u2014 `ttl 5_min` lifecycle with slots `corr: String`, `code: String`, `message: String`, `ts: Time`. A call to a `no response` service produces at most a `CallError` (LCRS.4.2.2, LCRS.17.1); rules needing both paths write two matcher rules. The schema is a builtin the compiler injects when a program names it. Pin: a rule pattern matching `CallError e where e.code == \"timeout\"` on a `no response` service's correlation compiles cleanly.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule trigger:\n    Trig\n->\n    call svc.foo cooldown: 30_s as \"corr1\"\n\nrule on_error:\n    CallError e where e.corr == \"corr1\" and e.code == \"timeout\"\n->\n    log warning \"timed out\"\n",
+    "libraries": {
+        "ha": "service svc.foo:\n    kwarg dummy: Int\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

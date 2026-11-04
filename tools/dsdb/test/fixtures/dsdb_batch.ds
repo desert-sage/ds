@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb batch mode's test program (DSDB.md §9): a rule that logs and
+# publishes, and one that calls. Compiled by the branch's own Mercury dsc in
+# the js gate, beside @ds-lang/ds's fixtures.
+
+use default
+
+schema FooReply scope ttl 1_min:
+    corr: String
+
+service svc.foo:
+    "test stub"
+    kwarg level: Float
+    response FooReply
+
+schema Reading scope logical:
+    id: String key
+    level: Float mutable
+    raw: Bytes? mutable
+
+schema Alert scope ttl 1_h:
+    id: String
+    level: Float
+    big: Int
+
+rule hot:
+    Reading r where r.level > 80.0
+->
+    log warning "hot {r.id}"
+    publish Alert id: r.id level: r.level big: 9007199254740993
+
+rule ask:
+    Reading r where r.level > 90.0
+->
+    call svc.foo level: r.level nocooldown as r.id

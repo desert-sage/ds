@@ -1,0 +1,27 @@
+{
+  "id": "LFST.9.3.7",
+  "prefix": "LFST",
+  "doc": "FACT_STREAM.md",
+  "parent": "LFST.9.3",
+  "seq": 595,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFST.9.3.7] **Active compare over both compare-class atoms.** The\nbyte-compare of [LFST.9.3.1] / [LFST.9.3.6] is **performed by the replayer**, not\nmerely defined. As replay re-fires the engine at each recorded pump boundary ([LFST.9.2.1],\n[RFCS.22]),\neach re-derived `CallIssued` **and** `RuleFireAnnotation` atom is captured and byte-compared, in\n`seq` order (a two-pointer merge — both streams are `seq`-ordered), against the\nrecorded atom, failing fast with **`DS_ERR_FS_DIVERGENCE`** ([NERR.13]) at the\nfirst difference. The **structural** checks are part of it: a recorded compare\natom with no re-derived twin (missing), a re-derived atom with no recorded twin\n(extra), or a kind/order mismatch is the same Divergence — replay fired a\ndifferent rule set — a stronger check than the byte-compare alone. `RuleFireAnnotation`'s\nidentity `(timetag, rule_name)` ([RFCS.11.2]) is compared too, its `timetag` by\n[LFST.9.3.6]'s pairing; its parity with\nthe bracketed `CallIssued`'s join key ([RFCS.15.2]) is what resolves a recorded `CallIssued`\nto its firing. `DS_ERR_FS_DIVERGENCE` is distinct from the `EngineDivergence`\n**event** (a callback surface); this is the replay compare verdict.\n\n",
+  "refs": [
+    "LFST.9.2.1",
+    "LFST.9.3.1",
+    "LFST.9.3.6",
+    "NERR.13",
+    "RFCS.11.2",
+    "RFCS.15.2",
+    "RFCS.22"
+  ],
+  "errors": [
+    "DS_ERR_FS_DIVERGENCE"
+  ],
+  "atoms": [
+    "CallIssued",
+    "RuleFireAnnotation"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LTAC.7.1_negative_duration_does_not_parse",
+    "category": "compiler",
+    "scenario": "[LTAC.7.1] with [LGRA.6.1]: a negative `after` duration does not parse, since the duration is a `UNIT_LIT` and `dsc.lex` produces no signed literal: `-5_s` is a unary minus over `5_s`, and the token after `after` is `-`. Expected DS_PARSE_GENERIC. A zero duration parses and is refused by the validator; the `LTAC.7.1` vector (`after 0_s:`, DS_VALIDATE_AFTER_NONPOSITIVE_DURATION) pins that half. The refusal begins on line 9, the `after` line ([RCTS.1.2.34]). PATH: `dsc.parse.ltac_2_1_parse_after`.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule later:\n    Motion m where m.state == true\n->\n    log info \"armed\"\n    after -5_s:\n        log info \"fired\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 9
+    }
+}

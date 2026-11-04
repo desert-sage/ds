@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.1",
+    "category": "logical",
+    "scenario": "Two aggregation lines in one series declaration per LSER.13.1 — both `mean` and `stdev` available. After two observations, mean = 22.5 > 15.0 → rule fires. Pin: action_log appears after 3 asserts+pumps.",
+    "rules_ds": "use default\n\nschema Temp scope logical:\n    entity_id: String key\n    celsius: Float mutable\n\nseries Temp.celsius:\n    mean sliding 30_s\n    stdev sliding 30_s\n\nrule multi_agg:\n    Temp t where t.mean > 15.0\n->\n    log info \"warm\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Temp", "slots": { "entity_id": "d1", "celsius": 20.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Temp", "slots": { "entity_id": "d1", "celsius": 25.0 } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

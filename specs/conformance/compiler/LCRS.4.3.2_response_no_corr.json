@@ -1,0 +1,10 @@
+{
+    "id": "LCRS.4.3.2_response_no_corr",
+    "category": "compiler",
+    "scenario": "LCRS.4.3.2: a response schema must declare `corr` as a non-nullable `String`, and the compiler adds no slot; it must reject one without such a slot (DS_VALIDATE_SERVICE_RESPONSE_NO_CORR). Pin: `response Reply` where `Reply` is `ttl` but declares `corr: String?`, nullable, so it is not the slot the clause asks for. Path: the validator's service check looks for a non-nullable `corr: String` among the schema's slots.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String?\n    ok: Bool\n\nservice svc.get:\n    kwarg id: Int\n    response Reply\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_RESPONSE_NO_CORR"
+    }
+}

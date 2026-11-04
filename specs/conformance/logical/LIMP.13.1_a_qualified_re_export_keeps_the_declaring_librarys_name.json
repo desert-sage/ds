@@ -1,0 +1,18 @@
+{
+    "id": "LIMP.13.1_a_qualified_re_export_keeps_the_declaring_librarys_name",
+    "category": "logical",
+    "scenario": "[LIMP.13.1], [LIMP.4.4.1]: `LIMP.13.1_a_re_export_keeps_the_declaring_librarys_name` reached through a qualified import. Library `a` declares `X`, library `b` does `from a import X`, and the program does `import b` with a head `b.X`. The host asserts `a.X`, and the rule fires once: exactly [\"x 1\"]. A compiler that named the schema for the library it was reached through writes `b.X`, and the assert is refused as an unknown schema. PATH PINNED: `dsc.imports.limp_4_4_1_qualified`, which puts `b;X` in `im_qualified_schemas` as `a`'s tree carries it.",
+    "rules_ds": "import b\n\nrule r:\n    b.X x\n->\n    log info \"x {x.v}\"\n",
+    "libraries": {
+        "a": "schema X scope ttl 1_h:\n    v: Int\n",
+        "b": "from a import X\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.X", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["x 1"]
+    }
+}

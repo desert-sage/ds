@@ -1,0 +1,20 @@
+{
+    "id": "LSER.16.2.1_count_all_time",
+    "category": "logical",
+    "scenario": "[LSER.16.2.1] / [LSER.14.1]: `count all_time` is exact from the first observation onward with no forgetting, on the running-stats backing (SeriesBackendWelfordEwma, [LSER.18.1]), and a cold `count` is the typed zero rather than `null` ([LSER.19.8]). Values 7, 8, 9 one per pump, each read pre-sample ([LSER.8.6.1]): the cold read logs 0, then 1, then 2. Drives the companion read `s.count` through the SeriesBackendWelfordEwma query in both runtimes: libds `welford_ewma.c`'s count and the Mercury `ds.series` `agg_count` over the all-time samples.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    count all_time\n\nrule r:\n    Reading s where s.count >= 0\n->\n    log info \"count {s.count}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 8 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 9 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["count 0", "count 1", "count 2"]
+    }
+}

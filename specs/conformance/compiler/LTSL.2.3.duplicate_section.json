@@ -1,0 +1,10 @@
+{
+    "id": "LTSL.2.3.duplicate_section",
+    "category": "compiler",
+    "scenario": "[LTSL.2.3]: a section keyword must not appear more than once per test, and a repeated one is REFUSED with DS_VALIDATE_TEST_DUPLICATE_SECTION -- not merged in source order, and not overridden by the last. Two `produces` sections; the test is otherwise well-formed. Path: `dsc.dstest.ltsl_2_3_once`, which refuses the second occurrence at its own position.",
+    "rules_ds": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nrule cold:\n    Reading r where r.celsius < 5.0\n->\n    log info \"cold\"\n\ntest \"twice\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 1.0\n    produces:\n        activated cold\n    produces:\n        activated cold\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_DUPLICATE_SECTION"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.7.20_other_schema",
+    "category": "logical",
+    "dead_rules_expected": ["eq"],
+    "scenario": "LEXP.7.20: two bindings of different schemas bind different facts, so they are never equal. Two Readings, r1 and r2, then one Alarm x1, and one pump. `eq` (`Reading a, Alarm b where a == b`) never fires; `ne` (the same with `!=`) fires once per pair, `ne r1/x1` then `ne r2/x1`: both matches complete when x1 enters, and LDET.5.5 orders them by their first pattern's fact. Every fact's key is `id` and the Alarm's value differs from both Readings', so equal keys cannot explain a result either way. PATH PINNED: the join test, scanned, in libds `rete/eval.c` `val_eq_unordered` (the same fact is the same rete id, and ids are engine-wide) and Mercury `ds.eval` `compare_outcome` (the same fact id). A runtime that raises a TypeError on every pair of both rules logs nothing.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nschema Alarm scope logical:\n    id: String key\n\nrule eq:\n    Reading a\n    Alarm b where a == b\n->\n    log info \"eq {a.id}/{b.id}\"\n\nrule ne:\n    Reading a\n    Alarm b where a != b\n->\n    log info \"ne {a.id}/{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r1"}},
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r2"}},
+            {"op": "assert", "schema": "Alarm", "slots": {"id": "x1"}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["ne r1/x1", "ne r2/x1"]
+    }
+}

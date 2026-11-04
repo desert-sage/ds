@@ -1,0 +1,12 @@
+{
+    "id": "LUNI.4.5_implicit_cross_lib_ok",
+    "category": "compiler",
+    "scenario": "LUNI.4.5 — implicit formulas declared in an imported library propagate into the importer's auto-apply pool. The user file imports `Hz` from a freq lib, which also declares `hz_period implicit`; `nanosecond` is `units.core`'s, in scope in the lib and the importer alike ([LUNI.4.1.2]). At the typed-let `let period: nanosecond = s.freq`, the importer's _IMPLICIT_FORMULAS_CTX has the bridge merged in from `lib_resolved.implicit_formulas`, so the auto-apply fires without the importer re-declaring.",
+    "rules_ds": "from freq_lib import Hz\n\nschema Signal scope logical:\n    freq: Hz key\n\nrule slow:\n    Signal s\n->\n    let period: nanosecond = s.freq\n    log info \"period via cross-lib implicit\"\n",
+    "libraries": {
+        "freq_lib": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period inverting implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

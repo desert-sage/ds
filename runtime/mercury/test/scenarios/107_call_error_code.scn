@@ -1,0 +1,20 @@
+# A host's malformed `CallError.code` is rewritten, and counted.
+#
+#   "Transport-Timeout"  malformed ([LECC.1.2]: uppercase, a hyphen): enters
+#                        as `internal.invariant`, counted once, before the
+#                        assert's tick (libds rewrites before it samples)
+#   "transport.timeout"  well-formed: enters as given, nothing counted
+#   "timeout"            one segment: well-formed by [LECC.1.2]'s pattern,
+#                        the check both runtimes make, though [LECC.1.3]
+#                        calls a one-segment adapter code malformed; it
+#                        enters as given
+#
+# Each CallError takes its own correlation, so none supersedes another
+# ([LCRS.6.2.4]) and each is logged by `seen` with the code it carries.
+# @spec [LECC.1.5]
+assert CallError corr="c1" code="Transport-Timeout" message="m" ts=0
+pump
+assert CallError corr="c2" code="transport.timeout" message="m" ts=0
+pump
+assert CallError corr="c3" code="timeout" message="m" ts=0
+pump

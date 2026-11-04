@@ -1,0 +1,374 @@
+{
+  "id": "IRET.11.5",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11",
+  "seq": 968,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.11.5] `max_fires = 0` means unlimited (run until\nempty). The existing `ds_engine_pump` contract maps to\n`ds_rete_run(engine, 0, NULL)`.\n\n---\n\n",
+  "symbols": [
+    "ds_rete_run"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_11_4__run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Fuel 0 fires nothing here rather than meaning unlimited: a total function cannot run unboundedly. The unlimited run is what `Lcyc_1_1__diverges` and `lcyc_1_1__certified_terminates` reason about instead, as propositions rather than an executable."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_11_4__run_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Fuel zero fires nothing rather than meaning unlimited, as for the core's `iret_11_4__run`; the unlimited run is what the termination theorems are about."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_11_4__run_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run takes its fuel; the unlimited pump is the run with fuel enough."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_11_4__run_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The view survives any fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkEdges.idr",
+        "name": "ltim_2_5_1__run_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'`max_fires = 0` means unlimited': the run with fuel above the unfired count is the unlimited run, halting on the drained agenda with its count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced loop halts on an empty agenda or on the fuel, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE TRACED RUN IS THE ONE TRACED FOLD at its named firing (Rete/RunFold.idr's `iret_11_4__trace_by`), by induction on the fuel. The bridge the trace-is-the-run goes through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_4__run_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The trace agrees with the run on the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__run_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The result is stated for any fuel: an unlimited run is the run with fuel enough, and a run out of fuel is accounted for by the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced loop halts on an empty agenda or on the fuel, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE TRACED CLOCKED RUN IS THE ONE TRACED FOLD at its named firing (Rete/RunFold.idr's `iret_11_4__trace_by`), by induction on the fuel. The bridge the trace-is-the-run and the two step-wise unfoldings go through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing consumes one unit of fuel: the run with `S n` from before it is the run with `n` from after it, with the firing in front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The trace agrees with the run on the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_4__run_ttl_net_traced_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With fuel left and nothing to fire, the halt is `Quiescent`, not `FuelOut`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__fuel_out_count_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "What the frame theorem says of a run that halts on the fuel, read at its instance: the firings and the activations left unfired account for every activation unfired before. Computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__run_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The result is stated for any fuel: an unlimited run is the run with fuel enough, and a run out of fuel is accounted for by the halt."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_fuel_out_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's fuel exhausted, executed: with fuel 1 the two-fact run halts `FuelOut` after one firing, with matches left unfired. Fuel is not assumed to suffice."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__run_net_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'`max_fires = 0` means unlimited': the run with fuel above the unfired count is the unlimited run, halting on the drained agenda with its count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_11_4__run_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The order survives any fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The ghost's run takes the same fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The network's halt is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_4__run_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The ghost stays sound under any fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run halts on an empty agenda or on the fuel, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "iret_11_4__run_tms_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The network's halt with truth maintenance is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__run_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The runs agree under any fuel, so under fuel enough to drain the agenda: the clause's unlimited run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_tms_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced pump halts on an empty agenda or on the fuel, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_tms_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRACE IS THE PUMP'S: the same engine, the same halt, and as many firings as the pump counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_ttl_net_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced clocked pump halts on an empty agenda or on the fuel, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTraced.idr",
+        "name": "iret_11_4__run_ttl_net_traced_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRACE IS THE CLOCKED PUMP'S: the same engine, the same halt, and as many firings as the pump counted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_11_4__run_by_fl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "FireLoop's halt is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__run_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The run agrees under any fuel, so under fuel enough to drain the agenda: the clause's unlimited run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_11_4__run_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A run under any fuel keeps the state well-formed; `max_fires = 0` as unlimited is the same run with fuel enough."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The halt of FireLoop's run with the deadline table is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The bounded run on the network, the deadline table threaded through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_11_4__run_ttl_net_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clocked network's halt is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__run_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RUN AGREES under any fuel: the same firings, the same halt, the same count, the same deadlines; the clock is the pump's own."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__run_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fold halts on the step refusing or on the fuel, and says which: `Quiescent` or `FuelOut`."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The traced fold halts as the fold does, and says which."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A firing consumes one unit of fuel: the run with `S n` from before it is the run with `n` from after it, with the firing in front."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_core",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The trace agrees with the run on the halt."
+      },
+      {
+        "path": "formal/idris/Rete/RunFold.idr",
+        "name": "iret_11_4__trace_by_end",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With fuel left and nothing to fire, the halt is `Quiescent`, not `FuelOut`."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_11_4__run_tms_by",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine's halt is the fold's."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_11_4__run_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fuel is the clause's `max_fires`; the run with the deadline table reports the halt as the engine's does, and agrees with it on the engine."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "iret_11_5__End",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/edge_once_firing.tla",
+        "name": "iret_11_5__LIMITED",
+        "tag": "spec"
+      }
+    ]
+  }
+}

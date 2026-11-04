@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.11_array_with_spec_is_a_type_error",
+    "category": "logical",
+    "scenario": "Only a leaf renders (LGRA.2.9.6.11): `{p.body.a:>8}` where `a` is an array is a TypeError even with a spec every scalar takes, and `handler` logs. PATH PINNED: as LGRA.2.9.6.11_object_without_spec_is_a_type_error, through the array arm of the composite test (libds builtin `json_path`, Mercury `json_value(j_array(_))`). The break is rendering the array's text right-aligned, which logs `v    [1,2]`.",
+    "rules_ds": "schema P scope logical:\n    body: Json key\n\nrule r:\n    P p\n->\n    log info \"v {p.body.a:>8}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "body": { "a": [1, 2] } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

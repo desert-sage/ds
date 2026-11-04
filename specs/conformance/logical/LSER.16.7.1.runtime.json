@@ -1,0 +1,18 @@
+{
+    "id": "LSER.16.7.1.runtime",
+    "category": "logical",
+    "scenario": "contains is exact set membership over the sliding window (LSER.16.7.1): once an \"error\" tag has been absorbed, `contains(e.tag, \"error\")` is true. Pin: a rule gated `contains(e.tag, \"error\")` fires (action_log) after the error tag arrives; the lookup value threads through query_with_value to the SeriesBackendRingBuffer raw samples.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    contains sliding 5_s\n\nrule check:\n    Event e where contains(e.tag, \"error\")\n->\n    log info \"saw error\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "info" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "error" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "info" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

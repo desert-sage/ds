@@ -1,0 +1,19 @@
+{
+    "id": "RDSC.5a.8.1_second_window_has_its_own_row",
+    "category": "logical",
+    "scenario": "RDSC.5a.8.1 at runtime -- the second window of a declaration observing one slot at two windows has a backing of its own, and a read of it answers that window's samples. The companion of RDSC.5a.8.1_two_windows_disagree, which cannot see a MISSING second backing: there `hourly` must not fire, and a cold read does not fire either. Here `hourly` must fire, on a mean only its own row holds. Drives the compiler's one-atom-per-(backing, window) emission (`dsc.rete.declaration_backends`), the series_state row key, and the reading line's window at the read, in both runtimes. A 0.0 sample, then 11 minutes, then a 100.0 sample, then a 100.5 reassert so the 100.0 is absorbed before the read (LSER.8.6.1): `recent` (10 min) holds [100] and its mean 100 fires `recent_high`; `hourly` (1 h) holds [0, 100] and its mean 50 fires `hourly_mid` (25 < mean < 75).",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Sensor.val:\n    mean sliding 10_min as recent\n    mean sliding 1_h as hourly\n\nrule recent_high:\n    Sensor s where s.recent.mean > 75.0\n->\n    log info \"recent high\"\n\nrule hourly_mid:\n    Sensor s where s.hourly.mean > 25.0 and s.hourly.mean < 75.0\n->\n    log info \"hourly mid\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val": 0.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 660000000000 },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val": 100.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "val": 100.5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["recent high", "hourly mid"]
+    }
+}

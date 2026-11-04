@@ -1,0 +1,9 @@
+{
+    "id": "LFAC.3.4",
+    "category": "compiler",
+    "scenario": "`no X` on a `logical` schema without `within` checks for complete absence of a live derived fact per LFAC.3.4. A `logical` fact either exists or doesn't at any instant; `within` is only meaningful on `ttl` (event) facts. Pin: a rule matching `no Alert` (a logical schema, no `within`) after a `ttl` trigger compiles. PINS ONLY THAT IT COMPILES: `compile_ok` observes neither the absence check nor the lowering.",
+    "rules_ds": "schema Alert scope logical:\n    entity_id: String key\n\nschema Trigger scope ttl 1_min:\n    v: Int\n\nrule when_quiet:\n    Trigger\n    no Alert\n->\n    log info \"no alerts active\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.7.2.3_seed_lone_high_surrogate_refused",
+    "category": "runtime",
+    "scenario": "[LSTR.7.2.3]: a surrogate escape that is half of no high-then-low pair names no codepoint a `String` can hold ([LSTR.1.1]), so JSON text holding one is malformed, and a host parse of it returns `DS_ERR_PARSE` (-100) and changes nothing. The site is the cache seed ([NSTG.9.1]), given as `text` ([RCTS.1.2.25]) so both harnesses hand the runtime these exact bytes: the JSON string `\"\\ud800\"`, a lone high surrogate. `message_contains` is the words both runtimes give this refusal and no other, so a refusal for another reason fails the vector, and `no_fault_events` pins that a host refusal reaches no stream event. Break tests: a reader that decodes the escape as the three-byte encoding of U+D800 (CESU-8), or drops it, admits the seed, nothing is refused, and the vector fails. PATH PINNED: on libds, `json.c` `parse_string_literal`'s `u` arm under pyds's `cache_seed` (`ds_json_parse`), `UNPAIRED_SURROGATE`; on the Mercury runtime, `ds.engine.seed_cache_text` -> `ds.json_text.escape`'s `jr_unpaired_surrogate`.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-100",
+        "message_contains": "surrogate escape that is half of no pair",
+        "no_fault_events": true,
+        "cache_seeds": [
+            { "key": "k", "text": "\"\\ud800\"" }
+        ]
+    }
+}

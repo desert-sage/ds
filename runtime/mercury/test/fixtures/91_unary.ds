@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Unary `-` and `~` (wire codes 1 and 2), in guard position, the channel
+# the runtime differential compares; its recordings check compares the
+# emitted payloads. `+x` has no wire code: the compiler drops it.
+
+use default
+
+schema Reading scope logical:
+    entity_id: String key
+    state: Float mutable
+    flags: Int mutable
+
+schema Result scope ttl 1_h:
+    entity_id: String
+    negated: Float
+
+# `-state < 0.0` is true exactly when `state` is positive, so the two readings
+# below split on it and the trace shows which.
+rule negated:
+    Reading r where -r.state < 0.0
+->
+    log info "neg fired"
+    emit Result entity_id: r.entity_id negated: -r.state
+
+# `~flags < 0` is true exactly when `flags` is non-negative, which is the
+# opposite split from the rule above -- so a run where both fire the same way
+# would mean one of the guards is not being evaluated at all.
+rule inverted:
+    Reading r where ~r.flags < 0
+->
+    log info "bitnot fired"

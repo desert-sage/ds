@@ -1,0 +1,58 @@
+{
+  "id": "IARC.3.2.5",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.3.2",
+  "seq": 464,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IARC.3.2.5] **Subsystem init / teardown order invariant.**\nEvery subsystem init runs inside `ds_engine_new`, and every destroy inside\n`ds_engine_free`. A subsystem may borrow from another, so libds **must** init a\nsubsystem after every subsystem it borrows from, and **must** destroy it before\nevery one of them: teardown never invalidates a borrow a subsystem not yet\ndestroyed still holds. That is the whole rule; teardown is not the reverse of\ninit. The clock holds nothing to destroy.\n\n`ds_engine_new` inits, in this order:\n\n1. the clock, `ds_clock_init`, which reads the `CLOCK_MONOTONIC` baseline;\n2. telemetry, `ds_telemetry_init`;\n3. the recorder, `ds_recorder_init`;\n4. the schema registry, `ds_schema_registry_init`;\n5. working memory, `ds_wm_init`, which borrows the engine; its facts borrow\n   schemas;\n6. the dispatcher, `ds_dispatcher_init`;\n7. the rete engine, `ds_rete_engine_create`, which owns the matching network\n   and the per-engine string-intern table;\n8. the cache, `ds_cache_init`;\n9. the series-state registry, `ds_series_state_registry_init`;\n10. the series-backend registry, `ds_engine_series_registry_init`, then filled\n    with the built-in backends.\n\n`ds_engine_free` destroys, in this order:\n\n1. the dispatcher;\n2. working memory, which frees its facts, before the schemas they borrow;\n3. the schema registry;\n4. the recorder;\n5. telemetry;\n6. the series-state registry, once each row's backend state is released\n   through its backend's `instance_free` ([ISBK.1.2]), so before the\n   series-backend registry that holds those backends;\n7. the cache;\n8. the series-backend registry;\n9. the rete engine, last, because every other subsystem may reference its\n   intern table.\n\nA subsystem added later is inited after, and destroyed before, every subsystem\nit borrows from. When an init fails, `ds_engine_new` destroys the subsystems\nalready inited before it returns.\n\n",
+  "refs": [
+    "ISBK.1.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__borrow_from_earlier",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__borrower_destroyed_first",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__borrows_acyclic",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__destroyed_before",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__subsystem",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__teardown",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__teardown_is_a_sequence",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/init_teardown.als",
+        "name": "iarc_3_2_5__teardown_preserves_borrows",
+        "tag": "derives"
+      }
+    ]
+  }
+}

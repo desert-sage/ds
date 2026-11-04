@@ -1,0 +1,17 @@
+{
+    "id": "LCDB.3.2.1_rgate_cool_suppress",
+    "category": "logical",
+    "scenario": "DS-source twin of the K vector formal/k/rgate.cool_suppress: the first fire is at mock-clock instant 0, and an activation 5s later, inside the 10s window, is suppressed. Drives adapter_ds_rate_allow (rete/adapters.c) on the has_fired branch with last_fire_ns == 0: a runtime that reads a zero stamp as never fired lets this second activation through (formal/idris/Rete/RateGate.idr, rlow_4_6_2_2__zero_stamp_is_lost). The second activation is a mutable-slot change under the same key, so it reaches the gate as a fresh token with the same activation key. The rule still activates and emits rule_fire_begin for the suppressed one (LCDB.3.2.1.1, RHS-level suppression) -- this fixture reads the log messages, not the fire events, on purpose.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire 1" ]
+    }
+}

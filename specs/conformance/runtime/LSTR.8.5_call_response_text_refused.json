@@ -1,0 +1,19 @@
+{
+    "id": "LSTR.8.5_call_response_text_refused",
+    "category": "runtime",
+    "scenario": "[LSTR.8.5]: the engine refuses host text that is not well-formed UTF-8 with `DS_ERR_ENCODING` (-222), changing nothing and recording no event, and a call's response is a host assert ([LCRS.4.3.2]), so its `String` slots are held to it too. Rule `r` calls `svc.read` for one `Job`, with no `as`, so the call carries a generated correlation ([LCRS.3.1]). The host answers it with a `Reply` on that correlation (`corr_from_call: 0`, [RCTS.1.2.28]) whose `text` is given as `{\"$text_bytes\": H}`: `a`, then ED A0 80, U+D800, a surrogate, then `b`. The answer, step 2, is refused, and only the `Job` stays live. `message_contains` is the host assert's words, which name the slot's text. `no_fault_events` pins that a host refusal reaches no stream event. Break tests: a runtime that let a response past the host assert's check, as if it were the engine's own, admits it, the answer is accepted and the vector fails. PATH PINNED: on libds, pyds hands the octets to `ds_engine_assert` unchanged, and the host assert's `ds_utf8_well_formed` check (`wm.c`), which a response passes through like any assert, refuses them; on the Mercury runtime, `ds.engine`'s host door, `lstr_8_5_first_ill_formed`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    text: String\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id nocooldown\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-222",
+        "message_contains": "slot's text is not well-formed UTF-8",
+        "no_fault_events": true,
+        "fault_at": 2,
+        "fact_count_after": 1,
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "corr_from_call": 0, "slots": { "text": { "$text_bytes": "61eda08062" } } }
+        ]
+    }
+}

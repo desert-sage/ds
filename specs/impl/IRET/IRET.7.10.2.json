@@ -1,0 +1,55 @@
+{
+  "id": "IRET.7.10.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.7.10",
+  "seq": 686,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.7.10.2] **`latest` modifier** (RLOW.5.6.5). When the\nanchor pattern is prefixed with `latest`, the compiler\nadds a NOT sub-node immediately after the sequence's last\njoin, where the anchor and every follower are on the\ntoken. For an anchor at `ts_a` and a first follower at `ts_b`\nwithin window `T`, the NOT node's join test blocks the\nmatch whenever a fact `f` of the anchor's schema has\n`ts_a < f.ts < ts_b`, `ts_b − f.ts < T`, and none of the\nanchor's `where` and the followers' `where`s, with `f` in\nthe anchor's place and the followers on the token unchanged,\nanswers `false` ([RLOW.5.6.5.2], [LTHE.2.5.3], [LNUL.4.7]).\n\nOnly the first follower's window and ordering involve `f`: each later\n`within` is measured from the step before it ([LTHE.2.3.1]), never from\nthe anchor. A follower `where` that does not read the anchor already\nholds of the token whichever anchor is in place, so the compiler may\nomit it from the test. In a two-pattern sequence the last join is the\nfirst follower's.\n\nThis reduces the activation set to the single latest\nqualifying anchor per match of the followers. `latest` applies only to the\nfirst (anchor) pattern in a sequence; the compiler rejects\nit on interior patterns (RLOW.5.6.5.4). The NOT sub-node\nis a standard `is_negative = true` beta node; no new node\ntype is required.\n\n---\n\n",
+  "refs": [
+    "LNUL.4.7",
+    "LTHE.2.3.1",
+    "LTHE.2.5.3",
+    "RLOW.5.6.5",
+    "RLOW.5.6.5.4",
+    "RLOW.5.6.5.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_3__chain_later_anchor_does_not_exclude",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Placed after the sequence's last join and ordering the candidate against the first follower, the sub-node lets a candidate after that follower exclude nothing. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_3__excludes",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The sub-node's join test on `ts`: `ts_a < f.ts < ts_b` and `ts_b - f.ts < T`, a standard NOT node's test over the token and one candidate. LESS than the clause: the anchor's `where` and every follower's `where` with `f` in the anchor's place are the fixture lowering's conjuncts in the same test. A substituted `where` that answers `null` blocks the node ([LNUL.4.7]) and excludes under [LTHE.2.5.3] (logical/LTHE.2.5.3_null_candidate_excludes); one that traps blocks the node too, which no clause says."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_5_3__latest_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A standard NOT node added after the last join, no new node type. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "rlow_5_6_5_2__window_implied",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`ts_b - f.ts < T` follows from `ts_a < f.ts` and `ts_b - ts_a < T`: the clause's second condition is implied by its first and the match."
+      }
+    ]
+  }
+}

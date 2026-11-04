@@ -1,0 +1,25 @@
+{
+  "id": "IRET.6.2.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.6.2",
+  "seq": 485,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.6.2.1] **`linear_scan: false` overlay — alpha tests over known types.**\nWhen the loaded DSC was compiled with `linear_scan: false`, all\n`DS_RETE_ALPHA_EQ` and `DS_RETE_ALPHA_CMP` tests operate on scalar or\ninterned-string types.  The engine may use an optimized comparison\npath for these types that avoids the `cmp_vals` switch statement when\nthe type is known at node-creation time.  Specifically:\n\n- `DS_RETE_VAL_INT`: direct `int64_t` comparison.\n- `DS_RETE_VAL_FLOAT`: direct `double` comparison.\n- `DS_RETE_VAL_BOOL`: direct `bool` comparison.\n- `DS_RETE_VAL_STR`: pointer equality (interned) for EQ/NEQ.\n- `DS_RETE_VAL_STR` for CMP (single-pattern only): `strncmp` bounded\n  by the slot's `capacity` ([LSTR.11.1]): N codepoints, at most 4N bytes.\n\nThe comparison path is a `may`, and libds does not take it: every alpha\ntest goes through the general `cmp_vals` comparison.\n`DS_RETE_ALPHA_REGEX` tests are only present when `capacity` is\ndeclared, and RE2 is linear in the input length ([LREG.8.1]), so a\nregex test costs O(capacity × P) with both factors compile-time\nconstants — the property `linear_scan: false` needs.\n\nThis supplements, and does not replace, the base [IRET.6.2]\nbehaviour.\n\n",
+  "refs": [
+    "IRET.6.2",
+    "LREG.8.1",
+    "LSTR.11.1"
+  ],
+  "symbols": [
+    "DS_RETE_ALPHA_CMP",
+    "DS_RETE_ALPHA_EQ",
+    "DS_RETE_ALPHA_REGEX",
+    "DS_RETE_VAL_BOOL",
+    "DS_RETE_VAL_FLOAT",
+    "DS_RETE_VAL_INT",
+    "DS_RETE_VAL_STR"
+  ]
+}

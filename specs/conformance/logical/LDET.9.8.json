@@ -1,0 +1,14 @@
+{
+    "id": "LDET.9.8",
+    "category": "logical",
+    "scenario": "Integer arithmetic stability per LDET.9.8 — basic integer operations (+, -, *) produce bit-identical results across runs. Pin: rule that adds two int slots emits a result fact; log action fires confirming the value is exact.",
+    "rules_ds": "schema Pair scope logical:\n    a: Int key\n    b: Int mutable\n\nrule r:\n    Pair p where p.a + p.b == 42\n->\n    log info \"exact\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Pair", "slots": { "a": 17, "b": 25 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

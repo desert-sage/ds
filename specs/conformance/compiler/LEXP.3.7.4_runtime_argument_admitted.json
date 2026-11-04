@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.3.7.4_runtime_argument_admitted",
+    "clauses": ["LEXP.3.7.4"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.7.4]'s other side: `x.bits(lo, 8)` with a run-time `lo` is not refused, since some `lo` places it inside the domain; a bad one is the engine's DOMAIN fault (`logical/LEXP.3.7.4_out_of_domain_traps`). `s.x.bits(s.lo, 8)` with the constant width 8 compiles. A check that refused every call with a non-constant argument, or that took 8 as out of range, would refuse it. PATH PINNED: `dsc.validate.lexp_3_7_4_bit_field_range`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    x: Int mutable\n    lo: Int mutable\n\nrule r:\n    Sensor s where s.x.bits(s.lo, 8) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

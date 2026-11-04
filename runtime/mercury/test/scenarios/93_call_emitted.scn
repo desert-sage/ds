@@ -1,0 +1,24 @@
+# A fact a rule emitted, handed on in the same pump ([RFCS.23.1], [RFCS.23.5],
+# [NCBK.10.1]). Fixture 128_call_emitted.
+#
+# 90_call_fact passes a HOST-asserted fact to a call. Here the fact is one a
+# rule emitted earlier in the same pump, so each runtime must have stamped it
+# by the time a later firing hands it over: libds at the FactAssert's
+# dispatch, the Mercury runtime at the end of the firing that emitted it. The
+# `call` line prints the Made's FactExternal bytes and the `publish` line the
+# Shipped's; `asserted_at` is in both, because the mock wall clock is set, so
+# a stamp either runtime took at another moment is a diff line.
+#
+# The Shipped enters no working memory ([LTIE.4.3]): each runtime builds its
+# FactExternal from the published values, `asserted_at` the step's held wall
+# sample, the instant of the publish ([RFCS.23.5]).
+#
+# The second pump is a microsecond later on both clocks, and its Seed derives
+# a Made under a new key, so its stamps differ from the first pump's and both
+# lines move with them.
+wall 1700000000000000000
+assert Seed tag="a" n=4
+pump
+advance 1000
+assert Seed tag="b" n=5
+pump

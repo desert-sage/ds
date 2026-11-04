@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `assert_external` ([NCBK.10.4], [RFCS.23.4], [RFCS.23.7]). The schemas of
+# libds's `runtime/tests/libds/impl/test_assert_external.c`, with `Doc` adding
+# a Json and a Bytes slot so the receiver's Json parse is exercised.
+#
+# `Tag` has no key, so several equal live facts can exist and [RFCS.23.7]
+# step 1 takes the earliest. `Pair` refers to one `Ref` twice. `N0` .. `N17`
+# are a chain: a record of `Ni` inlines a fact at depth i, and [RFCS.23.4]
+# admits 16. A received `Lease` expires at the receiver's 30 s, since no TTL
+# travels ([RFCS.23.6]).
+
+schema Ref scope logical:
+    id: String key
+    note: String mutable
+
+schema Main scope logical:
+    k: Int key
+    r: Ref mutable
+    x: Float mutable
+
+schema Doc:
+    body: Json
+    raw: Bytes
+
+schema Tag:
+    name: String
+
+schema Tagged scope logical:
+    k: Int key
+    t: Tag mutable
+
+schema Pair scope logical:
+    k: Int key
+    a: Ref mutable
+    b: Ref mutable
+
+schema Lease scope ttl 30_s:
+    id: String
+
+schema N0 scope logical:
+    n: Int key
+
+schema N1 scope logical:
+    n: Int key
+    r: N0 mutable
+
+schema N2 scope logical:
+    n: Int key
+    r: N1 mutable
+
+schema N3 scope logical:
+    n: Int key
+    r: N2 mutable
+
+schema N4 scope logical:
+    n: Int key
+    r: N3 mutable
+
+schema N5 scope logical:
+    n: Int key
+    r: N4 mutable
+
+schema N6 scope logical:
+    n: Int key
+    r: N5 mutable
+
+schema N7 scope logical:
+    n: Int key
+    r: N6 mutable
+
+schema N8 scope logical:
+    n: Int key
+    r: N7 mutable
+
+schema N9 scope logical:
+    n: Int key
+    r: N8 mutable
+
+schema N10 scope logical:
+    n: Int key
+    r: N9 mutable
+
+schema N11 scope logical:
+    n: Int key
+    r: N10 mutable
+
+schema N12 scope logical:
+    n: Int key
+    r: N11 mutable
+
+schema N13 scope logical:
+    n: Int key
+    r: N12 mutable
+
+schema N14 scope logical:
+    n: Int key
+    r: N13 mutable
+
+schema N15 scope logical:
+    n: Int key
+    r: N14 mutable
+
+schema N16 scope logical:
+    n: Int key
+    r: N15 mutable
+
+schema N17 scope logical:
+    n: Int key
+    r: N16 mutable
+
+rule seen:
+    Main m
+->
+    log info "main {m.k}"

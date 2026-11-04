@@ -1,0 +1,21 @@
+{
+    "id": "LTHE.2.3",
+    "clauses": ["LTHE.2.2.2"],
+    "category": "logical",
+    "scenario": "A three-step chain `A then B within 10_s then C within 10_s` fires for A, B and C whose `ts` (0, 5, 10 ns) are each strictly after the one before and within the bound (LTHE.2.2.2). The expectation states one firing, so it pins that the chain fires exactly once. Every gap is inside both windows, so the vector cannot tell which `then` each `within` binds to (LTHE.2.3.1), and no out-of-order case is stepped.",
+    "rules_ds": "schema A scope logical:\n    id: Int key\n    ts: Time\n\nschema B scope logical:\n    id: Int key\n    ts: Time\n\nschema C scope logical:\n    id: Int key\n    ts: Time\n\nrule chain:\n    A\n    then B within 10_s\n    then C within 10_s\n->\n    log info \"chain\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "id": 1, "ts": 0 } },
+            { "op": "assert", "schema": "B", "slots": { "id": 2, "ts": 5 } },
+            { "op": "assert", "schema": "C", "slots": { "id": 3, "ts": 10 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

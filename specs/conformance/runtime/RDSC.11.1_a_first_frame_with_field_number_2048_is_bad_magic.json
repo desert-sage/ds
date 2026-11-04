@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_first_frame_with_field_number_2048_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose inner tag's field number is in no band ([RFCS.16.3]) is malformed, and a malformed FIRST frame is refused with DS_ERR_DSC_BAD_MAGIC (-501), since the bytes are not a `.dsc`. `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a0482800100\"}}` ([RCTS.1.2.21]) puts a complete frame before the compiled artefact's first atom: outer tag 0x0A, outer length 4, inner key 0x82 0x80 0x01 (16386 = field 2048, wire type 2) and an empty body. The frame is well formed as protobuf, so the walk steps over it to the DscHeader, and that header is re-sealed where it now stands ([RDSC.3.6]): the refusal is the frame's, not the hash's. Twin of RDSC.11.1_a_later_frame_with_field_number_2048_is_decode, the same octets after the header, and sibling of the three band vectors before the header (`RDSC.11.1_a_skip_band_atom_before_the_header_is_bad_magic` and its two siblings). What it discriminates: a loader that takes 2048 for a future skip-band atom passes over it, finds the header second and loads; one that consults the band before it checks for the header answers -503 or -504. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom` OK, field 2048 is not DS_ATOM_DSC_HEADER), through pyds `load_dsc` (runner.py's `_tampered`, `dsc_seal.insert_bytes`); the Mercury runtime's `ds.dsc` `dispatch`, which refuses any first atom but a header ahead of the bands (`lek_bad_first_atom`, under RDSC.11.1 for a number in no band), through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a0482800100"}},
+        "code": "-501"
+    }
+}

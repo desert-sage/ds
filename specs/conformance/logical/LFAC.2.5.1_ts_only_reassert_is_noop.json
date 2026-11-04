@@ -1,0 +1,20 @@
+{
+    "id": "LFAC.2.5.1_ts_only_reassert_is_noop",
+    "clauses": ["LFAC.9.1", "RDSC.5.5.7"],
+    "category": "logical",
+    "scenario": "[LFAC.2.5.1], [LFAC.9.1]: `ts` takes no part in the no-op comparison, so a reassertion that differs from the live fact only in `ts` is a no-op and the live fact keeps the `ts` it entered with. Each input supplies `ts`, which is source time and kept ([LFAC.9.2]). The Stamp is asserted at `ts` 100 and fires `saw`; the same author values at `ts` 200 are a no-op, so `saw` does not fire again; a Mark carrying 100 then matches the Stamp only if its `ts` is still 100, which fires `kept` and logs `first`. Two messages, `fired` then `first`. PATH: the no-op test in both runtimes -- libds `rete/wm_rete.c` `slots_equal`, which skips a slot whose identity role is ENGINE, and Mercury `ds.wm.slot_tests`.",
+    "rules_ds": "schema Stamp scope logical:\n    k: Int key\n    v: Int mutable\n    ts: Time\n\nschema Mark scope logical:\n    k: Int key\n    t: Time mutable\n\nrule saw:\n    Stamp\n->\n    log info \"fired\"\n\nrule kept:\n    Stamp s\n    Mark m where m.k == s.k and m.t == s.ts\n->\n    log info \"first\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Stamp", "slots": { "k": 1, "v": 10, "ts": 100 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Stamp", "slots": { "k": 1, "v": 10, "ts": 200 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Mark", "slots": { "k": 1, "t": 100 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "first"]
+    }
+}

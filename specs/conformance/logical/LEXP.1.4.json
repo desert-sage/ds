@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.1.4",
+  "category": "logical",
+  "scenario": "Unary operators per LEXP.1 — unary minus, unary plus (no-op), bitwise NOT.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule unary_minus:\n    T t where 0 - t.v == -3\n->\n    log critical \"neg\"\n\nrule bitnot:\n    T t where ~t.v == -4\n->\n    log critical \"bitnot\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 3 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["unary_minus", "bitnot"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "IRET.28.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28",
+  "seq": 2076,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Representation invariant (RI)",
+  "text": "#### Representation invariant (RI) [IRET.28.4]\n\nAfter every public operation returns, all of the following **must** hold,\nand the `ds_oa_check` verifier (`[IRET.28.15]`) **must** assert them:\n\n- **RI-1** `cap == 0` (empty, lazily allocated) or `cap` is a power of two.\n- **RI-2** `len < cap` when `cap > 0`; and `len ≤ cap · load_pct / 100`\n  except transiently inside `ds_oa_put` before a grow.\n- **RI-3** for each slot `i`: `slots[i] == 0` (empty) or\n  `slots[i]-1 ∈ [0, len)`.\n- **RI-4** bijection: for each dense index `d ∈ [0,len)`,\n  `slots[dslot[d]] == d+1`; and for each non-empty slot `i`,\n  `dslot[slots[i]-1] == i`.\n- **RI-5** **findability** (the backward-shift invariant): for each\n  `d ∈ [0,len)`, probing from `mix(hash(dkeys[d])) & mask` reaches\n  `dslot[d]` without crossing an empty slot. Equivalently, no occupied\n  slot has an empty slot strictly between its home slot and its actual\n  slot (cyclically).\n- **RI-6** no duplicate keys: `eq(dkeys[a], dkeys[b])` is false for all\n  `a ≠ b`.\n- **RI-7** `dhash[d] == (uint32_t) mix(hash(dkeys[d]))` for all\n  `d ∈ [0,len)`.\n\n",
+  "refs": [
+    "IRET.28.15"
+  ]
+}

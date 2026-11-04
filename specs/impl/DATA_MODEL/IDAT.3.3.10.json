@@ -1,0 +1,30 @@
+{
+  "id": "IDAT.3.3.10",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.3.3",
+  "seq": 299,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.3.3.10] **Path syntax.** A path `ds_json_get_path` takes is a `json_path`,\nas this clause's `ebnf` check gives it. `ds_json_get_path` **must** judge\nthe whole path before it reads the tree, and **must** return `DS_ERR_INVAL` for a\npath the production does not admit, whatever the tree holds. So the empty path,\nan empty key, a leading `.`, an index with a sign or white space, and `a[0]b` are\nmalformed on every tree.\n\nA key step reads the object member whose key is the step's bytes. An index step\nreads the array element at that decimal number, from zero. A step on a node of\nanother kind, a key the object does not hold, and an index past the array's end,\nhowever large the number, are each a miss ([IDAT.3.3.6]), and the walk ends\nthere. A member whose key is empty, or holds `.` or `[`, has no path:\n`ds_json_object_get` reads it.\n\n",
+  "refs": [
+    "IDAT.3.3.6"
+  ],
+  "errors": [
+    "DS_ERR_INVAL"
+  ],
+  "symbols": [
+    "ds_json_get_path",
+    "ds_json_object_get"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "runtime/src/libds/json_path.ebnf",
+        "name": "json_path",
+        "tag": "spec"
+      }
+    ]
+  }
+}

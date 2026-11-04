@@ -1,0 +1,51 @@
+{
+    "id": "IARC.1.11l",
+    "category": "cross-tier",
+    "scenario": "Per-engine integrator-cb isolation \u2014 engine A firing `call svc.x` produces an action_call event on A's stream; engine B's stream is untouched. Pins that integrator-side cb dispatch is per-engine (action_call events route to the engine that fired them). Pins IARC.1.11 \u2014 integrator-cb dispatch is per-engine.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_per_engine_event_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nservice svc.x:\n    \"stub service for conformance\"\n    no response\n\nrule r:\n    Trig\n->\n    call svc.x nocooldown\n"
+            },
+            "b": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "a",
+                "op": "pump"
+            },
+            {
+                "engine": "b",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "b",
+                "op": "pump"
+            }
+        ],
+        "expected_event_counts": {
+            "a": {
+                "action_call": 1
+            },
+            "b": {
+                "action_call": 0
+            }
+        }
+    }
+}

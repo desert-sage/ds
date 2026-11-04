@@ -1,0 +1,9 @@
+{
+    "id": "LSER.17.2_series_agg_unit_typed_slot_ok",
+    "category": "compiler",
+    "scenario": "LSER.17.2 — numeric series aggregations (mean, stdev, the SeriesBackendWelfordEwma/Welford family) are valid on a UNIT-TYPED slot. Units are compile-time and the slot stores a numeric base value, so a unit-typed slot is numeric; DS_VALIDATE_SERIES_AGG_TYPE_MISMATCH must NOT fire on it. Pin: `mean, stdev` over a `degc`-typed slot compiles.",
+    "rules_ds": "use default\n\nunit dimension temp_dim storage float64 base degc\nunit degc: temp_dim label \"degC\"\n\nschema Thermometer scope logical:\n    entity_id: String key\n    reading:   degc mutable\n    ts:        Time\n\nseries Thermometer.reading:\n    mean, stdev sliding 30_min\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

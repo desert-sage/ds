@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.2.1",
+    "category": "compiler",
+    "scenario": "Continuation grammar per LCCO.2.1 \u2014 `call` accepts trailing `on`, `timeout`, `error` clauses (each optional, multiple of any kind allowed). Pin: a `call` action carrying all three clause kinds parses and compiles. PINS ONLY THAT IT COMPILES: `compile_ok` does not observe LCCO.3's lowering to one outer rule plus three sibling rules.",
+    "rules_ds": "schema WeatherGetForecastsReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice weather.get_forecasts:\n    kwarg entity_id: String\n    response WeatherGetForecastsReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.code == 200:\n            log info \"got forecast\"\n        timeout 10_s:\n            log info \"forecast timed out\"\n        error:\n            log info \"forecast failed\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

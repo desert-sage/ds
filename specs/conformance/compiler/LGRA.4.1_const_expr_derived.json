@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.4.1_const_expr_derived",
+    "category": "compiler",
+    "scenario": "LGRA.4.1 / LEXP.8.8 — a `const` RHS folds a compile-time-constant expression over an earlier const. `const RETRY = 3` then `const BACKOFF = 3 * RETRY` folds to the literal 9, inlined at the reference site. Pin: compiles, and the where-clause sees the folded literal, not a `?BACKOFF` reference.",
+    "rules_ds": "const RETRY = 3\nconst BACKOFF = 3 * RETRY\n\nschema Sensor scope logical:\n    state: Int key\n\nrule r:\n    Sensor s where s.state > BACKOFF\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

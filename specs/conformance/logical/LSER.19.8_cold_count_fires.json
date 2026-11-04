@@ -1,0 +1,26 @@
+{
+    "id": "LSER.19.8_cold_count_fires",
+    "category": "logical",
+    "scenario": "LSER.19.8 — `count` keeps a concrete type and a cold `count` is `0`. Same shape as LSER.19.8_cold_mean_does_not_fire (one assert, one pump, single-pattern `where` evaluated at assert before any sample is absorbed), with `count(r.v) == 0` (function form: the companion `r.count` is refused today with DS_VALIDATE_UNKNOWN_SLOT while `r.mean` is accepted; routed separately). It fires. This is the positive control for the two cold-null vectors: it shows a cold series read IS evaluated in this position, so their silence is the `null` and not a read that never runs. A runtime answering `null` for every cold read — the concrete partition ignored — fails here.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    v: Float mutable\n\nschema Warm scope logical:\n    d: Int key\n\nseries Reading.v:\n    count sliding 10_min\n\nrule cold_count:\n    Reading r where count(r.v) == 0\n->\n    emit Warm logical d: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Reading",
+                "slots": {
+                    "entity_id": "s1",
+                    "v": 1.0
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_emit"
+        ]
+    }
+}

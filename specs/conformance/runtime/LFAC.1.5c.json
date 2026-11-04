@@ -1,0 +1,28 @@
+{
+    "id": "LFAC.1.5c",
+    "clauses": ["LGRA.5.8.1"],
+    "category": "runtime",
+    "scenario": "Json-typed slots accept arbitrary nested values (dict / list / scalar). Pins LFAC.1.5 / IDAT.4.6.2 \u2014 Json slots store opaque integrator-shaped payloads.",
+    "rules_ds": "schema Reading scope logical:\n    source: String key\n    payload: Json mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Reading",
+                "slots": {
+                    "source": "sensor.x",
+                    "payload": {
+                        "k": 1,
+                        "nested": [
+                            true,
+                            null,
+                            "x"
+                        ]
+                    }
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

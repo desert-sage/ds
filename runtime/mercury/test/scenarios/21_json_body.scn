@@ -1,0 +1,17 @@
+# A call's arguments, byte for byte:
+#
+#   * keys are sorted by name by the compiler ([RLOW.7.3.1]), and rendered in
+#     the artefact's order. The service declares `zeta, alpha, mid, flag` and
+#     `pass_through` passes `mid, zeta, alpha, flag`: three orders.
+#   * `/` is not escaped, and non-ASCII stays raw UTF-8.
+#   * floats are shortest-round-trip: `2.0` keeps its `.0`, and `1e10`
+#     renders `10000000000.0`.
+#
+# `literals` fires only for id=1, with a quote, a backslash and a tab in one
+# string, which a scenario value cannot carry.
+assert In id=1 txt=plain num=1.5
+pump
+assert In id=2 txt=unicode-é num=10000000000.0
+pump
+assert In id=3 txt= num=-0.25
+pump

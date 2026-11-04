@@ -1,0 +1,24 @@
+{
+  "id": "LCSP.4.5",
+  "prefix": "LCSP",
+  "doc": "CONSTSPACE.md",
+  "parent": "LCSP.4",
+  "seq": 168,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCSP.4.5] **String-typed series are rejected.** A `series` declared\nover a `String`-typed slot, on any backing that stores raw sample\nvalues, is a compile error under `constspace`\n(`DS_VALIDATE_RT_STRING_SERIES`).\n\nThe reason is the absorb path, not the window. A value-storing backing\nowns its samples and copies each one on absorb, so a `String` element\ntype allocates **per absorbed sample**, at pump time, for the life of\nthe series — and frees on eviction. That is a steady-state allocation,\nwhich is the one thing `constspace` guarantees against ([LCSP.2]).\n\n**Which backings store values is the load-bearing part.** They\nare `SeriesBackendRingBuffer`, `SeriesBackendFifoDeque` and `SeriesBackendReservoir`, and those are exactly the backings a\n`String`-typed slot can reach: per [LSER.17.2] the only aggregations\napplicable to `String` are `count`, `count_distinct`, `count_of`,\n`contains`, `first` and `last`; per [LSER.18.1] those route to\n`SeriesBackendWelfordEwma` / `SeriesBackendRingBuffer` / `SeriesBackendReservoir` and `SeriesBackendWelfordEwma` / `SeriesBackendFifoDeque`, with the exact sliding\nset and table forms carried on `SeriesBackendRingBuffer`. `SeriesBackendWelfordEwma` holds running\naccumulators rather than samples, so it does not copy.\n\nThe obligation is on the property, and an implementation that checks a\nfixed list satisfies it only while the list is complete.\n\nThis is a distinct axis from [LNLS.3.11] /\n`DS_VALIDATE_RT_SERIES_UNBOUNDED`, which bound the *sample count*. A\n`String` series with a perfectly bounded window still allocates once\nper sample, so a capacity bound does not rescue it and the two checks\ndo not subsume each other.\n\nThe same allocation occurs under `realtime`, which carries the\nconstant-space concern as one of its three ([LCSP.1.1]) and states the\nzero-steady-state-allocation obligation at [RTCT.12.4]; the rejection\napplies there for the same reason, and is where the diagnostic's name\ncomes from.\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_VALIDATE_RT_SERIES_UNBOUNDED",
+    "DS_VALIDATE_RT_STRING_SERIES"
+  ],
+  "refs": [
+    "LCSP.1.1",
+    "LCSP.2",
+    "LNLS.3.11",
+    "LSER.17.2",
+    "LSER.18.1",
+    "RTCT.12.4"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LGRA.2.9.7_escaped_apostrophe_decodes",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.7] `\\'` in a double-quoted string is accepted and denotes an apostrophe, observed at run time on both runtimes at three sites. In a `where` literal: the rule matches the Item whose label is `it's` and not the control Item whose label keeps the backslash, so a literal lowered with its raw text fires on the wrong Item. In a `log` literal with no interpolation, the message is `it's`. In a literal piece beside an interpolation, the message is `a's`. PATH PINNED: `dsc.strlit.simple_escape`'s `\\'` arm, reached through `lgra_2_9_4_decode` from each literal's lowering into the `.dsc`, then libds's and Mercury's evaluation of that literal and rendering of the log. Without the arm the program is refused with DS_PARSE_BAD_ESCAPE per [LGRA.2.9.4].",
+    "rules_ds": "schema Item scope logical:\n    entity_id: String key\n    label: String mutable\n\nrule hit:\n    Item i where i.label == \"it\\'s\"\n->\n    log info \"it\\'s\"\n    log info \"{i.entity_id}\\'s\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "a", "label": "it's" } },
+            { "op": "assert", "schema": "Item", "slots": { "entity_id": "b", "label": "it\\'s" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["it's", "a's"]
+    }
+}

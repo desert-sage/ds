@@ -1,0 +1,9 @@
+{
+    "id": "LLET.9.3",
+    "category": "compiler",
+    "scenario": "Let bindings come first in the RHS block, before the actions (LLET.9.3): `let scaled = r.raw * 10` read by an `emit` slot value and a `cache` value compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the shared expanded expression is not observed.",
+    "rules_ds": "schema Reading scope logical:\n    raw: Int key\n\nschema Scaled scope logical:\n    val: Int key\n\nrule scale:\n    Reading r\n->\n    let scaled = r.raw * 10\n    emit Scaled logical val: scaled\n    cache key: \"last\" value: scaled\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

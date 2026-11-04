@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.3.1_reserved_letter",
+    "category": "compiler",
+    "scenario": "`i`, `j`, `e`, `E` are reserved language builtins (e/E for sci-notation in FLOAT_LIT; i/j held for the `complex` type, which is specified and not v1 per [LUNI.14]) and cannot be unit names. SITE: this pins the LEXER, not resolution. Bare `i`/`j` is withheld from `UNIT_SUFFIX` outright ([LLEX.11.3.1]), so `5_i` does not lex as `UNIT_LIT(5, suffix=i)` at all, and with COMPLEX_LIT absent from v1 it reaches no token class — `cooldown 5_i` surfaces DS_PARSE_GENERIC from the parser. Note the code here is reachable only from this phase: DS_VALIDATE_UNKNOWN_UNIT is emitted from one site, general expression position, and a duration position like `cooldown` never consults the unit registry at all — see LUNI.3.1_unknown_unit_in_expr for that site.",
+    "rules_ds": "schema Sensor scope ttl 30s:\n    v: Int\n\nrule trig cooldown 5_i:\n    Sensor s where s.v > 0\n->\n    log info \"reserved letter\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 4
+    }
+}

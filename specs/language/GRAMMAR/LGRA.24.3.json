@@ -1,0 +1,30 @@
+{
+  "id": "LGRA.24.3",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.24",
+  "seq": 2003,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.24.3] **Application.** After the engine loads an artefact, it **must**\napply every item of the artefact's `initial` blocks at its first step: the first\ntime it consumes an input or begins a pump ([LTIM.2.8.4]). It applies them under\nthat step's sample, before it consumes the step's input and before it evaluates\nany rule, so no rule sees the starting state half built:\n\n- within a file, in source order;\n- across files, a file's block after the blocks of the files it imports, in the\n  import-DAG order of [LDET.5.4], leaf libraries first. So an importer's cache\n  item overwrites a library's for the same key.\n\nBetween the load and the first step, working memory and the cache hold none of\nthe block's items.\n\nA fact item enters working memory with no `ts` of its own: its\nentry stamp is the step's monotonic sample ([LTIM.2.8.6]), and its `ts`, where\nits schema declares one, is the step's wall sample ([LFAC.9.2]). A cache item\nseeds the key as the host's cache seed does ([NLFC.9.1]): it raises no cache\nevent and calls no write-through. It overwrites the value an earlier item of the\nsame application placed, but **a key the host seeded before the block applies keeps\nthe host's value**: the engine **must not** overwrite it with a cache item.\n\nApplying the block records nothing in a fact stream: no item has a `FactAssert`,\nan `event_id` or a `seq`. The step's sample is recorded as every sample is\n([LTIM.2.8.5]). The artefact carries the block, and a replay against the same\nartefact applies it at the replay's first step, under the recorded sample.\n\n**A fault an item raises is recorded after the step's input.** A fact item whose `ts` the wall clock cannot fill is not\nplaced, and its `ComputationError` ([LTIM.2.8.3]) is recorded after the step's\nsample and its input ([RARC.5.8.10]): the `FactAssert`, or a pump's\n`PumpBoundary` ([RFCS.22]), as a bounds refusal below is. A replayer that\ndelivers the input re-derives the fault after it, and compares it.\n\n**A bounds refusal refuses the step** ([LERR.1.5]). Where applying an item\nwould exceed a declared cap, the engine **must** apply none of the block and\nnone of the step's input, and evaluate no rule. The call that made the step\nreturns `DS_ERR_CONTRACT_BREACH`, and the engine records the step as it records\na refused assert ([RFCS.6.7]): its input, then the `BoundsError`. A pump's input\nis its `PumpBoundary` ([RFCS.22]), so a refused pump records that boundary, then\nthe `BoundsError`, and fires no rule. A replayer meeting the boundary performs\nthe pump, which the engine refuses again, and compares the re-derived\n`BoundsError` ([RFCS.6.7]). A refused step whose input is an external delivery\n([NCBK.10.4]) records its sample and nothing else, because a stream holds only\nthe `ExternalAssert`s the engine admitted ([RFCS.24.1]); a replay therefore\nnever meets that refusal. The block stays pending, and the next step applies\nit from its first item.\n\n**Under a `.dstest`,** the test's own `initial` ([LTSL.5]) overlays the\nruleset's blocks. Its cache entries are host seeds made before the first step, so a\ncache item for one of those keys leaves the test's value in place; its facts are host asserts, the first of\nwhich is the first step, so the block applies ahead of them.\n\n",
+  "refs": [
+    "LDET.5.4",
+    "LERR.1.5",
+    "LFAC.9.2",
+    "LTIM.2.8.3",
+    "LTIM.2.8.4",
+    "LTIM.2.8.5",
+    "LTIM.2.8.6",
+    "LTSL.5",
+    "NCBK.10.4",
+    "NLFC.9.1",
+    "RARC.5.8.10",
+    "RFCS.22",
+    "RFCS.24.1",
+    "RFCS.6.7"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH"
+  ]
+}

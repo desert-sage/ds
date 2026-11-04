@@ -1,0 +1,53 @@
+{
+    "id": "IDAT.5.5f",
+    "category": "cross-tier",
+    "scenario": "Distinct dialects per engine + runtime dispatch \u2014 engine A uses default (call dispatches), engine B uses restricted_v1 (call form would be rejected at compile, so B has no rule that uses call). Per-engine dialect partitioning observed end-to-end through stream events. Pins IDAT.5.5 \u2014 per-engine dialect partitioning observed at runtime.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_per_engine_event_counts",
+        "engines": {
+            "open": {
+                "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nservice svc.x:\n    \"stub service for conformance\"\n    no response\n\nrule r:\n    Trig\n->\n    call svc.x nocooldown\n"
+            },
+            "tight": {
+                "rules_ds": "use restricted_v1\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"safe\"\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "open",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "open",
+                "op": "pump"
+            },
+            {
+                "engine": "tight",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "tight",
+                "op": "pump"
+            }
+        ],
+        "expected_event_counts": {
+            "open": {
+                "action_call": 1,
+                "action_log": 0
+            },
+            "tight": {
+                "action_call": 0,
+                "action_log": 1
+            }
+        }
+    }
+}

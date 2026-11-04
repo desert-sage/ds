@@ -1,0 +1,7 @@
+{
+    "id": "LREG.4.4",
+    "category": "compiler",
+    "scenario": "Named capture groups per LREG.4.4 — `(?<code>\\d+)` is lexed and parsed correctly, but a capturing pattern in `where` position is rejected per LREG.2.3 (captures must be bound in a `let` form). Pin: the compiler accepts the named-capture syntax and rejects its use in `where` with DS_VALIDATE_REGEX_WHERE_HAS_CAPTURES.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    msg: String mutable\n\nrule detect_error:\n    Event e where e.msg ~ /error-(?<code>\\d+)/\n->\n    log info \"error found\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_REGEX_WHERE_HAS_CAPTURES" }
+}

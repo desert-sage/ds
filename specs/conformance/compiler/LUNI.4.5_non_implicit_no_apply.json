@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.4.5_non_implicit_no_apply",
+    "category": "compiler",
+    "scenario": "LUNI.4.5 — a formula WITHOUT the `implicit` flag does not auto-apply at assignment. The same Hz→nanosecond bridge declared as `unit formula hz_period` (no implicit modifier) does not satisfy `let period: nanosecond = s.freq`; the typed-let dim-mismatch check fires with DS_VALIDATE_LET_DIM_MISMATCH. Authors must call the formula explicitly at the call site.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nschema Signal scope logical:\n    freq: Hz key\n\nrule slow:\n    Signal s\n->\n    let period: nanosecond = s.freq\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_DIM_MISMATCH"
+    }
+}

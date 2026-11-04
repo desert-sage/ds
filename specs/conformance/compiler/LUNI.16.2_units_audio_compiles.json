@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.16.2_units_audio_compiles",
+    "category": "compiler",
+    "scenario": "[LUNI.16.2]'s `units.audio`, compiled as it ships: the standard library is on every fixture's search path and there is no `libraries` copy ([RCTS.1.2.14]), so this fails if the shipped `stdlib/units/audio.ds` stops compiling or stops declaring what the clause names. `phon` is used as a literal against a `sone` slot (tier-2 non-affine, [LUNI.4.3]), and `midi_to_hz` is called explicitly on a `midi_note` slot ([LUNI.4.5]: a formula without `implicit` is called at the call site), its `Hz` result emitted into an `Hz` slot. `units.audio` imports `Hz` and `watt` from `units.si` itself, so that import is compiled too.",
+    "rules_ds": "from units.audio import sone, phon, midi_note, midi_hz\nfrom units.si import Hz\n\nschema Tone scope logical:\n    id: String key\n    note: midi_note mutable\n    level: sone mutable\n\nschema Pitch scope logical:\n    id: String key\n    freq: Hz mutable\n\nrule loud_pitch:\n    Tone t where t.level > 50_phon\n->\n    emit Pitch logical id: t.id freq: midi_to_hz(t.note)\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

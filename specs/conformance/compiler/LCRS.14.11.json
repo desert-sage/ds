@@ -1,0 +1,11 @@
+{
+    "id": "LCRS.14.11",
+    "clauses": ["LDIA.3.4.2"],
+    "category": "compiler",
+    "scenario": "[LDIA.3.4.2]: a construct the resolved settings do not permit is DS_VALIDATE_CAPABILITY_DISABLED at the construct. `restricted_v1` disables `call` ([LTIE.9.8] restates [LTIE.6.1]), so a `call` under `use restricted_v1` is refused. LCRS.14.11, the id, is a tombstone; the clause this counts for is LDIA.3.4.2, which states the refusal, and not LTIE.9.8, a pointer.",
+    "rules_ds": "use restricted_v1\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

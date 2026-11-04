@@ -1,0 +1,10 @@
+{
+    "id": "LDIA.3.3.2_retired_capability_name",
+    "category": "compiler",
+    "scenario": "[LDIA.3.3.2] / [LCAP.1]: a retired capability name names no capability. `storage_hydrate_events` and `storage_event_query` are both `reserved` in `proto/capabilities.proto#Capability` and absent from the registry. A `use` block line spelling either, even set `false`, is DS_VALIDATE_UNKNOWN_CAPABILITY, exactly as a name that never existed is. A compiler that admits either name compiles this program. PATH PINNED: the registry lookup in override resolution in `dsc.dialect` (`capability_named`), which reads `ds.capability`'s members and nothing else.",
+    "rules_ds": "use default:\n    storage_hydrate_events: false\n    storage_event_query: false\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_CAPABILITY"
+    }
+}

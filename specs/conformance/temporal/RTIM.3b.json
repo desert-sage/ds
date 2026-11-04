@@ -1,0 +1,31 @@
+{
+    "id": "RTIM.3b",
+    "clauses": ["RTIM.3.2.2", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "A clock move does the time-driven work at the next pump (RTIM.3.2.2): on the mock clock, a ttl-50ms fact asserted at 1 s, the clock advanced by 100 ms past its deadline, and the pump that follows retracts it, so working memory is empty after it. `temporal_sequence` reads working memory only after the last step ([RCTS.1.2.31]), the pump, so this pins the pump's retraction and nothing before it; that the fact is still present after the advance alone is RARC.7.15_an_advance_past_the_deadline_retracts_nothing's. Drives the libds and Mercury pump-entry TTL sweep through the runner's set / assert / advance / pump steps; it does not exercise a clock-mode switch.",
+    "rules_ds": "schema Pulse scope ttl 50_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "set",
+                "now_ns": 1000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 100000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

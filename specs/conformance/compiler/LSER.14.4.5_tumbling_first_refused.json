@@ -1,0 +1,10 @@
+{
+    "id": "LSER.14.4.5_tumbling_first_refused",
+    "category": "compiler",
+    "scenario": "[LSER.14.4.5]: no aggregation is backed on `tumbling` in this edition, so `first tumbling 10_min` is refused with DS_VALIDATE_SERIES_NO_EXACT_BACKING. A compiler that admits the FIFO forms reports compile_ok here. PATH PINNED: `dsc.series.lser_18_1_support`, the arm that judges the `tumbling` time model, which must refuse every aggregation and not only the ones without a backing.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    first tumbling 10_min\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_NO_EXACT_BACKING"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "id": "LUNI.7.4_tolerance_drops_offset",
+    "clauses": ["LFAC.2.5.1"],
+    "category": "logical",
+    "scenario": "[LUNI.7.4]: a tolerance is a difference, so the conversion drops the offset `b` and keeps the scale only. `unit shifted: warmth = x + 100` has `a = 1`, `b = 100`, so `t: shifted mutable tolerance 1` is 1 therm in the base unit. The steps assert base-unit values ([LUNI.7.2]): 0.0 establishes the fact and `saw` fires; 0.5 is within 1 and is SUPPRESSED ([LFAC.2.5.1]); 2.0 is 2 from the live value and goes through, and `saw` fires. Two firings. What it discriminates: a tolerance converted as an absolute value, `a*1 + b` = 101, suppresses the 2.0 as well and gives one. PATH PINNED: `dsc.lower`'s `tolerance_of`, through `dsc.quantity.luni_7_4_tolerance_base`'s `line_affine` arm, which reads the slope and not the offset, into both runtimes' tolerance compare.",
+    "rules_ds": "unit dimension warmth storage float64 base therm\nunit therm: warmth\nunit shifted: warmth = x + 100\n\nschema S scope logical:\n    e: Int key\n    t: shifted mutable tolerance 1\n\nrule saw:\n    S\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 0.5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "e": 1, "t": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "fired"]
+    }
+}

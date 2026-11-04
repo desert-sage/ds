@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.3.3_parenthesised_literal",
+    "category": "logical",
+    "scenario": "[LUNI.3.3]: `-(10_celsius)` behaves exactly as `-10_celsius`, because a minus whose operand is a unit literal negates the literal's number, with or without parentheses. Same readings as LUNI.3.3_negative_offset_literal: 258.15 K logs, 268.15 K does not. PATH PINNED: the parser turns the parentheses into nesting, so `rlow_6_1_1_expr`'s unary arm in dsc.rete sees the same `ex_unary(uo_neg, ex_unit)` and folds through `luni_4_3_negated_unit_literal`. The break is negating the base value, which logs nothing.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    t: celsius mutable\n\nrule cold:\n    Reading r where r.t < -(10_celsius)\n->\n    log info \"{r.sensor}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "a", "t": 258.15}},
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "b", "t": 268.15}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a"]
+    }
+}

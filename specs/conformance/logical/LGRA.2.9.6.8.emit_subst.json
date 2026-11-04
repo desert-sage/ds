@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.8.emit_subst",
+    "category": "logical",
+    "scenario": "LGRA.2.9.6.8 — `emit` String-slot interpolation substitutes at runtime, and `{{`/`}}` escape to literal braces. r1 emits Step{argv} from Src{obj} with `\"cc {s.obj} {{flag}}\"`; r2 matches the Step and logs its argv. The log text proves `{s.obj}` substituted to the bound value and `{{flag}}` collapsed to the literal `{flag}` (the inner braces are data, not re-interpolated).",
+    "rules_ds": "schema Src scope logical:\n    obj: String key\n\nschema Step scope logical:\n    argv: String key\n\nrule r1:\n    Src s\n->\n    emit Step logical argv: \"cc {s.obj} {{flag}}\"\n\nrule r2:\n    Step st\n->\n    log critical \"{st.argv}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Src", "slots": { "obj": "engine.o" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["cc engine.o {flag}"]
+    }
+}

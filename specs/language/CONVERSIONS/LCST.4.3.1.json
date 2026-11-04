@@ -1,0 +1,51 @@
+{
+  "id": "LCST.4.3.1",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.3",
+  "seq": 105,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[LCST.4.3.1] Let the source static type be `S` (non-null) or `S?` (nullable) and the\nconversion have fallibility `f`. The result **is** nullable if and only if `S` is nullable\n**or** `f` is fallible. The compiler **must** reject a **missing** `?` when the result is\nnullable.\n\n| source | `f` | `::T` | `::T?` |\n|---|---|---|---|\n| `S` non-null | total | conforms → `T` | **compile error** — redundant `?` |\n| `S` non-null | fallible | compile error — must be `::T?` | conforms → `T?` |\n| `S?` nullable | total | compile error — source may be null | conforms → `T?` |\n| `S?` nullable | fallible | compile error | conforms → `T?` |\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/conversion_presence.als",
+        "name": "lcst_4_3_1__mark_iff_source_or_fallible",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/conversion_presence.als",
+        "name": "lcst_4_3_1__result_nullable",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_3_1__fallible",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fallibility `f` of a (target, source value) pair: the parses from a String to Int, Float or Bool are fallible, every other pair of the fragment total."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_3_1__total_form",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The bare `::T` with `f` decided: a fallible pair under it is the table's compile error ('must be `::T?`'), which no runtime sees, a trap here; a total pair converts. Partial because the nullable-source rows are `lcst_4_2__cast`'s null path, and a compile error is a trap in a model that has to answer for the form."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_3_1__total_form_refused",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A fallible pair under the bare `::T` is refused for every text: never a value and never `null`. Under `::T?` the same pair is a value or `null` (`lcst_4_5_7__parse_is_a_value_or_null`)."
+      }
+    ]
+  }
+}

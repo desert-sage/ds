@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.2.9.6.5.runtime",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.5] — three specs in one log line are applied at runtime, not passed through as text. Each compiles to a ValuePrim of the log's InterpExpr (RLOW.6.4) — `04d` to { zero, width 4, d }, `.2f` to { precision 2, f }, `x` to { x lowercase } — and the runtime renders them itself: libds's `render_value` on this lane, Mercury's renderer in `test_behave`. The rendering rules themselves are pinned by `LGRA.2.9.6.10.render`.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    n: Int mutable\n    x: Float mutable\n    h: Int mutable\n\nrule show:\n    Reading r\n->\n    log critical \"[{r.n:04d}][{r.x:.2f}][{r.h:x}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "n": 42, "x": 3.14159, "h": 255 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["[0042][3.14][ff]"]
+    }
+}

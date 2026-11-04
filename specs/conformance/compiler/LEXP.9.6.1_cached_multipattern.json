@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.9.6.1_cached_multipattern",
+    "category": "compiler",
+    "scenario": "[LEXP.9.6.1] — `cached()` in a `where` on a rule with two positive patterns is a compile error. PATH PINNED: `dsc.validate`'s `lexp_9_6_1_nonfact_where`, through `first_nonfact`, NOT [LTIM.2.6.2]'s `ltim_2_6_2_clock_where`: the rule reads no clock, so DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED cannot fire and this is the only diagnostic available. The symptom this prevents is a rule that NEVER fires — the join test is retained in a beta memory whose validity condition (the cache key) the network does not track, so setting the key after the join is attempted leaves the rule silent through any number of further pumps.",
+    "rules_ds": "schema Zone scope logical:\n    name: String key\n    armed: Bool mutable\n\nschema Reading scope logical:\n    entity_id: String key\n    zone: String mutable\n    state: Float mutable\n\nrule gated:\n    Zone z\n    Reading r where r.zone == z.name and cached(\"threshold\") == r.state\n->\n    log warning \"gated\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NONFACT_WHERE_MULTIPATTERN"
+    }
+}

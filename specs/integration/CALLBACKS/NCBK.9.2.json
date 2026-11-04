@@ -1,0 +1,20 @@
+{
+  "id": "NCBK.9.2",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.9",
+  "seq": 492,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.9.2] When `request->service` is a hydration endpoint\n(an adapter's `hydrate_*` service), the call callback:\n\n1. Reads the query from the arguments ([NCBK.6.10]) — the schema or sample\n   source, the window, the limit, a `filter:` where the endpoint accepts one\n   ([LHYD.8.1]) — and the `retain` argument, the duration the hydrated facts\n   live ([LHYD.6.2]).\n2. Queries the history backend.\n3. Asserts each result with the call's correlation as its `corr` ([LHYD.4.1.7])\n   and the `retain` duration as its TTL: a stored fact through\n   `ds_engine_assert_external`, passing the correlation and the duration\n   ([NCBK.10.4]); any other row through `ds_engine_assert_with_ttl`,\n   with `corr` set.\n4. Asserts the call's response fact, a `HydrationComplete` carrying the same\n   correlation ([LHYD.5.1]); rules match it to learn the hydration ended.\n\n",
+  "deferred": true,
+  "refs": [
+    "LHYD.4.1.7",
+    "LHYD.5.1",
+    "LHYD.6.2",
+    "LHYD.8.1",
+    "NCBK.10.4",
+    "NCBK.6.10"
+  ]
+}

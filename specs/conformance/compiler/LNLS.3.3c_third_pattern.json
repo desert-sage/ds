@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3c_third_pattern",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] / [LNLS.3.3c] — one anchored pair is not enough in a rule of three patterns: `x` is anchored to `d`, and `z` compares only `z.ceiling > x.amount`, so `z` joins by scan. PATH PINNED: `dsc.validate.lnls_3_3_anchors` judges EVERY positive pattern after the first; a check that stopped at the first anchored pair would compile this.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n\nschema Reading scope logical:\n    device_id: String key\n    amount: Int mutable\n\nschema Limit scope logical:\n    device_id: String key\n    ceiling: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.device_id == d.device_id\n    Limit z where z.ceiling > x.amount\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

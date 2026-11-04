@@ -1,0 +1,20 @@
+{
+  "id": "LNRE.4.2",
+  "prefix": "LNRE",
+  "doc": "NOREGEX.md",
+  "parent": "LNRE.4",
+  "seq": 90,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Rejection is mechanical, not capability-gated",
+  "text": "### Rejection follows the content, not the setting [LNRE.4.2]\n\nA regex-less runtime decides whether it can load a DSC from the\nartefact's `requires` ([RDSC.16.2.8]), which the compiler computes from\nwhat the artefact contains, not from its settings. A DSC whose content\nuses regex lists `regex` there, and a build without an RE2-class engine\nrefuses it with `DS_ERR_DSC_CAPABILITY_ABSENT` before decoding any body\n([RDSC.16.2.7]). The runtime trusts `requires` and does not check it\nagainst the content ([RDSC.16.2.8]).\n\nThis is what makes the capability's absence safe rather than merely\nconventional. A DSC that happens to contain no regex loads on a\nregex-less runtime whatever its `regex` setting; a DSC that does contain\none is refused whatever its setting. `regex: false` changes only when\nthe author learns about a mismatch — at compile time instead of at load\ntime ([LNRE.1.3], [LNRE.2.3]) — never whether the runtime accepts the\nartefact.\n\n",
+  "refs": [
+    "LNRE.1.3",
+    "LNRE.2.3",
+    "RDSC.16.2.7",
+    "RDSC.16.2.8"
+  ],
+  "errors": [
+    "DS_ERR_DSC_CAPABILITY_ABSENT"
+  ]
+}

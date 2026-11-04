@@ -1,0 +1,34 @@
+{
+  "id": "RFCS.26.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.26",
+  "seq": 981,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.26.1] **The prelude carries the host's cache seeds.** A host seed ([NLFC.9.1]) changes what `cached()` reads and emits no\nstream event, so the recorder must write each as an atom of its own, a\n`CacheSeed` (`proto/cache_seed.proto#CacheSeed`). It writes them immediately\nafter the schema announcement ([RFCS.5.1]) and before any event atom: one for\neach key the host seeded that the cache holds when the `StreamHeader` is\nwritten, in ascending order of the key's UTF-8 bytes. Each carries:\n\n- `key`, the key;\n- `value_json`, the value as the cache holds it, its canonical JSON text\n  ([IARC.12.2]);\n- `deadline_ns`, the entry's deadline as the cache holds it, in engine-clock\n  nanoseconds, or `0` where the entry does not expire. A seed's TTL is never\n  recorded: the deadline is what the cache keeps.\n  The engine fixes it at its first sample, before it records that sample\n  ([NLFC.9.4]), so the header written at that event carries it.\n\nSeeding ends at the engine's first stream event ([NLFC.9.2]), and the encoder\nwrites the header when it encodes that event ([RFCS.5.1]), so the prelude holds\nevery seed of the run. Where the host seeded a key twice, the atom carries the\nentry the second seed left.\n\nNo other cache entry has an atom:\n\n- a seed the engine refused stored nothing ([LSTO.4.7.5]);\n- an `initial` block's cache items are not host seeds: the artefact carries\n  them, and a replay applies them at its first step as the run did\n  ([LGRA.24.3]);\n- a recorder attached after the engine's first stream event writes no\n  `CacheSeed`, because by then the cache holds what rules wrote, which no seed\n  describes.\n\n**Container-legality `stream`, stream-class `inject`, band `1–127`** (field 6).\nA `CacheSeed` is no stream event and carries no `seq` ([LFST.5.3]).\n\n",
+  "refs": [
+    "IARC.12.2",
+    "LFST.5.3",
+    "LGRA.24.3",
+    "LSTO.4.7.5",
+    "NLFC.9.1",
+    "NLFC.9.2",
+    "NLFC.9.4",
+    "RFCS.5.1"
+  ],
+  "atoms": [
+    "CacheSeed",
+    "StreamHeader"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/cache_seed.proto",
+        "name": "CacheSeed",
+        "tag": "spec"
+      }
+    ]
+  }
+}

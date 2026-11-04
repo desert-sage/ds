@@ -1,0 +1,92 @@
+{
+  "id": "LCRS.4.2.1",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.4.2",
+  "seq": 205,
+  "depth": 3,
+  "kind": "table",
+  "heading": null,
+  "text": "[LCRS.4.2.1] The `CallError` schema is `ttl`-scoped at 5_min. The adapter\nasserts it instead of the response fact ([LCRS.4.3.1]) when it could not\nfulfil the request.\n\n| Slot | Type | Meaning |\n|---|---|---|\n| `corr` | String | correlation from the call's `as` binding |\n| `code` | String | error kind ([LCRS.4.2.3]) |\n| `message` | String | human-readable detail |\n| `ts` | Time | when the error was received ([LFAC.9.2]) |\n\n",
+  "refs": [
+    "LCRS.4.2.3",
+    "LCRS.4.3.1",
+    "LFAC.9.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_4_2_2__answers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "CallError's kind among the answer kinds. LESS than the clause: its slots beyond `corr` are the payload's, its 5_min TTL the time map's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_4_3_2__corr_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "CallError keeps `corr` as its first slot, in the lowering's table. Where a kind keeps its `corr`, the lowering's table read off the declarations. LESS than the clause: that a response schema is `ttl` and declares `corr` as a non-nullable String is the validator's, not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wcorr",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A fixture. The schema's slots are the witnesses' payload."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_after_response",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "A CallError arriving, computed; its slots are the payload's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_spans_services",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "A CallError spanning services, computed; its slots are the payload's. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_sweeps_every_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "A CallError names no service. LESS than the clause: the schema itself is the lowering's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__survivor_kinds_if",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE KINDS THAT SURVIVE AN ARRIVAL'S SWEEP, by the two tests on the arriving kind: an answer kind not among the swept kinds is of another response schema and neither is CallError; a CallError sweeps every answer kind; a kind that is no answer sweeps nothing and is none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__swept_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A CallError names no service, so its correlation spans services: the first test. LESS than the clause: the schema's slots and TTL are the lowering's."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_1__ERROR_TTL",
+        "tag": "spec",
+        "note": "CallError's 5_min TTL, in ticks, independent of the response schema's (LCRS.4.3.2), which may be the shorter or the longer. call_response.cfg sets this one the longer so that the two lifetimes are told apart, and call_response.scope.long.cfg runs the clause's engine with it the shorter; call_response.teeth.one_ttl_long.cfg sets it the shorter too, the ordering under which an engine applying one TTL to both kinds keeps a CallError past 5_min."
+      }
+    ]
+  }
+}

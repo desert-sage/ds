@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.6.7.4_hanging_let_group",
+    "category": "compiler",
+    "scenario": "LGRA.6.7.4 / LGRA.6.1 — `let` written once with the remaining bindings hanging under it compiles. Pins the `let_decl ::= 'let' let_binding (INDENT let_binding+ DEDENT)?` production (`dsc.parse`'s hanging-binding loop), whose result is n bindings from one node. Two rules: `plain` is a group of three where each binding reads the one before it (legal, they are earlier in the same group); `mixed` is a two-binding group beside a trailing per-line `let`, pinning that the two forms coexist in one body, and reads regex captures bound in the pattern's `where` ([LREG.4.1]) — a capture is not a `let` form.",
+    "rules_ds": "use default\n\nschema Ev scope ttl 1_h:\n    msg: String\n    v: Float\n    ts: Time\n\nrule plain:\n    Ev e\n->\n    let start = e.v\n        scaled = start * 2.0\n        doubled = scaled * 2.0\n    log info \"{doubled}\"\n\nrule mixed:\n    Ev e where (device, code) = e.msg ~ /(?<device>\\w+) on (?<code>\\d+)/\n->\n    let severity = 3\n        level = e.v\n    let tail = e.v\n    log warning \"{device} {code} {severity} {level} {tail}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

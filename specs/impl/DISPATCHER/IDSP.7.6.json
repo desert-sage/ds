@@ -1,0 +1,22 @@
+{
+  "id": "IDSP.7.6",
+  "prefix": "IDSP",
+  "doc": "DISPATCHER.md",
+  "parent": "IDSP.7",
+  "seq": 449,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDSP.7.6] Stream events:\n- `DS_EV_ACTION_CACHE_GET` is **not emitted** — a\n  `cache-get` is a pure internal engine read\n  ([RARC.5.7.9]), reserved-but-not-emitted ([NCBK.2.4]).\n- `DS_EV_ACTION_CACHE_SET` after the engine applies the\n  write to its cache (independent of any persistence\n  callback); payload `{ key, value, ttl_ns }`.\n- `DS_EV_ACTION_CACHE_DELETE` after the engine removes the\n  key; payload `{ key }`.\n\nFailed verbs do NOT emit (per [IDSP.1.4]).\n\n**A TTL expiry emits nothing.** `DS_EV_ACTION_CACHE_DELETE`\ndenotes the *verb* — a rule acting — and no rule acts when a\ndeadline passes. The expiry sweep ([NSTG.2.4.2]) therefore\nfires `delete_cb` and emits no stream event, which is not an\nomission: the stream already records the clock, and expiry is\na function of the clock and a TTL both sides already have, so\nreplay re-derives it. Recording it would put a second source\nof truth beside a derivable fact, and the two could disagree.\n\nThe asymmetry is worth stating plainly because it is easy to\ntrip over: a **callback** consumer sees every removal, a\n**stream** consumer sees only the verb ones.\n\n",
+  "refs": [
+    "IDSP.1.4",
+    "NCBK.2.4",
+    "NSTG.2.4.2",
+    "RARC.5.7.9"
+  ],
+  "symbols": [
+    "DS_EV_ACTION_CACHE_DELETE",
+    "DS_EV_ACTION_CACHE_GET",
+    "DS_EV_ACTION_CACHE_SET"
+  ]
+}

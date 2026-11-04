@@ -1,0 +1,22 @@
+{
+  "id": "NLFC.9.4",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.9",
+  "seq": 320,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.9.4] **A seed's TTL counts from the engine's first sample.** A\nseed is made before the engine has sampled its clocks ([NLFC.9.1]), so there is\nno reading of the monotonic clock to count a TTL from ([LTIM.2.8.4]), and the\nclock's zero means nothing ([LTIM.2.8.2]). The engine therefore holds a seed's\nnon-zero `ttl_ns` as a duration until it takes its first sample ([LTIM.2.8.5]).\nWhen it takes that sample, the engine **must** give each seeded entry still held\nas a duration the deadline of that sample plus its `ttl_ns`. It does so before\nit records the sample, before the step applies the `initial` block\n([LGRA.24.3]), and before it consumes the step's input. From then on the entry\nexpires at its deadline, as a rule's `cache … ttl:` write does ([NSTG.2.4.2]).\n\nSo an entry restored with a remaining lifetime ([NSTG.9.1]) keeps that lifetime\nfrom the engine's first step. Neither where the host set a mock clock before that\nstep ([NTST.3.3]) nor how long the integrator took between creating the engine\nand its first input changes it. A clone made before the first sample holds the\nsame durations ([NLFC.8.1]), and its own first sample fixes its deadlines.\n\n",
+  "refs": [
+    "LGRA.24.3",
+    "LTIM.2.8.2",
+    "LTIM.2.8.4",
+    "LTIM.2.8.5",
+    "NLFC.8.1",
+    "NLFC.9.1",
+    "NSTG.2.4.2",
+    "NSTG.9.1",
+    "NTST.3.3"
+  ]
+}

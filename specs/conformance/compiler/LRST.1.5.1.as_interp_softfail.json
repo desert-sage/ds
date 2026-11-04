@@ -1,0 +1,7 @@
+{
+    "id": "LRST.1.5.1.as_interp_softfail",
+    "category": "compiler",
+    "scenario": "LRST.1.5.1 — an interpolated `as` correlation's bindings inherit LRST.1.5: a Json sub-path segment can soft-fail if the path is missing, so it is rejected (DS_VALIDATE_AS_SOFTFAIL_EXPRESSION) even though a general interpolation would compile (null → \"\"). A correlation key must be non-soft-failing so per-fact identity is well defined. Pin: `as \"rsvp-{r.maybe.field}\"` where `r.maybe` is Json.",
+    "rules_ds": "service svc.do:\n    kwarg line: String\n    no response\n\nschema Req scope logical:\n    entity_id: String key\n    maybe: Json mutable\n\nrule trig:\n    Req r\n->\n    call svc.do line: \"x\" nocooldown as \"rsvp-{r.maybe.field}\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_AS_SOFTFAIL_EXPRESSION" }
+}

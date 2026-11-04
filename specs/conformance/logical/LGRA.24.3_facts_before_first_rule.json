@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.24.3_facts_before_first_rule",
+    "category": "logical",
+    "scenario": "[LGRA.24.3]: the engine applies every item of its `initial` block at its first step, before it evaluates any rule, each fact entering with no `ts` of its own. Two facts of two `scope explicit` schemas, and one rule joining them on `k`. The steps assert nothing: the only facts in working memory are the block's, so the rule's one firing, against both, is the block applied at the first step, the pump, and applied whole before the pump's rules run. Pin: one `log` message naming both facts' values. A runtime that skipped the block logs nothing; one that applied it twice logs the join four times. PATH PINNED: the first step's application of IFCT atoms -- libds's `ds_engine_clock_step` into `dsc/loader.c`'s `ds_engine_initial_apply`, the Mercury runtime's `clock_step` into `ds.engine.lgra_24_3_apply` -- here at the pump.",
+    "rules_ds": "schema A scope explicit:\n    k: Int\n    v: Int\n\nschema B scope explicit:\n    k: Int\n    w: Int\n\ninitial:\n    A k: 1 v: 10\n    B k: 1 w: 20\n\nrule joined:\n    A a\n    B b where b.k == a.k\n->\n    log info \"joined {a.v} {b.w}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["joined 10 20"]
+    }
+}

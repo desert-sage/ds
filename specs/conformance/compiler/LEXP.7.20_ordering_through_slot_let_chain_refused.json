@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.20_ordering_through_slot_let_chain_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.20 with [LLET.12.5], one `let` further than LEXP.7.20_ordering_through_slot_let_refused: `Child c, Child d`, then `let x = c.parent`, `let y = x`, `let v = d.parent`, `let w = v` and `y > w` as the value of an emit's `Bool` slot. Each of `y` and `w` is a `let` naming a `let` whose right-hand side reads a schema-typed slot, so each is a fact reference and the ordering is refused with DS_VALIDATE_UNORDERED_TYPE at the `>`. Both operands go through the chain, so neither is typed by any other path. PATH PINNED: `dsc.typecheck` follows `let`s whose right-hand side is a bare `let` name to the slot read (`llet_12_5_inlined_rhs`) before typing it (`lexp_7_20_slot_let`). A typer that types only a `let` whose own right-hand side is the slot read leaves `y` and `w` untyped and compiles this source.",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent mutable\n\nschema Before scope logical:\n    id: Int key\n    earlier: Bool mutable\n\nrule r:\n    Child c\n    Child d\n->\n    let x = c.parent\n    let y = x\n    let v = d.parent\n    let w = v\n    emit Before logical id: c.id earlier: y > w\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

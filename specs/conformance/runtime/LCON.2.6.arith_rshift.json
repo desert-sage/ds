@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.6.arith_rshift",
+    "clauses": ["LEXP.7.14.1", "LCON.2.6.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 integer determinism — arithmetic right shift, negative value. `-8 >> 1` is -4 (sign-preserving / arithmetic shift per LEXP.7.14.1), not a large positive (logical / zero-fill shift). Guard `(t.x >> 1) == -4` gates the emit; fact_count 2 confirms the bit-exact value.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x >> 1) == -4\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -8 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

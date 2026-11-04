@@ -1,0 +1,16 @@
+{
+    "id": "LTAC.9.3.runtime",
+    "category": "temporal",
+    "scenario": "`after` timer does NOT fire before the delay per LTAC.9.1. Advance clock by 3_s when delay is 5_s: timer has not fired, Delayed fact not yet in WM. The body emits a `ttl` Delayed because a `logical` emit in an `after` body is refused ([LLOG.11.9]).",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Delayed scope ttl 1_h:\n    dummy: Int\n\nrule delayed:\n    Trig\n->\n    log info \"start\"\n    after 5_s:\n        emit Delayed dummy: 0\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 1
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.3.3.2",
+    "category": "compiler",
+    "scenario": "`t.date()` requires a timezone argument per LTIM.3.3.2 — a timezone-less local date is undefined. The compiler must reject `t.date()` (zero arguments) with DS_VALIDATE_DATE_NEEDS_TZ.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule trig:\n    Event e where e.fired_at.date() == e.fired_at.date(\"UTC\")\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DATE_NEEDS_TZ"
+    }
+}

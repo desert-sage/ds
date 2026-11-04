@@ -1,0 +1,15 @@
+{
+    "id": "LERR.1.3.1.a_json_leaf_of_the_wrong_type_is_a_type_error",
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "A Json leaf that is the wrong type for its operator is a TypeError, NOT an EngineError — the provenance split: the value came from a Json projection, so it is DATA the engine was handed rather than the artefact lying about its own types. `p.body.name` is a string and `>` wants a number. The tier must NOT halt: bad Json is ordinary input, and classifying it as an EngineError would take an engine down for a malformed message. Path: `ds_rete_fault` with DS_FAULT_TYPE_MISMATCH where `ctx->json_tainted` is set, which is the tainted arm of the funnel's switch.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where p.body.name > 5\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "IRET.2.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.2",
+  "seq": 240,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What the C Rete implements",
+  "text": "### What the C Rete implements [IRET.2.1]\n\nDerived from [RLOW]: every Rete feature the\ncompiler can emit must be supported:\n\n| DS feature | Rete mechanism |\n|---|---|\n| Schema / slot types | Schema descriptors, typed value arrays of the kinds [IRET.3.1] lists |\n| Simple pattern (`Schema s`) | Alpha node, all-slots bind |\n| Inline equality constraint (`where slot == literal`) | Alpha test: slot == literal |\n| Regex constraint (`where slot ~ /…/`) | Alpha test: regex match on slot |\n| Where clause | Test CE: beta-level predicate over bound variables |\n| `no Schema` (negation) | NOT node in beta network |\n| `within <dur>` | Test CE over the monotonic sample minus the fact's `assert_ns` ([IRET.4.3]) |\n| `then ... within` (sequence) | Multi-pattern join + test CE on ts ordering |\n| `latest` modifier | NOT sub-pattern excluding older anchors |\n| Refraction | Per-rule refraction table keyed by token identity (hash pre-filter + fact-id tuple, [IRET.11.3]) |\n| `emit X` (plain) | RHS assert action |\n| `emit X logical` | RHS assert action + TMS registration |\n| `let` pure | Inlined at compile time; no Rete mechanism needed |\n| `let` sync-impure (`now()`, `monotonic_ns()`) | Bind-once in RHS expression context |\n| `let` async | Desugared to request + response rules; no Rete primitive |\n| Cooldown gate | The terminal's `fire_guard`, or a call site's gate, calling `FN_RATE_ALLOW` ([IRET.10.4]) |\n| Action verbs (log, call, publish, cache) | RHS expression nodes → builtin dispatch |\n| Series aggregation in where clause | Test CE calling the `FN_SERIES_*` builtins ([IRET.13.2]) |\n| `$ClockTick` | Schema with no slots; assert/retract drives time-bound tests |\n| String interpolation | one `InterpExpr` node: a linear sequence of `FormatPrim`s — literal text, a value under a numeric or string spec, a time field (RLOW.6.4) |\n| Json path access | `json_path` expression node → builtin |\n| Truth maintenance (logical facts) | TMS: refcount + dependency table |\n| TTL fact expiry | Deadline in fact; swept once per pump, before anything fires ([IRET.19.3]) |\n| No-op reassertion suppression | Slot equality check (with per-slot tolerance) at assert time |\n| `scope activation` facts (LSCP.2.4) | Schema descriptor with `DS_RETE_SCOPE_ACTIVATION`; lifetime tied to the firing activation |\n| `scope logical ambient` facts (LSCP.2.5) | Schema descriptor with `DS_RETE_SCOPE_AMBIENT`; plain working memory with ambient-write restriction enforced at compile time |\n\n\n",
+  "refs": [
+    "IRET.10.4",
+    "IRET.13.2",
+    "IRET.19.3",
+    "IRET.3.1",
+    "IRET.4.3",
+    "IRET.11.3",
+    "LSCP.2.4",
+    "LSCP.2.5",
+    "RLOW.6.4.3",
+    "RLOW.8.4"
+  ],
+  "symbols": [
+    "DS_RETE_SCOPE_ACTIVATION",
+    "DS_RETE_SCOPE_AMBIENT"
+  ]
+}

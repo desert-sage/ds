@@ -1,0 +1,20 @@
+{
+  "id": "IRET.28.11.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.11",
+  "seq": 2382,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.28.11.4] **libds holds sixteen slot values inline on the assert path.** A\nfact of a schema with at most 16 slots asserts without allocating; above that the\nassert path allocates its slot-value array on the heap, which a `realtime` engine\nmust not do ([LCSP.1]).\n\nA compiler whose artefacts libds executes must therefore, when `realtime`\nresolves, refuse a schema of more than 16 slots with\n`DS_VALIDATE_RT_SCHEMA_TOO_WIDE`, naming the schema, its slot count and the bound.\n\n**The bound is libds's, not the language's.** It is the width of one runtime's\ninline buffer; a runtime that asserts without one has no such limit or declares\nits own, and the language commitment is only that `realtime` admits no unbounded\nper-assert allocation. The program is refused at compile time rather than\ntolerated because the alternative is an artefact whose steady state allocates,\nwhich is what `realtime` exists to exclude, and an author can act on a compile\nerror.\n\n",
+  "deferred": true,
+  "refs": [
+    "LCSP.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_RT_SCHEMA_TOO_WIDE"
+  ],
+  "verification": "gap",
+  "gap_reason": "Not implemented: the compiler declares DS_VALIDATE_RT_SCHEMA_TOO_WIDE but raises it nowhere, and no fixture pins the refusal."
+}

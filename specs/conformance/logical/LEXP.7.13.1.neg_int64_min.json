@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.7.13.1.neg_int64_min",
+    "category": "logical",
+    "scenario": "Unary `-` on INT64_MIN wraps to INT64_MIN, per [LEXP.7.13.1] ('overflow wraps silently, two's complement') and [LEXP.7.10] (unary `-` is arithmetic negation on Int). Drives DS_RETE_UNOP_NEG in rete/eval.c, which routes through ds_i64_neg in int_ops.h, beside the add/sub/mul helpers that go through uint64_t: `-INT64_MIN` is UNDEFINED BEHAVIOUR in C, and an optimizer is entitled to assume the operand is never INT64_MIN. THE GUARD IS THE INSTRUMENT AND IT CANNOT PASS BY ACCIDENT: `-b.n == b.n` holds for only two int64 values, 0 and INT64_MIN, and the second rule pins that the fixture is testing the second -- a build where `-n` produced anything other than INT64_MIN fires neither. Sibling of LDET.6.3.1, which pins the same wrap for `+` rather than for unary `-`.",
+    "rules_ds": "schema Big scope logical:\n    n: Int key\n\nrule negation_wraps:\n    Big b where -b.n == b.n\n->\n    log info \"wrapped\"\n\nrule not_zero:\n    Big b where b.n < 0\n->\n    log info \"negative\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Big", "slots": { "n": -9223372036854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "rule_fire_begin"]
+    }
+}

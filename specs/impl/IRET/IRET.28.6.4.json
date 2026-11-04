@@ -1,0 +1,18 @@
+{
+  "id": "IRET.28.6.4",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28.6",
+  "seq": 2180,
+  "depth": 3,
+  "kind": "heading",
+  "heading": "`ds_oa_put` (+ grow)",
+  "text": "#### `ds_oa_put` (+ grow) [IRET.28.6.4]\n\n1. `H = oa_mix64(t->hash(key, ctx))`. If `d = oa_find(t, key, H)` is not\n   `OA_NONE`: set `*out_val = dval(d)`, `*is_new = false`, return\n   `DS_OK_R`.\n2. Else a new entry is needed. If `cap == 0` or\n   `(len+1)·100 > cap·load_pct`: if `t->locked`, return `DS_ERR_RT_UNSAFE`\n   (table unchanged); else `oa_grow(t)` (×2, or `OA_INIT_CAP` from empty).\n   `DS_ERR_OOM` propagates (table unchanged).\n3. Append: `d = len++`; copy `key` into `dkey(d)`; `dhash[d] = (u32)H`;\n   **zero** `dval(d)`; probe from `H & mask` to the first empty slot `i`;\n   `slots[i] = d+1`; `dslot[d] = i`. Set `*out_val = dval(d)`,\n   `*is_new = true`, return `DS_OK_R`.\n\n",
+  "errors": [
+    "DS_ERR_OOM",
+    "DS_ERR_RT_UNSAFE"
+  ],
+  "symbols": [
+    "DS_OK_R"
+  ]
+}

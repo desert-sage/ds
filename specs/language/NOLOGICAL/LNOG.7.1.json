@@ -1,0 +1,19 @@
+{
+  "id": "LNOG.7.1",
+  "prefix": "LNOG",
+  "doc": "NOLOGICAL.md",
+  "parent": "LNOG.7",
+  "seq": 345,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`realtime` does not imply `logical: false`",
+  "text": "### `realtime` does not imply `logical: false` [LNOG.7.1]\n\nLogical facts are valid in hard-RT deployments. Under `realtime`, the engine\nmust reserve its truth-maintenance state during INIT, before the transition to\nLIVE, and must not allocate for it during LIVE ([RTCT.12.4]). A logical fact\nholds up to 16 supporting activations within that reservation; the engine must\nrefuse a seventeenth with `DS_ERR_RT_UNSAFE` rather than allocate for it.\n\nThe cascade under `realtime` is bounded by the contract's firing bound,\n`max_fires_per_pump` ([RTCT.6]): the compiler's activation-chain analysis\nprovides the depth bound. The TMS term in T_wcet, $c_{\\mathit{tms}} \\times 16$,\nis a compile-time constant.\n\nHard RT is achievable with logical facts.  `logical: false` is an optional\nfurther constraint for deployments that want to eliminate TMS overhead\nentirely.\n\n",
+  "deferred": true,
+  "refs": [
+    "RTCT.12.4",
+    "RTCT.6"
+  ],
+  "errors": [
+    "DS_ERR_RT_UNSAFE"
+  ]
+}

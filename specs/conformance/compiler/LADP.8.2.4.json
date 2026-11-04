@@ -1,0 +1,15 @@
+{
+    "id": "LADP.8.2.4",
+    "clauses": ["LCRS.14.9"],
+    "category": "compiler",
+    "scenario": "[LCRS.14.9] (LADP.8.2.4, the id, is a tombstone): two service declarations with the same name anywhere in one compilation's import closure are a compile error. Libraries `a` and `b` each declare `light.turn_on`, and the importer brings both domains in bare (`from a import light`, then `from b import light`), so the compiler refuses the program with DS_VALIDATE_DUPLICATE_SERVICE. PATH PINNED: dsc.driver.lcrs_14_9_duplicate_services, reached through two bare selective imports of one domain (LCRS.14.9's own vector reaches it through schema imports only).",
+    "rules_ds": "from a import light\nfrom b import light\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "a": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n",
+        "b": "service light.turn_on:\n    kwarg entity_id: String literal required\n    kwarg brightness: Int default 255\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DUPLICATE_SERVICE"
+    }
+}

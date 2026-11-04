@@ -1,0 +1,276 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# formal/formal.build — the formal-methods gate graph (alloy, tla, saw, cbmc,
+# k, idris), scheduled by build-unit in the ds-check image, which carries every
+# formal toolchain and the DS build toolchain. Each lane is a content-addressed
+# stamp step running a thin `python3 scripts/formal/check_<tool>.py` recipe;
+# with a warm cache, a passing lane whose inputs are unchanged is reused. Gate
+# targets:
+#
+#   build formal/formal.build alloy.stamp          # one lane
+#   build formal/formal.build formal-all.stamp     # every lane
+#
+# A separate graph from the CI graph: these lanes need no libds or pyds
+# runtime; they prove the spec, not the engine.
+#
+# Public: this file and scripts/formal/ are in the public tree, and nothing
+# here reads the private tree. The souffle lane's recipe imports
+# scripts/private/formal/, so it runs from its own graph, souffle.build.
+#
+# In formal/, beside what it builds, and run from the repository root:
+# build-unit resolves a graph's paths against the root it is invoked with, so
+# every path below is repo-relative.
+#
+# ── every lane requires `amd64 linux` ───────────────────────────────────────
+#
+# No formal methods on arm. Without `require`, a step runs wherever build-unit
+# runs, and on arm64 the lanes whose tools are arch-neutral (Alloy, TLC, CBMC,
+# Idris) would pass beside K's and SAW's refusals and fold into a green
+# `formal-all.stamp`. `require` is resolved against build.ini's `[caps]`, so no
+# arm64 target is chosen. `scripts/formal/formal_arch.py` is the other half,
+# for a recipe run by hand (`python3 scripts/formal/check_alloy.py
+# formal/alloy`).
+#
+# `formal-all.stamp` carries no require: it runs `true` and only folds its
+# inputs' digests.
+#
+# ── what each lane's key covers ─────────────────────────────────────────────
+#
+# Every model, program and expectation file is an input, per file, through the
+# globs in each lane's `reads`, so editing one re-runs its lane. The solver is
+# an input too, so upgrading Alloy, TLC, SAW, K, clang or the JDK re-keys the
+# lanes that use it. The tool paths are params: the graph sets the recipe's
+# environment (`env`) from the same value it hashes (`reads`).
+#
+# The key also covers the C under proof (saw and cbmc prove libds source,
+# reached through the shims' `#include`s and the harnesses' `@cbmc-src`), the
+# harness that decides (`RunAlloy.java` calls a command passed or failed;
+# `formal_arch.py` refuses a machine), and the idris modules, package and test
+# pairs.
+#
+# `keys.stamp` holds the rule: `scripts/formal/check_formal_keys.py` derives
+# each lane's inputs from the lane's own files — the includes, the `@cbmc-src`
+# lines, the modules on disk — and fails on one the key omits.
+#
+# ── a lane whose corpus vanished fails ──────────────────────────────────────
+#
+# build-unit fails the build on a glob that matched no files, so every corpus
+# glob below is a presence check: no lane runs its solver over an empty
+# directory and stamps a green proof of nothing. It catches zero, not wrong:
+# deciding whether a model is the right model is what the lane is for. A
+# private test proves it fires.
+
+param alloy_jar = /opt/alloy/alloy.jar
+param tla_jar   = /opt/tla/tla2tools.jar
+param saw_bin   = saw
+param saw_clang = clang
+param cbmc_bin  = cbmc
+
+# ── alloy: solve formal/alloy/*.als (structure) — every `check` UNSAT, `run` SAT.
+#    The graph sets ALLOY_JAR, which check_alloy.py reads, and hashes the same
+#    value. javac compiles the RunAlloy harness and java runs it, so a JDK swap
+#    changes the key.
+step alloy.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_alloy.py formal/alloy
+  env     ALLOY_JAR={alloy_jar}
+  reads   scripts/formal/check_alloy.py scripts/formal/formal_arch.py {alloy_jar} javac java
+          formal/alloy/RunAlloy.java formal/alloy/*.als
+
+# ── tla: model-check formal/tla/*.tla (behavior) — invariants + temporal props hold.
+step tla.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_tla.py formal/tla
+  env     TLA_JAR={tla_jar}
+  reads   scripts/formal/check_tla.py scripts/formal/formal_arch.py {tla_jar} java
+          formal/tla/*.tla formal/tla/*.cfg
+
+# ── saw: prove formal/saw/*.saw (C ⊨ spec, bit/pointer-exact). clang compiles
+#    the C harness to the bitcode SAW proves against, so a clang change changes
+#    what was proved.
+#
+#    `int_ops.h` and `oa.h` are the C under proof. Every function this lane
+#    proves is a `static inline` in one of the two, which is why each proof has
+#    a shim: the shim gives the function a symbol and holds none of its body.
+#    `oa.h` includes `libds.h`, so that is an input by the same route.
+step saw.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_saw.py formal/saw
+  env     SAW_BIN={saw_bin}
+  env     DS_SAW_CLANG={saw_clang}
+  reads   scripts/formal/check_saw.py scripts/formal/formal_arch.py {saw_bin} {saw_clang}
+          runtime/src/libds/int_ops.h runtime/src/libds/oa.h runtime/include/libds.h
+          formal/saw/*.saw formal/saw/*.c
+
+# ── cbmc: bounded model-checking of libds C against named clause properties.
+#    The second `C |= spec` lane, beside saw, and weaker: saw proves
+#    equivalence to a Cryptol reference over a whole domain, cbmc proves a
+#    stated property up to an unwind bound. The harnesses carry their own
+#    bounds in `@cbmc` directives so the claim travels with the proof — the .c
+#    is the proof, so one glob covers the corpus.
+#
+#    Reads the libds headers the harnesses include: a change to the band
+#    constants or the registry changes what was proved. And the translation
+#    units the harnesses' `@cbmc-src` lines name, which CBMC is handed beside
+#    the harness: the headers declare the functions, the `.c` files are the
+#    functions.
+#
+#    Two steps over one corpus. A harness may put entry points after a
+#    `@cbmc-step <name>` marker, and `check_cbmc.py --step <name>` runs those
+#    alone. `cbmc.stamp` is the default step: every entry point before a
+#    marker, which is every one a clause ties. `cbmc-sweep.stamp` is
+#    ldet_3_2_8__fixed.c's untied precision sweep (plan_rounds_p2, p3, p6, p10,
+#    p18, plan_short_fraction), over two hours on its own, so it is not folded
+#    into formal-all.stamp; it runs when named (the test driver's `cbmc-sweep`
+#    check). Same inputs, same key rule: keys.stamp holds both steps to the
+#    harness's @cbmc-src.
+step cbmc.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_cbmc.py formal/cbmc
+  env     CBMC_BIN={cbmc_bin}
+  reads   scripts/formal/check_cbmc.py scripts/formal/formal_arch.py {cbmc_bin}
+          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
+          runtime/src/libds/rfcs/atoms.h
+          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
+          runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
+          runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
+          formal/cbmc/*.c
+
+step cbmc-sweep.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_cbmc.py --step sweep formal/cbmc
+  env     CBMC_BIN={cbmc_bin}
+  reads   scripts/formal/check_cbmc.py scripts/formal/formal_arch.py {cbmc_bin}
+          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
+          runtime/src/libds/rfcs/atoms.h
+          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
+          runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
+          runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
+          formal/cbmc/*.c
+
+# ── k: run formal/k/*.k executable DS operational semantics (language ↦ meaning).
+#    No params for kompile/krun: check_k.py takes them off $PATH with no
+#    override. Read by name, resolved through $PATH like any other tool, and
+#    hashed. .prog and .expected are the lane's cases, and an expectation is as
+#    much an input as the model.
+step k.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_k.py formal/k
+  reads   scripts/formal/check_k.py scripts/formal/formal_arch.py kompile krun
+          formal/k/*.k formal/k/*.prog formal/k/*.expected
+
+# ── idris: typecheck formal/idris/**/*.idr — the ITP lane. The only lane with a
+#    totality checker: no other tool here can say that a function terminates
+#    on every input, or that a proof rests on no hidden hole. idris2 is read by
+#    name, as kompile and krun are.
+#
+#    The modules are globbed one directory level at a time, as `*.idr` and
+#    `*/*.idr`, and not as `**`: the recipe writes `build/` inside the corpus
+#    directory, and a per-directory pattern cannot reach into it whatever the
+#    walk prunes. A module two levels down is in neither pattern, and
+#    `keys.stamp` fails on it. The package decides what is built and run; the
+#    test pairs are the runner's cases, inputs on check_k's reasoning about
+#    `.expected`.
+step idris.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_idris.py formal/idris
+  reads   scripts/formal/check_idris.py scripts/formal/formal_arch.py idris2
+          formal/idris/*.idr formal/idris/*/*.idr formal/idris/*.ipkg
+          formal/idris/tests/*.lowered formal/idris/tests/*.expected
+
+# ── instances: one instance drawn in two lanes is one instance.
+#    Not a formal method and it proves nothing about the clause. tms_cascade.tla
+#    draws the ranked instance and the unfounded cycle (`iret_12__GRAPH`), and
+#    Rete/Refcount.idr writes both again as literals (`iret_12_3__tla_js`,
+#    `llog_2_5__witness_js`) that its witnesses execute; the [IRET.12.2] tie on
+#    `iret_12_2__no_unsupported_forever` cites their agreement. The recipe
+#    reads the module's three definitions under each graph, the literals and
+#    the signatures that apply the two fixpoints to them, and compares the two
+#    under the renaming it declares (the Logician's reading: f1..f4 -> 1..4, P,
+#    Q, R -> 0, 1, 2). A mismatch fails it; a definition it cannot find
+#    refuses, never passes.
+#
+#    Keyed on both models and the .cfg that says which graph the ELSE branch is,
+#    so an edit to either side re-runs it; the recipe imports check_tla.py's
+#    reader, so that is an input too. The tla and idris lanes each prove their
+#    own side; this holds that they were run on one instance.
+step instances.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_instances.py formal/tla/tms_cascade.tla formal/tla/tms_cascade.cfg formal/idris/Rete/Refcount.idr
+  reads   scripts/formal/check_instances.py scripts/formal/check_tla.py scripts/formal/formal_arch.py
+          formal/tla/tms_cascade.tla formal/tla/tms_cascade.cfg formal/idris/Rete/Refcount.idr
+
+# ── keys: every lane above is keyed on what its verdict depends on.
+#    Not a formal method and it proves nothing about the spec: it reads this
+#    file's expansion and, for each lane, derives the inputs from the lane's own
+#    files — the recipe and what it imports, the corpus the recipe globs, the C a
+#    shim includes or a harness names in `@cbmc-src` — and fails on one the lane's
+#    `reads` leaves out. It is in this graph so that the question is asked
+#    wherever the lanes are run, and folded into formal-all so that a green
+#    aggregate cannot be built over a key with a hole in it.
+#
+#    Its own key is held to the same rule, by itself: every file it opened or
+#    listed must be in the `reads` below. That is why the corpora are here a
+#    second time. The modules are `**` here
+#    and per-directory on the idris lane on purpose: this step has to be re-run
+#    by a module at a depth the lane's patterns do not reach, which is the one
+#    it exists to report.
+step keys.stamp
+  stamp
+  require amd64 linux
+  run     python3 scripts/formal/check_formal_keys.py formal/formal.build
+  reads   scripts/formal/check_formal_keys.py formal/formal.build
+          scripts/formal/check_alloy.py scripts/formal/check_tla.py
+          scripts/formal/check_saw.py scripts/formal/check_cbmc.py
+          scripts/formal/check_k.py scripts/formal/check_idris.py
+          scripts/formal/check_instances.py scripts/formal/formal_arch.py
+          runtime/src/libds/int_ops.h runtime/src/libds/oa.h runtime/include/libds.h
+          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
+          runtime/src/libds/rfcs/atoms.h
+          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
+          runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
+          runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
+          formal/alloy/RunAlloy.java formal/alloy/*.als
+          formal/tla/*.tla formal/tla/*.cfg
+          formal/saw/*.saw formal/saw/*.c formal/cbmc/*.c
+          formal/k/*.k formal/k/*.prog formal/k/*.expected
+          formal/idris/**/*.idr formal/idris/*.ipkg
+          formal/idris/tests/*.lowered formal/idris/tests/*.expected
+
+# ── formal-all: the aggregate — a stamp step that reads every lane's stamp, so
+#    `build formal/formal.build formal-all.stamp` runs (or reuses) every lane,
+#    and the key and instance checks beside them. Not cbmc-sweep.stamp, for its
+#    cost (the cbmc comment above).
+step formal-all.stamp
+  stamp
+  run   true
+  reads alloy.stamp tla.stamp saw.stamp cbmc.stamp k.stamp idris.stamp
+        instances.stamp keys.stamp
+
+# ── every lane reads deps.lock ──────────────────────────────────────────────
+#
+# These lanes need no libds or pyds of their own, but build-unit, which
+# schedules them, is a DS program, so the bootstrap installs pyds before this
+# graph runs. pyds links libds's `ds_re2.o`, and which RE2 that is comes from
+# the dependency lock by way of ds-check's image build. So the lock is an
+# input to every lane: a tree whose lock differs mints different step keys,
+# and no lane reuses a stamp proved against a different RE2, which is the DS
+# regex language under [LREG.7.1].
+#
+# This prevents false reuse; it does not detect two locks that disagree. The
+# image records the lock it was built from, and
+# scripts/private/gate/bootstrap.py refuses a tree whose lock differs. A green
+# here is not evidence the locks agree.
+#
+# Bound to every stamp rather than listed per lane, so a lane added later has
+# the edge. `formal-all.stamp` has it too, harmlessly.
+extend every stamp
+  reads vendor/deps.lock

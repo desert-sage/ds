@@ -1,0 +1,184 @@
+{
+  "id": "RTCT.7.1",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.7",
+  "seq": 558,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "",
+  "deferred": true,
+  "refs": [
+    "LSER.13.14",
+    "LSTR.11.3"
+  ],
+  "data": {
+    "columns": [
+      "Cap",
+      "Enumerator",
+      "Enforced where",
+      "Breach condition"
+    ],
+    "rows": [
+      [
+        "`wm_max`",
+        "`CAP_WM_MAX`",
+        "a WM assert",
+        "live fact count + 1 > `wm_max`"
+      ],
+      [
+        "`agenda_cap`",
+        "`CAP_AGENDA`",
+        "agenda push in beta/terminal activation",
+        "activations queued + 1 > `agenda_cap`"
+      ],
+      [
+        "`max_fires_per_pump`",
+        "`CAP_MAX_FIRES_PER_PUMP`",
+        "the pump fire loop",
+        "fires this pump + 1 > `max_fires_per_pump`"
+      ],
+      [
+        "`token_pool_cap`",
+        "`CAP_TOKEN_POOL`",
+        "beta join token allocation",
+        "live tokens + 1 > `token_pool_cap`"
+      ],
+      [
+        "`intern_cap`",
+        "`CAP_INTERN`",
+        "intern table insert",
+        "interned strings + 1 > `intern_cap`"
+      ],
+      [
+        "`intern_bytes_cap`",
+        "`CAP_INTERN_BYTES`",
+        "intern table byte accounting",
+        "interned bytes + N > `intern_bytes_cap`"
+      ],
+      [
+        "`pump_wcet_ns`",
+        "`CAP_PUMP_WCET_NS`",
+        "pump-completion timing",
+        "observed pump elapsed ns > `pump_wcet_ns`"
+      ],
+      [
+        "`nodes[i].capacity`",
+        "`CAP_NODE_CAPACITY`",
+        "per-node memory (alpha matches, beta tokens, terminal activations)",
+        "per-node count + 1 > capacity for the node's kind"
+      ],
+      [
+        "`series[i].capacity`",
+        "`CAP_SERIES_CAPACITY`",
+        "series backend append",
+        "backend's stored-sample count + 1 > capacity, for an aggregation whose \"At capacity\" is refuse ([LSER.13.14])"
+      ],
+      [
+        "a slot's declared `capacity`",
+        "`CAP_VALUE_CAPACITY`",
+        "a fact assert or emit writing the slot ([LSTR.11.3])",
+        "value length in codepoints > `capacity`"
+      ],
+      [
+        "`cache_cap`",
+        "`CAP_CACHE`",
+        "`cache` write of a new key (dispatcher)",
+        "live cache keys + 1 > `cache_cap`"
+      ],
+      [
+        "`cache_bytes_cap`",
+        "`CAP_CACHE_BYTES`",
+        "`cache` write value accounting",
+        "cache value bytes + N > `cache_bytes_cap`"
+      ]
+    ]
+  },
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/CapBreach.idr",
+        "name": "Rtct_7_1__observation",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/CapBreach.idr",
+        "name": "rtct_7_1__logical_breach",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A cap decision that reads only LOGICAL state. Eleven of this table's twelve rows are this shape."
+      },
+      {
+        "path": "formal/idris/CapBreach.idr",
+        "name": "rtct_7_1__logical_breach_is_replay_stable",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The eleven logical caps are replay-stable: two observations with the same count decide alike whatever the host measured, because the decision is a function of the count and of nothing else. Stated over the same observation type as the pump_wcet_ns decision so the two theorems say which field each reads; a definition that read elapsedNs would fail it."
+      },
+      {
+        "path": "formal/idris/ConsumptionLoop.idr",
+        "name": "rtct_7_1__fires_within_cap",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "Proves the MECHANISM is sound -- a fuel-bounded run of the engine model (Rete/FireLoop.idr's iret_11_4__run) fires at most `fuel` times, so the max_fires_per_pump row of this table cannot be outrun by the loop it caps. It does NOT establish that any implementation enforces the cap, which is what this clause asserts. Sound and unused is a different failure from wrong, and the verdict says which."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__AssertOk",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__CAP",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__Retract",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__count",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__vars",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_1__within_cap",
+        "tag": "derives"
+      }
+    ]
+  }
+}

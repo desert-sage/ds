@@ -1,0 +1,18 @@
+{
+    "id": "RFCS.15.2_correlation_always_recorded",
+    "clauses": ["RFCS.15.2", "LCRS.3.1", "LCCO.3.4"],
+    "category": "runtime",
+    "scenario": "[RFCS.15.2] with [LCRS.3.1]: a recorded `CallIssued` carries the call's correlation, and a call with no `as` has the one the compiler generates per activation ([LCCO.3.4]), so the field is never empty. Rule `r` calls the `no response` service `svc.ping` with no `as`; two Jobs fire it in two pumps. Each runtime records the session with its own writer, and the harness reads every `CallIssued` atom's `correlation` (field 3) back off the frames: `$r_c0_g0`, then `$r_c0_g1`, the engine's gensym counter starting at 0 and advancing once per firing. The breaks: a recorder that drops the field, or a call issued with no correlation, records none, which reads as `\"\"` in both harnesses; a counter kept per pump would record `g0` twice. PATH PINNED: libds's `ds_rfcs_record_to` writer (`rfcs/codec.c`, the `DS_ATOM_CALL_ISSUED` frame), read back as each `CallIssued`'s message through libds's reader (`pyds.atoms`) in runner.py `_run_rfcs_roundtrip`; the Mercury runtime's `ds.rfcs` `encode_stream` (`se_call_issued`'s field 3), read back by `call_correlations` in compiler/mercury/test/test_behave.m `rfcs_roundtrip_result`.",
+    "rules_ds": "schema Job scope explicit:\n    id: Int\n\nservice svc.ping:\n    kwarg n: Int\n    no response\n\nrule r:\n    Job j\n->\n    call svc.ping n: j.id nocooldown\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Job", "slots": { "id": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_call_correlations": ["$r_c0_g0", "$r_c0_g1"]
+    }
+}

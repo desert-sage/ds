@@ -1,0 +1,11 @@
+{
+    "id": "LCAP.2.1.5_realtime_refused",
+    "clauses": ["LDIA.3.3.7"],
+    "category": "compiler",
+    "scenario": "[LCAP.2.1.5]: `realtime` is not part of this edition, so a `use` block line setting it `true` is refused with DS_VALIDATE_REALTIME_DEFERRED, at the line ([LDIA.3.3.7]). The dialect is `default` and the block sets `constspace: true` as well, so the fundamental constraint of [LCAP.3.8] cannot be what fails, and the program has no sibling `.dsrt`: a compiler that still admits the setting reports DS_VALIDATE_COMPILE_MISSING_DSRT instead. PATH PINNED: the deferred-setting check in override resolution in `dsc.dialect`, the arm for `realtime`, before the constraint check and any `.dsrt` lookup.",
+    "rules_ds": "use default:\n    realtime: true\n    constspace: true\n\nschema Sensor scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REALTIME_DEFERRED"
+    }
+}

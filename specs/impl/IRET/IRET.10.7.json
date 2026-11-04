@@ -1,0 +1,25 @@
+{
+  "id": "IRET.10.7",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.10",
+  "seq": 850,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.10.7] **Withdraw in a nested body: by identity.** A `withdraw b` in a\nnested body ([LGRA.10.1.4]) cannot use a pattern position, because the rule\nthat runs the body is the synthetic sibling, whose activation token does not\nhold `b`'s fact. It lowers instead to an `ACTION_WITHDRAW_BY_ID`, whose\n`withdraw_fact_id` reads a reference to the withdrawn fact from the fact that\ncarries the body's captured values: the capture fact, or for a `timeout` body\nits timer ([LCCO.7.2]).\n\n- **The compiler** must add to the capture fact ([LCCO.5.2], [LTAC.3.5]) one\n  slot per binding a nested body withdraws, typed by that binding's schema\n  ([LGRA.5.7a.2]) and holding a reference to the fact the outer rule bound to\n  it when the rule fired, and the same slot to a `timeout` clause's timer when\n  its body withdraws the binding. A capture fact that carries such a slot has\n  something to capture, so [LCCO.5.6] and [LTAC.3.6] do not omit it.\n- **The engine** must, at fire time, resolve that reference and, when it names\n  a live fact, retract that fact exactly as for `ACTION_WITHDRAW`\n  ([IRET.7.8]), recorded as a `FactWithdraw` with cause `AUTHOR_WITHDRAWN`\n  ([RFCS.7a.2]). A reference names one fact by its id, and an id is never\n  reused ([IRET.4.4]), so once that fact has left working memory the reference\n  names nothing and the action does nothing. A fact replaced by a meaningful\n  change is a new fact ([LFAC.2.5.3]), so its replacement is never matched.\n\nA runtime that does not execute this kind refuses the artefact at load\n([IRET.10.6]).\n\n",
+  "refs": [
+    "IRET.10.6",
+    "IRET.4.4",
+    "IRET.7.8",
+    "LCCO.5.2",
+    "LCCO.7.2",
+    "LGRA.10.1.4",
+    "LGRA.5.7a.2",
+    "LCCO.5.6",
+    "LFAC.2.5.3",
+    "LTAC.3.5",
+    "LTAC.3.6",
+    "RFCS.7a.2"
+  ]
+}

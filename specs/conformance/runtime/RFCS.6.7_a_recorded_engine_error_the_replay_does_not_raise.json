@@ -1,0 +1,17 @@
+{
+    "id": "RFCS.6.7_a_recorded_engine_error_the_replay_does_not_raise",
+    "clauses": ["RFCS.3.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.6.7]: \"An `EngineError` the recording holds and the replay does not re-derive, or the reverse, is a divergence.\" The run halts nothing. `append_engine_error` adds an `EngineError` after the recording's last atom ([RCTS.1.2.18]). The unaltered recording replays, so the refusal is the edit's. The altered one is refused with DS_ERR_FS_DIVERGENCE (-725). The reverse, and a body that differs, need a run that halts, which `replay_refused` does not carry: those are `test_rfcs_6_7__a_replay_re_derives_another_engine_error` in test_fault_emission.c and `test_rfcs_6_7_engine_error_compared` in test_ds.m. Break: a replay that skipped the atom accepts it. PATH PINNED: libds's `verify_match` (rfcs/codec.c), through pyds `Engine.replay` in runner.py `_run_replay_refused`; the Mercury runtime's `ds.replay.lfst_9_3_1_match`, through test_behave.m `replay_refused_result`.",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n\nrule r:\n    T\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "T", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "append_engine_error" },
+        "code": "-725"
+    }
+}

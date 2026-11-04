@@ -1,0 +1,19 @@
+{
+    "id": "LCRS.6.2.4_aliased_response_supersedes",
+    "category": "logical",
+    "scenario": "[LCRS.6.2.4]: an arriving answer supersedes when its service names the response schema through an import alias. `response BR` names `b`'s `Reply`, so ServiceDef must carry its own name, `b.Reply` ([LIMP.13.1]): a runtime marks the response schema by that name, and the spelling `BR` marks nothing. The host asserts reply 1 and reply 2 of one corr, and the second retracts the first, so `probe` logs [\"live 2\"]. PATH PINNED: `dsc.driver.ladp_8_2_1_services` writing ServiceDef's field 3, then the host-assert supersede, `ds_dispatch_supersede_arrival` from `engine_assert_body` (libds) and `ds.exec.lcrs_6_2_4_arrival_victims` (Mercury). The break is the spelling in ServiceDef: both replies stay live and `probe` logs twice.",
+    "rules_ds": "from b import Reply as BR\n\nservice svc.read:\n    kwarg n: Int\n    response BR\n\nschema Probe scope explicit:\n    k: Int\n\nrule probe:\n    Probe\n    BR x\n->\n    log info \"live {x.v}\"\n",
+    "libraries": {
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["live 2"]
+    }
+}

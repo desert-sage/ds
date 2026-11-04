@@ -1,0 +1,7 @@
+{
+    "id": "LUNI.3.1_duration_sub_ms",
+    "category": "compiler",
+    "scenario": "[LUNI.3.1] — `ns` and the three spellings of microsecond are time builtins accepted at duration positions. The suffixes appear at THREE different duration positions — schema `ttl`, pattern `within`, rule `cooldown` — because the builtin set is consulted per use site rather than once, so a table wired into one path and not another would still pass a single-position fixture. The three microsecond spellings are μs (U+03BC GREEK SMALL LETTER MU — the SI symbol, and the canonical form the label and diagnostics use), µs (U+00B5 MICRO SIGN, the Latin-1 duplicate most keyboards actually emit), and `us` (ASCII, for a keyboard offering neither). All three must resolve identically, and each has to be listed rather than normalised into the others: DS normalises identifiers to NFC, and NFC — unlike NFKC — does not fold U+00B5 to U+03BC.",
+    "rules_ds": "schema Pulse scope ttl 250_ns:\n    v: Int\n\nschema Blip scope ttl 3_μs:\n    v: Int\n\nschema Flick scope ttl 3_µs:\n    v: Int\n\nschema Twitch scope ttl 3_us:\n    v: Int\n\nschema Beat scope logical:\n    v: Int key\n    ts: Time\n\nrule quick cooldown 500_ns:\n    Beat within 750_ns\n->\n    log info \"sub-microsecond durations\"\n",
+    "expect": { "kind": "compile_ok" }
+}

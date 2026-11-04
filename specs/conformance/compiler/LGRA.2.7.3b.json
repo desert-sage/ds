@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.2.7.3b",
+    "category": "compiler",
+    "scenario": "Integer literal at the INT64_MIN boundary (-2^63 = -9223372036854775808) compiles cleanly per LGRA.2.7.3. The lexer tokenises the positive magnitude 9223372036854775808 (one past INT64_MAX) before unary minus applies, so it is admitted as a literal only when negated; `-9223372036854775808` folds to a valid INT64_MIN. A bare 9223372036854775808 is still a range error (see LGRA.2.7.3_min_bare).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t where t.v > -9223372036854775808\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

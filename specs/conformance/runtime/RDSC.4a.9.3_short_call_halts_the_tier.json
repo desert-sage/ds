@@ -1,0 +1,21 @@
+{
+    "id": "RDSC.4a.9.3_short_call_halts_the_tier",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.3]: a call that reaches evaluation with operands its op does not admit raises an EngineError with fault ENGINE_FAULT_ARTEFACT_LIED, which halts the tier ([NCBK.2.9]); a runtime must not check the count at load. No compiler writes such a call, so the harness makes one: `tamper: {drop_call_operand: r}` takes the last operand off rule `r`'s first call action, the `log` verb, which [RLOW.7.7.1] gives three, (level, category, message), and re-seals the artefact. The artefact must load. The Trig is asserted and pumped: `r` fires, its two-operand `log` raises, and the stream carries exactly one fault, an `engine_error`, which is its last event ([LERR.1.4.7]). The pump, input 1, is the call during which the EngineError was raised, so it returns DS_ERR_ENGINE_HALTED (-10) itself ([NCBK.2.9]), and the halt latch holds ARTEFACT_LIED ([NCBK.2.11]). Working memory is not read: it is undefined and refused on a halted engine ([RCTS.1.2.25]). A runtime that refuses the artefact at load fails the load; one that skips the action, or logs with a default message, raises nothing; one whose pump returns OK over the halt fails `fault_at`, as the fault then comes at no input; one that halts with another fault fails `halted_fault`. PATH PINNED: libds's `log` adapter counting its operands at evaluation (rete/adapters.c), and the halting call's status from `ds_recorder_api_leave` (recorder.c), through pyds; the Mercury runtime's `ds.dsc_action.verb` decoding the short `log` to `ia_operands_not_admitted` at load and raising `rf_artefact_lied` when the action runs (ds.exec), through test_behave.m's `call_operand_dropped` and `run_runtime_error`, whose `run_step` gives the halting pump its -10. The edit is `dsc_seal.drop_call_operand` for libds and `call_operand_dropped` for Mercury, each with its own walk.",
+    "clauses": ["NCBK.2.9"],
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": { "drop_call_operand": "r" },
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

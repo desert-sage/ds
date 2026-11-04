@@ -1,0 +1,20 @@
+{
+    "id": "RDSC.4a.9.1_a_slot_assign_past_the_schema_faults",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.1]: a `SlotAssign.slot_index` within its field's range that names no slot of the emitted schema is not refused at load; where the engine writes it, it raises an EngineError with fault ENGINE_FAULT_ARTEFACT_LIED, naming the rule, and halts the tier. The engine must not skip the write. The harness compiles rule `on_t`, `T t -> emit U logical w: t.v`, whose network is `T`'s alpha (node 1), its beta (2) and the terminal (3), whose one action asserts `U` with one assignment. `runtime_error`'s `tamper: {set_field: {node: 3, path: [6, 0, 4, 0, 1], value: 1}}` ([RCTS.1.2.21]) writes that assignment's `slot_index` (action 0, `assigns` 0, field 1) as 1: `U` has one slot, so 1 names nothing. The artefact must load. Input 0 asserts `T` `v` 1 and is accepted; input 1 pumps, `on_t` fires, and its action writes the slot: the pump returns DS_ERR_ENGINE_HALTED (-10) ([NCBK.2.9]), the stream's fault events are exactly one `engine_error`, its last event, and the halt latch holds ARTEFACT_LIED. What it discriminates: a runtime that skips the write emits `U` with its key unset, or refuses the emit as a TypeError, and records a `type_error` or no fault; one that refuses the artefact at load fails the load. The rule the EngineError names is not observed by this kind; libds's `test_rdsc_4a_9_1__slot_assign_past_the_schema` and test_ds's `test_rdsc_4a_9_1_index_faults` pin it. PATHS: libds's `eval_actions` assign loop, through pyds; the Mercury runtime's `ds.exec` emit arm, through test_behave.m's `field_set` and `run_runtime_error`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Int key\n\nrule on_t:\n    T t\n->\n    emit U logical w: t.v\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 3, "path": [6, 0, 4, 0, 1], "value": 1}},
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

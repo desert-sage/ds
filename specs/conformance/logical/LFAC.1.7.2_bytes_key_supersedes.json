@@ -1,0 +1,22 @@
+{
+    "id": "LFAC.1.7.2_bytes_key_supersedes",
+    "clauses": ["LFAC.1.7.2", "LFAC.2.5.4"],
+    "category": "logical",
+    "scenario": "[LFAC.1.7.2]: one identity, one live fact, whatever the key slot's type; a `Bytes` key compares by content ([LFAC.2.5.4]). `Tag` is keyed on `raw: Bytes`. Tag 0x01 0x02 n 1 is asserted and pumped; Tag 0x01 0x02 n 2 is the same identity with a new payload, so it supersedes the first and one Tag stays live; Tag 0x01 0x03 differs in its last octet and is a second identity. Exactly 2 live facts. A key never found equal leaves 3; one compared by length or first octet leaves 1. A `Bytes` slot is written `{\"$bytes\": \"<hex>\"}`. PATH PINNED: the identity-key hash and equality, libds `rete/wm_rete.c` `hash_idval` and `idkey_equal` (their `DS_RETE_VAL_BYTES` arms), and the Mercury runtime's identity key over `bytes` values.",
+    "rules_ds": "schema Tag scope logical:\n    raw: Bytes key\n    n: Int mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tag", "slots": { "raw": {"$bytes": "0102"}, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tag", "slots": { "raw": {"$bytes": "0102"}, "n": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tag", "slots": { "raw": {"$bytes": "0103"}, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 2 }
+        ]
+    }
+}

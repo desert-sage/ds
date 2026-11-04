@@ -1,0 +1,11 @@
+{
+    "id": "LIMP.4.2.4",
+    "category": "compiler",
+    "scenario": "Selective-import names are single identifiers per LIMP.4.2.4. Dotted forms (`from ha import light.turn_on`) are compile errors; the grammar's `import_name` production accepts only `IDENT | TYPE_NAME`, so a dotted name surfaces as an unexpected `.` token after the first identifier and rejects with DS_PARSE_GENERIC. Importable identifiers are the principal names declared at the library's top level (schemas, consts, rules, flat-named services, domains) — never an interior segment of a dotted service path.",
+    "rules_ds": "from ha import light.turn_on\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 1
+    }
+}

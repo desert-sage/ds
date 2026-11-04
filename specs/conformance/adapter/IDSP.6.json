@@ -1,0 +1,31 @@
+{
+    "id": "IDSP.6",
+    "clauses": ["RARC.5.7.4"],
+    "category": "adapter",
+    "scenario": "A `call` action arrives at the integrator-side call callback with the right service / correlation / body. Pins IDSP.6 dispatch contract end-to-end.",
+    "rules_ds": "service ha.switch.turn_on:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call ha.switch.turn_on entity_id: \"switch.fan\" nocooldown as \"fan-on\"\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "ha.switch.turn_on",
+                "correlation": "fan-on",
+                "body": {
+                    "entity_id": "switch.fan"
+                }
+            }
+        ]
+    }
+}

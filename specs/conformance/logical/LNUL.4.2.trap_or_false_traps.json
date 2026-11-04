@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.trap_or_false_traps",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]: `or`'s control. `s.a / s.b > 1.0 or s.ok` with Int a, b and b = 0, and ok = false (Int operands, because only an all-Int division traps [LEXP.7.15.1]; a Float `1.0 / 0.0` is +Inf): `false` does not decide an `or`, so the division's ComputationError stands and is recorded, and the rule does not fire.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    a: Int mutable\n    b: Int mutable\n    ok: Bool mutable\n\nrule r:\n    S s where s.a / s.b > 1.0 or s.ok\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "a": 1, "b": 0, "ok": false } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error"]
+    }
+}

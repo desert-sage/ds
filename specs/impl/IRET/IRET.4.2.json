@@ -1,0 +1,43 @@
+{
+  "id": "IRET.4.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.4",
+  "seq": 375,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Schema descriptor",
+  "text": "### Schema descriptor [IRET.4.2]\n\nOne descriptor per registered schema: its name (interned), a compact\nindex used for alpha dispatch, its slot count, its scope, a default TTL\n(meaningful only under `ttl` scope, otherwise zero), and a flat array of\nslot descriptors ([IRET.4.1]).\n\n**Five scope values**: the four lifecycles the language declares, and\n`ambient`, which libds keeps as a value of its own for a `logical` schema\nthat carries the `ambient` modifier ([LSCP.2.5]):\n\n| Scope | Source form |\n|---|---|\n| plain | `scope explicit` |\n| logical | `scope logical` |\n| ttl | `scope ttl <dur>` |\n| activation | `scope activation` ([LSCP.2.4]) |\n| ambient | `scope logical ambient` ([LSCP.2.5]) |\n\n**Two of them carry runtime semantics that the scope value alone does\nnot convey:**\n\n**Activation scope.** Every activation-scoped fact emitted during a rule\nfiring is retracted when that activation ends — at the end of a\nsynchronous RHS, and on *every* async completion path, so no path leaks\nthem. The sweep is keyed by (fact, activation), through the same\ndependency table logical facts use, but it is **unconditional**: unlike a\nlogical fact it does not wait for a justification count to reach zero.\n\n**Ambient scope.** Working memory treats an ambient fact exactly as a\nplain one. The restriction that only ambient-declared rules may emit\nambient facts is a **compile-time** check and is deliberately not\nre-checked at runtime.\n\n",
+  "refs": [
+    "IRET.4.1",
+    "LSCP.2.4",
+    "LSCP.2.5"
+  ],
+  "symbols": [
+    "DS_RETE_SCOPE_ACTIVATION",
+    "DS_RETE_SCOPE_AMBIENT",
+    "DS_RETE_SCOPE_LOGICAL",
+    "DS_RETE_SCOPE_PLAIN",
+    "DS_RETE_SCOPE_TTL"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__ttl_two",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The schema's default TTL, as the deadline table takes it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "Iret_4_2__ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The descriptor's default TTL, by kind: zero for a schema without one, as the clause has it (meaningful only under `ttl` scope, otherwise zero). `dynamic_ttl: true`'s per-emit `retain:` is not modelled: the deadline is a function of the kind."
+      }
+    ]
+  }
+}

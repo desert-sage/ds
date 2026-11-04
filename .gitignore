@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Build artefacts (host or container).
+*.o
+*.d
+*.a
+*.dylib
+
+# Generated protobuf-c outputs (regenerated from proto/dsc/*.proto by
+# the libds Makefile's gen-protos rule per RDSC.12.3).
+runtime/src/libds/dsc/*.pb-c.c
+runtime/src/libds/dsc/*.pb-c.h
+
+# Generated RFCS fact-stream bodies (regenerated from proto/ds/*.proto by
+# the libds Makefile's gen-protos rule, RFCS1a).
+runtime/src/libds/rfcs/*.pb-c.c
+runtime/src/libds/rfcs/*.pb-c.h
+
+# The projected Makefile's record of the VERSION it last built (#639).
+runtime/src/libds/version.stamp
+
+# A rejected download vendor_source.py keeps beside a pinned file (#1916).
+*.rejected
+
+# Test binaries — they live next to their .c sources after build.
+runtime/tests/libds/impl/test_*
+!runtime/tests/libds/impl/test_*.c
+!runtime/tests/libds/impl/test_*.h
+runtime/tests/libds/spec/test_*
+!runtime/tests/libds/spec/test_*.c
+
+# Python build artefacts (compiler tree + pyds tree).
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+builds/
+.eggs/
+# A released compiler + protos unpack here, versioned by what was fetched, so
+# `dist/` does not cover it. Untracked AND unignored is a
+# `git add -A` hazard in a tree shared with concurrent agents.
+dist-*/
+
+# meson-python editable-install artefacts (pyds).
+bindings/python/build/
+bindings/python/.mesonpy*
+
+# jupyter-book renders INTO the book's own source dir, on the host clone. `build/`
+# above does not match `_build`. Load-bearing for build-unit, not just hygiene: source globs
+# skip git-ignored paths, so this is what keeps a book's render out of its own
+# declared inputs (docs/ds_docs.build).
+_build/
+
+# The pass-1 render (XBOOK1). The cross-book link graph is cyclic, so every book
+# is rendered once into `_inv/` purely to emit its objects.inv, then again for
+# real against the others' inventories. Ignored for the same load-bearing reason
+# as `_build/` above: it is a render's own output living inside its source dir.
+_inv/
+
+# The reference books' catalogue tables, generated into each book's `_generated/`
+# by scripts/spec/catalogues.py (#4377). Never committed, so never stale; and
+# ignored for the same load-bearing reason as `_build/`: the books' source globs
+# prune it, and the renders read the files as the catalogues step's outputs.
+_generated/
+
+# The local artifact directory. Builds write their outputs here, the rendered
+# docs site among them (out/flash-*.stamp, out/bench-*.jsonl).
+#
+# Untracked and unignored, a docs build leaves the whole rendered site — 1,543
+# files — in the working tree. Plain `git status` shows ONE `?? out/` line, because git
+# collapses a wholly-untracked directory, so it reads as clean while `git status -uall`
+# shows all 1,543, and `git add -A` would sweep the rendered site into a commit.
+#
+# Trailing slash on purpose: bare `out` would also match a FILE named `out` anywhere.
+out/
+
+# todo / mem CLI runtime lockfiles.
+.mem.db.lock
+.todo.db.lock
+
+# Claude Code's per-checkout state. Nothing in it belongs in the repository;
+# 04c238e4c committed its scheduled-task lock by accident.
+.claude/
+bindings/python/src/pyds/_pyds*.so
+
+# protoc-generated DSC bindings (regenerated per ICOM.11.2; W8).
+# The directory's __init__.py is committed (sys.path shim); only the
+# generated *_pb2.py files are gitignored — regenerated at build
+# (scripts/gen_protos.sh for local dev), never committed.
+compiler/ds_compiler/dsc/proto_gen/*_pb2.py
+compiler/ds_compiler/dsc/proto_gen/*_pb2.pyi
+
+# Per-checkout dev-tool configuration and databases. The `mem` and `todo`
+# stores live outside the repository, and each checkout's .mem.ini and
+# .todo.ini say where; they are local state like the databases.
+.mem.ini
+.todo.ini
+.mem.db
+.mem.db.bak
+.todo.db
+.todo.db.bak
+.todo.db.predelete
+# todo graph render — regenerable via `todo graph`.
+todo-graph.dot
+todo-graph.png
+
+
+# build-unit check-stamps from libds.build's `make all` (lint / harness-run / all).
+runtime/src/libds/build_*.stamp
+
+# build-unit's gate stamps, written at the repo root. A local build leaves a
+# score of them.
+*.stamp
+
+# Per-gate junit documents (P5): the `Report` Output each pytest lane declares.
+# The harness parses them into CaseFailed facts; the record is the durable copy.
+*.junit.xml
+
+# Captured gate output redirected to the repo root. One of these
+# (.gateC.out — a FAILING `spec` run from the spec-ratify branch) was committed
+# and sat in history for a day. A gate log is a transcript of one run against
+# one commit on one host: it is stale the moment it lands, and the durable copy
+# is the .buildstate record the run already writes. Ignore the shape so a
+# `> .gateX.out` while iterating can never become a commit.
+.gate*.out
+
+# v2's state directory — one .buildstate record per run plus the cache index.
+# Both are regenerable: the index is disposable by construction, and a record
+# accounts for a run that has already happened.
+.build/
+
+# Scratch working notes (commit-message drafts, conformance logs, audit
+# notes, ad-hoc analysis dumps). Local-only; never part of history.
+scratch/
+
+# accidental Claude Code transcript dumps
+spacetime.txt
+time.txt
+
+# systemate's generated state, under a target's .systemate/ (systemate's
+# docs/records.md). Listed by name rather than excluding .systemate/ and
+# re-including lib/: naming the generated set means a NEW generated directory
+# shows up in `git status` and somebody notices, while exclude-then-re-include
+# means a new SOURCE directory is silently untracked and only surfaces when
+# another host pulls and the graphs are not there. One mistake is loud; the
+# other is not.
+**/.systemate/run/
+**/.systemate/transcripts/
+**/.systemate/channels/
+**/.systemate/flags/
+**/.systemate/traces/
+
+# Compiled rule artefacts are build OUTPUTS, not sources (RPDSCSTALE3, owner
+# ruling 2026-08-27). REPO-WIDE, with no exemption: a tracked `.dsc` is a
+# licence for the artefact to diverge from the compiler that must load it, and
+# "golden vectors pinned to a released compiler" was considered and rejected for
+# exactly that reason. A second runtime proves it reads what the compiler emits
+# by compiling with THAT compiler, not against a frozen copy of an older one.
+#
+# The ignore rule is the whole mechanism — a `.dsc` cannot be committed, so it
+# cannot go stale. There is deliberately no freshness checker: a check over a
+# population that cannot exist is a check that cannot fail.
+#
+# NOT a licence to keep binaries elsewhere. The fuzz corpus stays base64 for its
+# own reason — those bytes are deliberately malformed INPUTS and regenerating
+# them destroys their value — and that encoding keeps it out of this pattern.
+*.dsc
+
+# Spec-corpus DUMPS. `ALL9.tsv` was 2.8 MB of every clause's `text` field, one
+# row per clause file, committed 2026-07-31 and never regenerated — so by the
+# time it was found it still carried retired protos and a `format_minor` from a
+# ladder two majors old, in a file a reader could easily mistake for the corpus.
+#
+# The corpus is `specs/**/*.json` and the queryable view of it is the DuckDB
+# substrate `scripts/private/spec/spec_db.py` builds on demand ([STYL.5.10.1]). A checked-in
+# flat dump is a second copy of the source that nothing regenerates and no gate
+# reads, which is the [STYL.5.6.2] shape that has already cost this repo 53
+# proto pages and a projected Makefile.
+#
+# Pattern rather than the one filename, so the next dump cannot land under a
+# new name.
+/*.tsv
+runtime/mercury/src/ds.version.m

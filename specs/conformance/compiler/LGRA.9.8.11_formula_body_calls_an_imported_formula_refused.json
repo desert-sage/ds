@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.9.8.11_formula_body_calls_an_imported_formula_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.9.8.11]: `there`'s body calls `to_c`, a function of a formula `lib` declares, which the file holds by importing `ub` ([LIMP.7.7]). Its bodies call nothing, so the call is refused for being a formula's function alone. Every end is a base unit. PATH PINNED: `dsc.validate.lgra_9_8_11_formula_body`, finding `to_c` in the imported `rf_units` through `dsc.quantity.lgra_9_8_11_formula_function`.",
+    "rules_ds": "from lib import ub\n\nunit dimension da storage float64 base ua\nunit ua: da\n\nunit formula ab:\n    there(x: ua): ub = to_c(x)\n    back(x: ub): ua = x\n\nschema Trig scope logical:\n    k: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "libraries": {
+        "lib": "unit dimension db storage float64 base ub\nunit ub: db\nunit dimension dc storage float64 base uc\nunit uc: dc\n\nunit formula bc:\n    to_c(x: ub): uc = x\n    to_b(x: uc): ub = x\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION",
+        "expected_line": 7
+    }
+}

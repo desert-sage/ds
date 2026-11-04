@@ -1,0 +1,31 @@
+{
+  "id": "RCLI.1.10",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 21,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.10] **`dump-ast` writes the input's syntax tree.** The compiler must\nlex, lay out and parse the input and do nothing more: it resolves no name and\nvalidates nothing, so a program that does not compile still dumps when it\nparses. It writes one JSON document, the `Module` node of `tools/ds_ast/ds.asdl`\nand everything under it, to standard output, or to the file `-o` names. The\ninput is a path or `-`, and `--filename` names it, as [RCLI.1.9] says.\n\nWhat the tree's definition cannot carry:\n\n- **A node is an object.** Its `_type` member is its constructor's name, and\n  its other members are its fields and attributes, by name. A sequence is an\n  array, and an absent optional is `null`.\n- **Positions count as the definition's attributes do.** `lineno` is a 1-based\n  line and `col_offset` a 0-based column, counted in code points, so a node's\n  `col_offset` is one less than the `column` a diagnostic gives the same point\n  ([RCLI.3.2]). `end_lineno` and `end_col_offset` may be `null`.\n- **An input that does not parse writes no tree.** It is refused: the compiler\n  exits `1` and reports the diagnostic as `compile` reports one, under\n  `--diagnostics` ([RCLI.3.2]).\n\n",
+  "refs": [
+    "RCLI.1.9",
+    "RCLI.3.2"
+  ],
+  "checks": {
+    "asdl": [
+      {
+        "path": "tools/ds_ast/ds.asdl",
+        "name": "Module",
+        "tag": "spec"
+      }
+    ],
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "dump_ast",
+        "tag": "spec"
+      }
+    ]
+  }
+}

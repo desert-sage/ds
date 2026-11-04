@@ -1,0 +1,11 @@
+{
+    "id": "LSER.16.3.1_var_is_not_an_aggregation",
+    "clauses": ["LSER.16.3.1", "LSER.17.2"],
+    "category": "compiler",
+    "scenario": "[LSER.16.3.1] / [LSER.17.2]: the variance aggregations are spelled `variance` and `pvariance`, and `var` is not an aggregation. A series line declaring `var sliding 1_h` names an aggregation [LSER.17.2] does not list, and is refused with the code any other unknown aggregation gets, DS_VALIDATE_SERIES_AGG_NOT_SUPPORTED. PATH PINNED: `dsc.series.applicability_agg`'s `lser_17_2_aggregation` test, whose table does not hold `var` or `pvar`.",
+    "rules_ds": "schema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nseries Reading.level (by: dev):\n    var sliding 1_h\n\nrule r:\n    Reading s where s.level > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_AGG_NOT_SUPPORTED"
+    }
+}

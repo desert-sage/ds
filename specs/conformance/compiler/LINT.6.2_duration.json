@@ -1,0 +1,9 @@
+{
+    "id": "LINT.6.2_duration",
+    "category": "compiler",
+    "scenario": "LINT.6.2 \u2014 `i.duration` desugars to `end - start`. Pin: `(m.window_start..m.window_end).duration > 1_s` over Time slots compiles. For Time endpoints `end - start` is a Duration (LTIM.4.1), so comparing it with a duration literal type-checks. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the subtraction is not observed.",
+    "rules_ds": "schema W scope logical:\n    entity_id: String key\n    window_start: Time mutable\n    window_end: Time mutable\n\nrule r:\n    W m where (m.window_start..m.window_end).duration > 1_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

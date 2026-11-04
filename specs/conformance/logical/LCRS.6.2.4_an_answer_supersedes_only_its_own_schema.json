@@ -1,0 +1,21 @@
+{
+    "id": "LCRS.6.2.4_an_answer_supersedes_only_its_own_schema",
+    "category": "logical",
+    "scenario": "[LCRS.6.2.4], [LIMP.13.2]: `response BR` names `b`'s `Reply`, and `a` declares a `Reply` of its own, which no service answers with. The host asserts `a.Reply` of `corr` c1, then `b.Reply` twice of that `corr`. The second answer supersedes the first, and `a.Reply` is no answer, so it stays live. `Probe` then fires each rule on what is live: exactly [\"a 9\", \"b 2\"]. A runtime marking the response schema by the `NAME` supersedes `a`'s fact too and loses `a 9`. PATH PINNED: `dsc.imports.lgra_23_1_responses`, whose ServiceDef carries `b.Reply`, then the host-assert supersede, `ds_dispatch_supersede_arrival` (libds) and `ds.exec.lcrs_6_2_4_arrival_victims` (Mercury).",
+    "rules_ds": "from a import Reply as AR\nfrom b import Reply as BR\n\nservice svc.read:\n    kwarg n: Int\n    response BR\n\nschema Probe scope explicit:\n    k: Int\n\nrule on_a:\n    Probe\n    AR x\n->\n    log info \"a {x.v}\"\n\nrule on_b:\n    Probe\n    BR y\n->\n    log info \"b {y.v}\"\n",
+    "libraries": {
+        "a": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n",
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.Reply", "slots": { "corr": "c1", "v": 9 } },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a 9", "b 2"]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "id": "LFST.8.10_strip_bytes_slot",
+    "category": "runtime",
+    "scenario": "[LFST.8.10], [RFCS.5.1]: a Bytes slot decodes from the stream's own Slot announcement exactly as from the artefact, and as asserted. The octets are 00 ff 7f 80: a leading NUL, which a decoder that treated the field as C text would stop at, and bytes that are not valid UTF-8 (ff, 80), which a decoder that treated it as a String would refuse or replace. Same driver as LFST.8.2. test_behave.m `artefact_strip_result` decodes the Mercury runtime's recording with the artefact and without it, and both decodes must equal the values asserted. runner.py `_run_rfcs_artefact_strip` decodes libds's recording with the artefact (`Engine.decode_fact_body`) against the values asserted; pyds binds no decoder without an artefact, so libds's announcement-typed decode (`ds_rfcs_decode_announced_fact_body`) is pinned in C by test_rfcs_announced_body.c.",
+    "rules_ds": "schema Blob scope logical:\n    id: String key\n    data: Bytes mutable\n",
+    "expect": {
+        "kind": "rfcs_artefact_strip",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": "b1", "data": { "$bytes": "00ff7f80" } } }
+        ]
+    }
+}

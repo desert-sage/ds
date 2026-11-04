@@ -1,0 +1,30 @@
+{
+    "id": "LFAC.1.3a",
+    "clauses": ["RARC.5.2.4", "LFAC.1.3.3"],
+    "category": "logical",
+    "scenario": "TTL fact retraction during pump emits a fact_retract stream event: each TTL retraction reaches the stream with its own `seq` (RARC.5.2.4), for a `ttl` fact expired via its TTL (LFAC.1.3.3). Retraction observability through the stream sink.",
+    "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_retract"
+        ]
+    }
+}

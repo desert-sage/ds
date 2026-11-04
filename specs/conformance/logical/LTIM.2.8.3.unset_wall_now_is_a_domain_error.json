@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.2.8.3.unset_wall_now_is_a_domain_error",
+    "category": "logical",
+    "scenario": "[LTIM.2.8.3] / [LERR.1.4.10]: `now()` read while the wall clock has no value is a ComputationError of kind DOMAIN, and the engine continues. The engine is on the mock clock and the wall clock is never set (`wall_clock: unset` keeps the harness from giving it the epoch). Two rules match one fact: `stamp`, first in source order, reads `now()` in a `let`; `later` logs. The pump raises the computation error from `stamp`'s action and then fires `later` in the same pump, so the stream holds a computation_error before the action_log. The kind is the discriminator against the placeholder this replaced: an artefact fault reaches the stream as engine_error, not computation_error. Drives libds's NOW node in rete/eval.c (DS_FAULT_DOMAIN) and Mercury's `e_now` (`rf_domain`).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n\nrule stamp:\n    S\n->\n    let t = now()\n    log info \"stamp {t}\"\n\nrule later:\n    S\n->\n    log info \"later\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "wall_clock": "unset",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "action_log"]
+    }
+}

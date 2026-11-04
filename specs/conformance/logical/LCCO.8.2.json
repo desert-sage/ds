@@ -1,0 +1,23 @@
+{
+    "id": "LCCO.8.2",
+    "category": "logical",
+    "scenario": "`error:` continuation fires on CallError per LCCO.8.1/8.2. Simulate: trigger → pump (call fires) → assert CallError with matching corr → pump → error clause fires. Pin: action_log appears in error clause.",
+    "rules_ds": "service svc.read:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.read entity_id: t.entity_id cooldown: 1_min as \"corr2\"\n        error:\n            log info \"call failed\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "dev1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "corr2", "code": "transport.timeout", "message": "no response", "ts": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "rule_fire_begin",
+            "action_call",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end"
+        ]
+    }
+}

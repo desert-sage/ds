@@ -1,0 +1,27 @@
+{
+    "id": "LFAC.1.2k",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "TTL `1_s` precision, the expiry side \u2014 the fact is gone after a 1_100_ms advance + pump, past the 1_s boundary (RARC.5.2.4; LFAC.1.3.3). The survival side, at 999_ms, is temporal/LFAC.1.2b. Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema Beat scope ttl 1_s:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Beat",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "advance",
+                "delta_ns": 1100000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

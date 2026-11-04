@@ -1,0 +1,12 @@
+{
+    "id": "LLOG.15.3_self_replacing_flip_refused",
+    "category": "compiler",
+    "clauses": ["LLOG.11.9"],
+    "scenario": "[LLOG.15.3]'s first bullet: an emit the literal break refutes compiles \"unless it replaces a fact the rule itself matched, which [LLOG.11.9] refuses\". The HonestPolitician shape. `corrupt` binds `Politician p where p.honest == true` and emits `Politician logical name: p.name honest: false`: the emit's key slot `name` is `p`'s own, and `honest: false` differs from the `true` the pattern requires, as LCYC.6.1.2 compares them. So the emit replaces the fact `p` matched ([LFAC.2.5.3]) and ends `corrupt`'s match at that emit; the `Politician` it makes would be withdrawn as it is made ([LLOG.15.1]). Being `logical`, it is refused with DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING at the emit, line 17. The literal break still drops `corrupt -> hope` and `corrupt -> corrupt`, so the rule graph admits the program and the refusal is LLOG.11.9's. PATH PINNED: `dsc.validate`'s `llog_11_9_self_replacing`, comparing through `dsc.cycle`'s `llog_11_9_literal_breaks`. Control: LLOG.15.3_literal_flip_admitted, the same flip made by a rule that binds no `Politician`, which compiles. Twin: LLOG.15.3_withdraw_refused, these rules with `withdraw p` in place of the emit.",
+    "rules_ds": "schema Politician scope logical:\n    name: String key\n    honest: Bool mutable\n\nschema Hope scope logical:\n    name: String key\n\nrule hope:\n    Politician p where p.honest == true\n->\n    emit Hope logical name: p.name\n\nrule corrupt:\n    Politician p where p.honest == true\n    Hope h where h.name == p.name\n->\n    emit Politician logical name: p.name honest: false\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING",
+        "expected_line": 17
+    }
+}

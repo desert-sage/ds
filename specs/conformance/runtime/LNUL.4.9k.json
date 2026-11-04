@@ -1,0 +1,19 @@
+{
+    "id": "LNUL.4.9k",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] — a `Time` written by `now()` answers `is Int` TRUE. Drives the libds TIME-TAG route specifically: rule `stamp` binds `now()` in a let and emits it into a `Time`-typed slot, so the stored value carries DS_RETE_VAL_TIME rather than DS_RETE_VAL_INT; rule `check` then reads that slot through the eval arm's IS_SUBJECT_INT case. Two rules because `now()` is let-RHS-only and a `where` cannot read a let, so the TIME tag has to be put into working memory by one activation and tested by another. Pins the arm at `rete/eval.c`'s DS_RETE_IS_INT: an arm that reads `v.kind == DS_RETE_VAL_INT` alone answers FALSE here. ONLY MEANINGFUL BESIDE LNUL.4.9l, which drives the other route into the same slot: this one cannot fail in Mercury (it has no separate write path to disagree about), and it is the pair that pins provenance-independence rather than either alone. fact_count 3 — Ping, Stamped, Marker.",
+    "rules_ds": "schema Ping scope logical:\n    entity_id: String key\n\nschema Stamped scope logical:\n    entity_id: String key\n    stamp: Time mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule stamp:\n    Ping p\n->\n    let n = now()\n    emit Stamped logical entity_id: p.entity_id stamp: n\n\nrule check:\n    Stamped s where s.stamp is Int\n->\n    emit Marker logical entity_id: s.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Ping",
+                "slots": {
+                    "entity_id": "a"
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

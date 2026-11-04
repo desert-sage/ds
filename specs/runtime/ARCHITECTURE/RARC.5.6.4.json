@@ -1,0 +1,624 @@
+{
+  "id": "RARC.5.6.4",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.6",
+  "seq": 608,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "3. [RARC.5.6.4] Applies the event to working memory (assert /\n   retract / TTL update / logical retract).\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__count_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Another kind's count is untouched by a change confined to one."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__count_remove_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing a live fact strictly lowers its kind's count."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__count_remove_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removal never raises a kind's count."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__facts_of_kind_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Facts of a kind distribute over ++."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__frame_append",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Appending a fact is a change confined to its kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__frame_remove",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing a fact is a change confined to its kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/Lemmas.idr",
+        "name": "rarc_5_6_4__frame_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Frame composes."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "rarc_5_6_4__all_facts_of_kind",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Facts of a kind have that kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "Rarc_5_6_4__frame_pred",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A change confined to the kinds satisfying a predicate: every other kind's facts are the same list. The single-kind frame is the case of one kind."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "rarc_5_6_4__facts_of_kind_retract",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting ids none of which belongs to a fact of a kind leaves that kind's facts alone."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "rarc_5_6_4__counts_by_kind",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Live-fact count per kind, for run reports."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Rarc_5_6_4__frame",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A change confined to one kind: every other kind's facts are unchanged. What every emit and withdraw satisfies, and what the termination measure's per-stratum locality rests on. Defined beside the working-memory type it is about; the frame lemmas are in Lcyc/Lemmas.idr."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Rarc_5_6_4__wm",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Working memory is the list of live facts, in assertion order. Assert appends, retract removes; TTL update and logical retract are outside the engine (no time, no TMS)."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_4__count_kind",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "How many live facts of a kind."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_4__facts_of_kind",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The live facts of a kind, in assertion order."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_4__is_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Whether an id is live."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_4__lookup_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The live fact with an id, if any."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_4__remove_exact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Retract: remove exactly this fact (id, kind, value all equal). The id alone would do in every reachable state; removing by the whole fact keeps that a consequence rather than an invariant the proofs carry."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "rarc_5_6_4__apply_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An input applied to the engine: an adapter assert under the kind's lifecycle, or the retraction of a live fact by id; an id not live is a no-op. Rete/PumpBoundary.idr's events, so the two models share a history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a host assert leaves live: live before, or the fact minted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A data event keeps what is carried: a no-op leaves the net; an assert or the retraction of a live fact, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_retract_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A host retraction only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_4__apply_actions",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_4__apply_keyless",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "rarc_5_6_4__apply_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An input keeps one live fact per key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_4__apply_net_view",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_4__applied_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Inputs with no pump between them keep the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "rarc_5_6_4__apply_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's apply keeps the frame invariant: inputs are not framed and need not be."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_3__prepare_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A data event prepared is the clause's apply, after the sweep this model runs as the input is consumed; RARC.5.6.3 runs the sweep at the pump's entry instead, and an input retracts nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_3__prepare_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_tms_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's apply with the cascade keeps the invariant: inputs are not framed and need not be."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_tms_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's apply fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_ttl_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's apply on the clocked network keeps the invariant; the deadline table rides beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "rarc_5_6_4__apply_ttl_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__applied_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And keeps every activation unfired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__apply_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert and retract on working memory create no fired activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rarc_5_6_4__applied",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "INPUTS APPLIED WITH NO PUMP BETWEEN THEM: a hundred asserts, say, then one pump. The canonical cadence ([LFST.9.2.1]) pumps after each; this one lets the activations accumulate. The definition is the clause's apply, iterated."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rarc_5_6_4__applied_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's apply, iterated with no pump between, keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_6_4__apply_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT keeps the order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "rarc_5_6_4__remove_exact_absent",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Removing a fact not live changes nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "rarc_5_6_4__remove_exact_elem_fwd",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live fact other than the removed one survives the removal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkPaths.idr",
+        "name": "rarc_5_6_4__remove_exact_elem_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fact of working memory less a fact was live and is not that fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_4__apply_g",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An input with the set beside it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_4__apply_g_fst",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The ghost's input is the model's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "rarc_5_6_4__apply_sound",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT keeps the ghost sound."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_4__apply_ttl_net_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's assert and retract move no clock: the sample is the loop's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_6__input_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A DATA INPUT applied to working memory: Rete/NetworkTtl.idr's apply on the swept net, with the stamps beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_6__input_timed_projects",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The event's application is Rete/NetworkTtl.idr's, by projection."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_assert_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An assert that changes working memory on FireLoopTms is the assert, one propagation, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_assert_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A no-op assert on FireLoopTms touches nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_retract_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction of a live id on FireLoopTms is the removal, one propagation, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_retract_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction of an id not live touches nothing on FireLoopTms."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_tms_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Apply the event to the network, propagate through it, and run the cascade the ended activations demand; a no-op assert and a retraction of an id not live touch nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_tms_net_assert_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An assert that changes working memory is the network's assert, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_tms_net_assert_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A no-op assert on the network touches nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_tms_net_retract_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction of a live id is the network's retract, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rarc_5_6_4__apply_tms_net_retract_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A retraction of an id not live touches nothing on the network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__apply_tms_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT AGREES: a no-op assert or a retraction of an id not live touches neither side; otherwise the network's assert or retract and FireLoop's assert-then-propagate or retract-then-propagate agree, and the cascades after them agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "iret_19_1__assert_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "FireLoop's assert under the kind's lifecycle, then one propagation when working memory changed: what the Emit action and the asserted input both do, named so that a statement can mention it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rarc_5_6_4__apply_plain_assert",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An asserted input is the named assert-then-propagate with nothing to avoid."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__apply_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN INPUT AGREES: the network's assert or retract and FireLoop's plain apply -- the same decision under the kind's lifecycle, then one propagation -- keep the agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_4__apply_plain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An input applied to a FireLoop state without the TMS phase: the assert under the kind's lifecycle, or the retraction by id, then one propagation. What Rete/PumpBoundary.idr's apply does before its phase, and what Rete/Network.idr does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_4__apply_plain_well",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An input applied keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rarc_5_6_4__apply_ttl_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A data event on the network; an adapter assert mints its deadline at the clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "rlow_4_2_1__apply_ttl_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A DATA EVENT AGREES, the adapter assert's deadline included."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_4__apply_sampled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's apply, with the stamps updated beside it at the held sample. The definition follows the clause."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "rarc_5_6_4__apply",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Apply the event to working memory, propagate, and run the cascade the ended activations demand [IRET.12.2]. An adapter assert has no bound ids to avoid; a retraction of an id not live is a no-op. TTL updates are not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "rarc_5_6_4__apply_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Applying an event keeps the run invariant and the kinds of the rows' targets."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "rarc_5_6_4__is_live_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And a live id belongs to a live fact."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "rarc_5_6_4__is_live_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`is_live` holds of a live fact's id."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "rarc_5_6_4__lookup_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a lookup returns is live and carries the id."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "rarc_5_6_4__lookup_some",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live fact's id looks up to some live fact."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_4__is_live_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Not live in a working memory, not live in any part of it."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_4__apply_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Apply a data event: the engine's application of Rete/PumpBoundary.idr, and an adapter assert stamps the fresh id at the clock."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "rarc_5_6_4__apply_ttl_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Applying a data event keeps the clocked invariant and the clock: the assert is a mint of the fresh id followed by an external cascade; the retraction only removes."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_4__MAXF",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/pump_atomicity.tla",
+        "name": "rarc_5_6_4__wm",
+        "tag": "spec"
+      }
+    ]
+  }
+}

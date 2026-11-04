@@ -1,0 +1,23 @@
+{
+  "id": "NADP.4.2.2",
+  "prefix": "NADP",
+  "doc": "ADAPTERS.md",
+  "parent": "NADP.4.2",
+  "seq": 273,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NADP.4.2.2] **Sync vs async work.** The cb runs on\nthe pump's stack per IARC.1.10 (no internal threads);\nit must not block. It must not assert either: every call on the engine that\nfired it returns `DS_ERR_STATE` ([RARC.13.16], [NCBK.1.2]). So the response fact\nis asserted once that call has returned ([NCBK.6.4]). Two patterns:\n\n- **Sync — fast services.** The adapter performs\n  the work inline (a quick HA state-machine call,\n  for instance), keeps the result, and returns DS_OK.\n  Once the pump has returned, it asserts the response\n  fact via `ds_engine_assert`.\n- **Async — slow / latency-unbounded services.**\n  The adapter queues the work onto its own runtime\n  (asyncio task, thread pool, message broker\n  publish) and returns DS_OK without asserting. The\n  response arrives later when the queued work\n  completes; the adapter's runtime then asserts the\n  response fact from whichever thread the integrator\n  pumps the engine on. A service declaring `no response`\n  asserts nothing on success.\n\n",
+  "refs": [
+    "IARC.1.10",
+    "NCBK.1.2",
+    "NCBK.6.4",
+    "RARC.13.16"
+  ],
+  "errors": [
+    "DS_ERR_STATE"
+  ],
+  "symbols": [
+    "ds_engine_assert"
+  ]
+}

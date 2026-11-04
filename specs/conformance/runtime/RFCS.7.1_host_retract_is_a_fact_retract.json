@@ -1,0 +1,25 @@
+{
+    "id": "RFCS.7.1_host_retract_is_a_fact_retract",
+    "category": "runtime",
+    "scenario": "[RFCS.7.1]: a `FactRetract` records the host's retraction of a fact it asserted. A Trig is asserted and pumped, then retracted by its handle and pumped again. The stream is the assert's ClockAdvance and FactAssert, the first pump's PumpBoundary, the FactRetract, then the second pump's PumpBoundary. The clock never moves, so there is one ClockAdvance ([RFCS.10.3]). Break: a recorder that wrote the host's retraction as a FactWithdraw, or dropped it, changes the list. PATH PINNED: libds's `ds_rfcs_record_to` through pyds `Engine.record` (runner.py), and the Mercury runtime's `ds.rfcs` writer (test_behave.m).",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+            { "op": "pump" },
+            { "op": "retract", "label": "t" },
+            { "op": "pump" }
+        ],
+        "expected_atoms": [
+            "StreamHeader",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot", "Slot", "Slot", "Slot",
+            "SchemaDef", "Slot",
+            "ClockAdvance", "FactAssert", "PumpBoundary",
+            "FactRetract", "PumpBoundary"
+        ]
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LGRA.7.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.7",
+  "seq": 817,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.7.1] Series productions:\n\n```\nseries_decl       ::= 'series' slot_ref block_opts? ':' NEWLINE\n                      INDENT docstring? series_line+ DEDENT\n\nslot_ref          ::= (NAME '.')? NAME\n\nblock_opts        ::= '(' block_kwarg (',' block_kwarg)* ')'\nblock_kwarg       ::= 'by' ':' (NAME | 'none')\n                    | 'capacity' ':' INT_LIT               ;; LSER.13.14\n                    | 'nulls' ':' ('skip' | 'hold' | 'zero') ;; LNUL.8.6\n\nseries_line       ::= agg_list time_model accuracy? gap_policy? ('as' NAME)? NEWLINE\nagg_list          ::= agg_name (',' agg_name)*\nagg_name          ::= NAME                           ;; per LSER.16\ngap_policy        ::= 'gap' ('hold' | 'zero' | 'skip') ;; integral only — LSER.13.5.1\ntime_model        ::= 'all_time'\n                    | 'sliding'  duration\n                    | 'tumbling' duration\n                    | 'sample'   INT_LIT\naccuracy          ::= 'exact'                    ;; all five parse and are\n                    | 'tolerance'  FLOAT_LIT     ;; then REJECTED — see below\n                    | 'confidence' FLOAT_LIT\n                    | 'delta'      FLOAT_LIT\n                    | 'bound' 'deterministic'\n```\n\nThe `accuracy` alternatives **parse**, and every one of them is then rejected\nby the validator ([LSER.15.1]). They are in the grammar so\nthe diagnostic can name the phrase the author wrote.\n\n",
+  "refs": [
+    "LNUL.8.6",
+    "LSER.13.14",
+    "LSER.13.5.1",
+    "LSER.15.1",
+    "LSER.16"
+  ]
+}

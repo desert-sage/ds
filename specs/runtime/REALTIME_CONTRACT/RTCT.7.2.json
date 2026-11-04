@@ -1,0 +1,63 @@
+{
+  "id": "RTCT.7.2",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.7",
+  "seq": 579,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.7.2] **Breach semantics, for a cap decided on a count the engine\nholds.** The breach returns `DS_ERR_CONTRACT_BREACH` from the API call that\ntriggered the check. The engine MUST NOT mutate state on a breaching\ncall (the assert / push / fire / append does not happen).\nSubsequent calls work normally — the engine is not\n\"poisoned\" — but the operation that breached is rejected.\n\n**Ten of [RTCT.7.1]'s eleven caps are that shape.** `pump_wcet_ns` is not: it\nis decided on a measurement taken after the work has already happened, so there\nis no operation left to refuse and no intact state to carry forward. It halts\nthe tier ([RTCT.7.3]).\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH"
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__AssertBreach",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__POISONS",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__breach_no_mutation",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__latched",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__not_poisoned",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__poisoned",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__refused_only_over_cap",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/rt_cap_enforcement.tla",
+        "name": "rtct_7_2__result",
+        "tag": "spec"
+      }
+    ]
+  },
+  "refs": [
+    "RTCT.7.1",
+    "RTCT.7.3"
+  ]
+}

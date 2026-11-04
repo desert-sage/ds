@@ -1,0 +1,17 @@
+{
+    "id": "RFCS.5.4_long_schema_names_replay",
+    "clauses": ["RFCS.6a.1"],
+    "category": "runtime",
+    "scenario": "[RFCS.5.4]: a `FactAssert` names its schema, and a replay finds the schema by that name. No clause bounds a schema name's length. Here both schemas' names are past 63 bytes: `SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter` (69 bytes) and `DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast` (71 bytes). `r` emits the second from the first ([RFCS.6a.1]). One assert and one pump are recorded, and each runtime verify-replays its own recording: the asserted fact must be found by its whole name, and the re-derived emit must compare equal to the recorded `FactEmit`, long name included. A decoder that cuts the name refuses to replay its own recording with DS_ERR_SCHEMA_UNKNOWN (-101): the cut name names no schema. The run and tier ids, which this kind does not set, are RFCS.4.3_long_ids_and_schema_names_round_trip's. PATH PINNED: libds records through rfcs/codec.c's recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`, runner.py `_run_replay_determinism`), whose replay schema pool takes the decoded name's view; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay` (`replay_stream`, compiler/mercury/test/test_behave.m).",
+    "rules_ds": "schema SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter scope logical:\n    v: Int key\n\nschema DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast scope logical:\n    v: Int key\n\nrule r:\n    SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter t\n->\n    emit DerivedAlarmForTheSubstationFeederBreakerTemperatureProbeOfTheNorthEast logical v: t.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "SubstationFeederBreakerTemperatureProbeReadingFromTheNorthEastQuarter", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3,
+        "min_rule_fires": 1
+    }
+}

@@ -1,0 +1,109 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// Portable test IR — the scenario atoms (Test*): TestCase, TestFact,
+// TestCacheSeed, TestResponse, TestReply.  Companion to the oracle atoms
+// (Oracle*, test_oracle.proto): Test* is what a `.dstest` feeds, Oracle* is
+// what it asserts.
+//
+// Test atoms are ADDITIVE metadata: a runtime that does not run tests SKIPS
+// them (skip-don't-reject — RDSC.9.4's unknown-atom default), exactly like the
+// planning atoms; it never rejects a bundle on their presence.
+//
+// THAT DISPOSITION IS FOR A RUNTIME, NOT FOR A TEST INTERPRETER (RTIM.14.9 /
+// RTIM.14.10).  An interpreter must account for every oracle atom it finds under a
+// test_id and FAIL the case when it evaluated fewer than it found.  A skipped
+// assertion in production is inert; a skipped assertion in a test run is a case
+// reporting success over a check that did not happen.
+//
+// The distinction matters more here than for any other family, because the
+// version gate is deliberately switched off for these atoms.  For every other
+// wire extension an old reader refuses
+// the bundle; for this one it silently runs a weaker test — an unknown modifier
+// on a known head degrades to the head's bare meaning, and an unknown head
+// vanishes.  RTIM.14.9 stands where the gate normally stands.  They also join the `dsc strip-tests` set so a
+// production bundle can carry none.  Full spec: RTIM (execution), LTSL
+// (surface), RLOW.17 (lowering).
+//
+// Joins — cross-references by number. A runtime's load does not check them: it
+// skips the family (RDSC.9.4). The `.dstest` interpreter checks them, before any
+// case runs, and refuses the run over one that names no atom (RTIM.14.15,
+// RDSC.8.7):
+//   module_id -> owning module (import-DAG order, leaves first).
+//   test_id  -> joins every Test* / Oracle* member to its TestCase.
+//   stub_id  -> joins TestReply replies to their TestResponse.
+//   expr_id  -> unassigned: an oracle's `where` predicate is a synthesised
+//               rule bound by name ([RTIM.14.11]).
+//
+// Construction atoms (TestFact/TestReply/TestCacheSeed) carry LITERAL slot/values inline;
+// oracle atoms carry a partial match (slot-equality + optional
+// expr_id).  This mirrors the surface split: emit-style construction vs
+// pattern-style matching.
+
+// A literal slot value: the same four primitive kinds `Expr`'s literal arms
+// carry.
+message TestSlotLiteral {
+  string slot_name = 1;        // unused for the TestCacheSeed cache value carrier
+  oneof value {
+    int64  i_val = 2;          // INT
+    double f_val = 3;          // FLOAT
+    string s_val = 4;          // STRING
+    bool   b_val = 5;          // BOOL
+    uint64 d_val = 6;          // DURATION — nanoseconds
+    string j_val = 7;          // JSON — the json("<text>") literal text, verbatim
+  }
+}
+
+// TestCase — one test case.  Drives a fresh engine per case (RTIM ITST
+// per-scenario isolation).
+message TestCase {
+  uint32 test_id  = 1;
+  string name     = 2;
+  uint64 until_ns = 3;         // extend the run past the last stamp; 0 = none
+  uint32 module_id = 4;        // owning module
+  // LTSL time model: false = relative duration offsets (monotonic clock only);
+  // true = absolute ISO-8601 stamps (pins wall-clock for rules reading now()).
+  bool   absolute_time = 5;
+}
+
+// TestFact — a fact placement: an `initial` arrange fact OR a timeline input.
+message TestFact {
+  uint32 test_id      = 1;
+  bool   is_initial   = 2;     // true: `initial:` fact (when_ns ignored)
+  uint64 when_ns      = 3;     // offset from case start (or absolute, per TestCase)
+  string schema_name  = 4;     // compile-bound; dangling = compile error
+  repeated TestSlotLiteral slots = 5;
+  uint32 source_order = 6;     // same-stamp tie-break (LDET.5)
+}
+
+// TestCacheSeed — a cache seed for `initial:` arrange (the live cache map).
+message TestCacheSeed {
+  uint32 test_id = 1;
+  string key     = 2;
+  TestSlotLiteral value = 3;   // slot_name unused; the literal carries the value
+}
+
+// TestResponse — a `for call` stub: the environment's reply policy for one outbound
+// call.  A stub MUST identify the call (correlation or arg_match) so its reply
+// can carry the matching corr (bare matching is reserved for OracleCall `called`).
+message TestResponse {
+  uint32 stub_id     = 1;      // unique; joins TestReply replies
+  uint32 test_id     = 2;
+  string service     = 3;      // service[.method], as the rule wrote it
+  string correlation = 4;      // "" = match by arg_match only
+  repeated TestSlotLiteral arg_match = 5;  // kwarg-equality keys
+  uint64 after_ns    = 6;      // reply delay; 0 = immediate (same logical tick)
+  bool   no_response = 7;      // intentionally unanswered (the timeout path)
+}
+
+// TestReply — one constructed reply fact for a TestResponse stub.  A batch reply is many
+// TestReply with the same stub_id, applied in reply_order.
+message TestReply {
+  uint32 stub_id     = 1;
+  string schema_name = 2;      // compile-bound; the service's response schema or CallError ([LTSL.7.3])
+  repeated TestSlotLiteral slots = 3;
+  uint32 reply_order = 4;      // deterministic order within a stub
+}

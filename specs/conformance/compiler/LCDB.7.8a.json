@@ -1,0 +1,11 @@
+{
+    "id": "LCDB.7.8a",
+    "category": "compiler",
+    "scenario": "Duplicate `cooldown` modifier on the same rule is a parse-time error per LCDB.7.8 / LGRA.6.6.7. The grammar accepts `rate_mod*` but the compiler folds duplicates and rejects.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r cooldown 5_min cooldown 1_min:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_DUP_RATE_MOD",
+        "message_contains": "duplicate `cooldown`"
+    }
+}

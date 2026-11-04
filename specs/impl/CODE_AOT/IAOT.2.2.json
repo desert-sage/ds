@@ -1,0 +1,15 @@
+{
+  "id": "IAOT.2.2",
+  "prefix": "IAOT",
+  "doc": "CODE_AOT.md",
+  "parent": "IAOT.2",
+  "seq": 70,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IAOT.2.2] For each alpha, beta and terminal node the compiler:\n\n1. Translates the node's expression tree to a C function matching\n   the appropriate signature ([IAOT.1]). The trees come from the\n   resolved program and the Rete network — `emit_aot_atoms` takes\n   `list[resolved.Program]` and a `ReteNetwork`, and the code\n   generator walks the resolved actions. ⚠ It re-derives what the\n   lowerer already computed, which is the defect AOTRHSTERM1\n   records: consume the lowered `TerminalNode` action list instead.\n2. Writes the C function to a temporary `.c` file.\n3. Invokes the C compiler:\n   ```\n   cc -O2 -fPIC -c -o <node>.o <node>.c\n   ```\n4. Extracts the `.text` section from the resulting object file.\n5. Prepends a zero-filled slot table of the correct size (RHS only).\n6. Emits a `CompiledCode` atom with `arch`, `node_id`, `kind`, and `body`.\n\n",
+  "deferred": true,
+  "refs": [
+    "IAOT.1"
+  ]
+}

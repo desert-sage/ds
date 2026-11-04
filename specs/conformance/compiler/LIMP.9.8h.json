@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.9.8h",
+    "category": "compiler",
+    "scenario": "Qualified const ref naming a non-existent library export per LIMP.4.1.1. Pin: `import ha` followed by `let retry_after = ha.NOT_THERE` rejects with DS_VALIDATE_UNKNOWN_QUALIFIED_CONST because library `ha` exports no const `NOT_THERE`. The library imports cleanly (so DS_VALIDATE_UNKNOWN_QUALIFIER doesn't fire); only the const lookup fails.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    let retry_after = ha.NOT_THERE\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "const RETRY = 30_s\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_QUALIFIED_CONST"
+    }
+}

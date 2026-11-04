@@ -1,0 +1,21 @@
+{
+    "id": "LERR.1.4.12_rederived_pair_records_again",
+    "category": "logical",
+    "scenario": "[LERR.1.4.12]: a pair that ends and is later derived again records again. Asserting `c1` (key k2, `y = 0`) derives `((a1), c1)` at the join `c.x / c.y > 1.0`, which traps (an all-Int division [LEXP.7.15.1]): one ComputationError. Asserting `b1` (a1's key, `y = 1`) blocks `(a1)` at the NOT node and ends the pair; its own pair `((a1), b1)` answers `false` and records nothing. Retracting `b1` releases `(a1)`, which derives `((a1), c1)` again ([IRET.7.9.3]), and it traps again, after the retraction ([RFCS.6.7]). Two ComputationErrors in all, and only one fact retraction. PATH: libds records each at the end of the event that derived it (rete/beta.c ds_rete_beta_flush_match_traps); Mercury in ds.match.lerr_1_4_12_derived. The runtime differential runs the same program (114_rederived_trap). `r` does not fire.",
+    "rules_ds": "schema A scope logical:\n    k: String key\n\nschema B scope logical:\n    k: String key\n    x: Int mutable\n    y: Int mutable\n\nrule r:\n    A a\n    no B b where b.k == a.k\n    B c where c.x / c.y > 1.0\n->\n    log info \"r fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "A", "slots": { "k": "k1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "B", "slots": { "k": "k2", "x": 1, "y": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "B", "slots": { "k": "k1", "x": 1, "y": 1 }, "as": "b1" },
+            { "op": "pump" },
+            { "op": "retract", "label": "b1" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "fact_retract", "computation_error"]
+    }
+}

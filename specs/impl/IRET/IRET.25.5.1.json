@@ -1,0 +1,21 @@
+{
+  "id": "IRET.25.5.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.25.5",
+  "seq": 1777,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.25.5.1] The cooldown gate for `call` actions wraps\nthe `ds-call` builtin in a `ds-rate-allow` IF expression\n([IRET.10.4]). The compiler emits that structure into the\nterminal's expression tree; the loader sees\nit as ordinary `Expr` nodes and builds no gate of its own:\n\n1. A `CallExpr` targeting `ds-rate-allow`\n   with args `(tracker_lit, key_0, ..., key_N, cooldown_ns)`:\n   the call site's tracker name `<rule>#call<N>`; then a `VarExpr`\n   for each declared `key` slot of each `logical` fact the\n   activation binds, in pattern-declaration order\n   ([LCDB.3.3.1]); then the declared window in nanoseconds.\n2. A `CallExpr` targeting `ds-call`\n   with the service, correlation, and kwarg expressions\n   from the call action, or targeting the hydration builtin for a\n   hydration call ([LHYD.11.2]), which is gated the same way.\n3. Both wrapped in an `IfExpr`: condition = step 1,\n   then-branch = step 2, else-branch = NULL (no-op).\n\n",
+  "refs": [
+    "IRET.10.4",
+    "LCDB.3.3.1",
+    "LHYD.11.2"
+  ],
+  "symbols": [
+    "DS_RETE_EXPR_CALL",
+    "DS_RETE_EXPR_IF",
+    "DS_RETE_EXPR_VAR"
+  ]
+}

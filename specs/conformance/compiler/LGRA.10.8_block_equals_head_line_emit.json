@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.8_block_equals_head_line_emit",
+    "category": "compiler",
+    "scenario": "[LGRA.10.8]: an action's indented block is layout and nothing else, for `emit` as for `call`. A logical `emit` with one slot argument on its head line and the other on a block line must compile exactly as the same emit with both arguments on its head line. Both values are slot reads, so a parser that dropped or misattached the block line changes an expression the artefact carries. Drives `dsc_equivalent`, comparing the two artefacts with the source-position atoms dropped. PATH PINNED: `dsc.parse`'s `lcco_2_1_action_block` emit/publish arm, through `parse_kwarg_lines`, against the single-line argument path.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n    zone: String mutable\n\nschema Alarm scope logical:\n    zone: String key\n    level: Int mutable\n\nrule raise:\n    Trig t\n->\n    emit Alarm logical zone: t.zone\n        level: t.v\n",
+    "expect": {
+        "kind": "dsc_equivalent",
+        "equivalent_ds": "schema Trig scope logical:\n    v: Int key\n    zone: String mutable\n\nschema Alarm scope logical:\n    zone: String key\n    level: Int mutable\n\nrule raise:\n    Trig t\n->\n    emit Alarm logical zone: t.zone level: t.v\n"
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LNOG.5.2",
+  "prefix": "LNOG",
+  "doc": "NOLOGICAL.md",
+  "parent": "LNOG.5",
+  "seq": 254,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "T_wcet improvement",
+  "text": "### T_wcet improvement [LNOG.5.2]\n\nUnder `realtime`, the TMS term is bounded (`n_ids ≤ DS_TMS_INLINE = 16`)\nbut present.  Under `realtime: true` with `logical: false`, T_wcet\nbecomes:\n\n```\nT_wcet(realtime, logical=false) =\n    T_init_cycle\n  + n_asserts   × T_assert\n  + n_retracts  × (c_wm_remove + c_alpha × A_s + c_beta_ridx × joined × k)\n  + T_tick_ttl(max_expired_per_tick)\n  + T_run(max_fires)\n```\n\nCompared to `realtime` alone:\n- `c_tms × n_ids` (≤ `c_tms × 16`) removed from every retraction.\n- No cascade: the retraction of one fact cannot cause the retraction of\n  further facts via TMS.  Every `T_retract` call is self-contained.\n\nAdding `linear_scan: false`, `joined` in the beta_ridx term is\nalso bounded to J_max... but see [LNOG.6] — this combination bans\nmulti-pattern rules, so the beta_ridx term is absent entirely.  Retract\nreduces to:\n\n```\nT_retract(realtime, linear_scan=false, logical=false) = c_wm_remove\n                                                      + c_alpha × A_s\n```\n\nThis is the minimum achievable retraction cost for a Rete engine: a\nhash-table remove from the WM and removal from the alpha memory arrays.\n\n---\n\n",
+  "deferred": true,
+  "refs": [
+    "LNOG.6"
+  ],
+  "symbols": [
+    "DS_TMS_INLINE"
+  ]
+}

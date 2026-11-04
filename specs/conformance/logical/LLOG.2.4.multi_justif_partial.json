@@ -1,0 +1,19 @@
+{
+  "id": "LLOG.2.4.multi_justif_partial",
+  "category": "logical",
+  "scenario": "Multi-justification lifecycle, partial withdrawal: a keyed logical fact emitted by two rules is ONE fact with two TMS justifications. Withdrawing one justifier (retract its trigger) must leave the fact in place — it is still justified by the other rule. A runtime that builds a second DS wrapper holds 3 facts (Trig + two Mark) instead of 2.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\nschema Gate scope logical:\n    g: Int key\nschema Mark scope logical:\n    step: String key\nrule from_trig:\n    Trig\n->\n    emit Mark logical step: \"X\"\nrule from_gate:\n    Gate\n->\n    emit Mark logical step: \"X\"\n",
+  "expect": {
+    "kind": "introspection_assert",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+      { "op": "assert", "schema": "Gate", "slots": { "g": 1 }, "as": "g" },
+      { "op": "pump" },
+      { "op": "retract", "label": "g" },
+      { "op": "pump" }
+    ],
+    "checks": [
+      { "surface": "fact_count", "equals": 2 }
+    ]
+  }
+}

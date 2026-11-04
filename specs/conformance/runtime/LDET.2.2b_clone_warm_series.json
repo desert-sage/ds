@@ -1,0 +1,30 @@
+{
+    "id": "LDET.2.2b_clone_warm_series",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1], [LSER.16.1]: a clone carries a series that already holds samples. `check` logs when `count(r.val)` over a 5_s window reaches 3; as LSER.16.1 has it, the count a rule reads lags the assert that fires it by one pump, so the rule first fires on the fourth reading. Pin: set 0; Reading d1 10.0 then 20.0, each pumped; CLONE, the series warm with two samples; then on both: 30.0, pumped; 40.0, pumped (check fires); FREE the source; on the clone: 50.0, pumped (check fires). The post-clone streams are compared event for event (runner.py `_run_clone_determinism`), so a clone that started its series empty has counted two samples where the source has counted four, does not fire on the fourth reading, and its stream parts from the source's. PATHS: libds `ds_engine_clone` through pyds `Engine.clone()`; the Mercury runtime in test_behave.m's `run_clone_determinism`, which holds it to its counts.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Reading.val:\n    count sliding 5_s\n\nrule check:\n    Reading r where count(r.val) >= 3\n->\n    log info \"count reached\"\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20.0 } },
+            { "op": "pump" }
+        ],
+        "after_clone": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 40.0 } },
+            { "op": "pump" }
+        ],
+        "free": "source",
+        "after_free": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 50.0 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "min_rule_fires": 1,
+        "min_rule_fires_after_free": 1
+    }
+}

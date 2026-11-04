@@ -1,0 +1,10 @@
+{
+    "id": "LLEX.11.1_capital_b_is_a_byte",
+    "clauses": ["LLEX.11.3.1"],
+    "category": "compiler",
+    "scenario": "LLEX.11.1's binary prefix is `0b`, lowercase only. So `0B` and `0Bps` are unit literals (LLEX.11.3.1): zero of `units.computer`'s byte alias `B` and byte-per-second alias `Bps`. Each is compared against a slot of its own dimension, so the rule compiles only if both resolve to those units. Beside them `0b101` is still the binary integer literal, compared to an `Int` slot, with `bit` and its alias `b` in scope to show that the lowercase prefix wins over a unit named `b`. A compiler that takes an uppercase prefix reads `0B` as a binary prefix with no digits and `0Bps` as one whose digits stop at `p`, and refuses the rule. The library is the shipped `stdlib/units/computer.ds`, on every fixture's search path ([RCTS.1.2.14]).",
+    "rules_ds": "from units.computer import bit, byte, byte_per_second\n\nschema Link scope logical:\n    id: String key\n    queued: byte mutable\n    throughput: byte_per_second mutable\n    flags: Int mutable\n\nrule r:\n    Link l where l.queued > 0B and l.throughput > 0Bps and l.flags == 0b101\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

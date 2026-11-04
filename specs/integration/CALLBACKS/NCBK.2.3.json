@@ -1,0 +1,40 @@
+{
+  "id": "NCBK.2.3",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 132,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[NCBK.2.3] **Kinds emitted by the current runtime**:\n\n| Kind | When | Payload member |\n|---|---|---|\n| `DS_EV_FACT_ASSERT`        | an assert arrived, before anything its evaluation produces ([RFCS.6.7]); the cases are [NFCT.5.1]'s | `p.fact_assert.fact` |\n| `DS_EV_FACT_RETRACT`       | a fact left working memory (retract / TTL sweep / upsert replacement) | `p.fact_retract.fact` |\n| `DS_EV_RULE_FIRE_BEGIN`    | just before a rule's RHS runs | `p.rule_fire_begin.{rule_name,timetag}` |\n| `DS_EV_RULE_FIRE_END`      | after a rule's RHS returns | `p.rule_fire_end.{rule_name,timetag}` |\n| `DS_EV_RULE_LHS_FACTS`     | immediately before `RULE_FIRE_BEGIN`, when the firing matched ≥ 1 fact — the resolved matched facts; absent for a factless firing ([NCBK.2.6]) | `p.rule_lhs_facts.{rule_name,timetag,facts,fact_count}` |\n| `DS_EV_ACTION_EMIT`        | after an `emit` asserted a fact (local-only) | `p.action_emit.fact` |\n| `DS_EV_ACTION_PUBLISH`     | a `publish` ran ([LTIE.4.3]; cross-tier marker) | `p.action_publish.{fact,external,external_len}` — a view of the fact valid for the callback only ([NCBK.2.5]), and its `FactExternal` encoding ([NCBK.10.1]) |\n| `DS_EV_ACTION_LOG`         | a `log` action ran — before the log callback | `p.action_log.{level,category,message}` |\n| `DS_EV_ACTION_CALL`        | a `call` action ran — before the call callback, whatever it returns | `p.action_call.{service,correlation,args,arg_count,timetag,rule_name}` ([NCBK.6.2]) |\n| `DS_EV_ACTION_CACHE_SET`   | after the engine applied a `cache` write (independent of any persistence callback) | `p.action_cache_set.{key,value,ttl_ns}` |\n| `DS_EV_ACTION_CACHE_DELETE`| after the engine applied a `cache_delete` (independent of any persistence callback) | `p.action_cache_delete.key` |\n| `DS_EV_TICK`               | an input or a pump took a clock sample ([LTIM.2.8.5], [NTST.3.3]); `clock_ns` is the monotonic sample | `p.tick.{wall_set,wall_ns}` |\n| `DS_EV_PUMP`               | a host pump began, after its sample and its `DS_EV_TICK`, whether or not it fires anything ([RFCS.22]); `clock_ns` is the pump's sample | (no payload) |\n| `DS_EV_TIMER_ARMED`        | a `cooldown` rule fired and armed its suppression window | `p.timer_armed.{rule_name,timetag,kind,window_ns,fire_at_ns}` |\n\n`DS_EV_ACTION_RECORD`'s number is reserved and never reissued ([STYL.2.8.7]).\n\n",
+  "refs": [
+    "LTIE.4.3",
+    "LTIM.2.8.5",
+    "NCBK.10.1",
+    "NCBK.2.5",
+    "NCBK.2.6",
+    "NCBK.6.2",
+    "NFCT.5.1",
+    "NTST.3.3",
+    "RFCS.22",
+    "RFCS.6.7"
+  ],
+  "symbols": [
+    "DS_EV_ACTION_CACHE_DELETE",
+    "DS_EV_ACTION_CACHE_SET",
+    "DS_EV_ACTION_CALL",
+    "DS_EV_ACTION_EMIT",
+    "DS_EV_ACTION_LOG",
+    "DS_EV_ACTION_PUBLISH",
+    "DS_EV_ACTION_RECORD",
+    "DS_EV_FACT_ASSERT",
+    "DS_EV_FACT_RETRACT",
+    "DS_EV_PUMP",
+    "DS_EV_RULE_FIRE_BEGIN",
+    "DS_EV_RULE_FIRE_END",
+    "DS_EV_RULE_LHS_FACTS",
+    "DS_EV_TICK",
+    "DS_EV_TIMER_ARMED"
+  ]
+}

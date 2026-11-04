@@ -1,0 +1,26 @@
+# A cooldown rule re-driven by the tick, on `122_cooldown_redrive`.
+#
+# t=0   assert Motion hall (0) and A a (1); A's first pump comes at 6 s.
+# t=6   pump: `fresh`'s window has closed under this pump's sample, so A does
+#       not fire; `settled` has matured (dwell 6 s) and fires, logging.
+# t=7   retract Motion (0); assert Motion hall again (2): a new match.
+# t=8   pump: immature (dwell 1 s), withheld -- no frame.
+# t=9   pump: matures; the gate denies (last firing 6 s, window 1 min), so the
+#       firing brackets an empty body, and the match is latched.
+# t=70  pump: the window has passed, the match persists: no firing.
+#
+# Selection-time withholding and an empty bracket both show in the event
+# trace, so the two runtimes are compared on exactly the split this pins.
+assert Motion zone=hall ts=0
+assert A k=a
+advance 6000000000
+pump
+advance 1000000000
+retract 0
+assert Motion zone=hall ts=7000000000
+advance 1000000000
+pump
+advance 1000000000
+pump
+advance 61000000000
+pump

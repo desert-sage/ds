@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.2.9.2_escaped_quote_then_hash_ok",
+    "category": "compiler",
+    "scenario": "A `#` after an escaped quote is still inside the string literal, not a comment. A lexer whose comment detection does not know the `\\\"` leaves the literal open answers DS_LEX_GENERIC. Pin: the literal `\"a \\\"#b\\\" c\"` compiles. Path: `dsc.lex.llex_8_2_3_scan_line` sends `\"` to `llex_8_3_3_scan_string` before any `#` arm is reached, and `lgra_2_9_2_take_single` consumes `\\` with its escapee, so the `\"` cannot end the literal.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"a \\\"#b\\\" c\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

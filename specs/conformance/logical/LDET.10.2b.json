@@ -1,0 +1,17 @@
+{
+    "id": "LDET.10.2b",
+    "clauses": ["LFST.5.4"],
+    "category": "logical",
+    "scenario": "An event's `clock_ns` is the engine's monotonic clock ([LFST.5.4]; LDET.10.2, the id, is a tombstone). After the clock is set to 5000000000, the events that follow carry exactly that `clock_ns`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"clocked\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 2,
+        "expected_clocks": [5000000000, 5000000000]
+    }
+}

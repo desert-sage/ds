@@ -1,0 +1,23 @@
+{
+  "id": "IDSP.13.4",
+  "prefix": "IDSP",
+  "doc": "DISPATCHER.md",
+  "parent": "IDSP.13",
+  "seq": 720,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[IDSP.13.4] **Value type mapping.** The engine must render `FN_JSON_VALUE`'s argument\nas this table gives:\n\n| DS value | JSON text |\n|---|---|\n| `null` | `null`: a `null` is stored, not refused ([LNUL.11.1]) |\n| `Int` | a JSON number, the integer in decimal |\n| `Float`, finite | a JSON number, in the canonical form of [LDET.3.2.7] |\n| `Bool` | `true` or `false` |\n| `String` | a JSON string: `\"` and `\\` escaped, `\\n` `\\r` `\\t` for those three, `\\u00XX` for any other character below U+0020, and every other character as itself |\n| `Time` | a JSON number, the instant's UTC nanoseconds since the Unix epoch |\n| `Date` | a JSON number, the days since 1970-01-01 |\n| `Duration` | a JSON number, the nanoseconds |\n| `Json` | the JSON text [LGRA.5.8.7a] gives the document |\n\n**A value with no JSON form is refused.** A non-finite `Float`, a `Bytes` value,\na fact reference and a `Ratio` have none. For each, the engine must raise a\n`ComputationError` of kind `NOT_REPRESENTABLE` ([LERR.1.4.9]) and abandon the\nactivation, so the `cache` write does not happen. It must not write a\nplaceholder, `null` included. A non-finite `Float` is also the hard error\n[LDET.3.2.7] names for the JSON data plane.\n\n",
+  "refs": [
+    "LDET.3.2.7",
+    "LERR.1.4.9",
+    "LGRA.5.8.7a",
+    "LNUL.11.1"
+  ],
+  "errors": [
+    "DS_ERR_JSON_NONFINITE"
+  ],
+  "symbols": [
+    "FN_JSON_VALUE"
+  ]
+}

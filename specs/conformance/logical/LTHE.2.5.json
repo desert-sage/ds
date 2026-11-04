@@ -1,0 +1,17 @@
+{
+    "id": "LTHE.2.5",
+    "clauses": ["LTHE.2.5.1"],
+    "category": "logical",
+    "scenario": "Without `latest`, a sequence follows all-matches semantics (LTHE.2.5.1): two Door anchors (ts 0, 1) and one Motion follower (ts 5) in the same zone, within the window, give exactly two firings, one per (anchor, follower) pair. The follower's `where` reads the anchor's binding.",
+    "rules_ds": "schema Door scope logical:\n    entity_id: String key\n    zone: String mutable\n    ts: Time\n\nschema Motion scope logical:\n    entity_id: String key\n    zone: String mutable\n    ts: Time\n\nrule door_then_motion:\n    Door d\n    then Motion m within 30_s where m.zone == d.zone\n->\n    log info \"motion after door\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Door",   "slots": { "entity_id": "d1", "zone": "north", "ts": 0 } },
+            { "op": "assert", "schema": "Door",   "slots": { "entity_id": "d2", "zone": "north", "ts": 1 } },
+            { "op": "assert", "schema": "Motion", "slots": { "entity_id": "m1", "zone": "north", "ts": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["door_then_motion", "door_then_motion"]
+    }
+}

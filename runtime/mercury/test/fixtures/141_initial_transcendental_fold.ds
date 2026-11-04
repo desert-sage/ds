@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# An `initial:` block whose facts carry `const`s folded through CORE-MATH
+# ([LEXP.8.8], [LDET.3.3a.8]). The folded values are bytes of the artefact,
+# so `ds_dsc`'s byte-identity gate, compiling with the native and the wasm32
+# `dsc`, fails if the two bind different CORE-MATH objects. Each of the
+# fifteen functions is folded once, and `pow` by both spellings. `use
+# default` is written out because the gate compiles each source as it stands.
+# `logical/LEXP.8.8_initial_transcendentals_fold` checks each value against
+# the engine's own evaluation.
+
+use default
+
+from math import exp, ln, log2, log10, sin, cos, tan, asin, acos, atan, atan2, sinh, cosh, tanh, pow
+
+const EXP = exp(1.0)
+const LN = ln(2.0)
+const LOG2 = log2(10.0)
+const LOG10 = log10(2.0)
+const SIN = sin(1.0)
+const COS = cos(1.0)
+const TAN = tan(1.0)
+const ASIN = asin(0.5)
+const ACOS = acos(0.5)
+const ATAN = atan(1.0)
+const ATAN2 = atan2(1.0, 2.0)
+const SINH = sinh(1.0)
+const COSH = cosh(1.0)
+const TANH = tanh(0.5)
+const POWF = 2.0 ** 0.5
+const POWC = pow(2, 0.5)
+
+schema VF scope explicit:
+    k: String
+    f: Float
+
+initial:
+    VF k: "exp" f: EXP
+    VF k: "ln" f: LN
+    VF k: "log2" f: LOG2
+    VF k: "log10" f: LOG10
+    VF k: "sin" f: SIN
+    VF k: "cos" f: COS
+    VF k: "tan" f: TAN
+    VF k: "asin" f: ASIN
+    VF k: "acos" f: ACOS
+    VF k: "atan" f: ATAN
+    VF k: "atan2" f: ATAN2
+    VF k: "sinh" f: SINH
+    VF k: "cosh" f: COSH
+    VF k: "tanh" f: TANH
+    VF k: "powf" f: POWF
+    VF k: "powc" f: POWC
+
+rule seen:
+    VF v
+->
+    log info "{v.k}"

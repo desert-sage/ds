@@ -1,0 +1,17 @@
+{
+    "id": "LFST.9.3.6_timetag_split_diverges",
+    "clauses": ["RFCS.11.2"],
+    "category": "runtime",
+    "scenario": "[LFST.9.3.6]: a replayer pairs each recorded `timetag` with the re-derived one the first time either occurs, and every later atom \"must agree with that pairing in both directions: a recorded `timetag` met with a second re-derived one, or a re-derived `timetag` met with a second recorded one, is the Divergence\". This vector holds the second direction. One Trig assert and a pump fire `r` once, and its RHS calls `svc.put`. So the firing's begin RuleFireAnnotation and its CallIssued carry one `timetag`. The harness ([RCTS.1.2.18]) gives the CallIssued, call 0, a `timetag` no atom in the recording carries (`split_timetag`), so the firing's atoms carry two recorded `timetag`s. On replay the begin annotation pairs the recorded `timetag` with the re-derived one; the CallIssued then re-derives that same `timetag` against a second recorded one, and the replay must stop with DS_ERR_FS_DIVERGENCE (-725). The unaltered recording must replay, so the refusal is the split's. What it discriminates: a replayer that keeps only a recorded-to-re-derived map meets a recorded `timetag` it has not seen, pairs it and goes on, so it replays the altered recording without refusal. `LFST.9.3.6_timetag_pairing_broken_diverges` (`merge_timetags`) holds the first direction, which that one-way map does catch. NOT PINNED: the Divergence's `seq`, which `replay_refused` does not read. PATHS: libds's `Engine.replay` in verify mode, its two-way pairing in `rfcs/codec.c` (unit case `tt_split_call` in test_rfcs_verify.c); the Mercury runtime's `ds.replay` pairing (`lfst_9_3_6_pair`, unit check `check_replay_timetag_call`), which ends the replay `diverged`.",
+    "rules_ds": "service svc.put:\n    kwarg id: Int\n    no response\n\nschema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    call svc.put id: t.v nocooldown\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "split_timetag", "atom": 0 },
+        "code": "-725"
+    }
+}

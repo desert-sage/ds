@@ -1,0 +1,21 @@
+{
+    "id": "LCRS.6.2.4_refire_pending_last_reply_wins",
+    "clauses": ["LCRS.5.5"],
+    "category": "logical",
+    "scenario": "[LCRS.6.2.4]: a call fires twice under one correlation before either request is answered, so neither firing's own supersede ([LCRS.6.2.1]) finds a reply to retract. The host then asserts reply A (v 1) and reply B (v 2), both with corr `c1`. The arriving B retracts the live A before B is asserted, so exactly one reply is live, B's: `probe` fires once and logs [\"live 2\"]. PATH PINNED: the host-assert supersede -- `ds_dispatch_supersede_arrival` from `engine_assert_body` (libds) and `ds.exec.lcrs_6_2_4_arrival_victims` from `ds.engine.host_assert_unstamped` (Mercury) -- for a fact of a response schema. Not the call-side sweep: both calls fire before any reply exists. The break is an assert path with no arrival retraction: both replies stay live and `probe` logs twice.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nschema Probe scope explicit:\n    k: Int\n\nrule r:\n    Job j\n->\n    call svc.read n: j.id nocooldown as \"c1\"\n\nrule probe:\n    Probe\n    Reply x\n->\n    log info \"live {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Job", "slots": { "id": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 2 } },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["live 2"]
+    }
+}

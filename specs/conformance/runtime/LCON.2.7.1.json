@@ -1,0 +1,12 @@
+{
+    "id": "LCON.2.7.1",
+    "category": "runtime",
+    "scenario": "LCON.2.7.1 within-platform float determinism — addition. `0.1 + 0.2` is the IEEE 754 double 0.30000000000000004, the correctly-rounded sum, every run. The inline guard `(t.a + t.b) == 0.30000000000000004` fires only if the bit pattern matches exactly; fact_count 2 (T + Hit) confirms.",
+    "rules_ds": "schema T scope logical:\n    a: Float key\n    b: Float mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.a + t.b) == 0.30000000000000004\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "a": 0.1, "b": 0.2 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

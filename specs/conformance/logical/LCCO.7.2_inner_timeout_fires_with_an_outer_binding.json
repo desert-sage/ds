@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.7.2_inner_timeout_fires_with_an_outer_binding",
+    "clauses": ["LCCO.7.2", "LCCO.10.1", "LCCO.10.3"],
+    "category": "logical",
+    "scenario": "[LCCO.7.2] one level in ([LCCO.10.1]): a `timeout` continuation on a call made inside another call's continuation body fires when its call is unanswered, and [LCCO.10.3] lets its body read the rule's bindings. Rule `r` binds `Job j` and calls `svc.first` as `first`; its `on response.code == 200:` body calls `svc.second` as `second` ([LCCO.3.8]) with a `timeout 5_s:` that logs `late {j.v}`. A Job with id 1 and v 7 is asserted and pumped, the `first` answer is asserted and pumped, so `svc.second` is issued, and the clock moves 6 s with `second` unanswered and is pumped. The inner timeout fires once. The messages are exactly ['late 7']. Each wrong reading fails: no timer fact asserted for the inner call, or its schema or `$ClockTick` undeclared, never fires the timeout sibling (and by RDSC.8.7 neither runtime loads that artefact); a timer keyed on the outer call's correlation never fires either, because `first` was answered; the wrong captured slot logs `late 1`. PATH PINNED: dsc.rete's `lcco_10_3_inner_emits`, which asserts `$Timer_$r_response_0_timeout_0` and the inner capture from the sibling that makes the call and declares both, and `has_timeout_call`, which declares `$ClockTick` for a `timeout` one level in.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.first:\n    kwarg n: Int\n    response Reply\n\nservice svc.second:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n    v: Int\n\nrule r:\n    Job j\n->\n    call svc.first n: j.id nocooldown as \"first\"\n        on response.code == 200:\n            call svc.second n: 2 nocooldown as \"second\"\n                timeout 5_s:\n                    log info \"late {j.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1, "v": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "first", "code": 200 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["late 7"]
+    }
+}

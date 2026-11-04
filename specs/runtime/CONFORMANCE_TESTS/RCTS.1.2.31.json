@@ -1,0 +1,19 @@
+{
+  "id": "RCTS.1.2.31",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 127,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.31] **`runtime_fact_count`'s and `temporal_sequence`'s fields** —\n  a fixture of either kind pins how many facts working memory holds after\n  its inputs. A harness must load the compiled artefact into a fresh engine\n  on the harness's mock clocks and give it the inputs below, in order,\n  through the runtime's own interface. The runtime passes only when working\n  memory then holds `fact_count_after` live facts.\n\n  - `fact_count_after` (required), a non-negative integer.\n  - `runtime_fact_count`'s inputs, each optional, in this order: `cache_seeds`,\n    as [RCTS.1.2.25] has it; `asserts`, an array of objects, each a host\n    assert carrying `schema`, a string, and optionally `slots`, an object, as\n    an `assert` step carries them ([RCTS.1.2.28]); `generate_asserts`, an\n    array of objects of `schema` and `slot_name`, strings, `count`, a\n    non-negative integer, and optionally `start`, an integer, 0 when absent,\n    each standing for `count` host asserts of `schema`, whose slot\n    `slot_name` holds `start`, `start` + 1, and so on, in that order; and one\n    pump, when `pump`, a boolean, is `true`. A fixture with none of them has\n    the load as its only input.\n  - `temporal_sequence`'s inputs: `steps`, the session's inputs as\n    [RCTS.1.2.28] has them.\n  - `tamper` (optional, `runtime_fact_count` only), an edit a harness must\n    make to the compiled artefact before the load, as [RCTS.1.2.21] has it\n    for this kind.\n  - `add_compiled_code` (optional, `runtime_fact_count` only), an object of\n    exactly one member, `node`, an integer N of at least 1. Before the load,\n    and after `tamper`'s edit, a harness must append to the compiled\n    artefact, after its last atom, one\n    `CompiledCode` atom for each of the `arch` values `amd64`, `arm64`,\n    `rv64g` and `rv64gc`, in that order, each with `node_id` N, `kind`\n    `CODE_KIND_RHS` and a `body` of 64 octets of 0, its fields in ascending\n    order ([RFCS.19.5]), and then recompute `dsc_sha256` as [RDSC.3.6]\n    states. No compiler of this edition writes the atom ([RDSC.4c.3]), so\n    this is how a fixture gives a runtime one for the architecture it runs\n    on. A harness must fail a fixture whose artefact holds no `TerminalNode`\n    whose `node_id` is N, or more than one.\n\n  A harness must fail a fixture of either kind with no `fact_count_after`,\n  and one whose value for any of these fields is not of the type stated here.\n  It must fail a fixture of any other `expect.kind` that carries\n  `add_compiled_code`.\n\n",
+  "refs": [
+    "RCTS.1.2.21",
+    "RCTS.1.2.25",
+    "RCTS.1.2.28",
+    "RDSC.3.6",
+    "RDSC.4c.3",
+    "RFCS.19.5"
+  ]
+}

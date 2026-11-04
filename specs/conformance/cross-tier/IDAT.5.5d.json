@@ -1,0 +1,57 @@
+{
+    "id": "IDAT.5.5d",
+    "category": "cross-tier",
+    "scenario": "Engine-A uses TTL schema, engine-B uses logical with the same name \u2014 different lifecycles per engine. Pins that schemas of the same name aren't linked across engines. Pins IDAT.5.5 \u2014 same schema name decoupled across engines.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "ttl_eng": {
+                "rules_ds": "schema Trig scope ttl 100_ms:\n    v: Int\n"
+            },
+            "logical_eng": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "ttl_eng",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "logical_eng",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "ttl_eng",
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "engine": "ttl_eng",
+                "op": "pump"
+            },
+            {
+                "engine": "logical_eng",
+                "op": "advance",
+                "delta_ns": 200000000
+            },
+            {
+                "engine": "logical_eng",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "ttl_eng": 0,
+            "logical_eng": 1
+        }
+    }
+}

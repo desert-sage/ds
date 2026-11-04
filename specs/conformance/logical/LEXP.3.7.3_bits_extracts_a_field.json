@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.3.7.3_bits_extracts_a_field",
+    "clauses": ["LEXP.3.7.3", "LEXP.3.7.1"],
+    "category": "logical",
+    "scenario": "[LEXP.3.7.3]: `x.bits(lo, w)` is int(floor(p / 2^lo) mod 2^w), p the 64-bit pattern of `x`. Rule `extracted` fires where `t.x.bits(t.lo, t.w)` equals the fact's `want`; every operand is an `Int` slot, so nothing folds. `abcd`: 0xABCD (43981) from bit 4, 8 bits wide, is 0xBC (188). `top`: -1 from bit 60, 4 bits wide, is 15: the field is the pattern's top nibble, all 1s, and it reads non-negative. `whole`: -1 from bit 0, 64 bits wide, is -1, `x.bits(0, 64)` being `x`. A builtin that shifted the signed value arithmetically would give `top` as -1, and one that masked a 64-bit width with `(1 << 64) - 1` would give `whole` as 0. PATH PINNED: FN_BITS in libds (`builtins.c`, `int_ops.h` `ds_i64_bits`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: String key\n    x: Int mutable\n    lo: Int mutable\n    w: Int mutable\n    want: Int mutable\n\nrule extracted:\n    T t where t.x.bits(t.lo, t.w) == t.want\n->\n    log info \"extracted {t.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": "abcd", "x": 43981, "lo": 4, "w": 8, "want": 188 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "top", "x": -1, "lo": 60, "w": 4, "want": 15 } },
+            { "op": "assert", "schema": "T", "slots": { "id": "whole", "x": -1, "lo": 0, "w": 64, "want": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["extracted abcd", "extracted top", "extracted whole"]
+    }
+}

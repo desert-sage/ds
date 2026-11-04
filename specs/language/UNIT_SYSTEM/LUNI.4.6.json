@@ -1,0 +1,24 @@
+{
+  "id": "LUNI.4.6",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.4",
+  "seq": 633,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "4.6 `unit fx_pair`",
+  "text": "### 4.6 `unit fx_pair` [LUNI.4.6]\n\nCross-currency formulas backed by **runtime, fact-sourced** exchange rates.\nThe conversion factor is never inlined into the `.dsc`; the compiler emits a\nruntime binding that consults the latest matching fact at the conversion\nsite. The full conversion semantics live in [LUNI.13];\nthis section pins the declaration form.\n\n```\nunit_fx_pair ::= 'unit' 'fx_pair' TYPE_SYM ':' NAME 'to' NAME NEWLINE\n                 INDENT\n                     'via' NAME 'where' expression NEWLINE\n                     'field' NAME '/' NAME NEWLINE\n                 DEDENT\n```\n\nIn order of appearance:\n\n- The two names after `:` and `to` are the from- and to-currency `unit\n  dimension` names (LUNI.13.2).\n- The name after `via` is the schema whose facts publish the rate. By\n  convention this is `FxRate` (LUNI.13.3); any schema with the right slot shape\n  is admitted.\n- The `where` expression is the rate selector: a comma- or `and`-separated\n  equality match on the schema's slots, restricted to string equality.\n- The two names after `field` name `Int`-typed slots of that schema carrying\n  the rate as an exact integer fraction, numerator first. The compiler validates both slots\n  exist and are `Int`-typed.\n\nBoth directions (forward + inverse) are declared as separate `unit fx_pair`s.\nThe compiler does NOT auto-derive the inverse by floating-point reciprocation —\nthat would introduce a 1-ULP drift; authors who want a derived inverse compute\nit explicitly with the round mode they intend.\n\n",
+  "deferred": true,
+  "refs": [
+    "LUNI.13",
+    "LUNI.13.2",
+    "LUNI.13.3"
+  ],
+  "errors": [
+    "DS_VALIDATE_FX_PAIR_FIELD_NOT_INT",
+    "DS_VALIDATE_FX_PAIR_SELECTOR",
+    "DS_VALIDATE_FX_PAIR_UNKNOWN",
+    "DS_VALIDATE_FX_PAIR_UNKNOWN_DIM",
+    "DS_VALIDATE_FX_PAIR_UNKNOWN_FIELD"
+  ]
+}

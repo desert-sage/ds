@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.8.1",
+    "category": "compiler",
+    "scenario": "A call with one bare `error:` continuation (LCCO.8.1's `error [<code-pattern>]:`, the pattern omitted) compiles. PINS ONLY THAT IT COMPILES: `compile_ok` observes neither the `$..._error_0` sibling rule over `CallError` nor its firing.",
+    "rules_ds": "service failed:\n    \"\"\"stub\"\"\"\n    no response\n\nservice sensor.read:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call sensor.read entity_id: t.entity_id cooldown: 1_min\n        error:\n            log info \"call failed\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

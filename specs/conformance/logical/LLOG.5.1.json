@@ -1,0 +1,22 @@
+{
+    "id": "LLOG.5.1",
+    "category": "logical",
+    "scenario": "Arithmetic in `where` clauses under logical per LLOG.5.1 — standard expression evaluation applies inside logical LHS conditions. Pin: rule emits logical fact only when `s.temp - s.baseline > 5`; retracts when that condition becomes false.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    temp: Float mutable\n    baseline: Float mutable\n\nschema Alarm scope logical:\n    dummy: Int key\n\nrule spike:\n    Sensor s where (s.temp - s.baseline) > 5.0\n->\n    emit Alarm logical dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s1", "temp": 30.0, "baseline": 20.0 }, "as": "h" },
+            { "op": "pump" },
+            { "op": "retract", "label": "h" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "action_emit",
+            "fact_retract",
+            "fact_retract"
+        ]
+    }
+}

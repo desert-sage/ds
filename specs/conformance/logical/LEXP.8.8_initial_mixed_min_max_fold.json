@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_initial_mixed_min_max_fold",
+    "category": "logical",
+    "scenario": "[LEXP.8.8] with [LEXP.3.8.1]: a scalar `min` / `max` of an `Int` and a `Float` in a `const` folds, and an `initial:` item may name one. \"The scalar result preserves the winning operand's `Int` / `Float` kind\", so each folded value travels as its winner's kind, and an `initial` fact whose slot takes that kind places it. Its rule compares that slot with the same `const` inlined and evaluated by the engine; the rule fires only if the two agree. `MX1 = max(5, 3.0)` is the `Int` `5` and `MX2 = max(2, 3.5)` the `Float` `3.5`, the clause's own two examples; `MN1 = min(1, 2.0)` is the `Int` `1` and `MN2 = min(3, 2.5)` the `Float` `2.5`. A tie between kinds is left out: the clause does not say which operand wins it. Pin: all four rules log, in source order. A fold that converted the winner to `Float` places a `Float` in an `Int` slot, which each runtime refuses at the first step. A compiler that does not fold these refuses the program with DS_VALIDATE_INITIAL_NOT_CONST. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `fold_builtin` `min` / `max` arm, against the rule's inlined `const` evaluated by each runtime's `min` / `max` (`ds.eval.pick`; libds's `builtin_min` / `builtin_max`).",
+    "rules_ds": "const MX1 = max(5, 3.0)\nconst MX2 = max(2, 3.5)\nconst MN1 = min(1, 2.0)\nconst MN2 = min(3, 2.5)\n\nschema VI scope explicit:\n    k: String\n    i: Int\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VI k: \"mx1\" i: MX1\n    VF k: \"mx2\" f: MX2\n    VI k: \"mn1\" i: MN1\n    VF k: \"mn2\" f: MN2\n\nrule r_mx1:\n    VI v where v.k == \"mx1\" and v.i == MX1\n->\n    log info \"mx1\"\n\nrule r_mx2:\n    VF v where v.k == \"mx2\" and v.f == MX2\n->\n    log info \"mx2\"\n\nrule r_mn1:\n    VI v where v.k == \"mn1\" and v.i == MN1\n->\n    log info \"mn1\"\n\nrule r_mn2:\n    VF v where v.k == \"mn2\" and v.f == MN2\n->\n    log info \"mn2\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mx1", "mx2", "mn1", "mn2"]
+    }
+}

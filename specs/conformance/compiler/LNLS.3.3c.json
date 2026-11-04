@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3c",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3c] — a multi-pattern rule with no cross-pattern equality is refused under +nolinscan: the one cross-pattern comparison is `>`, which pins nothing, so the join degenerates to a scan. PATH PINNED: `dsc.validate.anchor_body`'s last arm — `key_equalities` finds no `==` between the two bindings. Counting any cross-pattern comparison as an equality would move this to DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_A.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Device scope logical:\n    device_id: String key\n    level: Int mutable\n\nschema Reading scope logical:\n    device_id: String key\n    amount: Int mutable\n\nrule joined:\n    Device d\n    Reading x where x.amount > d.level\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

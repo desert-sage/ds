@@ -1,0 +1,24 @@
+{
+    "id": "LDTL.4.1_an_emit_evaluates_retain_after_its_values",
+    "clauses": ["LDTL.4.1"],
+    "category": "logical",
+    "scenario": "[LDTL.4.1]: the engine evaluates an `emit`'s `retain:` expression only after every slot value of the action, so where a slot value and `retain:` would both fault, the fault recorded is the slot value's and `retain:` is not evaluated. `dynamic_ttl` is on, and `Out` is `scope ttl 1_h` with no `ts`. Three rules, each taking one `Trig` by its key, so each fault is at its own (node, rule) site and none is latched away ([LERR.9.5]). Each writes `q: t.a // t.b`, an Int floor division that traps DIVIDE_BY_ZERO when `b` is 0 ([LEXP.7.15.1]), and `retain: t.f::Int * 1_s`, whose cast traps NOT_REPRESENTABLE when `f` is 1e300 ([LCST.4.5.4]), a different kind. Both faulting (`b` = 0, `f` = 1e300) gives the slot's DIVIDE_BY_ZERO; only `retain:` faulting (`b` = 1) gives NOT_REPRESENTABLE; only the slot faulting (`f` = 1.0) gives DIVIDE_BY_ZERO. One assert and one pump per case, so the log order is the steps' order. `faulted` logs each ComputationError's rule and kind ([LERR.9.2]); `leaked` logs any `Out` and must never fire, because every emit here faults. A runtime that evaluates `retain:` first logs `emit_both NOT_REPRESENTABLE`. PATH PINNED: libds `rete/engine.c`'s `emit` path, whose `ttl_override` follows its assigns; the Mercury runtime's `ds.exec.assert_verb`, whose `assign_fault` evaluates the assigns and then the override.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\n    a: Int mutable\n    b: Int mutable\n    f: Float mutable\n\nschema Out scope ttl 1_h:\n    k: Int\n    q: Int\n\nrule emit_both:\n    Trig t where t.k == 1\n->\n    emit Out k: t.k\n        q: t.a // t.b\n        retain: t.f::Int * 1_s\n\nrule emit_retain:\n    Trig t where t.k == 2\n->\n    emit Out k: t.k\n        q: t.a // t.b\n        retain: t.f::Int * 1_s\n\nrule emit_slot:\n    Trig t where t.k == 3\n->\n    emit Out k: t.k\n        q: t.a // t.b\n        retain: t.f::Int * 1_s\n\nrule faulted:\n    ComputationError c\n->\n    log info \"{c.rule} {c.kind}\"\n\nrule leaked:\n    Out\n->\n    log info \"leaked\"\n",
+    "dead_rules_expected": ["leaked"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "a": 6, "b": 0, "f": 1e300 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "a": 6, "b": 1, "f": 1e300 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 3, "a": 6, "b": 0, "f": 1.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "emit_both DIVIDE_BY_ZERO",
+            "emit_retain NOT_REPRESENTABLE",
+            "emit_slot DIVIDE_BY_ZERO"
+        ]
+    }
+}

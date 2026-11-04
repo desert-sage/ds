@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.2.6_now_multipattern_rejects",
+    "clauses": ["LTIM.2.6.2"],
+    "category": "compiler",
+    "scenario": "[LTIM.2.6.2] — a `now()` (or `dwell`) time-dependent `where`-condition is re-evaluated as the clock advances via the `$ClockTick` re-driver, which is v1-supported only on a SINGLE positive pattern (a following positive pattern makes the token-index remap unsafe). On a multi-positive-pattern rule it is a compile error, not a rule that silently never re-fires (reject-don't-skip). Pin: a rule with two positive patterns whose second carries `where now() > T` rejects with DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED. The guard compares `now()` with a Time, `calendar.time(1970, 1, 1, 0, 0, 5)` ([LTIM.14.1]), so the multi-pattern use is the program's only defect.",
+    "rules_ds": "import calendar\n\nschema A scope logical:\n    v: Int key\n\nschema B scope logical:\n    v: Int key\n\nrule two_pat:\n    A\n    B where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log info \"both\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED"
+    }
+}

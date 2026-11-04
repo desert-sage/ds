@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.8.3.2_computed_unknown_format_is_not_representable",
+    "category": "logical",
+    "scenario": "[LTIM.8.3.2]: an unknown COMPUTED time-format identifier raises a ComputationError of kind NOT_REPRESENTABLE. LTIM.8.3.2_computed_unknown_format's rules and steps, which observe only that `written` is abandoned and `seen` still logs, so they pass with any kind; this adds `trapped`, a rule on every ComputationError fault fact ([LERR.9.2]) that logs its `kind`, last in source order. Fact 1 names `ISO8601` and fact 3 `iso8601` (identifiers are case-insensitive, [LTIM.8.2.2]): both write and no fault is raised. Fact 2 names `rfc3339`, which no runtime registers ([LTIM.8.2.1]): `written`'s test traps, the activation is not created, `seen` logs, and `trapped` logs the fault's kind, after `seen` by source order ([LDET.5.4]). A runtime raising DOMAIN, or a TypeError, or reading the failure as `null`, logs something else or nothing there. The stream event alone could not tell the kinds apart, so the kind is read off the fault fact. PATH PINNED: libds `adapter_ds_to_string`'s unknown-format arm (DS_FAULT_NOT_REPRESENTABLE), the Mercury runtime's `time_to_string` (`rf_not_representable`).",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    t: Time mutable\n    fmt: String mutable\n\nrule written:\n    Ev e where e.t.to_string(e.fmt) is not null\n->\n    log critical \"written {e.id}\"\n\nrule seen:\n    Ev e\n->\n    log critical \"seen {e.id}\"\n\nrule trapped:\n    ComputationError c\n->\n    log critical \"trapped {c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "t": 1705334400000000000, "fmt": "ISO8601" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "t": 1705334400000000000, "fmt": "rfc3339" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 3, "t": 1705334400000000000, "fmt": "iso8601" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["written 1", "seen 1", "seen 2", "trapped NOT_REPRESENTABLE", "written 3", "seen 3"]
+    }
+}

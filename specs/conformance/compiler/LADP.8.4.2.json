@@ -1,0 +1,12 @@
+{
+    "id": "LADP.8.4.2",
+    "category": "compiler",
+    "scenario": "LADP.8.4.2: every service declares its response, and `no response` is one of the two declarations. Pin: library `ha` declares `service light.turn_on` with one kwarg and `no response`; the rules file imports the library and calls the service, and the program compiles. Path: the validator's service check admits the `no response` line. NOT pinned here: the refusal of a service declaring neither form, which is compiler/LGRA.23.2_no_response_decl.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"x\" cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

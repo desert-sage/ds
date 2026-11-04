@@ -1,0 +1,23 @@
+{
+    "id": "LDET.5.8_late_fires_once",
+    "category": "logical",
+    "witnesses": [
+        "formal/idris/Rete/NetworkTick.idr#ldet_5_8__late_fires_once",
+        "formal/idris/Rete/NetworkClocked.idr#ldet_5_8__late_fires_once_clocked"
+    ],
+    "scenario": "[LDET.5.8]'s own observable: an engine-synthesised fact, the clock tick that re-drives a time-dependent LHS, is not a working-memory fact, so cycling it is not a change to the LHS for refraction ([LDET.5.3]). One Ping is asserted at 0; `late`'s gate, `now()` past 5_s, is shut for two pumps. The clause writes the gate `now() > 5000000000`, a Time compared with an Int, which [LTIM.5.5] refuses, so the vector builds the instant as the corpus does, `calendar.time(1970, 1, 1, 0, 0, 5)` ([LTIM.14.1]); and it binds the Ping as `p`, which nothing reads and [LGRA.8.6] refuses, so the pattern here is unbound; the clock advances past it to 6_s; two more pumps follow. `late` fires exactly once, in the third pump, and not in the fourth. Break: a runtime that held the tick in working memory, so that its fresh fact id entered the refraction tuple or its cycling cleared refraction, fires `late` on every pump after the third, and the list gains a second `late`. `witnesses` names the two formal witnesses of this scenario, LDET.5.8's `checks` entries with role `witness`: `ldet_5_8__late_fires_once` on the network and `ldet_5_8__late_fires_once_clocked` on the clocked engine, each proving `[0, 0, 1, 0]`. The field is advisory under [RCTS.1.2.1]. logical/LTIM.2.5_now_edge_once_multipump pins the same edge-once with other steps; this vector keeps the witnesses' steps exactly, so the pairing is checkable.",
+    "rules_ds": "import calendar\n\nschema Ping scope logical:\n    v: Int key\n\nrule late:\n    Ping where now() > calendar.time(1970, 1, 1, 0, 0, 5)\n->\n    log warning \"late fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["late"]
+    }
+}

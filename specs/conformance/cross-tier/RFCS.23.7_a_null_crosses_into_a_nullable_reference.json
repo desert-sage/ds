@@ -1,0 +1,33 @@
+{
+    "id": "RFCS.23.7_a_null_crosses_into_a_nullable_reference",
+    "clauses": ["RFCS.23.7"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.7]: \"In a nullable slot it is `null`.\" The nullable twin of `RFCS.23.7_a_reference_with_no_target_crosses`, on the same run: `F`'s `u` is `U?`. The sender's `U` expires, and `up` publishes an `R` referring to `F`, whose record inlines `F` with `u` as `KIND_NULL` ([RFCS.23.4]). The receiver's fact count is 2: `F` and `R`. The rule `null_u` joins a `Check` to a received `F` whose `u` is `null`, and emits `Seen`. So the receiver holds `F`, `R`, `Check` and `Seen`: 4. With the slot holding anything else, `null_u` does not fire and the count reads 3 (`F`, `R`, `Check`); a refused record reads 1 (`Check`). The sender holds `F` and `Go`: a `publish` asserts nothing there ([LTIE.4.3]). PATH PINNED: libds's `fx_field` (rfcs/codec.c), through pyds `Engine.assert_external` (runner.py); the Mercury runtime's `ds.fact_receive.plan_field`, `pv_no_target(null)`, through test_behave.m's `receive_on_tier`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "sender": {
+                "rules_ds": "schema U scope ttl 1_s:\n    v: Int\n\nschema F scope ttl 1_h:\n    v: Int\n    u: U?\n\nschema R scope logical:\n    k: Int key\n    f: F mutable\n\nschema Go scope logical:\n    k: Int key\n\nrule mk:\n    U x\n->\n    emit F v: x.v u: x\n\nrule up:\n    Go g\n    F y\n->\n    publish R k: g.k f: y\n"
+            },
+            "receiver": {
+                "rules_ds": "schema U scope ttl 1_s:\n    v: Int\n\nschema F scope ttl 1_h:\n    v: Int\n    u: U?\n\nschema R scope logical:\n    k: Int key\n    f: F mutable\n\nschema Check scope logical:\n    k: Int key\n\nschema Seen scope ttl 1_h:\n    k: Int\n\nrule null_u:\n    Check c\n    F y where y.u is null\n->\n    emit Seen k: c.k\n"
+            }
+        },
+        "steps": [
+            { "engine": "sender", "op": "assert", "schema": "U", "slots": { "v": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "sender", "op": "advance", "delta_ns": 2000000000 },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "sender", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "sender", "op": "pump" },
+            { "engine": "receiver", "op": "forward_external", "from": "sender" },
+            { "engine": "receiver", "op": "assert", "schema": "Check", "slots": { "k": 1 } },
+            { "engine": "receiver", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "sender": 2,
+            "receiver": 4
+        }
+    }
+}

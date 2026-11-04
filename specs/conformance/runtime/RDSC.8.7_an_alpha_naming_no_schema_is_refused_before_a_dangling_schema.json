@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.8.7_an_alpha_naming_no_schema_is_refused_before_a_dangling_schema",
+    "clauses": ["RDSC.4a.6.3"],
+    "category": "runtime",
+    "scenario": "[RDSC.8.7]'s stream is parsed when every atom body is decoded in full, an `AlphaNode`'s schema name ([RDSC.4a.6]) included: an artefact carrying an alpha that names no schema and an alpha whose schema no atom declares is refused for the first, with DS_ERR_DSC_SEMANTIC (-504), not for the name (DS_ERR_DSC_DANGLING, -506). The harness compiles rules `on_t` (`T`'s `AlphaNode` 1) and `on_u` (`U`'s `AlphaNode` 4), then `runtime_error`'s `tamper` list ([RCTS.1.2.21]) makes two edits in order and re-seals `dsc_sha256` once ([RDSC.3.6]): `set_field` writes `U`'s alpha's `schema_name` as the empty string, and `drop_schema_group: T` removes `T`'s group, so `T`'s alpha names a schema the artefact does not declare. Each defect alone has its own vector: `RDSC.4a.6_an_alpha_naming_no_schema_is_refused` (-504) and `RDSC.8.7_alpha_schema_group_dropped_is_dangling` (-506). What it discriminates: a loader that reads an empty schema name as a name to look up, or checks the alpha's shape only after the names, refuses with -506. PATHS: libds's atom walk (`ds_engine_load_dsc`, `ds_dsc_rete_body_decodes`) before the cross-atom checks; the Mercury runtime's `ds.dsc` walk (`network_decoder`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Int key\n\nrule on_t:\n    T t where t.v > 0\n->\n    log info \"t\"\n\nrule on_u:\n    U u where u.w > 0\n->\n    log info \"u\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": [{"set_field": {"node": 4, "path": [2], "value": ""}}, {"drop_schema_group": "T"}],
+        "code": "-504"
+    }
+}

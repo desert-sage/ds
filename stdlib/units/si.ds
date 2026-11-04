@@ -1,0 +1,303 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# units.si — SI International System of Units (9th edition, 2019)
+#
+# All prefixed forms are declared explicitly. No algorithmic prefix expansion.
+# Canonical names are ASCII word forms. Unicode aliases (°, Ω, µ) are valid
+# in unit literals only, not as schema field types. Every dimension declared
+# here is float64.
+
+# The angle units' bodies use `math`'s `pi` (LUNI.4.3, LIMP.3.3.4).
+from math import pi
+
+# ── Dimensions ────────────────────────────────────────────────────────────────
+# The seven SI base axes (time/length/mass/temperature/current/amount/
+# luminous_intensity) and their anchor units are the baked `units.core`
+# ([LUNI.4.1.2]) — implicitly in scope, NOT redeclared here.
+
+# SI named derived dimensions — kept separate from dimensional analysis
+# equivalents (Hz ≠ Bq, Gy ≠ Sv) following SI convention.
+unit dimension frequency           storage float64  base Hz
+unit dimension radioactivity       storage float64  base becquerel
+unit dimension force               storage float64  base newton
+unit dimension energy              storage float64  base joule
+unit dimension power               storage float64  base watt
+unit dimension pressure            storage float64  base pascal
+unit dimension voltage             storage float64  base volt
+unit dimension resistance          storage float64  base ohm
+unit dimension conductance         storage float64  base siemens
+unit dimension capacitance         storage float64  base farad
+unit dimension inductance          storage float64  base henry
+unit dimension charge              storage float64  base coulomb
+unit dimension magnetic_flux       storage float64  base weber
+unit dimension magnetic_flux_density  storage float64  base tesla
+unit dimension absorbed_dose       storage float64  base gray
+unit dimension equivalent_dose     storage float64  base sievert
+unit dimension illuminance         storage float64  base lux
+unit dimension luminous_flux       storage float64  base lumen
+unit dimension luminance           storage float64  base candela_per_meter_squared
+unit dimension catalytic_activity  storage float64  base katal
+unit dimension area                storage float64  base meter_squared
+unit dimension volume              storage float64  base meter_cubed
+unit dimension velocity            storage float64  base meters_per_second
+unit dimension acceleration        storage float64  base meters_per_second_squared
+unit dimension solid_angle         storage float64  base steradian
+
+# Dimensionless scalars
+unit scalar angle       storage float64
+unit scalar proportion  storage float64
+
+# ── Time ──────────────────────────────────────────────────────────────────────
+
+# The whole time axis lives in units.core — the anchor and every scale — because
+# duration literals occupy core grammar positions and must resolve in a file that
+# imports nothing ([LUNI.4.1.2]). units.si must not redeclare any of them; a
+# base axis's units are core's to own.
+
+# ── Length ────────────────────────────────────────────────────────────────────
+
+# meter / m — baked length anchor (units.core)
+unit decimeter:    length  = x / 10              label "dm"   alias dm
+unit centimeter:   length  = x / 100             label "cm"   alias cm
+unit millimeter:   length  = x / 1000            label "mm"   alias mm
+unit micrometer:   length  = x / 1_000_000       label "µm"   alias µm, um
+unit nanometer:    length  = x / 1_000_000_000   label "nm"   alias nm
+unit picometer:    length  = x / 1_000_000_000_000  label "pm" alias pm
+unit kilometer:    length  = x * 1000            label "km"   alias km
+
+# ── Mass ──────────────────────────────────────────────────────────────────────
+# SI base is kilogram, not gram.
+
+# kilogram / kg — baked mass anchor (units.core)
+unit gram:         mass   = x / 1000             label "g"    alias g
+unit milligram:    mass   = x / 1_000_000        label "mg"   alias mg
+unit microgram:    mass   = x / 1_000_000_000    label "µg"   alias µg, ug
+
+# ── Temperature ───────────────────────────────────────────────────────────────
+# Kelvin is SI base. Celsius is SI-accepted (offset affine).
+# Fahrenheit and Rankine are in units.customary.
+
+# kelvin / K — baked temperature anchor (units.core)
+unit celsius:  temperature  = x + 273.15         label "°C"   alias °C, degC
+
+# ── Current ───────────────────────────────────────────────────────────────────
+
+# ampere / A — baked current anchor (units.core)
+unit milliampere:  current  = x / 1000           label "mA"   alias mA
+unit microampere:  current  = x / 1_000_000      label "µA"   alias µA, uA
+unit kiloampere:   current  = x * 1000           label "kA"   alias kA
+
+# ── Luminous intensity ────────────────────────────────────────────────────────
+
+# candela / cd — baked luminous_intensity anchor (units.core)
+unit millicandela: luminous_intensity  = x / 1000  label "mcd" alias mcd
+
+# ── Amount of substance ───────────────────────────────────────────────────────
+
+# mole / mol — baked amount anchor (units.core)
+unit millimole:    amount  = x / 1000            label "mmol" alias mmol
+unit micromole:    amount  = x / 1_000_000       label "µmol" alias µmol, umol
+unit nanomole:     amount  = x / 1_000_000_000   label "nmol" alias nmol
+unit kilomole:     amount  = x * 1000            label "kmol" alias kmol
+
+# ── Angle (dimensionless scalar) ─────────────────────────────────────────────
+
+# The glyph and short-word aliases below make `45°`, `30′`, `45″` and
+# `45_arcsec` writable: a `label` is display-only, and only the canonical name
+# and `alias` entries are input symbols.
+unit radian:    angle                             label "rad"    alias rad
+unit degree:    angle  = x * pi / 180            label "deg"    alias deg, °
+unit gradian:   angle  = x * pi / 200            label "grad"   alias grad
+unit turn:      angle  = x * 2 * pi              label "turn"
+unit arcminute: angle  = x * pi / 10800          label "arcmin" alias arcmin, ′
+unit arcsecond: angle  = x * pi / 648000         label "arcsec" alias arcsec, ″
+
+unit steradian: solid_angle                       label "sr"   alias sr
+
+# ── Proportion (dimensionless scalar) ─────────────────────────────────────────
+
+unit fraction:  proportion                        label "frac"
+unit percent:   proportion  = x / 100            label "%"    alias pct
+
+# ── Frequency ─────────────────────────────────────────────────────────────────
+# Hz and Bq are separate dimensions.
+
+unit Hz:         frequency                        label "Hz"
+unit kilohertz:  frequency  = x * 1_000          label "kHz"  alias kHz
+unit megahertz:  frequency  = x * 1_000_000      label "MHz"  alias MHz
+unit gigahertz:  frequency  = x * 1_000_000_000  label "GHz"  alias GHz
+unit terahertz:  frequency  = x * 1_000_000_000_000  label "THz"  alias THz
+unit millihertz: frequency  = x / 1000           label "mHz"  alias mHz
+
+unit becquerel:  radioactivity                    label "Bq"   alias Bq
+unit kilobecquerel:  radioactivity  = x * 1_000      label "kBq"  alias kBq
+unit megabecquerel:  radioactivity  = x * 1_000_000  label "MBq"  alias MBq
+unit gigabecquerel:  radioactivity  = x * 1_000_000_000  label "GBq"  alias GBq
+
+# ── Force ─────────────────────────────────────────────────────────────────────
+
+unit newton:      force                           label "N"    alias N
+unit kilonewton:  force  = x * 1000              label "kN"   alias kN
+unit meganewton:  force  = x * 1_000_000         label "MN"   alias MN
+unit millinewton: force  = x / 1000              label "mN"   alias mN
+unit micronewton: force  = x / 1_000_000         label "µN"   alias µN, uN
+
+# ── Energy ────────────────────────────────────────────────────────────────────
+
+unit joule:      energy                           label "J"    alias J
+unit kilojoule:  energy  = x * 1000              label "kJ"   alias kJ
+unit megajoule:  energy  = x * 1_000_000         label "MJ"   alias MJ
+unit millijoule: energy  = x / 1000              label "mJ"   alias mJ
+unit microjoule: energy  = x / 1_000_000         label "µJ"   alias µJ, uJ
+unit nanojoule:  energy  = x / 1_000_000_000     label "nJ"   alias nJ
+
+# ── Power ─────────────────────────────────────────────────────────────────────
+
+unit watt:        power                           label "W"    alias W
+unit kilowatt:    power  = x * 1000              label "kW"   alias kW
+unit megawatt:    power  = x * 1_000_000         label "MW"   alias MW
+unit gigawatt:    power  = x * 1_000_000_000     label "GW"   alias GW
+unit milliwatt:   power  = x / 1000              label "mW"   alias mW
+unit microwatt:   power  = x / 1_000_000         label "µW"   alias µW, uW
+unit nanowatt:    power  = x / 1_000_000_000     label "nW"   alias nW
+
+# ── Pressure ──────────────────────────────────────────────────────────────────
+
+unit pascal:      pressure                        label "Pa"   alias Pa
+unit hectopascal: pressure  = x * 100            label "hPa"  alias hPa
+unit kilopascal:  pressure  = x * 1000           label "kPa"  alias kPa
+unit megapascal:  pressure  = x * 1_000_000      label "MPa"  alias MPa
+unit gigapascal:  pressure  = x * 1_000_000_000  label "GPa"  alias GPa
+unit millipascal: pressure  = x / 1000           label "mPa"  alias mPa
+
+# ── Voltage ───────────────────────────────────────────────────────────────────
+
+unit volt:        voltage                         label "V"    alias V
+unit kilovolt:    voltage  = x * 1000            label "kV"   alias kV
+unit megavolt:    voltage  = x * 1_000_000       label "MV"   alias MV
+unit millivolt:   voltage  = x / 1000            label "mV"   alias mV
+unit microvolt:   voltage  = x / 1_000_000       label "µV"   alias µV, uV
+unit nanovolt:    voltage  = x / 1_000_000_000   label "nV"   alias nV
+
+# ── Resistance ────────────────────────────────────────────────────────────────
+
+unit ohm:         resistance                      label "Ω"    alias Ω
+unit kilohm:      resistance  = x * 1000         label "kΩ"   alias kΩ
+unit megohm:      resistance  = x * 1_000_000    label "MΩ"   alias MΩ
+unit milliohm:    resistance  = x / 1000         label "mΩ"   alias mΩ
+unit microohm:    resistance  = x / 1_000_000    label "µΩ"   alias µΩ, uΩ
+
+# ── Conductance ───────────────────────────────────────────────────────────────
+
+unit siemens:     conductance                     label "S"    alias S
+unit millisiemens: conductance  = x / 1000       label "mS"   alias mS
+unit microsiemens: conductance  = x / 1_000_000  label "µS"   alias µS, uS
+unit kilosiemens:  conductance  = x * 1000       label "kS"   alias kS
+
+# ── Capacitance ───────────────────────────────────────────────────────────────
+
+unit farad:       capacitance                     label "F"    alias F
+unit millifarad:  capacitance  = x / 1000        label "mF"   alias mF
+unit microfarad:  capacitance  = x / 1_000_000   label "µF"   alias µF, uF
+unit nanofarad:   capacitance  = x / 1_000_000_000  label "nF"  alias nF
+unit picofarad:   capacitance  = x / 1_000_000_000_000  label "pF"  alias pF
+
+# ── Inductance ────────────────────────────────────────────────────────────────
+
+unit henry:       inductance                      label "H"    alias H
+unit millihenry:  inductance  = x / 1000         label "mH"   alias mH
+unit microhenry:  inductance  = x / 1_000_000    label "µH"   alias µH, uH
+unit nanohenry:   inductance  = x / 1_000_000_000  label "nH" alias nH
+
+# ── Charge ────────────────────────────────────────────────────────────────────
+
+unit coulomb:     charge                          label "C"    alias C
+unit millicoulomb: charge  = x / 1000            label "mC"   alias mC
+unit microcoulomb: charge  = x / 1_000_000       label "µC"   alias µC, uC
+unit nanocoulomb:  charge  = x / 1_000_000_000   label "nC"   alias nC
+unit picocoulomb:  charge  = x / 1_000_000_000_000  label "pC" alias pC
+unit kilocoulomb:  charge  = x * 1000            label "kC"   alias kC
+unit ampere_hour:  charge  = x * 3600            label "Ah"   alias Ah
+unit milliampere_hour: charge  = x * 3.6         label "mAh"  alias mAh
+
+# ── Magnetic flux ─────────────────────────────────────────────────────────────
+
+unit weber:       magnetic_flux                   label "Wb"   alias Wb
+unit milliweber:  magnetic_flux  = x / 1000      label "mWb"  alias mWb
+unit microweber:  magnetic_flux  = x / 1_000_000  label "µWb" alias µWb, uWb
+
+# ── Magnetic flux density ─────────────────────────────────────────────────────
+
+unit tesla:       magnetic_flux_density           label "T"    alias T
+unit millitesla:  magnetic_flux_density  = x / 1000  label "mT"  alias mT
+unit microtesla:  magnetic_flux_density  = x / 1_000_000  label "µT"  alias µT, uT
+unit nanotesla:   magnetic_flux_density  = x / 1_000_000_000  label "nT"  alias nT
+
+# ── Absorbed dose / Equivalent dose ───────────────────────────────────────────
+# Separate dimensions: Gy ≠ Sv despite identical dimensional analysis.
+
+unit gray:        absorbed_dose                   label "Gy"   alias Gy
+unit milligray:   absorbed_dose  = x / 1000      label "mGy"  alias mGy
+unit microgray:   absorbed_dose  = x / 1_000_000  label "µGy" alias µGy, uGy
+
+unit sievert:     equivalent_dose                 label "Sv"   alias Sv
+unit millisievert: equivalent_dose  = x / 1000   label "mSv"  alias mSv
+unit microsievert: equivalent_dose  = x / 1_000_000  label "µSv"  alias µSv, uSv
+
+# ── Illuminance / Luminous flux ───────────────────────────────────────────────
+
+unit lux:         illuminance                     label "lx"   alias lx
+unit kilolux:     illuminance  = x * 1000        label "klx"  alias klx
+unit millilux:    illuminance  = x / 1000        label "mlx"  alias mlx
+
+unit lumen:       luminous_flux                   label "lm"   alias lm
+unit kilolumen:   luminous_flux  = x * 1000      label "klm"  alias klm
+unit millilumen:  luminous_flux  = x / 1000      label "mlm"  alias mlm
+
+# ── Luminance ─────────────────────────────────────────────────────────────────
+# cd/m² — distinct from illuminance (lux). Luminance is light emitted or
+# reflected per unit area of a source; illuminance is light received per unit
+# area of a surface. "Nit" is the informal name for cd/m², universal in
+# display technology (HDR spec: 1000 nit peak brightness).
+
+unit candela_per_meter_squared:       luminance                    label "cd/m²"  alias nit
+unit kilocandela_per_meter_squared:   luminance  = x * 1000       label "kcd/m²" alias kilonit
+
+# ── Catalytic activity ────────────────────────────────────────────────────────
+
+unit katal:       catalytic_activity              label "kat"  alias kat
+unit millikatal:  catalytic_activity  = x / 1000  label "mkat" alias mkat
+unit microkatal:  catalytic_activity  = x / 1_000_000  label "µkat" alias µkat, ukat
+
+# ── Area ──────────────────────────────────────────────────────────────────────
+
+unit meter_squared:       area                    label "m²"
+unit centimeter_squared:  area  = x / 10_000     label "cm²"
+unit millimeter_squared:  area  = x / 1_000_000  label "mm²"
+unit kilometer_squared:   area  = x * 1_000_000  label "km²"
+
+# ── Volume ────────────────────────────────────────────────────────────────────
+
+unit meter_cubed:        volume                   label "m³"
+unit centimeter_cubed:   volume  = x / 1_000_000  label "cm³"
+unit millimeter_cubed:   volume  = x / 1_000_000_000  label "mm³"
+unit decimeter_cubed:    volume  = x / 1000       label "dm³"
+
+# ── Velocity ──────────────────────────────────────────────────────────────────
+
+unit meters_per_second:    velocity               label "m/s"  alias mps
+unit kilometers_per_hour:  velocity  = x / 3.6   label "km/h" alias kmh, kph
+
+# ── Acceleration ──────────────────────────────────────────────────────────────
+
+unit meters_per_second_squared: acceleration      label "m/s²"
+# The label is gₙ, the SI symbol for standard gravity, so it does not collide
+# in output with gram's `g`; gₙ is also an alias, so it is writable. The ASCII
+# spelling is the canonical name `g_force`.
+unit g_force: acceleration  = x * 9.80665        label "gₙ"   alias gₙ
+
+# ── Formula declarations ──────────────────────────────────────────────────────
+
+unit formula hz_period  inverting implicit:
+    hz_to_period(x: Hz): nanosecond  = 1_000_000_000 / x
+    period_to_hz(x: nanosecond): Hz  = 1_000_000_000 / x

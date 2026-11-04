@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.4.3_tier2_with_log2_compiles",
+    "category": "compiler",
+    "scenario": "A tier-2 unit symbol whose conversion bodies use transcendental operations (`log2`, and `**` with a non-integer exponent) compiles: both are correctly rounded through CORE-MATH ([LEXP.3.9.1], [LEXP.7.3a]), so the conversion is EXACT and nothing refuses it ([LUNI.4.3]; DS_VALIDATE_TRANSCENDENTAL is retired). `log2` is `math`'s, imported bare ([LIMP.3.3.4]). PATH PINNED: `luni_4_3_tier2_body` in dsc.validate, which admits each body over `dsc.quantity.luni_4_3_tier2_fn`'s vocabulary, `math.log2` among it.",
+    "rules_ds": "from math import log2\n\nunit dimension loudness  storage float64  base sone\nunit sone: loudness\nunit phon: loudness:\n    to_base:   2.0 ** ((x - 40.0) / 10.0)\n    from_base: 10.0 * log2(x) + 40.0\n\nschema Pad scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

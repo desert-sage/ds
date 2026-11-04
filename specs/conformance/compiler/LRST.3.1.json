@@ -1,0 +1,10 @@
+{
+    "id": "LRST.3.1",
+    "clauses": ["LRST.1.1"],
+    "category": "compiler",
+    "scenario": "LRST.3.1's motion-light example compiles: `after 5_min as \"light.kitchen\":`, the `as <expr>` clause on `after` (LRST.1.1), with a literal key. PINS ONLY THAT IT COMPILES: the supersedure on re-fire is not run. LRST.3.1 is an example, so the vector links the production.",
+    "rules_ds": "service light.turn_off:\n    kwarg entity_id: String\n    no response\n\nservice light.turn_on:\n    kwarg entity_id: String\n    no response\n\nschema Motion scope logical:\n    entity_id: String key\n    state: String mutable\n\nrule motion_light:\n    Motion m where m.state == \"on\"\n->\n    call light.turn_on entity_id: \"light.kitchen\" cooldown: 1_s\n    after 5_min as \"light.kitchen\":\n        call light.turn_off entity_id: \"light.kitchen\" cooldown: 1_s\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LCCO.14.1",
+    "clauses": ["LCCO.2.2"],
+    "category": "compiler",
+    "scenario": "[LCCO.2.2]: an `on` clause over the response, a `timeout` clause naming a duration and an `error` clause, all three on one `call`, compile together. PINS ONLY THAT IT COMPILES: which case label fires is a runtime question this does not observe. LCCO.14.1, the id, is a tombstone.",
+    "rules_ds": "schema SvcMethodReply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method cooldown: 30_s\n        on response.v > 0:\n            log info \"ok\"\n        timeout 5_s:\n            log info \"timeout\"\n        error:\n            log info \"error\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

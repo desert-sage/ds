@@ -1,0 +1,43 @@
+{
+  "id": "LCYC.6.1.2",
+  "prefix": "LCYC",
+  "doc": "CYCLE_DETECTION.md",
+  "parent": "LCYC.6.1",
+  "seq": 311,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "  [LCYC.6.1.2] **What \"different literals\" means.**\n  The check compares two values: (a) the\n  literal on the LHS where-clause `binding.slot == X`,\n  (b) the literal on the RHS emit's `slot: Y`. Different\n  here is *literal inequality* by value, not just\n  textual difference. `kind == \"enter\"` vs `kind:\n  \"leave\"` differs; `kind == \"enter\"` vs `kind:\n  \"enter\"` does not (the self-edge stays — it is a real\n  cycle). Slot expressions that aren't a pair of\n  comparable literals (slot references, arithmetic,\n  function calls, interpolated strings) leave the edge\n  in the graph: the check is conservative.\n\n  **Two literals are compared as `==` compares them.**\n  An `Int` and a `Float` are a comparable pair,\n  the `Int` promoted ([LEXP.7.3]): `kind == 1` vs\n  `kind: 1.0` does not differ, and its self-edge stays;\n  `kind == 1` vs `kind: 2.0` differs. `0.0` and `-0.0`\n  do not differ.\n",
+  "refs": [
+    "LEXP.7.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_6_1_2__self_loop",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`X x -> emit X` with the same literal on both sides: the self-edge the clause says stays (\"it is a real cycle\")."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_6_1_2__self_loop0",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "From one live X."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "lcyc_6_1_2__self_loop_prog",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "That rule alone, over an explicit kind."
+      }
+    ]
+  }
+}

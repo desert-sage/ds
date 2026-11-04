@@ -1,0 +1,19 @@
+{
+    "id": "LNUL.4.9m",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] — a `Duration` answers `is Int` TRUE: libds carries a Duration as a bare int64-ns value. A runtime that gives it its own `duration` tag answers FALSE. The value is reached through `dwell`, which reads the entry stamp ([LEXP.9.5.1]) and is therefore a RUNTIME subtraction rather than a literal — a duration literal in the operand position risks being constant-folded before lowering, which would leave the fixture green without ever reaching the eval arm it names. Single positive pattern, because a `dwell` where-condition on a multi-pattern rule is DS_VALIDATE_NOW_MULTIPATTERN_UNSUPPORTED ([LTIM.2.6.2]). PINS MERCURY, NOT LIBDS: the value is INT-tagged in libds, so the vector cannot fail there. fact_count 2 — Label, Marker.",
+    "rules_ds": "schema Label scope logical:\n    entity_id: String key\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Label l where l.dwell is Int\n->\n    emit Marker logical entity_id: l.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Label",
+                "slots": {
+                    "entity_id": "a"
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

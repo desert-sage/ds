@@ -1,0 +1,24 @@
+{
+  "id": "RFCS.26.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.26",
+  "seq": 982,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.26.2] **The replayer applies the seeds before the first input.** A\nreplayer must apply each `CacheSeed` to the engine, in stream order, before the\nreplay's first stream event. It seeds `key` with the value `value_json` holds\nand with the recorded deadline, as a host seed writes the cache\n([IARC.12.1]): it raises no cache event and calls no write-through. The replay\nclock follows the recorded clock values ([LFST.9.2.1]), so an entry expires\nwhere it did in the run.\n\nA seed the replayer applies is a host seed for [RFCS.26.1] and for [NLFC.9.3]:\na recording of the replay carries the same `CacheSeed` atoms, and the `initial`\nblock's cache item for the same key leaves it in place, as in the run. The integrator must not seed an\nengine it replays into: the stream carries that engine's seeds, and one more\nwould start the replay from a cache the run did not have.\n\nA recorded `CacheSeed` was stored when it was recorded. So an engine that\nrefuses one, as a cache bound the recording engine did not have refuses it\n([LSTO.4.7.5]), and a `CacheSeed` after an event atom, which no recorder\nwrites, are a replay that has not reproduced the run. The replayer must stop\nwith `DS_ERR_FS_DIVERGENCE`.\n\n",
+  "refs": [
+    "IARC.12.1",
+    "LFST.9.2.1",
+    "LSTO.4.7.5",
+    "NLFC.9.3",
+    "RFCS.26.1"
+  ],
+  "atoms": [
+    "CacheSeed"
+  ],
+  "errors": [
+    "DS_ERR_FS_DIVERGENCE"
+  ]
+}

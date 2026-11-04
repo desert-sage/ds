@@ -1,0 +1,44 @@
+{
+    "id": "LTIE.9.4_the_receiving_schema_gives_the_ttl",
+    "clauses": ["LTIE.9.4"],
+    "category": "cross-tier",
+    "scenario": "[LTIE.9.4]: a published fact crosses a tier boundary as its schema name and slot values ([NCBK.10.1]); the receiving tier asserts it under its own declaration of that schema, so the TTL is the receiving schema's, counted from that assert. Two pairs, run the same way, the durations swapped: `pub_long` declares `Sig scope ttl 60_s` and forwards to `hub_short`, which declares `Sig scope ttl 5_s`; `pub_short` declares 5_s and forwards to `hub_long`, which declares 60_s. Each publisher holds its Trig alone, since a `publish` asserts nothing there ([LTIE.4.3]): 1 fact. Each hub takes its forward at t = 0, then advances 6 s and pumps: `hub_short`'s Sig has expired (0 facts) and `hub_long`'s has not (1). A runtime that carried the publisher's TTL across gives 1 and 0. PATH: the forward bridge over DS_EV_ACTION_PUBLISH ([RCTS.1.2.29]) into each hub's working-memory door, which takes its own schema's lifecycle.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "pub_long": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope ttl 60_s:\n    v: Int\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "hub_short": {
+                "rules_ds": "schema Sig scope ttl 5_s:\n    v: Int\n"
+            },
+            "pub_short": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope ttl 5_s:\n    v: Int\n\nrule up:\n    Trig t\n->\n    publish Sig v: t.v\n"
+            },
+            "hub_long": {
+                "rules_ds": "schema Sig scope ttl 60_s:\n    v: Int\n"
+            }
+        },
+        "steps": [
+            { "engine": "pub_long", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "pub_long", "op": "pump" },
+            { "engine": "hub_short", "op": "forward", "from": "pub_long" },
+            { "engine": "hub_short", "op": "pump" },
+            { "engine": "hub_short", "op": "advance", "delta_ns": 6000000000 },
+            { "engine": "hub_short", "op": "pump" },
+            { "engine": "pub_short", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "pub_short", "op": "pump" },
+            { "engine": "hub_long", "op": "forward", "from": "pub_short" },
+            { "engine": "hub_long", "op": "pump" },
+            { "engine": "hub_long", "op": "advance", "delta_ns": 6000000000 },
+            { "engine": "hub_long", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "pub_long": 1,
+            "hub_short": 0,
+            "pub_short": 1,
+            "hub_long": 1
+        }
+    }
+}

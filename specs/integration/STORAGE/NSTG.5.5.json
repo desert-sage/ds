@@ -1,0 +1,19 @@
+{
+  "id": "NSTG.5.5",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.5",
+  "seq": 508,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Declaration callback",
+  "text": "### Declaration callback [NSTG.5.5]\n\nFires at DSC load, **once per persisted series** — a series without\n`persist:` never reaches this callback. It is the manifest a backend\nneeds to provision storage before the first sample arrives.\n\n| Field | Meaning |\n|---|---|\n| schema_name / slot_name | which series is being declared |\n| identity_slot_name | how it partitions; **empty under `by: none`**, matching [NSTG.5.3] |\n| storage_mode | accumulator, or ring buffer |\n| element_type | the element's type; always float for an accumulator |\n| window_ns | the window; **zero means unwindowed** |\n| persist_ns | the retention, always positive — it is what made this series persisted at all |\n\nThe storage mode is the field that decides provisioning: an accumulator\nkeeps one running value per instance, a ring buffer keeps a bounded\nsequence, and those want different backing shapes. The enum is\ndeliberately open for future modes, so a receiver should reject an\nunrecognised mode rather than assume one of the two.\n\nThe callback signature will be `ds_series_declared_cb_t`, the declaration\nstruct `ds_series_declaration_t`, and the storage-mode enum\n`ds_series_storage_mode_t` (`DS_SERIES_ACCUMULATOR` /\n`DS_SERIES_RING_BUFFER`), declared in `runtime/include/libds.h` when this\nsection binds. Nothing declares them in this edition.\n\n",
+  "deferred": true,
+  "refs": [
+    "NSTG.5.3"
+  ],
+  "symbols": [
+    "DS_SERIES_ACCUMULATOR",
+    "DS_SERIES_RING_BUFFER"
+  ]
+}

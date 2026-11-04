@@ -1,0 +1,62 @@
+# lowered from the probe now.json by the fixture lowering (private tooling)
+# The lane runs `ds-formal-tests --fixture` on this and diffs against
+# now.expected (scripts/formal/check_idris.py). The Idris model's temporal
+# fragment: `now()` is lowered as the clock
+# leaf `now`, the wall sample in nanoseconds since the epoch (LTIM.2.8.3,
+# LTIM.2.1.1), against instants folded from `calendar.time` (LTIM.14.1); the
+# wall sample travels in `wall` steps -- the wall half of every `advance`,
+# after its tick, and each `wall_set` (NTST.3.1) -- written because a `where`
+# reads `now()`. Two kinds: Ping (0, relation: v Int key), Fresh (1, relation:
+# k Int key). The time map's unit is 1 s, the gcd of the four 1 s advances;
+# the ticks are 0 (the `set`), 1, 2, 3 and 4; the wall steps are the advances'
+# 1 s, 2 s, 3 s and 4 s and the `wall_set` back to 1 s before the third pump.
+# Rule 0 `window` is the witnesses' window `(now() > 0 and now() < 2 s) or
+# now() > 2 s`; rule 1 `at_one` is `now() == 1 s`; rule 2 `fresh` emits Fresh
+# logical under `now() < 2 s`; rule 3 `gone` has an untimed `no Fresh` node;
+# rule 4 `held` is `p.dwell >= 3 s`, scaled by 1000000000. At (1, 1) `window`,
+# `at_one` and `fresh` fire and Fresh blocks `gone`; at (2, 2) the three
+# matches end, Fresh is retracted by the cascade and `gone` fires; at (3, 1)
+# the wall is back and the three reopen as new matches, Fresh is emitted again
+# and `held` matures on the monotonic clock; at (4, 2) they shut again, Fresh
+# is retracted, `gone` fires and `held` persists. The key is the code of one
+# Int (8 * zigzag(n) + 2); payloads the empty tuple (1); no text is read, so no
+# `string` records.
+schema 0 relation Ping
+schema 1 relation Fresh
+alpha 0 0
+alpha 1 1
+rule 0 window
+pattern 0 0 0
+where 0 0 or and gt now lit i:0 lt now lit i:2000000000 gt now lit i:2000000000
+log 0 0 0
+rule 1 at_one
+pattern 1 0 0
+where 1 0 eq now lit i:1000000000
+log 1 0 0
+rule 2 fresh
+pattern 2 0 0
+where 2 0 lt now lit i:2000000000
+emit 2 1 1000000000000000000002 1
+rule 3 gone
+pattern 3 0 0
+pattern 3 1 1
+log 3 0 0
+rule 4 held
+pattern 4 0 0
+where 4 0 ge mul lit i:1000000000 dwell 0 lit i:3000000000
+log 4 0 1 slot 0 key 0
+step tick 0
+step assert _0 0 1000000000000000000018 1
+step tick 1
+step wall 1000000000
+step pump
+step tick 2
+step wall 2000000000
+step pump
+step tick 3
+step wall 3000000000
+step wall 1000000000
+step pump
+step tick 4
+step wall 2000000000
+step pump

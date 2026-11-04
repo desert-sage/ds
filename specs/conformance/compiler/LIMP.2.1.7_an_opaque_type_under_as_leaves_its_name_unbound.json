@@ -1,0 +1,13 @@
+{
+    "id": "LIMP.2.1.7_an_opaque_type_under_as_leaves_its_name_unbound",
+    "category": "compiler",
+    "scenario": "[LIMP.2.1.7]: `from crypto import Key as K` binds `K`, and not `Key`, so a slot typed `Key` names nothing. Its twin, `LIMP.2.1.7_an_opaque_type_under_as_is_that_type`, types the slot `K`. The break is the import bound under the declaration's own name, which compiles this. PATH PINNED: `dsc.resolve.imported_types` binding the alias, so that `dsc.resolve.resolve_imported`'s fold over `imported_unit_decls` adds no `Key`.",
+    "rules_ds": "from crypto import Key as K\n\nschema Mine scope logical:\n    k: Int key\n    pubkey: Key mutable\n\nrule r:\n    Mine\n->\n    log info \"m\"\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_TYPE"
+    }
+}

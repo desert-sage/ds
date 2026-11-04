@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+schema Trig scope logical:
+    v: Int key
+
+schema Out scope ttl 1_h:
+    v: Int
+
+service light.turn_on:
+    kwarg entity_id: String
+    no response
+
+rule call_then_log:
+    Trig
+->
+    call light.turn_on entity_id: "light.foyer" nocooldown
+    log info "after the call"
+
+rule delete_then_log:
+    Trig
+->
+    cache_delete key: "gone"
+    log info "after the cache_delete"

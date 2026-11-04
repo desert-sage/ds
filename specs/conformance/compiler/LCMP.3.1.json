@@ -1,0 +1,9 @@
+{
+    "id": "LCMP.3.1",
+    "category": "compiler",
+    "scenario": "Report is structured per-rule with feature-level breakdowns per LCMP.3.1. A rule with a call action generates rule-level call-analysis entries. Pin: a call in a rule compiles cleanly, exercising the per-rule analysis path.",
+    "rules_ds": "schema SensorReadReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice sensor.read:\n    kwarg entity_id: String\n    response SensorReadReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule with_call:\n    Trig t\n->\n    call sensor.read entity_id: t.entity_id cooldown: 30_s\n        on response.status == 200:\n            log info \"ok\"\n        timeout 10_s:\n            log info \"timeout\"\n        error:\n            log info \"error\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

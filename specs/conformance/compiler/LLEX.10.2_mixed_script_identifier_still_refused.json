@@ -1,0 +1,11 @@
+{
+    "id": "LLEX.10.2_mixed_script_identifier_still_refused",
+    "category": "compiler",
+    "scenario": "[LLEX.10.2]: a run carrying a unit glyph that is not a legal NAME under [LNAM.2.5.1] lexes as a TYPE_SYM, so `kΩ` is a unit symbol. That must not make a mixed-script spelling usable as a NAME. `kΩx` mixes Latin with Greek (Ω U+03A9), so it is a TYPE_SYM too; a `let` binding takes a NAME, and a TYPE_SYM is accepted only at a type or unit position, so the program is refused at the binding as a syntax error. PATH PINNED: dsc.lex llex_10_4_scan_ident's llex_10_2_carries_unit_glyph arm emits the type_sym; dsc.parse's `let` binding rejects it, llex_10_8_3_take_type being the one acceptor of a type_sym.",
+    "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule r:\n    T t\n->\n    let kΩx = t.v\n    log info \"bound\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

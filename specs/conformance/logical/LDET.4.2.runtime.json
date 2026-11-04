@@ -1,0 +1,15 @@
+{
+    "id": "LDET.4.2.runtime",
+    "category": "logical",
+    "scenario": "Refraction prevents a rule from re-firing on the same activation per LDET.4.2. Assert one fact and pump twice: rule fires exactly once, not twice.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n    v: Int mutable\n\nrule once:\n    Trig t where t.v > 0\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1", "v": 5 } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["once"]
+    }
+}

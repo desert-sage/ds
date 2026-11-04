@@ -1,0 +1,14 @@
+{
+    "id": "LCDB.3.2.1_rgate_cool_first",
+    "category": "logical",
+    "scenario": "DS-source twin of the K vector formal/k/rgate.cool_first: the first activation of a cooldown rule fires -- there is no prior fire to be inside a window of. Drives the rate gate as libds realises it: the terminal fire_guard is the ds_rate_allow CallExpr (`dsc.rete`'s `rlow_4_6_1_rate_guard`, IRET.10.4), evaluated inside eval_actions by adapter_ds_rate_allow (rete/adapters.c) with no prior entry for (r, key=1), so the RHS runs. Pins the fire, not the gate's internal state. The clock is the mock clock at 0.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire 1" ]
+    }
+}

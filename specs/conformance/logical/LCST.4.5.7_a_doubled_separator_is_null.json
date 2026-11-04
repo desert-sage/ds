@@ -1,0 +1,33 @@
+{
+    "id": "LCST.4.5.7_a_doubled_separator_is_null",
+    "category": "logical",
+    "scenario": "[LCST.4.5.7] parses a text as a source INT_LIT spells it, and [LLEX.11.1] admits a `_` only between two digits, one at a time (`DIGIT ('_'? DIGIT)*`, and the same for each base). So a doubled `_` is `null` in every base: `3__1`, `0x1__F`, `0b1__1111`, `0o3__7`. Each control, the same text with one `_`, parses to 31. Each text is asserted and pumped on its own, so the log order is the assert order. Rule `absent` logs a text whose `::Int?` is null, and rule `parsed` one that parses to 31. PATH PINNED: FN_STRING_TO_INT's runtime adapter, through libds's `digit_run` (`float_text/float_parse.cc`, shared by `ds_parse_int_text`) and Mercury's `ds.i64.from_literal`. The breaks: a parser that skips a doubled `_` logs `31 [...]` in place of a doubled text's `null [...]`; one that refuses every `_` logs `null [...]` for a control.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule absent:\n    S s where (s.txt::Int?) is null\n->\n    log info \"null [{s.txt}]\"\n\nrule parsed:\n    S s where (s.txt::Int? ?? 0) == 31\n->\n    log info \"31 [{s.txt}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "3__1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "b", "txt": "3_1" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "c", "txt": "0x1__F" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "d", "txt": "0x1_F" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "e", "txt": "0b1__1111" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "f", "txt": "0b1_1111" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "g", "txt": "0o3__7" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "h", "txt": "0o3_7" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "null [3__1]", "31 [3_1]",
+            "null [0x1__F]", "31 [0x1_F]",
+            "null [0b1__1111]", "31 [0b1_1111]",
+            "null [0o3__7]", "31 [0o3_7]"
+        ]
+    }
+}

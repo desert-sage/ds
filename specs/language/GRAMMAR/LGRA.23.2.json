@@ -1,0 +1,34 @@
+{
+  "id": "LGRA.23.2",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.23",
+  "seq": 1992,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.23.2] **Residue the grammar does not carry ([STYL.2.15.4]).**\n\n- **Modifiers are unordered.** A `kwarg_decl`'s modifiers may be written in any\n  order; each may appear at most once, and the compiler must reject a repeated\n  one (`DS_PARSE_KWARG_MODIFIER_DUPLICATE`).\n- **Kwargs are unordered at the source and sorted in the artefact.** A\n  service's `kwarg_decl`s may be written in any order. The compiler must emit\n  them sorted by name, as it emits a call's kwargs ([RLOW.7.3.1]), so the\n  artefact does not depend on the order the author wrote.\n- **A `default` must fit the kwarg's declared type**, and the compiler must\n  reject one that does not (`DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE`):\n  - a unit-typed kwarg takes a quantity in the unit's dimension. Where that\n    dimension declares `storage int64` ([LUNI.7.2]), the quantity must also\n    be a whole number of the kwarg's unit: `120 s` on a `min` kwarg is `2`,\n    and `90 s` is refused;\n  - a dimension-typed kwarg ([LUNI.7.1]) takes a quantity in that dimension;\n  - an `Int`, `Float`, `String` or `Bool` kwarg takes a literal of its type,\n    and a `Float` kwarg takes an `Int` literal too;\n  - a kwarg of any other builtin type — `Bytes`, `Date`, `Duration`,\n    `Interval`, `Json` or `Time` — takes no `default`;\n  - a kwarg declared with a schema or with the kind `Schema` takes no\n    `default` at all, because no literal has a schema type;\n  - a kwarg declared with an opaque type takes no `default`, because no\n    literal has an opaque type ([LOPQ.3.3]).\n\n  A `-` before the literal is admitted only before a number or a unit\n  literal. Before any other literal the compiler must reject it\n  (`DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE`). A negated unit literal has the\n  value [LUNI.3.3] gives it: the literal's number is negated, then converted.\n\n  What the service receives, from a `default` and from a written argument\n  alike, is [LADP.8.5.2]. The meaning of `default`, and of `literal` and\n  `required`, is [LADP.8.5.1].\n- **`TYPE_SYM` in a `kwarg_decl` resolves in the type namespace** ([LGRA.22.7]):\n  a scalar builtin, a unit symbol, a dimension or scalar-group name\n  ([LUNI.7.1]), a schema, the kind `Schema`, or an opaque type ([LOPQ.3.2]),\n  which an argument must match exactly. The compiler must refuse one\n  that resolves to none of these, as it refuses a slot's\n  (`DS_VALIDATE_UNKNOWN_TYPE`, [LGRA.5.7.1]), and checks no `default` against\n  it. A kwarg declared with a schema or with `Schema` takes only a pattern\n  binding ([LADP.8.6.1]); the compiler must reject any other argument\n  (`DS_VALIDATE_FACT_KWARG_NOT_BINDING`).\n- **Every `service_decl` declares its response, as its last line.** The\n  grammar makes `response_decl` required; the compiler must reject a\n  declaration without one (`DS_VALIDATE_SERVICE_NO_RESPONSE_DECL`), naming the\n  two forms. Its meaning is [LADP.8.4.2].\n- **`TYPE_SYM` in a `response_decl` resolves to a schema**: a response is a\n  fact, so a scalar, a unit symbol or the kind `Schema` there is a compile\n  error (`DS_VALIDATE_SERVICE_RESPONSE_NOT_SCHEMA`). The schema it names must\n  meet [LCRS.4.3.2].\n\n",
+  "errors": [
+    "DS_PARSE_KWARG_MODIFIER_DUPLICATE",
+    "DS_VALIDATE_FACT_KWARG_NOT_BINDING",
+    "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE",
+    "DS_VALIDATE_SERVICE_NO_RESPONSE_DECL",
+    "DS_VALIDATE_SERVICE_RESPONSE_NOT_SCHEMA",
+    "DS_VALIDATE_UNKNOWN_TYPE"
+  ],
+  "refs": [
+    "LADP.8.4.2",
+    "LADP.8.5.1",
+    "LADP.8.5.2",
+    "LADP.8.6.1",
+    "LCRS.4.3.2",
+    "LGRA.22.7",
+    "LGRA.5.7.1",
+    "LOPQ.3.2",
+    "LOPQ.3.3",
+    "LUNI.3.3",
+    "LUNI.7.1",
+    "LUNI.7.2",
+    "RLOW.7.3.1"
+  ]
+}

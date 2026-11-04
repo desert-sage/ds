@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.3.8.2_initial_tie_fold",
+    "clauses": ["LEXP.3.8.2", "LDET.3.3a.8"],
+    "category": "logical",
+    "scenario": "[LEXP.3.8.2] with [LDET.3.3a.8]: a compile-time fold of a tied `min` / `max` gives the first operand, kind included, as the engine does. Each call is a `const`, which the compiler folds before an `initial:` item can name it ([LEXP.8.8]), and each `initial` fact carries the folded value. `MXT = max(2, 2.0)` is the `Int` `2`, so it fits `VI`'s `Int` slot, and `MNT = min(2.0, 2)` is the `Float` `2.0`, which fits `VF`'s. Each rule logs its fact's key and value, so the kind is read through the text. A fold that gives a tie to the second operand places the `Float` `2.0` in `VI`'s `Int` slot, which each runtime refuses at the first step ([LGRA.24.3]). The sign half of the clause: `MNZ = min(0.0, -0.0)` is `0.0` and `MNNZ = min(-0.0, 0.0)` is `-0.0`, the first operand each time, read through [LDET.3.2.7]'s `-0.0` rendering. A fold that gave the tie to the second operand would log the two zeros the other way round. Each value has its own schema and rule, so the firings come in rule order. PATH PINNED: `dsc.dstest`'s `fold_math_builtin` `min` / `max` arm (`co_le` / `co_ge`).",
+    "rules_ds": "const MXT = max(2, 2.0)\nconst MNT = min(2.0, 2)\nconst MNZ = min(0.0, -0.0)\nconst MNNZ = min(-0.0, 0.0)\n\nschema VI scope explicit:\n    k: String\n    i: Int\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\nschema VZ scope explicit:\n    k: String\n    f: Float\n\nschema VNZ scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VI k: \"mxt\" i: MXT\n    VF k: \"mnt\" f: MNT\n    VZ k: \"mnz\" f: MNZ\n    VNZ k: \"mnnz\" f: MNNZ\n\nrule r_i:\n    VI v\n->\n    log info \"{v.k} {v.i}\"\n\nrule r_f:\n    VF v\n->\n    log info \"{v.k} {v.f}\"\n\nrule r_z:\n    VZ v\n->\n    log info \"{v.k} {v.f}\"\n\nrule r_nz:\n    VNZ v\n->\n    log info \"{v.k} {v.f}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mxt 2", "mnt 2.0", "mnz 0.0", "mnnz -0.0"]
+    }
+}

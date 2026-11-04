@@ -1,0 +1,21 @@
+{
+    "id": "IDSP.6.5_nan_argument_refuses_the_call",
+    "category": "adapter",
+    "scenario": "[IDSP.6.5], [LEXP.4.2]: a call whose `Float` argument is NaN is refused -- no ACTION_CALL, no request to the integrator -- and the firing's other actions still run; a call whose argument is +Inf is issued, because Inf is a value. One rule makes two calls: `svc.diff v: t.a * 10.0 - t.a * 10.0` and `svc.big w: t.a * 10.0`. Inf and NaN are made by arithmetic from a finite slot, so no fixture or scenario has to spell either. Pump 1 asserts a=1e308: `a * 10.0` overflows to +Inf, so `v` is Inf - Inf = NaN and `svc.diff` is refused, while `svc.big` is issued with w=+Inf; the pump reports DS_ERR_NAN_REJECTED (-216) after it completes, with no rollback. Pump 2 asserts a=2.0: both calls are issued and the pump returns 0. PATH PINNED: libds's `ds_dispatcher_call_typed` NaN check, reached through `bridge_call` and pyds's call callback; the Mercury runtime's `ds.exec` `call_args` refusal is compared against it by the runtime differential's `95_nan_call_arg` on `130_nan_call_arg`, which carries the same rule.",
+    "rules_ds": "service svc.diff:\n    kwarg v: Float\n    no response\n\nservice svc.big:\n    kwarg w: Float\n    no response\n\nschema Trig scope logical:\n    k: Int key\n    a: Float mutable\n\nrule r:\n    Trig t\n->\n    call svc.diff v: t.a * 10.0 - t.a * 10.0 nocooldown\n    call svc.big w: t.a * 10.0 nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "a": 1e308 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2, "a": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_pump_statuses": [-216, 0],
+        "expected_calls": [
+            { "service": "svc.big", "correlation": "$r_c1_g1", "body": { "w": Infinity } },
+            { "service": "svc.diff", "correlation": "$r_c0_g2", "body": { "v": 0.0 } },
+            { "service": "svc.big", "correlation": "$r_c1_g3", "body": { "w": 20.0 } }
+        ]
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "IRET.28.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28",
+  "seq": 2009,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Coverage — the tables",
+  "text": "### Coverage — the tables [IRET.28.2]\n\nThe engine's `oa` tables, by the number `[IRET.28.13]` and the code's comments\ncite. A number no table holds stays unused.\n\n| # | table (field, file) | key | hash / eq | value |\n|---|---|---|---|---|\n| 1 | `table` (`ds_wm_state_t`, wm.c) | `rete_fact*` | pointer | `ds_fact_t*`, owning |\n| 2 | — | | | |\n| 3 | `id_map` (`ds_rete_schema_t`, wm_rete.c) | `ds_rete_val_t*`, the fact's identity-key slots | the slots' content | `rete_fact*` |\n| 4 | `wm_map` (`ds_rete_engine_t`, wm_rete.c) | `u32` fact id | int | `rete_fact*` |\n| 5 | `ridx_map` (beta node, beta.c) | `u32` fact id | int | `oa_list<token*>` |\n| 6 | `lmem_idx_map` (beta node, beta.c) | `ds_rete_val_t` | `lmem_idx_oa_hash` / `_eq` | `oa_list<token*>` |\n| 7 | `ralpha_idx_map` (beta node, beta.c) | `ds_rete_val_t` | as #6 | `oa_list<fact*>` |\n| 8 | `ltok_idx_map` (beta node, beta.c) | `token*` | pointer | `oa_list<fact*>` |\n| 9 | — | | | |\n| 10 | `lmem_map` (beta node, beta.c) | `token*` | `token->hash` / `tokens_equal` | `token*` |\n| 11 | `map` (the TMS table, tms.c) | `i64` timetag | int | `ds_tms_just_t` |\n| 12 | `memory.map` (alpha node, alpha.c) | `u32` fact id | int | `rete_fact*` |\n| 13 | `act_map` (terminal, terminal.c) | `token*` | `token->hash` / `tokens_equal` | `activation*` |\n| 14 | `by_id` (`ds_wm_state_t`, wm.c) | `u64` fact id | `wm_id_hash` / `wm_id_eq` | `ds_fact_t*` |\n| 15 | `oneshot` (terminal, terminal.c) | `u32` fact id | `oneshot_oa_hash` / `_eq` | none ([IRET.11.3.5]) |\n| 16 | `map` (cache, cache.c) | `char*`, owned | `cache_hash` / `cache_eq` | `ds_cache_entry_t` |\n| 17 | `zones` (zone index, wm_rete.c) | `tz_zone_key_t` | the zone key | `tz_node_t*`, a tree's root |\n\nTables #1, #4 and #12 are iterated, #12 on the hot join scan. A clone\n([IARC.11.1]) and a replay build further `oa` maps that live only for that\noperation.\n\n",
+  "refs": [
+    "IARC.11.1",
+    "IRET.11.3.5",
+    "IRET.28.13"
+  ]
+}

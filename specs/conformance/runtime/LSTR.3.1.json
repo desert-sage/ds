@@ -1,0 +1,15 @@
+{
+    "id": "LSTR.3.1",
+    "category": "runtime",
+    "scenario": "String equality is codepoint-by-codepoint per LSTR.3.1. A rule gated on `u.name == \"alice\"` fires exactly when the slot value matches. Fact lands in working memory (2 Msg facts + 1 Found).",
+    "rules_ds": "schema User scope logical:\n    entity_id: String key\n    name: String mutable\n\nschema Found scope logical:\n    dummy: Int key\n\nrule trig:\n    User u where u.name == \"alice\"\n->\n    emit Found logical dummy: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "User", "slots": { "entity_id": "u1", "name": "alice" } },
+            { "schema": "User", "slots": { "entity_id": "u2", "name": "bob" } }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

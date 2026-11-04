@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A `+realtime` bundle, carrying a `RealtimeContract` atom whose hash is the
+# second element of the RT binding ([RBND.1.4], [RTCT.6]). Realtime-only: its
+# MANIFEST row is commented out.
+
+use realtime
+
+schema Reading scope logical:
+    entity_id: String key
+    state: Float mutable
+
+rule warm:
+    Reading r where r.state > 30.0
+->
+    log warning "warm {r.entity_id}"

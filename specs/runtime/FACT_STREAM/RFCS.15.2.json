@@ -1,0 +1,33 @@
+{
+  "id": "RFCS.15.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.15",
+  "seq": 805,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.15.2] The `CallIssued` body is defined in\n`proto/call_issued.proto#CallIssued`. The recorder is its only producer; it\nleaves field 1, `call_id`, absent.\n\n**The arguments are typed and named.** `args` holds one `Arg` ([RFCS.23.2]) per\nkwarg the call supplies, sorted by kwarg name; an optional kwarg the call omits\nis absent, not `null`. A kwarg declared with a schema or with `Schema`\n([LADP.8.6.1]) is an `Arg` of kind `KIND_ENCODED_FACT` carrying the bound fact\nas a `FactExternal` ([RFCS.23.1]). The call callback ([NCBK.6.2]) and the\n`DS_EV_ACTION_CALL` event carry the same arguments.\n\n**Joins.** `(timetag, rule_name)` is the firing activation's identity:\n`RuleFireAnnotation` ([RFCS.11.2]) carries the byte-identical pair, so a\nrecorded `CallIssued` resolves to the `RuleFireAnnotation` bracketing it.\n`correlation` joins it forward to the answers it will (or will not) receive.\n`correlation` is always present and never empty ([LCRS.3.1]): the author's\n`as` string, or the per-activation value the compiler generated\n([LCCO.3.4]).\n\n",
+  "refs": [
+    "LADP.8.6.1",
+    "LCCO.3.4",
+    "LCRS.3.1",
+    "NCBK.6.2",
+    "RFCS.11.2",
+    "RFCS.23.1",
+    "RFCS.23.2"
+  ],
+  "atoms": [
+    "CallIssued",
+    "RuleFireAnnotation"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/call_issued.proto",
+        "name": "CallIssued",
+        "tag": "spec"
+      }
+    ]
+  }
+}

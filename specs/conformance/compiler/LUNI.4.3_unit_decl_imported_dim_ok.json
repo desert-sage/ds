@@ -1,0 +1,12 @@
+{
+    "id": "LUNI.4.3_unit_decl_imported_dim_ok",
+    "category": "compiler",
+    "scenario": "LUNI.4.3 + LIMP.4.2 — a dimension name brought in via `from <lib> import <dim>` is accepted as the dimension reference on a `unit <sym>: <dim>` declaration. Pin: importing a dim from another library admits it as a valid target for unit-symbol declarations in the importer. The dimension is `span`, not one of `units.core`'s seven, which every file already has and no library may redeclare ([LUNI.4.1.2]). `my_span` is not `span`'s base, so it carries a conversion: only the base omits `=` ([LUNI.4.3]).",
+    "rules_ds": "from sub import span\n\nunit my_span: span = x * 2\n",
+    "libraries": {
+        "sub": "unit dimension span  storage float64  base base_span\nunit base_span: span\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

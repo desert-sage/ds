@@ -1,0 +1,23 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// founded_cycle -- formal/idris/Rete/Refcount.idr's witness shape with its
+// base fact PRESENT: P -> Q, Q -> R, R -> Q, and P holds 1. The least model
+// derives Q and R. This is the twin of unfounded_cycle: it proves the rules
+// derive when founded, so the twin's empty answer is the absence of the base
+// and not a dead rule.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl P(x: DsInt)
+.decl Q(x: DsInt)
+.decl R(x: DsInt)
+.input P(filename="founded_cycle.P.facts")
+
+Q(x) :- P(x).
+R(x) :- Q(x).
+Q(x) :- R(x).
+
+.output Q
+.output R

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.16.2_units_customary_compiles",
+    "clauses": ["RCTS.1.2.14"],
+    "category": "compiler",
+    "scenario": "[LUNI.16.2]'s `units.customary`, compiled as it ships: the standard library is on every fixture's search path and there is no `libraries` copy ([RCTS.1.2.14]), so this fails if the shipped `stdlib/units/customary.ds` stops compiling or stops declaring the dry measure the clause names. `bushel` is a slot type and a literal, so the vector also fails if it is moved out. `units.customary` imports from `units.si`, so that import is compiled too.",
+    "rules_ds": "from units.customary import bushel\n\nschema Bin scope logical:\n    id: String key\n    grain: bushel mutable\n\nrule full:\n    Bin b where b.grain >= 100_bushel\n->\n    log info \"full\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

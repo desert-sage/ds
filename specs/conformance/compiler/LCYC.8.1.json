@@ -1,0 +1,11 @@
+{
+    "id": "LCYC.8.1",
+    "clauses": ["LCYC.3.1"],
+    "category": "compiler",
+    "scenario": "Cycle rejection is a compile error per [LCYC.3.1] (LCYC.8.1, the id, is a tombstone) — no runtime cycle-breaking. A direct A → B → C → A cycle through emit + match is rejected at compile time with DS_VALIDATE_RULE_CYCLE.",
+    "rules_ds": "schema X scope logical:\n    v: Int key\n\nschema Y scope logical:\n    v: Int key\n\nschema Z scope logical:\n    v: Int key\n\nrule a:\n    X\n->\n    emit Y logical v: 1\n\nrule b:\n    Y\n->\n    emit Z logical v: 1\n\nrule c:\n    Z\n->\n    emit X logical v: 1\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

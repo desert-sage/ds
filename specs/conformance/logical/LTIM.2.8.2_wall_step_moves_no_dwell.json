@@ -1,0 +1,23 @@
+{
+    "id": "LTIM.2.8.2_wall_step_moves_no_dwell",
+    "category": "logical",
+    "scenario": "Relative-time mechanisms read the monotonic clock only (LTIM.2.8.2): stepping the wall clock back an hour and then forward two neither closes, re-opens nor re-fires a `dwell` gate. Drives the tick re-evaluation of a single-pattern `where` reading `dwell`, with the harness's `wall_set` step (mock wall clock alone, NTST.3.1). Pin: set 0; wall_set 2001-09-09T01:46:40Z; assert Ping; advance 5_s, pump (fires); wall_set one hour earlier, pump; wall_set one hour later than the first, pump; advance 1_s, pump. Messages are ['fired'] exactly once. A runtime whose `dwell` reads the wall clock closes the gate on the backward step (the dwell goes negative) and re-opens it on the forward one, a new match that fires again: ['fired', 'fired']. The backward step alone cannot tell the two apart, because nothing would re-open the gate.",
+    "rules_ds": "schema Ping scope logical:\n    k: String key\n\nrule held:\n    Ping p where p.dwell >= 3_s\n->\n    log critical \"fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set",      "now_ns": 0 },
+            { "op": "wall_set", "utc_ns": 1000000000000000000 },
+            { "op": "assert",   "schema": "Ping", "slots": { "k": "p" } },
+            { "op": "advance",  "delta_ns": 5000000000 },
+            { "op": "pump" },
+            { "op": "wall_set", "utc_ns": 999996400000000000 },
+            { "op": "pump" },
+            { "op": "wall_set", "utc_ns": 1000003600000000000 },
+            { "op": "pump" },
+            { "op": "advance",  "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired"]
+    }
+}

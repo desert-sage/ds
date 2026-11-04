@@ -1,0 +1,88 @@
+{
+  "id": "LDET.3.6.2",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.3.6",
+  "seq": 530,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.3.6.2] **IEEE results, including the exceptional ones.** A `Float`\noperation whose IEEE 754 result is an infinity or a NaN returns it, and none\ntraps: `x / 0.0` is `±Inf` for a nonzero `x` and NaN for `0.0 / 0.0`, `sqrt`\nof a negative is NaN, and `**` and the transcendental functions follow\n[LEXP.3.9.3]. No floating-point exception flag is observable. A NaN result flows\non through its expression, and [LEXP.4.2] keeps it out of working memory and\nevery payload. Division and modulo of `Int` operands by zero are not IEEE\noperations and stay runtime errors ([LEXP.7.15.1]).\n\n",
+  "refs": [
+    "LEXP.3.9.3",
+    "LEXP.4.2",
+    "LEXP.7.15.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "ldet_3_6_2__derivations",
+        "tag": "spec",
+        "note": "An operation's result derives from its operands and a derivation is finite; no other source has inputs."
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "ldet_3_6_2__results_are_quiet",
+        "tag": "spec",
+        "note": "'A Float operation whose IEEE 754 result is an infinity or a NaN returns it': the NaN it returns is IEEE 754 section 6.2's quiet NaN whenever no operand is signalling, and a conversion from an Int, a Duration or a Time is finite. Negation, a copy operation that keeps a signalling NaN, is covered by the same hypothesis. What [NDET.1.4]'s signalling-NaN exclusion takes from this clause; that libds's `fma`, `rint` and CORE-MATH build no NaN from a bit pattern is read in their pinned sources, not checked here."
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "ndet_1_4__no_signalling_operand",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "'A NaN result flows on through its expression' and stays quiet: with every source of a Float operand finite, infinite or refusing NaN, and every operation quiet on non-signalling operands, no derivation reaches a signalling NaN. Bounded at ten operands; `probe__quiet_nan_flows` is the quiet NaN the clause admits, flowing on."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__float_order",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The six comparisons on Floats are IEEE 754's: every ordering and == false on a NaN and != true, -0.0 == 0.0, an infinity beyond every finite value. Comparisons only; the clause's arithmetic is `lexp_7_3__float_op`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_6__render_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One consumer of the clause's exceptional results: an infinity or a NaN that flows on into `Float :: String` renders `inf`, `-inf` or `nan` ([LCST.4.5.6]) and traps nowhere. The clause is about the arithmetic that produces them, which is `lexp_7_3__float_op`'s."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "ldet_3_6_2__infinity",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The positive infinity as the clause's `x / 0.0` makes it, `1.0 / 0.0`; the parse's `inf` and the render's `inf` are this value and its negation."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_15_1__float_divmod_never_traps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "With a Float operand `//` and `%` yield a Float for every pair of operands and never trap, a zero, infinite or NaN operand included; the Int zero divisor stays [LEXP.7.15.1]'s trap, as the clause's last sentence says."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "An IEEE result that is an infinity or a NaN is returned and never traps: x / 0.0 is ±Inf, 0.0 / 0.0 NaN, x // 0.0 ±Inf and x % 0.0 NaN, run in Main.idr. Only + - * / // %: sqrt, ** and the transcendental functions are outside the fragment, no exception flag is modelled, and an Int zero divisor is [LEXP.7.15.1]'s trap in `lexp_7_2__int_op`."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

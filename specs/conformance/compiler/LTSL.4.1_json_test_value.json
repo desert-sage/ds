@@ -1,0 +1,9 @@
+{
+    "id": "LTSL.4.1_json_test_value",
+    "category": "compiler",
+    "scenario": "[LTSL.4.1] / [LGRA.9.8.3]: `json(\"…\")` over one string literal is a test value, so a test can seed a `Json` slot, while the same call in a rule is refused (LGRA.9.8.3_json_refused). The `inputs` fact constructs `Doc` with `payload: json(\"{\\\"a\\\": {\\\"b\\\": 1}}\")`, whose braces are literal text, not an interpolation site. PATH PINNED: `dsc.dstest.ltsl_4_1_literal`'s `json` arm and `json_literal_checked`, which lower the argument to `TestSlotLiteral.j_val` verbatim. What this does NOT pin: that the text reaches a runner, or that a runner refuses text that is not JSON; `compile_ok` stops at the artefact.",
+    "rules_ds": "schema Doc scope logical:\n    id: Int key\n    payload: Json mutable\n\nrule seen:\n    Doc\n->\n    log info \"seen\"\n\ntest \"a Json slot seeded from a json() test value\":\n    inputs:\n        at 0_s:\n            Doc id: 1 payload: json(\"{\\\"a\\\": {\\\"b\\\": 1}}\")\n    produces:\n        wm count Doc == 1\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

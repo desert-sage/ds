@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.5.8.6_rule_cache_string_over_limit_writes_nothing",
+    "category": "logical",
+    "scenario": "[LGRA.5.8.6]: the activation that makes a value past a limit is abandoned, so nothing it would have written lands, and the value is never truncated into the cache. The input is LGRA.5.8.6_rule_cache_string_over_limit_raises's: a `String` slot of 16,385 ASCII `a`s (the harness's `$repeat` form), cached by the rule as a `Json` string one byte past the string-bytes limit. Pin: no `action_cache_set` on the stream. A runtime that cached the value whole, or cut it to 16,384 bytes, writes one and fails. PATH PINNED: on libds, `adapter_ds_cache_set` refuses before `ds_cache_set` runs; on the Mercury runtime, `ds.exec.cache_set_verb` abandons through `json_over_limit` before `cache_put`.",
+    "rules_ds": "schema T scope logical:\n    k: Int key\n    s: String mutable\n\nrule r:\n    T t\n->\n    cache key: \"k\" value: t.s\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "k": 1, "s": { "$repeat": "a", "count": 16385 } } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["action_cache_set"]
+    }
+}

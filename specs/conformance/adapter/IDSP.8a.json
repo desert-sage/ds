@@ -1,0 +1,29 @@
+{
+    "id": "IDSP.8a",
+    "clauses": ["LSTO.4.3.2"],
+    "category": "adapter",
+    "scenario": "[LSTO.4.3.2]: after a `cache` action writes the engine's cache, the write reaches the integration's write-through hook. `cache key: \"daily-peak\" value: (t.v * 2) ttl: 1_h` with v = 21 reaches the cache-set callback once, with the key, the value 42 as a JSON value, and the TTL in nanoseconds (3600000000000). The value is computed at runtime, so it reaches the callback through [RLOW.7.4]'s `FN_JSON_VALUE` call.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    cache key: \"daily-peak\" value: (t.v * 2) ttl: 1_h\n",
+    "expect": {
+        "kind": "adapter_cache_sets",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 21
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_sets": [
+            {
+                "key": "daily-peak",
+                "value": 42,
+                "ttl_ns": 3600000000000
+            }
+        ]
+    }
+}

@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# mercury_ds fixture: a series kept per key, read by the rule below. No
+# public function reads one, and a pump hands the host no duty for it.
+
+use default
+
+schema Sensor scope logical:
+    entity_id: String key
+    state: Float mutable
+
+series Sensor.state:
+    count sliding 10_s
+
+rule trig:
+    Sensor t where count(t.state) > 0
+->
+    log info "x"

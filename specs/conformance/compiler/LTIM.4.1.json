@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.4.1",
+    "clauses": ["LTIM.4.1.1"],
+    "category": "compiler",
+    "scenario": "Time arithmetic per LTIM.4.1 — `Time - Time` produces `Duration`, `Time + Duration` produces `Time` (preserving the LHS's `tz_offset_s`). Pin: `now() - m.fired_at` (a Time-Time subtraction) compiled as part of a comparison against a literal duration parses cleanly.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule old_event:\n    Event m where (now() - m.fired_at) > 1_h\n->\n    log info \"old: {m.entity_id}\"\n",
+    "expect": { "kind": "compile_ok" }
+}

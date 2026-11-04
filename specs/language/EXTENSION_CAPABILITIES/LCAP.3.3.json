@@ -1,0 +1,17 @@
+{
+  "id": "LCAP.3.3",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": "LCAP.3",
+  "seq": 265,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Rule 3 — `dynamic_ttl: true` reintroduces a log factor",
+  "text": "### Rule 3 — `dynamic_ttl: true` reintroduces a log factor [LCAP.3.3]\n\n`dynamic_ttl: false` keeps the per-schema FIFO TTL queue, so the TTL tick\nis O(expired × log n_ttl_schemas + n_ttl_schemas) whatever\n`linear_scan` is ([LCAP.2.4], [LDTL.6.1]). Its log factor is in the number of\nTTL schemas, which is fixed at compile time, so no term grows with N_ttl.\n\n`dynamic_ttl: true` replaces the FIFO queue with a deadline heap: the TTL\ntick becomes O(expired × log N_ttl), which grows with N_ttl.\n\nThe combination of `linear_scan: false` and `dynamic_ttl: true` is permitted.\nIts TTL tick and its asserts, each O(log N_ttl) on the heap ([LCAP.2.4]), are\nthe operations [LCAP.2.2]'s O(1) bound does not cover. What the combination\ncosts `realtime`'s T_wcet is [LCAP.3.9]'s.\n\n",
+  "refs": [
+    "LCAP.2.2",
+    "LCAP.2.4",
+    "LCAP.3.9",
+    "LDTL.6.1"
+  ]
+}

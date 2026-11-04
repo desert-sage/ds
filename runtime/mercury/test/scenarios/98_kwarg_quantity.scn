@@ -1,0 +1,20 @@
+# A quantity on a unit-typed kwarg arrives in the kwarg's unit, converted when
+# the call is evaluated ([LADP.8.5.3], [RLOW.7.3.9]).
+#
+#   Delay k=1    wait=120 s   timer.arm wait=2, FN_INT_DIV_EXACT by 60e9 ns,
+#                             and the log line runs
+#   Delay k=2    wait=90 s    NOT_REPRESENTABLE: the activation is abandoned,
+#                             no call, no log, and the engine goes on
+#   Reading k=1  t=293.15 K   hvac.set t=20.0, (base - 273.15), and h=40.0,
+#                             (base - 273.15) / 0.5 -- both exact in binary64
+#
+# FN_INT_DIV_EXACT's zero divisor and null operand cannot be written in source
+# (the divisor is a unit's factor, and a `call` argument is never nullable), so
+# test_rete_time and test_ds pin those two in each runtime.
+# @spec [RLOW.7.3.9]
+assert Delay k=1 wait=120000000000
+pump
+assert Delay k=2 wait=90000000000
+pump
+assert Reading k=1 t=293.15
+pump

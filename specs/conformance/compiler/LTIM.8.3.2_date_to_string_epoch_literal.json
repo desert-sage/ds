@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.8.3.2_date_to_string_epoch_literal",
+    "category": "compiler",
+    "scenario": "LTIM.8.3.2 / LTIM.8.2.1: `d.to_string(format)` on a Date admits `iso8601` alone, so a literal epoch identifier is DS_VALIDATE_UNKNOWN_TIME_FORMAT, where on a Time it compiles. Drives the Date arm of `ltim_8_3_2_format_errors` in dsc.typecheck through `ltim_8_1_2_to_string`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    cal: Date mutable\n\nrule r:\n    Ev e\n->\n    let s = e.cal.to_string(\"epoch_millis\")\n    log info \"{s}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_TIME_FORMAT"
+    }
+}

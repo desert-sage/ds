@@ -1,0 +1,22 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// unfounded_reach -- the `+recursive` proposal's transitive-closure shape
+// with its seed ABSENT (withdrawn): Edge(a, b), Edge(b, a), no Seed. Under
+// the refcount of [IRET.12.2] the two Reach facts keep each other live after
+// the seed goes (iret_12_2__reach_refcount); the least model derives neither
+// (llog_2_5__reach_well_founded). Expected: Reach is empty.
+//
+//@derives [LLOG.2.5] [IRET.12.2]
+#include "prelude.dl"
+
+.decl Edge(x: DsStr, y: DsStr)
+.decl Seed(x: DsStr, y: DsStr)
+.decl Reach(x: DsStr, y: DsStr)
+.input Edge(filename="unfounded_reach.Edge.facts")
+.input Seed(filename="unfounded_reach.Seed.facts")
+
+Reach(x, y) :- Seed(x, y).
+Reach(x, z) :- Reach(x, y), Edge(y, z).
+
+.output Reach

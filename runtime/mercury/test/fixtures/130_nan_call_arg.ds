@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+service svc.diff:
+    kwarg v: Float
+    no response
+
+service svc.big:
+    kwarg w: Float
+    no response
+
+schema Trig scope logical:
+    k: Int key
+    a: Float mutable
+
+rule r:
+    Trig t
+->
+    call svc.diff v: t.a * 10.0 - t.a * 10.0 nocooldown
+    call svc.big w: t.a * 10.0 nocooldown
+    log info "fired {t.k}"

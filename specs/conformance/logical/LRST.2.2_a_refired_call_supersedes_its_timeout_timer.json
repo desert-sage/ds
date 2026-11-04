@@ -1,0 +1,22 @@
+{
+    "id": "LRST.2.2_a_refired_call_supersedes_its_timeout_timer",
+    "clauses": ["LRST.2.2", "LCCO.7.2"],
+    "category": "logical",
+    "scenario": "[LRST.2.2]: \"A re-fire of the same rule's same `call`-clause-position with the same evaluated key supersedes the prior timer of each of that call's `timeout` clauses.\" Rule `r` matches a `logical` Trig and calls `svc.get` as `c1` (a literal `as`; no body reads a binding, so there is no capture fact) with `timeout 5_s:` logging `late`. A Trig k 1, n 1 is asserted and pumped, so the call is issued and a timer armed for 5 s; at 3 s the Trig is asserted again with n 2, a changed mutable slot, and pumped, so the rule fires again and arms a timer for 8 s. The clock moves to 6 s and is pumped: nothing is logged, because the first timer was superseded. It moves to 9 s and is pumped: the second timer's timeout logs once. The messages are exactly ['late']. The break: a re-fire that left the prior timer in place logs `late` at 6 s too, ['late', 'late']. PATH PINNED: `dsc.rete`'s `clause_timer`, which sweeps the clause's timer on the same `corr` (`fn_retract_corr`) before asserting the new one, for a call with an author's `as`.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r:\n    Trig t\n->\n    call svc.get n: t.n nocooldown as \"c1\"\n        timeout 5_s:\n            log info \"late\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["late"]
+    }
+}

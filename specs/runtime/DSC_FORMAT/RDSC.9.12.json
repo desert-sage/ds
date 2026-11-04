@@ -1,0 +1,29 @@
+{
+  "id": "RDSC.9.12",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.9",
+  "seq": 2013,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.9.12] **A string field holds well-formed UTF-8 and no U+0000.** A\nloader **must** refuse with `DS_ERR_DSC_DECODE` an atom body in which a field\nof protobuf type `string`, at any depth it reads ([RDSC.11.4]), holds bytes\nthat are not well-formed UTF-8 (RFC 3629), or that hold U+0000, which no\n`String` holds ([LSTR.1.1]). Protobuf's own decode of a proto3 `string` field\nrefuses ill-formed UTF-8 at the occurrence that holds it, so such a body has\nnot decoded, and it is refused before any other rule judges it. A\nfield that occurs more than once is judged at every occurrence. A loader\n**must not** repair the string, nor truncate it at a U+0000.\n\n**Two `bytes` fields carry text, and are judged as strings.** Where a\nloader reads them, it **must** refuse the same way an atom body whose\n`proto/ds_source.proto#DsSource` `data`, the module's source text\n([RDSC.14.2.1]), or whose `proto/schema_def.proto#SchemaDef` `proto_source`,\nthe schema's `.proto` text ([RDSC.5.8.3]), is not well-formed UTF-8 or holds\nU+0000. This clause reaches no other `bytes` field. A loader reads either\nfield as text only when its body's `compression` is `COMPRESSION_NONE`. Under\nany other, it refuses the body for its compression ([RDSC.4.5.1]) and reads\nno text. What it judges is the field's value, which for a field that occurs\nmore than once is its last occurrence ([RDSC.9.5]).\n\nNo conforming compiler writes such a string: every name it emits is an\nidentifier ([LNAM.2]), every literal a `String` ([LSTR.1.1]), and the source\nand `.proto` texts are UTF-8 ([LLEX.1.1]). This is a\ncheap structural need of the loader's ([RDSC.9.9]), one pass over each string\nit reads.\n\n",
+  "refs": [
+    "LLEX.1.1",
+    "LNAM.2",
+    "LSTR.1.1",
+    "RDSC.11.4",
+    "RDSC.14.2.1",
+    "RDSC.4.5.1",
+    "RDSC.5.8.3",
+    "RDSC.9.5",
+    "RDSC.9.9"
+  ],
+  "atoms": [
+    "DsSource",
+    "SchemaDef"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DECODE"
+  ]
+}

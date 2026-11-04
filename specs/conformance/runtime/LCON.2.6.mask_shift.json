@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.6.mask_shift",
+    "clauses": ["LEXP.7.14.1", "LCON.2.6.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 integer determinism — bitwise mask + shift compose. `(0xF0 >> 4) & 0x0F` is 0x0F (15): right-shift a positive byte then mask the low nibble (LEXP.7.7). Guard `((t.x >> 4) & 15) == 15` gates the emit; fact_count 2 confirms.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where ((t.x >> 4) & 15) == 15\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 240 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

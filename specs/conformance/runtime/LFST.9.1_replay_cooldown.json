@@ -1,0 +1,22 @@
+{
+    "id": "LFST.9.1_replay_cooldown",
+    "category": "runtime",
+    "scenario": "A rule COOLDOWN replayed ([LFST.9.1], [LCDB.3]). `plain` and `cooled` differ only by `cooldown 30_s`. The sensor's reading changes at 0, 10_s and 35_s: `plain` fires all three times; `cooled` fires at 0, is suppressed at 10_s (10_s since its last fire) and fires at 35_s. The gate's state is the last fire instant, which no atom records, so the replay must rebuild it from the clock it was given. Paths: libds records through `rfcs/codec.c`'s recorder and replays through `ds_rfcs_replay_*` (pyds `Engine.record` / `Engine.replay`), which byte-compares each re-derived RuleFireAnnotation and FactEmit; the Mercury runtime records through `ds.rfcs` and replays through `ds.replay`.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    reading: Int mutable\n\nschema Fired scope ttl 1_h:\n    who: String\n    v: Int\n\nrule plain:\n    Sensor s\n->\n    emit Fired who: \"plain\" v: s.reading\n\nrule cooled cooldown 30_s:\n    Sensor s\n->\n    emit Fired who: \"cooled\" v: s.reading\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s", "reading": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 10000000000 },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s", "reading": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 25000000000 },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "s", "reading": 3 } },
+            { "op": "pump" }
+        ],
+        "min_events": 10,
+        "min_rule_fires": 5
+    }
+}

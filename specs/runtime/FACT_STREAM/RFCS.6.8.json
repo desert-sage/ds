@@ -1,0 +1,19 @@
+{
+  "id": "RFCS.6.8",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.6",
+  "seq": 387,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.6.8] **The `event_id` derivation.** An engine must derive each\n`FactAssert`'s `event_id` ([LFST.5.6]) by this function, and no other. Let $r$\nand $t$ be the UTF-8 bytes of the run identifier and the tier identifier the\nintegrator gave the engine, each empty when absent ([NLFC.1.2]); $s$ the\n`FactAssert`'s `seq` ([LFST.5.3]); $\\operatorname{be}_{64}(s)$ its eight bytes,\nmost significant first; $\\Vert$ concatenation; and $\\texttt{1F}$ the single\nbyte 0x1F. The literal is the bytes of its ASCII characters.\n\n$$h = \\operatorname{SHA\\text{-}256}\\bigl(\\texttt{\"ds.rfcs.event\\_id.v1\"} \\Vert \\texttt{1F} \\Vert r \\Vert \\texttt{1F} \\Vert t \\Vert \\texttt{1F} \\Vert \\operatorname{be}_{64}(s)\\bigr)$$\n\n$$u_i = h_i \\;\\; (0 \\le i < 16,\\ i \\ne 6, 8), \\qquad u_6 = (h_6 \\wedge \\texttt{0F}) \\vee \\texttt{80}, \\qquad u_8 = (h_8 \\wedge \\texttt{3F}) \\vee \\texttt{80}$$\n\n$h_i$ is byte $i$ of the digest, counting from 0, and $\\wedge$ and $\\vee$ are\nbitwise. The two assignments set the UUID version to 8 and the variant to the\nstandard one.\n\nThe `event_id` is $u_0 \\ldots u_{15}$ written as 32 lower-case hexadecimal\ndigits, two per byte with the high nibble first, in groups of 8, 4, 4, 4 and 12\ndigits separated by `-`: 36 characters.\n\n",
+  "refs": [
+    "LFST.5.3",
+    "LFST.5.6",
+    "NLFC.1.2"
+  ],
+  "atoms": [
+    "FactAssert"
+  ]
+}

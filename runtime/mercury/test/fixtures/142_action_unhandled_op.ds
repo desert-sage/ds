@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A builtin call as an action's value: `degrees()` is an `emit` slot's value,
+# as `68_where_unsupported`'s is a `where` test's. [RDSC.4a.9.3]: a `CallExpr`
+# may name only a builtin with a registered handler, and one with none is
+# DS_ERR_FN_NOT_FOUND at load. Both runtimes have a handler for `degrees`, so
+# this loads in both, and scenario `110_action_unhandled_op` pins that they
+# agree on the run.
+#
+# `test_ds`'s `op_rewritten` rewrites this fixture's one call to an op the
+# Mercury runtime has no handler for, pinning the refusal's code and clause at
+# the action site. It finds the call as the byte pair 0x18 23 (CallExpr.op,
+# FN_DEGREES), which a SchemaSource or RuleSource on compiled line 23 also
+# encodes, so no declaration may sit there: this header keeps its line
+# count.
+#
+
+from math import degrees
+
+schema Sensor scope logical:
+    entity_id: String key
+    reading: Float mutable
+
+schema Out scope ttl 1_h:
+    v: Float
+
+rule convert:
+    Sensor s
+->
+    emit Out v: degrees(s.reading)

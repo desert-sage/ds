@@ -1,0 +1,9 @@
+{
+    "id": "LLOG.5.1",
+    "category": "compiler",
+    "scenario": "Arithmetic and comparison test CEs work inside `where` clauses on `logical` emit rules per LLOG.5.1. Pin: `where t.celsius * 1.8 + 32.0 > 100.0` on a rule that emits a logical fact compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the lowered test is not observed.",
+    "rules_ds": "schema Temp scope logical:\n    id: Int key\n    ts: Time\n    celsius: Float mutable\n\nschema Hot scope logical:\n    source: String key\n\nrule detect_hot:\n    Temp t where t.celsius * 1.8 + 32.0 > 100.0\n->\n    emit Hot logical source: \"sensor\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "LSIG.6.1",
+  "prefix": "LSIG",
+  "doc": "SERIES_SIGNAL.md",
+  "parent": "LSIG.6",
+  "seq": 413,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LSIG.6.1] The v1 aggregations are exact over the *observed* event stream,\nbut their fidelity to the *physical* process depends on assumptions the\nsubstrate does not guarantee. The recurring rule: these primitives are\ntrustworthy paired with a liveness check, not alone. Over a lossy transport,\nan author should pair them with an independent rate or heartbeat signal.\n\n| Aggregation | Exact w.r.t. | Key assumption | Failure mode if it breaks | Pair with |\n|---|---|---|---|---|\n| `active_fraction` | observed transition stream | every transition observed; adapter asserts initial `true` on connect | a lost falling edge biases it high without self-correcting; an already-on sensor under-reports for ≤ W after connect | `onset_rate` and/or a `scope ttl` heartbeat |\n| `onset_rate` | observed rising edges | edges are genuine onsets, not chatter | un-debounced chatter inflates it | debounce upstream |\n| `integral` | piecewise-constant fact model | every value change observed; correct `gap` policy | `gap hold` over a dead sensor accrues without bound; rectangle error ≤ granularity × W vs the true signal | `gap zero` for rates; liveness for held quantities |\n\n"
+}

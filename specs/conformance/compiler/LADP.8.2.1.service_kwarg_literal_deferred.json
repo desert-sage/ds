@@ -1,0 +1,14 @@
+{
+    "id": "LADP.8.2.1.service_kwarg_literal_deferred",
+    "clauses": ["LADP.8.5.1", "LGRA.10.7", "LGRA.23.1"],
+    "category": "compiler",
+    "scenario": "[LGRA.10.7], [LADP.8.5.1]: a kwarg its service declares `literal` must be given a literal at every `call`. `ha`'s `light.turn_on` declares `entity_id: String literal required`, and rule `r` passes `entity_id: t.v`, a pattern binding's slot, which is computed at the firing, so the call is refused with DS_VALIDATE_DYNAMIC_IDENT_KWARG naming the kwarg and the service. PATH PINNED: `lgra_10_7_literal_kwarg` in dsc.validate, from `lgra_10_3_3_call_kwargs`, against the imported service's declared modifiers.",
+    "rules_ds": "from ha import light\n\nschema Trig scope logical:\n    v: String key\n\nrule r:\n    Trig t\n->\n    call light.turn_on entity_id: t.v cooldown: 30_s\n",
+    "libraries": {
+        "ha": "service light.turn_on:\n    kwarg entity_id: String literal required\n    no response\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DYNAMIC_IDENT_KWARG"
+    }
+}

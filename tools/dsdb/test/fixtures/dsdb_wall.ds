@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The two things the wall clock drives (LTIM.2.8.3): `now()`, and the `ts` the
+# engine fills on a publish. Compiled by the branch's own Mercury dsc
+# in the js gate.
+
+use default
+
+schema Reading:
+    id: String
+    ts: Time
+
+schema Stamped:
+    id: String
+    ts: Time
+
+schema Old:
+    id: String
+
+rule stamp:
+    Reading r
+->
+    publish Stamped id: r.id
+
+rule aged:
+    Reading r where now() - r.ts > 5_min
+->
+    publish Old id: r.id

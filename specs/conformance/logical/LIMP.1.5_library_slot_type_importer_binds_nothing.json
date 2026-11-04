@@ -1,0 +1,18 @@
+{
+    "id": "LIMP.1.5_library_slot_type_importer_binds_nothing",
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: a library's slot type resolves in the library's scope. `c` does `from a import Reply` and types `Held.r` with it; the program binds `a`'s schema only as `AR`, so `Reply` means nothing in the program. It must compile, and a run reaches the fact through `h.r`, by the join a reference slot takes ([LEXP.7.20]): exactly [\"held 10\"]. The break is the slot read in the importer's scope: `DS_VALIDATE_UNKNOWN_TYPE`, and nothing runs. PATH PINNED: `dsc.imports.limp_1_5_tree`, which writes `a.Reply` on `c`'s field, then `dsc.lower.slot_kind_of` and `dsc.typecheck.schema_slot` finding it through `dsc.resolve.limp_13_1_own_types`.",
+    "rules_ds": "from a import Reply as AR\nimport c\n\nrule make:\n    AR x\n->\n    emit c.Held logical k: x.k r: x\n\nrule read:\n    c.Held h\n    AR y where h.r == y\n->\n    log info \"held {y.v}\"\n",
+    "libraries": {
+        "a": "schema Reply scope logical:\n    k: Int key\n    v: Int mutable\n",
+        "c": "from a import Reply\n\nschema Held scope logical:\n    k: Int key\n    r: Reply mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.Reply", "slots": { "k": 1, "v": 10 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["held 10"]
+    }
+}

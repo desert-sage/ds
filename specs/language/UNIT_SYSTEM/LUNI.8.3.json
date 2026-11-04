@@ -1,0 +1,43 @@
+{
+  "id": "LUNI.8.3",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.8",
+  "seq": 866,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": "8.3 Dimensioned value and bare number",
+  "text": "### 8.3 Dimensioned value and bare number [LUNI.8.3]\n\nA number with no unit is dimensionless. It takes no dimension and no unit from\nthe operand beside it. A value of a `unit scalar` group ([LUNI.4.2]) is\ndimensioned for this clause.\n\nA bare number scales a dimensioned value: `x * n`, `n * x`, `x / n` and `x // n`\nhave `x`'s dimension. [LTIM.4.1.1] states what a `Duration` scaled this way holds.\n\nThe compiler **must** refuse a bare number beside a dimensioned value with\n`DS_VALIDATE_DIM_MISMATCH` as an operand of `+`, `-` or `%`, in either order, and\nin a comparison, a literal zero included. A `unit formula`'s function checks a\nbare argument the same way ([LGRA.9.8.11]). `n / x` and `n // x` are [LUNI.8.4]'s.\n\nA literal, a slot typed `Int` or `Float`, a `::Float` strip ([LUNI.8.7.2]) and a\nsame-dimension quotient ([LUNI.8.1]) are bare numbers. An operand whose type the compiler cannot determine is not one. This\nclause does not reach the body of a unit declaration or a `unit formula` ([LUNI.4.3], [LUNI.4.5]), which is\narithmetic on plain numbers.\n\n",
+  "refs": [
+    "LGRA.9.8.11",
+    "LTIM.4.1.1",
+    "LUNI.4.2",
+    "LUNI.4.3",
+    "LUNI.4.5",
+    "LUNI.8.1",
+    "LUNI.8.4",
+    "LUNI.8.7.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_DIM_MISMATCH"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/unit_dimension.als",
+        "name": "luni_8_3__bare_preserves_dimension",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The model accepts a bare number beside a dimensioned value under every operator and gives the result the dimensioned operand's dimension. The clause does that for scaling alone."
+      },
+      {
+        "path": "formal/alloy/unit_dimension.als",
+        "name": "luni_8_3__result_dim",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "Its first two cases give a bare-with-dimensioned operation the dimensioned operand's dimension under every operator. The clause does that for scaling alone."
+      }
+    ]
+  }
+}

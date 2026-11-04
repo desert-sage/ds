@@ -1,0 +1,20 @@
+{
+    "id": "LTIM.8.1.2_a_zoned_time_renders_its_own_offset",
+    "clauses": ["LTIM.8.1.2", "LTIM.8.2.4", "LTIM.7.1", "LTIM.4.1.1", "LTIM.1.1.3"],
+    "category": "logical",
+    "scenario": "[LTIM.8.1.2] / [LTIM.8.2.4]: a `Time` renders at its own offset, wherever the expression that produced it came from, and a `Time` read from a slot renders in UTC ([LTIM.1.1.3]). `show` binds `z` to `r.epoch.local(r.zone) + 0_s` -- a `let` whose value is neither a slot read nor a `.local(tz)` call, but a sum whose LHS carries the zone's offset ([LTIM.4.1.1]) -- and logs, through `::String` and `to_string`, `z` itself, `z.floor(1_h)` ([LTIM.7.1]: the result keeps the input's offset), `z + 1_h` ([LTIM.4.1.1]: the LHS offset is kept) and `z.to_string(\"iso8601\")`, then the slot `r.epoch` alone. Fact `x`'s instant is 2026-03-14T14:30:00Z in zone `Plus9`, which a `TimeZoneOffset` row gives `+09:00` through 2026 ([LTIM.10.7]), so its first four render at `+09:00`, not `2026-03-14T14:30:00Z`, and its slot renders `2026-03-14T14:30:00Z`. Fact `y`'s zone is `UTC` ([LTIM.10.8]), so all five render in UTC. One pump, `x` then `y` in assert order ([LDET.5.4]). The discriminator: a compiler that hands a `Time` receiver it cannot see is tagged through FN_UTC renders `x`'s four in UTC (`2026-03-14T14:30:00Z` ...); a runtime whose slot read gives an untagged Int renders `y`'s `z` as a Date. PATH PINNED: the compiler's `::String` cast and `to_string` / `floor` member lowering (dsc.rete, with no FN_UTC on the receiver), libds's `slot_read` (rete/eval.c) and the Mercury runtime's `ds.eval.slot_value`, and FN_TO_STRING in both runtimes.",
+    "rules_ds": "schema R scope logical:\n    entity_id: String key\n    zone: String mutable\n    epoch: Time mutable\n\nrule show:\n    R r\n->\n    let z = r.epoch.local(r.zone) + 0_s\n    let k = z::String\n    let f = (z.floor(1_h))::String\n    let p = (z + 1_h)::String\n    let m = z.to_string(\"iso8601\")\n    let u = r.epoch::String\n    log info \"{r.entity_id} {k} {f} {p} {m} {u}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Plus9", "valid_from": 1704067200000000000, "valid_until": 1798761600000000000, "offset_s": 32400 } },
+            { "op": "assert", "schema": "R", "slots": { "entity_id": "x", "zone": "Plus9", "epoch": 1773498600000000000 } },
+            { "op": "assert", "schema": "R", "slots": { "entity_id": "y", "zone": "UTC", "epoch": 1700000000000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "x 2026-03-14T23:30:00+09:00 2026-03-14T23:00:00+09:00 2026-03-15T00:30:00+09:00 2026-03-14T23:30:00+09:00 2026-03-14T14:30:00Z",
+            "y 2023-11-14T22:13:20Z 2023-11-14T22:00:00Z 2023-11-14T23:13:20Z 2023-11-14T22:13:20Z 2023-11-14T22:13:20Z"
+        ]
+    }
+}

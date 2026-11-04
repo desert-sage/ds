@@ -1,0 +1,58 @@
+{
+  "id": "IRET.11.3.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.11.3",
+  "seq": 927,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.11.3.3] **The identity tiebreak is required for\nconfluence.** Keying refraction by token hash alone lets\ntwo *distinct* activations whose tokens collide on the\n32-bit hash cross-suppress: the second is wrongly treated\nas already-fired and its RHS never runs. Because a\nfrom-scratch (batched) build restarts fact ids at 0 — so\nits small ids yield small, collision-prone hashes, while\nthe incremental engine's spread ids rarely collide — this\nmade the batched result derive *fewer* facts than the\nincremental one, violating the batched-equals-incremental\ndeterminism contract (`[LDET.5]`). The fact-id tiebreak\nrestores it.\n\nThe tiebreak applies under every capability setting, the\npooled strategy of `constspace` and `realtime` included\n([LDET.1.12]). There the runtime captures the fact-id tuple\nin a fixed-size buffer: a token's fact count is bounded by\nthe network, so capturing it allocates nothing.\n\n",
+  "refs": [
+    "LDET.1.12",
+    "LDET.5"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/refraction_identity.als",
+        "name": "iret_11_3_3__no_distinct_activation_suppressed",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__network_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Batched equals incremental in order on the instance: the replay is the from-scratch build."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__order_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The batched-equals-incremental contract for order, after any history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__ordered_recompute",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Batched equals incremental in order: the terminal's order is the canonical order of its recompute, which a from-scratch build produces directly."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "idat_6_2_2__marked_fired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Identity as the fact-id tuple makes the marked activation unique: with distinct identities no other activation is suppressed by the mark."
+      }
+    ]
+  }
+}

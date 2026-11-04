@@ -1,0 +1,23 @@
+{
+  "id": "NLFC.8.2",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.8",
+  "seq": 284,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[NLFC.8.2] **Clone requires a quiescent engine.**\n\n| Condition | Result |\n|---|---|\n| `src` or `out_dst` NULL | `DS_ERR_INVAL` |\n| called mid-pump / mid-callback | `DS_ERR_STATE`, as every call on that engine is ([RARC.13.16]); clone runs between pumps only |\n| `src` has halted | `DS_ERR_ENGINE_HALTED`: a clone would carry the halted state into an engine with no halt ([NCBK.2.9]) |\n| allocation fails | `DS_ERR_OOM` (source unchanged) |\n\nClone mints no new error codes; it reuses the existing taxonomy ([NLFC.7.4]).\nThis edition has no realtime entry point, so no engine an integrator holds is in\nRT mode ([NRTM.9.1]).\n\n",
+  "refs": [
+    "NCBK.2.9",
+    "NLFC.7.4",
+    "NRTM.9.1",
+    "RARC.13.16"
+  ],
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INVAL",
+    "DS_ERR_OOM",
+    "DS_ERR_STATE"
+  ]
+}

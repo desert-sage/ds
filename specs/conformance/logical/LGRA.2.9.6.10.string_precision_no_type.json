@@ -1,0 +1,16 @@
+{
+    "id": "LGRA.2.9.6.10.string_precision_no_type",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.10]: with no type, a String takes a precision and truncates to that many code points, as `s` does. `héllo` under `.3` is `hél`: `é` is one code point and two UTF-8 bytes, so a byte cut would give `hé` plus half a character. The `.3s` line is the control the clause says it equals. PATH PINNED: the ValuePrim with no type and a precision (RLOW.6.4), rendered by libds's `render_value` on this lane and by Mercury's renderer through the runtime differential.",
+    "rules_ds": "schema V scope logical:\n    id: Int key\n    s: String mutable\n\nrule show:\n    V v\n->\n    log critical \"none=[{v.s:.3}] s=[{v.s:.3s}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "V", "slots": { "id": 1, "s": "héllo" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "none=[hél] s=[hél]"
+        ]
+    }
+}

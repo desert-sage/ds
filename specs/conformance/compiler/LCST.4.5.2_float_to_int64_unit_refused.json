@@ -1,0 +1,11 @@
+{
+    "id": "LCST.4.5.2_float_to_int64_unit_refused",
+    "clauses": ["LUNI.8.5"],
+    "category": "compiler",
+    "scenario": "[LCST.4.5.2]: a unit and the other numeric kind do not convert; the author converts the number first. `byte` is a `data` unit and `data` stores `int64`, so `1.5::byte` is DS_VALIDATE_CAST_UNDEFINED, where `1.5::Int::byte` would compile and drop the fraction visibly. PATH PINNED: `dsc.cast`'s `ck_float -> ct_unit(_, st_int)` row, `cc_rejected(cr_no_conversion)`, rendered by `lcst_4_3_2_outcome_type` in dsc.typecheck.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema R scope logical:\n    id: Int key\n\nschema Out scope logical:\n    id: Int key\n    size: byte mutable\n\nrule r:\n    R p\n->\n    emit Out logical id: p.id size: 1.5::byte\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_UNDEFINED"
+    }
+}

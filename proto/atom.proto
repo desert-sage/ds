@@ -1,0 +1,248 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The unified atom registry — one oneof over one field-number space
+// (PBF1). A `.dsc` is a `Dsc` (repeated Atom carrying the DSC-legal subset);
+// a recorded fact stream is a `Stream` (the stream-legal subset).
+// An atom's field number IS its
+// wire identity in both, and the number's band is its blind forward-compat
+// disposition:
+//
+//   inject             1–127     (reject unknown → DS_ERR_FS_UNKNOWN_INJECT)
+//   reject-don't-skip  128–255   (reject unknown → DS_ERR_DSC_VERSION)
+//   skip-don't-reject  256–2047  (skip unknown)
+//
+// Field numbers 1–15 carry a 1-byte tag; 16–2047 are 2-byte (2047 is the
+// max 2-byte field number). The runtime hand-parses; this file is the
+// machine-readable registry + the compiler's emit type.
+//
+// An atom is named by its body message ([RDSC.1.2]), and each oneof field is
+// that message's name in snake case, so the field, the message and the census
+// row ([RDSC.7.1], [RFCS.3.1]) carry one name.
+//
+// PACKAGE: ds.v1 — the one unified namespace. Every
+// body is same-package here and referenced unqualified.
+
+// ── inject band: recorded external inputs (fact bodies) ──
+import "fact_assert.proto";
+import "fact_retract.proto";
+import "fact_emit.proto";           // FactEmit ([RFCS.6a])
+import "fact_publish.proto";        // FactPublish ([RFCS.27])
+import "fact_withdraw.proto";       // FactWithdraw ([RFCS.7a])
+import "external_assert.proto";     // ExternalAssert ([RFCS.24])
+import "cache_seed.proto";          // CacheSeed ([RFCS.26])
+// ── stream structural/compare (fact-stream bodies) ──
+import "stream_header.proto";        // StreamHeader, ClockAdvance, RuleFireAnnotation
+import "call_issued.proto";          // CallIssued
+// ── reject band + all DSC bodies ──
+import "realtime_contract.proto";
+import "series_backend_interval_pulse.proto";
+import "series_backend_numeric_integral.proto";
+import "schema_def.proto";
+import "slot.proto";
+import "header.proto";
+import "dialect.proto";
+import "capabilities.proto";
+import "ds_source.proto";
+import "alfa.proto";
+import "beta.proto";
+import "term.proto";
+import "test_oracle.proto";
+import "aot.proto";
+import "schema_logical.proto";
+import "schema_ttl.proto";
+import "hydration.proto";
+import "schema_source.proto";
+import "line_span.proto";
+import "doc_string.proto";
+import "rule_cooldown.proto";
+import "rule_source.proto";
+import "rule_debug_name.proto";
+import "service_def.proto";
+import "series_backend_welford_ewma.proto";
+import "series_backend_ring_buffer.proto";
+import "series_backend_monotonic_deque.proto";
+import "series_backend_fifo_deque.proto";
+import "series_backend_reservoir.proto";
+import "test_scenario.proto";
+import "engine_error.proto";         // ComputationError
+import "type_error.proto";           // TypeError
+import "bounds_error.proto";         // BoundsError
+import "engine_fault.proto";         // EngineError
+import "pump_boundary.proto";        // PumpBoundary ([RFCS.22])
+import "initial.proto";              // InitialFact, InitialCacheSeed ([LGRA.24])
+
+message Atom {
+  oneof body {
+    // ── inject 1–127 (1–15 = 1-byte tag) ──
+    FactAssert      fact_assert     = 1;
+    FactRetract     fact_retract    = 2;
+    ClockAdvance    clock_advance   = 3;
+    PumpBoundary    pump_boundary   = 4;   // pump-to-quiescence boundary ([RFCS.22])
+    ExternalAssert  external_assert = 5;   // host input carrying a fact reference ([RFCS.24])
+    CacheSeed       cache_seed      = 6;   // host cache seed, in the prelude ([RFCS.26])
+
+    // ── reject-don't-skip 128–255 ──
+    RealtimeContract              realtime_contract               = 128;
+    SeriesBackendIntervalPulse    series_backend_interval_pulse   = 129;  // active_fraction
+    SeriesBackendNumericIntegral  series_backend_numeric_integral = 130;  // integral
+    // A ruleset's `initial:` block ([LGRA.24]). Program content, so reject
+    // band: a reader that skipped one would start the program from another
+    // working memory. initial.proto says why these differ from TestFact /
+    // TestCacheSeed.
+    InitialFact                   initial_fact                    = 131;
+    InitialCacheSeed              initial_cache_seed              = 132;
+
+    // ── skip-don't-reject 256–2047 ──
+    // shared (DSC + stream)
+    SchemaDef schema_def = 256;
+    Slot      slot       = 257;
+    // stream-only structural/compare
+    StreamHeader        stream_header        = 258;
+    // 259 is held for Checkpoint ([RFCS.9]), which is deferred: its census row
+    // ([RFCS.3.1]) keeps the number and nothing else may take it. It is not
+    // allocated here, so a reader meets 259 as an unknown skip-band atom.
+    // 260 is reserved at MESSAGE level below.
+    RuleFireAnnotation  rule_fire_annotation = 261;  // compare
+    CallIssued          call_issued          = 262;  // outbound-call provenance (compare, [RFCS.15])
+    // 323 is held for TextNote ([RFCS.25]), which is deferred: its census row
+    // ([RFCS.3.1]) keeps the number and nothing else may take it. It is not
+    // allocated here, so a reader meets 323 as an unknown skip-band atom.
+    // ComputationError lands at the end of the oneof rather than beside the
+    // other stream compare atoms: 258-262 is full and a registry number is
+    // never inserted into a gap ([STYL.2.8.7]). 325 is inside the
+    // skip-don't-reject band 256-2047 ([RFCS.16.2]), which is where a
+    // provenance atom belongs — a replayer that does not know it should replay
+    // the run, not refuse it.
+    ComputationError computation_error = 325;  // trap provenance ([LERR.1.4.7], [RFCS.21])
+    // [RFCS.6a] / [RFCS.7a] — the author-emitted half of the fact surface.
+    // FactAssert / FactRetract are the INTEGRATOR's atoms and stay inject-class
+    // in the 1-127 band; these are the ENGINE's and are compare-class, so they
+    // belong in skip-don't-reject where a replayer that does not know them
+    // skips rather than refuses. Additive by [RFCS.3.4]: a new inject-class atom
+    // would force a version reject.
+    FactEmit     fact_emit     = 326;  // author-emitted fact (compare, [RFCS.6a])
+    FactWithdraw fact_withdraw = 327;  // engine withdrawal + cause (compare, [RFCS.7a])
+    // The fault taxonomy: THREE messages and not one shared body with a
+    // discriminator. The atom's field number IS the class ([RFCS.16.1]), so a
+    // `kind` enum spanning them would be a second copy of it.
+    //
+    // Same band and same reasoning as FactEmit / FactWithdraw above:
+    // compare-class, stream-only, skip-don't-reject. Stream-only means a census
+    // row in [RFCS.3.1] and NONE in [RDSC.7.1] — a fault is something a run
+    // produces, never something a bundle carries.
+    TypeError    type_error   = 328;  // invalid op at this site (compare)
+    BoundsError  bounds_error = 329;  // a declared cap was reached (compare)
+    EngineError  engine_error = 330;  // engine untrustworthy; halts (compare)
+    FactPublish  fact_publish = 331;  // a rule's `publish` ran (compare, [RFCS.27])
+    // DSC-only
+    DscHeader      dsc_header      = 263;
+    DialectInfo    dialect_info    = 264;
+    CapabilityInfo capability_info = 265;
+    DsSource       ds_source       = 267;
+    AlphaNode      alpha_node      = 268;
+    BetaNode       beta_node       = 269;
+    TerminalNode   terminal_node   = 270;
+    // 271-286 and 322 are reserved at MESSAGE level below.
+    // oracle atoms (test-tier)
+    OracleActivated     oracle_activated      = 287;
+    OracleEmit          oracle_emit           = 288;
+    OraclePublish       oracle_publish        = 289;
+    OracleCall          oracle_call           = 290;
+    OracleCacheSet      oracle_cache_set      = 291;
+    OracleCacheDelete   oracle_cache_delete   = 292;
+    // 293 is reserved at MESSAGE level below.
+    OracleLog           oracle_log            = 294;
+    // 295 is reserved at MESSAGE level below.
+    OracleRetract       oracle_retract        = 296;
+    OracleWorkingMemory oracle_working_memory = 297;
+    // OracleExclusive lands at the END of the oneof rather than beside its
+    // family: 290-297 is full and 298 onward is allocated, and a registry
+    // number is never inserted into a gap ([STYL.2.8.7]). 324 is still inside
+    // the skip-don't-reject band 256-2047 ([RFCS.16.2]), which is where every
+    // test atom belongs.
+    OracleExclusive     oracle_exclusive      = 324;
+    // AOT
+    CompiledCode compiled_code = 298;
+    // schema (non-shared)
+    SchemaLogical schema_logical = 299;
+    SchemaTtl     schema_ttl     = 300;
+    Hydration     hydration      = 301;
+    SchemaSource  schema_source  = 302;
+    // source-meta
+    LineSpan  line_span  = 303;
+    DocString doc_string = 304;
+    // rule
+    // 305 and 306 are reserved below. The agenda's
+    // outer key is the terminal ordinal, assigned at load from TerminalNode
+    // order ([LDET.5.4]), which is not a wire field.
+    RuleCooldown   rule_cooldown   = 307;
+    // 308 is reserved below; an on-delay is `where x.dwell >= T`
+    // ([LCDB.3.2.3]).
+    RuleSource     rule_source     = 309;
+    RuleDebugName  rule_debug_name = 310;
+    // service
+    ServiceDef service_def = 311;
+    // series (non-reject)
+    SeriesBackendWelfordEwma     series_backend_welford_ewma     = 312;
+    SeriesBackendRingBuffer      series_backend_ring_buffer      = 313;
+    SeriesBackendMonotonicDeque  series_backend_monotonic_deque  = 314;
+    SeriesBackendFifoDeque       series_backend_fifo_deque       = 315;
+    SeriesBackendReservoir       series_backend_reservoir        = 316;
+    // test scenario atoms
+    TestCase      test_case       = 317;
+    TestFact      test_fact       = 318;
+    TestCacheSeed test_cache_seed = 319;
+    TestResponse  test_response   = 320;
+    TestReply     test_reply      = 321;
+  }
+
+  // These numbers and field names are reserved, never issued
+  // ([RDSC.7.1], [STYL.2.8.7]). `reserved` sits at MESSAGE level, not
+  // inside the oneof: protobuf does not admit it there, and the oneof's fields
+  // share this message's number space anyway ([RFCS.16.1]).
+
+  // Connection: the connection system is not in the language.
+  reserved 266;
+  reserved "conn";
+
+  // Seal: DS carries no attestation and no cryptography.
+  reserved 260;
+  reserved "seal";
+
+  // RuleBand: priority bands are not in the language.
+  reserved 305;
+  reserved "band";
+
+  // RuleRefraction: refraction is unconditional token identity.
+  reserved 306;
+  reserved "refr";
+
+  // RuleDebounce: `debounce` is not in the language ([LCDB.3.2.3]).
+  reserved 308;
+  reserved "debo";
+
+  // The `alert` verb and its `alerted` assertion are not in the language.
+  // 287-297 and 324 are otherwise the `.dstest` oracle atoms; 295 is a hole in
+  // that run.
+  reserved 295;
+  reserved "oalt";
+
+  reserved 293;
+  reserved "orce";
+
+  // Never reused, so no allocation can make a reader silently misinterpret one
+  // of these numbers. There are no compatibility shims ([RARC.4.2]).
+  reserved 271 to 286, 322;
+  reserved "elit", "eslt", "ebin", "euno", "ejsp", "ecat", "efmt", "efun",
+           "eagg", "aemt", "apub", "acal", "acht", "acdl", "arce", "alog",
+           "aalt";
+}
+
+// A compiled artifact (.dsc) and a recorded fact stream are both a sequence
+// of Atoms; the container distinguishes intent + legal subset ([RFCS.17.1]).
+message Dsc    { repeated Atom atoms = 1; }
+message Stream { repeated Atom atoms = 1; }

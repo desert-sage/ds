@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_dim_times_dim_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.8.4 — multiplication of two dimensioned values produces a result whose unit the compiler cannot infer; the spec rejects implicit unit algebra. `r.w * r.h` where both are meter-typed slots rejects with DS_VALIDATE_DIM_AMBIGUOUS. Pin: even SAME-dim multiplication errors (the result would be meter_squared but that's the author's annotation to declare).",
+    "rules_ds": "schema Rect scope logical:\n    w: meter key\n    h: meter mutable\n\nrule big:\n    Rect r where (r.w * r.h) > 10\n->\n    log info \"big rect\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

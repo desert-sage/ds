@@ -1,0 +1,55 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+//@spec [LEXP.7.14.1]
+//
+// i64_shr.saw -- SAW proof that DS's `>>` is the ARITHMETIC right shift of
+// [LEXP.7.14.1]: `a >> n` is floor(a / 2^n), and the count is NEVER reduced modulo 64.
+// A count of 64 or more therefore gives 0 for a non-negative `a` and -1 for a
+// negative one. C's `>>` on a signed negative value is implementation-defined and
+// on a count of 64 or more is undefined, so `ds_i64_shr` has to reach this
+// explicitly; this proves it does, for every `a` and every non-negative count.
+//
+// THE NEGATIVE COUNT IS THE CALLER'S. A count that is negative at run time is a
+// trap, a ComputationError of kind DOMAIN ([LERR.1.4.1]). As for
+// `ds_i64_floordiv`'s zero divisor, `int_ops.h`'s helpers take the checked
+// operand and the evaluators (`rete/eval.c`, `builtins.c`) raise the trap before
+// calling. So the contract below carries `count >= 0` as a precondition, and the
+// trap is a conformance fixture's to pin, not this proof's.
+//
+// THE REFERENCE IS THE SPEC, NOT THE CODE. For a count below 64, Cryptol's `>>$`
+// IS floor(a / 2^n) on a 64-bit two's-complement `a`; at 64 or more, floor(a / 2^n)
+// lies in {0, -1} by the sign of `a`, which is `a >>$ 63`. So the reference states
+// the clause's floor, case by case, and the C may reach it however it likes.
+//
+// TEETH, measured. A C with `n = count & 63` and no guard fails this: z3 returns a
+// count of 64 or more, where the mask shifts by the low six bits and the clause
+// gives the sign fill. `ds_i64_shr` in `int_ops.h`, with
+// `if (count >= 64) return a < 0 ? -1 : 0;` ahead of its
+// sign-extending shift, passes, so the reference is the provable one.
+// Dropping the sign-extension branch fails it too, on a negative `a`. See
+// `i64_shl.saw` for the one idiom the C must avoid.
+//
+// SECOND PROOF IN THIS LANE, and `i64_shl.saw` the third. `oa_mix64.saw` was the
+// pilot. `scripts/formal/check_saw.py` compiles any `formal/saw/*.c` harness against
+// `runtime/include` and `runtime/src/libds` and runs any `formal/saw/*.saw` beside
+// it, and the shim pattern reaches any `static inline` in a header. `ds_i64_floormod`
+// was tried first and z3 did not return in ninety minutes on a division with both
+// operands symbolic: the lane's reach is pure functions WITHOUT symbolic division.
+
+// @spec [LEXP.7.14.1]
+// The LLVM contract: for every `a` and every non-negative `count`, the C equals
+// floor(a / 2^count) -- the arithmetic shift below 64, the sign fill at or above.
+let lexp_7_14_1__shr_spec = do {
+    a     <- llvm_fresh_var "a" (llvm_int 64);
+    count <- llvm_fresh_var "count" (llvm_int 64);
+    llvm_precond {{ count >=$ 0 }};
+    llvm_execute_func [llvm_term a, llvm_term count];
+    llvm_return (llvm_term {{ if count >=$ 64 then a >>$ (63 : [64]) else a >>$ count }});
+};
+
+// @probe [LEXP.7.14.1]
+// Load the compiled harness bitcode and prove the contract for ALL pairs via z3.
+lexp_7_14_1__mod <- llvm_load_module "i64_shr_shim.bc";
+llvm_verify lexp_7_14_1__mod "lexp_7_14_1__i64_shr" [] false lexp_7_14_1__shr_spec z3;
+print "[LEXP.7.14.1] ds_i64_shr == floor(a / 2^count), count never masked: PROVED for every a and every count >= 0";

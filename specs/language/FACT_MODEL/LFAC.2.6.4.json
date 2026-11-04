@@ -1,0 +1,31 @@
+{
+  "id": "LFAC.2.6.4",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.2.6",
+  "seq": 350,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFAC.2.6.4] `tolerance` is legal on **`logical`** schemas only.\nIt drives the no-op dedup above — a within-tolerance reassertion\nof the same identity ([LFAC.1.7]) is suppressed — so it\npresupposes identity dedup. A `ttl` / event fact carries no\nidentity markers ([LFAC.1.7.6]) and does not dedup; such facts\naccumulate and expire on their deadline, so `tolerance` has\nnothing to suppress there. `tolerance` on a `ttl`-scoped schema\nis therefore a compile error (`DS_VALIDATE_TOLERANCE_TTL_SCHEMA`;\ngrammar rule [LGRA.5.9.5]). The rule is **`logical`-only**, not\nmerely `ttl`-specific: the compiler rejects `tolerance` on every\nnon-`logical` lifecycle (`ttl`, `explicit`, `ambient`), matching\nthe runtime, which rejects it on any non-`logical` schema at\nload. The `ttl` case (the common one) reports\n`DS_VALIDATE_TOLERANCE_TTL_SCHEMA`.\n\n",
+  "refs": [
+    "LFAC.1.7",
+    "LFAC.1.7.6",
+    "LGRA.5.9.5"
+  ],
+  "errors": [
+    "DS_VALIDATE_TOLERANCE_TTL_SCHEMA"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "iret_19_1__assert_fact",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The clause's premise only: identity dedup exists for the `logical` lifecycles and an explicit fact never dedups (every emit is a new fact), which is what makes `tolerance` meaningless there. `tolerance` itself is not modelled."
+      }
+    ]
+  }
+}

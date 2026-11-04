@@ -1,0 +1,9 @@
+{
+    "id": "LNLS.3.3_negated_existence_ok",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3]'s exemption: a negated pattern whose `where` references no earlier binding asks only whether a matching fact exists, so it needs no anchor. `no R x where x.amount > 5` is decided per `R` fact on its own; when the answer changes, every token it blocks or releases is part of the result. PATH PINNED: `dsc.validate.lnls_3_3_anchors`, the exemption for a `no` pattern with no cross-pattern reference; dropping it turns this red with DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C. The `D` pattern carries no binding ([LGRA.8.6]): a named but unread one is refused first, by another check, and would mask this one.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema D scope logical:\n    id: String key\n    level: Int mutable\n\nschema R scope logical:\n    id: String key\n    amount: Int mutable\n\nrule r:\n    D\n    no R x where x.amount > 5\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

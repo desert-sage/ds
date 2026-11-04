@@ -1,0 +1,56 @@
+{
+  "id": "LGRA.6.1",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.6",
+  "seq": 694,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.6.1] Rule productions:\n\n```\nrule_decl ::= 'rule' NAME rule_modifier* ':' NEWLINE\n              INDENT\n                  docstring?\n                  pattern+\n              DEDENT\n              '->' NEWLINE\n              INDENT\n                  let_decl*\n                  action_body\n              DEDENT\n\naction_body   ::= action+ after_clause*\n               |  after_clause+\n\nafter_clause  ::= 'after' UNIT_LIT ('as' expression)? ':' NEWLINE\n                  INDENT\n                      action_body\n                  DEDENT\n\nrule_modifier ::= rate_mod\n               |  rate_key\n\n\nrate_mod      ::= 'cooldown' time_expr\n\nrate_key      ::= 'by' ':' ( key_path (',' key_path)* | 'none' )\n\nkey_path      ::= NAME '.' NAME\n\nlet_decl      ::= 'let' let_binding\n                  (INDENT let_binding+ DEDENT)?\n\nlet_binding   ::= NAME (':' TYPE_SYM NULLABLE?)? '=' expression NEWLINE\n               |  '(' NAME (',' NAME)* ')' '=' expression NEWLINE\n```\n\nThe optional indented block is a **hanging indent**: `let` is written once and\nthe rest of the group hangs under it. The per-line form is the same production\nwith the block absent, so the two coexist and a rule body may use either or both\n([LGRA.6.7.4]).\n\n`let_binding`'s second alternative is **kept parseable, not legal.** [LREG.4.1]\nrequires a capture-bearing match to bind in `where`, never in `let` — a\n`let`-position capture is a compile refusal pointing the author at the `where`\nform, rather than a generic parse error. The alternatives are\ndistinguished by their first token — `NAME` against `(` — so the choice needs\nno lookahead.\n\n`after_clause` is a timed action ([LTAC.2]). Its duration is a bare\n`UNIT_LIT`, not a `time_expr` ([LGRA.2.8.1]): it takes no `NAME` and no sign, so\na named, computed or negative duration does not parse ([LTAC.2.2]). Its body is\nan `action_body`, so it nests ([LTAC.6.2.2]) and takes no `let_decl`. The `as`\nexpression is the clause's correlation key ([LRST.1.1]).\n\n",
+  "refs": [
+    "LGRA.2.8.1",
+    "LGRA.6.7.4",
+    "LREG.4.1",
+    "LRST.1.1",
+    "LTAC.2",
+    "LTAC.2.2",
+    "LTAC.6.2.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Lgra_6_1__rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A rule: positive patterns by kind, a guard over the bound facts (where clauses and join predicates), `no` patterns, RHS actions. `let` bindings, `after` clauses, `cooldown` / `debounce` and the docstring have no model."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Lgra_6_1__same_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "TWO RULES THAT ARE ONE, extensionally: the same positive kinds, a guard that decides alike on every tuple, blockers that read the same kinds and decide alike, the same actions. The lowering builds closures and there is no function extensionality, so this is the equality a run can tell."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "lgra_6_1__same_rule_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule is one with itself."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "lgra_6_1__same_rule_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rules that are one compose."
+      }
+    ]
+  }
+}

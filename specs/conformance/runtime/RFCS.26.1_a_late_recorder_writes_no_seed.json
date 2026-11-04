@@ -1,0 +1,20 @@
+{
+    "id": "RFCS.26.1_a_late_recorder_writes_no_seed",
+    "category": "runtime",
+    "scenario": "[RFCS.26.1]: \"a recorder attached after the engine's first stream event writes no `CacheSeed`, because by then the cache holds what rules wrote, which no seed describes.\" Steps: `set` the clock to 0, a host seed of `k` = 1, a host assert of Trig 1 (the engine's first stream event), then a pump, a second Trig and a second pump. `late_start` 3 ([RCTS.1.2.23]) attaches the recorder after the first assert, so the recording begins with the first pump. The cache still holds `k`, with no TTL and nothing to remove it: rule `hit` reads it, and fires at each pump, two `rule_fire_begin`s (`expected_stream_kinds`). `expected_cache_seeds` is empty: the recording holds no `CacheSeed`. The control is RFCS.26.1_seeds_by_key_bytes_as_the_cache_holds_them, whose recorder is attached before the first event and reads four back through the same field. What it discriminates: a recorder that announces the cache whenever it is attached writes `k` here. ON THE MERCURY RUNTIME THE HARNESS DECIDES: its recorder is `ds.rfcs.encode_recording`, which writes the seeds its caller passes, and test_behave.m passes none for a late start, as it does for `replay_refused`'s. So this vector measures libds's recorder and test_behave.m's agreement with it, not a Mercury runtime decision. PATHS: libds's `ds_rfcs_record_begin`, which writes the prelude at once and without seeds when the engine has already emitted an event (`rfcs_write_prelude(engine, rec, false)` in `rfcs/codec.c`), through pyds's `Engine.record` attached after the first assert, read back through libds's reader (runner.py's `_run_rfcs_roundtrip`, which does not replay a late recording: the replayer refuses one, [LTIM.2.8.5]);test_behave.m's `late_records` and `encode_recording` with no seeds.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"k\") == \"1\"\n->\n    log info \"hit {t.v}\"\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "cache_seed", "key": "k", "value": 1 },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 2 } },
+            { "op": "pump" }
+        ],
+        "late_start": 3,
+        "expected_stream_kinds": ["rule_fire_begin", "rule_fire_begin"],
+        "expected_cache_seeds": []
+    }
+}

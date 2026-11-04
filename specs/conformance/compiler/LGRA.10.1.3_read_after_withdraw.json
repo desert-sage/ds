@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.10.1.3_read_after_withdraw",
+    "category": "compiler",
+    "scenario": "LGRA.10.1.3: an action after `withdraw t` reads a slot of `t` (`{t.v}` in the log message), so it would read a fact the withdraw removed. Refused at the action with DS_VALIDATE_WITHDRAWN_BINDING_USED. PATH PINNED: the compiler's RHS check for references after a withdraw, over the top-level actions in source order.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nrule r:\n    Trig t\n->\n    withdraw t\n    log info \"gone {t.v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHDRAWN_BINDING_USED"
+    }
+}

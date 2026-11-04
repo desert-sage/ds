@@ -1,0 +1,31 @@
+{
+    "id": "LDET.2.2b_clone_keeps_cooldown",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1], [LCDB.3.2.1]: a clone carries the rate gate's state, so a cooldown armed before the clone still suppresses after it. `r cooldown 10_s` logs `fire {t.n}`. Pin: set 0; assert Trig k=1 n=0; pump (admitted: `fire 0`, TIMER_ARMED); advance 2 s; CLONE; then on both: assert Trig k=1 n=1, a mutable-slot change under the same key, so a new match with the same activation key ([LCDB.3.3.1]); pump (+2 s, inside the window: the rule fires and brackets, with no ACTION_LOG and no TIMER_ARMED, [LCDB.3.2.1.1], [NCBK.2.6]); advance 10 s; assert Trig k=1 n=2; pump (+12 s, past the window: admitted, `fire 2`); FREE the clone; on the source: advance 11 s; assert Trig k=1 n=3; pump (+23 s: admitted). The post-clone streams are compared event for event (runner.py `_run_clone_determinism`). A clone that does not carry the gate's table finds no entry for the key, admits the +2 s firing, and its stream carries an ACTION_LOG `fire 1` and a TIMER_ARMED that the source's does not. PATHS: libds `ds_engine_clone` copying the rate table (`ds_rete_rate_table_clone`, rete/adapters.c) under `adapter_ds_rate_allow`, through pyds `Engine.clone()`; the Mercury runtime in test_behave.m's `run_clone_determinism`, where a clone is the engine value used twice and agrees by construction, so this vector pins libds and holds Mercury to its counts.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 10_s:\n    Trig t\n->\n    log info \"fire {t.n}\"\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 }
+        ],
+        "after_clone": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 10000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "free": "clone",
+        "after_free": [
+            { "op": "advance", "delta_ns": 11000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "min_events": 8,
+        "min_rule_fires": 2,
+        "min_rule_fires_after_free": 1
+    }
+}

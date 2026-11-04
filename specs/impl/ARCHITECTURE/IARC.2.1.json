@@ -1,0 +1,11 @@
+{
+  "id": "IARC.2.1",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.2",
+  "seq": 355,
+  "depth": 2,
+  "kind": "note",
+  "heading": null,
+  "text": "[IARC.2.1] libds modules and their dependency edges:\n\n```\n              ┌────────────────────────────────────────────┐\n              │  Public headers  (runtime/include/libds)  │\n              │  - typed callback signatures               │\n              │  - structured event payloads               │\n              │  - opaque handles                          │\n              └──────────────────┬─────────────────────────┘\n                                 │\n                  ┌──────────────▼──────────────────┐\n                  │   engine                        │\n                  │   (pump-driven consumption;     │\n                  │   one Rete network per instance)│\n                  └─┬──────┬──────────┬──────┬──────┘\n                    │      │          │      │\n       ┌────────────┘      │          │      └────────────────┐\n       ▼                   ▼          ▼                       ▼\n┌──────────┐        ┌──────────┐ ┌──────────┐          ┌──────────┐\n│ wm       │        │ schema   │ │dispatcher│          │ recorder │\n│(working  │        │(registry)│ │(RHS      │          │(stream   │\n│ memory)  │        │          │ │ actions) │          │ writer)  │\n└────┬─────┘        └──────────┘ └────┬─────┘          └────▲─────┘\n     │                                │                     │\n     │          rete                  │                     │\n     └────────────────────────────────┤                     │\n                                      │                     │\n                                      └─► integrator ───────┘\n                                          callbacks\n                                       (call / cache /\n                                        stream / ...)\n\n              ┌──────────────────────────────┐\n              │  clock    (leaf; no deps)    │\n              │  telemetry (callback dispatch)│\n              └──────────────────────────────┘\n```\n\n"
+}

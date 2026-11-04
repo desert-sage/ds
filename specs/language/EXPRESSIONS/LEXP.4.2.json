@@ -1,0 +1,50 @@
+{
+  "id": "LEXP.4.2",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.4",
+  "seq": 247,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.4.2] **Non-finite floats.** `inf` is a permitted `Float` value (`Inf == Inf`\nholds, so it dedups and joins in Rete). **`nan` is not:** NaN must never enter\nworking memory — `NaN != NaN` breaks fact identity, joins, and refraction. A\nNaN is a `Float` an expression may compute ([LDET.3.6.2]); what is refused is\nstoring one in a slot, on every path into one:\n\n- the compiler must reject the `nan` constant in a **value position** — a\n  slot value, a `let` / `const`, a `::` cast target — as a compile error\n  (`DS_VALIDATE_NAN_VALUE`);\n- a NaN `Float` arriving at runtime via a host assert is a hard error\n  (`DS_ERR_NAN_REJECTED`, −216);\n- a NaN a rule's activation would put into a slot is a `TypeError`, and the\n  engine abandons the activation ([RARC.5.2.7]).\n\nA `Float` call argument whose value is NaN refuses the call with\n`DS_ERR_NAN_REJECTED`, and the engine does not issue it; a `±Inf` argument\npasses.\n\nNo `Float` operation checks for NaN, and NaN needs no division by zero: `inf`\nis an author-writable constant and overflow yields one, so `inf - inf`,\n`inf / inf` and `0.0 * inf` are NaN. The refusal at the slot is what keeps it\nout of working memory.\n\nA non-finite `Float` (`±Inf`, or a NaN an expression produced) forced into a JSON data-plane body is a separate\n`NOT_REPRESENTABLE` trap at the verb ([LDET.3.2.7]), and a host call that would\nbuild such a value is refused with `DS_ERR_JSON_NONFINITE` ([LGRA.5.8.10]); rendered as\n**text** (`Float::String`, display) `±Inf` is `\"inf\"` / `\"-inf\"`\n([LCST.4.5.6]).\n\n---\n\n",
+  "refs": [
+    "LCST.4.5.6",
+    "LDET.3.2.7",
+    "LDET.3.6.2",
+    "LGRA.5.8.10",
+    "RARC.5.2.7"
+  ],
+  "errors": [
+    "DS_ERR_JSON_NONFINITE",
+    "DS_ERR_NAN_REJECTED",
+    "DS_VALIDATE_NAN_VALUE"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "lexp_4_2__class",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "lexp_4_2__nan",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "lexp_4_2__slot_paths_refuse_nan",
+        "tag": "spec",
+        "note": "The refusal on every path into a slot, as the clause names them and as the two stream paths reach it: a host assert and a call argument (`DS_ERR_NAN_REJECTED`), a `FactExternal` ([RFCS.23.2]) and a replayed fact body ([RFCS.6.3]), which both runtimes assert as a host assert. What is modelled is the refusal, not the TypeError of a rule's slot write, which reaches no operand."
+      },
+      {
+        "path": "formal/alloy/float_sources.als",
+        "name": "ndet_1_4__no_signalling_operand",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "'The refusal at the slot is what keeps it out of working memory', read one step further: with every stored path refusing NaN, every parse unable to spell one and every operation on non-signalling operands quiet, no signalling NaN reaches an operation -- the artefact's literals refusing a NaN at load ([RDSC.9.10]). Bounded at ten operands."
+      }
+    ]
+  }
+}

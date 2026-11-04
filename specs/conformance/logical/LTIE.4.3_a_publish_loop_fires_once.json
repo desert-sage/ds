@@ -1,0 +1,16 @@
+{
+    "id": "LTIE.4.3_a_publish_loop_fires_once",
+    "clauses": ["LTIE.4.3", "LCYC.3.2.2"],
+    "category": "logical",
+    "scenario": "[LTIE.4.3]: a `publish` asserts nothing in the current tier, so no rule on this tier matches what this tier publishes, and a rule that publishes the schema it matches is not a cycle ([LCYC.3.2.2] draws no edge for it). Rule `r` matches a `Soc` and publishes a `Soc` with the same `id`, logging `fired` first. `Soc` is `scope ttl 1_h` with no key, so each assert would be a new fact ([LFAC.1.2]). The host asserts one Soc and pumps once: `r` fires once, and the log is `fired` alone. A runtime whose publish asserted locally would match its own Soc, fire again, publish again, and run until its fire budget stopped it, logging `fired` many times. PATH: the compiler's `dsc.cycle`, which makes no edge for a `publish`; libds's `adapter_ds_publish` / `ds_rete_publish_values` and the Mercury runtime's `ds.exec.publish_verb`, neither of which enters working memory.",
+    "rules_ds": "schema Soc scope ttl 1_h:\n    id: Int\n\nrule r:\n    Soc s\n->\n    log info \"fired\"\n    publish Soc id: s.id\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Soc", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired"]
+    }
+}

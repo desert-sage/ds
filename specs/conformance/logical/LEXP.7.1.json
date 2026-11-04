@@ -1,0 +1,14 @@
+{
+  "id": "LEXP.7.1",
+  "category": "logical",
+  "scenario": "Type rules per LEXP.7.1 — Int+Float promotes to Float; floor division returns Int; modulo preserves type. Three rules verify Int arithmetic stays Int, Int+Float promotes, and floor-div returns Int.",
+  "rules_ds": "schema T scope logical:\n    v: Int key\n\nrule r_int_arith:\n    T t where t.v * 2 + 1 == 11\n->\n    log critical \"int\"\n\nrule r_floordiv_int:\n    T t where t.v // 3 == 1\n->\n    log critical \"floordiv\"\n\nrule r_mod_int:\n    T t where t.v % 4 == 1\n->\n    log critical \"mod\"\n",
+  "expect": {
+    "kind": "rule_fire_order",
+    "steps": [
+      { "op": "assert", "schema": "T", "slots": { "v": 5 } },
+      { "op": "pump" }
+    ],
+    "expected_rule_names": ["r_int_arith", "r_floordiv_int", "r_mod_int"]
+  }
+}

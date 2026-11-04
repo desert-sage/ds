@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.7.20_ordering_through_slot_let_refused",
+    "category": "compiler",
+    "scenario": "LEXP.7.20 with [LLET.12.5]: a read of a schema-typed slot is a fact reference, and a `let` is its right-hand side inlined, so an unannotated `let x = c.parent` is one too. `Child c, Child d`, then `let x = c.parent`, `let y = d.parent` and `x < y` as the value of an emit's `Bool` slot, is refused with DS_VALIDATE_UNORDERED_TYPE at the `<`. Neither operand is a pattern binding or a slot read as written, so nothing but the `let`s' types can refuse it. PATH PINNED: `dsc.typecheck` types an unannotated `let` whose right-hand side is a schema-typed slot read as that slot's fact (`lexp_7_20_slot_let`), and `adjacent_mismatches` refuses an ordering on an operand typed `lk_fact` (`fact_operand`). A typer that follows a `let` only to a pattern binding (`llet_12_5_bound_binding`) leaves both `let`s untyped and compiles this source.",
+    "rules_ds": "schema Parent scope logical:\n    id: Int key\n\nschema Child scope logical:\n    id: Int key\n    parent: Parent mutable\n\nschema Before scope logical:\n    id: Int key\n    earlier: Bool mutable\n\nrule r:\n    Child c\n    Child d\n->\n    let x = c.parent\n    let y = d.parent\n    emit Before logical id: c.id earlier: x < y\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNORDERED_TYPE"
+    }
+}

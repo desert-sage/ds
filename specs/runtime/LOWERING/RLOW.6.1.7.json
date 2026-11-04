@@ -1,0 +1,42 @@
+{
+  "id": "RLOW.6.1.7",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.6.1",
+  "seq": 787,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.6.1.7] **An operation on an interval lowers inside `FN_INTERVAL_CHECK`.**\nNo runtime holds an interval value: the compiler lowers each operation on one to\ncomparisons of its endpoints ([LINT.3.1.1], [LINT.3.2.1], [LINT.4.1],\n[LINT.5.1], [LINT.6.1]). It must lower each such operation to\n`FN_INTERVAL_CHECK(s₁, e₁, v)`, or to `FN_INTERVAL_CHECK(s₁, e₁, s₂, e₂, v)` for\nan operation with two interval operands (`proto/builtin_fn.proto#BuiltinFn`),\nwhere each `sᵢ .. eᵢ` is an interval operand and `v` is the lowered endpoint\ncomparison or component read. The check encloses `v`. It is never an operand of\nan `and` beside it, where a `false` operand would absorb its fault ([LNUL.4.2]).\n\nThe engine evaluates `FN_INTERVAL_CHECK` as [LINT.7.2] evaluates `..`:\n\n1. If no argument faults and every pair is valid, it yields `v`, `null` included.\n2. Otherwise it yields one fault, chosen as [LNUL.4.2] chooses among faults, from\n   the faults of its arguments and, for each pair whose endpoints are two values,\n   neither `null`, that are not `s <= e`, a `ComputationError` of kind `DOMAIN`\n   ([LERR.1.4.10]) whose offending operand is that pair's `s`, as [LERR.9.12]\n   chooses it for `..`.\n\nA `null` `v` does not prevent the check, as a `null` operand prevents a builtin's\noperation ([LNUL.4.10]): the check is the `..` operation, which [LINT.7.2]\nperforms whatever the enclosing operation's other operand is. A pair with a\n`null` endpoint is valid.\n\nWhere both endpoints of a pair are compile-time constants ([LEXP.8.8]) and\n`s <= e`, the compiler may leave the pair out of the check, and lowers the\noperation to `v` alone when no pair is left. It must not fold an operation over\nan invalid interval to a value; an invalid interval of literals is refused\ninstead ([LINT.7.4]).\n\n",
+  "refs": [
+    "LERR.1.4.10",
+    "LERR.9.12",
+    "LEXP.8.8",
+    "LINT.3.1.1",
+    "LINT.3.2.1",
+    "LINT.4.1",
+    "LINT.5.1",
+    "LINT.6.1",
+    "LINT.7.2",
+    "LINT.7.4",
+    "LNUL.4.10",
+    "LNUL.4.2"
+  ],
+  "symbols": [
+    "FN_INTERVAL_CHECK"
+  ],
+  "defines": {
+    "symbols": [
+      "FN_INTERVAL_CHECK"
+    ]
+  },
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/builtin_fn.proto",
+        "name": "BuiltinFn",
+        "tag": "spec"
+      }
+    ]
+  }
+}

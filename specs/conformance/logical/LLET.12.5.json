@@ -1,0 +1,20 @@
+{
+    "id": "LLET.12.5",
+    "category": "logical",
+    "scenario": "Let is inlined at compile time per LLET.12.5. Let on the RHS (after ->) computes and the result is used in an emit kwarg. Rule fires with t.v==7; emit Trig2 carries diff=3 (7-4).",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n    v: Int mutable\n\nschema Out scope logical:\n    dummy: Int key\n\nrule r:\n    Trig t\n->\n    let diff = t.v - 4\n    emit Out logical dummy: diff\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1", "v": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.trap_and_type_error_records_no_trap",
+    "category": "logical",
+    "scenario": "[LNUL.4.2] / [LERR.1.4.11]: the twin of LNUL.4.2.trap_and_type_error_yields_the_type_error. `p.a // p.z > 1 and p.body.name > 5` with z = 0 and body.name = \"alice\" yields the TypeError, which the kind order ranks above a trap, so the DIVIDE_BY_ZERO the left operand raised is not the expression's fault and is NOT recorded -- the trap is met FIRST in both runtimes' left-to-right evaluation, which is what makes this pin the selection rather than the order. The rule does not fire. Path: one join test; libds's rete/eval.c AND arm with ds_rete_held_select, Mercury's ds.eval.lnul_4_2_absorbing with ds.fault.lnul_4_2_yielded.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n    a: Int mutable\n    z: Int mutable\n\nrule r:\n    Payload p where p.a // p.z > 1 and p.body.name > 5\n->\n    log info \"fired\"\n",
+    "dead_rules_expected": ["r"],
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "name": "alice" }, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "rule_fire_begin"]
+    }
+}

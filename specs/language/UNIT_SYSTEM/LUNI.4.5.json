@@ -1,0 +1,23 @@
+{
+  "id": "LUNI.4.5",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.4",
+  "seq": 580,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "4.5 `unit formula`",
+  "text": "### 4.5 `unit formula` [LUNI.4.5]\n\nCross-dimension named conversions, declared as a pair — one formula in each\ndirection. Each formula is called at the call site by default; an `implicit` pair additionally\nauto-applies at an assignment boundary ([LUNI.4.5.1]).\n\nA formula's expression may use the transcendental functions and `**` with any\nexponent, each correctly rounded ([LEXP.3.9.2]), and is evaluated as it is\nwritten, one rounded operation at a time ([LDET.3.4.4]). Every call in it is to a\nbuilt-in ([LGRA.9.8.11]).\n\n```\nunit_formula     ::= 'unit' 'formula' NAME formula_modifier* ':' NEWLINE\n                     INDENT\n                         formula_line+\n                     DEDENT\n\nformula_modifier ::= 'inverting' | 'implicit'\nformula_line     ::= NAME '(' NAME ':' TYPE_SYM ')' ':' TYPE_SYM '=' expression NEWLINE\n```\n\nThe body holds exactly two formulas, each converting in the opposite direction\nto the other; the compiler must reject a body with any other count\n(`DS_VALIDATE_UNIT_FORMULA_PAIR_ARITY`).\n\nEach formula's parameter type and return type name a unit symbol or an alias of\none, declared in the file or imported. A dimension is not a unit symbol. The\ncompiler must reject any other name (`DS_VALIDATE_UNIT_UNKNOWN_SYMBOL`).\n\n#### Modifiers\n\nThe modifiers may be written in either order; each appears at most once.\n\n- **`implicit`**: compiler auto-applies at an assignment boundary\n  ([LUNI.4.5.1]) when the source and target dimension pair is unambiguous\n  (exactly one implicit formula for that pair). Ordering-preserving.\n- **`inverting`**: the function is monotone decreasing — larger input yields\n  smaller output. At variable-to-variable comparisons the compiler flips the\n  comparison operator. Can be combined with `implicit`.\n- **`inverting implicit`**: auto-applied at assignment, operator-flipping at\n  comparisons.\n\n",
+  "refs": [
+    "LDET.3.4.4",
+    "LGRA.9.8.11",
+    "LUNI.4.5.1",
+    "LEXP.3.9.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_DIM_AMBIGUOUS",
+    "DS_VALIDATE_FORMULA_AMBIGUOUS",
+    "DS_VALIDATE_UNIT_FORMULA_PAIR_ARITY",
+    "DS_VALIDATE_UNIT_UNKNOWN_SYMBOL"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_inverted_duration_raises_domain",
+    "clauses": ["RLOW.6.1.7", "LINT.6.1"],
+    "category": "logical",
+    "dead_rules_expected": ["no_length"],
+    "scenario": "[LINT.7.2]: a component read is an operation on the interval ([LINT.6.1]), so `.duration` of an invalid interval raises DOMAIN. One T with `a` at 2 s and `b` at 1 s, `b` before `a`: rule `no_length` tests `(s.a .. s.b).duration == 0_s`. It does not fire, and rule `handler` logs `DOMAIN [T] [a]`: the kind, and the schema and slot of the pair's start ([LERR.9.12]); not the `rule`, which for a trap raised during matching is a node name ([LERR.9.2]). Before RLOW.6.1.7 the lowering saturated `end - start` at `0_s`, so `no_length` fired silently; that is the break this vector is for. PATH PINNED: `dsc.rete`'s `lint_6_1_component` wrapped in FN_INTERVAL_CHECK(s, e, v) by `rlow_6_1_7_check`, on `Time` endpoints compared by their `utc_ns` ([LTIM.5]), in libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`.",
+    "rules_ds": "schema T scope logical:\n    id: Int key\n    a: Time mutable\n    b: Time mutable\n\nrule no_length:\n    T s where (s.a .. s.b).duration == 0_s\n->\n    log info \"no_length {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": 1, "a": 2000000000, "b": 1000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN [T] [a]"]
+    }
+}

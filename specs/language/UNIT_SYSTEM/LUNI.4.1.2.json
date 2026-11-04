@@ -1,0 +1,20 @@
+{
+  "id": "LUNI.4.1.2",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.4.1",
+  "seq": 339,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.4.1.2] **The baked base.** The seven SI base dimensions and their\ncanonical anchors are **primitive**: they are the coordinate axes of the\ndimensional algebra, always in scope, and **non-redefinable** (a redeclaration is\n`DS_VALIDATE_UNIT_IMPORT_COLLISION`). They are\nnot content an author imports — they are the basis everything else is\nexpressed over. The compiler pre-loads them as an implicit module\n`units.core`, a `.ds` module of the library the compiler ships with\n([LIMP.3.3.1]), read from there on every compilation:\n\n| Dimension | Storage | Anchor |\n|---|---|---|\n| `time` | int64 | nanosecond |\n| `length` | float64 | meter |\n| `mass` | float64 | kilogram |\n| `temperature` | float64 | kelvin |\n| `current` | float64 | ampere |\n| `amount` | float64 | mole |\n| `luminous_intensity` | float64 | candela |\n\n`units.core` provides, for each base axis, the **anchor unit** above **and its\ncanonical short alias** — `nanosecond`/`ns`, `meter`/`m`, `kilogram`/`kg`,\n`kelvin`/`K`, `ampere`/`A`, `mole`/`mol`, `candela`/`cd` — so the short-form base\nliterals resolve with no import.\n\n**The `time` axis is baked in full**, at every scale [LUNI.10.2] declares on it —\n`microsecond`/`us`, `millisecond`/`ms`, `second`/`s`, `minute`/`min`, `hour`/`h`\nand `day`/`d`, alongside the `nanosecond`/`ns` anchor. It is the one axis whose\nliterals occupy **core grammar positions** — `cooldown`\n([LGRA.6.6]), `after` ([LTAC.2.1]), `ttl`, `within`, `sliding` and `tumbling` — so\na duration literal is a term of the language rather than library content, and\nmaking those productions depend on an import would leave them unwritable in a\nfile that imports nothing. `minute`, `hour` and `day` are baked with the rest\ndespite being non-SI: the set an author reaches for is the set that must be in\nscope.\n\nA program uses `5_kg`, `100_m`, `30_s` and `5_min` with **no import**. Scaled and\nprefixed forms on the other six axes (`gram`, `kilometer`, …), affine units\n(`celsius`), and the derived SI units (`watt`, `Hz`, …) are **not** baked: they\nare declared in `units.si`, which builds on `units.core` and may not redeclare a\nbase axis. **Only these 7 axes are baked** — the six non-time axes at anchor plus\nshort alias, `time` at every scale [LUNI.10.2] declares — and everything else,\nSI or otherwise, is earned by declaration.\n\n",
+  "refs": [
+    "LGRA.6.6",
+    "LIMP.3.3.1",
+    "LTAC.2.1",
+    "LUNI.10.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_UNIT_IMPORT_COLLISION"
+  ]
+}

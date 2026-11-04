@@ -1,0 +1,9 @@
+{
+    "id": "LRST.2.2",
+    "category": "compiler",
+    "scenario": "Supersedure scope is (rule, clause-position, evaluated-key) per LRST.2.2 \u2014 two `after` clauses with the same `as` key at different positions are independent timers. Pin: one rule with two `after ... as r.entity_id:` clauses compiles. PINS ONLY THAT IT COMPILES: the timers' independence needs a run. `compile_ok` reads no lowered output, so the timer schemas are not observed.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n\nrule two_timers:\n    Req r\n->\n    log info \"trig\"\n    after 5_min as r.entity_id:\n        log info \"cleanup1\"\n    after 10_min as r.entity_id:\n        log info \"cleanup2\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "RCTS.1.2.13_no_library_without_the_keys",
+    "category": "compiler",
+    "scenario": "[RCTS.1.2.13]: \"A fixture with neither has no library to import.\" This fixture carries neither `libraries` nor `stdlib`, and its program writes `import ha`, so a harness that follows the clause resolves the import against nothing and the compiler refuses it with DS_VALIDATE_UNKNOWN_LIBRARY ([LIMP.3.1.2]). It differs from LIMP.9.4a, which pins the same refusal with `\"libraries\": {}` written: here the field is absent, the case the Mercury suites once compiled with import resolution switched off, under which this program compiled clean. PATH PINNED: each harness's library set for a fixture with neither key -- `runner.py`'s `_compile_mercury`, which puts no root on the search path, and `test_conformance.m`'s `rcts_1_2_14_libraries`, which gives the compiler an empty library set rather than none.",
+    "rules_ds": "import ha\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_LIBRARY"
+    }
+}

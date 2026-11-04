@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.9.8.3_json_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.9.8.3]: `json()` is not admitted in this edition, and the compiler refuses every call, in any position, with DS_VALIDATE_JSON_LITERAL_REFUSED. The argument here is valid JSON text, so the refusal is the call's and not LEXP.6.4's (deferred). PATH PINNED: `dsc.validate.lgra_9_8_3_json_refused`, reached for a rule through `rule_expressions`; the emit's `json()` is the only error in the program.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Doc scope ttl 1_h:\n    id: Int\n    payload: Json\n\nrule r:\n    Trig\n->\n    emit Doc id: 1 payload: json(\"{\\\"a\\\": 1}\")\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_JSON_LITERAL_REFUSED"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.3.7.4_swap_bytes_width_refused",
+    "clauses": ["LEXP.3.7.4"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.7.4]: the compiler refuses a `bits`, `sign_extend` or `swap_bytes` call whose compile-time constant arguments ([LEXP.8.8]) place it outside [LEXP.3.7.3]'s domain whatever its other arguments hold. `s.x.swap_bytes(24)`, the clause's own example: [LEXP.3.7.3] admits a width of 16, 32 or 64 only, so 24 is DS_VALIDATE_BIT_FIELD_RANGE for every receiver. One refusal per vector, so this one cannot pass on another call's diagnostic. PATH PINNED: `dsc.validate.lexp_3_7_4_bit_field_range`'s `swap_bytes` arm. Twins: LEXP.3.7.4_sign_extend_width_refused, LEXP.3.7.4_constant_out_of_range_refused (`bits`).",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    x: Int mutable\n\nrule r:\n    Sensor s where s.x.swap_bytes(24) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BIT_FIELD_RANGE"
+    }
+}

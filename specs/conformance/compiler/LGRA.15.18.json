@@ -1,0 +1,9 @@
+{
+    "id": "LGRA.15.18",
+    "category": "compiler",
+    "scenario": "Disambiguation per LGRA.15.18 \u2014 context-sensitive constructs (uppercase in pattern vs expression, dotted paths in patterns vs services vs slot access) are made explicit. Pin verifies a TYPE_NAME-led pattern coexists with a TYPE_NAME-led service path in the same rule (`Trig` pattern + `svc.method` call) without grammar collision. `x` is declared `Int`, the kind of the `t.v` it is given: a mismatched builtin kwarg is a refusal ([LADP.8.5.4]), which is not what this vector is about.",
+    "rules_ds": "service svc.method:\n    kwarg x: Int\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    call svc.method x: t.v nocooldown\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

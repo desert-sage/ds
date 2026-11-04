@@ -1,0 +1,47 @@
+{
+    "id": "IARC.1.11c",
+    "category": "cross-tier",
+    "scenario": "Two engines with the same schema name + slot shape independently dedupe within their own working memory \u2014 no cross-registry collision per IARC.1.11.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "x": {
+                "rules_ds": "schema Sample scope logical:\n    a: Int key\n"
+            },
+            "y": {
+                "rules_ds": "schema Sample scope logical:\n    a: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "x",
+                "op": "assert",
+                "schema": "Sample",
+                "slots": {
+                    "a": 1
+                }
+            },
+            {
+                "engine": "x",
+                "op": "assert",
+                "schema": "Sample",
+                "slots": {
+                    "a": 1
+                }
+            },
+            {
+                "engine": "y",
+                "op": "assert",
+                "schema": "Sample",
+                "slots": {
+                    "a": 1
+                }
+            }
+        ],
+        "engine_fact_counts_after": {
+            "x": 1,
+            "y": 1
+        }
+    }
+}

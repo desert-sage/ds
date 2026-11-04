@@ -1,0 +1,14 @@
+{
+    "id": "LGRA.22.5",
+    "category": "compiler",
+    "scenario": "[LGRA.22.5] / [LIMP.2.1.7] — bringing two DISTINCT schemas into scope under the same bare name without an alias is a compile error (DS_VALIDATE_IMPORT_NAME_COLLISION), not a silent source-order-last clobber. `from ha import Sensor` and `from hb import Sensor` both bind `Sensor` from different libraries; the author must rename one with `as`. A name's role is fixed by its position and comparison is case-sensitive, so the two are one name, and the `as` alias (LIMP.2.1.7) is the fix.",
+    "rules_ds": "from ha import Sensor\nfrom hb import Sensor\n\nrule r:\n    Sensor\n->\n    log info \"s\"\n",
+    "libraries": {
+        "ha": "schema Sensor scope logical:\n    id: String key\n",
+        "hb": "schema Sensor scope logical:\n    id: String key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_IMPORT_NAME_COLLISION"
+    }
+}

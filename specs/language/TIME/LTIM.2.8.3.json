@@ -1,0 +1,328 @@
+{
+  "id": "LTIM.2.8.3",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.8",
+  "seq": 245,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.8.3] **The wall clock** reads UTC nanoseconds since the Unix epoch.\nIt **may** jump forward or move backward between two samples — a host clock\nset by an operator or stepped by time synchronisation does both. It drives\n`now()` ([LTIM.2.1]) and the `ts` the engine fills ([LFAC.9.2]), and nothing\nelse.\n\nA condition reading `now()` observes the wall clock as it is: a gate such as a\ncomparison of `now()` against a fixed instant can become false again when the\nwall clock moves backward across the instant, and true again when it moves\nforward ([LTIM.2.5.1]). An author who needs a gate that stays open once opened\nmeasures elapsed time on the monotonic clock instead — `dwell`, `within`, or a\ndifference of `monotonic_ns()` readings.\n\n**The wall clock may have no value**: a mock clock before the test sets it\n([NLFC.5.4]), or a live clock on a host that supplies no wall-clock source.\nA `now()` read while it has none, or the engine filling a `ts` from it\n([LFAC.9.2]), is a `ComputationError` of kind `DOMAIN` ([LERR.1.4.10]), and\nthe engine continues. In a rule's activation (a `now()` read, an `emit` or a\n`publish`) the activation is abandoned and the rule does not fire. For an\n`initial` block's fact ([LGRA.24.3]) the fact is not placed. Once the wall\nclock has a value, `now()` reads it.\n\n",
+  "refs": [
+    "LERR.1.4.10",
+    "LFAC.9.2",
+    "LGRA.24.3",
+    "LTIM.2.1",
+    "LTIM.2.5.1",
+    "NLFC.5.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/EventTime.idr",
+        "name": "lthe_2_2_2__wall_step_inverts",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'May jump forward or move backward between two samples', seen through `ts`: two facts emitted across a backward step carry `ts` values in the other order, and a sequence orders them by `ts`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__wall_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The wall step: Rete/NetworkWall.idr's; the call trackers stand."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__wall_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The wall step keeps the invariant: the net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_1__second_edge_refires",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A gate such as a comparison of `now()` against a fixed instant can become false again ... and true again': the window that shuts and reopens fires once per opening, `[1, 0, 1, 0]`, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__reads_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'It drives `now()` ... and nothing else': the wall clock is observed through the `now()` leaf alone, which this criterion is the test for."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_2__counts_ignore_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "However the wall clock is stepped, a history's counts under monotonic gates are the counts it had."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__remap_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'May jump forward or move backward between two samples': a history's wall samples rewritten by any function at all."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A gate such as a comparison of `now()` against a fixed instant can become false again when the wall clock moves backward across the instant, and true again when it moves forward': `[1, 0, 1, 0]` over a wall that goes 1, 2, 1, 2, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_start",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one rule under the wall window at (0, 0). A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_3__wall_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'It drives `now()`': a gate on `now()` reads the wall sample as it is. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "Ltim_2_8_3__step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A wall step among a fixture's steps: the clause's 'may jump forward or move backward between two samples', as a step the engine is driven with. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__successor_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`fresh` reads the wall; the two rules beside it do not. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ldet_5_8__late_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A gate on the wall sample against a fixed instant. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "llog_3_11_1__fresh_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A rule whose condition reads the wall and whose RHS justifies a logical fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__now_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A gate comparing `now()` with fixed instants, which can be false and then true again. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_1__window_second_edge_refires_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'True again when it moves forward': the window reopens at 3 on an advancing wall, a second edge. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_step_moves_no_monotonic_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "However the wall clock is stepped -- 'forward or backward' -- a monotonic `where` fires as it would have: the wall step is observed by `now()` and by nothing else, on this engine by theorem."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_steps_move_no_dwell_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'An author who needs a gate that stays open once opened measures elapsed time on the monotonic clock instead -- `dwell`': under two wall steps, once. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__at_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`now() == 1`: a gate on the wall clock against a fixed instant, logical/LTIM.2.8.3_wall_gate_reopens's `at_one` in the witnesses' units. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__no_wall_step_is_the_timed_run",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no wall step the wall sample is never moved, and the run is Rete/NetworkTimed.idr's with the wall held: what every fixture whose lowering writes no wall step runs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_leaf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`now()` in a `where`: the clock leaf that reads the wall sample. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_leaf_reads_the_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE `now()` LEAF READS THE WALL SAMPLE: under any sample, stamp table and token, the substitution replaces it by the wall component as an Int. 'It drives `now()`'. A TRANSCRIPTION of Rete/NetworkTimed.idr's `ltim_2_4_1__read_at`'s first clause, said so: it fails if the leaf is changed to read the monotonic sample or a stamp and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_test_is_not_monotonic",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `now()` TEST IS NOT A MONOTONIC GATE: the timed test of `now() == 1` admits the Ping at the sample (0, 1) and refuses it at (0, 2), both computed, so no proof that it answers alike at two wall samples exists. C2's hypothesis is not inhabited by a `where` that reads the wall, and nothing in this module says a wall step leaves such a rule alone: what the clause's second paragraph allows, and `wall_gate_reopens_timed` executes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__ping",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one Ping the wall witnesses match: kind 0, key 1, no payload. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__pump_proj",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A pump's result with its state projected: the gated state, the halt and the trace. By a triple pattern, so that it reduces on a named result; what C2 compares through."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__run_steps_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A FIXTURE'S STEPS on the timed engine with the wall, in its cadence: a wall step moves the wall sample; every other step is Rete/NetworkTimed.idr's; every pump's verdicts collected. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__verdicts_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE VERDICTS OF A SCHEDULE WITH THE WALL from the loaded network: one list per pump. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_gate_reopens_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "C3b ON THIS ENGINE. A GATE ON THE WALL CLOCK CAN REOPEN: the Ping asserted at (0, 0) under `now() == 1`; an advance to 1 and a pump fire; an advance to 2 and a pump find the gate shut, which ends the match; a tick to 3 with the wall stepped BACK to 1 and a pump find it open again, a new match, and fire; an advance to 4 and a pump fire nothing -- logical/LTIM.2.8.3_wall_gate_reopens's shape, Rete/NetworkTwoClocks.idr's `ltim_2_8_3__wall_gate_reopens` on the Idris model's engine through its wall steps. 'Can become false again when the wall clock moves backward across the instant, and true again when it moves forward.' Executed: `[[(0, True)], [], [(0, True)], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_keeps_stamps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE WALL STEP KEEPS THE STAMPS: `dwell` measures from the entry stamp, and a wall step enters no fact; the stamp table after it is the one before, for every instant and state. A transcription."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_projects",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE WALL STEP PROJECTS TO THE IDENTITY: the gated state under the timed state -- the clocked net with its clock, deadlines and rows, and the trackers -- is what it was, for every instant and state. A TRANSCRIPTION of the definition, said so: it fails if the step is changed to touch the net or the trackers and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_sets_the_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "AND SETS THE WALL: to the instant named, whatever it was, for every instant and state. A transcription."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WALL STEP: the wall sample set alone, to any instant, earlier or later; the clocked net, the stamps and the trackers stand. 'May jump forward or move backward between two samples', as the engine receives it; not a sample ([NTST.3.3]), the next pump reads what it left."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wm_after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE WORKING MEMORY after a schedule with the wall from the loaded network. A fixture."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_3__stepped_back",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A clock source whose wall clock goes BACK: (1, 9) and then (2, 4). A fixture."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_3__wall_moves_a_now_gate",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A gate such as a comparison of `now()` against a fixed instant can become false again when the wall clock moves backward across the instant': `now() > 5`, true at (3, 6), false at (3, 4). Computed."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__wall_goes_back_on_replay",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'May jump forward or move backward between two samples': a wall clock that went back is replayed as it went, (1, 9) and then (2, 4)."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_3__Drift",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_3__MAXWALL",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_3__platform_wall",
+        "tag": "spec"
+      }
+    ]
+  }
+}

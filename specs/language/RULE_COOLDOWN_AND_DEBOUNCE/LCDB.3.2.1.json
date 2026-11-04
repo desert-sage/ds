@@ -1,0 +1,295 @@
+{
+  "id": "LCDB.3.2.1",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.2",
+  "seq": 88,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LCDB.3.2.1] **`cooldown T`** — when this rule activation fires,\n  suppress further fires of the *same activation\n  key* for duration T. Matches `call`'s cooldown\n  semantics precisely.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__selected_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selected chain is at its ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Lcdb_3_2_1__cool",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A rule's `cooldown T`: the window in clock units, and the activation key as a FUNCTION of the fired match. The key is not composed here: it is the fixture lowering's expressions over the match, evaluated by Rete/Eval.idr and coded (Fixture.idr, THE VALUE CODE); a rule with none runs as it did."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "Lcdb_3_2_1__gated_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clocked network engine with the trackers beside it: what the gated pump runs on."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__admits_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An alpha that admits every fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__admitted",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A plain trace read as a gated one: every firing admitted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__alphas_one",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One alpha, kind 0. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__any_join",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A join that admits every candidate: the single-pattern rule's node. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cooldown of the rule at an ordinal: none past the list, none for a rule without one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_first",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "rgate.cool_first on this engine: the first activation of a cooled rule fires. Executed; rgate.cool_first.expected carries `fire:R:int(1)@0|`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_refire",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "rgate.cool_refire on this engine: a fire at 0, a tick to 10 and a fresh match of the key fires again at the window's boundary. Executed; `fire:R:int(1)@0|fire:R:int(1)@10|`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cool_suppress",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "rgate.cool_suppress on this engine, at instant zero: a fire at clock 0, a fresh match at 5 inside the window refused -- the stamp `Just 0` kept apart from 'never fired'. Executed; `fire:R:int(1)@0|cool_suppress:R:int(1)@5|`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__cooled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one rule cooled: a window and a key. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__entity_life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every kind logical with an identity: the rgate fixtures' Trig, whose mutable-slot change under one key is a replace, a fresh match of the same activation key. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__explicit_life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every kind explicit: a ttl schema's facts, which carry no identity. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__fire_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The firing at a selection: mark the activation fired, then the RHS under the gate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__fire_at_once",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The firing at a selection gates once: from what it names, the trackers after it are the trackers before, or those with the fired rule's key stamped at the clock in front."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__fire_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "'When this rule activation fires, suppress further fires of the same activation key for duration T', read with LCDB.3.2.1.1: the activation fires -- selected and marked as `iret_11_4__fire_ttl_net` does -- and the RHS runs under the gate. LESS than the clause: the key is the lowering's composition, evaluated and coded, and `call`'s cooldown is outside the fragment."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__label",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A firing named: the ordinal, the fired facts and the verdict, with the state after it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__loaded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The loaded network, no rows, no deadlines, the clock at 0, no tracker. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__no_cooldown_is_the_plain_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FRAME: with no rule cooled, the gated traced pump's net, halt and trace are `iret_11_4__run_ttl_net_traced`'s, every firing admitted, and the trackers are the ones given; over every program, fuel, state and table. Every fixture the Idris model compared before this rung runs through the gated pump, and its agreement holds by this theorem."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__no_ttl",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No schema carries a TTL. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__one_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One rule over kind 0, action-free: rgate.k's R, whose RHS is a log the model does not carry. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__plain",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A plain firing read as a gated one: admitted, the trackers as given."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__program",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The program of the one rule, under a lifecycle for every kind. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__run_gated_traced",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The gated pump: Rete/RunFold.idr's traced fold over the gated firing, each firing named with its ordinal, its facts and the verdict. What Fixture.idr runs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__run_steps_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture's steps on the gated engine in its cadence, collecting every pump's verdicts. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__selected",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The selection of IRET.11.4 1a with the chain and the activation it names, as `iret_11_4__fire_ttl_net` resolves it before firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__uncooled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "No rule cooled: the frame theorem's hypothesis. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__uncooled_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "With no rule cooled, no ordinal has a cooldown."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__uncooled_firing_is_plain",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO RULE COOLED, THE GATED FIRING IS THE PLAIN FIRING, admitted, the trackers as given: on every program, state and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__uncooled_rule_fires_plain",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A RULE WITH NO COOLDOWN FIRES AS THE PLAIN ENGINE FIRES: the gated firing's net is `iret_11_4__fire_ttl_net`'s, admitted, and the trackers are unchanged. Over every program, state, selection and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__verdicts",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A trace's verdicts: each firing's ordinal and whether the gate admitted it. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__verdicts_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The verdicts of a schedule on the one-rule program from the loaded network. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1__window_suppresses",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE WINDOW SUPPRESSES: a key stamped at c0 and an instant inside the window, c' < c0 + window, is refused and the trackers do not move -- 'suppress further fires of the same activation key for duration T'. Over every window, stamp, instant and table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "lcdb_3_2_1__verdicts_length",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A trace's verdicts are as many as its firings. By induction."
+      }
+    ]
+  }
+}

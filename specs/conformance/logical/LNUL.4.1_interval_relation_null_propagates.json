@@ -1,0 +1,17 @@
+{
+    "id": "LNUL.4.1_interval_relation_null_propagates",
+    "category": "logical",
+    "scenario": "[LNUL.4.1]: an interval relational operator propagates `null` ([LINT.4.5]). `lo` is `Int?`, so `(r.lo..r.hi)` is an interval with an absent endpoint. With `lo` absent, `(r.lo..r.hi) overlaps (0 .. 10)` and `(r.lo..r.hi) contains (3 .. 4)` are `null`, so neither `overlapping` nor `containing` fires, and no TypeError is raised: `saw_type_error` matches any `TypeError` fault fact ([LERR.9.3]) and must never fire. With `lo` 2 and `hi` 5 both relations hold and both rules fire, in source order ([LDET.5.4]). A runtime that read the absent endpoint as 0 would fire both on the first fact. PATH PINNED: the compiler's lowering of `overlaps` and `contains` into endpoint comparisons, each of which propagates `null`, evaluated by libds rete/eval.c and Mercury `ds.eval`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    lo: Int? mutable\n    hi: Int mutable\n\nrule overlapping:\n    R r where (r.lo..r.hi) overlaps (0 .. 10)\n->\n    log info \"overlaps\"\n\nrule containing:\n    R r where (r.lo..r.hi) contains (3 .. 4)\n->\n    log info \"contains\"\n\nrule saw_type_error:\n    TypeError\n->\n    log critical \"type error\"\n",
+    "dead_rules_expected": ["saw_type_error"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": 1, "lo": null, "hi": 5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "R", "slots": { "id": 2, "lo": 2, "hi": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["overlaps", "contains"]
+    }
+}

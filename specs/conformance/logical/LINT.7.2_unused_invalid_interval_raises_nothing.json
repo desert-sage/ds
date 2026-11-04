@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_unused_invalid_interval_raises_nothing",
+    "clauses": ["RLOW.6.1.7", "LLET.10.3"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LINT.7.2]: a `let` bound to an interval is evaluated where it is used ([LLET.10.3]), so an invalid interval that no operation uses raises nothing. One S with `a` 5 and `b` 3: rule `bound` binds `let i = (s.a .. s.b)` and logs only `s.id`, so nothing reads `i`. It fires and logs `bound 1`, and rule `handler` never fires. There is nothing to wrap: [RLOW.6.1.7] lowers each operation on an interval, and here there is none. A compiler that checked every `..` it parsed, used or not, would raise DOMAIN and abandon the activation. PATH PINNED: the compiler's treatment of an unused interval `let` (`dsc.rete`), which emits no FN_INTERVAL_CHECK, and both runtimes running the action with nothing to evaluate for it.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    a: Int mutable\n    b: Int mutable\n\nrule bound:\n    S s\n->\n    let i = (s.a .. s.b)\n    log info \"bound {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "a": 5, "b": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["bound 1"]
+    }
+}

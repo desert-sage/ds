@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.12.4",
+    "clauses": ["LTIM.4.3.1", "LTIM.6.1"],
+    "category": "compiler",
+    "scenario": "[LTIM.4.3.1] / [LTIM.6.1] (LTIM.12.4, the id, is a tombstone), for LTIM.4.3.2's shift: a shift that overshoots its target month's end clamps to the last day; `.add_months` on a month-end `Date` is therefore a well-typed `Date`, with no error arm for an invalid target, and compiles as one. The rule reads the shifted `Date`'s `.day`, which a `Date` result admits directly and a `Time` only through `.utc` or `.local(tz)` ([LTIM.6.1]), so a typing that left the result untyped or Int is refused. Drives the compiler's FN_ADD_MONTHS typing on a `Date` receiver and the Date component lowering behind `.day`. The clamp itself is a runtime value: logical/LTIM.4.3.2_add_months_clamps pins 2024-03-31 + 1 month = 2024-04-30 in both runtimes.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    due: Date mutable\n\nrule r:\n    Event e where e.due.add_months(1).day < 31\n->\n    log info \"clamped or short\"\n",
+    "expect": { "kind": "compile_ok" }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LTHE.4.6",
+  "prefix": "LTHE",
+  "doc": "THEN_TEMPORAL_SEQUENCE.md",
+  "parent": "LTHE.4",
+  "seq": 235,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What this lowers to",
+  "text": "## What this lowers to [LTHE.4.6]\n\nFor the two-step sequence `DoorOpen d then Motion m within 30_s`, the\ncompiler emits a `DoorOpen` alpha node joined to a `Motion` alpha node, with\nthe join carrying two predicates: `m.ts > d.ts` (strict ordering) and\n`m.ts - d.ts < 30_s` (the window bound). Both must hold for an activation to\nfire.\n\nWith `latest DoorOpen d then Motion m within 30_s`, the\ncompiler adds a NOT sub-node **after** the `Motion` join, where both `d` and `m`\nare bound, blocking the match whenever a `DoorOpen` `d2` excludes `d` with this\n`m` ([LTHE.2.5.3]): `d.ts < d2.ts < m.ts`, `m.ts - d2.ts < 30_s`, and neither\nthe anchor's `where` nor the trailing `where`, with `d2` in `d`'s place,\nanswers `false`.\n\n**Common non-fire causes:**\n\n1. **`ts` slot absent.** Compile error\n   `DS_VALIDATE_WITHIN_NO_TS_SLOT`. Fix: add\n   `ts: Time` to every participating schema.\n\n2. **`ts` not being updated.** A `logical` fact's\n   `ts` is the assertion time and does not change\n   when the fact is no-op reasserted. A door that\n   was opened hours ago still has that old `ts`.\n   Sequences involving `logical` facts fire against\n   the assertion timestamp, not \"now.\" See\n   [LTHE.5.5].\n\n3. **Simultaneous timestamps.** The predicate is\n   strict: `B.ts > A.ts`. If A and B were asserted\n   at the same engine tick (identical `ts` values),\n   the rule does not fire. Adapters that assert\n   events in batches can produce this; add a small\n   ordering offset or use `>=` via a direct\n   `where` clause if simultaneity is expected.\n\n4. **Window too small for source granularity.** If\n   the adapter publishes readings at 5_s intervals\n   and `within T` is set to 2_s, no sequence of two\n   consecutive readings will ever match.\n\n",
+  "refs": [
+    "LTHE.2.5.3",
+    "LTHE.5.5"
+  ],
+  "errors": [
+    "DS_VALIDATE_WITHIN_NO_TS_SLOT"
+  ]
+}

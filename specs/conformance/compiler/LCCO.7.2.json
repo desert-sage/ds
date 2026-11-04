@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.7.2",
+    "category": "compiler",
+    "scenario": "A `timeout 10_s:` continuation on a call to a service that declares `response WeatherGetForecastsReply` compiles; a `timeout` on a `no response` service is refused (LCRS.17.2). PINS ONLY THAT IT COMPILES. LCCO.7.2 describes the timeout's timer fact and sibling rule: the timer, the clock tick and two negated patterns on the call's correlation, one over the response schema and one over `CallError`. The timeout fires only when neither arrives. `compile_ok` observes neither the rule nor the firing.",
+    "rules_ds": "schema WeatherGetForecastsReply scope ttl 1_h:\n    corr: String\n\nservice weather.get_forecasts:\n    kwarg entity_id: String\n    response WeatherGetForecastsReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        timeout 10_s:\n            log info \"timed out\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

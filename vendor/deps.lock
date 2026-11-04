@@ -1,0 +1,273 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# deps.lock — the vendored dependency set, pinned once (VENDOR1 / PROPOSAL §3.1).
+#
+# THIS IS VENDORING, and it is one of two mechanisms the word covers. Here the
+# source is FETCHED AT A PINNED DIGEST, verified, built and installed into the
+# store; in `vendor/` the source is COMMITTED to this repository as a
+# snapshot. Abseil, RE2, protobuf and protobuf-c are vendored by this file —
+# their bytes end up inside `libds.a` exactly as a committed snapshot's would.
+# What differs is whether the repository carries the source or a pin to it, not
+# whether the dependency is vendored.
+#
+# Worth stating because reading "vendored" as meaning only `vendor/`
+# produced the claim that RE2 and Abseil are NOT vendored, and that claim was
+# then cited as standing precedent for a third dependency's vendoring decision.
+# A wasm projection that excludes RE2 excludes it by CHOICE (a capability
+# decision, per the noregex projection) — not because it was never vendored.
+#
+# WHAT BELONGS HERE: exactly the transitive closure of what `libds.a` links or
+# needs to build. Abseil -> RE2, protobuf -> protobuf-c. Everything else an image
+# installs is either a build tool that leaves no trace in the artifact (meson,
+# ninja, hatchling) or a test/formal tool — those stay on the package manager
+# deliberately (PROPOSAL §5).
+#
+# WHY ONE FILE. Scattering the same pins across ds-base, ds-check and ds-musl is
+# how ds-wheelbuild/ds-docsbuild rotted: three copies, two updated. One file, one
+# diff, one thing for a test to read.
+#
+# `kind` — WHAT A ROW IS, as against what it is signed with (BUCSIG1 P2). `dep`
+# is a vendored dependency: fetched, built, installed into the store. `trust` is
+# a pinned anchor that verification READS and nothing compiles — the owner ruled
+# the keyring a fetched-and-pinned artifact rather than something baked into an
+# image, precisely so rotating it is an edit here instead of an image rebuild.
+#
+# It is REQUIRED on every row and has no default, because three readers used to
+# assume every section was buildable — `ci/vendor.py`'s ORDER, and the section-set
+# assertions in test_deps_lock.py and test_vendor.py — and the two ways to get it
+# wrong are opposite and both quiet: a dep read as trust is never built at all, a
+# trust row read as a dep is handed to cmake. `vendor.deps()` is the one filter,
+# and it refuses a row that declares nothing.
+#
+# SOURCE TARBALLS, NOT GIT CLONES, and not GitHub's auto-generated archives.
+# These are UPLOADED release assets, which are stable bytes with a digest. The
+# `/archive/refs/tags/X.tar.gz` URLs GitHub generates on demand are NOT
+# byte-stable across time and must never be pinned by digest.
+#
+# The commit shas are recorded alongside for provenance and for anyone who wants
+# to diff the tarball against the tree. Note that whether a tag is annotated
+# CHANGES WHICH SHA IS CORRECT: abseil's and protobuf-c's tags are lightweight
+# (ref == commit), protobuf's and re2's are annotated (the ref is a tag object,
+# and the commit underneath is what belongs here). Recording the tag object's
+# sha would look entirely right and be wrong — RELSUM1 hit exactly this.
+#
+# ATTESTATION, stated per row rather than assumed. Only RE2 publishes anything:
+# a sigstore bundle beside the tarball. The other three publish a tarball and
+# nothing else. So for THIS set the digest is the primary control and signatures
+# are a bonus — which is the reverse of the toolchain downloads (LLVM ships .sig
+# and .jsonl, Node ships a signed SHASUMS256.txt), and it is worth knowing before
+# deciding where signature verification earns its keep first (BUCSIG1 §6).
+#
+# Digests recorded 2026-08-04. Verified before use; see BUCSIG1 for the
+# verification path and PROPOSAL_vendored_dependencies.md §3 for the rationale.
+
+# ── THE CHAIN, and why every version below is upstream's choice ──────────────
+#
+# protobuf-c 1.5.2 -> protobuf 30.x -> abseil 20250127.0 -> re2 2024-07-02.
+#
+# Not one of these is a preference. Each is declared by the thing above it:
+#   * protobuf-c 1.5.2's release notes are titled "protobuf 30.0-rc1" and
+#     "protobuf 30.x" — that is the C++ API it was updated for.
+#   * protobuf-30.2/MODULE.bazel declares `abseil-cpp 20250127.0`.
+#   * ds-check has paired that Abseil with re2 2024-07-02 in production since
+#     REGEXRE2, which is the evidence for the last link.
+#
+# GETTING HERE COST FOUR FAILED RUNS AND TWO WRONG FIXES, both in the same
+# direction: reading a version mismatch as a reason to separate the builds.
+# First protobuf 35.1 would not compile against Abseil 20250127.0
+# (ABSL_ATTRIBUTE_VIEW), so the abseil edge was cut — which cannot work, because
+# protobuf bundles no Abseil and cutting the edge merely sent find_package to
+# the SYSTEM copy in /usr/include, older still. Then Abseil was bumped to
+# 20250512.1 to satisfy 35.1 — which built, and then protobuf-c 1.5.2 failed on
+# `FieldDescriptor::label()`, removed from protobuf's C++ API after 30.x.
+#
+# THE WRONG END WAS BEING ADJUSTED. protobuf 35.1 was never a requirement:
+# PROTOCVER1 pins protoc 35.1 in ds-check to match the *pip protobuf runtime*
+# for the PYTHON path, and this row builds the C path's protoc-gen-c. Two tools,
+# two jobs. Pinning 30.2 here narrows a divergence that already exists and is
+# far wider — ds-base's apt protoc is 3.21.12 today.
+
+[abseil]
+version   = 20250127.0
+url       = https://github.com/abseil/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz
+sha256    = 16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8
+commit    = 9ac7062b1860d895fb5a8cbf58c3e9ef8f674b5f
+tag_kind  = lightweight
+sig       = none
+corroborated = arch 20250127.0-1 sha256 (2026-08-10)
+kind      = dep
+needed_by = re2, protobuf, protobuf-c
+build     = cmake
+# Arch fetches `/archive/20250127.0/...` where we fetch `/releases/download/...`
+# — a DIFFERENT URL, and normally a different artifact, since GitHub's
+# auto-generated tag archive and an uploaded release asset are not the same
+# object. Both were downloaded and hashed on 2026-08-10 before this line was
+# written: byte-identical, so the corroboration is real rather than assumed.
+# Comparing digests across two URLs without checking that is how a legitimate
+# difference gets reported as a compromise.
+# What protobuf 30.2 declares, and what ds-check already pairs with RE2. One
+# Abseil serves all three consumers; protobuf-c needs it TRANSITIVELY, because
+# the header its configure probes for includes absl headers.
+
+[re2]
+version   = 2024-07-02
+url       = https://github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.tar.gz
+sha256    = eb2df807c781601c14a260a507a5bb4509be1ee626024cb45acbd57cb9d4032b
+commit    = 6dcd83d60f7944926bfd308cc13979fc53dd69ca
+tag_kind  = annotated
+sig       = sigstore
+# `signed`, not a second observer: an upstream signature is a stronger claim than
+# a third party recording the same digest, and this is the only row that has one.
+corroborated = n/a — signed (see sig_identity)
+sig_url   = https://github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.tar.gz.sigstore
+# WHO WE REQUIRE TO HAVE SIGNED, and this is the field that decides whether
+# verification means anything. Without it cosign checks that SOMEBODY holds a
+# valid Fulcio certificate — which any GitHub Actions run on earth can get.
+#
+# Read out of upstream's own published workflow, not guessed:
+# google/re2's .github/workflows/release.yml signs with
+# sigstore/gh-action-sigstore-python@v3.0.1 under `id-token: write`, and is
+# triggered by `on: push: tags: ['2[0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]']` — a
+# tag push, which is why the SAN ends `@refs/tags/<version>`.
+#
+# CONFIRMED against the real bundle on 2026-08-09, not inferred: cosign
+# verify-blob with this identity returns "Verified OK", and with a wrong one it
+# prints the SAN it actually found, which is this string exactly.
+#
+# It moves with `version`. The ref is part of the identity, so bumping the
+# version without bumping this fails closed rather than verifying the old tag.
+sig_identity = https://github.com/google/re2/.github/workflows/release.yml@refs/tags/2024-07-02
+sig_issuer   = https://token.actions.githubusercontent.com
+kind      = dep
+needed_by = libds.a
+build     = cmake
+# RE2 IS DS's regex ([LREG.7.1]/[LREG.8.1]), not a backend choice, so this row
+# decides language semantics and not merely a link. It is also the row that
+# MUSLDIV1 is about: Alpine 3.20 packaged 2024.05.01 while Debian packaged
+# 20240702, so the musl and glibc tarballs shipped different regex engines.
+
+[protobuf]
+version   = 30.2
+url       = https://github.com/protocolbuffers/protobuf/releases/download/v30.2/protobuf-30.2.tar.gz
+sha256    = fb06709acc393cc36f87c251bb28a5500a2e12936d4346099f2c6240f6c7a941
+commit    = 43e1626812c1b543e56a7bec59dc09eb18248bd2
+tag_kind  = annotated
+sig       = none
+corroborated = none (searched 2026-08-10)
+kind      = dep
+needed_by = protobuf-c
+build     = cmake
+# THE ONE ROW NOBODY ELSE RECORDS, and it is alone for the same reason the
+# version is what it is. Searched 2026-08-10: Arch builds protobuf from the git
+# tag and so records no tarball digest at all; Gentoo carries no 30.x; Homebrew
+# is on 35.1. We pin 30.2 because protobuf-c 1.5.2 needs 30.x (below), and no
+# distribution shares that constraint — so this row is a genuine
+# trust-on-first-use whose only observer is us.
+#
+# Building from `commit` rather than from this tarball is what would fix it: the
+# git tree at 43e16268 is the object Arch and everyone else look at, so it is
+# where corroboration becomes possible at all. Recorded here, not done here.
+#
+# 30.2, NOT 35.1, and the distinction is which path this serves. protobuf-c
+# 1.5.2 is the newest release there is and its C++ plugin was updated for
+# "protobuf 30.x"; against 35.1 it fails on `FieldDescriptor::label()`, which
+# that API removed. Debian never pairs those two either — it ships protobuf-c
+# 1.5.1 against protoc 3.21.12.
+#
+# PROTOCVER1's protoc 35.1 is a DIFFERENT tool for a DIFFERENT job: it lives in
+# ds-check and is pinned to the pip protobuf runtime (python protobuf 7.35.1 and
+# protoc v35.1 are one release train) for the PYTHON path. This row builds
+# protoc-gen-c for the C path. Conflating them is what sent four runs chasing
+# an Abseil version to satisfy a protobuf nothing here needed.
+#
+# Annotated tag: `ls-remote` prints tag object 934a01c2 first; 43e16268 is the
+# commit under it and the one recorded here.
+
+[protobuf-c]
+version   = 1.5.2
+url       = https://github.com/protobuf-c/protobuf-c/releases/download/v1.5.2/protobuf-c-1.5.2.tar.gz
+sha256    = e2c86271873a79c92b58fef7ebf8de1aa0df4738347a8bd5d4e65a80a16d0d24
+commit    = 4719fdd7760624388c2c5b9d6759eb6a47490626
+tag_kind  = lightweight
+sig       = none
+corroborated = arch 1.5.2-1 sha256; gentoo Manifest sha512+size (2026-08-10)
+kind      = dep
+needed_by = libds.a
+build     = autotools
+# 1.5.2 RESOLVES A SPLIT rather than matching what ships today: Debian trixie
+# packages 1.5.1 and Alpine 3.22 packages 1.5.2, and libprotobuf-c.a is copied
+# bodily into every tarball, so the two shipped artifacts have been carrying
+# different protobuf-c versions (MUSLDIV1). Picking one is the point of
+# vendoring; 1.5.2 is the newer and the one with a release tarball. This CHANGES
+# the protobuf-c in the glibc artifacts from 1.5.1.
+
+# ── THE C LIBRARY THE BUILD IMAGES LINK AGAINST (#4590) ──────────────────────
+#
+# `kind = image`: built from this pin by ds-base, not into the store, and so
+# read by no `vendor.deps()` consumer. Owner, 2026-10-29: DS patches no single
+# glibc file; if it needs glibc built a particular way, it builds the whole of
+# glibc, from one pin, with the right options. ds-base builds it with
+# ci/buildlib.py's CFI switch for its machine (#4411: Debian 13's x86_64 start
+# files carry no CET note, so no shared object linked against them did) and
+# installs its link-time half in place of Debian's libc6-dev
+# (runtime/docker/glibc_link_install.py). Debian's runtime libc6 stays.
+#
+# 2.41 because every image and every shipped glibc artifact is built against
+# 2.41 today, so no symbol version moves. The release tarball, not a
+# release/2.41/master state: this file pins release tarballs. The bytes the
+# build contributes to what ships are the start files and libc_nonshared.a.
+#
+# `sig = gpg`: GNU signs its tarballs. The signer is the PRIMARY key's
+# fingerprint, and the key is committed beside this file
+# (vendor/glibc/glibc-release-key.asc) rather than fetched: GNU's keyring
+# changes whenever any GNU maintainer's key does. It expired in 2026, after it
+# signed; a VALIDSIG naming it is the pass condition, as DISTRIBUTION.md states
+# for an archived release.
+[glibc]
+version   = 2.41
+url       = https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz
+sha256    = a5a26b22f545d6b7d7b3dd828e11e428f24f4fac43c934fb071b6a7d0828e901
+sig       = gpg
+sig_url   = https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz.sig
+sig_identity = 35B17DF5752577CA0C541CEB94BFDF4484AD142F
+sig_key   = vendor/glibc/glibc-release-key.asc
+corroborated = n/a — signed (see sig_identity; verified 2026-10-29, dsdev-1367)
+kind      = image
+needed_by = ds-base
+
+# ── THE TRUST ANCHOR (BUCSIG1 P2) ────────────────────────────────────────────
+#
+# `kind = trust`: read by verification, built by nothing. Sigstore's public-good
+# trusted root — the Fulcio CA and Rekor keys that decide whether a bundle's
+# certificate is real. It is what makes `sig = sigstore` above mean something
+# rather than describe something.
+#
+# WHY IT IS PINNED AT ALL. cosign will fetch this over TUF at verify time on its
+# own, and that would work. It would also mean the set of keys we trust is
+# whatever the network served this morning, which is the property the rest of
+# this file exists to remove. Pinned, a rotation upstream becomes a deliberate
+# edit here — visible in a diff, with a digest — instead of a silent change of
+# who can convince us (owner ruling 2026-08-08).
+#
+# THE URL CONTAINS THE DIGEST, and that is not decoration: TUF serves targets
+# content-addressed as `<sha256>.<name>`, so the pin and the location cannot
+# disagree. The plain `targets/trusted_root.json` path 404s — checked.
+#
+# `sig = none` and it is not an oversight. The trusted root is the thing that
+# decides what a valid signature IS, so a signature over it could only be
+# checked against itself. `pyds/seal.py` states the rule this follows:
+# self-verifiable is not trusted. The digest is the anchor, and it has to be,
+# because something must be.
+#
+# ROTATION: when sigstore rotates, verification starts FAILING rather than
+# silently accepting new keys. That is the intended direction. Re-pin by taking
+# the digest cosign caches at ~/.sigstore/root/<repo>/targets/trusted_root.json
+# after a successful fetch, and check the new URL resolves before committing it.
+[sigstore-trust-root]
+version   = 2026-08-09
+url       = https://tuf-repo-cdn.sigstore.dev/targets/6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66.trusted_root.json
+sha256    = 6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66
+sig       = none
+kind      = trust
+needed_by = re2

@@ -1,0 +1,27 @@
+{
+  "id": "RCTS.1.2.28",
+  "prefix": "RCTS",
+  "doc": "CONFORMANCE_TESTS.md",
+  "parent": "RCTS.1.2",
+  "seq": 124,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [RCTS.1.2.28] **The session's inputs** — wherever a fixture's `expect`\n  carries an array of steps (`steps`, and `clone_determinism`'s `after_clone`\n  and `after_free`), each step is an object whose `op` names one member of a\n  closed set, and which carries exactly the members that op takes. A harness\n  must give the runtime under test each step in order, through the runtime's\n  own interface, on the harness's mock clocks:\n\n  - `assert`, with `schema`, a string, and optionally `slots`, an object;\n    `as`, a string; `corr_from_call`, a non-negative integer; and `refused`\n    ([RCTS.1.2.27]). It is a host assert of a fact of `schema` whose slots\n    have `slots`' values. A `Bytes` value is written `{\"$bytes\": H}`, H its\n    octets as two hex digits each, and nothing else. A `String` value may be\n    written `{\"$text_bytes\": H}`, H its text's octets as two hex digits each,\n    none of them `00` ([LSTR.1.5]), which need not be well-formed UTF-8: a harness must give the runtime\n    those octets as the slot's text, unchanged, which is how a fixture hands\n    the engine text [LSTR.8.5] refuses, and must fail a fixture that gives\n    the form to a slot of another kind. With `as`, the fact the\n    assert answers with is kept under that label. With `corr_from_call` N,\n    the `corr` slot takes the correlation the N-th call issued so far\n    carried, counting from 0 in the order the calls were issued\n    ([LCCO.3.4]); a harness must fail the fixture when fewer than N + 1\n    calls have been issued.\n  - `retract`, with `label`, a string: a host retract of the fact kept under\n    that label. A harness must fail the fixture when no earlier `assert`\n    kept one under it.\n  - `pump`, with nothing else: one pump.\n  - `advance`, with `delta_ns`, a non-negative integer: the mock clock is\n    advanced by that many nanoseconds ([NTST.3.1]).\n  - `set`, with `now_ns`, a non-negative integer: the mock clock is set to\n    that instant ([NTST.3.1]).\n  - `wall_set`, with `utc_ns`, an integer: the wall clock alone is set to\n    that instant ([NTST.3.1]).\n  - `cache_seed`, with `key`, a string, and `value`, any JSON value, and\n    optionally `ttl_ns`, an integer from 0 to 2^63 − 1: `value` is seeded\n    under `key` ([NLFC.9.1]), given as [RCTS.1.2.25] gives a `cache_seeds`\n    entry's, with `ttl_ns` as the seed's TTL in engine-clock nanoseconds,\n    which counts from the engine's first sample ([NLFC.9.4]). An absent\n    `ttl_ns`, or `0`, is a seed with no expiry.\n\n  A harness must fail a fixture when the runtime refuses one of its steps\n  (a `set` below the current instant, [NTST.3.1]; a `cache_seed` after the\n  engine's first stream event, [NLFC.9.2]; an `assert` past a bound), except a refusal the\n  fixture pins: a `runtime_error` fixture's ([RCTS.1.2.25]), an `assert`'s\n  that carries `refused` ([RCTS.1.2.27]), a pump's under an `adapter`\n  kind whose row states the pump's outcome ([RCTS.1.2.10]), a pump's in\n  a fixture that carries `expected_pump_statuses` ([RCTS.1.2.30]), and, in a `replay_determinism` fixture that carries\n  `tamper`, the step during which the engine halts, which must be the\n  fixture's last ([RCTS.1.2.21]).\n\n  A cross-tier fixture's steps take more ([RCTS.1.2.29]). A harness must fail\n  a fixture whose array of steps is not an array of objects, and one with a\n  step whose `op` names no member of the set, or that lacks a member its op\n  requires, carries one it does not take, or gives one a value of another\n  type, or gives a slot an object with a `$bytes` or a `$text_bytes` member\n  that is not its form above. A deprecated fixture is not run ([RCTS.1.2.12]), so\n  its steps are not judged. The set grows only by a change to this clause.\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LSTR.1.5",
+    "LSTR.8.5",
+    "NLFC.9.1",
+    "NLFC.9.2",
+    "NLFC.9.4",
+    "NTST.3.1",
+    "RCTS.1.2.10",
+    "RCTS.1.2.12",
+    "RCTS.1.2.21",
+    "RCTS.1.2.25",
+    "RCTS.1.2.27",
+    "RCTS.1.2.29",
+    "RCTS.1.2.30"
+  ]
+}

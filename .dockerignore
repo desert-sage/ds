@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Keep build artefacts out of the docker context so production images
+# rebuild from source rather than inheriting stale dev-tree objects.
+
+# Recursive globs — Docker requires ** to match across directories.
+**/*.o
+**/*.d
+**/*.a
+**/*.pb-c.c
+**/*.pb-c.h
+
+# Test binaries (no extension; matched against runtime/tests/libds/{impl,spec}/test_*).
+runtime/tests/libds/impl/test_*
+!runtime/tests/libds/impl/test_*.c
+!runtime/tests/libds/impl/test_*.h
+runtime/tests/libds/spec/test_*
+!runtime/tests/libds/spec/test_*.c
+!runtime/tests/libds/spec/test_*.h
+
+# Committed benchmark outputs — keep them out of the docker context so the
+# ds-benchmarks image never bakes in (and re-emits) prior result/plot files.
+# The harness recreates these dirs at runtime.
+benchmarks/results/
+benchmarks/plots/
+
+# Editor / OS noise.
+.git
+.idea
+.vscode
+*~

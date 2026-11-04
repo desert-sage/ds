@@ -1,0 +1,15 @@
+{
+  "id": "IARC.1.11",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 146,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.11] **One `ds_engine_t` = one independent engine.**\n  An integrator may instantiate multiple `ds_engine_t`\n  instances in the same process; each is fully\n  independent, with its own working memory, agenda,\n  rule set, clock, recorder, and Rete network. libds\n  holds no global state and no singletons; every public\n  function that acts on an engine takes its handle (or a\n  sub-handle the engine owns) as its first argument. Four\n  kinds act on none: `ds_engine_new`, which makes one; the\n  `ds_json_*` functions, whose trees belong to no engine;\n  `ds_free`, which releases memory libds returned; and\n  `ds_build_capabilities`, which reports what the build has\n  code for. All\n  engine state hangs off the handle — there is no\n  ambient or process-global engine context.\n  Important for real-world deployments — the integration in\n  particular runs multiple DS contexts (per-tier,\n  per-room, per-experiment) and depends on them\n  being independent within one process. Combined\n  with [IARC.1.10], it means an integrator can pump\n  N engines from one async runtime without any\n  threading or cross-engine interference.\n\n  Test obligations: `spec/test_arch_invariants_spec`\n  pins the per-engine isolation invariant black-box\n  (facts, clock state, stream callbacks, typed\n  callbacks, and rule sets are all per-engine; no\n  cross-engine bleed). The schema-registry slice of\n  the same invariant lives in\n  `spec/test_schema_registry_spec` per IDAT.5.5.\n",
+  "refs": [
+    "IARC.1.10",
+    "IDAT.5.5"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "RFCS.19.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.19",
+  "seq": 924,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.19.2] **A partial trailing atom ends a `Stream` read incrementally.** In a\n`Stream`, a partial trailing atom (a short length or a truncated body) is **EOF, not an\nerror**, for a reader consuming the stream incrementally: the reader **must** end the\ncontainer at the last complete atom ([RFCS.6.6]). A reader whose caller supplied the full\nextent — a whole buffer — **may** instead treat a partial trailing atom as an error,\nbecause the caller has asserted that extent is the whole stream; a short tail is then the\ncaller's slice being wrong, not the stream being in progress.\n\nThis clause does not reach a `Dsc`: a truncated `.dsc` is a loader error ([RDSC.9.7]).\nRecovery of a crash-truncated recording is the incremental reader's ([RFCS.19.8]).\n\nThe two containers share a framing and differ here because of what each is for. A\nrecording is appended to while it is being read: a reader that called a half-written tail\ncorruption would fail on every live stream, and [RFCS.19.8]'s recovery to the last complete\natom would have nothing to stand on. A `.dsc` is never appended to while being read. It is a\nfinished artefact, and a truncated one is a rule bundle missing rules: accepting it would run\na policy the author did not write.\n\n",
+  "refs": [
+    "RDSC.9.7",
+    "RFCS.19.1",
+    "RFCS.19.8",
+    "RFCS.6.6"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "Rfcs_19_2__tail_policy",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a partial trailing frame means, as an ARGUMENT rather than a constant. This clause gives three answers depending on the container: EOF for a Stream read incrementally, an error a whole-buffer caller MAY raise, and always an error for a Dsc under [RDSC.9.7]. A decoder with one truncation rule cannot be right about both containers, so the caller states which it is."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_2__bad_outer_tag_is_not_eof",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A wrong outer tag is Malformed under EITHER policy. Truncation policy governs a SHORT tail, not a wrong byte -- a reader that treated any frame-level refusal as end-of-stream would accept a corrupt container as a short one, and this clause's EOF rule is about running out of bytes rather than finding the wrong ones."
+      }
+    ]
+  }
+}

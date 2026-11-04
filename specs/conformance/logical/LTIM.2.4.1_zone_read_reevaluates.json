@@ -1,0 +1,25 @@
+{
+    "id": "LTIM.2.4.1_zone_read_reevaluates",
+    "clauses": ["LTIM.2.4.1", "LLOG.3.11.1", "LTIM.10.7"],
+    "category": "logical",
+    "scenario": "[LTIM.2.4.1]: a `where` that resolves a zone other than `UTC` is time-dependent, because its answer moves as the host asserts, replaces or retracts `TimeZoneOffset` facts ([LTIM.10.6]) with no change to the matched facts. So it is re-driven by the tick like a clock read, and a `logical` fact it justifies follows the zone's rows ([LLOG.3.11.1]). One `Europe/Paris` row covers the Event's instant, 2024-03-01T09:00Z, and the host replaces it twice under its key (`zone`, `valid_from`), changing only `offset_s`. Pump 1: offset 0, so the local hour is 9 and `open`'s `where` (`hour == 10`) is false; `closed` fires on `no Open`. Pump 2: offset 3600, hour 10, so `open` fires, `Open` is emitted, and `saw_open` fires. Pump 3: offset 7200, hour 11, so the match ends, `Open` is retracted, and `closed` fires again on the recreated `no Open` token. So the messages are exactly ['closed', 'open', 'closed']. The Event never changes after pump 1, and no rule matches `TimeZoneOffset`, so only the tick can carry the row changes into `open`. PATH PINNED: `dsc.rete`'s `now_reeval_plan` through `dsc.typecheck.ltim_2_4_1_zone_read`, which moves the `where` into the terminal's fire guard behind the `$ClockTick` re-driver, read under each pump against the zone index (libds `ds_rete_tz_resolve`, Mercury `ds.eval.ltim_10_7_resolve`).",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nschema Open scope logical:\n    id: Int key\n\nrule open:\n    Event e where e.seen.local(\"Europe/Paris\").hour == 10\n->\n    emit Open logical id: e.id\n\nrule saw_open:\n    Open\n->\n    log critical \"open\"\n\nrule closed:\n    Event e\n    no Open o where o.id == e.id\n->\n    log critical \"closed\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1729990800000000000, "offset_s": 0 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1709283600000000000 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1729990800000000000, "offset_s": 3600 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1729990800000000000, "offset_s": 7200 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["closed", "open", "closed"]
+    }
+}

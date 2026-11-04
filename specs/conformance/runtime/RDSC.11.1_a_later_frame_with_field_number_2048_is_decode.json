@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_later_frame_with_field_number_2048_is_decode",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose inner tag's field number is in no band ([RFCS.16.3]) is malformed, and a malformed frame AFTER the first is refused with DS_ERR_DSC_DECODE (-503). `runtime_error`'s `tamper: {insert_bytes: {at: 1, hex: \"0a04828001\" + \"00\"}}` ([RCTS.1.2.21]), written whole as `0a0482800100`, puts a complete frame after the compiled artefact's DscHeader and before its second atom: outer tag 0x0A, outer length 4, inner key 0x82 0x80 0x01 (16386 = field 2048, wire type 2, length-delimited) and an empty body. 2048 is one past the skip band's top (2047), so the number names no atom, known or future. The walk reaches the DscHeader first, so `dsc_sha256` is re-sealed over the edited artefact and the refusal is the frame's, not the hash's. Twin of RDSC.11.1_a_first_frame_with_field_number_2048_is_bad_magic, the same octets at the first position. What it discriminates: a loader that takes 2048 for a future skip-band atom passes over the frame and loads; one that answers it as a semantic error gives -504. PATHS: libds's `ds_dsc_load` atom walk (`ds_pbf_next_atom` OK, `ds_pbf_lookup` NULL, `handle_unknown_field`'s DS_PBF_DISP_MALFORMED arm); the Mercury runtime's `ds.dsc` `dispatch_atom` (`disposition_of_unknown` = `disp_malformed`, `lek_malformed_field_number`), through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 1, "hex": "0a0482800100"}},
+        "code": "-503"
+    }
+}

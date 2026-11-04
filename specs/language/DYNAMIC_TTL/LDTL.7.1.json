@@ -1,0 +1,15 @@
+{
+  "id": "LDTL.7.1",
+  "prefix": "LDTL",
+  "doc": "DYNAMIC_TTL.md",
+  "parent": "LDTL.7",
+  "seq": 272,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "`max_expired_per_tick` — a derived compile-time bound",
+  "text": "### `max_expired_per_tick` — a derived compile-time bound [LDTL.7.1]\n\n`expired_max` is not a free deployment parameter — it is derivable\nfrom values the compiler already knows:\n\n$\\mathit{max\\_expired\\_per\\_tick} = \\left\\lceil \\dfrac{N_{\\max} \\cdot \\Delta_{\\mathit{tick}}}{d_{\\min}} \\right\\rceil$\n\nwhere $N_{\\max}$ is the declared maximum working-memory size (a deployment\nparameter), $\\Delta_{\\mathit{tick}}$ the interval between TTL ticks (an\nintegration parameter, declared alongside $N_{\\max}$), and $d_{\\min}$ the\nshortest TTL among the program's `ttl`-lifecycle schemas (a compile-time\nconstant from their declarations).\n\nRationale: in the worst case, all facts have the minimum possible TTL.\nAt steady state with $N_{\\max}$ facts, at most\n$N_{\\max} \\cdot \\Delta_{\\mathit{tick}} / d_{\\min}$ facts accumulate between\nticks.  That many expire on the next tick.  This is the ceiling on expired\nfacts per tick.\n\nThe compiler will carry `max_expired_per_tick` in the artefact's realtime\ncontract ([RTCT.6]) beside its other bounds, and the engine will check the TTL\nqueues' capacity against it at the transition to LIVE.\n\nFor example, with $N_{\\max} = 10{,}000$, $\\Delta_{\\mathit{tick}} = 100$ ms and\n$d_{\\min} = 30$ s, `max_expired_per_tick` $= \\lceil 10{,}000 \\times 0.1 / 30 \\rceil = 34$.\nNot proportional to $N_{\\max}$ in the large-$N_{\\max}$ limit; proportional\nto $\\Delta_{\\mathit{tick}} / d_{\\min}$, which is a deployment design choice.\n\n",
+  "deferred": true,
+  "refs": [
+    "RTCT.6"
+  ]
+}

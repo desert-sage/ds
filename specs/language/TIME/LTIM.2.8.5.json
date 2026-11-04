@@ -1,0 +1,235 @@
+{
+  "id": "LTIM.2.8.5",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.8",
+  "seq": 247,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.8.5] **Both clocks are recorded.** A sample in which either clock's\nvalue differs from the previous sample is an observed clock value, and the\nengine **must** record it on its event trace, both values together\n([RFCS.10.3]). The first sample is an observed clock value. The engine\n**must** record a sample before it records the input or the pump boundary the\nsample was taken for. A replay restores both clocks from the recording ([RFCS.10.5]),\nso `now()`, `monotonic_ns()` and every relative-time mechanism read on replay\nexactly what they read when the trace was recorded ([LDET.1.1]).\n\nA recording is complete only if the integrator attaches the stream callback\nbefore the engine's first input or sample. One attached later begins part-way\nthrough the run: its first event's `seq` is not `0` ([LFST.5.3]), and a replayer\n**must** refuse it with `DS_ERR_FS_RECORDING_INCOMPLETE`, because the inputs\nbefore it are not in it.\n\n",
+  "refs": [
+    "LDET.1.1",
+    "LFST.5.3",
+    "RFCS.10.3",
+    "RFCS.10.5"
+  ],
+  "errors": [
+    "DS_ERR_FS_RECORDING_INCOMPLETE"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/CheckpointClocks.idr",
+        "name": "rfcs_9_4__fresh_checkpoint_breaks",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A checkpoint carrying a sample the engine never held makes the seek read what the recording never read: the recording's samples are the held ones, nothing else replays."
+      },
+      {
+        "path": "formal/idris/CheckpointClocks.idr",
+        "name": "rfcs_9_4__mono_only_checkpoint_breaks",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'Both values together' holds of a checkpoint's clocks as of a `ClockAdvance`: a seek that restores one of them reads a `now()` the recording never read."
+      },
+      {
+        "path": "formal/idris/CheckpointClocks.idr",
+        "name": "rfcs_9_4__record_splits",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The recording of a run is the concatenation of the recordings of its parts, the second recorded from where the first left off: what lets a replay be started in the middle."
+      },
+      {
+        "path": "formal/idris/CheckpointClocks.idr",
+        "name": "rfcs_9_4__seek_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A replay restores both clocks from the recording', started at a checkpoint rather than at the first atom: it holds at every later input what the recording held, provided the checkpoint carries the held sample."
+      },
+      {
+        "path": "formal/idris/EventTime.idr",
+        "name": "rlow_7_1_2__emitted_ts_replays",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Every relative-time mechanism read on replay exactly what they read when the trace was recorded', for the `ts` and the stamp of every emitted fact: both are functions of the sample, and the samples replay."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ltim_2_8_5__mock_replay_at_samples",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RECORDED AT SAMPLES, A REPLAY FROM ANY STARTING CLOCKS HOLDS AT EVERY INPUT WHAT THE RECORDING HELD, for every mock run of moves and inputs."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ltim_2_8_5__mock_replay_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Recorded at samples, a replay whose clocks are the last recorded sample holds what the run held, from any state of the mock."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ltim_2_8_5__record_at_samples",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "RECORDED AT SAMPLES, the clauses' reading: a move writes nothing; at an input the sample is recorded if it differs from the one recorded before, by TwoClocks.idr's step. The tick's `DS_EV_TICK` event and `seq` are not modelled."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__live_trace_is_at_samples",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'A sample in which either clock's value differs from the previous sample is an observed clock value': a live run through the values a mock run reaches by two mutations records the one sample, as the mock run does at its next input."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_3__mock_replay_at_mutations",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Recorded at mutations rather than at samples, a replay still restores both clocks at every input: the clause's replay guarantee would hold under the refused recorder too, so the choice [NTST.3.3] made between the two is about the trace a test leaves and not about soundness."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_5__replay_run_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A step whose sample equals the previous one wrote no `ClockAdvance`, and the replay still runs it under that sample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_5__replay_run_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Every relative-time mechanism read on replay exactly what they read when the trace was recorded', for whatever an engine does with its samples: the replay's final state is the recording's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "rfcs_10_5__replay_drives_the_engine",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's replay guarantee at the composed pump, for a tick history."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__first_sample_must_be_recorded",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE FIRST SAMPLE MUST BE RECORDED. A recorder that compares the first sample with an assumed starting value (0, 0) and writes nothing when they agree leaves, on a platform whose clocks start there, a trace with no `ClockAdvance`; a replay engine whose clocks start at (7, 7) then holds (7, 7) where the recording held (0, 0). 'The first sample is an observed clock value', by the engine that takes the other answer."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__one_clock_is_not_enough",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "ONE CLOCK ON THE ATOM IS NOT ENOUGH: with the monotonic value restored and the wall value not, a replay reads a `now()` the recording never read. 'Both values together', by the atom that carries one."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__record",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RECORDING of a run: each step's atoms in order, the last recorded sample carried along."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__replay_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The replay of a run from its second step on, the replay's clocks being the sample of the step before: it holds the recording's samples."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__replay_holds_what_was_held",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'A replay restores both clocks from the recording, so `now()`, `monotonic_ns()` and every relative-time mechanism read on replay exactly what they read when the trace was recorded': for every clock source, every run and every starting value of the replay's clocks, the samples held on replay are the samples held when recording, step for step."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__replay_mono_only",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A replay of atoms that carry the monotonic clock alone: a `ClockAdvance` sets the monotonic clock and leaves the wall clock where it was. The refused shape."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__step_atoms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The atoms of one step in the clause's engine: the sample's `ClockAdvance` if the sample differs from the one before, THEN the input. Before the first step there is no sample to differ from and the first sample is recorded."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__step_replayed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One step replayed when the replay's clocks are the sample of the step before: whether or not the step wrote a `ClockAdvance`, the replay holds the step's sample and goes on with it."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_5__wall_goes_back_on_replay",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND WITH BOTH, A WALL CLOCK THAT GOES BACK IS REPLAYED AS IT WENT: the replay holds (1, 9) and then (2, 4), the later step at the earlier instant. The run in which the clause's 'may move backward' happens, executed."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "rfcs_10_5__clock_atom_goes_first",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A recorder that writes the step's input before its `ClockAdvance` makes the replay consume each input under the clocks of the step before: 'both values together' on the trace is not enough, the atom must precede the input it governs."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_5__FIRST",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_5__WHAT",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_5__observed",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_5__replay_held",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_5__replay_holds_what_was_held",
+        "tag": "derives"
+      }
+    ]
+  }
+}

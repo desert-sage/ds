@@ -1,0 +1,16 @@
+# See fixtures/101_match_faults.ds.
+#
+#   pump 1  a Sensor whose state is null and whose division traps, then a
+#           Tick: `all_cool` and `no_div` stay blocked and `div_where` does
+#           not fire; both traps are recorded, each after the assert whose
+#           propagation raised it ([RFCS.6.7])
+#   pump 2  the Sensor becomes cool and divisible (2 / 1 > 1.0): `all_cool`
+#           fires; `no_div` stays blocked by a definite `true`; `div_where`
+#           fires. Superseding the trapping Sensor ends its pairs, and a
+#           retraction evaluates no join test ([IRET.7.7]), so no third trap
+#           is recorded ([LERR.1.4.12])
+assert Sensor entity_id=s1 state=null a=1 b=0
+assert Tick id=1
+pump
+assert Sensor entity_id=s1 state=10.0 a=2 b=1
+pump

@@ -1,0 +1,18 @@
+{
+    "id": "LGRA.5.8.10_seed_float_underflow_is_zero",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.10]: \"A literal whose value rounds to zero is a zero, which a `Json` value holds as `+0.0` ([LGRA.5.8.8])\". Two seeds, each given as `text` ([RCTS.1.2.25]) at the cache seed ([NSTG.9.1]) so both runtimes read these exact digits: `p` is 1e-400, below the smallest subnormal, which rounds to +0.0; `n` is -1e-400, which rounds to -0.0 and is held as +0.0. Both are admitted, raising nothing. `cached()` reads the stored value's canonical text ([LGRA.5.8.7a], [LDET.3.2.7]), so rule `hit` emits a `Hit` only when both read `0.0`. fact_count 2: the `Trig` and the `Hit`. What it discriminates: a runtime that refused an underflow as it refuses an overflow raises at the seed, and the driver fails; one that kept the negative zero's sign stores `-0.0` under `n`, `hit` does not fire, and the count is 1. `p` alone could not tell the sign rule apart, since 1e-400 reads as +0.0 either way; `n` is what does. PATH PINNED: on libds, `ds_json_parse` of each seed's text in pyds's `cache_seed`, `json.c`'s `parse_number` admitting the zero and `json_new_float_node` folding its sign, then `adapter_ds_cache_get` for `cached()`; on the Mercury runtime, `ds.engine.seed_cache_text` -> `ds.json_text`'s number arm, which folds the sign, and `ds.eval`'s `fn_cache_get` arm.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nschema Hit scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"p\") == \"0.0\" and cached(\"n\") == \"0.0\"\n->\n    emit Hit v: t.v\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "p", "text": "1e-400" },
+            { "key": "n", "text": "-1e-400" }
+        ],
+        "asserts": [
+            { "schema": "Trig", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

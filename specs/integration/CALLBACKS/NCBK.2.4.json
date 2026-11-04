@@ -1,0 +1,26 @@
+{
+  "id": "NCBK.2.4",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 153,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[NCBK.2.4] **Reserved but not emitted** (handle the `default` case — adding a\nproducer later is ABI-additive):\n\n| Kind | Note |\n|---|---|\n| `DS_EV_FACT_MODIFY`       | an upsert surfaces as a `FACT_ASSERT` followed by a `FACT_RETRACT` ([NFCT.5.1]), not a modify |\n| `DS_EV_ACTION_CACHE_GET`  | a `cached()` read is a pure internal engine read ([LSTO.4.7.1] / [RARC.5.7.9]); it dispatches no callback, so no action event is emitted |\n| `DS_EV_TIMER_FIRED` (20) | a cooldown-gated rule's later firing is seen through its ordinary firing events, joined to its `DS_EV_TIMER_ARMED` by `timetag` ([NCBK.2.12]); the value is never reissued ([STYL.2.8.7]) |\n\n**Enum values 10, 11, 13, 14 and 17 are permanently vacant**, as\n`proto/stream_event_kind.proto#StreamEventKind` reserves them, and none is ever\nreissued: recorded streams in the wild carry them, so an undocumented hole is\nsafer than a recycled meaning. 10 held `DS_EV_ACTION_RECORD`, 11\n`DS_EV_ACTION_ALERT`, 13 and 14 the\npeer-connect pair, and 17 the DIFFERENTIAL backend's divergence event\n([STYL.2.8.7]).\n\n",
+  "refs": [
+    "LSTO.4.7.1",
+    "NCBK.2.12",
+    "NFCT.5.1",
+    "RARC.5.7.9"
+  ],
+  "symbols": [
+    "DS_EV_ACTION_ALERT",
+    "DS_EV_ACTION_CACHE_GET",
+    "DS_EV_ACTION_RECORD",
+    "DS_EV_ENGINE_DIVERGENCE",
+    "DS_EV_FACT_MODIFY",
+    "DS_EV_PEER_CONNECT",
+    "DS_EV_TIMER_FIRED"
+  ]
+}

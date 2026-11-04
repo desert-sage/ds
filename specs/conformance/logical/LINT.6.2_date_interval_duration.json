@@ -1,0 +1,15 @@
+{
+    "id": "LINT.6.2_date_interval_duration",
+    "clauses": ["LINT.6.1", "LINT.6.2", "RLOW.6.1.5"],
+    "category": "logical",
+    "scenario": "[LINT.6.1]: `i.duration` is `i.end - i.start` for an interval of `Time` or `Date`; [LINT.6.2]: \"For `Interval<Date>`, the duration is a whole-day multiple.\" One Span, `b` 2024-02-29 (day 19782) and `a` 2024-03-03 (day 19785). Rule `three` fires where `(s.b .. s.a).duration == 3_d`; rule `render` logs `((s.b .. s.a).duration)::String`, which is `72h` in [LTIM.8.4]'s compact form. A `Date` is its day count and a `Duration` its nanoseconds ([RDSC.5.5.8]), so the subtraction is RLOW.6.1.5's FN_DATE_DIFF. Lowered to plain Int `-`, the difference in days reads as nanoseconds: `three` does not fire, and `render` logs `3ns`. PATH PINNED: `dsc.rete`'s `lint_6_1_component` lowering a `Date` interval's `duration` to FN_DATE_DIFF, in a join test and in an action, and the builtin in libds (`rete/adapters.c`, `adapter_ds_date_diff`) and Mercury (`ds.eval.ltim_4_2_3_date_diff`). Twin: LTIM.4.2.3_date_diff, the same subtraction written out.",
+    "rules_ds": "schema Span scope logical:\n    id: Int key\n    a: Date mutable\n    b: Date mutable\n\nrule three:\n    Span s where (s.b .. s.a).duration == 3_d\n->\n    log info \"three\"\n\nrule render:\n    Span s\n->\n    let d = ((s.b .. s.a).duration)::String\n    log info \"span {d}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Span", "slots": { "id": 1, "a": 19785, "b": 19782 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["three", "span 72h"]
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.9_alias_shadow_refused",
+    "category": "compiler",
+    "scenario": "LGRA.22.9's refusal reaches an `as` alias (\"or an `as` alias of one\"): `import plant.zone as pz`, then a pattern binding `pz`. Refused with DS_VALIDATE_BINDING_SHADOWS_LIBRARY: `pz.id` would read both as slot access and as the library's member. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, against the import's binding, which is the alias.",
+    "rules_ds": "import plant.zone as pz\n\nschema Door scope logical:\n    id: Int key\n\nrule r:\n    Door pz\n->\n    log info \"door {pz.id}\"\n",
+    "libraries": {
+        "plant.zone": "const LIMIT = 3\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

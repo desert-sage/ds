@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A pair derived for the first time by a retraction. Assert `a1`, then `b1`
+# with `b1.k == a1.k`, which blocks `(a1)` at the NOT node; then `c1` with
+# `y = 0`, which the C node meets with no left token, so nothing traps.
+# Retracting `b1` releases `(a1)` and derives `((a1), c1)` for the first time,
+# and the division traps at the retraction: a trap is recorded each time the
+# network derives the pair, and never for a pair a retraction ends.
+#
+# The division is a beta test, so `C c` is the third pattern ([IRET.6.2]
+# admits no arithmetic in an alpha test). `x` and `y` are Int because only an
+# all-Int division traps [LEXP.7.15.1].
+use default
+
+schema A scope logical:
+    k: String key
+
+schema B scope logical:
+    k: String key
+
+schema C scope logical:
+    id: String key
+    x: Int mutable
+    y: Int mutable
+
+rule r:
+    A a
+    no B b where b.k == a.k
+    C c where c.x / c.y > 1.0
+->
+    log info "r fired"

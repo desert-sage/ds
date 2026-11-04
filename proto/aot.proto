@@ -1,0 +1,60 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// Ahead-of-time compiled code atom (CompiledCode).
+//
+// IN THIS EDITION A RUNTIME SKIPS EVERY CompiledCode ATOM ([RDSC.4c.3]): it
+// decodes, maps, wires and executes none of them, and no compiler emits one.
+// Everything below describes the deferred design ([RAOT]), not what a loader
+// of this edition does.
+//
+// One CompiledCode atom per compiled expression or RHS.  The body field
+// carries compiled machine code for a single node's test function
+// (alpha test or join test) or rule's RHS function.
+//
+// The first bytes of body are a fixed-layout slot table of external
+// function pointers (zero-filled in the file).  The runtime
+// populates the slots with actual libds function addresses at load
+// time before marking the memory executable.  Alpha and join test
+// bodies have an empty slot table (pure predicates; no external
+// calls).
+//
+// Multiple CompiledCode atoms with different arch values may appear in the
+// same DSC.  The loader uses the first CompiledCode atom whose arch matches
+// the runtime's DS_ARCH constant and ignores the rest.
+//
+// A runtime that does not know CompiledCode atoms skips them per RDSC.9.4.
+// Full spec: [RAOT.3].
+
+enum CodeKind {
+  CODE_KIND_UNSPECIFIED = 0;
+  CODE_KIND_ALPHA_TEST  = 1;  // bool (*fn)(const ds_rete_fact_t *)
+  CODE_KIND_JOIN_TEST   = 2;  // bool (*fn)(const ds_rete_token_t *, const ds_rete_fact_t *)
+  CODE_KIND_RHS         = 3;  // void (*fn)(ds_engine_t *, ds_rete_token_t *, const ds_dispatch_t *)
+}
+
+message CompiledCode {
+  // Architecture identifier.  Well-known values: "amd64", "arm64",
+  // "rv64g", "rv64gc".  The loader skips atoms whose arch does not
+  // match the runtime's DS_ARCH.  Unrecognised arch values are
+  // silently skipped per RDSC.9.4.
+  string   arch    = 1;
+
+  // The alpha, beta or terminal node this code implements.
+  uint32   node_id = 2;
+
+  // Discriminates the function signature the loader wires into the
+  // node.
+  CodeKind kind    = 3;
+
+  // Compiled machine code.  First N bytes are the slot table
+  // (external function pointer slots, each pointer-sized, zero in
+  // file).  Followed immediately by the machine code.  N is 0 for
+  // ALPHA_TEST and JOIN_TEST; the fixed slot table size for RHS is
+  // defined per arch in RAOT.5.  The code is position-independent
+  // and references the slot table via PC-relative addressing.
+  bytes    body    = 4;
+}

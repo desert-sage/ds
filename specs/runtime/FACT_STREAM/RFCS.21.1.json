@@ -1,0 +1,162 @@
+{
+  "id": "RFCS.21.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.21",
+  "seq": 942,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.21.1] A `ComputationError` atom records a **trap** — a computation with no honest\nanswer ([LERR.1.4.1]). Its body is `proto/engine_error.proto#ComputationError`, and\nit is the first of the two steps [LERR.9.1] orders: **record the event, then\nassert the fault fact.** Recording is the delivery: the integrator receives the\natom on the stream callback ([NCBK.2.8]), and no separate fault callback\nfollows. The fault fact is itself recorded, as a `FactEmit` ([LERR.9.8]). A trap that is not\nrecorded did not happen as far as any consumer can tell.\n\n**Container-legality `stream`, stream-class `compare`, band skip-don't-reject**\n(field 325). It is provenance in exactly the sense `CallIssued` and `RuleFireAnnotation` are: a\nreplayer compares it, and a replayer that does not know the atom skips it and replays\nthe run rather than refusing it. The reject bands exist for a *misplaced input*\n([RFCS.16.3]); an unrecognised trap event is neither an input nor a reason to\ncall a stream unreadable.\n\n**Identity is `rule_name` + `timetag`**, the same pair `CallIssued` and\n`RuleFireAnnotation` carry ([RFCS.15]), so a trap joins to the activation that\ncaused it with no new join key.\n\n**A trap raised while matching carries `timetag` 0.** No activation exists\nthen ([LERR.9.11]), and the engine **must not** give any activation the timetag\n0, so 0 names no activation. Such a trap is told apart by its `rule_name`\n(`$beta_<id>`), `node_id` and `fact_id`, and placed among one operation's\ntraps by [LERR.1.4.12].\n\n**The slot-context fields name the offending operand** ([LERR.9.12]): set when\nthat operand is a slot read, and absent otherwise. Every kind this atom records\nis a **computation** error ([LERR.1.4.9]). A resource limit is a `BoundsError` or\nan `EngineError`, and is not recorded here; a recorder failure is no fault at\nall ([NCBK.1.5]).\n\n**`recoverable` is carried on the wire and is not derivable from `kind`.**\n[LERR.1.4.9] makes recoverability a property of the occurrence rather than of\nthe kind: the test is whether engine state is still trustworthy. Every kind this\natom records is `reported`.\n\n**A recorder failure is not this atom's concern.** The recorder is a **hook\nlayer**, not a writer (RARC.5.8, [IARC.1.14] — libds writes no file), so the\nengine emits the record as it emits any other and it is the **integrator's\nsink** that may be unable to persist it (RARC.5.8.13). A failing sink's status is\nwhat the call that fired the callback returns ([NCBK.1.5]), and the engine does\nnot halt.\n\n---\n\n",
+  "refs": [
+    "IARC.1.14",
+    "LERR.1.4.1",
+    "LERR.1.4.12",
+    "LERR.1.4.9",
+    "LERR.9.1",
+    "LERR.9.11",
+    "LERR.9.12",
+    "LERR.9.8",
+    "NCBK.1.5",
+    "NCBK.2.8",
+    "RARC.5.8",
+    "RARC.5.8.13",
+    "RARC.5.8.9",
+    "RFCS.15",
+    "RFCS.16.3"
+  ],
+  "atoms": [
+    "ComputationError"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__ans",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Filters in source order, then the rest in the order: how it ended. V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__answer",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "How an evaluation ended."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__body",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The body of the atom a fault records -- every recorded field after the kind, recording provenance excluded -- totally ordered."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__rec",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "M1: the atom recorded -- a fault a filter raised, else the best fault when nothing false stopped it. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__v5_one_atom",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ONE ATOM: kind then body is total over what is recorded, so at most one atom is recorded. Kind alone breaks it (TEETH). [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__v5_selfjoin",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "THE SELF-JOIN: two traps of one kind over two facts; every order records the lesser body."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "Rfcs_21_1__fault",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fault: its kind and the body of the atom it records -- every field of `proto/engine_error.proto#ComputationError` or `proto/type_error.proto` after the kind, recording provenance excluded, encoded injectively as a natural. Two faults with one kind and one body record the same atom (node and slot alone are not total, `gap__selfjoin_coarse_differs`)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_9_5__any_order",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Evaluating ANY reordering of the source, left to right and stopping at a false, gives the `where`'s answer and records its fault. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__fault_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fault is its kind and its identity."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__pair_record",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fault a (token, candidate) pair records under a V5 `where`. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__pair_record_order_free",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A PAIR'S RECORD IS A FUNCTION OF THE PAIR, however its conjuncts are ordered or evaluated: what the trap record needs to be a function of the join relation, and [IRET.7.6]'s 'the pair yields the one fault [LNUL.4.2]'s order selects'. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__record",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "M1: the fault recorded is the one the `where` yields. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__recordOf",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a node records: the yielded fault if it evaluated, nothing if a filter rejected. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__selfjoin_v5_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Keyed on the recorded body, as T2I is, V5 records the same atom in either order. Fixing the identity breaks it (TEETH T5 against the self-join)."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/engine_error.proto",
+        "name": "ComputationError",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/engine_error.proto",
+        "name": "TrapKind",
+        "tag": "spec"
+      }
+    ]
+  }
+}

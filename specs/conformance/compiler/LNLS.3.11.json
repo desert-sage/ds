@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.11",
+    "category": "compiler",
+    "scenario": "Series membership/frequency scan without a sample bound is a compile error under +nolinscan per LNLS.3.11. `contains(t.state, 5)` over a ring-buffer series with no `max_samples` cap scans the window — O(series depth), which grows with the fact stream — so it is a linear scan in series depth (LNLS.1.1). This is the series-cursor overload of `contains`, not the String substring `contains` of LNLS.3.10. The bounded form compiles (LNLS.3.11b.json).",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Int mutable\n\nseries Sensor.state (by: entity_id):\n    contains sliding 10_s\n\nrule trig:\n    Sensor t where contains(t.state, 5)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_SERIES_UNBOUNDED"
+    }
+}

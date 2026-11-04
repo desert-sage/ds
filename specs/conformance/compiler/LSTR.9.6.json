@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.9.6",
+    "category": "compiler",
+    "scenario": "[LSTR.9.6]: DS has no locale-aware operations and no case mapping. `lower(m.text)` names no builtin, so the compiler refuses it with DS_VALIDATE_UNKNOWN_FUNCTION. Case-insensitive matching is computed adapter-side.",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule r:\n    Msg m where lower(m.text) == \"hello\"\n->\n    log info \"lowercased match\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "RDSC.4a.8.2.2",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.8.2",
+  "seq": 498,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.8.2.2] **The condition is a `where` test, evaluated before the\nfiring.** The runtime **must** evaluate it when it selects the activation,\nunder the pump's clock sample ([LTIM.2.8.4]) and series snapshot\n([LSER.8.6.1]), and **must** let the activation\nfire only when it is `true`: `false` and `null` both withhold it ([LNUL.4.3]).\nA withheld activation is not a firing. The runtime emits no event for it\n([NCBK.2.6]), does not count it as a firing, and does not evaluate the rate\ngate. Which later tick fires the match is [LTIM.2.5.1]'s.\n\n",
+  "refs": [
+    "LNUL.4.3",
+    "LSER.8.6.1",
+    "LTIM.2.5.1",
+    "LTIM.2.8.4",
+    "NCBK.2.6"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_2__activation",
+        "tag": "spec",
+        "note": "The selected activation: the live facts it resolves, its condition's answer, and the rate gate's verdict where the gate was evaluated. What the clause's reading happens to."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_2__answer",
+        "tag": "spec",
+        "note": "The condition's answer at selection: `true` lets the activation fire, `false` and `null` withhold it; NoCondition is a guard with no condition part (RDSC.4a.8.2.1), which withholds nothing. The clock sample and series snapshot it is read under are not drawn."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_2__selection",
+        "tag": "spec",
+        "note": "The activation fires iff its condition is `true` or absent; withheld, it is no firing and emits no event. Which later tick fires the match (LTIM.2.5.1) is outside this snapshot."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "rdsc_4a_8_2_2__withheld_emits_nothing",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "A condition that is not `true` leaves no firing and no event, RULE_LHS_FACTS included, however many facts the activation resolved; the withheld probe shows the instance. Bounded at seven positions and events. That the rate gate is then not evaluated is RDSC.4a.8.2.3's gate_needs_a_firing."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rdsc_4a_8_2_2__need_gate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A CONDITION AGAINST A SLOT: `dwell >= m.need`, `need` the payload's one slot, which the null-need fixture asserts `null`. A fixture. The condition as a join test, where the clause has it in the fire guard: `rdsc_4a_8_2_2__null_condition_withholds`'s note."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rdsc_4a_8_2_2__null_condition_withholds",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "A `null` CONDITION WITHHOLDS: the Motion's `need` is `null`, so `dwell >= need` answers `null` at every sample and `settled` never fires, while `steady` fires at the first pump -- logical/RDSC.4a.8.2.2_null_condition_withholds's shape. 'False and null both withhold it': here as no activation of the re-timed node, which fires nothing, counts nothing and reaches no gate; the clause's withheld activation at selection is the same at every pump boundary. Executed: `[[(1, True)], []]`. Partial for the mechanism."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "rdsc_4a_8_2_2__rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The null-need fixture's rules: `settled` under `dwell >= m.need`, and `steady` with no condition, both over kind 0. A fixture. The condition as a join test, where the clause has it in the fire guard: `rdsc_4a_8_2_2__null_condition_withholds`'s note."
+      }
+    ]
+  }
+}

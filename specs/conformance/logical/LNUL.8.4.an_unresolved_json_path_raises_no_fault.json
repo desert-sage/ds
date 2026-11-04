@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.an_unresolved_json_path_raises_no_fault",
+    "category": "logical",
+    "scenario": "A Json path that does not resolve is `null` ([LNUL.8.4]) and raises NOTHING — the null arm, and the boundary against the row above it: a path that resolves to a leaf of the wrong TYPE is a TypeError, while a path that resolves to nothing at all is an absence. Both are Json-sourced, so provenance alone does not decide the kind; whether the operation was invalid does. The `is null` rule firing is the evidence the absence reached the Kleene stack.",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nrule r:\n    Payload p where p.body.missing is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "present": 1 } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin"]
+    }
+}

@@ -1,0 +1,43 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// The stream event kinds, the single definition ([STYL.5.9.7]). libds's
+// `ds_stream_ev_kind_t` mirrors it member for member and value for value
+// ([NCBK.2.3] lists when each is emitted). A kind's name in a recording or a
+// binding is its member name without the `STREAM_EVENT_KIND_` prefix, in lower
+// case.
+//
+// 0-based with no UNSPECIFIED member: every event carries one of these kinds,
+// so zero is FACT_ASSERT.
+enum StreamEventKind {
+  STREAM_EVENT_KIND_FACT_ASSERT        = 0;
+  STREAM_EVENT_KIND_FACT_RETRACT       = 1;
+  STREAM_EVENT_KIND_FACT_MODIFY        = 2;
+  STREAM_EVENT_KIND_RULE_FIRE_BEGIN    = 3;
+  STREAM_EVENT_KIND_RULE_FIRE_END      = 4;
+  STREAM_EVENT_KIND_ACTION_CALL        = 5;
+  STREAM_EVENT_KIND_ACTION_EMIT        = 6;
+  STREAM_EVENT_KIND_ACTION_PUBLISH     = 7;
+  STREAM_EVENT_KIND_ACTION_CACHE_SET   = 8;
+  STREAM_EVENT_KIND_ACTION_CACHE_GET   = 9;
+  STREAM_EVENT_KIND_ACTION_LOG         = 12;
+  STREAM_EVENT_KIND_TICK               = 15;
+  STREAM_EVENT_KIND_ACTION_CACHE_DELETE = 16;
+  STREAM_EVENT_KIND_RULE_LHS_FACTS     = 18;
+  STREAM_EVENT_KIND_TIMER_ARMED        = 19;
+  STREAM_EVENT_KIND_TIMER_FIRED        = 20;
+  STREAM_EVENT_KIND_TYPE_ERROR         = 21;
+  STREAM_EVENT_KIND_BOUNDS_ERROR       = 22;
+  STREAM_EVENT_KIND_ENGINE_ERROR       = 23;
+  STREAM_EVENT_KIND_COMPUTATION_ERROR  = 24;
+  STREAM_EVENT_KIND_PUMP               = 25;
+
+  // Reserved, never reissued ([STYL.2.8.7]).
+  reserved 10, 11, 13, 14, 17;
+  reserved "STREAM_EVENT_KIND_ACTION_RECORD", "STREAM_EVENT_KIND_ACTION_ALERT",
+           "STREAM_EVENT_KIND_PEER_CONNECT", "STREAM_EVENT_KIND_PEER_DISCONNECT",
+           "STREAM_EVENT_KIND_ENGINE_DIVERGENCE";
+}

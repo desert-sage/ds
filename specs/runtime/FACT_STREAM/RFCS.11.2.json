@@ -1,0 +1,28 @@
+{
+  "id": "RFCS.11.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.11",
+  "seq": 575,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.11.2] The `RuleFireAnnotation` body is defined in\n`proto/stream_header.proto#RuleFireAnnotation`.\n\nThe `timetag` (field 6) is the firing activation's identity: the same\n`(timetag, rule_name)` the bracketed `CallIssued` records, so the two atoms carry a\n**byte-identical** join key ([RFCS.15.2]). The encoder **must** record the firing\nactivation's own creation timetag ([LDET.5.5]). `0` appears only on the\nahead-of-time dispatch path, which carries no fire identity, and is never a valid\ntimetag.\n\n**A `timetag`'s value is the engine's own.** [LDET.5.5] fixes the order in which an\nengine's timetags ascend, not their origin or their step, so two conforming engines\nmay record different values for one run. A `timetag`, on this atom or any other\nthat carries one, identifies a firing within one stream. A consumer **may** use it\nto join that stream's atoms and to order one rule's firings, and **must not**\ncompare its value with a `timetag` from another engine's stream. A replayer\ncompares it by the pairing [LFST.9.3.6] defines.\n\n",
+  "refs": [
+    "LDET.5.5",
+    "LFST.9.3.6",
+    "RFCS.15.2"
+  ],
+  "atoms": [
+    "CallIssued"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/stream_header.proto",
+        "name": "RuleFireAnnotation",
+        "tag": "spec"
+      }
+    ]
+  }
+}

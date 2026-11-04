@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.4.6_cast_refused",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6] / [LCST.4.5.2]: `Bytes` and `String` have no conversion in either direction, so the fallible cast `b :: String?` is refused with DS_VALIDATE_BYTES_CONVERSION_RETIRED, not with DS_VALIDATE_CAST_UNDEFINED: the pair is named as retired. PATH PINNED: the cast table's `Bytes ↔ String` row in the validator; `s :: Bytes` takes the same row.",
+    "rules_ds": "schema Pkt scope ttl 1_h:\n    raw: Bytes\n\nschema Out scope ttl 1_h:\n    s: String?\n\nrule r:\n    Pkt p\n->\n    emit Out s: p.raw::String?\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BYTES_CONVERSION_RETIRED"
+    }
+}

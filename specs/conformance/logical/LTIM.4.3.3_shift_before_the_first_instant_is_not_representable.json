@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.3.3_shift_before_the_first_instant_is_not_representable",
+    "clauses": ["LTIM.1.1.5"],
+    "category": "logical",
+    "scenario": "[LTIM.4.3.3], [LTIM.1.1.5]: the other side of LTIM.4.3.3_shift_onto_the_first_day_in_range, on the same UTC day. One Event at 1677-10-21T00:05:00Z (-9220780500000000000 ns). `shifted` logs `(e.stamp.add_months(-1))::String`: the result would be 1677-09-21T00:05:00Z (-9223372500000000000 ns), before INT64_MIN (1677-09-21T00:12:43.145224192Z), so the shift raises a ComputationError of kind NOT_REPRESENTABLE and the activation is abandoned. `handler` matches the ComputationError fault fact ([LERR.9.1]) and logs its kind and rule. Messages: exactly ['NOT_REPRESENTABLE shifted']. A shift that stopped checking, or wrapped, logs a date from `shifted`, and one that raised another kind logs that kind. PATH PINNED: the compiler's FN_ADD_MONTHS member lowering, the Time receiver through FN_UTC; libds's `calendar_shift` Time arm (rete/adapters.c), whose sum from the next midnight overflows exactly when the instant is out of range; the Mercury runtime's `ds.eval.ltim_4_3_shift` Time arm, whose whole instant has no int64.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    stamp: Time mutable\n\nrule shifted:\n    Event e\n->\n    let s = (e.stamp.add_months(-1))::String\n    log info \"shifted {s}\"\n\nrule handler:\n    ComputationError e\n->\n    log info \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "stamp": -9220780500000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE shifted"]
+    }
+}

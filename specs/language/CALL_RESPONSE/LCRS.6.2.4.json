@@ -1,0 +1,754 @@
+{
+  "id": "LCRS.6.2.4",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.6.2",
+  "seq": 305,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.6.2.4] **An arriving answer supersedes as the call does.** A call that\nfires again before its earlier request is answered finds no live answer to\nretract ([LCRS.6.2.1]), and both replies arrive. So the engine must apply the\nsupersede again when an answer is asserted ([NCBK.6.4]), before the answer\nitself:\n\n- **A fact of a response schema `T`** ([LCRS.4.3.2]) with `corr` `K`: the\n  engine retracts every live fact of `T` whose `corr` is `K` and every live\n  `CallError` whose `corr` is `K`.\n- **A `CallError`** with `corr` `K`: the engine retracts every live `CallError`\n  whose `corr` is `K` and every live fact of every response schema whose `corr`\n  is `K`. A `CallError` names no service ([LCRS.4.2.1]), so its correlation\n  spans services, as it does in [LCRS.6.2.1].\n\nAn answer whose `corr` is the empty `String` supersedes nothing. The\nempty key is no key ([LRST.1.2]), and such an answer answers no call, since a\ncall's correlation is never empty ([LCRS.3.1]).\n\nThe retractions precede the answer in working memory. The stream records the\nanswer's `FactAssert` first and the withdrawals after it, as for any host\nassert ([RFCS.6.7]).\n\nA rule asserts no answer ([LCRS.4.3.4]), so this assert is how every answer\nenters working memory. For each non-empty correlation, therefore, either one\n`CallError` is live and no response fact is, or no `CallError` is live and at\nmost one fact of each response schema is. Each live answer is the last of its\nkind asserted with that correlation. Replies of different services that share a\ncorrelation are live together, as [LCRS.6.2.1] leaves them.\n\nThe engine does not know which request a reply answers ([NCBK.6.3]), so when\nreplies arrive out of order the answer to the earlier request is the one that\nstays. An author who needs the newer request's answer carries an ordering value\nin the response and matches on it.\n\n",
+  "refs": [
+    "LCRS.3.1",
+    "LCRS.4.2.1",
+    "LCRS.4.3.2",
+    "LCRS.4.3.4",
+    "LCRS.6.2.1",
+    "LRST.1.2",
+    "NCBK.6.3",
+    "NCBK.6.4",
+    "RFCS.6.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__carried",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the history carries beside the answers: Rete/NetworkFrame.idr's frame invariant (the view, the shapes kept against the loaded network) and unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__inv",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The invariant on a clocked net: what is carried, and one answer per correlation in its working memory. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__no_rule_answers",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "NO RULE ANSWERS: every chain of the loaded network has actions that mint no answer; the history theorem's hypothesis. THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "Lcrs_6_2_4__one_answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE ANSWER PER CORRELATION, the clause's consequence as a predicate on working memory: two distinct live answers carrying one non-empty correlation are of different kinds and neither is CallError. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__issued_call_sweeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "After an arrival's sweep none of the kinds it sweeps carries the answer's correlation. Over every state and non-empty correlation; the empty correlation is the clause's exemption. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__other_kind_is_no_victim",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A response's arrival leaves every other response schema's facts alone. Over every state and non-empty correlation; the empty correlation is the clause's exemption. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__other_service_reply_survives",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Both replies survive each other's arrival, computed: one instance, under a non-empty correlation. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_1__retraction_keeps_non_victims",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The retraction removes the victims and nothing else. LESS than the clause: proved of the sweep's retraction alone; what the cascade then removes is IRET.12.2's, and a response fact, being `ttl`, has no justification row. Over every state and non-empty correlation; the empty correlation is the clause's exemption. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__action_kind",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__action_no_answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "An action mints no answer: an emit's kind is no answer kind, a withdraw mints nothing. THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a host assert leaves live: live before, or the fact minted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A data event keeps what is carried: a no-op leaves the net; an assert or the retraction of a live fact, then the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__apply_ttl_retract_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A host retraction only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_keeps_one_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A HOST ASSERT KEEPS ONE ANSWER PER CORRELATION with the arrival's sweep before it, over every state. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_sweep_keeps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ARRIVAL ON A CORRELATION KEEPS ONE ANSWER PER CORRELATION: after its sweep and the TTL sweep every live fact was live before or is the answer minted, and the minted one against a survivor is `lcrs_6_2_4__new_against_survivor_at`'s case. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrival_victims",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An assert of a kind sweeps the kinds it sweeps on the asserted value's correlation; a retraction sweeps nothing. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrive_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The arrival's sweep on the net as it stands, then Rete/NetworkTimed.idr's input, so the retractions precede the answer in working memory. LESS than the clause: the stream's record order is not modelled. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__arrive_timed_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A data input arriving keeps the invariant: an assert through the arrival's sweep, the TTL sweep and the event; a retraction through the TTL sweep and the event. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__assert_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WHAT AN ASSERT LEAVES LIVE: live before, or the fact minted, under any lifecycle -- a no-op, an insert, a replace."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__call_site_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A call site keeps the invariant: admitted, its issue is a correlation sweep; refused, the net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__chains_emit_no_answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "No chain's actions mint an answer, decided by computation over the loaded chains. THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__chains_no_answer_sound",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The computed form implies the hypothesis. By induction on the chains."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_acc_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One emit or withdraw on the accumulator keeps the invariant when it mints no answer."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_net_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What one action leaves live on the plain network: live before, or minted by the action, of the kind the action mints."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action keeps what is carried on the plain network: an emit is an assert, a withdraw of a bound fact a withdraw."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What one action with truth maintenance leaves live: live before, or minted by the action; the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action with truth maintenance keeps what is carried: the dispatch, the record (rows alone), the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_ttl_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action on the clocked network keeps the invariant when it mints no answer; the deadlines ride beside."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_actions_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The RHS with calls keeps the invariant when its actions mint no answer. By induction on the actions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__emits_no_answer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "No action of a list mints an answer. THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__empty_corr_retracts_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two replies and a CallError with the empty correlation, all three live after; the shape executed on working memory where the vector reads a `log` probe. A fixture. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_after_response",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An error after a response: the error alone is live after; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_spans_services",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An error spans services: both services' replies go; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__error_sweeps_every_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The second bullet, a transcription. Over every state and non-empty correlation; the empty correlation is the clause's exemption. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__fire_at_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The firing at a selection keeps the invariant: the selected chain is at its ordinal, so its actions are the loaded rule's (the shapes kept), which mint no answer; the mark, then the gated RHS with calls."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__fire_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The called firing keeps the invariant, at the selection the engine makes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__history_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A history: the steps folded over the state. A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__history_called_inv",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A history keeps the invariant. By induction on the steps."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__history_is_run_steps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The history is the fixture runner's state: `lcrs_6_2_1__run_steps_called`'s state is the fold, whatever it reports per pump."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__is_answer_cases",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An answer kind is CallError's or a response schema's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fixture. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__loaded_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The loaded called state has the invariant: the view and its own shapes, no fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__mark_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Marking an activation fired keeps the invariant: working memory untouched."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_against_survivor",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ARRIVING ANSWER AGAINST A SURVIVOR: an answer live after the arrival's sweep on a non-empty correlation, carrying it, is of none of the swept kinds, so of another response schema, and neither is CallError. Under unique ids, over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_against_survivor_at",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The same for the fact the arrival minted, whose correlation is the one asserted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__new_kind_is_no_answer",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A kind an action mints under the hypothesis is no answer kind."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__no_corr_arrival_is_the_input",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "WITH NO KIND CARRYING A `corr` AN ARRIVAL IS THE INPUT, over every event and state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__no_corr_assert_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A host assert that reads no correlation keeps one answer per correlation: the minted fact carries none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__not_elem_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Not in a list: not its head, not in its tail."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_action",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One answer per correlation survives an action that mints no answer: every fact live after is live before or is the minted one, over every pair of memories."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_after_run_steps",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The history theorem on the fixture runner's state. ONE ANSWER PER CORRELATION OVER ANY HISTORY: from the loaded state, after any ticks, data inputs and pumps under any fuel, two distinct live answers carrying one non-empty correlation are of different response schemas and neither is CallError. Over every program, environment, kind table, site table, cooldown table and schedule. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation. LESS than the clause: THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it. The clause's sentence that each live answer is the last of its kind asserted with that correlation is not proved: the theorem gives at most one live answer per kind and not which one; the witnesses alone show the last asserted staying. The stream's record order (the answer's FactAssert first, the withdrawals after) is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_per_corr_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "ONE ANSWER PER CORRELATION OVER ANY HISTORY: from the loaded state, after any ticks, data inputs and pumps under any fuel, two distinct live answers carrying one non-empty correlation are of different response schemas and neither is CallError. Over every program, environment, kind table, site table, cooldown table and schedule. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation. LESS than the clause: THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it. The clause's sentence that each live answer is the last of its kind asserted with that correlation is not proved: the theorem gives at most one live answer per kind and not which one; the witnesses alone show the last asserted staying. The stream's record order (the answer's FactAssert first, the withdrawals after) is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__one_answer_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One answer per correlation survives removal: a working memory every fact of which was live before inherits it, over every pair of memories."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__other_service_untouched",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The other service is untouched by a response: both replies live, and a second reply of one service retracts that service's alone; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_n_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Phases keep what is carried. By induction on their number."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint keeps what is carried."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade only removes, at the fixpoint's fuel: Rete/NetworkWindowLapse.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_step_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase keeps what is carried: it ends nothing, or it retracts the zeroed ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__pump_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The called pump keeps the invariant: the re-time at entry, then the run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__refire_pending_last_reply_wins",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Two calls before any reply find nothing to retract, each recorded with its Job's key; the last reply asserted stays; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__refire_pending_out_of_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The replies out of order: the one asserted last stays, whichever request it answered; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__response_after_error",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A response after an error: the reply alone is live after; the shape executed on working memory where the vector reads a `log` probe. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__retime_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time stage keeps the invariant: the tick changes no fact and keeps the frame, the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__rhs_gated_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The gated RHS with calls keeps the invariant: admitted, the RHS with calls; refused, the marked net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__run_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The called run keeps the invariant, for any fuel. By induction on the fuel through the firing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__run_sites_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The sites of a position keep the invariant, one after the other."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__selected_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The selected chain is at its ordinal."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__step_called",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One step of a fixture on the called engine, the state alone: a tick, a data input through the arrival, a pump under its fuel. A definition the theorems and the witnesses read."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__step_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A step of the history keeps the invariant: what is carried, and one answer per correlation. Over every state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__survivor_kinds",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The same on the arriving kind's own tests."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__survivor_kinds_if",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE KINDS THAT SURVIVE AN ARRIVAL'S SWEEP, by the two tests on the arriving kind: an answer kind not among the swept kinds is of another response schema and neither is CallError; a CallError sweeps every answer kind; a kind that is no answer sweeps nothing and is none."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_ids_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A correlation sweep keeps the invariant: what is carried, and one answer per correlation since it only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_ids_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A correlation sweep keeps what is carried: the retraction of ids and the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The TTL sweep keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The TTL sweep only removes: the expired ids' retraction and the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__swept_by",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The kinds an arriving fact of a kind sweeps: the two bullets."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__swept_if",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The two bullets by the two tests on the arriving kind: a CallError sweeps every answer kind, a response fact its own kind and CallError, any other kind nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__tick_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A tick keeps the invariant: the clock advances and the TTL sweep runs."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__victims_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The victims of an arriving fact under its read correlation; none for a fact that reads none. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__wall_called_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The wall step keeps the invariant: the net stands."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__withdraw_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A withdraw only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__witness_arrivals_keep_one_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The same for the arrival shapes' program, which has no rule: any schedule of host answers, ticks and pumps; the arrival fixtures' schedules are among them. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__witness_rule_answers_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The witnesses' rule mints no answer, computed: the one rule is action-free. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__witnesses_keep_one_answer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "One answer per correlation in the witness world over every history: any site on the witnesses' rule, any schedule. The theorem at the witnesses' program, whose one rule is action-free and so mints no answer; the call fixtures' schedules are among them. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__empty_corr_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE EMPTY CORRELATION SWEEPS NOTHING on either side: a transcription of the victims' empty clause, said so. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__no_carrier_sweeps_nothing",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An answer whose correlation no earlier answer carries retracts nothing. Over every state and non-empty correlation; the empty correlation is the clause's exemption. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__victims",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The ids of the live victims in working-memory order; the empty correlation has none, on the call side by LRST.1.2's rule and on the arrival side by the clause's. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_4_2_2__Respond",
+        "tag": "derives",
+        "note": "An arriving answer retracts the live answers with its correlation that the engine does not keep (survivors), then goes live at age zero: the clause's supersede on arrival, the answer asserted last being the live one."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_4__FIRES",
+        "tag": "spec",
+        "note": "How many times a call's firing is admitted in a run, each admitted firing issuing a request; 2 in every config, the clause's case of a firing and one more before its request is answered."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_4__fired",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_4__one_answer_per_corr",
+        "tag": "derives",
+        "verdict": "partial",
+        "note": "ONE ANSWER PER CORRELATION, with one service: at every reachable state at most one answer with a given correlation is live, with a call firing while its request is owed and replies arriving in any order; a call whose correlation is generated holds one answer per firing, each under its own correlation. Bounded: two calls, one with an author's `as`, one with a generated correlation, two firings each, TTLs of 2 and 3 ticks. The keepboth, errkeeps and respkeeps teeth engines violate it. Less than the clause: with one service, one fact per response schema and one answer per correlation coincide, so the per-schema reading across services is not modelled; the vectors LCRS.6.2.4_other_service_untouched and LCRS.6.2.1_other_service_reply_survives pin it."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_2_4__survivors",
+        "tag": "spec",
+        "note": "What an arriving answer leaves live: the answers whose correlation is not its own -- nothing, in the clause's engine with one service, under an author's `as`; everything under a generated correlation, which no other answer carries. The three teeth engines each keep something of what shares the correlation that the clause's two bullets retract."
+      }
+    ]
+  }
+}

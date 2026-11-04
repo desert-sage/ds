@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.10.null_beside_a_trap_is_the_trap",
+    "category": "logical",
+    "scenario": "[LNUL.4.10]: a `null` operand does not absorb a fault. With `n` null and `z` zero, `s.n + s.a // s.z` and `s.a // s.z + s.n` are each the DIVIDE_BY_ZERO the floor-division raises, not [LNUL.4.1]'s `null`, on either side of `+`. Two rules, one per side, so a runtime that let a null LEFT operand skip the right one records one error, not two. Path: the non-connective BINOP arm — libds rete/eval.c (both operands evaluated, the fault forwarded before the null test), Mercury ds.eval.m eval_node(e_binop(...)) (the else branch of `connective`).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    n: Int? mutable\n    a: Int mutable\n    z: Int mutable\n\nrule null_left:\n    S s where s.n + s.a // s.z > 0\n->\n    log info \"left\"\n\nrule null_right:\n    S s where s.a // s.z + s.n > 0\n->\n    log info \"right\"\n",
+    "dead_rules_expected": ["null_left", "null_right"],
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "n": null, "a": 1, "z": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["computation_error", "computation_error"]
+    }
+}

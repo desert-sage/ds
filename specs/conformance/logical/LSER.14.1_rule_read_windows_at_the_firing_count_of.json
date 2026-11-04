@@ -1,0 +1,20 @@
+{
+    "id": "LSER.14.1_rule_read_windows_at_the_firing_count_of",
+    "category": "logical",
+    "scenario": "LSER.14.1 — the value-taking reads answer the window at the firing too. `count_of sliding 10_s` absorbs \"a\" at t=0 and \"b\" at t=8 s; at t=15 s an upsert to \"c\" re-evaluates `where e.tag == \"c\" and count_of(e.tag, \"a\") == 0 and count_of(e.tag, \"b\") == 1` at assert, before that pump's sweep. The window (5 s, 15 s] holds \"b\" alone, so the rule fires. The two counts close both wrong answers: a read that counts every sample the backing holds counts \"a\" once and does not fire, and a read that goes cold counts \"b\" zero times and does not fire. The newest sample is 7 s old, so the coldness test passes the read to the backing. Path: libds `series_read_with_value_dispatch` → `series_evict_at_clock` → SeriesBackendRingBuffer `query_with_value`, which takes no instant; Mercury `ds.series.query` → `in_window_samples` at `ec_now`. Companion: LSER.14.1_rule_read_windows_at_the_firing_mean, the plain dispatch.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    count_of sliding 10_s\n\nrule windowed_count_of:\n    Event e where e.tag == \"c\" and count_of(e.tag, \"a\") == 0 and count_of(e.tag, \"b\") == 1\n->\n    log info \"count_of the window at the firing\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 8000000000 },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 7000000000 },
+            { "op": "assert", "schema": "Event", "slots": { "entity_id": "d1", "tag": "c" } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

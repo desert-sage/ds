@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.9_let_shadows_library_refused",
+    "category": "compiler",
+    "scenario": "LGRA.22.9's refusal, the `let` case: `import ha`, then `let ha = d.id` on the right-hand side. A `let` binding named like the first segment of an imported library is refused with DS_VALIDATE_BINDING_SHADOWS_LIBRARY, so a later `ha.x` has one reading. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, over the rule's `let` names.",
+    "rules_ds": "import ha\n\nschema Door scope logical:\n    id: Int key\n\nrule r:\n    Door d\n->\n    let ha = d.id\n    log info \"door {ha}\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 3\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

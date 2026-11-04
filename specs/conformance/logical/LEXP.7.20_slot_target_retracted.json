@@ -1,0 +1,20 @@
+{
+    "id": "LEXP.7.20_slot_target_retracted",
+    "category": "logical",
+    "scenario": "LEXP.7.20: a schema-typed slot names one fact, and keeps naming it after that fact leaves working memory; a fact re-asserted with the same key is another fact ([LFAC.2.5.3]), so the slot does not name it. The Child is a `ttl` fact emitted unconditionally, so retracting its parent does not retract it. Pump 1: Seed, Parent 1, Parent 2; `make` emits the Child naming Parent 1; `eq` fires with Parent 1 and `ne` with Parent 2. Then the Seed and Parent 1 are retracted and Parent 1 is asserted again, as a new fact. Pump 2: `ne` fires for the new Parent 1, and `eq` does not. Exactly [\"eq 1/1\", \"ne 1/2\", \"ne 1/1\"]. A runtime that compared keys would log `eq 1/1` in pump 2. One that read a slot naming a fact no longer in working memory as `null` would log nothing in pump 2, by null propagation. PATH PINNED: the slot read returns the stored reference unchanged (libds `rete/eval.c` DS_RETE_EXPR_VAR returns `f->slots[si]`, a FACT_REF holding the target's rete id, and ids are never reused; Mercury `ds.eval` `slot_value` returns the stored `fact_ref`), and the comparison is by id (libds `val_eq_unordered`, Mercury `compare_outcome`).",
+    "rules_ds": "schema Seed scope logical:\n    n: Int key\n\nschema Parent scope logical:\n    id: Int key\n\nschema Child scope ttl 1_h:\n    id: Int\n    parent: Parent\n\nrule make:\n    Seed\n    Parent p where p.id == 1\n->\n    emit Child id: 1 parent: p\n\nrule eq:\n    Child c\n    Parent p where c.parent == p\n->\n    log info \"eq {c.id}/{p.id}\"\n\nrule ne:\n    Child c\n    Parent p where c.parent != p\n->\n    log info \"ne {c.id}/{p.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Seed", "slots": { "n": 1 }, "as": "s" },
+            { "op": "assert", "schema": "Parent", "slots": { "id": 1 }, "as": "p1" },
+            { "op": "assert", "schema": "Parent", "slots": { "id": 2 } },
+            { "op": "pump" },
+            { "op": "retract", "label": "s" },
+            { "op": "retract", "label": "p1" },
+            { "op": "assert", "schema": "Parent", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["eq 1/1", "ne 1/2", "ne 1/1"]
+    }
+}

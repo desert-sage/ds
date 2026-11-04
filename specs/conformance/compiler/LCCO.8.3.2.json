@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.8.3.2",
+    "category": "compiler",
+    "scenario": "Hierarchical error-code prefix matching per LCCO.8.3.2 \u2014 `auth` matches `auth.failed` and `auth.expired`; `auth.failed` matches only `auth.failed`. A rule with an `error` clause (bare, matching any code) compiles cleanly. Full prefix-pattern matching syntax (`error [\"auth.*\"]:`) is exercised by the engine; compile-level pin is that the error clause itself is legal.",
+    "rules_ds": "schema SvcActionReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice svc.action:\n    kwarg entity_id: String\n    response SvcActionReply\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule r:\n    Trig t\n->\n    call svc.action entity_id: t.entity_id cooldown: 1_min\n        on response.status == 200:\n            log info \"ok\"\n        error:\n            log info \"any error caught\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

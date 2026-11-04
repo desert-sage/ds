@@ -1,0 +1,32 @@
+{
+  "id": "RFCS.10.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.10",
+  "seq": 539,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.10.1] A `ClockAdvance` atom records a new sample of the engine's two\nclocks ([LTIM.2.8.5]): `clock_ns` is the monotonic clock ([LTIM.2.8.2]) and\n`wall_ns` the wall clock ([LTIM.2.8.3]). Every `ClockAdvance` carries both,\nwhichever of them moved. `has_wall` is false when the wall clock has no value,\nand `wall_ns` then carries nothing; the engine **must** write `has_wall` on\nevery `ClockAdvance`.  Clock advances are input events ([LFST.6.1]) and are\nrequired for replay: without them, time-bound rules\n(`after:`, TTL expirations, `cooldown:` windows) fire at different\ntimes during replay, breaking determinism.\n\n",
+  "refs": [
+    "LTIM.2.8.2",
+    "LTIM.2.8.3",
+    "LTIM.2.8.5",
+    "LFST.6.1"
+  ],
+  "atoms": [
+    "ClockAdvance"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "Rfcs_10_1__atom",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the recorder writes: a `ClockAdvance` carrying one sample -- both clocks together, whichever moved -- or the record of a step's input."
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+    "id": "LFAC.1.6",
+    "clauses": ["LFST.6.1.1"],
+    "category": "temporal",
+    "scenario": "A host retract of a `logical` fact (LFST.6.1.1's FactRetract input) removes it, with no rule involved. Named for the LFAC.1.6 heading (mixing categories in one rule), which it does not test; its schema is `logical`, so no TTL is involved either.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                },
+                "as": "h"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 100
+            },
+            {
+                "op": "retract",
+                "label": "h"
+            }
+        ],
+        "fact_count_after": 0
+    }
+}

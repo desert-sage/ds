@@ -1,0 +1,38 @@
+{
+  "id": "RFCS.3.6",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.3",
+  "seq": 109,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[RFCS.3.6] **What each stream event records as.** The stream callback is the\nengine's one channel, and a recording is the recordable events an integrator\nkeeps from it ([LFST.9.2.1]). For each `proto/stream_event_kind.proto#StreamEventKind`\nmember, named as that file says, a recorder must write the atom below, and\nmust write none for a kind that has none. A kind with no atom reaches the\nstream callback only: nothing a replay injects or compares rests on it.\n\n| Kind | Atom |\n|---|---|\n| `fact_assert` | `FactAssert` for a host assert. For a fact an external delivery asserts, or a host assert of a fact that holds a fact reference, the delivery's `ExternalAssert` lists it instead ([RFCS.24.1], [RFCS.24.3]). A fact a rule emitted has none: its `action_emit` records it ([RFCS.6a]), unless the event answers a host reassert ([RFCS.6.7]) |\n| `fact_retract` | `FactRetract` when the integrator withdrew the fact; `FactWithdraw`, with its cause, when the engine did ([RFCS.7a]) |\n| `rule_fire_begin`, `rule_fire_end` | `RuleFireAnnotation`, one each |\n| `action_emit` | `FactEmit` ([RFCS.6a]) |\n| `action_publish` | `FactPublish` ([RFCS.27]) |\n| `action_call` | `CallIssued` ([RFCS.15.2]) |\n| `tick` | `ClockAdvance` |\n| `pump` | `PumpBoundary` ([RFCS.22]) |\n| `type_error`, `bounds_error`, `engine_error`, `computation_error` | `TypeError`, `BoundsError`, `EngineError`, `ComputationError` respectively |\n| `action_log`, `action_cache_set`, `action_cache_delete`, `rule_lhs_facts`, `timer_armed`, `fact_modify`, `action_cache_get`, `timer_fired` | none |\n\nA replay re-derives what the kinds with no atom report: a cache write, a log\nline and a cooldown window come from a rule firing again on the recorded\ninputs.\n\n",
+  "refs": [
+    "LFST.9.2.1",
+    "RFCS.15.2",
+    "RFCS.22",
+    "RFCS.24.1",
+    "RFCS.24.3",
+    "RFCS.27",
+    "RFCS.6.7",
+    "RFCS.6a",
+    "RFCS.7a"
+  ],
+  "atoms": [
+    "BoundsError",
+    "CallIssued",
+    "ClockAdvance",
+    "ComputationError",
+    "EngineError",
+    "ExternalAssert",
+    "FactAssert",
+    "FactEmit",
+    "FactPublish",
+    "FactRetract",
+    "FactWithdraw",
+    "PumpBoundary",
+    "RuleFireAnnotation",
+    "TypeError"
+  ]
+}

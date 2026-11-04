@@ -1,0 +1,26 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+import "series_backend_ring_buffer.proto";  // SeriesNullPolicy
+
+// SeriesBackendWelfordEwma atom body. Per [RDSC.5a.4]. Welford-EWMA running-stats
+// backend for accumulator series providing avg / variance / stdev
+// / count / min / max / rate / direction aggregations.
+message SeriesBackendWelfordEwma {
+  string schema_name        = 1;
+  string slot_name          = 2;
+  // "" for `by: none` per LSER.7.6.2.
+  string identity_slot_name = 3;
+  // 0 indicates an unwindowed cumulative-from-boot accumulator
+  // per LSER.14.3; non-zero sets the EWMA decay time-constant.
+  uint64 window_ns          = 4;
+  // 0 indicates the series is live-only; non-zero forwards every
+  // absorbed sample to the integrator's sample callback per
+  // LSER.8.3 / NSTG.5.
+  uint64 persist_ns         = 5;
+  uint32 module_id          = 10;
+  SeriesNullPolicy null_policy = 11;  // [LNUL.8.6]
+}

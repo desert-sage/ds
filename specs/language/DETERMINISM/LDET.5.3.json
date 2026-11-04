@@ -1,0 +1,244 @@
+{
+  "id": "LDET.5.3",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 583,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "2. [LDET.5.3] **Refraction is suppression, not an ordering key.** An\n   activation whose (rule, token) identity has already fired in this\n   cycle is **not eligible to fire again** until its LHS changes. It is\n   removed from consideration; it is not sorted later.\n\n   In the CLIPS model, refraction is an axis in the conflict-resolution\n   strategy. Here selection happens first and suppression is applied to\n   the winner, so a refracted activation never competes at all.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ldet_5_8__tick_keeps_activation_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An activation that fired and still matches after the tick is the same (rule, token) identity with its flag: it stays suppressed, as the clause requires until its LHS changes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_5_1__window_2367_clocked",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Refraction across the window's two openings: one firing per opening and none while the activation persists, `[0, 1, 0, 0, 0, 1, 0]`, computed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "iret_11_3__framed_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME. From the loaded network, after any inputs applied with no pump between them, a pump that reaches quiescence fires a framed chain exactly as many times as it has matches when the pump begins: its activations are its distinct matches ([IRET.7.7], [IRET.11.1], in the view), each fires once and none twice ([IRET.11.3], [LDET.5.3], in the run), whatever the other rules emit and withdraw meanwhile. Rete/NetworkOnce.idr's theorem with the action-free frame replaced by this one; the plain network, so no cascade and no sweep. Every hypothesis is discharged by computation at `ltim_2_5_1__two_rules_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__run_frame",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Refraction as suppression on the framed chain: an activation fires once, is marked, and is not selected again; the run's firings of the chain are its activations that went from unfired to fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE AND THE CLOCK. From the loaded clocked network, after any inputs -- data events and ticks that sweep -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins, whatever the other rules emit and withdraw and whatever their endings cascade: a cascade's targets are emitted kinds, which a framed chain does not read. Rete/NetworkFrame.idr's theorem on the engine Rete/NetworkClocked.idr runs; a prepare that re-times is outside it and is Rete/NetworkFrameRetime.idr's. Every hypothesis is discharged by computation at `ltim_2_5_1__one_fact_is_an_instance_ttl`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__run_frame_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Refraction as suppression on the framed chain, with cascades in the run: an activation fires once, is marked, and is not selected again; the run's firings of the chain are its activations that went from unfired to fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONCE PER MATCH UNDER THE GENERAL FRAME, WITH TRUTH MAINTENANCE, THE CLOCK AND THE RE-TIME. From the loaded clocked network, after any inputs -- data events, and ticks that sweep and re-time every timed chain -- prepared with no run between them, a run that reaches quiescence fires a framed chain exactly as many times as it has matches when the run begins: the matches the ticks made counted, the matches they ended not. Rete/NetworkFrameClocked.idr's theorem with Rete/NetworkClocked.idr's prepare. Every hypothesis is discharged by computation at `ltim_2_5_1__gated_is_an_instance` and `ltim_2_5_1__shut_is_an_instance`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE THEOREM. For an action-free program, from the loaded network, after any inputs applied with no pump between them, a pump with fuel enough halts `Quiescent`, fires exactly as many times as there are activations, leaves every activation fired with its tuple, and every chain's tuples are exactly its recompute over working memory, none twice: once per match, and each match once. [IRET.7.7] and [IRET.11.1] in the view; [IRET.11.3] and [LDET.5.3] in the run. The clauses a duplicate firing breaks, held together."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__pump_fires_once_per_match_from",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An activation that fired is not eligible again until its LHS changes: the pump fires each once and leaves all fired."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_4__run_net_marks_all",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Refraction as suppression: a marked activation is skipped, so the loop fires each activation once and stops."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "idat_6_2_2__mark_sorted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Refraction is not an ordering key: setting `fired` moves no activation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "idat_6_2_2__mark_chain_ordered",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Suppression by the flag leaves a rule's agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "idat_6_2_2__mark_net_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Suppression by the flag leaves every rule's agenda order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "Iret_11_3__sound",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The clause's rule as an invariant: an identity that fired and whose LHS has not changed is an activation carrying `fired`, and the set adds nothing to that."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__refraction_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's 'until its LHS changes' is the reading the theorem defends: an identity that fired is refused until its activation ends, and the set of [IRET.11.3.2], cleared more often, refuses nothing more. A set cleared only per pump ([LTIM.2.5.1] read strictly) would differ observably -- a match blocked by an RHS emit and released by a later RHS withdraw within one pump would be refused, against this clause."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkRefraction.idr",
+        "name": "iret_11_3__select_spec_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Selection first, suppression on the winner: with the set subsumed by the flag, the suppression never changes the winner."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ldet_5_8__tick_keeps_activation",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A TICK IS NOT A CHANGE TO THE LHS: an activation whose match the new test still admits is the same record after the tick, its `fired` flag included. A fired match stays refracted across every tick that leaves it matching -- Rete/NetworkRefraction.idr's theorem, restated under ticks."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Done",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__ENGINE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Init",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Next",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Readings",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "Five readings of the suppression rule. `own` -- the flag, held until the activation is re-created -- is this clause; `runentry` is observably the same in the fragment. `pump` and `anywm` are readings the clause refuses, and `pump_oneshot` is libds, which agrees with `own` on every stream but one: the hash collision under the hash-alone key [IRET.11.3.3] refuses. On `tick_edge_twice`, where a gate that closes and reopens fires again (1@2 1@6, what [LTIM.2.5.1] requires of a reopening), libds's one-shot ends with the closing and it fires with `own`."
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Scenarios",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Spec",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__Step",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__TypeOK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__expected",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__fired",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__libds_fires_each_opening",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "LIBDS'S CELL ON THE REOPENING STREAM IS THE CLAUSE'S: the `pump_oneshot` reading fires 1@2 1@6 on `tick_edge_twice`, its one-shot ending with the closing as the flag does ([LTIM.2.5.1]), so the second opening fires. One cell of the table held on its own so that it carries its own verdict; the engine that keeps the one-shot past the closing breaks it (the `.teeth.oneshot_outlives.` config, held on every run of the lane)."
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__pc",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__reading",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__scenario",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__table_holds",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Within the model's streams (TLC, every reading x identity x stream). The `pump_oneshot` column is libds: its refraction table is keyed by a cycle generation that advances on every working-memory assert and retract and once per pump, so a match blocked and released within one pump fires again (stream `same_pump_rel`, 1@1 1@1), as this clause requires; and its one-shot for a time-dependent rule ends with the closing, so a reopened gate fires again (`tick_edge_twice`, 1@2 1@6, as [LTIM.2.5.1] requires; `ldet_5_3__libds_fires_each_opening`). libds differs from the clause's column in one place: under the hash-only identity it still uses in RT mode, which [IRET.11.3.3] forbids in every mode."
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_3__vars",
+        "tag": "spec"
+      }
+    ]
+  }
+}

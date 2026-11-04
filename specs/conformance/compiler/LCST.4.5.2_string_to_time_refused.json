@@ -1,0 +1,11 @@
+{
+    "id": "LCST.4.5.2_string_to_time_refused",
+    "clauses": ["LCST.4.5.2"],
+    "category": "compiler",
+    "scenario": "[LCST.4.5.2] with [LTIM.14]: DS reads no temporal text, so `String -> Time` is no conversion and `s::Time?` is DS_VALIDATE_CAST_UNDEFINED. The cast is written fallible, `::Time?`, so the refusal cannot be the missing-`?` one: it is the conversion's. PATH PINNED: `dsc.cast.lcst_4_5_2_classify`'s `ck_string` row for `ct_time`, `cc_rejected(cr_temporal_text)`, raised as DS_VALIDATE_CAST_UNDEFINED by `dsc.typecheck.lopq_4_3_refusal_code`.",
+    "rules_ds": "schema Ev scope logical:\n    id: Int key\n    stamp: String mutable\n\nrule late:\n    Ev e where now() > e.stamp::Time?\n->\n    log info \"late {e.id}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_UNDEFINED"
+    }
+}

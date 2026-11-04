@@ -1,0 +1,9 @@
+{
+    "id": "LTAC.2.1",
+    "category": "compiler",
+    "scenario": "Grammar per LTAC.2.1 \u2014 a rule's RHS may carry trailing `after <duration>: <actions>` clauses. Pin: a rule with one immediate action and a single `after 5_min:` clause compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so LTAC.3.4's parent rule and `$<rule>_after_0` follow-up are not observed.",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule auto_off:\n    Motion m where m.state == true\n->\n    log info \"motion seen\"\n    after 5_min:\n        log info \"5_min later\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

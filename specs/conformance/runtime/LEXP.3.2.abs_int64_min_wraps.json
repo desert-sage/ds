@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.3.2.abs_int64_min_wraps",
+    "category": "runtime",
+    "scenario": "[LEXP.3.2] abs(x) over [LEXP.7.13.1]'s wrap: |INT64_MIN| = 2^63 has no Int representation, and the Int wrap makes it INT64_MIN, as unary `-` on INT64_MIN is (LEXP.7.13.1.neg_int64_min). The guard `abs(t.x) == t.x and t.x < 0` holds for exactly one Int, INT64_MIN. Path: builtins.c builtin_abs, which computed `v < 0 ? -v : v` in int64_t -- undefined behaviour at INT64_MIN, so an optimizer owed this answer nothing (audit finding I1) -- now int_ops.h ds_i64_abs over ds_i64_neg; Mercury ds.eval int64.abs. fact_count 2 = T plus the Hit the rule emits.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where abs(t.x) == t.x and t.x < 0\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -9223372036854775808 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

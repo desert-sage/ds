@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Under `nulls: skip` a null reading is no sample ([LNUL.8.6]): one null and
+# one 5.0 count one. The read exists because a declared series that nothing
+# reads emits no backend atom.
+use default
+
+schema Meter scope logical:
+    id: String key
+    reading: Float? mutable
+
+schema Report scope ttl 1_h:
+    n: Int
+
+series Meter.reading (by: id, nulls: skip):
+    count sliding 10_min
+
+rule report:
+    Meter m
+->
+    emit Report n: count(m.reading)

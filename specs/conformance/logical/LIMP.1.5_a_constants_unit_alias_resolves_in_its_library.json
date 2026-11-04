@@ -1,0 +1,20 @@
+{
+    "id": "LIMP.1.5_a_constants_unit_alias_resolves_in_its_library",
+    "category": "logical",
+    "scenario": "[LIMP.1.5], [LUNI.7.5]: an alias in a constant's value resolves in the file declaring the constant. `a`'s `mark`, at `x * 2`, has the alias `mk`, and `b` imports `mark` and declares `LIMIT = 5_mk`. The program binds `other`, `c`'s unit at `x * 3`, whose alias is also `mk`. `LIMIT` is 10 in base units, so the fact holding 10.0 matches and the one holding 15.0, `c`'s reading, does not: exactly [\"hit 1\"]. PATH PINNED: `dsc.imports.limp_1_5_const_unit` taking the alias through `limp_1_5_group_decls`, and `dsc.resolve.const_scope` from `dsc.rete`'s lowering of the name.",
+    "rules_ds": "from c import other\nfrom b import LIMIT\n\nschema S scope logical:\n    k: Int key\n    t: other mutable\n\nrule r:\n    S x where x.t == LIMIT\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2 alias mk\n",
+        "b": "from a import mark\n\nconst LIMIT = 5_mk\n",
+        "c": "from a import warmth\n\nunit other: warmth = x * 3 alias mk\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "t": 10.0 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "t": 15.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

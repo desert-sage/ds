@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.5.2_duration_to_int_signed_difference",
+    "category": "logical",
+    "scenario": "[LCST.4.5.2]: `Duration -> Int` is total and gives the nanoseconds, and `(a - b)::Int - (b - a)::Int` is the signed difference of two instants ([LTIM.1.3.1]), because one of the two differences is `0_s`. One W, `a` at 1 s and `b` at 6 s, so `a` is the earlier. Rule `signed` logs the signed difference from `b` to `a`, `-5000000000`, and its reverse, `5000000000`; rule `ahead` fires where that difference is below zero, the way an author asks how far early `a` is. PATH PINNED: `dsc.cast`'s `Duration -> Int` row and `dsc.rete`'s `lcst_4_5_2_lower` (the identity on the nanoseconds), over the saturated `Time - Time` of [RLOW.6.1.6].",
+    "rules_ds": "schema W scope logical:\n    id: Int key\n    a: Time mutable\n    b: Time mutable\n\nrule signed:\n    W w\n->\n    let back = (w.a - w.b)::Int - (w.b - w.a)::Int\n    let fwd = (w.b - w.a)::Int - (w.a - w.b)::Int\n    log info \"signed {back} {fwd}\"\n\nrule ahead:\n    W w where (w.a - w.b)::Int - (w.b - w.a)::Int < 0\n->\n    log info \"ahead\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "W", "slots": { "id": 1, "a": 1000000000, "b": 6000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["signed -5000000000 5000000000", "ahead"]
+    }
+}

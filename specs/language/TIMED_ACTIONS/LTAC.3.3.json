@@ -1,0 +1,111 @@
+{
+  "id": "LTAC.3.3",
+  "prefix": "LTAC",
+  "doc": "TIMED_ACTIONS.md",
+  "parent": "LTAC.3",
+  "seq": 127,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTAC.3.3] The parent rule's RHS gains an action that asserts the\ntimer fact with `fire_at: monotonic_ns() + <dur>`. The assertion is\nappended after the rule's original immediate actions; the\nordering matches source.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_3_3__timer_value",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE TIMER THE PARENT EMITS: `fire_at` copied from the trigger's payload, not `monotonic_ns() + dur`; an emit reads no clock in this model. The fixture's departure, named. on the Idris model's engine the clock reading is the mint's entry stamp: Rete/NetworkTimer.idr's `ltac_3_3__stamp_is_fire_at` proves the gate from that stamp opens at `stamp + dur`, which is this clause's value."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_3__rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The parent's RHS asserts the timer, its only action; its `fire_at` is the trigger's payload and not a clock reading. A fixture. The clock reading is Rete/NetworkTimer.idr's (`ltac_3_3__stamp_is_fire_at`, R5)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_4_3__two_timers",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "Two parent firings, two timer assertions, each with its own `fire_at` -- taken from the triggers, not from the clock. Computed. Stamped from the clock on the Idris model's engine: Rete/NetworkTimer.idr's `ltac_4_3__independent_timed` (R5)."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_1__lower",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The timer's assertion after the parent's original actions, in clause order. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__alphas_three",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Three alphas: the trigger's kind 0, the body's `Delayed` kind 1, the timer's kind 2. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__explicit_mint_is_stamped",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A MINT INTO AN EXPLICIT KIND IS STAMPED WITH THE SAMPLE: the explicit lifecycle's assert always enters, so Rete/EntryStamp.idr's stamp of the fresh id is the sample, for every avoided id, kind, key, payload, sample, working memory and stamp table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE DELAYED-EMIT PROGRAM, lowered: `delayed` on the trigger with `after 5: emit Delayed` -- the parent emitting the timer, and the follow-up emitting the `Delayed` then retracting the timer (temporal/LTAC.3.1.runtime's and logical/LTAC.3.3's shape). A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__stamp_is_fire_at",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE STAMP IS `fire_at` LESS THE DURATION. An `Emit` into an explicit kind, run by the stamped RHS at the net's clock `m`, stamps the fact it mints with `m`; and from that stamp the follow-up's gate is `monotonic_ns() >= m + S d`: the clause's `fire_at: monotonic_ns() + dur`, the clock read in the firing being the held sample `m`. For every program, kind, sample, activation, value function, working memory and stamp table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__survives_parent_retract_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TIMER SURVIVES ITS PARENT'S RETRACTION: the trigger pumped at 0 arms the timer; the trigger is retracted; the advance to 6 and a pump still fire the follow-up and mint the `Delayed` -- the timer is asserted plainly, with no justification, logical/LTAC.3.3_after_survives_parent_retract's shape. Executed: working memory holds the `Delayed` alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The delayed-emit program's tests. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_3__with_timer",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "THE PARENT'S RHS GAINS THE TIMER'S ASSERTION, appended after its own actions, one per clause in clause order: 'appended after the rule's original immediate actions'. LESS than the clause: the timer's value is the captures, not `monotonic_ns() + dur`; the stamped RHS stamps the mint with the held sample, and that the stamp plus the duration is the clause's `fire_at` is `ltac_3_3__stamp_is_fire_at`'s theorem, with which this definition meets the clause. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard_is_due",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`fire_at: monotonic_ns() + dur` with the clock read being the mint's stamp: the gate from the stamp is the gate at `stamp + dur`, for every stamp, duration and sample."
+      }
+    ]
+  }
+}

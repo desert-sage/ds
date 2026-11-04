@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.10.7_overlap_greatest_from_wins",
+    "clauses": ["LTIM.10.7", "LTIM.10.9"],
+    "category": "logical",
+    "dead_rules_expected": ["a_wins", "covered"],
+    "scenario": "[LTIM.10.7] with [LTIM.10.9]'s overlap: the facts of one zone may overlap, and the one with the greatest `valid_from` not after the instant decides, whatever order they arrived in. Two `Europe/Paris` rows, the later one asserted first: B, +7200, from 2024-03-01T00:00Z until 2024-06-01T00:00Z; then A, +3600, from 2024-01-01T00:00Z until 2025-01-01T00:00Z. Event 1 at 2024-04-01T09:00Z falls in both: B has the greater `valid_from`, so Paris reads 11:00 and `b_wins` fires while `a_wins` (10:00) does not. Event 2 at 2024-07-01T09:00Z is still covered by A, but B has the greatest `valid_from` not after it and B's `valid_until` has passed, so the zone has no answer there ([LTIM.10.7]: \"Otherwise ... `Z` has no answer at `t`\"). The read faults DOMAIN and `covered` does not fire. Exactly ['b']. PATH PINNED: the per-zone index's predecessor lookup, libds's `ds_rete_tz_resolve` and Mercury's `ds.wm` index read by `ds.eval`.",
+    "rules_ds": "schema Event scope logical:\n    id: Int key\n    seen: Time mutable\n\nrule b_wins:\n    Event e where e.id == 1 and e.seen.local(\"Europe/Paris\").hour == 11\n->\n    log critical \"b\"\n\nrule a_wins:\n    Event e where e.id == 1 and e.seen.local(\"Europe/Paris\").hour == 10\n->\n    log critical \"a\"\n\nrule covered:\n    Event e where e.id == 2 and e.seen.local(\"Europe/Paris\").hour >= 0\n->\n    log critical \"covered\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1709251200000000000, "valid_until": 1717200000000000000, "offset_s": 7200 } },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 3600 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 1, "seen": 1711962000000000000 } },
+            { "op": "assert", "schema": "Event", "slots": { "id": 2, "seen": 1719824400000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["b"]
+    }
+}

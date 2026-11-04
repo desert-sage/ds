@@ -1,0 +1,10 @@
+{
+    "id": "RLOW.7.3.1_kwarg_order_does_not_reach_the_artefact",
+    "category": "compiler",
+    "scenario": "RLOW.7.3.1 / RDSC.4a.9.4: a call's kwargs lower to its own operands, `FN_CALL(service, corr, \"k1\", v1, \"k2\", v2, ...)`, names in strictly ascending UTF-8 byte order, so an artefact does not depend on the order the author wrote them in. Drives `dsc_equivalent`: the two sources differ only in kwarg order -- `mid, zeta, alpha` against `alpha, mid, zeta` -- and their DSC byte-strings must be equal once the source-position tier is dropped. Path: `dsc.rete`'s sort of a call's kwargs by name before lowering (`rlow_7_3_1_call`). It pins nothing about the runtimes, which take the artefact's order.",
+    "rules_ds": "use default\n\nservice svc.body:\n    kwarg zeta: String\n    kwarg alpha: Int\n    kwarg mid: Float\n    no response\n\nschema In scope logical:\n    id: Int key\n    txt: String mutable\n    num: Float mutable\n\nrule out:\n    In i\n->\n    call svc.body mid: i.num zeta: i.txt alpha: i.id nocooldown\n",
+    "expect": {
+        "kind": "dsc_equivalent",
+        "equivalent_ds": "use default\n\nservice svc.body:\n    kwarg zeta: String\n    kwarg alpha: Int\n    kwarg mid: Float\n    no response\n\nschema In scope logical:\n    id: Int key\n    txt: String mutable\n    num: Float mutable\n\nrule out:\n    In i\n->\n    call svc.body alpha: i.id mid: i.num zeta: i.txt nocooldown\n"
+    }
+}

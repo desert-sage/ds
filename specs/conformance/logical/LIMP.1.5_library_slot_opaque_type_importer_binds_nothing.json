@@ -1,0 +1,18 @@
+{
+    "id": "LIMP.1.5_library_slot_opaque_type_importer_binds_nothing",
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: `vault`'s `Box.pubkey` is `crypto`'s opaque `Key`, by `vault`'s own import, and the program does only `import vault`, so it cannot spell `Key`. It compiles, and a run sees the fact: exactly [\"seen\"]. The break is DS_VALIDATE_UNKNOWN_TYPE. PATH PINNED: `dsc.imports.limp_1_5_field` giving the slot `crypto`'s declaration, `dsc.resolve.slot_entry` reading it from `rf_decl_types`, and `dsc.lower.rdsc_5_5_4_slot_kind` erasing it to `Bytes`.",
+    "rules_ds": "import vault\n\nrule r:\n    vault.Box\n->\n    log info \"seen\"\n",
+    "libraries": {
+        "crypto": "opaque type Key over Bytes\n",
+        "vault": "from crypto import (Key)\n\nschema Box scope logical:\n    k: Int key\n    pubkey: Key mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "vault.Box", "slots": { "k": 1, "pubkey": { "$bytes": "00" } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["seen"]
+    }
+}

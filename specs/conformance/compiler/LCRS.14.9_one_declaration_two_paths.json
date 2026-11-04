@@ -1,0 +1,13 @@
+{
+    "id": "LCRS.14.9_one_declaration_two_paths",
+    "category": "compiler",
+    "scenario": "[LCRS.14.9]: one declaration reached through two import paths is one declaration, not a duplicate. `base` declares `svc.method`; the file imports from `base` directly and from `mid`, which itself imports `base`. The check is keyed on the declaration (each library is read once), not on how many paths reach it, so this compiles. PATH PINNED: dsc.driver.lcrs_14_9_duplicate_services with one library reached twice.",
+    "rules_ds": "from base import Trig\nfrom mid import Mid\n",
+    "libraries": {
+        "base": "schema Trig scope logical:\n    v: Int key\n\nservice svc.method:\n    \"\"\"the only one\"\"\"\n    no response\n",
+        "mid": "from base import Trig\n\nschema Mid scope logical:\n    k: Int key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

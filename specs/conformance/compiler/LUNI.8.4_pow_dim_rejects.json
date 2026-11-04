@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_pow_dim_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.8.4 — `**` with a dimensioned operand is ambiguous: the compiler doesn't infer compound units (m^2 isn't derived from m). `r.dist ** 2` rejects with DS_VALIDATE_DIM_AMBIGUOUS. Authors use a typed-let with the target compound unit to escape.",
+    "rules_ds": "schema Range scope logical:\n    dist: meter key\n\nrule bad:\n    Range r where (r.dist ** 2) > 100\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

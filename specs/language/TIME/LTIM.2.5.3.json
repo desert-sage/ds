@@ -1,0 +1,69 @@
+{
+  "id": "LTIM.2.5.3",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.5",
+  "seq": 214,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.5.3] A time-dependent condition that is **already true when its fact is\nasserted** fires on the next pump, **if it still holds under that pump's\nsample** ([LTIM.2.4.3]). [LTIM.2.4] / [LTIM.2.5] add re-evaluation on later\nticks; they do not delay a condition already satisfied when the fact arrives.\nA condition the pump's sample finds false has ended its match\n([LTIM.2.5.1]), and nothing fires.\n\n",
+  "refs": [
+    "LTIM.2.4",
+    "LTIM.2.4.3",
+    "LTIM.2.5",
+    "LTIM.2.5.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__due_at_assert_fires_now",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A gate true at assert fires on the next pump. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTick.idr",
+        "name": "ltim_2_5_3__true_at_assert",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "A condition already true at assert fires on that pump and never again: the tick after the assert makes nothing, so the firing is the activation the assertion made."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_3__fires_on_the_next_pump",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AND A CONDITION TRUE AT THE ASSERT FIRES ON THE NEXT PUMP with no tick between: the pump's re-time at the held sample decides it. '[LTIM.2.4] / [LTIM.2.5] ... do not delay a condition already satisfied when the fact arrives.' Executed: `[[(0, True)]]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_3__true_at_assert_decided_at_the_pump",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "TRUE AT THE ASSERT, FALSE UNDER THE PUMP'S SAMPLE, NOTHING FIRES: the Ping asserted at 0 under `dwell < 2`, the clock advanced to 3, one pump -- logical/LTIM.2.5.3_true_at_assert_false_at_pump's `young`; and advanced to 1, the condition still holds under the pump's sample and it fires. 'If it still holds under that pump's sample'. Executed: `[[]]` and `[[(0, True)]]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_5_3__young",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A CONDITION TRUE AT THE ASSERT: `dwell < 2`, logical/LTIM.2.5.3_true_at_assert_false_at_pump's `young`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_5_3__true_at_assert_fires_once_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "TRUE AT THE ASSERT, IT FIRES ON THE NEXT PUMP AND ONCE: both clocks advanced to 6 and a pump with no fact; the Ping asserted with the gate already open; an advance to 7 and a pump fire it; an advance to 8 and a pump fire nothing -- logical/LTIM.2.5.3_true_at_assert_fires_once's shape. The firing is the activation the assert made, which the tick from 6 to 7 finds open and leaves. Executed: `[[], [(0, True)], []]`."
+      }
+    ]
+  }
+}

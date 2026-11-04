@@ -1,0 +1,20 @@
+{
+  "id": "IDSP.10.1",
+  "prefix": "IDSP",
+  "doc": "DISPATCHER.md",
+  "parent": "IDSP.10",
+  "seq": 742,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[IDSP.10.1] What every verb implementation must wire\nup. Use as a checklist when adding a verb.\n\n| Step | Concrete action |\n|---|---|\n| Register adapter | Wire `bridge_<verb>` into `ds_rete_adapter_config_t` in `ds_engine_wire_rete_adapters`; `ds_rete_register_adapters` installs it on the Rete engine. |\n| Receive args | The bridge receives typed values in the verb's request struct (e.g. `ds_rete_call_request_t`); no per-arg decode. Arity / type are fixed by the `Action` in the rule's `TerminalNode` atom ([RDSC.4a.8]). |\n| Look up callback | Read `engine->dispatcher.<verb>_cb` and `<verb>_user`. NULL handling per the verb's policy ([IDSP.2] silent drop vs [IDSP.6-8] essential). |\n| Invoke primary effect | Call the typed callback (or run inline if local-only). Save/restore pending slot if the effect re-enters libds (assert/retract). |\n| Emit stream event | Once the engine's own part of the verb succeeds, and before any callback, call `ds_recorder_emit_action_<verb>` ([IDSP.1.4]). A verb whose engine part fails does NOT emit; the callback's outcome does not decide it. |\n| Surface errors | Essential-verb failures stash via `ds_engine_set_pending` (the bridge's `essential_fail`); `ds_engine_pump` drains and returns them after `ds_rete_run`. |\n| Add a public setter | `ds_engine_set_<verb>_callback` (or `_callbacks` for cache). Lives in `dispatcher.c`. Stores into `engine->dispatcher.<verb>_cb / _user`. |\n| Update `ds_dispatcher_state_t` | Add the `<verb>_cb` and `<verb>_user` fields in `dispatcher.h`. Init to NULL in `ds_dispatcher_init`. |\n| Add a stream-event union member | If it carries a typed payload (e.g., `ds_call_request_t`-shaped event), add to `ds_stream_ev`'s union in `libds.h`. |\n| Add a recorder helper | `ds_recorder_emit_action_<verb>` in `recorder.{h,c}`. |\n| Write per-verb test | `test_dispatcher_<verb>` covering registration, decode happy-path, NULL-cb policy, error paths, callback-error propagation. |\n| Update `test_action_events` | New scenario verifying the verb emits ACTION_<verb> once its engine part succeeds, whatever the callback answers, and not when its engine part fails. |\n\n---\n\n",
+  "refs": [
+    "IDSP.1.4",
+    "IDSP.2",
+    "IDSP.6",
+    "RDSC.4a.8"
+  ],
+  "atoms": [
+    "TerminalNode"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+    "id": "RCTS.1.2.14_stdlib_name_collision",
+    "clauses": ["RCTS.1.2.15"],
+    "category": "compiler",
+    "scenario": "[RCTS.1.2.14]: a fixture whose `libraries` names a library the standard library also supplies is malformed, and the harness fails it rather than choose between the two ([LIMP.3.1.4]'s first-match order would otherwise decide silently). The standard library is on every fixture's search path, and `libraries` supplies its own `units.si`, which `stdlib/units/si.ds` also is. Either copy alone would compile the program: the `libraries` one declares `Hz` as the shipped one does, so a harness that picked either would compile it and report `accepted`, not refuse it. [RCTS.1.2.15]: the subject is the harness, so it passes only when the harness refuses it under [RCTS.1.2.14], before anything is compiled. PATH PINNED: `rcts_1_2_14_libraries` in compiler/mercury/test/test_conformance.m (shared by test_behave.m), and `_rcts_1_2_14_malformed` in specs/conformance/harness/runner.py.",
+    "rules_ds": "from units.si import Hz\n\nschema Tone scope logical:\n    id: String key\n    freq: Hz mutable\n",
+    "libraries": {
+        "units.si": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n"
+    },
+    "expect": {
+        "kind": "malformed_fixture",
+        "reason": "RCTS.1.2.14"
+    }
+}

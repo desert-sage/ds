@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.2.3_date_plus_days",
+    "clauses": ["LTIM.4.2.3", "RLOW.6.1.5"],
+    "category": "logical",
+    "scenario": "[LTIM.4.2.3]: `d + dur` and `d - dur` are the `Date` `dur` / 86 400 · 10⁹ days after or before `d`, exactly. One Visit on 2024-02-29 (day 19782), a leap day. Rule `plus` logs `(v.due + 1_d)::String`, 2024-03-01, and rule `minus` logs `(v.due - 7_d)::String`, 2024-02-22. A `Date` is its day count and a `Duration` its nanoseconds ([RDSC.5.5.8]), so a lowering to plain Int `+` and `-` adds 86 400 · 10⁹ to a day count, lands far outside the Date range, and logs neither date. PATH PINNED: `dsc.rete`'s `rlow_6_1_5_date_arith` (RLOW.6.1.5) lowering to FN_DATE_ADD_DURATION and FN_DATE_SUB_DURATION, and the two builtins in libds (`rete/adapters.c`, `date_shift`) and Mercury (`ds.eval.ltim_4_2_3_date_shift`).",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nrule plus:\n    Visit v\n->\n    let a = (v.due + 1_d)::String\n    log info \"plus {a}\"\n\nrule minus:\n    Visit v\n->\n    let b = (v.due - 7_d)::String\n    log info \"minus {b}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 19782 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["plus 2024-03-01", "minus 2024-02-22"]
+    }
+}

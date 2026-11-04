@@ -1,0 +1,40 @@
+{
+    "id": "IARC.1.11a",
+    "clauses": ["RARC.13.1"],
+    "category": "cross-tier",
+    "scenario": "Two engines coexist independently per IARC.1.11. Asserting a fact in engine A leaves engine B's working memory untouched. Pins the no-shared-state invariant on which cross-tier rule sets depend.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "a": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            },
+            "b": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            {
+                "engine": "a",
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "engine": "a",
+                "op": "pump"
+            },
+            {
+                "engine": "b",
+                "op": "pump"
+            }
+        ],
+        "engine_fact_counts_after": {
+            "a": 1,
+            "b": 0
+        }
+    }
+}

@@ -1,0 +1,62 @@
+{
+  "id": "LLOG.2.7.1.multimod_neg",
+  "category": "logical",
+  "dead_rules_expected": ["reuse", "run", "running", "produce", "succeeded", "fail", "complete", "abort", "unsat_fail"],
+  "scenario": "End to end: two intermediate-fact fragments emit Step/Consumes into the full build engine; late Products (a.c,b.c,cc) retract each step Blocked (block_tool + block_input, multi-justified). The coalesced Blocked emit must not build a duplicate DS wrapper. After scheduling, working memory holds exactly: BuildRequested, SrcA, SrcB, 2 Step, 2 Output, 2 Consumes, 3 Product, 2 Ready = 14. Orphaned Blocked wrappers leave fact_count at 16.",
+  "rules_ds": "schema Product scope logical:\n    name:     String key\n    pathname: String mutable\n    digest:   String mutable\nschema Step scope logical:\n    id:   String key\n    tool: String mutable\n    argv: String mutable\nschema Output scope logical:\n    name:     String key\n    step:     String mutable\n    pathname: String mutable\nschema Consumes scope logical:\n    step:    String key\n    product: String key\nschema Blocked scope logical:\n    step: String key\nschema Ready scope logical:\n    step: String key\nschema ActionKey scope logical:\n    step: String key\n    action_key: String mutable\nschema Dispatched scope logical:\n    step: String key\nschema Running scope logical:\n    step: String key\nschema StepResult scope logical:\n    step: String key\n    exit: Int mutable\nschema Done scope logical:\n    step: String key\nschema Failed scope logical:\n    step: String key\n    exit: Int mutable\nschema StepOutput scope logical:\n    name:     String key\n    step:     String mutable\n    pathname: String mutable\n    digest:   String mutable\nschema Cached scope logical:\n    name:     String key\n    action_key: String mutable\n    pathname: String mutable\n    digest:   String mutable\nschema Unsatisfiable scope logical:\n    name: String key\nschema BuildRequested scope logical:\n    root: String key\nschema BuildOk scope logical:\n    root: String key\nschema BuildFailed scope logical:\n    root: String key\nschema SrcA scope logical:\n    obj: String key\nschema SrcB scope logical:\n    obj: String key\n\nservice cache.key:\n    kwarg step: String\n    no response\nservice exec.run:\n    kwarg step: String\n    kwarg argv: String\n    no response\n\nrule block_tool:\n    Step s\n    no Product p where p.name == s.tool\n->\n    emit Blocked logical step: s.id\nrule block_input:\n    Consumes c\n    no Product p where p.name == c.product\n->\n    emit Blocked logical step: c.step\nrule ready:\n    Step s\n    no Blocked b where b.step == s.id\n    no Done d where d.step == s.id\n    no Failed f where f.step == s.id\n->\n    emit Ready logical step: s.id\nrule fetch_key:\n    Ready r\n    no ActionKey k where k.step == r.step\n->\n    call cache.key step: r.step nocooldown\nrule reuse:\n    ActionKey k\n    Cached c where c.action_key == k.action_key\n->\n    emit Product logical name: c.name pathname: c.pathname digest: c.digest\n    emit Done logical step: k.step\nrule run:\n    ActionKey k\n    no Cached c where c.action_key == k.action_key\n    no Dispatched d where d.step == k.step\n    Step s where s.id == k.step\n->\n    call exec.run step: s.id argv: s.argv nocooldown\nrule running:\n    Dispatched d\n    no StepResult sr where sr.step == d.step\n->\n    emit Running logical step: d.step\nrule produce:\n    ActionKey k\n    StepOutput so where so.step == k.step\n->\n    emit Product logical name: so.name pathname: so.pathname digest: so.digest\n    emit Cached logical name: so.name action_key: k.action_key pathname: so.pathname digest: so.digest\nrule succeeded:\n    StepResult sr where sr.exit == 0\n->\n    emit Done logical step: sr.step\nrule fail:\n    StepResult sr where sr.exit != 0\n->\n    emit Failed logical step: sr.step exit: sr.exit\nrule complete:\n    BuildRequested req\n    Product p where p.name == req.root\n->\n    emit BuildOk logical root: req.root\nrule abort:\n    BuildRequested req\n    Failed\n->\n    emit BuildFailed logical root: req.root\nrule unsat_fail:\n    BuildRequested req\n    Unsatisfiable\n->\n    emit BuildFailed logical root: req.root\nrule seed_a:\n    BuildRequested\n->\n    emit SrcA logical obj: \"a.o\"\nrule seed_b:\n    BuildRequested\n->\n    emit SrcB logical obj: \"b.o\"\nrule compile_a:\n    SrcA s\n->\n    emit Step logical id: s.obj tool: \"cc\" argv: \"cc\"\n    emit Output logical name: s.obj step: s.obj pathname: s.obj\n    emit Consumes logical step: s.obj product: \"a.c\"\nrule compile_b:\n    SrcB s\n->\n    emit Step logical id: s.obj tool: \"cc\" argv: \"cc\"\n    emit Output logical name: s.obj step: s.obj pathname: s.obj\n    emit Consumes logical step: s.obj product: \"b.c\"\n",
+  "expect": {
+    "kind": "introspection_assert",
+    "steps": [
+      {
+        "op": "set",
+        "now_ns": 1000000000
+      },
+      {
+        "op": "assert",
+        "schema": "BuildRequested",
+        "slots": {
+          "root": "x"
+        }
+      },
+      {
+        "op": "pump"
+      },
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "a.c",
+          "pathname": "a.c",
+          "digest": "da"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "b.c",
+          "pathname": "b.c",
+          "digest": "db"
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Product",
+        "slots": {
+          "name": "cc",
+          "pathname": "cc",
+          "digest": "dc"
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "checks": [
+      {
+        "surface": "fact_count",
+        "equals": 14
+      }
+    ]
+  }
+}

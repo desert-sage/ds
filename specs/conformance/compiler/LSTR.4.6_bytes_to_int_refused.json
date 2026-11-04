@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.4.6_bytes_to_int_refused",
+    "category": "compiler",
+    "scenario": "[LSTR.4.6]: `bytes_to_int(b, 4)` is refused with DS_VALIDATE_BYTES_CONVERSION_RETIRED at the call, not as an unknown function: the name is the retired builtin's. The arguments are well typed and the width is a valid one. PATH PINNED: the builtin-call arm of the validator; `bytes_to_int_le` takes the same arm.",
+    "rules_ds": "schema Pkt scope ttl 1_h:\n    raw: Bytes\n\nschema Out scope ttl 1_h:\n    n: Int\n\nrule r:\n    Pkt p\n->\n    emit Out n: bytes_to_int(p.raw, 4)\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BYTES_CONVERSION_RETIRED"
+    }
+}

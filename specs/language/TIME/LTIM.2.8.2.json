@@ -1,0 +1,488 @@
+{
+  "id": "LTIM.2.8.2",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.8",
+  "seq": 244,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.8.2] **The monotonic clock** never decreases. Its zero is\nunspecified: only the difference between two of its readings has a meaning, and\nthe runtime **must not** give a single reading any other (process uptime, time\nsince engine creation, a calendar instant).\n\nEvery relative-time mechanism **must** read the monotonic clock and no other:\nTTL expiry, `after`, a call's `timeout`, `cooldown`, a single pattern's `within`,\n`dwell` and series windows. A change to the wall clock therefore moves none of them.\n\nA sequence's `within` (`then … within`) is not one of them. It bounds when the\nevents **happened**, not when the engine received them, so it compares the\nfacts' own `ts` values ([LTHE.2.2.2]), which are event time.\n\n",
+  "refs": [
+    "LTHE.2.2.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__mono_never_decreases",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'The monotonic clock never decreases', on the mock, across one mutation once an input has been consumed: the refusal of [NTST.3.1] is how the mock keeps it."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__run_never_decreases",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'The monotonic clock never decreases', on the mock, across any run of mutations once an input has been consumed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_1__clock_after_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The monotonic clock over a history never goes back."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAfter.idr",
+        "name": "ltac_5_3__due_rising",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "On the monotonic clock, which never goes back, `>= fire_at` once true stays true."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCooldown.idr",
+        "name": "lcdb_3_2_1_1__rhs_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`cooldown` reads the monotonic clock and no other: the gate's instant is the net's clock, the monotonic sample, and the wall clock is nowhere in this engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "rarc_5_6_3__consumed_clock",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clock after a step is `next_clock` of the clock and the sample: it never runs back, and for a conforming source's sample is the sample itself."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__tick_leaves_chain",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A sequence chain is not re-evaluated when the monotonic clock moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__tick_leaves_engine",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The engine with a sequence alone is unmoved by the monotonic clock."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkThen.idr",
+        "name": "lthe_2_2_2__untimed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A sequence is not among the monotonic clock's readers. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__mono_test_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE MONOTONIC TIMED TEST OF A `where`: the test read at the monotonic sample with the wall fixed at zero. What the runner builds for a `where` with no `now()`, so that it is a monotonic gate of Rete/NetworkTwoClocks.idr by construction."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__mono_test_of_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AND IT IS THE TIMED TEST, PAIR BY PAIR, for a `where` with no `now()`: at every sample, token and candidate the two answer alike, since a leaf that reads no wall sample is substituted alike at any wall. Stated pointwise, since two join functions that agree on every pair are not identified without extensionality, which is why the runner builds the monotonic form rather than deriving it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__mono_test_of_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE MONOTONIC TIMED TEST IS A MONOTONIC GATE: at one monotonic sample it is one function of the pair, whatever the wall. A TRANSCRIPTION by construction on the monotonic component, as Rete/NetworkTwoClocks.idr's `ltim_2_7_1__within_gate_monotonic` is; it fails if the test is changed to read the wall and refutes nothing else. What lets C2 (`ltim_2_8_2__pump_ignores_wall`) instantiate on a lowered `where`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__read_ignores_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A LEAF THAT READS NO WALL SAMPLE IS SUBSTITUTED ALIKE AT TWO WALL SAMPLES: `monotonic_ns()` and `dwell` read the monotonic component and the stamps, nothing of the wall, over every pair of wall samples, stamp table and token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__reads_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "WHETHER A `where` READS THE WALL CLOCK: a `now()` leaf anywhere in it. `dwell` and `within`, as lowered, read the monotonic clock and no other: the criterion answers `False` on `ReadMono` and `ReadDwell`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_8_2__subst_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AND SO IS A `where` WITH NO `now()`: substituted at `(m, w)` and at `(m, w')` it is one expression, over every expression, stamp table and token. By induction on the expression. 'A change to the wall clock therefore moves none of them', for `dwell` and `within` as lowered."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__due_stamped_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE GATE FORM IS A MONOTONIC GATE at every stamp table: it reads the monotonic sample and the stamps, nothing of the wall. C2's hypothesis, inhabited; a TRANSCRIPTION of Rete/NetworkTwoClocks.idr's `dwell_gate_monotonic`, said so."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimer.idr",
+        "name": "ltac_3_4__guard",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `where` with no `now()`, built in the monotonic form: a monotonic gate by construction. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_8_2__monotonic",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A MONOTONIC GATE: a two-clock test that answers at `(m, w)` what it answers at `(m, w')`. A gate on elapsed monotonic time, the clause's 'reads the monotonic clock and no other'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "Ltim_2_8_2__monotonic_all",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every test monotonic, chain by chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__retime_clocked_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The re-time stage at two wall samples: one state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_chain_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One chain re-timed under a monotonic gate at two wall samples: one chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_chains_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And every chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "iret_19_5__tick_clocked_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The composed tick at two wall samples: one state. The sweep reads no test; the re-time stage is the lemma above."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_fires_once_executed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "C3a EXECUTED: the one-fact program under `dwell >= 2` from a stamp of 0, over ticks 1, 2, 3, 4, fires once, at 2, and never again: `[0, 1, 0, 0]`, total 1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_gate_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And so is `dwell`. A TRANSCRIPTION on the same terms."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_ignores_wall_executed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "C2 EXECUTED: over the samples of `wall_gate_reopens`, whose wall goes 1, 2, 1, 2, the `dwell >= 2` gate fires once, at the monotonic sample 2, `[0, 1, 0, 0]`; over the same monotonic samples with every wall sample rewritten to 9, the same."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "lexp_9_5_1__dwell_tests_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "C2'S HYPOTHESIS, INHABITED: the one `dwell` test is monotonic at every stamp table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_edges_at_most_one",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C3a. A RISING GATE'S EDGES OVER ANY TICK HISTORY SUM TO AT MOST ONE: it rises once or not at all, because the composed engine's clock never goes back. 'A gate that stays true once true fires once per wrapper', as a count."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_5_1__rising_fires_at_most_once",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C3a ON THE ENGINE, with part B: the one-fact program under a rising gate fires AT MOST ONCE over any tick history from any starting clock. Once per false-to-true edge, and a rising gate has at most one. The hypothesis is inhabited by `lexp_9_5_1__dwell_gate_rising` and executed by `lexp_9_5_1__dwell_fires_once_executed`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_7_1__within_gate_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "`within` is a monotonic gate: it reads the monotonic sample alone, so at one monotonic sample it is one function of the pair, whatever the wall. A TRANSCRIPTION, `Refl` by construction on the monotonic component; it fails if the gate is changed to read the wall and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_2__counts_ignore_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C2 OVER A HISTORY: with every test monotonic at every stamp table, the counts of a sample history are unmoved by any rewriting of its wall samples. The wall clock may be set anywhere, at any step, and `dwell`, `within` and every other gate on elapsed monotonic time fire as they would have."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTwoClocks.idr",
+        "name": "ltim_2_8_2__pump_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C2. THE WALL CLOCK MOVES NO FIRING OF A MONOTONIC GATE: when every test is a gate on elapsed monotonic time, the pump at `(m, w)` and the pump at `(m, w')` leave one engine, with one halt and one count. `dwell` and `within` on the composed engine are moved by no wall clock, as the clause requires of every relative-time mechanism. The hypothesis is inhabited by `lexp_9_5_1__dwell_tests_monotonic` and executed by `lexp_9_5_1__dwell_ignores_wall_executed`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__held",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`dwell >= 3`: logical/LTIM.2.8.2_wall_step_moves_no_dwell's `held`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__one_mono_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE RULE IN THE RUNNER'S MONOTONIC FORM over kind 0, action-free, its node loaded with the monotonic test at the sample (0, 0): what `Fixture.idr` builds for a `where` with no `now()`. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__one_mono_test_monotonic",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE RUNNER'S MONOTONIC TEST INHABITS C2'S HYPOTHESIS: the one-rule test list of a `where` with no `now()`, built in Rete/NetworkTimed.idr's monotonic form, is monotonic at every stamp table, for every environment and expression. What lets the theorem below be read on every lowered `dwell` and `within`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__one_mono_tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The one monotonic rule's tests, by ordinal. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_step_moves_no_monotonic_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "C2 ON THIS ENGINE. A WALL STEP MOVES NO FIRING OF A MONOTONIC `where`: with every timed test a monotonic gate over the state's stamps, the pump after a wall step to any instant and the pump without it leave one gated state -- the net, the clock, the deadlines, the rows, the trackers -- one halt and one trace; the wall sample alone differs. Over every program, cooldown list, test list, fuel, net, pair of wall samples, stamp table and tracker table. The entry re-time at the two wall samples is one net (Rete/NetworkTwoClocks.idr's `iret_19_5__retime_clocked_wall`), and the run from it projects to Rete/NetworkCooldown.idr's gated run from the projected state, which carries no wall (Rete/NetworkTimed.idr's `ltim_2_4_2__run_timed_projects`). 'A change to the wall clock therefore moves none of them', for `dwell` and `within` as the Idris model lowers them, on the engine the Idris model runs. The hypothesis is inhabited by `ltim_2_8_2__one_mono_test_monotonic` and executed by `ltim_2_8_2__wall_steps_move_no_dwell_timed`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_steps_move_no_dwell_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WALL STEPS MOVE NO `dwell`: the wall set to 10 before the Ping; an advance to 5 and a pump fire `held`; the wall stepped back to 9 and a pump, forward to 16 and a pump, an advance to 6 and a pump fire nothing -- logical/LTIM.2.8.2_wall_step_moves_no_dwell's shape, C2 executed on the Idris model's engine. Executed: `[[(0, True)], [], [], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__now_test_is_not_monotonic",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "'Every relative-time mechanism must read the monotonic clock and no other': `now()` is not one of them, and its test is not a monotonic gate, by refutation."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__discount_after_eviction",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The series-window consequence of a clock that does not go back: eviction at an assertion's sample and the discount at a later query's sample see one membership, whatever the wall clock read at either."
+      },
+      {
+        "path": "formal/idris/SeriesWindow.idr",
+        "name": "lsig_2_5_1__out_stays_out",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'Series windows read the monotonic clock and no other': a value out of a window at one monotonic sample is out at every later one, the two wall samples arbitrary and unused."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__cooled",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A cooldown has run: at least `window` since the last firing, on the monotonic clock. Reduced to its clock dependence; the gate itself is Rete/RateGate.idr's."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__cooled_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NOR ANY COOLDOWN. A TRANSCRIPTION: the mechanism is defined on the monotonic component, so this is `Refl`; it fails if the definition is changed to read the wall clock and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__cooled_ignores_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Nor does any cooldown."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__difference_ignores_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Moving the zero: a difference of two readings taken `k` later on the dial is the difference it was. By induction on the shift."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__dwell_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A WALL CLOCK SET ANYWHERE MOVES NO `dwell`. A TRANSCRIPTION: the mechanism is defined on the monotonic component, so this is `Refl`; it fails if the definition is changed to read the wall clock and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__dwell_ignores_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ZERO IS UNSPECIFIED, AND NO `dwell` DEPENDS ON IT: a monotonic clock that counts from `k` later gives every fact the `dwell` it had. 'Only the difference between two of its readings has a meaning.'"
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__in_window",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A series window's membership: a value absorbed at a monotonic sample is in a window of `w` while it entered less than `w` ago -- `within`'s formula on the sample at which it was absorbed. A stand-in for the mechanism, reduced to its clock dependence: which members a query's discount admits after an eviction ([LSIG.2.5.1]) is SeriesWindow.idr's, and the discounted value is not modelled."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__in_window_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NOR A SERIES WINDOW'S MEMBERSHIP. A TRANSCRIPTION: the mechanism is defined on the monotonic component, so this is `Refl`; it fails if the definition is changed to read the wall clock and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__in_window_ignores_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Nor does a series window's membership, which is `within`'s."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__order_ignores_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And an order of two readings is the order it was. By induction on the shift."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__reached",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A deadline on the monotonic clock is reached -- a TTL's expiry, an `after` timer's `fire_at`. Inclusive, as for expiry ([RARC.5.2.4]). Reduced to its clock dependence; the sweep itself is Rete/TtlSweep.idr's."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__reached_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NOR ANY DEADLINE: no TTL expires and no timer comes due because the host clock was set. A TRANSCRIPTION: the mechanism is defined on the monotonic component, so this is `Refl`; it fails if the definition is changed to read the wall clock and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__reached_ignores_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Nor does any deadline: a shift of the zero is carried through the comparison."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__within_ignores_wall",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "NOR ANY `within`. A TRANSCRIPTION: the mechanism is defined on the monotonic component, so this is `Refl`; it fails if the definition is changed to read the wall clock and refutes nothing else."
+      },
+      {
+        "path": "formal/idris/TwoClocks.idr",
+        "name": "ltim_2_8_2__within_ignores_zero",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Nor does any `within`: a shift of the zero is carried through the subtraction."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_2__MAXMONO",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_2__RELATIVE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_2__mono_never_decreases",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/tla/clock_sample.tla",
+        "name": "ltim_2_8_2__platform_mono",
+        "tag": "spec"
+      }
+    ]
+  }
+}

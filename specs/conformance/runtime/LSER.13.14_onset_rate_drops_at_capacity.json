@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.14_onset_rate_drops_at_capacity",
+    "category": "runtime",
+    "dead_rules_expected": ["r"],
+    "scenario": "[LSER.13.14] / [LSIG.1.1]: `onset_rate` drops at capacity like the other ring-buffer aggregations; it does not refuse. The positive control for the two `*_refuses_at_capacity` vectors: the same shape, three asserts of one identity before a pump on `onset_rate sliding 1_h` with `capacity: 2`, and every assert is admitted. After the pump the identity is one logical fact (the three asserts supersede each other), so the count is 1. PATH PINNED: the pre-assert capacity check taking the drop arm for the ring buffer whatever aggregations read it, so `onset_rate` beside `mean` on one atom never makes the atom refuse.",
+    "rules_ds": "use default\n\nschema Door scope logical:\n    dev: String key\n    open: Bool mutable\n\nseries Door.open (by: dev, capacity: 2):\n    onset_rate sliding 1_h\n\nrule r:\n    Door s where s.onset_rate > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Door", "slots": { "dev": "k", "open": true } },
+            { "schema": "Door", "slots": { "dev": "k", "open": false } },
+            { "schema": "Door", "slots": { "dev": "k", "open": true } }
+        ],
+        "pump": true,
+        "fact_count_after": 1
+    }
+}

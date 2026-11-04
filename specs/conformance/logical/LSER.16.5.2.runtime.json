@@ -1,0 +1,22 @@
+{
+    "id": "LSER.16.5.2.runtime",
+    "category": "logical",
+    "scenario": "count_distinct over a bounded sliding window is exact (LSER.16.5.2): the distinct-value set over the ring buffer's raw samples. Asserting 10,20,10,30,40 — with a repeated 10 — the distinct cardinality the predicate sees crosses 3 once three DISTINCT values (10,20,30) have been absorbed; the duplicate 10 is not double-counted. Pin: a rule gated `count_distinct(r.val) >= 3` (the declared 5_s window, LSER.6.11.3) fires (action_log present).",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Int mutable\n\nseries Reading.val:\n    count_distinct sliding 5_s\n\nrule check:\n    Reading r where count_distinct(r.val) >= 3\n->\n    log info \"three distinct\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 40 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

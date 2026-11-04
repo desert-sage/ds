@@ -1,0 +1,17 @@
+{
+    "id": "LGRA.5.8.10_seed_float_largest_admitted",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.10]: 1.7976931348623158e308 lies above the largest finite Float's own decimal (1.7976931348623157e308) and below the rounding threshold 2^1024 - 2^970, so it rounds to the largest finite Float, a float a `Json` value holds: a host parse of it is admitted. The seed is given as `text` ([RCTS.1.2.25]) at the cache seed ([NSTG.9.1]), so both runtimes read these exact digits. `cached()` reads the stored value's canonical text ([LGRA.5.8.7a], [LDET.3.2.7]), so rule `hit` emits a `Hit` only when the cache holds exactly the largest Float, `1.7976931348623157e+308`. fact_count 2: the `Trig` and the `Hit`. What it discriminates: a parser that refuses every literal above the largest Float's decimal, rather than every one that ROUNDS past it, refuses the seed and the driver fails on the raise; one that rounded the literal anywhere else stores another value, `hit` does not fire, and the count is 1. Its twin LGRA.5.8.10_seed_float_rounds_past_largest_refused is one in the last digit higher. PATH PINNED: on libds, `ds_json_parse` of the seed's text in pyds's `cache_seed`, through `json.c`'s `parse_number`, whose `isfinite` test passes, then `ds_engine_cache_seed`, and `adapter_ds_cache_get` for `cached()`; on the Mercury runtime, `ds.engine.seed_cache_text` -> `ds.json_text.parse`, and `ds.eval`'s `fn_cache_get` arm.",
+    "rules_ds": "schema Trig scope explicit:\n    v: Int\n\nschema Hit scope explicit:\n    v: Int\n\nrule hit:\n    Trig t where cached(\"k\") == \"1.7976931348623157e+308\"\n->\n    emit Hit v: t.v\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "k", "text": "1.7976931348623158e308" }
+        ],
+        "asserts": [
+            { "schema": "Trig", "slots": { "v": 1 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

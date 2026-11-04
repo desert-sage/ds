@@ -1,0 +1,20 @@
+{
+  "id": "IARC.1.13",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 209,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.13] **Per-object allocation; no arena.**\n  Every libds struct has `ds_<type>_new(engine, ...)`\n  that allocates and `ds_<type>_free(obj)` that frees.\n  No bulk arena allocation, no copy-on-write. Exactly one\n  owner at any time; explicit ownership transfer where\n  needed (documented per-function in headers, never\n  implicit). Reference counting is used in two places and\n  no others: the intern table's counted entries\n  ([IDAT.4.7]), and the immutable structures a clone shares\n  with its source ([IARC.11.1]).\n\n  Rete-network memory — fact storage in working memory,\n  alpha/beta-node state, tokens — is owned by the `rete`\n  and `wm` modules and follows the same per-object\n  discipline; it routes through the `DS_*` allocation\n  macros ([IALC.1]) like all libds allocation.\n\n  **OOM surfaces via `ds_result_t`.** Allocation\n  failure returns a `DS_ERR_OOM` status through the\n  standard result path ([IARC.1.12]); libds never\n  aborts on OOM. Callers clean up anything partially\n  constructed and propagate the failure. No\n  try / rescue / `longjmp`.\n\n  Rationale: simple to reason about, trivially\n  profilable with standard heap tools (valgrind,\n  Massif, tcmalloc hooks). At v1 fact / activation\n  footprints (hundreds to low\n  thousands active) allocation churn is a third-order\n  concern. Arena-style escape hatches are reserved\n  for specific hot paths if profiling warrants, not\n  a global policy.\n",
+  "refs": [
+    "IALC.1",
+    "IARC.1.12",
+    "IARC.11.1",
+    "IDAT.4.7"
+  ],
+  "errors": [
+    "DS_ERR_OOM"
+  ]
+}

@@ -1,0 +1,1601 @@
+{
+  "id": "IRET.12.2",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.12",
+  "seq": 986,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.12.2] **Justification withdrawal.** The engine must retract exactly the\nlogical facts [LLOG.2.5] leaves unsupported: a logical fact survives while it\nhas a well-founded justification, one that does not rest on the fact itself.\n\nOn every program [LCYC.3.1.1] admits, support is acyclic — no SCC both emits\nand matches a schema — so a count of live justifications decides it, and libds\nmaintains one. When an activation ends (its token is retracted because a\nsupporting fact in the LHS was retracted or a NOT condition became\nunsatisfied):\n\n1. Look up all logical facts this activation supports in\n   the dependency table.\n2. For each: decrement `justif_count`.\n3. For each where `justif_count == 0`: retract the fact\n   from working memory (generating a `fact_retract`\n   stream event). The retraction may cascade through the\n   Rete network if other rules pattern-match on F.\n4. Remove the activation's entry from the dependency\n   table.\n\n**An activation can end inside its own firing** ([LLOG.15.1]), when an\naction of the firing retracts a fact its token holds. The steps run at that\naction, and the firing goes on. The engine must not enter a logical fact the\nfiring asserts after that action in the dependency table against the ended\nactivation. It must retract that fact as it is asserted, unless another live\njustification already holds it.\n\n**The clock tick's turnover ends no match.** The tick is not a supporting\nfact: a match that persists across ticks is one match ([IRET.19.5]), so the\nengine must not run these steps when the only change to its token is the tick.\nThe activation formed again with the new tick takes over the justifications of\nthe one the tick's retraction removed (`carry_across_tick`, `terminal.c`). The activation ends, and its justifications are withdrawn, on the tick at\nwhich its time-dependent test goes false ([LTIM.2.7.2]).\n\n**The count is correct only because support is acyclic.** On a support cycle\nit keeps every member's count above zero with no well-founded justification\nleft, and [LLOG.2.5] retracts them. So admitting emit-and-read cycles — the\nshape a `+recursive` admission would license — requires replacing the count\nwith a mechanism that finds unfounded sets, and must not land without one.\n\n",
+  "refs": [
+    "IRET.19.5",
+    "LCYC.3.1.1",
+    "LLOG.15.1",
+    "LLOG.2.5",
+    "LTIM.2.7.2"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/derivation_graph.als",
+        "name": "iret_12_2__admitted_support_acyclic",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "The clause's sentence 'on every program [LCYC.3.1.1] admits, support is acyclic' as a bounded check: under condition (a) of the admission -- no kind both emitted and matched within one SCC of the emit-edge rule graph -- no fact lies in its own ancestor cone of the firing-level support relation. The direct statement at scope 4; at scope 6 through the model's two cheaper checks, the kind graph acyclic and support projecting onto it, which compose into it. The condition is needed: probe__unadmitted_cycle exhibits a support cycle without it."
+      },
+      {
+        "path": "formal/alloy/tms_justification.als",
+        "name": "iret_12_2__retract_iff_no_justifier",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "A snapshot of the refcount: a logical fact is live iff some justifier is. Well-founded support ([LLOG.2.5]) is the contract, and this clause's count is a mechanism that must agree with it. The two coincide on every program [LCYC.3.1.1] admits (acyclic support: formal/idris/Rete/Refcount.idr, iret_12_3__ranked_agree) and differ on an unfounded cycle (iret_12_2__witness_refcount), which no admitted program reaches. So this check is the clause on the admitted fragment and less than the clause in general: partial, not violated."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "iret_12_2__phase_after_gone_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The end of a phase, with the retracted ids named: nothing, or their retraction and its propagation."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "iret_12_2__phase_gone_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a phase does to the core state, with the retracted ids named: nothing, or the retraction of the zeroed targets of the ended rows and its propagation."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_2__reach_engine_cascade",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Rete/Refcount.idr's cascade on the engine's own table is the engine's final working memory: both Reach facts kept. `iret_12_2__cascade_unfounded` then says they are an unfounded set, in the engine."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsWitnesses.idr",
+        "name": "iret_12_2__reach_engine_run",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: the seed's withdrawal ends its activation, Reach(1,2) drops to one justification and is kept -- step 3 retracts nothing, and the cycle survives."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__ended",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 1 for every ending at once: the rows whose activation is no longer live. A row whose target is already gone is dropped with them, which is what keeps the model total when [LLOG.11.8] is violated."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__kept",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rows still live after the endings."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__phase",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint with one more phase than there are rows: a phase that changes anything drops a row."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__phase_after",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The end of a phase that ended something: nothing to retract and only the table changes, or the retraction and its propagation. Split out so the bridge's proofs can case on it."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__phase_empty",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An empty table ends nothing, so a phase on it is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__phase_n",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The phases iterated, each result taken apart and rebuilt so a run evaluates once per step."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__phase_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "One cascade phase: drop the ended rows, retract what they alone supported, propagate. Breadth-first over every ending at once, where the clause and [IRET.7.8] describe a depth-first cascade one fact at a time; the fixpoint is the same because a retraction creates no positive match and only drops or unblocks tokens, but that equivalence is argued in the header, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__retract_ids",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Step 3: retract those facts from working memory."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "iret_12_2__zeroed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Steps 2-3: the ended rows' targets whose count against the remaining rows is zero."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_elem",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What one action with truth maintenance leaves live: live before, or minted by the action; the cascade only removes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__do_action_tms_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One action with truth maintenance keeps what is carried: the dispatch, the record (rows alone), the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_n_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Phases keep what is carried. By induction on their number."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint keeps what is carried."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade only removes, at the fixpoint's fuel: Rete/NetworkWindowLapse.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__phase_step_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase keeps what is carried: it ends nothing, or it retracts the zeroed ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2_4__sweep_ids_net_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A correlation sweep keeps what is carried: the retraction of ids and the cascade."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__sweep_ids_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The sweep on the clocked network: the ids retracted one at a time through alpha dispatch, then the cascade; nothing to sweep is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCall.idr",
+        "name": "lcrs_6_2__sweep_ids_net_sub",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A SWEEP ONLY REMOVES: a fact live after it was live before, over every id list and state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__ended_net_ext",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The rows a phase ends depend on the chains' activations alone."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__phase_n_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Any number of phases keep the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__phase_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__phase_step_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase keeps the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "iret_12_2__retract_ids_net_view",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions, one fact at a time by id, keep the view."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkClocked.idr",
+        "name": "ltim_2_7_2__no_cascade_is_the_retime",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A cascade that finds no ended row touches nothing, by the quiet case of the phase."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__rows_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the clause's cascade leaves at its fixpoint: every surviving row's target is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "Ltim_2_5_1__tms_inv_live",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The state between the clause's cascades: the invariant, and every row's target live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_ttl",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's cascade, however many times the other rules' endings start it inside the run, never touches a framed chain: its targets are emitted kinds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__fixed_rows_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At the fixpoint every row's target is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__kept_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The rows a phase keeps are rows it started with."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_fixed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FUEL ON THE NETWORK: with at least as many phases as rows, the cascade reaches a phase that ends nothing, since every other phase drops a row. Rete/TmsBridge.idr's `iret_12_2__phase_n_fixed` for the network's phase, which retracts one fact at a time. What makes `rows_live` hold between actions, so that no stale row survives to a mint."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Phases iterated skip a framed chain."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Phases iterated keep the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_stable",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nothing ending, nothing changes however many phases run."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_n_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Any number of phases keeps every activation unfired when all were."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE CLAUSE'S CASCADE SKIPS A FRAMED CHAIN. A CASCADE'S TARGETS ARE EMITTED KINDS: a row is recorded by a logical emit and targets the fact that emit left live, so what a cascade retracts is of a kind some rule of the program emits, which under the frame no framed chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_net_inv_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's cascade, run to its fixpoint, keeps the invariant and leaves every row's target live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade keeps every activation unfired when all were."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_step_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase of the clause's cascade skips a framed chain. A CASCADE'S TARGETS ARE EMITTED KINDS: a row is recorded by a logical emit and targets the fact that emit left live, so what a cascade retracts is of a kind some rule of the program emits, which under the frame no framed chain reads."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_step_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase of the clause's cascade keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_step_net_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase on the network either ends nothing and is the identity, or keeps strictly fewer rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__phase_step_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase keeps every activation unfired when all were."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions skip a chain that reads none of the retracted kinds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions, each of a live fact, keep the frame invariant."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions only remove facts."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting ids keeps every activation unfired when all were: it only retracts, and a retraction fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__retract_ids_net_unique",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's retractions keep ids unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "iret_12_2__zeroed_target",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Step 3: the ids retracted are targets of rows the phase started with."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__entity_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE ENTITY STATE: A fires for the replacement's match, B fires and cascades, `[1, 0]`, quiescent; the entity and the input relation, which no row targets, are left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the fixture: A's firings are its matches, 1, with the clause's cascade inside the run. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__one_fact_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's cascade, executed inside A's run: B's withdrawal ends its activation and the kind-2 fact it had just recorded is retracted; no kind-2 fact survives its justifier."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__rules_b_first",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "B's withdrawal of its own matched fact ends the activation that recorded its kind-2 row, so the clause's cascade retracts the kind-2 fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__ticked_trace_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE TRACE FROM THE TICKED STATE: A fires for the surviving match, B fires and cascades, `[1, 0]`, quiescent, the kind-0 fact alone left live. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_is_an_instance_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The theorem at the two-fact fixture: A's firings are its matches, 2, with the clause's cascade between them. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_facts_run_ttl",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's cascade twice inside one run, each firing a `Refl` from a literal state: B's withdrawal ends its activation and the kind-2 fact it had recorded is retracted, between A's two firings and after the second. The literal after each cascade holds no kind-2 fact and no row."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameClocked.idr",
+        "name": "ltim_2_5_1__two_rules_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Kind 2 is a relation so that B's emit records a row for the cascade to act on. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_11_3__framed_fires_once_per_match_clocked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's cascade, inside the run and after every prepare, never touches a framed chain: its targets are emitted kinds."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__retime_clocked_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's cascade after a re-time keeps the invariant and leaves every row's target live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "iret_19_5__retime_clocked_unfired",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The clause's cascade after a re-time fires nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__ended_fired_cascade",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's cascade executed after a re-time with a row to drop: the row goes and its target is retracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__gated_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's cascade executed inside A's run after the edge: B's withdrawal ends its activation and the kind-2 fact it had recorded is retracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_b_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "B records a row and keeps its match, so a tick, not its own withdraw, is what ends the activation. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "B's withdrawal of its own matched fact ends the activation that recorded its kind-2 row, so the clause's cascade retracts the kind-2 fact. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__rules_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The same two rules under the shutting gate. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_b_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Kind 2 is a relation, so the row exists for the tick's cascade to drop. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_gated",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Kind 2 is a relation so that B's emit records a row for the cascade to act on. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrameRetime.idr",
+        "name": "ltim_2_5_1__two_rules_shutting",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Kind 2 is a relation, as in the opening fixture. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkSampled.idr",
+        "name": "ltim_2_8_4__arrives_open_trace",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The clause's cascade executed inside A's run: B's withdrawal ends its activation and the kind-2 fact it had recorded is retracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "ltim_2_4_3__entry_retime_untimed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade from a state with no ended row is the identity: Rete/TmsRun.idr's fixpoint, which the cascade after every action and every input reaches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__ended_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The rows that ended agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__ended_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rows whose activation has ended, or whose target is no longer live -- read off the terminals."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__kept_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The rows kept agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__kept_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rows still live, read off the terminals."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_n_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Iterate, rebuilding the state each phase as FireLoopTms does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_n_net_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more phase on the network, when the first is known."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint, with FireLoop's fuel: one more than the number of rows."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_step_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase on FireLoop that ends something keeps the live rows and retracts what the ended ones alone supported, as a batch."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_step_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One phase on the network: drop the rows of ended activations, retract what they alone supported, one fact at a time. A phase that ends nothing touches nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_step_net_cons",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase on the network that ends something keeps the live rows and retracts what the ended ones alone supported."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__phase_step_net_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase on the network that ends nothing is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__retract_ids_net",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Retract the facts with those ids one at a time through alpha dispatch, as the reference engine cascades; an id no live fact carries is skipped."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "iret_12_2__retract_ids_net_wm",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting ids one at a time leaves the working memory the batch leaves, under unique ids."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CASCADE AGREES: with the same rows on both sides the fuel is the same, and every phase agrees."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_n_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Any number of phases agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__phase_step_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE PHASE AGREES: the two sides end and keep the same rows, so they retract the same ids -- the network one at a time, FireLoop as a batch -- and agree after; a phase that ends nothing, or ends rows that supported nothing alone, changes neither side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTms.idr",
+        "name": "rlow_4_2_1__retract_ids_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A BATCH OF IDS keeps the agreement: one at a time through alpha dispatch on the network, as a batch with one propagation on FireLoop. Each network retraction keeps the agreement against one more FireLoop propagation, and those propagations compose into the batch's one; an id no live fact carries retracts nothing on either side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_12_2__drop_pointwise_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Dropping a live id then the rest, member by member, is dropping the fact then the rest: ids are unique."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_12_2__retract_ids_cons_dead",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting an id no live fact carries changes nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_12_2__retract_ids_cons_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting a live id and then the rest is retracting the rest from the memory less that fact: ids are unique, so the id names one fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_12_2__retract_ids_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No ids: nothing retracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__prop_rule_shrink_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The clause's 'for each' retraction, done one fact at a time as the reference engine does, ends where the batch does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__propagate_shrink_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The tables after the batch's one propagation are the tables after the facts' successive retractions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_12_2__elem_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Two id lists with the same members are the same membership test."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTtl.idr",
+        "name": "iret_12_2__phase_n_net_quiet",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Phases on the network that end nothing touch nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__alphas_four",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Four alphas, kinds 0 to 3. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__queued_successor_removed_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "partial",
+        "note": "A FIRED `now()` MATCH WHOSE FACT A WITHDRAW REMOVES LOSES ITS JUSTIFICATION: the Reading at (0, 0) fires `fresh`, which emits Fresh; an advance to 1, a Kill and a pump: the re-time keeps `fresh`'s match (the gate is still open), `kill` fires first and withdraws the Reading, the match ends and Fresh is retracted with its one justification; a Probe and a pump: `live`, which joins Fresh with Probe, finds no Fresh and does not fire -- logical/IRET.12.2_queued_successor_removed_withdraws's shape. Executed: `[[(1, True)], [(0, True)], []]`, and working memory ends with the Kill and the Probe. LESS than the clause's PATH: the clause's successor activation on the agenda is this engine's one persisting activation, ended by the withdraw before the pump reaches it; the outcome is the clause's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__successor_life",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The lifecycles of the queued-successor fixture: Reading (0), Kill (1) and Probe (2) explicit, Fresh (3) a relation. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__successor_rules",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The three rules in source order: `kill` (a Kill and a Reading, withdraw the Reading), `fresh` (a Reading under `now() < 2`, emit Fresh logical), `live` (a Fresh and a Probe). A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "iret_12_2__successor_tests",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The tests by ordinal: `fresh` alone is timed. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "Ltim_2_7_2__justified_only_by_ended",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rows a phase ends, read per target id: every row targeting the id fails the clause's liveness test. The predicate under the frame of a lapse, not a restatement of `iret_12_2__ended_net`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_12_2__phase_n_net_wm_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A CASCADE ONLY REMOVES FACTS: a fact in working memory after any number of phases was in it before. By induction on the phases, an ending phase being `iret_12_2__retract_ids_net_sub` and a quiet phase the identity."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_12_2__phase_step_net_split",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE PHASE, BY CASES: it ends nothing and is the identity, or it ends rows and the engine it leaves is the retraction of the zeroed ids from the engine it started with. Rete/NetworkFrameClocked.idr's `iret_12_2__phase_step_net_shape` with the engine named rather than existential; the shape lemma's length bound is not restated."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "iret_12_2__retract_ids_net_wm_eng",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rete/NetworkTms.idr's `iret_12_2__retract_ids_net_wm` for an engine given whole, by matching the record. A wrapper."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__cascade_drops",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "[IRET.12.2]'s step 3 as a theorem about the whole cascade: a fact whose every row has ended is retracted in the first phase and stays retracted, on the network's one-fact-at-a-time phase, for any fuel."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__dead_row_is_ended",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row whose activation is not live is among the rows the phase ends, whatever its target's liveness: the ending test is `not (live && target_live)`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__kept_count_zero",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A KEPT ROW TARGETS NO LAPSED ID: the id's `justif_count` against the rows the phase keeps is zero, because a kept row's activation is live and every row targeting the id has one that is not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapse_only_dead",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "EXECUTED: every row targeting the kind-2 fact has lapsed -- there is one, and it has."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__lapsed_justification_retracted",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cascade after the re-time, on the clocked state: the clause's retraction of what an ended activation alone supported, proved for the re-time stage of every tick."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__retracted_at_the_fixture",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The cascade's retraction executed through the theorem at the fixture with one row to drop."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWindowLapse.idr",
+        "name": "ltim_2_7_2__zeroed_holds_it",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE LAPSED ID IS ZEROED: when the phase ends rows, an id some row targets and every row of which has lapsed is among the ids the phase retracts -- it is a target of an ended row and its count against the kept rows is 0."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__boundary_fixpoint",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AT A BOUNDARY, and at every state between actions, the live ids are exactly Rete/Refcount.idr's cascade of the engine's own table over themselves: every row is live, so the live set is self-supported, and the cascade is the greatest self-supported subset."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__external_cascade",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A change of working memory outside any firing -- ids kept, at most facts with fresh ids added, unique, in the domain -- followed by propagation and the cascade keeps the run invariant and the target kinds: the bridge's premises hold because every row was live. It also reports that the cascade only removed facts and kept every explicit-kind fact."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__external_entry",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The entry to that cascade: the bridge's cascade invariant holds over the rows and the ids live after the change, and the target kinds are kept. Split out so a caller can reach the invariant the cascade ends in."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__external_final",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade after such a change ends in the bridge's cascade invariant relative to the rows and the ids live after the change: rows drawn from them, a row with live antecedents and target kept, Refcount's cascade still live."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__external_gfp",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "So the cascade after such a change keeps Rete/Refcount.idr's cascade of the rows over the ids live after it: the half of the bridge a caller needs to show that a fact survives."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__phase_explicit",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A cascade phase never removes a fact of an explicit kind: what it retracts is a row's target, and a row's target is `logical`. What Rete/TtlSweep.idr needs to keep a TTL fact through a sweep."
+      },
+      {
+        "path": "formal/idris/Rete/PumpBoundary.idr",
+        "name": "iret_12_2__phase_facts_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A cascade phase only removes facts."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__base_shrink",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A base fact still live after a retraction is still base: the rows are the same."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__base_sub_rows",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A base fact stays base when rows are dropped and it is still live."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__elem_agree",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The two membership tests on ids agree."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__retract_cascade",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Retracting a list of ids is an external change in Rete/PumpBoundary.idr's sense, so the cascade after it keeps the run invariant and the target kinds, only removes facts, and keeps explicit-kind facts."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__retract_final",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And that cascade ends in the bridge's cascade invariant relative to the rows and the ids that survived the retraction."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__retract_gfp",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And that cascade keeps Rete/Refcount.idr's cascade of the rows over the ids that survived the retraction."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__retract_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A survivor of the retraction was live, and its id was not retracted."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_2__retract_keeps",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A fact whose id is not retracted survives the retraction."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "iret_12_3__certified_ranked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "The clause's own sentence, on the engine, for the kind-level certificate: on every positive program certified over the kind graph, support is acyclic. At every state between actions of a run the table is ranked (a fact by one more than the highest stratum emitting its kind), so the count is exact there (Rete/Refcount.idr's iret_12_3__ranked_agree). What the count's correctness rests on, proved rather than argued -- `partial`, because a program [LCYC.3.1.1] admits only through [LCYC.6.1]'s literal break has no kind-level certificate and the theorem is silent on it."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeDiff.idr",
+        "name": "llog_2_5__wf_in_cascade_of",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade keeps every well-founded fact over a smaller live set and a different base, provided the well-founded facts are live there and a base fact still live is still base. Generalises `llog_2_5__wf_in_cascade`."
+      },
+      {
+        "path": "formal/idris/Rete/RecomputeStrata.idr",
+        "name": "iret_12_2__hybrid_mixed_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: a recursive stratum seeded from outside with a self-free stratum on top, the seed withdrawn; the refcount over both keeps all three facts -- 1 and 2 on each other, 5 on 1."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cascade to its fixpoint: what the refcount leaves live after a set of base retractions."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_closed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A survivor is a base fact or is supported by the survivors."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_fixed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cascade's result is a fixpoint of the cascade step."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_greatest",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cascade keeps every self-supported subset of the live set, so it is the GREATEST such set -- the exact sense in which [IRET.12.2]'s mechanism keeps an unfounded cycle alive."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_n",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Iterate the step; fuel = the number of live facts suffices, since a step that changes anything removes a fact."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_n_fixed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade stabilises within as many steps as there are live facts: a step that retracts nothing is the fixpoint, one that retracts something shortens the live list: the fuel the cascade is given always suffices."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_n_stable",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Once a step retracts nothing, no later step does."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Steps 1-3 for every ended activation at once: each live derived fact whose count is zero against the current live set is retracted. The engine does this incrementally; the fixpoint it reaches is the same."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_step_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A cascade step only ever retracts."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade's result lies in the live set it started from."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__cascade_unfounded",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "What the refcount keeps beyond the well-founded answer is an unfounded set: mutual support with nothing under it. The general form of what `iret_12_2__witness_refcount` and `iret_12_2__reach_refcount` exhibit on instances."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__reach_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed on the `+recursive` proposal's own shape (seed -> Reach(a,b); Reach + Edge derives Reach(a,a); that re-derives Reach(a,b)): withdrawing the seed leaves both Reach facts live under the refcount."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__strata_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: two recursive strata, seed withdrawn; the cascade keeps all four derived facts, the upper cycle through a lower-stratum fact that is itself unfounded."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__tla_retract_both",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: after both base facts are retracted the cascade and the well-founded answer agree (everything goes)."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__tla_retract_f1",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed on tms_cascade.tla's ranked instance: after f1 is retracted the cascade and the well-founded answer agree."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__unfounded_base_free",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A survivor outside the well-founded set is not a base fact."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__unfounded_held",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A justification keeping a survivor outside the well-founded set alive has an antecedent outside it too."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_2__witness_refcount",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Executed: rules P -> Q, Q -> R, R -> Q, retract P. The cascade retracts nothing -- Q and R each keep a live justifier in the other -- although no base fact founds either. The count, applied exactly as written, leaves an unfounded cycle live. Well-founded is the contract; this clause states it and keeps the count as libds's mechanism, correct because [LCYC.3.1.1] makes support acyclic, so no admitted program reaches this witness."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__ranked_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Both inclusions on a ranked graph: the cascade and the well-founded set contain each other."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "iret_12_3__ranked_exact",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "On a ranked (acyclic) support graph every survivor of the cascade is well-founded -- the refcount is exact there."
+      },
+      {
+        "path": "formal/idris/Rete/Refcount.idr",
+        "name": "llog_2_5__wf_in_cascade",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The cascade never retracts a well-founded fact: the well-founded set is self-supported, so the greatest self-supported set contains it. Generalises `iret_12_2__cascade_step_keeps`."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "Iret_12_2__cascade_inv",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The cascade invariant, relative to the starting table and live set: the core invariant and unique ids; rows and live ids drawn from the start; every starting row still a match; a starting row whose antecedents are all live is present, live, with its target live; Refcount's cascade of the starting reading still live; every live non-base fact has a row."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__any_true",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A true `any` exhibits its witness."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__base",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The live facts no row justifies: never retracted by the cascade. Refcount's base, read off the engine's table."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__base_row",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At the start a live fact outside the base has a row targeting it."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__bridge",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE BRIDGE THEOREM. On a positive program, from a settled state with unique ids whose live rows read as matches and whose rows with live antecedents and a live target are live activations, the cascade reaches a phase that ends nothing within its fuel, and the ids live there are exactly Rete/Refcount.idr's cascade of the engine's own table over the ids live at the start with the never-justified ones as base. Both inclusions and the fixpoint. With Rete/Refcount.idr's theorems the engine's retraction is the greatest self-supported subset of the live set, and what it keeps beyond the well-founded answer is an unfounded set. The premises are what a state satisfies between actions; that every run's states satisfy them is the engine-level invariant of the next increment."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__cascade_not_zeroed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE KEY STEP. A fact of Refcount's cascade is never zeroed by a phase: base, and then no row targets it while an ended one does; or supported in the cascade, and the supporting row's antecedents are live, so it is a kept activation and the count is not zero. `iret_12_2__cascade_closed` from Rete/Refcount.idr does the work."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__drop_preserves",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase that ends activations but zeroes nothing keeps the invariant with the surviving rows."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__elem_concat_map",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Membership through `concat_map`."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__filter_drops",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A filter that drops a member is strictly shorter: the pigeonhole the fuel rests on."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__filter_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A filter is no longer than its input."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__fixed_post",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "At a phase that ends nothing every live fact is base or supported among the live facts by a row's activation, whose token is a current match of live facts: the live set is self-supported, which is what `iret_12_2__cascade_greatest` needs."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__is_live_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A target live after a retraction was live before."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__live_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An id live after a retraction was live before."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_after_eta",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Whatever a phase retracts, its rows are the kept ones."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_after_preserves",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The two outcomes of a phase that ended something, each keeping the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_n_fixed",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE FUEL: with at least as many phases as rows the cascade reaches a phase that ends nothing, since every other phase drops a row. What `iret_12_2__phase` relies on, proved."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_n_preserves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "And so does any number of phases."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_n_stable",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Nothing ending, nothing changes however many phases run."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_n_succ",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One more phase, when the first is known."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_preserves",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PRESERVATION: one phase keeps the invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_step_nil",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase that ends nothing is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__phase_step_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase either ends nothing and is the identity, or keeps strictly fewer rows: the ended row is dropped."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__retract_preserves",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A phase that retracts keeps the invariant: the core invariant by `lcyc_1_1__propagate_inv`, uniqueness and the row readings through the filter, the live activations by the token lemma `iret_7_8__live_after_propagate`, the cascade by `iret_12_2__cascade_not_zeroed`."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__survives",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live fact whose id is not retracted survives the retraction."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__survives_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A survivor was live, with an id not retracted."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "iret_12_2__target_kept",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A row targeting a fact, after the endings: kept, or ended with the fact not zeroed and then some kept row targets it -- step 3 read backwards."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__action_cascade",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AT EVERY ACTION OF EVERY RUN, THE BRIDGE APPLIES. One action with truth maintenance from a state satisfying the firing invariant: the core action gives the new working memory and tables, the record gives the table, and the cascade from there ends in a state whose live ids are exactly Rete/Refcount.idr's cascade of that table over the ids live after the action, with the never-justified ones as base. Both inclusions, and the firing invariant holds again."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__cascade_entry",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE CASCADE ENTRY. After a core action and its record, from a state satisfying the firing invariant, the bridge's premises hold: every live row reads as a match, every row whose antecedents and target are live is live, and the firing activation is still tracked."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__cascade_tracked",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE BRIDGE WITH A TRACKED ACTIVATION: the bridge's cascade, whose final state satisfies the cascade invariant and ends nothing, keeps a tracked activation tracked."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__entry_live_after",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live activation whose antecedents stay live is live after the action's propagation, if any."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__entry_live_before",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A live activation after the action's propagation, if any, was live before."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__entry_read_old",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An old row live before the action reads as a match in the new working memory: its ids were all live, so no added fact carries one of them."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__phase_after_core_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What the end of a phase does to the core state: nothing, or a retraction and its propagation."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__phase_core_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "What a phase does to the core state: nothing, or a retraction and its propagation."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__phase_n_tracked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And so does any number of phases, alongside the cascade invariant."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "iret_12_2__phase_tracked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One phase keeps a tracked activation."
+      },
+      {
+        "path": "formal/idris/Rete/TtlSweep.idr",
+        "name": "iret_12_2__phase_n_facts_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The cascade only removes facts, over any number of phases."
+      }
+    ],
+    "souffle": [
+      {
+        "path": "formal/souffle/composed_founded.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/composed_unfounded.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/founded_cycle.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/founded_reach.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/unfounded_cycle.dl",
+        "name": null,
+        "tag": "derives"
+      },
+      {
+        "path": "formal/souffle/unfounded_reach.dl",
+        "name": null,
+        "tag": "derives"
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12_2__Cascade",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12_2__no_unsupported_forever",
+        "tag": "derives",
+        "verdict": "partial",
+        "note": "The count's mechanism as a cascade, on the ranked instance tms_cascade.cfg selects (f2 <- {f1}, f2 <- {f4}, f3 <- {f2}; `iret_12__GRAPH`): a derived fact whose every justification has lost an antecedent is retracted, and what the cascade leaves is the greatest self-supported set below the live facts, `formal/idris/Rete/Refcount.idr`'s `iret_12_2__cascade`. On acyclic support that is the clause's obligation (`iret_12_3__ranked_agree`), and `iret_12_2__tla_retract_f1` and `_both` execute the agreement on this instance, which `formal/checks/check_instances.py` (`instances.stamp`) holds equal to the module's on every run of the lane. Of cyclic support, where the obligation and the mechanism part (`iret_12_2__witness_refcount`: rules P -> Q, Q -> R, R -> Q, retract P; the count keeps Q and R live, the well-founded set drops them), this property says nothing: on the cycle its antecedent is never true, and `iret_12_2__quiescent_is_well_founded` is what the `.teeth.cycle.` run violates there. Well-founded support is the contract ([LLOG.2.5]), so `partial` stands."
+      },
+      {
+        "path": "formal/tla/tms_cascade.tla",
+        "name": "iret_12_2__quiescent_is_well_founded",
+        "tag": "spec"
+      }
+    ]
+  }
+}

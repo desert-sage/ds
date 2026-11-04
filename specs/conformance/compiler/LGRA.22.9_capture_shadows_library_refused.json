@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.22.9_capture_shadows_library_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.22.9]'s refusal, the regex capture case: \"The compiler must reject a pattern binding, a regex capture, a `let` binding or a constant whose NFC name equals the first segment of the path of a library the file imports\". `import ha`, then `Event e where (ha) = e.msg ~ /(?<ha>\\w+)/`. A capture is an ordinary binding ([LREG.4.6]), so `ha.x` would read both as access on the capture and as library `ha`'s member. Refused with DS_VALIDATE_BINDING_SHADOWS_LIBRARY. PATH PINNED: `dsc.resolve`'s `lgra_22_9_shadows`, over the rule's capture names (`body_capture_names`).",
+    "rules_ds": "import ha\n\nschema Event scope logical:\n    id: Int key\n    msg: String mutable\n\nrule r:\n    Event e where (ha) = e.msg ~ /(?<ha>\\w+)/\n->\n    log info \"{ha}\"\n",
+    "libraries": {
+        "ha": "const LIMIT = 3\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

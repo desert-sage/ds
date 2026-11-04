@@ -1,0 +1,10 @@
+{
+    "id": "RLOW.14.7_nested_after_follows_its_follow_up",
+    "category": "compiler",
+    "scenario": "[RLOW.14.7]: the order applies at every level, so a synthesized terminal is followed at once by the terminals it induces, before the next terminal at its own level. Rule `r` has one `after 5_s` clause whose body nests an `after 1_s` ([LTAC.6.2.2]); rule `next` follows it in source. The outer clause's follow-up `$r_after_0` induces the nested clause's follow-up `$r_after_0_0`, so the emitted sequence is `r`, `$r_after_0`, `$r_after_0_0`, then `next`. A compiler that lowers the nested clauses first, because their timer emits are the outer follow-up's actions, and pushes their terminals as it makes them, emits the inner follow-up ahead of the outer one that induced it. PATH PINNED: `dsc.rete`'s `after_clause`, which takes what `nested_clauses` pushed off the build and hands it to `follow_up`, which pushes it back behind the clause's own terminal and group.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"r\"\n    after 5_s:\n        log info \"outer\"\n        after 1_s:\n            log info \"inner\"\n\nrule next:\n    Trig\n->\n    log info \"next\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["r", "$r_after_0", "$r_after_0_0", "next"]
+    }
+}

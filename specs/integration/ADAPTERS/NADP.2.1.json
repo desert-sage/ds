@@ -1,0 +1,15 @@
+{
+  "id": "NADP.2.1",
+  "prefix": "NADP",
+  "doc": "ADAPTERS.md",
+  "parent": "NADP.2",
+  "seq": 100,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NADP.2.1] Order of operations at adapter startup:\n\n1. **Engine ready.** The engine is created and the\n   adapter has a `ds_engine_t *` to call against.\n2. **Load the program.** Every fact type arrives with\n   `ds_engine_load_dsc`, the adapter's own included: they\n   are declared in the program ([NFCT.1.1]). Load in this\n   setup step, never after the first assert, retract or\n   pump. See [NFCT.1].\n3. **Register callbacks.** For every action verb the\n   adapter handles, register the typed callback. The\n   most common pair is the call callback (D6+C2,\n   handles outbound service requests) plus the stream\n   callback (audit / cross-tier bridging). Cache\n   callbacks too, and the storage library's services in\n   the call callback, if the adapter owns storage.\n4. **Connect to the source system.** Subscribe,\n   poll, or otherwise begin receiving events.\n5. **Begin pumping.** The integrator's runtime drives\n   `ds_engine_pump` on the chosen cadence; the\n   adapter's source-event-handler calls\n   `ds_engine_assert` from the integrator's pump\n   thread when source events arrive.\n\n",
+  "refs": [
+    "NFCT.1",
+    "NFCT.1.1"
+  ]
+}

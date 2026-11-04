@@ -1,0 +1,44 @@
+{
+  "id": "LERR.9.7_one_pending_per_site_fires",
+  "category": "logical",
+  "dead_rules_expected": ["ratio"],
+  "scenario": "The companion of LERR.9.7_one_pending_per_site, so that one cannot pass by raising nothing: the same program and steps, plus a handler, which fires exactly once on the one ComputationError fault fact the site's two faults drain to (LERR.9.7). The handler logs a constant rather than `e.kind`, because which of the two faults is last depends on the order the beta evaluates its candidates, which this vector does not pin. It does not tell coalescing from its absence either -- without it the first fact's activation is retracted before the next selection and the handler still fires once -- which is what LERR.9.7_one_pending_per_site is for. The handler's patterns make it a handler site (LERR.9.6), so it raises no fault fact of its own. Pin: assert Q(zero), Q(huge), P; pump. Messages are ['fault']; `ratio` never fires.",
+  "rules_ds": "from math import floor\n\nschema P scope logical:\n    entity_id: String key\n    n: Int mutable\n\nschema Q scope logical:\n    entity_id: String key\n    d: Int mutable\n    f: Float mutable\n\nrule ratio:\n    P p\n    Q q where (p.n // q.d) > floor(q.f)\n->\n    log info \"ratio\"\n\nrule handler:\n    ComputationError\n->\n    log critical \"fault\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Q",
+        "slots": {
+          "entity_id": "zero",
+          "d": 0,
+          "f": 1.0
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Q",
+        "slots": {
+          "entity_id": "huge",
+          "d": 1,
+          "f": 1E+300
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "P",
+        "slots": {
+          "entity_id": "p",
+          "n": 7
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "fault"
+    ]
+  }
+}

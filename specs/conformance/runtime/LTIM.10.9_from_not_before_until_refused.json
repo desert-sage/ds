@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.10.9_from_not_before_until_refused",
+    "clauses": ["LTIM.10.9"],
+    "category": "runtime",
+    "scenario": "[LTIM.10.9]: the engine refuses a host assert of a `TimeZoneOffset` fact whose `valid_from` is not before its `valid_until`, with DS_ERR_INVAL (-1), and asserts nothing. A good row is asserted first, offset +64800 (eighteen hours, the bound, admitted), so the engine holds one fact. Then a row for another zone whose `valid_from` equals its `valid_until`, an empty period: refused at input 1, no fault event on the stream (a host refusal), and the engine unchanged (`fact_count_after` 1). Its siblings refuse an offset out of range and the zone \"UTC\". PATH PINNED: libds's host-assert argument checks (`engine_assert_canonical`, wm.c), and Mercury's `ds.engine.host_assert_core`, beside the Date-range refusal.",
+    "rules_ds": "schema Note scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-1",
+        "message_contains": "TimeZoneOffset",
+        "no_fault_events": true,
+        "fact_count_after": 1,
+        "fault_at": 1,
+        "asserts": [
+            { "schema": "TimeZoneOffset", "slots": { "zone": "Asia/Tokyo", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 64800 } },
+            { "schema": "TimeZoneOffset", "slots": { "zone": "Europe/Paris", "valid_from": 1711846800000000000, "valid_until": 1711846800000000000, "offset_s": 7200 } }
+        ]
+    }
+}

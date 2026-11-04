@@ -1,0 +1,35 @@
+{
+    "id": "NLFC.9.5_first_step_refused_for_a_seed_deadline",
+    "category": "runtime",
+    "scenario": "[NLFC.9.5]: where a seed's deadline, fixed at the first sample ([NLFC.9.4]), would fall outside the `Time` range, the call that would take that sample is refused with DS_ERR_TIME_RANGE, and the engine is left as it was: neither clock moves, no sample is recorded, no seed's deadline is fixed, nothing enters working memory, and the seeding window stays open. Steps: `set` the mock clock to INT64_MAX - 1 s and seed `k` = 1 with `ttl_ns` 1 h (`cache_seed`, [RCTS.1.2.28]), which is admitted, since the TTL is held as a duration until the first sample. The first assert, Trig `a`, would sample at INT64_MAX - 1 s and give `k` a deadline past the range, so it is refused with -205 ([RCTS.1.2.27]). Then `set` the clock back to 0, which [NTST.3.1] admits only before the first sample, so the step succeeding is what shows the refused call took none (the harness fails the fixture on a refused step). Then seed a SECOND key, `j`, with no expiry: admitted, so the window is open. `k` is left as it was seeded. Then Trig `b` at 0, `c` at 1 h - 1 ns and `d` at 1 h, each asserted and pumped. Rule `hit` emits a Hit for each Trig whose assert reads `cached(\"k\")` as \"1\": `b` and `c` read the ORIGINAL `k`, and `d`, at its deadline, does not. So the recording holds two FactEmits, both `hit`'s, and its fact ids run 1 to 5 (FactAssert b, FactEmit, FactAssert c, FactEmit, FactAssert d): the refused call took no id and recorded no atom. What it discriminates: a runtime that admitted `a`, or refused it after its sample, has sampled, so its `set` back to 0 is refused; one that fixed `k`'s deadline at the refusal holds it at INT64_MAX - 1 s + 1 h, which an unsigned 64-bit count holds, so `d` hits too and there are three emits, or, as a signed count, wraps it negative, so `b` misses; one that closed the window at the refusal refuses the seed of `j`. Re-seeding `k` instead of `j` would hide a fixed or wrapped deadline, which is why the second seed names another key. PATH PINNED: libds's `ds_engine_nlfc_9_5_first_sample_in_range`, asked by `engine_assert_canonical` (wm.c) beside its TTL deadline check, through pyds `Engine.assert_fact` and `cache.seed(..., ttl_ns=)` (`runner.py`'s `_Session`); the Mercury runtime's `ds.engine.nlfc_9_5_first_sample_out_of_range`, asked by `host_assert_core`, which answers `refused_ttl_range` (`test_behave.m`'s `cache_seed` and `assert` steps).",
+    "rules_ds": "schema Trig scope logical:\n    tag: String key\n\nschema Hit scope explicit:\n    tag: String\n\nrule hit:\n    Trig t where cached(\"k\") == \"1\"\n->\n    emit Hit tag: t.tag\n",
+    "expect": {
+        "kind": "rfcs_roundtrip",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "cache_seed", "key": "k", "value": 1, "ttl_ns": 3600000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "a" }, "refused": "-205" },
+            { "op": "set", "now_ns": 0 },
+            { "op": "cache_seed", "key": "j", "value": 1 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 3599999999999 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "c" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "assert", "schema": "Trig", "slots": { "tag": "d" } },
+            { "op": "pump" }
+        ],
+        "expected_emits": [
+            { "rule_name": "hit" },
+            { "rule_name": "hit" }
+        ],
+        "expected_fact_ids": [
+            { "atom": "FactAssert", "fact_id": 1 },
+            { "atom": "FactEmit", "fact_id": 2 },
+            { "atom": "FactAssert", "fact_id": 3 },
+            { "atom": "FactEmit", "fact_id": 4 },
+            { "atom": "FactAssert", "fact_id": 5 }
+        ]
+    }
+}

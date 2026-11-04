@@ -1,0 +1,47 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// TypeError — atom body. A value is PRESENT and the operation is invalid
+// AT THIS SITE ([IRET.9.6]). The activation is abandoned; the
+// engine is intact.
+//
+// STREAM-CLASS: compare ([RFCS.3.4]). Stream-only — it has a census row in
+// [RFCS.3.1] and none in [RDSC.7.1], exactly where FactEmit (326) and FactWithdraw (327)
+// sit: a fault is something a run PRODUCES, never something a bundle carries.
+//
+// IDENTITY IS THE NODE, NOT THE ACTIVATION, and this is the sharpest constraint
+// on the shape. A matching-time TypeError has no activation — none
+// exists yet — and one alpha node ([RLOW.5.2.1]) serves every rule sharing a
+// `(schema, tests)` key, so `rule_name` is not well-defined at that layer.
+// [RFCS.21.1]'s `rule_name` + `timetag` join key, which CallIssued and
+// RuleFireAnnotation share, is therefore UNAVAILABLE here. `node_id` is what
+// this fault has, and LineSpan maps it to a source line ([RDSC.14.3]).
+//
+// NO `disposition` AND NO `recoverable`. The disposition is a property of the
+// CLASS — a TypeError always
+// abandons the activation — and under the three-message split the atom's field
+// number already carries the class. A field restating it would be a second copy
+// of the discriminator. ComputationError keeps `recoverable` because that atom
+// still spans several kinds with different dispositions; this one does not.
+message TypeError {
+  uint32 node_id     = 1;   // identity; LineSpan maps it to a line ([RDSC.14.3])
+  string schema_name = 2;
+  string slot_name   = 3;
+  string actual      = 4;   // the tag the value actually had
+  // NO `expected`: `node_id` derives it, and a consumer without the artefact
+  // cannot resolve it. Its absence is a decision, not an oversight.
+  //
+  // NO `json_path`, on the same reasoning: the COMPILER decides provenance and
+  // lowers it onto the node ([IRET.9.6]), so
+  // the path is already fixed statically by the time a TypeError is raised and
+  // `node_id` recovers it for anyone holding the artefact.
+  uint64 clock_ns    = 5;
+  uint64 seq         = 6;
+  // The fault's rule name ([LERR.9.11]): the activation's rule, or
+  // $alpha_<id> / $beta_<id> at matching time. A label for the
+  // integrator, derived from node_id there; identity stays the node.
+  string rule_name   = 7;
+}

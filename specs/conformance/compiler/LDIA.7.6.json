@@ -1,0 +1,11 @@
+{
+    "id": "LDIA.7.6",
+    "clauses": ["LDIA.3.4.1"],
+    "category": "compiler",
+    "scenario": "Compile-time validation is hard, not lazy, per [LDIA.3.4.1] (LDIA.7.6, the id, is a tombstone) — a file with a form its dialect doesn't enable fails compile; no runtime-on-first-use validation. Pinned via the rejection path: restricted_v1 + `call` → compile error, not deferred-to-runtime.",
+    "rules_ds": "use restricted_v1\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

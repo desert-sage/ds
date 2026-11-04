@@ -1,0 +1,9 @@
+{
+    "id": "LLET.12.5",
+    "category": "compiler",
+    "scenario": "Inlined at compile time per LLET.12.5 \u2014 not memoised; runtime sees the expanded expression at every use site. Pin: `let x = t.v + 1` read by two `cache` actions compiles. PINS ONLY THAT IT COMPILES: `compile_ok` reads no lowering, so the expression at both sites is not observed.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    let x = t.v + 1\n    cache key: \"a\" value: x\n    cache key: \"b\" value: x\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

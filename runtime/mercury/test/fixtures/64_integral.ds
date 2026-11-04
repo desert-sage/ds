@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Four `integral` backings, one per combination of the two fields only
+# `SeriesBackendNumericIntegral` carries: `time_model` (sliding or all_time,
+# field 8, [LSIG.2.3.6]) and `gap_policy` (hold or zero, field 9, [LSIG.3]).
+# Four schemas, since every read is the same aggregation name.
+use default
+
+schema SlideHold scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema SlideZero scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema AllHold scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema AllZero scope logical:
+    entity_id: String key
+    v: Float mutable
+
+schema Vol scope ttl 1_h:
+    label: String
+    total: Float
+
+series SlideHold.v (by: entity_id):
+    integral sliding 10_min gap hold
+
+series SlideZero.v (by: entity_id):
+    integral sliding 10_min gap zero
+
+series AllHold.v (by: entity_id):
+    integral all_time gap hold
+
+series AllZero.v (by: entity_id):
+    integral all_time gap zero
+
+rule sh:
+    SlideHold s
+->
+    emit Vol label: "sh" total: s.integral
+
+rule sz:
+    SlideZero s
+->
+    emit Vol label: "sz" total: s.integral
+
+rule ah:
+    AllHold s
+->
+    emit Vol label: "ah" total: s.integral
+
+rule az:
+    AllZero s
+->
+    emit Vol label: "az" total: s.integral

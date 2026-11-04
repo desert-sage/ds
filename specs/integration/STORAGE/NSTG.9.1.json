@@ -1,0 +1,19 @@
+{
+  "id": "NSTG.9.1",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.9",
+  "seq": 677,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NSTG.9.1] **The seed is the read-back half of write-through persistence.** The\n`ds_engine_cache_callbacks` write-through hooks ([NSTG.2.1.1], [LSTO.4.5.2])\nmirror each `cache` write to a durable store so it survives a restart; they do\n**not** read anything back. On the next startup the integrator restores the\nsaved entries into the fresh engine's cache with `ds_engine_cache_seed`\n([IARC.12]) — one call per persisted `key` → `value`, before the engine's first\nstream event ([NLFC.9.1]). The two are a matched pair: `set_cb` / `delete_cb` persist outward,\nthe seed hydrates inward.\n\nBecause they are a pair, every delete notification is one to act on: both\nreasons the callback can carry — the verb and TTL expiry ([NSTG.2.4]) — mean\nthe value is genuinely finished, so the store drops the row in each case and\nthe seed has nothing it should have restored.\n\nThat is only true because a cache write past its cap **fails** rather than\nevicting ([LSTO.4.7.5]). Were it otherwise there would be a third reason meaning\n*still valid, could not hold it*, and a store acting on it would destroy under\nmemory pressure precisely what the durable copy existed to survive.\n\n",
+  "refs": [
+    "IARC.12",
+    "LSTO.4.5.2",
+    "LSTO.4.7.5",
+    "NLFC.9.1",
+    "NSTG.2.1.1",
+    "NSTG.2.4"
+  ]
+}

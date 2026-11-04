@@ -1,0 +1,11 @@
+{
+    "id": "LSIG.CC-2",
+    "clauses": ["LSIG.3.3"],
+    "category": "compiler",
+    "scenario": "LSIG.3.3 CC-2: a `gap` policy on a non-integrating aggregation (`active_fraction`) is a compile error — gap applies only to `integral`.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    active: Bool mutable\n\nseries Sensor.active:\n    active_fraction sliding 5_min gap hold\n\nrule r:\n    Sensor\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERIES_GAP_ON_NON_INTEGRAL"
+    }
+}

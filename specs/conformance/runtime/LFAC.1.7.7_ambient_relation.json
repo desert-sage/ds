@@ -1,0 +1,17 @@
+{
+    "id": "LFAC.1.7.7_ambient_relation",
+    "category": "runtime",
+    "scenario": "[LFAC.1.7.7] — a `scope logical ambient` relation holds N distinct rows keyed by the declared `key` (the multi-row ambient relation). Devices{id key, name mutable, room mutable}: assert d1, d2, d3 (three distinct ids coexist), then re-assert d1 with a changed mutable slot — same key REPLACES, not a 4th row. fact_count 3 confirms keyed multi-row identity, not a singleton.",
+    "rules_ds": "schema Devices scope logical ambient:\n    id: String key\n    name: String mutable\n    room: String mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Devices", "slots": { "id": "d1", "name": "a", "room": "lab" } },
+            { "schema": "Devices", "slots": { "id": "d2", "name": "b", "room": "hall" } },
+            { "schema": "Devices", "slots": { "id": "d3", "name": "c", "room": "lab" } },
+            { "schema": "Devices", "slots": { "id": "d1", "name": "a2", "room": "lab" } }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

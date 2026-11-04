@@ -1,0 +1,67 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// FactWithdraw — atom body. The ENGINE taking back a fact it was holding
+// ([RFCS.7a]).
+//
+// The integrator's counterpart is FactRetract. `withdraw` is the corpus's own
+// word for the engine side: [IRET.12.2] is titled "Justification withdrawal"
+// and [LLOG.15.1] says "the same justification withdrawal, whatever ends the
+// match".
+//
+// STREAM-CLASS: compare ([RFCS.3.4]). Re-derived and byte-compared, never
+// delivered to the engine.
+message FactWithdraw {
+  // Closed, on the TrapKind precedent ([LERR.1.4.9]): a consumer branches on a
+  // cause rather than string-matching, and a cause added without a raiser is
+  // visible. Each member and its raiser is [RFCS.7a.2]'s table. The engine sets
+  // the cause where the withdrawal originates, and never records
+  // CAUSE_UNSPECIFIED. Every member has a raiser.
+  //
+  // A member added after this atom ships breaks a reader that switches on the
+  // closed set, so it is a format change ([LDET.1.10]).
+  enum Cause {
+    // 4 named a disconnected adapter, which the engine has no concept of
+    // ([RARC.14.5]). Nothing raised it.
+    reserved 4;
+    reserved "ADAPTER_DISCONNECTED";
+    CAUSE_UNSPECIFIED    = 0;
+    JUSTIFIER_ENDED      = 1;  // TMS cascade — the last justifier's LHS stopped matching
+    TTL_EXPIRED          = 2;  // the pump's TTL sweep
+    // SUPERSEDURE GENERALLY — a successor took this fact's place under the
+    // same identity. Two mechanisms, one meaning:
+    //   identity upsert  — a re-assert replaces a keyed fact ([LFAC.2.5.1]),
+    //                      identity = the slot key
+    //   as-keyed         — a re-fire supersedes the prior timer, call
+    //                      response or capture fact ([LRST.2.2]), identity =
+    //                      (rule, clause-position, evaluated-key)
+    SUPERSEDED           = 3;
+    // A fact THE LOWERING created to carry a deferred action, withdrawn
+    // because that action has run and the fact has nothing left to carry.
+    // The `after`-clause timer fact ([LTAC.3.1]) dropped at end-of-RHS, and
+    // the capture-corr facts ([LRST.4]). Never an author fact.
+    SYNTHETIC_DISCHARGED = 5;
+    // A rule's own `withdraw <binding>` action ([LSCO.4.5.9], [LCYC.3.1.1]),
+    // the one case in this enum where an AUTHOR fact leaves — distinct from
+    // SYNTHETIC_DISCHARGED (never an author fact) and from JUSTIFIER_ENDED
+    // (the fact is not `logical`; `withdraw` is `scope explicit` only, so no
+    // justification is ending).
+    AUTHOR_WITHDRAWN     = 6;
+    // A fact a rule's activation emitted into a `scope activation` schema,
+    // withdrawn because that activation completed ([LSCP.2.4.1]): at the
+    // synchronous end of its RHS, or when the token fact carrying its last
+    // deferred path (a timer, a capture) was discharged or superseded. An
+    // AUTHOR fact, by the author's declaration of the scope -- distinct from
+    // AUTHOR_WITHDRAWN (an action) and from SYNTHETIC_DISCHARGED (the token
+    // fact itself, never an author fact).
+    ACTIVATION_COMPLETED = 7;
+  }
+
+  uint64 fact_id  = 1;  // matches the FactEmit.fact_id (or FactAssert.fact_id) withdrawn
+  Cause  cause    = 2;  // why the engine took it back
+  uint64 clock_ns = 3;  // engine clock at withdrawal (ns)
+  uint64 seq      = 4;  // stream sequence number
+}

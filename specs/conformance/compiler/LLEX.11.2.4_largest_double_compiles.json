@@ -1,0 +1,9 @@
+{
+    "id": "LLEX.11.2.4_largest_double_compiles",
+    "category": "compiler",
+    "scenario": "[LLEX.11.2.4]: \"`1.7976931348623157e308` is a literal\". So is `1.7976931348623158e308`: above the largest Float's own decimal and below the rounding threshold 2^1024 - 2^970, it reads as the largest finite Float, and the program compiles. The literal sits in a rule's `where`, so the program is whole and the literal is lexed, parsed and lowered. Its twin LLEX.11.2.4_rounds_past_largest_refused is one higher in the last digit and refused. What it discriminates: a range check that refuses every literal above the largest Float's decimal, rather than every one that rounds past it, refuses this program. PATH PINNED: `dsc.lex`'s `finish_float`, where `dsc.exact.llex_11_2_4_past_largest` fails and `ds.float_text.parse_json` reads the largest Float.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    v: Float mutable\n\nrule r:\n    Trig t where t.v < 1.7976931348623158e308\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

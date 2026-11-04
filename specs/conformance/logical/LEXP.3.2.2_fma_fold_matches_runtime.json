@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.3.2.2_fma_fold_matches_runtime",
+    "clauses": ["LEXP.3.2.2", "LDET.3.3a.8", "LEXP.8.8"],
+    "category": "logical",
+    "scenario": "[LEXP.3.2.2] with [LDET.3.3a.8]: a compile-time fold of `math.fma` gives the value the engine computes. `const FMA = math.fma(0.1, 10.0, -1.0)` is folded into the `initial:` item's slot ([LEXP.8.8]); unfolded, the program is refused with DS_VALIDATE_INITIAL_NOT_CONST. The value is 2^-54: the exact product of the double 0.1 and 10 is 1 + 2^-54 (`LEXP.3.2.2_fma_rounds_once`). `folded`: the folded slot times 2^54 is 1.0, so the fold rounded once, where a fold of the product then the sum gives 0.0. `slots`: the folded slot equals `math.fma` over an `In` fact's `Float` slots, which the engine evaluates. `inlined`: it equals `FMA` named in the rule, which is inlined and evaluated by the engine, not folded. A `logical` vector rather than a `compiler` one, because only an engine can give the runtime's half of the comparison. PATH PINNED: `dsc.dstest.fold_builtin`'s `math.fma` row through `ds.core_math.fma`, against FN_FMA in libds (`builtins.c`) and Mercury (`ds.eval`).",
+    "rules_ds": "import math\n\nconst FMA = math.fma(0.1, 10.0, -1.0)\n\nschema V scope explicit:\n    k: String\n    f: Float\n\nschema In scope logical:\n    id: String key\n    x: Float mutable\n    y: Float mutable\n    z: Float mutable\n\ninitial:\n    V k: \"fma\" f: FMA\n\nrule folded:\n    V v where v.k == \"fma\" and v.f * 18014398509481984.0 == 1.0\n->\n    log info \"folded\"\n\nrule slots:\n    V v\n    In i where v.f == math.fma(i.x, i.y, i.z)\n->\n    log info \"slots\"\n\nrule inlined:\n    V v where v.f == FMA\n->\n    log info \"inlined\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "In", "slots": { "id": "i", "x": 0.1, "y": 10.0, "z": -1.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["folded", "slots", "inlined"]
+    }
+}

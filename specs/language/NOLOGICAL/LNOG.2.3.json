@@ -1,0 +1,18 @@
+{
+  "id": "LNOG.2.3",
+  "prefix": "LNOG",
+  "doc": "NOLOGICAL.md",
+  "parent": "LNOG.2",
+  "seq": 103,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What `realtime` does not enforce from `logical: false`",
+  "text": "### What `realtime` does not enforce from `logical: false` [LNOG.2.3]\n\n`realtime` does **not** imply `logical: false`.  Under `realtime`, the TMS is:\n\n- Pre-sized to a fixed capacity before `go_live`, in the RT\n  table pre-sizing step.\n- `rt_locked = true`: a TMS insert returns `DS_ERR_RT_UNSAFE` instead\n  of calling `realloc` if the inline array overflows.\n- `withdraw_scratch` pre-allocated to `DS_TMS_INLINE` entries, covering\n  the common case without malloc.\n\nThis makes TMS operations bounded and allocation-free in LIVE mode.\nThe T_wcet contains a `c_tms × n_ids` term, but n_ids ≤ DS_TMS_INLINE\n= 16 (a compile-time constant), so the term is bounded.\n\n`realtime` does not require eliminating the TMS because the TMS is already\nprovably bounded in LIVE mode.  `logical: false` is an optional constraint\nfor deployments that want to eliminate the TMS term entirely and\nguarantee no cascade depth in T_wcet.\n\n",
+  "deferred": true,
+  "errors": [
+    "DS_ERR_RT_UNSAFE"
+  ],
+  "symbols": [
+    "DS_TMS_INLINE"
+  ]
+}

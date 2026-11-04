@@ -1,0 +1,51 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+//@spec [IRET.28.5]
+//
+// oa_mix64.saw -- SAW proof that the unified open-addressing map's hash finalizer
+// oa_mix64 ([IRET.28.5]) is EXACTLY the splitmix64 finalizer, for ALL 2^64 inputs.
+// This is the SAW-lane pilot: the "C |= spec" sibling of the Alloy (structure) and
+// TLC (behavior) lanes -- it proves the compiled C bitcode of the real header
+// function equals a bit-precise Cryptol reference, discharged by z3.
+//
+// NORMATIVE COMPANION. Same traceability discipline as the .als / .tla models: the
+// Cryptol reference and the LLVM spec are named <lowercased-clause-id>__<tag> after
+// [IRET.28.5] and the harness verifies the clause-named symbol iret_28_5__oa_mix64.
+//
+// THE GUARANTEE ([IRET.28.5]). The table applies a final mixer so callbacks need
+// not be well-distributed. This proves the mixer the C actually runs is the
+// splitmix64 finalizer bit-for-bit -- multiply mod 2^64, logical shifts, xor --
+// with no counterexample over the whole 64-bit domain.
+//
+// TEETH. Perturb any constant/shift in the Cryptol reference below (e.g. >> 30 to
+// >> 29) and llvm_verify fails: z3 returns a 64-bit input on which the C and the
+// reference disagree.
+
+// @spec [IRET.28.5]
+// The splitmix64 finalizer as a bit-precise Cryptol reference. `*` on [64] is
+// multiply mod 2^64 (matching C unsigned) and `>>` is a logical shift.
+let {{
+  iret_28_5__mix_ref : [64] -> [64]
+  iret_28_5__mix_ref h = h3
+    where
+      h1 = (h  ^ (h  >> 30)) * 0xbf58476d1ce4e5b9
+      h2 = (h1 ^ (h1 >> 27)) * 0x94d049bb133111eb
+      h3 = (h2 ^ (h2 >> 31))
+}};
+
+// @spec [IRET.28.5]
+// The LLVM contract for iret_28_5__oa_mix64: for a fresh 64-bit h, the C returns
+// exactly the reference mixer applied to h.
+let iret_28_5__mix_spec = do {
+    h <- llvm_fresh_var "h" (llvm_int 64);
+    llvm_execute_func [llvm_term h];
+    llvm_return (llvm_term {{ iret_28_5__mix_ref h }});
+};
+
+// @probe [IRET.28.5]
+// Load the compiled harness bitcode and prove the contract for ALL inputs via z3.
+// (Top-level statements run in order; SAW does not auto-run a `main`.)
+iret_28_5__mod <- llvm_load_module "oa_mix64_shim.bc";
+llvm_verify iret_28_5__mod "iret_28_5__oa_mix64" [] false iret_28_5__mix_spec z3;
+print "[IRET.28.5] oa_mix64 == splitmix64 finalizer: PROVED for all 2^64 inputs";

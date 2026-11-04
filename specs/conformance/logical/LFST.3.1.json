@@ -1,0 +1,15 @@
+{
+    "id": "LFST.3.1",
+    "category": "logical",
+    "scenario": "Stream seq is monotonically increasing across a full rule-fire cycle per LFST.3.1 — fact_assert, rule_fire_begin, action_log, rule_fire_end all carry strictly increasing seq values. A single rule fires once on one fact; at least 4 events must appear.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hello\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 4,
+        "expected_seq_step": 1
+    }
+}

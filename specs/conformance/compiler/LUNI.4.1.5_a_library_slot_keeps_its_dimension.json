@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.4.1.5_a_library_slot_keeps_its_dimension",
+    "category": "compiler",
+    "scenario": "[LUNI.4.1.5], [LIMP.1.5]: `u.Temp.t` is `u`'s `therm`, in `warmth`. The program binds `therm` to `v`'s, in another dimension `coolth`, and compares `x.t` with a `therm` literal. The slot keeps the type `u` gave it, so this is two dimensions, not a silent match on the name. PATH PINNED: `dsc.imports.limp_1_5_field` giving the slot `u`'s declaration in `af_decl`, whatever the program binds `therm` to, `dsc.resolve.slot_entry` reading it, then `dsc.typecheck`'s comparison.",
+    "rules_ds": "from v import therm\nimport u\n\nrule r:\n    u.Temp x where x.t > 3_therm\n->\n    log info \"x\"\n",
+    "libraries": {
+        "u": "unit dimension warmth storage float64 base therm\nunit therm: warmth\n\nschema Temp scope logical:\n    k: Int key\n    t: therm mutable\n",
+        "v": "unit dimension coolth storage float64 base therm\nunit therm: coolth\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

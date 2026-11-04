@@ -1,0 +1,17 @@
+{
+    "id": "LSER.13.14_integral_refuses_at_capacity",
+    "category": "runtime",
+    "scenario": "[LSER.13.14] / [LSIG.1.1]: `integral` refuses at capacity, and the count against N includes samples admitted in the current pump and not yet absorbed. `integral sliding 1_h` with `capacity: 2`; three asserts of one identity before any pump. The first two are admitted; at the third the identity already has two samples admitted this pump, so the assert is a bounds refusal naming CAP_SERIES_CAPACITY (DS_ERR_CONTRACT_BREACH, -710) and the fact is not asserted. PATH PINNED: the pre-assert capacity check in both runtimes counting the pump's pending samples for the identity, not the backing's retained count alone (libds `series/state.c` on the assert path before `ds_engine_queue_superseded_sample`; Mercury `ds.engine`'s host assert through the series capacity check). `fault_at: 2` makes the refusal the third assert's.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    power: Float mutable\n\nseries Reading.power (by: dev, capacity: 2):\n    integral sliding 1_h\n\nrule r:\n    Reading s where s.integral > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_at": 2,
+        "asserts": [
+            { "schema": "Reading", "slots": { "dev": "k", "power": 1.0 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": 2.0 } },
+            { "schema": "Reading", "slots": { "dev": "k", "power": 3.0 } }
+        ]
+    }
+}

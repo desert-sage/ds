@@ -1,0 +1,19 @@
+{
+    "id": "LADP.11.3_entity_set_is_an_identity_regex",
+    "clauses": ["LADP.3.1.1", "LADP.3.2.1"],
+    "category": "logical",
+    "scenario": "[LADP.3.1.1] / [LADP.3.2.1] (LADP.11.3, the id, and LADP.11.2 are tombstones): an adapter entity set is written as a regex the author puts over the identity slot, not as a dotted pattern sugar or a grammar wildcard. `[^.]*` stands for \"any run within one entity_id segment\". The rule `motion` matches `BinarySensor b where b.entity_id ~ /^binary_sensor\\.[^.]*_motion$/ and b.state == true`. Three sensors, all `state: true`, one pump each: `binary_sensor.hall_motion` fires; `binary_sensor.hall_door` does not (wrong suffix); `binary_sensor.a.b_motion` does not, because `[^.]*` stops at a dot, as a segment glob would. One message, the matching entity_id. A runtime that matched the regex unanchored, or let `.` in the pattern match anything but a literal dot, logs more.",
+    "rules_ds": "schema BinarySensor scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule motion:\n    BinarySensor b where b.entity_id ~ /^binary_sensor\\.[^.]*_motion$/ and b.state == true\n->\n    log info \"{b.entity_id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "BinarySensor", "slots": { "entity_id": "binary_sensor.hall_motion", "state": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "BinarySensor", "slots": { "entity_id": "binary_sensor.hall_door", "state": true } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "BinarySensor", "slots": { "entity_id": "binary_sensor.a.b_motion", "state": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["binary_sensor.hall_motion"]
+    }
+}

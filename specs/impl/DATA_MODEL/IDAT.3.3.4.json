@@ -1,0 +1,38 @@
+{
+  "id": "IDAT.3.3.4",
+  "prefix": "IDAT",
+  "doc": "DATA_MODEL.md",
+  "parent": "IDAT.3.3",
+  "seq": 279,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IDAT.3.3.4] **Transfer is single and success-only.** On a\nsuccessful `ds_json_array_append` / `ds_json_object_set` the\ncontainer takes ownership of the child: freeing the container\nfrees it, and freeing the child again is a double-free. On error\nownership does NOT move — the child is not consumed and the\ncontainer is left unchanged, so the caller must free the child.\nThis makes error cleanup deterministic. `ds_json_object_set`\ncopies its key, and when the key is already present it replaces\nthe value (freeing the old), so a built object holds one value per\nkey. A parsed one does too: `ds_json_parse` refuses text that\nrepeats a key in one object ([LGRA.5.8.7]).\n\n",
+  "refs": [
+    "LGRA.5.8.7"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/json_single_owner.als",
+        "name": "idat_3_3_4__exactly_one_owner",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/json_single_owner.als",
+        "name": "idat_3_3_4__free_reaches_each_node_once",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/json_single_owner.als",
+        "name": "idat_3_3_4__node",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/json_single_owner.als",
+        "name": "idat_3_3_4__ownership_acyclic",
+        "tag": "spec"
+      }
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "NFCT.1.1",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.1",
+  "seq": 39,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.1.1] A schema reaches the engine from a compiled artefact, and in no\nother way: `ds_engine_load_dsc` registers every schema (and rule) the `.ds`\nsource declared, with the schemas of the built-in module ([LIMP.12.2]). A fact\ntype an adapter supplies is declared in the program, as an `ambient` schema\nwhere rules only read it ([LADP.2.1.1]). See [NGST.4].\n\n**Registration is setup-phase only.** Every schema an engine holds must be\nregistered before the engine emits its first stream event, and the engine must\nrefuse a load after that with `DS_ERR_STATE`. A host\nassert, a retract and a pump each emit one, so registration comes before the\nfirst of them; loading an artefact and seeding the cache ([NLFC.9.1]) emit none.\nThe schema set is therefore fixed before anything on the stream can name a\nschema, which is what lets an encoder announce all of it at the head of a\nstream ([RFCS.5.1]).\n\nA single `.dsc` load is everything assert\nneeds — the engine builds its own\nmatching working-memory and Rete state internally.\n\n**An engine holds one artefact.** After a\nsuccessful `ds_engine_load_dsc`, the engine must refuse a second load, of the\nsame artefact or of another, with `DS_ERR_STATE`, and leave its state\nunchanged. A recording's header names one rule set by its hash ([LFST.4.7]),\nand a replay loads that one artefact ([RFCS.4.5]), so an engine holding two\nwould run a program no recording describes. A load that failed spent the engine\n([RDSC.9.8]), so that engine takes no other load.\n\n",
+  "refs": [
+    "LADP.2.1.1",
+    "LFST.4.7",
+    "LIMP.12.2",
+    "NGST.4",
+    "NLFC.9.1",
+    "RDSC.9.8",
+    "RFCS.4.5",
+    "RFCS.5.1"
+  ],
+  "errors": [
+    "DS_ERR_STATE"
+  ]
+}

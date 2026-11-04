@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.23.2_unit_default_not_whole",
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a unit-typed kwarg in a dimension held as whole numbers -- time, in nanoseconds -- refuses a `default` that is not a whole number of the kwarg's unit. `kwarg wait: minute default 90_s` would be 1.5 minutes and is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE. PATH PINNED: `quantity_misfit` in dsc.validate, its `whole_number_dimension(Dimension), not is_whole(Value)` arm, with the value from `dsc.quantity.ladp_8_5_2_in_unit`. Without the whole-number test the program compiles.",
+    "rules_ds": "service timer.arm:\n    kwarg wait: minute default 90_s\n    no response\n\nschema Trig scope logical:\n    v: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

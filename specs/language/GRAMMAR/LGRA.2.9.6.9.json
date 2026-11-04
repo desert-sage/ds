@@ -1,0 +1,21 @@
+{
+  "id": "LGRA.2.9.6.9",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.2.9.6",
+  "seq": 405,
+  "depth": 4,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LGRA.2.9.6.9] An unescaped `{` in an interpolation-eligible string\n([LGRA.2.9.6.8]) whose brace span has a body that is not a valid\n`interp_body` ([LGRA.2.9.6.1]) — a body containing an operator or any\ntoken outside the `NAME ( '.' NAME | '[' INT_LIT ']' )*` path\ngrammar, e.g. `{c.a + c.b}` — is a compile error\n(`DS_VALIDATE_INTERP_BAD_PATH`). The compiler must not emit such a span\nas literal text. A computed value in an interpolation is expressed by\nbinding it with a `let` and interpolating the bound name.\n\nA **valid** `interp_body` is refused with `DS_VALIDATE_INTERP_UNSUPPORTED`, and\nlikewise never emitted as literal text, in two cases. In the first, its value\nkind is one a compiler cannot render: the code is distinct from\n`DS_VALIDATE_INTERP_BAD_PATH` for the reason [LCST.4.5.3] gives for its cast pair,\nthat the program is well-formed and the compiler is incomplete. In the second, it\nis a whole `Json` value, which is not a leaf ([LGRA.2.9.6.11]): the program\nbreaks a rule, and the compiler must refuse it however complete it is.\n\n",
+  "refs": [
+    "LCST.4.5.3",
+    "LGRA.2.9.6.1",
+    "LGRA.2.9.6.11",
+    "LGRA.2.9.6.8"
+  ],
+  "errors": [
+    "DS_VALIDATE_INTERP_BAD_PATH",
+    "DS_VALIDATE_INTERP_UNSUPPORTED"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+    "id": "LADP.8.5.2_written_time_bridged_by_an_implicit_formula",
+    "category": "compiler",
+    "scenario": "[LADP.8.5.2], [LUNI.4.5.1]: a written quantity of another dimension is refused \"unless exactly one `implicit` formula bridges the two dimensions, which the compiler then applies\". `5_s` is a quantity of `time`, and `hz_period` bridges `time` and `frequency`, so it compiles on a `Hz` kwarg. Its twin, `LADP.8.5.2_written_time_on_another_dimension`, has no formula. This vector compiles the program and does not observe the value the formula gives. PATH PINNED: `dsc.types.luni_8_2_quantity_dimension`, read by `dsc.validate.ladp_8_5_2_written_dimension` for the `bridge_one` arm and by `dsc.rete.luni_4_5_1_call_kwarg`, which applies the formula.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period inverting implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nservice tone.set:\n    kwarg pitch: Hz required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call tone.set pitch: 5_s nocooldown\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

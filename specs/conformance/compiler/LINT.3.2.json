@@ -1,0 +1,8 @@
+{
+    "id": "LINT.3.2",
+    "clauses": ["LINT.3.2.1", "LINT.3.2.2"],
+    "category": "compiler",
+    "scenario": "`(a.lo..a.hi) contains (b.lo..b.hi)` over two `Int` intervals is `Bool` (LINT.3.2.1), and both element types match (LINT.3.2.2), so it compiles as a `where`. PINS ONLY THAT IT COMPILES: no containment is evaluated.",
+    "rules_ds": "schema Span scope logical:\n    entity_id: String key\n    lo: Int mutable\n    hi: Int mutable\n\nrule r:\n    Span a where a.entity_id == \"outer\"\n    Span b where b.entity_id == \"inner\" and (a.lo..a.hi) contains (b.lo..b.hi)\n->\n    log info \"inner is subset\"\n",
+    "expect": { "kind": "compile_ok" }
+}

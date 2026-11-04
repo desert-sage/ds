@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_first_frame_with_an_overlong_varint_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame one of whose varints runs past ten bytes is malformed, and a malformed FIRST frame is refused with DS_ERR_DSC_BAD_MAGIC (-501). `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a8080808080808080808000\"}}` ([RCTS.1.2.21]) puts, before the compiled artefact's first atom, the outer tag 0x0A and an outer length written as eleven varint bytes: ten 0x80 continuation bytes and a final 0x00. The varint ends inside the artefact, so the bytes do not run out: it is overlong, not truncated. The walk from the first byte stops at that varint and reaches no DscHeader, so nothing is re-sealed. What it discriminates: a loader that reads a varint of any length takes the length as 0 and then fails elsewhere or loads; one that reports the overlong varint as TRUNCATED gives -500. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom` through `ds_pbf_next_field`'s overlong varint, MALFORMED with no short body); the Mercury runtime's `ds.atom.next_frame` in `ds.dsc`'s walk, through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a8080808080808080808000"}},
+        "code": "-501"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "RTIM.3.2.6_a_time_read_after_one_move_reads_the_new_instant",
+    "category": "logical",
+    "scenario": "[RTIM.3.2.6]'s second half: after one clock move, \"an expression that reads the time reads the new instant\". The timeline is `RTIM.3.2.6_one_move_does_everything_due`'s: at 0 the harness asserts Go, a Short (ttl 2 s) and a Long (ttl 4 s), and pumps, so `wait` arms `after 3_s`. Then one `advance` of 5 s and one pump. The timer's follow-up runs in that pump, and its body reads the clock: `emit Fired t: monotonic_ns()` ([LTIM.2.2.2]), read inside the `after` body so that it is the follow-up's read and not the arming firing's. A runtime that does the timer at the new instant reads 5 s, so `read_new` fires and emits a ReadNew; one that visits the instant the move skipped, running the timer at its own deadline, reads 3 s, so `read_due` fires instead and no ReadNew is emitted. Live after the second pump: Go, Fired and ReadNew, so 3; the TTL facts have expired and the compiler's timer and capture facts are discharged ([LTAC.3.1]). `read_due` is in `dead_rules_expected`, so a 3 s read also fails by name ([RCTS.1.2.17]). Each check rule has one positive pattern and compares a slot with a literal, so neither makes a time-dependent read ([LEXP.9.6.1]). PATH PINNED: the deadline drain at the pump after a clock move, and the clock a firing in that drain reads: libds's timer dispatch and `FN_MONOTONIC_NS`, and the Mercury runtime's one deadline structure (`ds.engine`) and its clock token. That the TTL deadlines are done at the new instant is pinned by `RTIM.3.2.6_due_deadlines_carry_the_new_instant`.",
+    "rules_ds": "schema Go scope logical:\n    v: Int key\n\nschema Short scope ttl 2_s:\n    v: Int\n\nschema Long scope ttl 4_s:\n    v: Int\n\nschema Fired scope ttl 1_h:\n    t: Duration\n\nschema ReadNew scope ttl 1_h:\n    v: Int\n\nrule wait:\n    Go\n->\n    after 3_s:\n        emit Fired t: monotonic_ns()\n\nrule read_new:\n    Fired f where f.t == 5_s\n->\n    emit ReadNew v: 1\n\nrule read_due:\n    Fired f where f.t == 3_s\n->\n    log info \"the timer read its own deadline\"\n",
+    "dead_rules_expected": ["read_due"],
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Go", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Short", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "Long", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "fact_count", "equals": 3 }
+        ]
+    }
+}

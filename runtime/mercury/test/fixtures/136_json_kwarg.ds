@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A Json value on a Json kwarg reaches the peer as the value, not as its text
+# ([NCBK.6.10]). `attachments` is given a Json path and `meta` the whole slot;
+# each call argument is KIND_JSON, its value the document's canonical text
+# ([LDET.3.2.7]). The String kwarg `recipient` beside them differs only by
+# kind from a Json argument flattened to a string.
+
+service mail.send:
+    kwarg recipient:   String required
+    kwarg attachments: Json
+    kwarg meta:        Json
+    no response
+
+schema Inbox scope logical:
+    k:        Int key
+    response: Json mutable
+
+rule send:
+    Inbox r
+->
+    call mail.send recipient: "me@example.com" attachments: r.response.ref meta: r.response nocooldown

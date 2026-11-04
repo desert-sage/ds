@@ -1,0 +1,12 @@
+{
+    "id": "LEXP.3.2.bit_length_int64_min",
+    "category": "runtime",
+    "scenario": "[LEXP.3.2] x.bit_length ([LGRA.9.6.2]): the number of bits needed to represent |x|. |INT64_MIN| = 2^63 needs 64. Path: builtins.c builtin_bit_length, which formed |x| as `-args[0].i` in int64_t -- undefined behaviour at INT64_MIN (audit finding I4) -- now int_ops.h ds_i64_bit_length, on the unsigned magnitude. libds only: the Mercury runtime does not implement bit_length and refuses the artefact at load. fact_count 2 = T plus the Hit the rule emits.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where t.x.bit_length == 64\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -9223372036854775808 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

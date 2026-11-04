@@ -1,0 +1,10 @@
+{
+    "id": "LRST.3.2b",
+    "clauses": ["RLOW.1.6"],
+    "category": "compiler",
+    "scenario": "Per-entity restart per LRST.3.2 \u2014 `as <expr>` evaluates per-activation against each matching fact's bindings, so different entities get independent timers. Pin: `after 30_s as e.entity_id:` keyed on a String slot compiles, with a body reading `{e.entity_id}`. PINS ONLY THAT IT COMPILES: independent per-entity timers need a run. `compile_ok` observes neither the supersedure key in the timer lowering nor the capture-bindings slot.",
+    "rules_ds": "schema Request scope logical:\n    entity_id: String key\n\nrule r:\n    Request e\n->\n    log info \"start\"\n    after 30_s as e.entity_id:\n        log info \"timeout for {e.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

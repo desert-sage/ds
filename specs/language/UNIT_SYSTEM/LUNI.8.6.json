@@ -1,0 +1,30 @@
+{
+  "id": "LUNI.8.6",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.8",
+  "seq": 940,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "8.6 `let` binding type annotation",
+  "text": "### 8.6 `let` binding type annotation [LUNI.8.6]\n\nA `let <name>: <type> = <expr>` binding may annotate the bound name, no space\nbefore the colon — consistent with field declaration style. `<type>` is a scalar\nbuiltin (`String`, `Int`, `Float`, `Bool`, `Json`), a temporal type (`Time`,\n`Date`, `Duration`, [LTIM.1]) or a canonical unit symbol.\n\nThe annotation is a claim about the type the right-hand side already has, and\nthe compiler **must** check it. It never converts the value and never drops a\nunit; conversion is the `::` operator's ([LCST.4]). The check is on the\nright-hand side's result, not on the arithmetic that produced it. Once it\npasses, the binding has the annotated type.\n\nThe compiler **must** refuse:\n\n- a scalar or temporal annotation whose right-hand side is of another kind —\n  `Int` on a `Float`, `String` on a `Bool`, `Time` on a `Duration` — and a unit\n  annotation on a value that is not a number, with\n  `DS_VALIDATE_LET_TYPE_MISMATCH`;\n- a right-hand side whose type the compiler cannot determine, with\n  `DS_VALIDATE_LET_TYPE_MISMATCH`;\n- a unitless `Float` or `Int` annotation on a value that carries a unit, and a\n  unit annotation on a value of another dimension, with\n  `DS_VALIDATE_LET_DIM_MISMATCH`, unless exactly one `implicit` formula bridges\n  the two dimensions ([LUNI.4.5]);\n- a unit annotation on a bare number ([LUNI.8.3]), with\n  `DS_VALIDATE_LET_DIM_MISMATCH`;\n- an alias ([LUNI.7.5]), a dimension name, or a name that is a type but none of\n  those above, such as a schema, with `DS_VALIDATE_LET_BAD_ANNOTATION`;\n- a name that resolves to no type, with `DS_VALIDATE_UNKNOWN_TYPE`\n  ([LGRA.5.7.1]).\n\nA unit annotation on a value of the same dimension is valid and changes\nnothing, because the value is held in the dimension's base unit ([LUNI.7.2],\n[LUNI.8.1]). Asserting a unit on a number is the `::<unit>` cast's ([LUNI.8.5]),\nand an annotation answers neither [LUNI.8.4] nor [LUNI.9.2].\n\n",
+  "refs": [
+    "LCST.4",
+    "LGRA.5.7.1",
+    "LTIM.1",
+    "LUNI.4.5",
+    "LUNI.7.2",
+    "LUNI.7.5",
+    "LUNI.8.1",
+    "LUNI.8.3",
+    "LUNI.8.4",
+    "LUNI.8.5",
+    "LUNI.9.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_LET_BAD_ANNOTATION",
+    "DS_VALIDATE_LET_DIM_MISMATCH",
+    "DS_VALIDATE_LET_TYPE_MISMATCH",
+    "DS_VALIDATE_UNKNOWN_TYPE"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.6.sign_rshift",
+    "clauses": ["LEXP.7.14.1", "LCON.2.6.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 integer determinism — arithmetic right shift saturates at -1. `-1 >> 8` stays -1 (sign bit propagates through every shifted position per LEXP.7.14.1). Guard `(t.x >> 8) == -1` gates the emit; fact_count 2 confirms.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x >> 8) == -1\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": -1 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

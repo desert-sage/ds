@@ -1,0 +1,7 @@
+{
+    "id": "LGRA.9.6.3_function_spelling_refused",
+    "category": "compiler",
+    "scenario": "[LGRA.9.6.3]: `utc(r.seen)` is a spelling the compiler refuses in favour of the member `r.seen.utc`, with DS_VALIDATE_RETIRED_BUILTIN_SPELLING, not with DS_VALIDATE_UNKNOWN_FUNCTION. `utc` is not reserved, so a compiler with no such refusal would report an unknown function and never name the replacement.",
+    "rules_ds": "schema R scope logical:\n    k: Int key\n    seen: Time mutable\n\nrule check:\n    R r where utc(r.seen).hour > 8\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_RETIRED_BUILTIN_SPELLING" }
+}

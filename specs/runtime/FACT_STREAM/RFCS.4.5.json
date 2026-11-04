@@ -1,0 +1,28 @@
+{
+  "id": "RFCS.4.5",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.4",
+  "seq": 243,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.4.5] **`dsc_hash` is binding whenever a DSC is obtainable.** A\nreader that has DSC bytes — whether **embedded** at the front of the\nfile ([RFCS.13]) or **supplied** alongside it (the replay path,\n[RFCS.1.2]) — MUST verify the DSC against its own `dsc_sha256` ([RDSC.3.6])\nand compare `dsc_hash`, `capabilities` and `dialect_def_sha256` with the DSC's\n[RBND.1.3] tuple, field by field ([RBND.3.1]) via the dialect-binding comparison [RBND.6]; mismatch is\nfatal (`DS_ERR_BND_DSC_MISMATCH` or `DS_ERR_BND_DIALECT_MISMATCH`).\nEmbedded and supplied forms differ only in where the DSC bytes come from, not\nin whether they are verified. Two streams are not compared: one whose header\nholds neither `dsc_hash` nor `dialect_def_sha256`, which the engine replays\nwithout a binding check ([RBND.2.1]), and a schema-only offline dump with **no**\nDSC available at all, which can neither replay nor bind to a program. The dump\nrelies on the in-stream `SchemaDef` / `Slot` atoms, which remain authoritative\nfor schema interpretation.\n\n",
+  "refs": [
+    "RBND.1.3",
+    "RBND.2.1",
+    "RBND.3.1",
+    "RBND.6",
+    "RDSC.3.6",
+    "RFCS.1.2",
+    "RFCS.13"
+  ],
+  "errors": [
+    "DS_ERR_BND_DIALECT_MISMATCH",
+    "DS_ERR_BND_DSC_MISMATCH"
+  ],
+  "atoms": [
+    "SchemaDef",
+    "Slot"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+    "id": "LFAC.1.2a",
+    "clauses": ["LFAC.1.3.3", "RARC.5.2.4"],
+    "category": "temporal",
+    "scenario": "TTL-lifecycle fact still alive *before* its deadline. Mirror of TEMP-001 with an advance that stops short \u2014 pins that the deadline is real, not just a side effect of pump. A `ttl` fact expires via its TTL (LFAC.1.3.3), and only once its deadline is at or before the clock (RARC.5.2.4). Named for the LFAC.1.2 heading (`logical` facts), which it does not test.",
+    "rules_ds": "schema Pulse scope ttl 100_ms:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Pulse",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 50000000
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 1
+    }
+}

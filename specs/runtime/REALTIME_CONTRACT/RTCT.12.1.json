@@ -1,0 +1,16 @@
+{
+  "id": "RTCT.12.1",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.12",
+  "seq": 692,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Structural formula — one pump cycle",
+  "text": "### Structural formula — one pump cycle [RTCT.12.1]\n\nThe worst-case execution time of one pump cycle is bounded by:\n\n```\nT_run = c_alpha  × R × N_max\n      + c_beta   × max_fires × k_max\n      + c_agenda × max_fires × log2(max_fires)\n      + c_fire   × max_fires × A_max\n      + c_ttl    × expired_max × log2(N_max)\n      + c_cache  × cap_keys\n```\n\n| Term | Big-O | Meaning |\n|---|---|---|\n| `c_alpha × R × N_max` | O(R × N_max) | alpha dispatch per newly asserted fact × R alpha nodes matching that schema × N_max worst-case activations |\n| `c_beta × max_fires × k_max` | O(max_fires × k_max) | beta join propagation per activation, bounded by the token budget |\n| `c_agenda × max_fires × log₂(max_fires)` | O(M log M) | agenda heap insert/pop for M = max_fires activations |\n| `c_fire × max_fires × A_max` | O(max_fires × A_max) | firing loop: max_fires activations, each with A_max actions |\n| `c_ttl × expired_max × log₂(N_max)` | O(expired × log N) | deadline-heap drain plus the fact-retract cascade |\n| `c_cache × cap_keys` | O(cap_keys) | the cache-expiry sweep at pump entry ([NSTG.2.4.2]) |\n\nThe cache term is **linear in the cap, not in the number of expiries**: the\nsweep looks at every entry to find the expired ones, so a deployment pays for\nthe cache it permitted rather than the one it used. A large `cap_keys` with a\nnearly empty cache still costs a full walk each pump. Sizing the cap is\ntherefore a WCET decision, not only a memory one.\n\nEvery parameter derives statically from the `.dsc` and the deployment-time\n`N_max` declaration. The `c_*` coefficients are hardware-dependent and must be\nmeasured per platform ([RTCT.12.4]).\n\n",
+  "deferred": true,
+  "refs": [
+    "NSTG.2.4.2",
+    "RTCT.12.4"
+  ]
+}

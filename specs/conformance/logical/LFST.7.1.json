@@ -1,0 +1,16 @@
+{
+    "id": "LFST.7.1",
+    "clauses": ["LFST.7.1.1"],
+    "category": "logical",
+    "scenario": "Each tier's engine is the single writer, and `seq` is assigned at consumption in processing order (LFST.7.1.1): the stream seq is strictly monotonic across all events from one engine. Pin: fire three log actions in one activation; seq steps by 1 across fact_assert, rule_fire_begin, three action_log and rule_fire_end, at least six events.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"first\"\n    log info \"second\"\n    log info \"third\"\n",
+    "expect": {
+        "kind": "event_seq_monotonic",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "expected_seq_step": 1
+    }
+}

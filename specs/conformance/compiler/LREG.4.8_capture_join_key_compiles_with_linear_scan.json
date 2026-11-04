@@ -1,0 +1,9 @@
+{
+    "id": "LREG.4.8_capture_join_key_compiles_with_linear_scan",
+    "category": "compiler",
+    "scenario": "[LREG.4.8]: the twin of LREG.4.8_capture_join_key_refused_without_linear_scan, the same rule under `use default`, whose `linear_scan` is on. A capture used as a join key is refused only under `linear_scan: false`, so here it compiles: `dev`, captured from `e.msg`, is read by the second pattern's `d.id == dev`. The pair shows the refusal is the dialect's, not the rule's. PINS ONLY THAT IT COMPILES: the converse of the refusal; what the join then does is not observed here.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    msg: String capacity 64 mutable\n\nschema Device scope logical:\n    id: String key\n\nrule r:\n    Event e where (dev) = e.msg ~ /([a-z]+) failed/\n    Device d where d.id == dev\n->\n    log info \"{d.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

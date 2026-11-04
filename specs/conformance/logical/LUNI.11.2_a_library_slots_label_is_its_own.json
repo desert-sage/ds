@@ -1,0 +1,18 @@
+{
+    "id": "LUNI.11.2_a_library_slots_label_is_its_own",
+    "category": "logical",
+    "scenario": "[LUNI.11.2], [LUNI.4.1.5]: `{x.t:u}` shows the label of the slot's own unit. `x.t` is `b`'s `mark`, labelled `b-mark`, and the program binds `mark` to `a`'s, labelled `a-mark`: exactly [\"b-mark\"]. A label found by the bare symbol shows `a-mark`. PATH PINNED: `dsc.rete.luni_11_4_label_prim` and `unit_label`, finding the slot's `decl_ref` in `rf_units`.",
+    "rules_ds": "from a import mark\nimport b\n\nrule r:\n    b.S x\n->\n    log info \"{x.t:u}\"\n",
+    "libraries": {
+        "a": "unit dimension warmth storage float64 base base_a\nunit base_a: warmth\nunit mark: warmth = x * 2 label \"a-mark\"\n",
+        "b": "from a import warmth\n\nunit mark: warmth = x * 3 label \"b-mark\"\n\nschema S scope logical:\n    k: Int key\n    t: mark mutable\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "b.S", "slots": { "k": 1, "t": 3.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["b-mark"]
+    }
+}

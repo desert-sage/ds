@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.1.1.1_ns_boundary_dead",
+    "clauses": ["LTES.12.3", "RARC.13.10"],
+    "category": "temporal",
+    "scenario": "[LTIM.1.1.1] utc_ns is NANOSECONDS — high half of the discriminating pair. Identical to LTIM.1.1.1_ns_boundary_alive except for the last two steps: after 1000 ns the clock advances ONE further nanosecond, landing exactly on the `1001_ns` deadline, and the fact is retracted ([LFAC.1.2], expiry at now >= deadline). Two things here are individually unrepresentable at microsecond resolution and must BOTH survive for this to pass — the 1.001 µs TTL literal, and the final 1 ns advance. The advance is a separate step deliberately: one advance of 1001 ns reaches the same instant, and a fixture that only ever moves the clock in one jump cannot tell a nanosecond clock from one that rounds the jump.",
+    "rules_ds": "schema Pulse scope ttl 1001_ns:\n    v: Int\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Pulse", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "pump" }
+        ],
+        "fact_count_after": 0
+    }
+}

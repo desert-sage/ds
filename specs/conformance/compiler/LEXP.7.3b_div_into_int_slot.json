@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.7.3b_div_into_int_slot",
+    "clauses": ["RARC.5.2.7"],
+    "category": "compiler",
+    "scenario": "LEXP.7.4 makes `/` Float whatever its operands, and LEXP.7.3b stops promotion at a slot, so `100 / r.divisor` into an `Int` slot is DS_VALIDATE_TYPE_MISMATCH: a Float in a slot declared Int, which a recording cannot encode. `LEXP.7.3b_int_expr_into_float_slot` pins the other direction. Path: `dsc.typecheck.lexp_7_2_arith_leaf` answers `lk_float` for `bo_div`, and `dsc.validate.lexp_7_3b_kwarg_type` refuses the leaf mismatch.",
+    "rules_ds": "schema Reading scope logical:\n    entity_id: String key\n    divisor: Int mutable\n\nschema Result scope ttl 1_h:\n    quotient: Int\n\nrule divide:\n    Reading r\n->\n    emit Result quotient: 100 / r.divisor\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

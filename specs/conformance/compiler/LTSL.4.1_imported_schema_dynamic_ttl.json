@@ -1,0 +1,13 @@
+{
+    "id": "LTSL.4.1_imported_schema_dynamic_ttl",
+    "category": "compiler",
+    "scenario": "Under the program's `dynamic_ttl: true`, which governs the library too ([LDIA.2.10.9]), a test resolves an IMPORTED schema exactly as the rules in the same file do: the input fact and the `produces` oracle both name schemas declared in library `state`. A compiler that fails the test half with DS_VALIDATE_TEST_UNKNOWN_SCHEMA while the rules resolve the same names fails this. The setting is `dynamic_ttl` because it is admitted in this edition and constrains nothing the program does. Pinned as `dsc_term_order` rather than `compile_ok` so the test's oracle rule has to LOWER, not merely not error: `warm`, then `$dstest_oracle_1_0` ([RTIM.14.13]). Path: `dsc.dstest.icom_26_3_schema_slots` resolves through `rf_types`, the same resolved-file map as the rules, and reads no dialect.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nfrom state import Reading, Alarm\n\nrule warm:\n    Reading r where r.celsius > 30.0\n->\n    emit Alarm logical zone: r.zone\n\ntest \"a warm reading raises an alarm\":\n    inputs:\n        at 0_s:\n            Reading zone: \"a\" celsius: 31.0\n    produces:\n        emitted Alarm a where a.zone == \"a\"\n",
+    "libraries": {
+        "state": "schema Reading scope logical:\n    zone: String key\n    celsius: Float mutable\n\nschema Alarm scope logical:\n    zone: String key\n"
+    },
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["warm", "$dstest_oracle_1_0"]
+    }
+}

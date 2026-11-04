@@ -1,0 +1,10 @@
+{
+    "id": "LCYC.3.2.2_emit_in_call_response_closes_cycle",
+    "category": "compiler",
+    "scenario": "LCYC.3.2.2's emit edge reaches a `call`'s continuation body: `ra` matches an `A` and, in the call's `on response` body, emits a `B`; `rb` matches the `B` and emits an `A`. The `emit B` is an ordinary emit edge ra -> rb, because the response decides when it runs and not whether it is an emit, so the two rules form one SCC with `A` emitted and matched inside it (LCYC.3.1.1). Refused with DS_VALIDATE_RULE_CYCLE. PATH PINNED: `dsc.cycle.rhs_actions` descending into an `on` body. Without that descent `ra` emits nothing, the graph is acyclic, and the program compiles.",
+    "rules_ds": "schema GoReply scope ttl 1_h:\n    corr: String\n    status: Int\n\nservice s.go:\n    kwarg n: Int\n    response GoReply\n\nschema A scope explicit:\n    v: Int\n\nschema B scope explicit:\n    v: Int\n\nrule ra:\n    A a\n->\n    call s.go n: a.v cooldown: 30_s\n        on response.status == 200:\n            emit B v: a.v\n\nrule rb:\n    B b\n->\n    emit A v: b.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_RULE_CYCLE"
+    }
+}

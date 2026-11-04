@@ -1,0 +1,31 @@
+{
+    "id": "LIMP.13.3_a_shared_library_crosses_once",
+    "clauses": ["LIMP.13.3"],
+    "category": "cross-tier",
+    "scenario": "[LIMP.13.3]: two programs share a schema by its own name when each imports one library under one path. `pub` and `hub` both import `lib`'s `Ref`, and `pub` publishes one. `hub` receives the record through its own `assert_external`, under the own name `lib.Ref` and that name's `schema_hash` ([RFCS.23.3]). `pub` holds its Trig alone, since a `publish` asserts nothing there ([LTIE.4.3]): 1 fact; `hub` holds 1. A receiver that looked the record up by any other name refuses it, and `forward_external` fails the fixture on a refusal ([RCTS.1.2.29]). PATH PINNED: libds's `ds_engine_assert_external` (through pyds `Engine.assert_external`, runner.py) and the Mercury runtime's `ds.fact_receive.assert_external` (test_behave.m's `receive_on_tier`).",
+    "rules_ds": "",
+    "libraries": {
+        "lib": "schema Ref scope ttl 1_h:\n    v: Int\n"
+    },
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "pub": {
+                "rules_ds": "from lib import Ref\n\nschema Trig scope logical:\n    v: Int key\n\nrule up:\n    Trig t\n->\n    publish Ref v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "from lib import Ref\n"
+            }
+        },
+        "steps": [
+            { "engine": "pub", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "pub", "op": "pump" },
+            { "engine": "hub", "op": "forward_external", "from": "pub" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "pub": 1,
+            "hub": 1
+        }
+    }
+}

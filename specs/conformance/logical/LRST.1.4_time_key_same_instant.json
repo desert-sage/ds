@@ -1,0 +1,26 @@
+{
+    "id": "LRST.1.4_time_key_same_instant",
+    "clauses": ["LRST.1.4"],
+    "category": "logical",
+    "scenario": "[LRST.1.4]: two `as` keys are the same key exactly when `==` is `true`, and two `Time`s are equal at the same UTC instant whatever their offsets ([LTIM.5.2]). The key is `r.t.local(r.zone)`: the instant at the zone's offset ([LTIM.3.2.1]), not nullable ([LRST.1.5]). A `TimeZoneOffset` row gives zone `Plus2` +02:00 through 2024 ([LTIM.10.7]); `UTC` needs none ([LTIM.10.8]). Three Req facts (distinct `entity_id`) each arm a 100ms timer: a with 2024-01-15T12:00:00Z in `UTC` and b with the same instant in `Plus2` (14:00+02:00) at t=0, the same instant at two offsets; c with 2024-01-15T13:00:00Z in `UTC` at t=50ms. b's arming supersedes a's, so that timer fires once, at 100ms; c's instant differs and its timer fires at 150ms. Exact messages: armed x3, then `timer fired` twice. Keys compared with their offsets keep a's timer and give three firings. PATH PINNED: the compiler's Time `corr` slot (`dsc.rete.lrst_1_4_leaf_kind`) and the supersedure sweep's key equality on it, libds `rete/adapters.c` `corr_key_eq` (UTC ns) and Mercury `ds.exec`'s sweep.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    zone: String mutable\n    t: Time mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.t.local(r.zone):\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Plus2", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 7200 } },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "zone": "UTC", "t": 1705320000000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "zone": "Plus2", "t": 1705320000000000000 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "zone": "UTC", "t": 1705323600000000000 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "id": "LGRA.5.8.6_host_nodes_at_limit",
+    "category": "runtime",
+    "scenario": "[LGRA.5.8.6]: a `Json` value of exactly the node limit, 256, is admitted when the host asserts it into a `Json` slot. The value is one array holding fifteen arrays of sixteen Ints: 1 + 15 + 240 = 256, since every scalar, array and object counts, the root included. The fact lands (fact_count 1). Paired with LGRA.5.8.6_host_nodes_over_limit, the same value with one more Int and refused, so a limit of 255 (this vector goes red) or 257 (the other goes red) is caught. PATH PINNED: on libds, libds's builders as pyds's `pyds_py_to_json_tree_at` calls them (`ds_json_array_append` counts the nodes); on the Mercury runtime, `ds.engine.host_assert` through `ds.fact`'s `sr_json_limit` check (`ds.json.limit_breach`).",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n    doc: Json mutable\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Blob", "slots": { "id": 1, "doc": [
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            ] } }
+        ],
+        "fact_count_after": 1
+    }
+}

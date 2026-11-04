@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.9.7_last_atom_cut_short_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.9.7] a `.dsc` whose last atom is cut short is refused with DS_ERR_DSC_TRUNCATED (-500), not loaded with the rules that arrived. The path: the harness (`runtime_error`'s `tamper: {truncate_tail: 1}`) drops the artefact's final byte, which leaves its last atom's frame one byte short of the length it declares, and re-seals `dsc_sha256` over the shortened bytes, so the hash check at the header passes ([RDSC.3.6]) and the load reaches the cut atom. libds's loader refuses the partial trailing atom; the Mercury runtime's reader reports the frame truncated (`lek_truncated`), which its harness maps to -500. A loader that read a short tail as the end of the artefact, as a stream reader does ([RFCS.19.2]), would load this.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n    x: Int mutable\n\nrule touch:\n    Reading\n->\n    log info \"r\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"truncate_tail": 1},
+        "code": "-500"
+    }
+}

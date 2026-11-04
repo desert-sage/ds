@@ -1,0 +1,10 @@
+{
+    "id": "LERR.1.2a",
+    "clauses": ["LERR.1.2.3"],
+    "category": "compiler",
+    "scenario": "Errors-as-values schema availability per LERR.1.2 \u2014 CallError is a builtin schema injected when referenced in a rule LHS. Rules can pattern-match on code and corr slots. The engine does not synthesise CallError; the integrator asserts it (thin-verb per IDSP.6 / LCRS.3.1). Compile-side pin: program with CallError in LHS compiles.",
+    "rules_ds": "service svc.op:\n    kwarg corr: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.op nocooldown corr: \"c1\"\n\nrule handle_error:\n    CallError e where e.code == \"timeout\"\n->\n    log critical \"timeout\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

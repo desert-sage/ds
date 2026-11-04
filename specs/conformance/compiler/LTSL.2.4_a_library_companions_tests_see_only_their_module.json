@@ -1,0 +1,16 @@
+{
+    "id": "LTSL.2.4_a_library_companions_tests_see_only_their_module",
+    "category": "compiler",
+    "scenario": "[LTSL.2.4]: a module's tests see what that module sees, its own declarations and what it imports. Library `gamma`'s companion asserts `activated tock`, and `tock` is the program's rule, which gamma does not import, so the test is refused with DS_VALIDATE_TEST_UNKNOWN_RULE ([RLOW.17.3]). The program's own companion naming `tock` compiles (`LTSL.2.4_every_compiled_modules_tests_are_carried_numbered_across_the_artefact`), so the refusal is the module's scope. The compile is from files ([RCTS.1.2.35]). PATH PINNED: dsc.driver `ltsl_2_4_library_tests`, which lowers a library's tests against the rules its module sees.",
+    "rules_ds": "use default\n\nimport gamma\n\nschema Tick scope logical:\n    id: Int key\n\nschema Tock scope logical:\n    id: Int key\n\nrule tock:\n    Tick p\n->\n    emit Tock logical id: p.id\n",
+    "libraries": {
+        "gamma": "schema Ding scope logical:\n    id: Int key\n\nschema Dong scope logical:\n    id: Int key\n\nrule ring:\n    Ding p\n->\n    emit Dong logical id: p.id\n"
+    },
+    "files": {
+        "lib/gamma.dstest": "test \"sees too far\":\n    inputs:\n        at 0_s:\n            Ding id: 1\n    produces:\n        activated tock\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TEST_UNKNOWN_RULE"
+    }
+}

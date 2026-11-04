@@ -1,0 +1,10 @@
+{
+    "id": "LREG.2.5",
+    "category": "compiler",
+    "scenario": "Position rule per LREG.2.5 — `!~` is not legal in `let`; a `let` binding whose RHS uses `!~` rejects with DS_VALIDATE_REGEX_LET_NEGATED. The diagnostic should point at the `where` form (`!~` produces no captures).",
+    "rules_ds": "schema Msg scope logical:\n    entity_id: String key\n    text: String mutable\n\nrule trig:\n    Msg m\n->\n    let x = m.text !~ /abc/\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_REGEX_LET_NEGATED"
+    }
+}

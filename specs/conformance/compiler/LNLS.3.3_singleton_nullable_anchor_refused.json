@@ -1,0 +1,10 @@
+{
+    "id": "LNLS.3.3_singleton_nullable_anchor_refused",
+    "category": "compiler",
+    "scenario": "[LNLS.3.3] / [LNUL.8.10]: a singleton slot that stands in for a key slot must be non-nullable. `Cpu` is a singleton and `Mem` is keyed on `addr`; the anchor `m.addr == cpu.pcf` has the singleton shape, but `pcf` is declared `Int?`, and a key slot is never null. Refused as an unanchored pattern. LNLS.3.3_singleton_nonnullable_anchor_ok is the same program without the `?`. PATH PINNED: `dsc.validate.anchor_body`'s nullable-singleton arm (`nullable_singleton_slot`); without it `anchored` admits the shape and this vector compiles.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nschema Cpu scope logical:\n    pcf: Int? mutable\n    running: Bool mutable\n\nschema Mem scope logical:\n    addr: Int key\n    amount: Int mutable\n\nrule fetch:\n    Cpu cpu where cpu.running == true\n    Mem m where m.addr == cpu.pcf\n->\n    log info \"fetch\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

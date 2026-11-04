@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `125_assert_external` with `Main.x` an Int: the same schema name of
+# another shape, so a record written against 125's `Main` is refused with
+# DS_ERR_SCHEMA_HASH_MISMATCH ([RFCS.23.3]).
+
+schema Ref scope logical:
+    id: String key
+    note: String mutable
+
+schema Main scope logical:
+    k: Int key
+    r: Ref mutable
+    x: Int mutable
+
+rule seen:
+    Main m
+->
+    log info "main {m.k}"

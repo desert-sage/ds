@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.3.3_negative_offset_literal",
+    "category": "logical",
+    "scenario": "[LUNI.3.3]: a minus on a unit literal negates the literal's number before the unit's formula converts it, so `-10_celsius` is -10 °C, 263.15 K. `t: celsius` stores kelvin. Sensor `a` reads 258.15 K (-15 °C) and sensor `b` 268.15 K (-5 °C); the rule `Reading r where r.t < -10_celsius` logs `a` and not `b`. PATH PINNED: `rlow_6_1_1_expr`'s unary arm in dsc.rete, which sends a minus over a non-time `ex_unit` to `luni_4_3_negated_unit_literal`. The break is negating the base value instead: the threshold becomes -283.15 K, nothing is below it, and nothing logs.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    sensor: String key\n    t: celsius mutable\n\nrule cold:\n    Reading r where r.t < -10_celsius\n->\n    log info \"{r.sensor}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "a", "t": 258.15}},
+            {"op": "assert", "schema": "Reading", "slots": {"sensor": "b", "t": 268.15}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["a"]
+    }
+}

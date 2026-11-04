@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.5.not_of_a_null_comparison_does_not_fire",
+    "category": "logical",
+    "scenario": "[LNUL.4.5]'s second row: over a null `s.state`, `not (s.state > 85)` is `null` and the pattern does not match. A missing reading fires neither a comparison nor its negation. Two Sensors, a = null and b = 10.0, against `not (s.state > 85.0)`: `cool` fires once, for b, whose negated comparison is true. A null-as-false reading, the design [LNUL.4.6] rejects, makes a's comparison false and its negation true, and fires `cool` twice. `runtime/LNUL.4.3a` pins the un-negated comparison over a null. Path: the NOT over the comparison is one test; libds rete/eval.c DS_RETE_UNOP_NOT over the comparison's null, Mercury ds.eval ev_node(e_unop(...)).",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nrule cool:\n    Sensor s where not (s.state > 85.0)\n->\n    log info \"cool\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "a", "state": null } },
+            { "op": "assert", "schema": "Sensor", "slots": { "entity_id": "b", "state": 10.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["cool"]
+    }
+}

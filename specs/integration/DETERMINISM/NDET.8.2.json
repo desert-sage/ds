@@ -1,0 +1,26 @@
+{
+  "id": "NDET.8.2",
+  "prefix": "NDET",
+  "doc": "DETERMINISM.md",
+  "parent": "NDET.8",
+  "seq": 142,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NDET.8.2] **The settings a replay need not reproduce.** The rest of libds's\nconfiguration changes no observable, so it is not a precondition of replay:\n\n- **The admission policy** (`ds_engine_set_admission`): it decides only whether\n  an artefact loads ([NLFC.10.2]).\n- **The clocks:** the replayer drives both from the trace ([LFST.9.2.1],\n  [NDET.4.1]).\n- **The reporting callbacks** (stream, metric, log):\n  they observe and answer nothing. The call callback's answers enter the\n  engine as inputs, which the stream records.\n- **The cache persistence callbacks** (`ds_engine_cache_callbacks`): a\n  callback's status reaches the call's return ([NCBK.7.5]) and changes neither\n  the cache nor the stream.\n\n**A replay invokes no effect callback.** The\nreplayer compares each re-derived call against its recorded `CallIssued` and\nre-derives each cache write, which no atom records ([RFCS.3.6]). It must not\nperform either outside the engine ([LFST.9.2]): it must hand no call\nto the call callback, and no write, delete or expiry to the cache persistence\ncallbacks. The engine still applies each cache write to its own cache, where\nthe replay's later reads find it. So neither callback need be registered to\nreplay a recording, and a registered one is not called: the answers a call\nreceived are already in the stream as inputs.\n\n**A cache seed is not configuration but starting state, and the recording\ncarries it** ([NSTG.9.2]). It emits no stream event, so the recorder writes\neach host seed in the stream's prelude ([RFCS.26.1]) and the replayer applies\nit before the first input ([RFCS.26.2]). The integrator does not seed an\nengine it replays into.\n\n---\n\n",
+  "refs": [
+    "LFST.9.2",
+    "LFST.9.2.1",
+    "NCBK.7.5",
+    "NDET.4.1",
+    "NLFC.10.2",
+    "NSTG.9.2",
+    "RFCS.26.1",
+    "RFCS.26.2",
+    "RFCS.3.6"
+  ],
+  "symbols": [
+    "ds_engine_cache_callbacks",
+    "ds_engine_set_admission"
+  ]
+}

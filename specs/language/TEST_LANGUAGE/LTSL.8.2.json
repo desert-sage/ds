@@ -1,0 +1,30 @@
+{
+  "id": "LTSL.8.2",
+  "prefix": "LTSL",
+  "doc": "TEST_LANGUAGE.md",
+  "parent": "LTSL.8",
+  "seq": 279,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Assertion heads",
+  "text": "### Assertion heads [LTSL.8.2]\n\nEach head is a past-tense observation the compiler lowers to one `Oracle*` oracle atom\n([RDSC.7.1], [RLOW.17.1]):\n\n| Head | Asserts | Atom |\n|---|---|---|\n| `activated <rule>` | the rule produced and ran an activation | `OracleActivated` |\n| `emitted <Schema> …` | an `emit` of a matching fact | `OracleEmit` |\n| `published <Schema> …` | a `publish` of a matching fact | `OraclePublish` |\n| `called <service> [as \"corr\"]` | an outbound call to the service (optionally a correlation) | `OracleCall` |\n| `cached \"k\" [: v]` | a cache write of `k` (optionally value `v`) | `OracleCacheSet` |\n| `cache_deleted \"k\"` | a cache delete of `k` | `OracleCacheDelete` |\n| `logged <level> [\"substr\"]` | a `log` at that level (optionally matching a substring) | `OracleLog` |\n| `retracted <Schema> …` | a matching fact left working memory | `OracleRetract` |\n| `wm has <Schema> …` / `wm count <Schema> == N` / `wm empty` | working-memory state at end of run | `OracleWorkingMemory` |\n\nA subset-matching head (`emitted` / `published` / `retracted` / `wm has`) matches\na schema-typed fact by **subset slot equality** — the given slots must equal the\nobserved fact's, other slots free — over exact values ([LTSL.4.3]). The one\nnon-schema value is the `cached \"k\": v` cache value, **opaque JSON**, which\nmatches `v` as two JSON values do ([LTSL.4.3]).\n\n`recorded` is not a head: the compiler must reject it\n(`DS_VALIDATE_TEST_RECORDED_RETIRED`) with a message naming `called`, the head\nthat asserts a call.\n\n",
+  "refs": [
+    "LTSL.4.3",
+    "RDSC.7.1",
+    "RLOW.17.1"
+  ],
+  "atoms": [
+    "OracleActivated",
+    "OracleCacheDelete",
+    "OracleCacheSet",
+    "OracleCall",
+    "OracleEmit",
+    "OracleLog",
+    "OraclePublish",
+    "OracleRetract",
+    "OracleWorkingMemory"
+  ],
+  "errors": [
+    "DS_VALIDATE_TEST_RECORDED_RETIRED"
+  ]
+}

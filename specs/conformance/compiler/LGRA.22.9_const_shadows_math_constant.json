@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.22.9_const_shadows_math_constant",
+    "clauses": ["LGRA.22.9", "LGRA.4.6"],
+    "category": "compiler",
+    "scenario": "[LGRA.22.9]'s second refusal reaches a `math` constant too. A member is \"a constant ([LGRA.22.6]), or a builtin where the library is `math` or `distance`\" (step 2), and `math`'s source declares `pi`. [LGRA.4.6] hands this case on: \"a local constant named for a `math` or `distance` member the file imports bare is [LGRA.22.9]'s, refused with `DS_VALIDATE_BINDING_SHADOWS_LIBRARY`\". Pin: `from math import pi`, a local `const pi = 3.0`, and a rule reading `pi`. The compiler refuses the local constant with DS_VALIDATE_BINDING_SHADOWS_LIBRARY, not [LGRA.4.6]'s DS_VALIDATE_IMPORT_NAME_COLLISION. A compiler that holds only the builtin rows against the file's names compiles it, with the local value winning. PATH PINNED: `dsc.resolve.lgra_22_9_shadows`, whose members include `dsc.libcall`'s `lcs_consts`; and `dsc.resolve.lgra_4_6_local_consts`, which leaves `math` and `distance` to it.",
+    "rules_ds": "from math import pi\n\nconst pi = 3.0\n\nschema Sensor scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    Sensor s where s.v > pi\n->\n    log info \"over\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BINDING_SHADOWS_LIBRARY"
+    }
+}

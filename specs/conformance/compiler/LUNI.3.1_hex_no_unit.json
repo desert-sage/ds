@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.3.1_hex_no_unit",
+    "category": "compiler",
+    "scenario": "LUNI.3.1.8 — UNIT_LIT excludes hex / binary / octal numeric prefixes. `0xff_s` (or `0b1010_s` / `0o17_s`) is a parse error: HEX_LIT eats the `0xff` prefix and the trailing `_s` is left as a separate IDENT, which doesn't satisfy the duration position. The exclusion is FORCED, not a style choice: the based form is provably ambiguous with the integer literal it is built from — `0xFF_A` reads as 4090 or as 255 amperes and a lexer has one priority ordering ([LUNI.3.1.8]).",
+    "rules_ds": "schema T scope ttl 0xff_s:\n    v: Int\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 1
+    }
+}

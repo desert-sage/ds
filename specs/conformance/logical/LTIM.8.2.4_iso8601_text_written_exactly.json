@@ -1,0 +1,25 @@
+{
+    "id": "LTIM.8.2.4_iso8601_text_written_exactly",
+    "clauses": ["LTIM.8.2.3"],
+    "category": "logical",
+    "scenario": "[LTIM.8.2.3] / [LTIM.8.2.4]: the exact `iso8601` text `::String` writes ([LCST.4.5.9]), compared character for character. A `Time` read from a slot is UTC ([LTIM.1.1.3]), so its zone is `Z`. The fraction is written only when the sub-second part is not zero, as nine digits with the trailing zeros removed: 1700000000 s is `2023-11-14T22:13:20Z`; one nanosecond more is `.000000001`; 500 ms is `.5`; 123456780 ns is `.12345678`; one nanosecond before the epoch floors to `1969-12-31T23:59:59.999999999Z`. A `Date` is `YYYY-MM-DD`, at the epoch, a day either side of it, and at both ends of [LTIM.1.2.2]'s range. A `Time` at a non-zero offset (`+hh:mm`, `-hh:mm`) needs `local()` and a `TimeZoneOffset` row for its zone ([LTIM.10.7]), which this vector does not assert; each runtime's unit suite pins it (libds `test_rete_time.c`, Mercury `test_ds`). Pin: five lines in assert order. A writer that always wrote nine digits, dropped the fraction, wrote `+00:00` for UTC, or truncated a negative instant toward zero gives a different line. PATH PINNED: FN_TO_STRING in libds's `fmt_iso8601` / `fmt_date` (rete/adapters.c) and Mercury's `ds.format.render_iso8601` / `ds.eval.ltim_8_2_1_render_date`.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    stamp: Time mutable\n    due: Date mutable\n\nrule r:\n    Visit v\n->\n    let t = v.stamp::String\n    let d = v.due::String\n    log critical \"{t} {d}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "stamp": 1700000000000000000, "due": 0 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "stamp": 1700000000000000001, "due": 19813 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 3, "stamp": 1700000000500000000, "due": -1 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 4, "stamp": 1700000000123456780, "due": 106751 } },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 5, "stamp": -1, "due": -106751 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "2023-11-14T22:13:20Z 1970-01-01",
+            "2023-11-14T22:13:20.000000001Z 2024-03-31",
+            "2023-11-14T22:13:20.5Z 1969-12-31",
+            "2023-11-14T22:13:20.12345678Z 2262-04-11",
+            "1969-12-31T23:59:59.999999999Z 1677-09-22"
+        ]
+    }
+}

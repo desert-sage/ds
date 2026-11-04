@@ -1,0 +1,9 @@
+{
+    "id": "RDSC.11.3_expression_48_deep_compiles",
+    "category": "compiler",
+    "scenario": "[RDSC.11.3]'s boundary, the compiler's half: an expression that lowers to an `Expr` nested exactly 48 deep compiles. The join test `s.v + ... + s.v > 0` over 48 slot reads is the comparison at depth 0 and 47 additions under it, so its deepest `Expr`, a read, sits at 48, the deepest a `.dsc` admits. Slot reads, so nothing folds. PATH: `dsc.rete.rdsc_11_3_too_deep_nodes`, measuring the lowered network as `dsc.encode` writes it, finds nothing past 48, and `dsc.driver` encodes. Its pair is RDSC.11.3_expression_49_deep_refused.",
+    "rules_ds": "schema Sensor:\n    v: Int\n\nrule deep:\n    Sensor s where s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v + s.v > 0\n->\n    log info \"deep\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

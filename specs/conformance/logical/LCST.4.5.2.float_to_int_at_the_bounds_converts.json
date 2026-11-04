@@ -1,0 +1,15 @@
+{
+    "id": "LCST.4.5.2.float_to_int_at_the_bounds_converts",
+    "category": "logical",
+    "scenario": "The positive half of [LCST.4.5.2]'s `Float → Int` range: the last double on each side whose truncation is an `Int` converts, and does not trap. `hi` is 2^63 - 1024 (9.223372036854774784e18), the double below 2^63, and must convert to exactly 9223372036854774784. `lo` is -2^63 (-9.223372036854775808e18) and must convert to INT64_MIN; the rule pins it by the only Int that is negative and whose `- 1` wraps positive ([LEXP.7.13.1]), so a runtime that trapped at -2^63, or produced any other value, fires one rule or none. Path: FN_FLOAT_TO_INT at a `where` — libds's `adapter_ds_float_to_int` (rete/adapters.c) and the Mercury runtime's `cast_builtin(fn_float_to_int, …)` truncation arm (ds.eval.m).",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    big: Float mutable\n\nrule hi:\n    S s where s.big::Int == 9223372036854774784\n->\n    log info \"hi\"\n\nrule lo:\n    S s where s.big::Int < 0 and s.big::Int - 1 > 0\n->\n    log info \"lo\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "hi", "big": 9.223372036854774784e18 } },
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "lo", "big": -9.223372036854775808e18 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["rule_fire_begin", "rule_fire_begin"]
+    }
+}

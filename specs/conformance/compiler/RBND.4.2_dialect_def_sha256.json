@@ -1,0 +1,11 @@
+{
+    "id": "RBND.4.2_dialect_def_sha256",
+    "category": "compiler",
+    "scenario": "[RBND.4.2] golden vector: `dialect_def_sha256` is SHA-256 over the serialization of the program's resolved settings. The file starts from `base` ([LDIA.9.1], every capability false) and turns on four, written in the order float, dynamic_ttl, logical, linear_scan, which is neither the `Capability` order nor name order, so the sort by number is exercised. `expected_serialization` is the two lines exactly: the magic, then `enabled=` and the four stable names in ascending `Capability` order (linear_scan 3, logical 4, dynamic_ttl 5, float 7), each line ending in a newline. `expected_dialect_def_sha256` is the lowercase hex SHA-256 of those bytes. Path: `dsc.encode.rbnd_4_2_dialect_sha` digests `ds.capability.rbnd_4_2_serialization` of the program's settings into the DscHeader header's field 10, and the compiler's conformance harness reads field 10 back from the emitted artefact. The harness first checks the fixture against itself, that the hex is the digest of the text. The four capabilities were chosen to have no [LCAP.3.8] constraint.",
+    "rules_ds": "use base:\n    float: true\n    dynamic_ttl: true\n    logical: true\n    linear_scan: true\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "dsc_dialect_binding",
+        "expected_serialization": "ds.dialect.v2\nenabled=linear_scan,logical,dynamic_ttl,float\n",
+        "expected_dialect_def_sha256": "df178363da9b4e23fc5a66feb2a9d2b98e447064869003421e86a017295c573f"
+    }
+}

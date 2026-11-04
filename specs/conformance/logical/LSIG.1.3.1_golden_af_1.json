@@ -1,0 +1,22 @@
+{
+    "id": "LSIG.1.3.1_golden_af_1",
+    "clauses": ["LSIG.1.3.1", "LSIG.2.2.3", "LSIG.2.2.4"],
+    "category": "logical",
+    "scenario": "Golden vector AF-1 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: `active_fraction sliding 5_min` over a pump held true over (0, 240 s] and then false, read at 300 s, is 240/300 = 0.8. It is time-weighted, not the fraction of true samples (LSIG.1.3.2), and the (t-W, t] left-exclusive boundary makes the start at t-W contribute nothing (LSIG.2.2.4). Each sample is asserted at its instant and pumped; at 300 s a `Probe` arrives and `read` logs the binding's `active_fraction` as of that firing ([NSBK.6.3]: a series' value reaches an integrator only through a rule).",
+    "rules_ds": "use default\n\nschema Pump scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Pump.state:\n    active_fraction sliding 5_min\n\nrule read:\n    Probe\n    Pump p\n->\n    log info \"{p.active_fraction}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pump", "slots": { "entity_id": "p1", "state": true } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 240000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "entity_id": "p1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 300000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0.8"]
+    }
+}

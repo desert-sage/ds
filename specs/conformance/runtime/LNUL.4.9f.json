@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9f",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] `is not` is ONE operator and not `is` applied to a negated subject — the case where the two readings differ observably. Drives the negated eval arm (IsTestExpr.negated with subject IS_SUBJECT_TRUE) over an Int slot. Read correctly as `(f.n) is-not (true)`: the tag is Int, `is true` is false, the negation makes it true, the rule FIRES. Read as `f.n is (not true)` — i.e. `is false` — the tag is still Int, the answer is false, and the rule does NOT fire. An Int operand is what separates them; a Bool operand would fire under both readings and pin nothing. [LGRA] closes this at the grammar (the subject is not an expression position, so `not true` cannot appear there), and this vector pins that the RUNTIME applies the negation after the test rather than to the subject. fact_count 2.",
+    "rules_ds": "schema Flag scope logical:\n    entity_id: String key\n    n: Int? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Flag f where f.n is not true\n->\n    emit Marker logical entity_id: f.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Flag",
+                "slots": {
+                    "entity_id": "a",
+                    "n": 5
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

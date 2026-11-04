@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.2.8.10",
+    "category": "compiler",
+    "scenario": "A `within` window is a `time_expr` (LGRA.2.8.1): a bare UNIT_LIT or a NAME, with no sign. Per LGRA.2.8.10, `-5_s` is an expression and not a `time_expr`, so `then Ev b within -5_s` is refused by the parser, before validation. PATH PINNED: `dsc.parse.lgra_2_8_1_time_expr`, which admits a `within` span only as one UNIT_LIT or one NAME.",
+    "rules_ds": "schema Ev scope logical:\n    entity_id: String key\n    ts: Time\n\nrule r:\n    Ev a\n    then Ev b within -5_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_PARSE_GENERIC",
+        "expected_line": 7
+    }
+}

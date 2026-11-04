@@ -1,0 +1,23 @@
+{
+  "id": "RTCT.6.7.6",
+  "prefix": "RTCT",
+  "doc": "REALTIME_CONTRACT.md",
+  "parent": "RTCT.6.7",
+  "seq": 510,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RTCT.6.7.6] **Old-reader rejection (structural, no minor\ngate).** A runtime implementing this clause MUST accept both\nencodings. A runtime built *before* this clause rejects a\ncompact contract **without needing to know about it**, via the\nload-time hash recompute it already performs ([RTCT.6.5] /\n[RDSC.16.3.3] step 3 / [RBND.4b]): it decodes the compact body\nas a legacy body with an empty `nodes` list, recomputes the\ncanonical hash over that empty list, and the result cannot\nequal the stored `rt_config_sha256` (computed over the *N*-node\nlogical contract, `N > 0`), so the contract is\n`DS_ERR_CONTRACT_INVALID`. No version gate and no\nfield-presence sniffing are required. The `node_count = 0` case\n([RTCT.6.7.2]) is the sole contract an old reader accepts —\ncorrectly, as it hashes identically under either encoding.\n(`[RTCT.3.3]`'s per-node coverage rule is **compile-time** —\n`DS_VALIDATE_COMPILE_CONTRACT_INCOMPLETE` — and MUST NOT be cited\nfor runtime rejection.)\n\n",
+  "deferred": true,
+  "refs": [
+    "RBND.4b",
+    "RDSC.16.3.3",
+    "RTCT.3.3",
+    "RTCT.6.5",
+    "RTCT.6.7.2"
+  ],
+  "errors": [
+    "DS_VALIDATE_COMPILE_CONTRACT_INCOMPLETE",
+    "DS_ERR_CONTRACT_INVALID"
+  ]
+}

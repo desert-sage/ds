@@ -1,0 +1,14 @@
+{
+    "id": "RARC.5.2.7.null_into_non_nullable_slot_is_a_type_error",
+    "category": "logical",
+    "scenario": "[RARC.5.2.7] with [LNUL.3.1]: a rule's `emit` of `null` into a slot not declared `T?` raises a TypeError naming the slot, and the fact does not enter. `p.body.name` is a Json path the document does not have, so it reads `null` at runtime; `Out.v` is a non-nullable Int. `handler` pins that the fault fact names `Out.v` and the tag `Null`. Path: libds rete/engine.c eval_actions (ds_rete_slot_refused's null arm), Mercury ds.exec.m assert_verb (`sr_null_non_nullable`).",
+    "rules_ds": "schema Payload scope logical:\n    body: Json key\n\nschema Out scope logical:\n    v: Int key\n\nrule r:\n    Payload p\n->\n    emit Out logical v: p.body.name\n\nrule handler:\n    TypeError e where e.schema == \"Out\" and e.slot == \"v\"\n->\n    log info \"refused Out.v {e.actual}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Payload", "slots": { "body": { "other": 1 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["refused Out.v Null"]
+    }
+}

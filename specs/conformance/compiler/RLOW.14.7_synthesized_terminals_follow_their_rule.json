@@ -1,0 +1,10 @@
+{
+    "id": "RLOW.14.7_synthesized_terminals_follow_their_rule",
+    "category": "compiler",
+    "scenario": "[RLOW.14.7]: a terminal with no rule of its own in source takes the position of the rule that induced it -- immediately after that rule's terminal and before any later author rule's ([RLOW.14.3]). Rule `r` induces three: two `after` follow-ups ([LTAC.3.1]) and the sibling of its `call`'s `on response` continuation ([LCCO.10.1]); rule `next` follows it in source. The emitted sequence is `r`, its follow-ups in source order, its call's sibling, then `next`. A compiler that pushes each follow-up's TerminalNode before the inducing rule's own emits `r` third, after both of its follow-ups, and its own `after` follow-up outranks it on the agenda. PATH PINNED: `dsc.rete`'s parent-terminal push after `ltac_3_1_afters`, which places the segment the afters pushed behind the rule's own TerminalNode, and `lcco_3_1_siblings` after it.",
+    "rules_ds": "schema SvcMethodReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.method:\n    \"\"\"stub\"\"\"\n    response SvcMethodReply\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call svc.method nocooldown\n        on response.code == 200:\n            log info \"ok\"\n    after 5_s:\n        log info \"first\"\n    after 10_s:\n        log info \"second\"\n\nrule next:\n    Trig\n->\n    log info \"next\"\n",
+    "expect": {
+        "kind": "dsc_term_order",
+        "expected_terminal_order": ["r", "$r_after_0", "$r_after_1", "$r_response_0", "next"]
+    }
+}

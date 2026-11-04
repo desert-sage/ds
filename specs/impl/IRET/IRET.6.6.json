@@ -1,0 +1,111 @@
+{
+  "id": "IRET.6.6",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.6",
+  "seq": 519,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Sharing alpha nodes",
+  "text": "### Sharing alpha nodes [IRET.6.6]\n\nTwo rules that have identical patterns on the same schema\nwith identical tests share one alpha node. The compiler\nis responsible for deduplication; the RETP atom encodes\nthe node graph, including shared references. The loader\nrespects shared nodes — one in-memory `ds_rete_alpha_node_t`\nmay appear as the right input to multiple beta nodes.\n\n---\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__alpha_dedup",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__alpha_node",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__dedup_key_identifies",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__schema",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__sharing_is_exact",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/rete_integrity.als",
+        "name": "iret_6_6__test_set",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_6__alpha_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A beta node references its right alpha by position [RDSC.4a.3]; sharing is by reference."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_6__alpha_or",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The node a reference resolves to; a dangling reference is a node admitting nothing. Its own function so a proof can reduce it by rewriting the lookup alone."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_6_6__mem_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The referenced node's memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_6__alpha_at_just",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A resolving reference yields its node."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_6__alpha_at_nothing",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A dangling reference yields the node admitting nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_6__alpha_at_set_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Updating the referenced node updates what the reference yields."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_6__alpha_at_set_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Updating another node leaves what the reference yields: sharing by reference is by position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "iret_6_6__nth_beyond",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A position past the list resolves to nothing."
+      }
+    ]
+  }
+}

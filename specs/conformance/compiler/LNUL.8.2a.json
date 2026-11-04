@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.8.2a",
+    "category": "compiler",
+    "scenario": "[LNUL.8.2] — the boundary of the refusal, and the case that makes it a LITERAL rule rather than a null rule. Cross-pattern join equality `a.state == b.state` on two nullable slots COMPILES: neither operand is a `null` literal, so the comparison is ordinary join equality, non-matching when both are null. Without this vector the diagnostic could be widened to `any operand that may be null` and every LNUL.4.4* case would stay green while this legal program started failing. PATH PINNED: the refusal is SYNTACTIC; a nullability check in its place fails this.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema Other scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nrule joined:\n    Sensor s\n    Other o where o.state == s.state\n->\n    log info \"matched\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "LERR.1.5",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.1",
+  "seq": 87,
+  "depth": 2,
+  "kind": "normative",
+  "heading": "Bounds refusal — rung 2",
+  "text": "### Bounds refusal — rung 2 [LERR.1.5]\n\n**When.** A declared cap **would be** exceeded. In this edition that is a cap\nthe program declares, a `String` slot's `capacity` ([LSTR.11.3]) or a series'\n`capacity` ([LSER.13.14]), or a cache bound the integration set\n([LSTO.4.7.5]); under a realtime contract it is also any of the caps of\n[RTCT.7.1]. The cap is the\nauthor's or integrator's own declaration, so reaching it is a stated limit being\nenforced, not a computation going wrong.\n\n**The tense is the criterion.** This rung is for a cap the engine can decide\n*before* the work happens, leaving nothing begun to abandon. `pump_wcet_ns` is\ndecided on a measurement taken after the pump completed, so it is not this rung\nand not this shape: it halts the tier ([RTCT.7.3], rung 7).\n\n**Shape.** The operation **does not happen** ([LSTO.4.7.5], [RTCT.7.2]): the\nengine must not mutate state on a breaching call, and subsequent calls work\nnormally. The API call that triggered the check\nreturns `DS_ERR_CONTRACT_BREACH`, and a `BoundsError` records the cap, its\ndeclared limit, and what the operation would have reached.\n\n**Why rung 2.** The refused operation is never begun, so nothing of it is\nabandoned — which is what separates it from rungs 5–7, where an operation is\ngiven up part-way. A breach\nmay occur where no activation exists at all: a `max_fires_per_pump` trip has\nactivation context, an `intern_cap` breach during load has none, and\n`proto/bounds_error.proto` carries those fields as present-where-applicable for\nexactly that reason.\n\n**Inside a rule's RHS.** When the refused operation is one of a firing's\nactions, whichever action and whichever cap it breaches (an `emit` whose value\nbreaches a declared capacity, [LSTR.11.3], is one), the engine **must** stop the\nfiring at it, by the prefix rule of [LNUL.11.1]: the\nactions before it stand, the refused action does not happen, and the actions\nafter it do not run.\n\n**Criterion.** A limit was declared, and honouring the declaration means\nrefusing. If no limit was declared and the engine simply ran out, the engine's\nstate is in question and it is rung 7 ([LERR.1.4]).\n\n",
+  "refs": [
+    "LERR.1.4",
+    "LNUL.11.1",
+    "LSER.13.14",
+    "LSTO.4.7.5",
+    "LSTR.11.3",
+    "RTCT.7.1",
+    "RTCT.7.2",
+    "RTCT.7.3"
+  ],
+  "errors": [
+    "DS_ERR_CONTRACT_BREACH"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+    "id": "LSER.16.3.1_pvar_pstdev_all_time",
+    "category": "logical",
+    "scenario": "[LSER.16.3.1] / [LSER.14.1]: `pvariance` and `pstdev` are the POPULATION statistics (n), exact over the all-time history on the running-stats backing (SeriesBackendWelfordEwma, [LSER.18.1]). Values 1, 7, 1, 7 then 2, one per pump, each read pre-sample ([LSER.8.6.1]); the guard `s.count >= 4` makes the one read that logs the one over [1, 7, 1, 7]: mean 4, squared deviations 9 + 9 + 9 + 9 = 36, so `pvariance` = 36 / 4 = 9.0 and `pstdev` = 3.0. Every running mean on these inputs (1, 4, 3, 4) is an integer, so Welford's m2 is exactly 36 and the two runtimes must print the same text. Drives libds `welford_ewma.c`'s m2 / w and the Mercury `ds.series` `variance(_, _, 0)`. The `count` guard is 4 and not 2 so that the read covers both pairs.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Int mutable\n\nseries Reading.level (by: dev):\n    count, pvariance, pstdev all_time\n\nrule r:\n    Reading s where s.count >= 4\n->\n    log info \"pvar {s.pvariance} pstdev {s.pstdev}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["pvar 9.0 pstdev 3.0"]
+    }
+}

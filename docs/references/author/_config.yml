@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# JupyterBook configuration — DS Author Reference
+title: The DS Author's Reference
+author: Dan Finster
+# The page footer reads "© Copyright <this>.": the year and the holder as
+# LICENSE's copyright line names them. A release test holds it there.
+copyright: "2026 Dan Finster and the Desert Sage Contributors"
+logo: ""
+
+# Don't try to execute anything — this is a prose manual, not notebooks.
+execute:
+  execute_notebooks: "off"
+
+# Only build pages that are reachable from _toc.yml.
+only_build_toc_files: true
+
+parse:
+  myst_enable_extensions:
+    - colon_fence      # ::: fenced admonitions
+    - deflist          # definition lists
+    # linkify is deliberately ABSENT (XBOOK2): it rewrites a bare `NAME.md` in
+    # prose into <a href="http://NAME.md">, since `.md` is a real ccTLD. Nothing
+    # in the corpus relies on bare-URL autolinking.
+    - smartquotes
+
+html:
+  use_issues_button: false
+  use_repository_button: false
+
+
+sphinx:
+  # ds_lexer — ```ds fence highlighting. ds_intersphinx — cross-book links
+  # (XBOOK1); it owns the book catalogue and pulls in sphinx.ext.intersphinx.
+  # ds_specref — a cited clause ID, `[LEXP.7.13.1]`, links to its clause.
+  # ds_refused — a fragment fenced `error=<code>` renders as refused.
+  # ds_codefont — code is set in Fira Code, ligatures off, from the book's own files.
+  local_extensions:
+    ds_lexer: ../../../tools/ds_lexer
+    ds_intersphinx: ../../_ext
+    ds_banner: ../../_ext
+    ds_specref: ../../_ext
+    ds_refused: ../../_ext
+    ds_codefont: ../../_ext
+  config:
+    # Generate slug anchors for headings (h1–h3) so in-book cross-references
+    # like [text](expressions.md#reading-state-inside-an-expression) resolve.
+    myst_heading_anchors: 3
+    # DS source blocks are tagged ```ds — fall back to plain text rather than
+    # erroring on an unknown Pygments lexer.
+    highlight_language: none
+    suppress_warnings:
+      - myst.highlight

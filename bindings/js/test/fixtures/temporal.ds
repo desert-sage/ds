@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# The temporal fixture for the @ds-lang/ds suite: a `Time`, a `Date` and
+# a `Duration` slot, each declared as its own type and represented as an Int
+# (RDSC.5.5.8). Compiled by the branch's own Mercury dsc in the `js`
+# gate, never committed as a .dsc.
+#
+# `long` compares the Duration against `1_s`, so it fires only if the BigInt
+# arrived as the nanoseconds it was given.
+
+use default
+
+schema Visit scope logical:
+    id: Int key
+    seen: Time mutable
+    due: Date mutable
+    span: Duration mutable
+
+schema Long scope logical:
+    id: Int key
+
+rule long:
+    Visit v where v.span > 1_s
+->
+    emit Long logical id: v.id

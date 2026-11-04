@@ -1,0 +1,14 @@
+{
+    "id": "IRET.9.6_json_leaf_format_is_a_type_error",
+    "category": "logical",
+    "scenario": "[IRET.9.6]: a format spec that cannot render the value it is given raises, and the fault follows the value's provenance. `m.body.count` is a String leaf of a Json slot and `.2f` wants a number, so rendering it is a TypeError, not an EngineError. PATH PINNED: dsc.rete.iret_9_6_interp_stamp sets Expr.json_tainted on the interpolation node because its segment is a Json projection, and the runtime's render refusal reads that flag. Twin: IRET.9.6_json_leaf_format_does_not_halt, which pins that the tier survives.",
+    "rules_ds": "schema Msg scope logical:\n    body: Json key\n\nrule render:\n    Msg m\n->\n    log info \"count {m.body.count:.2f}\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Msg", "slots": { "body": { "count": "abc" } } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["type_error"]
+    }
+}

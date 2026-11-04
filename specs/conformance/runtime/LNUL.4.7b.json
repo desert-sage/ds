@@ -1,0 +1,26 @@
+{
+    "id": "LNUL.4.7b",
+    "category": "runtime",
+    "scenario": "N1 control \u2014 a definitively-cool reading (10 > 85 false) does NOT block, so AllCool fires. Facts: Sensor + Tick + AllCool = 3. Contrast LNUL.4.7a: null behaves like a hot reading (blocks), not a cool one.",
+    "rules_ds": "schema Tick scope logical:\n    id: Int key\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nschema AllCool scope logical:\n    id: Int key\n\nrule all_cool:\n    Tick t\n    no Sensor s where s.state > 85.0\n->\n    emit AllCool logical id: t.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Sensor",
+                "slots": {
+                    "entity_id": "a",
+                    "state": 10.0
+                }
+            },
+            {
+                "schema": "Tick",
+                "slots": {
+                    "id": 1
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 3
+    }
+}

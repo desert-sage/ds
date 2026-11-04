@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.3_expr_with_no_kind_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s first shape: an artefact carrying an `Expr` with no member of its `kind` oneof set is refused at load with DS_ERR_DSC_SEMANTIC (-504). No source produces one, so the harness compiles rule `r`, whose one action is `log`, an `ACTION_CALL` whose `expr` is a call, and `runtime_error`'s `tamper: {clear_action_expr: r}` replaces that `expr` with an `Expr` of no field and re-seals `dsc_sha256` ([RCTS.1.2.21], [RDSC.3.6]), so the load reaches the expression with the rest intact. The `expr` is present and empty, which is this shape and not the third (`RDSC.11.3_call_action_with_no_expr_is_refused`). Break: a loader that reads a kindless `Expr` as literal `0` or `null`, or as a decode failure (-503), fails on the code. Judged on the code alone: libds's message for this shape, unlike its other three, does not name the clause. Paths: libds's `decode_expr_msg` (`dsc/rete_loader.c`), whose `KIND__NOT_SET` arm refuses; the Mercury runtime's `ds.dsc_expr`, which refuses with `lek_semantic` under RDSC.11.3.",
+    "rules_ds": "use default\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"clear_action_expr": "r"},
+        "code": "-504"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "id": "LCRS.6.2.1_cooldown_suppressed_retracts_nothing",
+    "clauses": ["RLOW.7.3.8"],
+    "category": "logical",
+    "scenario": "[LCRS.6.2.1], RLOW.7.3.8: a call its cooldown suppresses retracts nothing. A rule calls `svc.read ... cooldown: 10_s as \"c1\"`; the call is issued at instant 0 and the host answers with a reply of corr `c1`. A probe before the second firing logs [\"before 1\"]. The rule then fires again 5s later, inside the window: the gate denies the call, so `FN_CALL` is not evaluated and the reply stays live, and the probe after logs [\"after 1\"]. PATH PINNED: the call's own supersede inside the `FN_CALL` handler -- `lcrs_6_2_1_call_supersede` from `ds_dispatcher_call_typed` (libds) and `ds.exec.lcrs_6_2_1_call_supersede` from `call_verb_admitted` (Mercury) -- reached only through an admitting `IF(FN_RATE_ALLOW(...), FN_CALL(...), null)` gate ([IRET.25.5.1]). The second firing is a mutable-slot change under the same key, so it meets the gate with the same activation key. The break is a sweep outside the gate: the reply is retracted and the second probe logs nothing.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n\nservice svc.read:\n    kwarg n: Int\n    response Reply\n\nschema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nschema Early scope explicit:\n    k: Int\n\nschema Late scope explicit:\n    k: Int\n\nrule r:\n    Trig t\n->\n    call svc.read n: t.k cooldown: 10_s as \"c1\"\n\nrule seen_early:\n    Early\n    Reply x\n->\n    log info \"before {x.v}\"\n\nrule seen_late:\n    Late\n    Reply x\n->\n    log info \"after {x.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "assert", "schema": "Early", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Late", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["before 1", "after 1"]
+    }
+}

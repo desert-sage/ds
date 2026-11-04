@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# The sliding-window edge: every sliding window is the half-open (t−W, t]
+# ([LSER.14.1]), so a sample exactly W old is out and one a nanosecond younger
+# is in. Per identity:
+#
+#   `e`  re-asserted exactly W after its first sample -> the window is empty:
+#        `edge_count` (count == 0) and `edge_mean` (mean is null) fire
+#   `i`  re-asserted W - 1 ns after its first sample  -> still one sample:
+#        `inside_count` (count == 1) fires
+#
+# The `v > 1.5` guard keeps the first, cold, asserts from firing anything.
+use default
+
+schema Reading scope logical:
+    entity_id: String key
+    v: Float mutable
+
+series Reading.v (by: entity_id):
+    mean, count sliding 10_min
+
+rule edge_count:
+    Reading r where r.v > 1.5 and count(r.v) == 0
+->
+    log info "edge_count fired"
+
+rule edge_mean:
+    Reading r where r.v > 1.5 and r.mean is null
+->
+    log info "edge_mean fired"
+
+rule inside_count:
+    Reading r where r.v > 1.5 and count(r.v) == 1
+->
+    log info "inside_count fired"

@@ -1,0 +1,43 @@
+{
+    "id": "LGRA.6.6a",
+    "clauses": ["LCDB.3.2.1", "LCDB.3.3.4"],
+    "category": "adapter",
+    "scenario": "Rule-level cooldown (LGRA.6.6 / RLOW.4.6) suppresses subsequent calls within the cooldown window for the same binding-tuple. Uses TTL schema so each assert is a fresh fact (logical would dedup), `by: t.v` because a `ttl` fact has no declared identity (LCDB.3.3.4), and the same `v` value so the cooldown key matches across activations.",
+    "rules_ds": "schema Trig scope ttl 1_h:\n    v: Int\n\nservice svc.x:\n    \"stub service for conformance\"\n    no response\n\nrule r cooldown 30_s by: t.v:\n    Trig t\n->\n    call svc.x nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            },
+            {
+                "op": "advance",
+                "delta_ns": 1000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Trig",
+                "slots": {
+                    "v": 1
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "expected_calls": [
+            {
+                "service": "svc.x",
+                "correlation": "$r_c0_g0",
+                "body": {}
+            }
+        ]
+    }
+}

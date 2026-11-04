@@ -1,0 +1,22 @@
+{
+    "id": "RFCS.6.7_noop_reassert_recorded",
+    "category": "logical",
+    "scenario": "RFCS.6.7 — a FactAssert records an assert ARRIVING, not a fact entering working memory. The second assert here is a no-op reassertion (same identity, same slots): the WM change is suppressed and the rule does not re-fire, but the assert still arrived from outside and the host still pumped for it, so a SECOND fact_assert must appear on the stream. A recorder hooked at WM commit leaves this event out, and a replayer of that stream is one input short.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "rule_fire_begin",
+            "action_log",
+            "rule_fire_end",
+            "fact_assert"
+        ]
+    }
+}

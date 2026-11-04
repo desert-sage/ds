@@ -1,0 +1,10 @@
+{
+    "id": "LLET.10.6_group_equals_per_line",
+    "category": "compiler",
+    "scenario": "LLET.10.6 — a hanging `let` group is LAYOUT ONLY, so it and the equivalent per-line run must emit the SAME artefact. Drives `dsc_equivalent`: both sources compile, and `test_conformance.m`'s `equivalent_result` compares the two artefacts after `strip_layout` drops the source-position atoms, the one thing the two spellings are ALLOWED to differ in. This fixture pins the meaning rather than the syntax: LGRA.6.7.4_hanging_let_group already proves a group PARSES, and LLET.10.6_forward_ref_in_group proves scope is unchanged, but neither can see a parser that reorders or re-scopes the bindings and still produces a valid program. The bindings form an order-dependent chain (`start` -> `scaled` -> `doubled`), each reading the one before, so a reordering parser either emits a different expression tree here or fails the forward-reference rule outright. The pure `let`s inline into the terminal's action expressions, which is why the handler refuses to compare a DSC carrying no TerminalNode atoms — without the Rete network the comparison would be over headers and schemas alone and would pass for any two programs declaring the same schemas.",
+    "rules_ds": "use default\n\nschema Ev scope ttl 1_h:\n    v: Float\n    ts: Time\n\nrule chain:\n    Ev e\n->\n    let start = e.v\n        scaled = start * 2.0\n        doubled = scaled * 2.0\n    log info \"{doubled}\"\n",
+    "expect": {
+        "kind": "dsc_equivalent",
+        "equivalent_ds": "use default\n\nschema Ev scope ttl 1_h:\n    v: Float\n    ts: Time\n\nrule chain:\n    Ev e\n->\n    let start = e.v\n    let scaled = start * 2.0\n    let doubled = scaled * 2.0\n    log info \"{doubled}\"\n"
+    }
+}

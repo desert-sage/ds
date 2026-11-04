@@ -1,0 +1,9 @@
+{
+    "id": "LCCO.5.6",
+    "category": "compiler",
+    "scenario": "LCCO.5.6: a generated-correlation `call` whose continuation bodies reference only `response.*` compiles; the response is a fact of the service's declared response schema (LCRS.4.3.2). PINS ONLY THAT IT COMPILES: `compile_ok` cannot observe whether the `$CaptureBindings_<outer>_*` schema is emitted, which is what LCCO.5.6 / LCCO.5.2 decide (emitted, with `corr` alone). The clause's tie to this vector is recorded as a gap until an observable vector exists.",
+    "rules_ds": "schema WeatherGetForecastsReply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice weather.get_forecasts:\n    kwarg entity_id: String\n    response WeatherGetForecastsReply\n\nschema TimeOfDay scope ttl 1_min:\n    state: String\n\nrule daily_forecast:\n    TimeOfDay t where t.state == \"18:00\"\n->\n    call weather.get_forecasts entity_id: \"weather.home\" cooldown: 23_h\n        on response.code == 200:\n            log info \"ok\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

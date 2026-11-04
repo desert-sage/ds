@@ -1,0 +1,13 @@
+{
+    "id": "LCDB.7.9_qualified_rule_wide_window",
+    "category": "compiler",
+    "scenario": "LCDB.7.9 — a `cooldown` on a rule whose activation key is empty compiles and raises the warning DS_VALIDATE_RULE_WIDE_RATE_WINDOW, and the schema that contributes no key slot may be a library's: `plant.AmbientTemp` is `logical` with every slot `mutable` (LCDB.3.3.3), reached by a qualified head. The `warning` expectation pins both halves: a refusal fails it, and so does a clean compile. A compiler that reads a qualified head as a schema whose key is unknown keeps the warning off. PATH PINNED: `dsc.validate.contributes_no_key` through `dsc.resolve.lgra_22_4_schema_of` (LCDB.7.9.rule_wide_window is the local case).",
+    "rules_ds": "import plant\n\nrule hot cooldown 5_min:\n    plant.AmbientTemp t where t.celsius > 30.0\n->\n    log info \"hot\"\n",
+    "libraries": {
+        "plant": "schema AmbientTemp scope logical:\n    celsius: Float mutable\n"
+    },
+    "expect": {
+        "kind": "compile_ok",
+        "warning": "DS_VALIDATE_RULE_WIDE_RATE_WINDOW"
+    }
+}

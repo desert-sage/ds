@@ -1,0 +1,32 @@
+{
+    "id": "LDET.2.2b",
+    "category": "runtime",
+    "scenario": "[LDET.2.2b], [NLFC.8.1]: the clone-diverge-compare check. An engine is cloned mid-run, the source and the clone are driven with the same inputs, and their post-clone streams must agree event for event; the source is then freed, and the clone must go on firing. The rule is time-dependent at a pattern index other than 0, so the vector also pins that window: `fresh` emits a `logical` Fresh from `Ping p within 3_s`, and a window that justifies a logical emit stays a join test behind a head-inserted `$ClockTick` (dsc.rete.within_reeval_index), so the tick holds token position 0 and the window reads the join candidate's entry stamp (`ENTRY_STAMP` at the right-fact index, [LTIM.2.8.6]). Pin: set 0; assert Ping a; pump (Fresh a); advance 1 s; pump; CLONE; then on both: assert Ping b; pump (Fresh b); advance 2.5 s, pump (+3.5 s: a has aged out, Fresh a retracts); advance 1 s, pump (+4.5 s: b has aged out, Fresh b retracts); FREE the source; on the clone: assert Ping c; pump (Fresh c). PATHS: libds through `ds_engine_clone` (rete/clone.c's `ds_rete_clone_expr` for the window) and pyds `Engine.clone()`, the streams compared field for field as pyds delivers them (runner.py `_run_clone_determinism`); the Mercury runtime runs the same fields in test_behave.m's `run_clone_determinism`, where a clone is the engine value used twice and agrees by construction, so this vector pins libds and holds Mercury to its counts. A clone that reads the window at pattern 0 reads the tick's entry stamp, which is that pump's sample, so Ping a never ages out in the clone and its stream carries no retraction of Fresh a at +3.5 s.",
+    "rules_ds": "schema Ping scope logical:\n    k: String key\n\nschema Fresh scope logical:\n    k: String key\n\nrule fresh:\n    Ping p within 3_s\n->\n    emit Fresh logical k: p.k\n",
+    "expect": {
+        "kind": "clone_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Ping", "slots": { "k": "a" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "after_clone": [
+            { "op": "assert", "schema": "Ping", "slots": { "k": "b" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2500000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "free": "source",
+        "after_free": [
+            { "op": "assert", "schema": "Ping", "slots": { "k": "c" } },
+            { "op": "pump" }
+        ],
+        "min_events": 6,
+        "min_rule_fires": 1,
+        "min_rule_fires_after_free": 1
+    }
+}

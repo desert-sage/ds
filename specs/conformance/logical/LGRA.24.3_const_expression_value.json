@@ -1,0 +1,13 @@
+{
+    "id": "LGRA.24.3_const_expression_value",
+    "category": "logical",
+    "scenario": "[LGRA.24.2]: a fact item's value may be the name of a `const`, and [LGRA.13.3] / [LEXP.8.8] have every `const` fold to a compile-time value, an expression included. `LIMIT` is `BASE * 2 - 38` over `const BASE = 40`; the block places one `Cfg` whose `v` is `LIMIT`, and the rule logs it. Pin: `limit 42`, the folded value. A compiler that folds only a `const` whose value is a literal refuses the program with DS_VALIDATE_INITIAL_NOT_CONST, and one that carried the expression unfolded has no `TestSlotLiteral` to write. PATH PINNED: the compiler's `dsc.dstest.ltsl_4_1_fold`, reached through `ltsl_4_1_constant`'s `const` branch, writing the IFCT slot literal, then each runtime's application of that IFCT at the first step, here the pump.",
+    "rules_ds": "const BASE = 40\nconst LIMIT = BASE * 2 - 38\n\nschema Cfg scope explicit:\n    v: Int\n\ninitial:\n    Cfg v: LIMIT\n\nrule r:\n    Cfg c\n->\n    log info \"limit {c.v}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["limit 42"]
+    }
+}

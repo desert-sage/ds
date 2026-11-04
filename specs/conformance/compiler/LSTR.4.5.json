@@ -1,0 +1,10 @@
+{
+    "id": "LSTR.4.5",
+    "category": "compiler",
+    "scenario": "No implicit String/Bytes conversion per LSTR.4.5. The two are distinct types; conversion requires explicit `encode` / `decode`. Pin: comparing a `String` slot to a `Bytes` slot via `==` rejects with DS_VALIDATE_TYPE_MISMATCH naming both types.",
+    "rules_ds": "schema Mixed scope logical:\n    entity_id: String key\n    text: String mutable\n    raw: Bytes mutable\n\nrule trig:\n    Mixed m where m.text == m.raw\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

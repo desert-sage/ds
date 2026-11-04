@@ -1,0 +1,290 @@
+{
+  "id": "RFCS.19.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.19",
+  "seq": 923,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[RFCS.19.1] The framing is two levels and both are protobuf. A container is a\n`Dsc` or a `Stream`, each declared `repeated Atom atoms = 1`\n(`proto/atom.proto#Dsc`, `proto/atom.proto#Stream`). So the unit repeated on the wire is\nthe **outer frame** — `[0x0A][varint len][Atom]`, the field-1 tag of the container message\n— and the **inner** `Atom` is itself `[tag][varint len][body]`, where that tag is the\natom's oneof field number and carries its identity ([RFCS.16.1]).\n\n```ebnf\ncontainer   = { frame } ;                  (* Dsc or Stream; type from the first atom *)\nframe       = outer_tag , varint_len , atom ;\nouter_tag   = %x0A ;                       (* field 1, wire type 2 *)\natom        = oneof_tag , varint_len , body ;\noneof_tag   = ?varint of (field_number << 3 | 2)? ;\n```\n\n**Residue the grammar cannot carry ([STYL.2.15.4]):** the band and tag-width rules of\n[RFCS.16.2] and [RFCS.16.4] are about `oneof_tag`, the **inner** tag — not `outer_tag`, which is one byte for every\natom regardless of band. A partial trailing `frame` is EOF ([RFCS.19.2]); the productions\ncannot say that. And the container's *type* is not in the grammar at all: it is the first\natom's field number ([RFCS.19.4]).\n\n",
+  "refs": [
+    "RFCS.16.1",
+    "RFCS.16.2",
+    "RFCS.16.4",
+    "RFCS.19.2",
+    "RFCS.19.4"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "Rfcs_19_1__frame",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One decoded frame: the atom's identity and its body. `identity` is the INNER tag's field number, which [RFCS.16.1] makes the atom's identity -- not a magic string, not a position."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "Rfcs_19_1__walk",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "How a container walk ended: Complete, EndedEarly with the byte count it left, or Malformed. EndedEarly carries that count because an incremental reader needs it to resume and a whole-buffer caller needs it to know the slice was wrong."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_1__empty_container_is_complete",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An empty container is Complete with no frames, not truncated. Zero frames is a container that ENDED and a partial frame is one that did not -- the same absent-versus-empty distinction the wire layer refuses to blur about 0x00."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_1__frame",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One frame: outer tag, length, atom. The atom is decoded from the FRAME'S OWN PAYLOAD rather than from the remaining input, which is what makes the two levels two: a frame's length bounds its atom, so a lying inner length cannot reach past the frame into the next one. The inner tag's wire type is required to be LEN, which the grammar states literally -- `oneof_tag = ?varint of (field_number << 3 | 2)?`."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_1__outer_tag",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "%x0A -- field 1, wire type LEN. A value rather than an inlined constant because this clause's residue note turns on it: the band and tag-width rules of [RFCS.16.2] / [RFCS.16.4] are about the INNER tag, \"not `outer_tag`, which is one byte for every atom regardless of band\"."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_1__walk",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`container = { frame }`, under a stated truncation policy."
+      },
+      {
+        "path": "formal/idris/Protobuf/Framing.idr",
+        "name": "rfcs_19_1__walk_go",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The walk loop. Fuel is bounded by the input length and is not a safety net: one frame costs at least one byte, so the byte count is an EXACT upper bound on frame count, and exhausting it means the decoder is wrong rather than the input being large."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "Rfcs_19_1__field",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A field: its number, and its value as the wire gave it."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "Rfcs_19_1__field_value",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A field's raw value in the shape its wire type gives it. NOT interpreted: a VARINT payload might be an int64, a bool, an enum or a ZigZag sint, and the wire cannot tell -- only the .proto can. Decoding stops exactly where the schema would have to be consulted, which is what makes this reusable for every atom body rather than for one."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__empty_body_has_no_fields",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "An empty body has no fields, not a truncated one."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__field",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Read one field, dispatching on wire type. THIS IS WHAT MAKES UNKNOWN FIELDS SKIPPABLE, which the guide gives as the reason wire types exist: a reader that does not know field 47 can still step over it, because the wire type says how long it is without saying what it means. Groups are REFUSED rather than skipped -- proto3 cannot declare one, so no conforming producer emits one, and supporting them would mean nesting-and-matching logic nothing in this corpus can exercise."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__fields",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "Every field in a body, IN ORDER. Order is preserved because two protobuf rules depend on it -- a repeated field concatenates its appearances and a non-repeated one keeps the last -- and returning a map would silently decide both."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__fields_go",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The field loop. Fuel is the byte count and is an exact bound: a field costs at least one byte for its tag."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__last_field",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The LAST field with a given number, which is the value a parser must use: \"if the same field appears multiple times, the parser accepts the last value it sees\". Written as a fold so the rule is visible in the code rather than hidden in a list reversal."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__last_oneof",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Last-wins ACROSS the several field numbers a oneof spans, which is a different rule from `rfcs_19_1__last_field`'s last-wins WITHIN one number: \"if the parser encounters multiple members of the same oneof on the wire, only the last member seen is used\". PARAMETERISED BY THE RECOGNISER rather than written per message: protobuf's rule outlives any one schema, so it is stated once, here."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__lookup_in_empty",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Looking up a field in nothing finds nothing, for every field number."
+      },
+      {
+        "path": "formal/idris/Protobuf/Message.idr",
+        "name": "rfcs_19_1__no_body_sets_no_member",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An empty body sets no member of any oneof, quantified over the recogniser -- so it is the BODY that is empty rather than one schema failing to find itself in it."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "Rfcs_19_1__decoded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A decode yields a value and the bytes after it, or refuses. Carrying the remainder is what makes termination provable: every step returns a suffix, so a caller recursing on it recurses on something structurally smaller. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "Rfcs_19_1__refusal",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Why a decode stopped. THREE OF THE FIVE are cases Google's specification does not rule on -- overlong varint, truncated input, field number out of range -- and naming them separately is what makes those choices auditable rather than accidental. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "Rfcs_19_1__tag",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A decoded tag: field number and wire type. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "Rfcs_19_1__wire_type",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The six wire types, quoted from the encoding guide's table. Codes 6 and 7 are unassigned and reachable from arbitrary bytes, which is why decoding a tag can refuse rather than being total into this type. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__empty_is_truncated",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The empty input is TRUNCATED, not zero. Distinguishing those is the whole difference between a decoder and a guess: proto3 omits a zero-valued scalar entirely, so \"no bytes\" and \"a byte encoding 0\" are different facts about the message."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__len_payload",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "\"The LEN wire type has a dynamic length, specified by a varint immediately after the tag.\" Used identically by string, bytes, submessages and packed repeated fields. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__max_field_number",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "536,870,911. proto3: \"You must give each field in your message definition a number between 1 and 536,870,911\". Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__tag",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Tag decoding by division rather than shifts, so the field number cannot be silently truncated by the type it is computed in. Field 0 and anything above the maximum are refused; reserved numbers 19,000-19,999 are ACCEPTED, because that restriction binds what a .proto may declare and not what may travel on the wire. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__take",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Take exactly n bytes or refuse as truncated -- the building block for LEN payloads and the two fixed-width wire types. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__take_zero_is_identity",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Taking nothing consumes nothing and refuses nothing, for every input. Quantified rather than shown on an example, which is the distinction this module draws throughout: a theorem holds for all inputs, a worked example holds for one and is RUN by Main.idr."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__unzigzag",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ZigZag decoded by inverting the guide's STATEMENT of the mapping rather than its shift formula: the shift formula is width-dependent and the statement is not, and only one of them is true for every width. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__varint",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Base-128 varint. Ten bytes is the ceiling the guide states; an eleventh is refused rather than silently truncated to 64 bits, which is what a machine-word implementation does by accident. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__varint_go",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The varint loop, top-level rather than a `where` clause -- a where-bound helper is lifted with its scope captured and does not reduce during typechecking, which is the difference between a decoder one can state theorems about and one that merely runs. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__wire_code",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A wire type's numeric code, the inverse of wire_type_of. Total in this direction unlike the decode: every wire type has a code, but not every code is a wire type. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      },
+      {
+        "path": "formal/idris/Protobuf/Wire.idr",
+        "name": "rfcs_19_1__wire_type_of",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The wire type in a tag's low three bits, as a refusal rather than a total function -- mapping an unassigned code onto a real wire type would let malformed input parse as something. Protobuf wire mechanics, written from Google's specification rather than from memory of it. All four productions of this clause's grammar -- container, frame, atom, oneof_tag -- are implemented between Protobuf/Wire.idr and Protobuf/Framing.idr, and 37 worked examples run against them."
+      }
+    ],
+    "proto": [
+      {
+        "path": "proto/atom.proto",
+        "name": "Dsc",
+        "tag": "spec"
+      },
+      {
+        "path": "proto/atom.proto",
+        "name": "Stream",
+        "tag": "spec"
+      }
+    ]
+  }
+}

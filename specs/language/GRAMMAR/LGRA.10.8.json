@@ -1,0 +1,18 @@
+{
+  "id": "LGRA.10.8",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.10",
+  "seq": 10000098,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": null,
+  "text": "[LGRA.10.8] **An action's indented block.** An `emit`, `publish` or `call`\naction may continue on indented lines under its head line. No other action\nmay: under `log`, `cache`, `cache_delete` or `withdraw` an indented block is a\nsyntax error, and the compiler must refuse it.\n\n```\naction_block    ::= INDENT block_line+ DEDENT\n\nblock_line      ::= action_arg+ NEWLINE                 # emit, publish, call\n                 |  call_as NEWLINE                     # call only ([LGRA.10.1])\n                 |  continuation                        # call only ([LCCO.2.1])\n```\n\n`action_block` follows [LGRA.10.1]'s `action` and `call_action` productions,\nwhose head line may carry arguments of its own.\n\nWhat the productions do not say:\n\n- Argument lines and continuations may come in any order.\n- A `call` holds at most one `as`, its correlation ([LRST.1.1]): one `as` line\n  in its block, or the `call_as` on its head line, and not both. After an `as`\n  line the block holds only continuations ([LCRS.6.2.3]).\n- **The block is layout and nothing else**, as [LGRA.6.7.4] says of `let`. The\n  compiler must compile an action whose arguments are spread over block lines\n  exactly as the action with the same arguments, in the order they are\n  written, head line first, all on its head line; and an `as` line exactly as\n  the same `as` clause at the end of the head line. Interleaving argument lines\n  with continuations changes neither the arguments nor the continuations'\n  order.\n\n",
+  "refs": [
+    "LCCO.2.1",
+    "LCRS.6.2.3",
+    "LGRA.10.1",
+    "LGRA.6.7.4",
+    "LRST.1.1"
+  ]
+}

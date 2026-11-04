@@ -1,0 +1,53 @@
+{
+  "id": "LDET.5.4",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 587,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "1. [LDET.5.4] **The terminal ordinal — the first key, and it is source\n   order.** Each rule is assigned a zero-based ordinal from the order its\n   terminal appears in the compiled artefact, which `[RLOW.14.3]` requires\n   to be canonical source order: within a file, the rule written first;\n   across files, **import-DAG topological order, leaf libraries first**.\n\n   Import-DAG rather than lexicographic-by-path because a path-based rule\n   moves when a file is renamed, and because a library's rules are already\n   loaded before its importer's — the DAG order is the one the compiler\n   has, not one it would have to reconstruct.\n\n   **This is spatial author intent** ([LDET.5.7.3]) and it is the reason\n   the order is spec-defined rather than implementation-defined\n   ([LTES.12.9]): a firing order that fell out of when matches happened to\n   complete would depend on propagation internals, which is precisely what\n   that clause forbids.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_4__ordinal",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_4__ordinal_injective",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_order.als",
+        "name": "ldet_5_4__source_order_dominates",
+        "tag": "spec"
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_1__select_next",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The outer key is the rule's position in source order; nothing else separates two rules."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__select_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Both engines select the lowest ordinal with a pending activation: the first key, source order, on both sides."
+      }
+    ]
+  },
+  "refs": [
+    "RLOW.14.3",
+    "LDET.5.7.3",
+    "LTES.12.9"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+    "id": "LSER.10.9_direction_newest_pair",
+    "category": "logical",
+    "scenario": "LSER.10.9: `direction` is the sign of newest - previous over the two newest samples in the window, decided by comparison, and `null` with fewer than two. Drives the companion read `s.direction` of a `sliding` declaration -- the compiler routes it to the raw-sample backing (SeriesBackendRingBuffer) -- into libds's `ds_series_ring_buffer_direction` and Mercury's `aggregate(agg_direction)`. A `ttl` schema, so an equal value is still a sample (LSER.7.6.3). Row k: 10, 30, 20, 20, then a fifth assert; reads pre-sample (LSER.8.6.1): cold, then [10] null (no log), [10, 30] +1, [10, 30, 20] -1 (the newest pair falls, where the sign of rate first-to-last is +1), [10, 30, 20, 20] 0. Row w: -1, INT64_MAX, then a third assert; [-1, INT64_MAX] reads +1. THE `where` READS A SERIES, SO IT IS RE-READ EVERY PUMP ([LTIM.2.4.1]) and each live fact fires once, on the pump its condition first holds ([LTIM.2.5.1]): the two k facts before the third read +1 with it, so `k 1` logs three times, and the two w facts before the third likewise log `w 1`. A fact that has fired does not fire again while its direction stays non-null, whatever its value.",
+    "rules_ds": "use default\n\nschema Sample scope ttl 1_d:\n    dev: String\n    level: Int\n\nseries Sample.level (by: dev):\n    direction sliding 1_h\n\nrule r:\n    Sample s where s.direction is not null\n->\n    log info \"{s.dev} {s.direction}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 10 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 30 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 20 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "k", "level": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "w", "level": -1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "w", "level": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Sample", "slots": { "dev": "w", "level": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["k 1", "k 1", "k 1", "k -1", "k 0", "w 1", "w 1", "w 1"]
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LCCO.5.6_computed_as_capture_corr_alone",
+    "clauses": ["LCCO.5.2"],
+    "category": "logical",
+    "scenario": "[LCCO.5.6] / [LCCO.5.2]: a call whose `as` is computed from the firing (`as q.id`) gets the capture fact even when its continuation body reads no parent binding, with the `corr` slot alone, because the correlation is per activation and the fact is what carries it to the siblings. Two `Req` facts fire the rule twice, so two calls go out correlated \"a\" and \"b\"; a response for each arrives, and each `on` sibling fires once, joined to its own capture on `corr` -- two log lines. A sibling joined on anything coarser would fire for both captures per response, four lines; a compiler that refuses the shape does not compile the program. PATH PINNED: `dsc.rete`'s `needs_capture_fact` for a computed `as` with no captures, through `capture_emit` and the sibling's capture join.",
+    "rules_ds": "schema GetReply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.get:\n    kwarg k: Int\n    response GetReply\n\nschema Req scope logical:\n    id: String key\n\nrule r:\n    Req q\n->\n    call svc.get k: 1 cooldown: 1_min as q.id\n        on response.ok == true:\n            log info \"got\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Req", "slots": { "id": "a" } },
+            { "op": "assert", "schema": "Req", "slots": { "id": "b" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "GetReply", "slots": { "corr": "a", "ok": true } },
+            { "op": "assert", "schema": "GetReply", "slots": { "corr": "b", "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "got",
+            "got"
+        ]
+    }
+}

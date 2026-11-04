@@ -1,0 +1,11 @@
+{
+    "id": "LGRA.23.2_time_default_refused",
+    "clauses": ["LGRA.23.2"],
+    "category": "compiler",
+    "scenario": "[LGRA.23.2]: a `Time` kwarg takes no `default`, as no kwarg of a builtin type other than `Int`, `Float`, `String` or `Bool` does. `kwarg t: Time default 0` is refused with DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE, though `0` is a number a `Time` is stored as. `LGRA.23.2_bytes_default_refused` is the same rule on a `Bytes` kwarg with a String literal. PATH PINNED: `lgra_23_2_default_misfit`'s `te_builtin(_)` arm for a type that is not one of the four, in dsc.validate. Without that arm the program compiles.",
+    "rules_ds": "service svc.foo:\n    kwarg t: Time default 0\n    no response\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_SERVICE_KWARG_DEFAULT_TYPE"
+    }
+}

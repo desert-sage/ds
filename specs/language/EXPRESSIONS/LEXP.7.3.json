@@ -1,0 +1,71 @@
+{
+  "id": "LEXP.7.3",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 414,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.3] Any operand `Float` → result `Float`. `Int` operands promote\n  automatically.\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_float",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An Int to the right of a Float in a comparison promotes to a Float first."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "iret_7_5__cmp_int",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An Int to the left of a Float in a comparison promotes to a Float first."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "With a Float operand the result is a Float, computed in IEEE binary64: + - * / directly, // and % by [LEXP.7.5] / [LEXP.7.6]'s compositions."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__float_right",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An Int to the right of a Float in arithmetic promotes to a Float first; the result is a Float."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_3__promote",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "The promotion itself: an Int to the nearest binary64, ties to even, by Idris's `cast` (Chez's exact->inexact). That the rounding is to nearest even is the runtime's and the clause's reading of [LDET.3.6.1]; run on 2^53 + 1 in Main.idr, not proved."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_4__div_of_ints",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "`/` on two Ints with a nonzero divisor is the Float quotient of their promotions, for every such pair."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lnul_4_1__arith",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A Float on either side of an arithmetic operator promotes the other operand; the result is a Float."
+      }
+    ]
+  }
+}

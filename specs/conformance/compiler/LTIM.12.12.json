@@ -1,0 +1,8 @@
+{
+    "id": "LTIM.12.12",
+    "clauses": ["LTIM.4.1.1", "LTIM.5.1"],
+    "category": "compiler",
+    "scenario": "[LTIM.4.1.1] / [LTIM.5.1] (LTIM.12.12, the id, is a tombstone): `Time - Time` is a `Duration`, and `<` is defined for `Duration`, so `(now() - e.fired_at) < 5_min` compiles. What the subtraction computes, saturation included, is logical/LTIM.4.1.1_*'s.",
+    "rules_ds": "schema Event scope logical:\n    entity_id: String key\n    fired_at: Time mutable\n\nrule r:\n    Event e where (now() - e.fired_at) < 5_min\n->\n    log info \"recent event\"\n",
+    "expect": { "kind": "compile_ok" }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LNUL.4.4b",
+    "category": "compiler",
+    "scenario": "[LNUL.4.4] — the LEFT operand position: `null != s.state` is refused with DS_VALIDATE_NULL_LITERAL_COMPARISON. A right-only refusal is evaded by swapping the operands, so the check reads both positions and this pins the half a one-sided implementation drops. PATH PINNED: the check's left-operand arm; without it `LNUL.4.4a` passes and this fails.",
+    "rules_ds": "schema Sensor scope logical:\n    entity_id: String key\n    state: Float? mutable\n\nrule offline:\n    Sensor s where null != s.state\n->\n    log warning \"reading present\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULL_LITERAL_COMPARISON"
+    }
+}

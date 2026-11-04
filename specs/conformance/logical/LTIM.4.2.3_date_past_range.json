@@ -1,0 +1,19 @@
+{
+    "id": "LTIM.4.2.3_date_past_range",
+    "clauses": ["LTIM.4.2.3", "LTIM.1.2.2"],
+    "category": "logical",
+    "scenario": "[LTIM.4.2.3]: a result outside its type's range raises a ComputationError of kind NOT_REPRESENTABLE ([LERR.1.4.10]), never a wrap, and the engine continues. Rule `handler` logs each ComputationError's kind and rule ([LERR.9.1]). Pump 1: a Visit on 2262-04-11 (day 106751, [LTIM.1.2.2]'s last): rule `up` computes `v.due + 1_d`. Pump 2: a Visit on 1677-09-22 (day -106751, the first): rule `down` computes `v.due - 1_d`. Pump 3: a Pair with those two days: rule `wide` computes `p.a - p.b`, 213 502 days, whose nanoseconds pass int64. Each rule renders its result through `::String` and logs it, so a result that wrapped or stayed unchecked would log. Messages: `NOT_REPRESENTABLE up`, `NOT_REPRESENTABLE down`, `NOT_REPRESENTABLE wide`. PATH PINNED: the range checks in FN_DATE_ADD_DURATION, FN_DATE_SUB_DURATION and FN_DATE_DIFF in libds (`rete/adapters.c`) and Mercury (`ds.eval`), through `ds_date_days_in_range` and `ltim_1_2_2_date_in_range`.",
+    "rules_ds": "schema Visit scope logical:\n    id: Int key\n    due: Date mutable\n\nschema Pair scope logical:\n    id: Int key\n    a: Date mutable\n    b: Date mutable\n\nrule up:\n    Visit v where v.id == 1\n->\n    let a = (v.due + 1_d)::String\n    log info \"up {a}\"\n\nrule down:\n    Visit v where v.id == 2\n->\n    let b = (v.due - 1_d)::String\n    log info \"down {b}\"\n\nrule wide:\n    Pair p\n->\n    let w = (p.a - p.b)::String\n    log info \"wide {w}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Visit", "slots": { "id": 1, "due": 106751 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Visit", "slots": { "id": 2, "due": -106751 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Pair", "slots": { "id": 1, "a": 106751, "b": -106751 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE up", "NOT_REPRESENTABLE down", "NOT_REPRESENTABLE wide"]
+    }
+}

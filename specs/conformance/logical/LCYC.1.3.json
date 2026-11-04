@@ -1,0 +1,15 @@
+{
+    "id": "LCYC.1.3",
+    "category": "logical",
+    "scenario": "No loops per LCYC.1.3 — DS has no loop construct; repetition can only occur through rule re-firing driven by new facts. Pin: a single assert + pump causes the rule to fire exactly once; without new facts, no re-fire occurs.",
+    "rules_ds": "schema Once scope logical:\n    v: Int key\n\nrule single_fire:\n    Once\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Once", "slots": { "v": 1 } },
+            { "op": "pump" },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["single_fire"]
+    }
+}

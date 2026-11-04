@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.13.11_fx_pair",
+    "category": "compiler",
+    "scenario": "LUNI.13.11: a `unit fx_pair` declaration is refused with DS_VALIDATE_FINANCE_DEFERRED at the declaration. The source is the deferred LUNI.4.6_fx_pair_ok's, which compiled before; the currency dimensions it declares are ordinary unit dimensions and are not refused on their own. PATH PINNED: the compiler's finance refusal at the fx_pair declaration.",
+    "rules_ds": "unit dimension currency_usd  storage int64  base USD_cent\nunit USD_cent: currency_usd\nunit dimension currency_eur  storage int64  base EUR_cent\nunit EUR_cent: currency_eur\n\nschema FxRate scope ttl 1_h:\n    base_code:  String\n    quote_code: String\n    rate_num: Int\n    rate_den: Int\n\nunit fx_pair USD_to_EUR: currency_usd to currency_eur\n    via FxRate where base_code == \"USD\" and quote_code == \"EUR\"\n    field rate_num / rate_den\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_FINANCE_DEFERRED"
+    }
+}

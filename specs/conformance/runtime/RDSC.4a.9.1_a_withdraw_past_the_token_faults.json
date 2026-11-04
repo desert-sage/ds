@@ -1,0 +1,20 @@
+{
+    "id": "RDSC.4a.9.1_a_withdraw_past_the_token_faults",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.1] with [RARC.5.3.3]: an `Action.withdraw_pattern_index` within its field's range that names no pattern of the terminal's token is not refused at load; where the engine runs the `withdraw`, it raises an EngineError with fault ENGINE_FAULT_PATTERN_INDEX, naming the rule, and halts the tier. The engine must not drop the `withdraw`. The harness compiles rule `r`, `Job j -> withdraw j`, whose network is `Job`'s alpha (node 1), its beta (2) and the terminal (3), whose one action withdraws pattern 0. `runtime_error`'s `tamper: {set_field: {node: 3, path: [6, 0, 6], value: 1}}` ([RCTS.1.2.21]) writes that action's `withdraw_pattern_index` as 1: the token holds one fact, so 1 names no pattern. The artefact must load. Input 0 asserts a `Job` and is accepted; input 1 pumps, `r` fires, and its `withdraw` reads the position: the pump returns DS_ERR_ENGINE_HALTED (-10) ([NCBK.2.9]), the stream's fault events are exactly one `engine_error`, its last event, and the halt latch holds PATTERN_INDEX. What it discriminates: a runtime that drops the `withdraw` raises nothing; one that withdraws the token's last fact instead raises nothing and withdraws the `Job`; one that halts with ARTEFACT_LIED fails `halted_fault`. The rule the EngineError names is not observed by this kind; libds's `test_rdsc_4a_9_1__withdraw_past_the_token` and test_ds's `test_rdsc_4a_9_1_index_faults` pin it. PATHS: libds's `eval_actions` WITHDRAW arm, through pyds; the Mercury runtime's `ds.exec` withdraw arm, through test_behave.m's `field_set` and `run_runtime_error`.",
+    "rules_ds": "use default\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    withdraw j\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 3, "path": [6, 0, 6], "value": 1}},
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "PATTERN_INDEX"
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "LLOG.11.9",
+  "prefix": "LLOG",
+  "doc": "LOGICAL_FACTS.md",
+  "parent": "LLOG.11",
+  "seq": 408,
+  "depth": 2,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "- [LLOG.11.9] **A `logical` emit whose activation ends inside its own\n  firing is a compile error** (`DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING`).\n  The body of an `after` clause is such a place, and the compiler must\n  refuse a `logical` emit there: the body runs in the follow-up rule, which\n  matches the timer fact and retracts it ([LTAC.3.4]). The timer is that\n  rule's only pattern, so the match is gone before the firing ends.\n\n  **So is a rule's RHS after a `withdraw` of one of its bindings.** `withdraw b` removes a fact the activation matched\n  ([LSCO.4.5.9]), so the match is gone from that action on. The compiler must\n  refuse a `logical` emit that follows a `withdraw` in the same RHS, at the\n  emit, naming the `withdraw`. An emit before the `withdraw` is not refused:\n  its fact is justified while the match holds, and the `withdraw` ends that\n  justification ([LLOG.15.1]). A body nested in a later action is not this\n  RHS. It runs in a rule of its own, a continuation rule ([LCCO.5.2]) or an\n  `after` follow-up, and the `withdraw` does not end that rule's match;\n  [LGRA.10.1.3] says what such a body may read.\n\n  **So is a rule's RHS from an emit that replaces a fact the activation\n  matched.** Take an emit of schema `X` where the\n  rule binds `b` to a positive `X` pattern, every identity-key slot of the emit\n  ([LFAC.1.7]) is the same slot of `b` (`id: b.id`), and some other slot of the\n  emit is a literal that differs from the literal the pattern requires of that\n  slot, as [LCYC.6.1.2] compares them. That emit is a meaningful change to\n  `b`'s fact and replaces it ([LFAC.2.5.3]), so the match is gone from that\n  action on, as after `withdraw b`. The compiler must refuse such an emit when\n  it is `logical`, and a `logical` emit that follows such an emit in the same\n  RHS, at the emit, naming the one that replaced the fact. A replacement that\n  only run-time values decide is not refused here; [LLOG.15.1] governs it.\n\n  A fact emitted in any of these places is withdrawn as it is made: the activation that\n  justified it has ended, so justification withdrawal retracts it in the\n  same firing ([LLOG.15.1]). Accepting the program would give an author a\n  fact that never exists, or — on a runtime that skipped the withdrawal —\n  one that no live activation supports and nothing ever retracts.\n\n  **What the author writes instead.** A plain `emit` is not the answer: a\n  plain emit requires a `ttl` schema ([LFAC.1.3.1]), and `emit X logical`\n  requires `X` to be declared `logical` ([LLOG.11.1]), so the choice is\n  between the two lifetimes rather than between two spellings of one. The\n  derived fact is expressed by emitting a `ttl` fact from the deferred body\n  and joining it to the condition that should keep the logical fact alive:\n  a second rule matching both emits the `logical` fact, and its justifying\n  activation is that rule's, which lives exactly as long as the join holds.\n  After a `withdraw`, the fact the author wants is likewise a `ttl` or\n  `explicit` fact, or a `logical` fact that another rule's join justifies.\n\n",
+  "refs": [
+    "LCCO.5.2",
+    "LCYC.6.1.2",
+    "LFAC.1.3.1",
+    "LFAC.1.7",
+    "LFAC.2.5.3",
+    "LGRA.10.1.3",
+    "LLOG.11.1",
+    "LLOG.15.1",
+    "LSCO.4.5.9",
+    "LTAC.3.4"
+  ],
+  "errors": [
+    "DS_VALIDATE_LOGICAL_EMIT_SELF_ENDING"
+  ]
+}

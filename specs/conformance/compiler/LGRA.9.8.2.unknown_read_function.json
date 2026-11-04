@@ -1,0 +1,10 @@
+{
+    "id": "LGRA.9.8.2.unknown_read_function",
+    "category": "compiler",
+    "scenario": "`cached(key)` is the only read function ([LGRA.9.8.2]), so a `let` RHS naming any other read function is refused by the closed built-in set ([LGRA.9.8.11]) with DS_VALIDATE_UNKNOWN_FUNCTION. Drives the built-in-name resolution path in the validator, not the schema-resolution path: the argument names a declared schema, so a reject on schema grounds would mean the case never reached the check it is named for. Pin: `let r = latest(Event)` rejects with DS_VALIDATE_UNKNOWN_FUNCTION.",
+    "rules_ds": "schema Event scope logical:\n    v: Int key\n\nrule r:\n    Event\n->\n    let r = latest(Event)\n    log info \"ok\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_FUNCTION"
+    }
+}

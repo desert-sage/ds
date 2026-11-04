@@ -1,0 +1,19 @@
+{
+  "id": "IRET.12.2_cascade_past_sixteen_justified_facts",
+  "clauses": ["LLOG.15.1", "RARC.5.2.5"],
+  "category": "logical",
+  "scenario": "[IRET.12.2]: when an activation ends, every `logical` fact whose last justification it was is retracted, and a retraction that ends another activation withdraws that one's facts too, inside the first withdrawal. Rule `make` on Trig emits seventeen `logical` F facts, one more than an activation's inline justification list holds, so the first withdrawal walks an array of seventeen ids. Rule `chain` on F 1, the first of them, emits two `logical` G facts. Retracting Trig ends `make`'s activation; retracting F 1, the first id walked, ends `chain`'s activation, whose withdrawal runs nested and must not disturb the seventeen ids still being walked. Expect every derived fact gone: fact_count 0. A runtime whose nested withdrawal reuses the outer walk's buffer overwrites its next two ids with G's, finds those facts already gone, and skips F 2 and F 3, which stay with no justifier: fact_count 2. PATH PINNED: libds `withdraw_justification` (rete/terminal.c) over `ds_tms_withdraw`'s owned array above DS_TMS_INLINE; the Mercury runtime's `ds.engine.end_justifications`, which has no shared buffer.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema F scope logical:\n    i: Int key\n\nschema G scope logical:\n    k: Int key\n\nrule make:\n    Trig\n->\n    emit F logical i: 1\n    emit F logical i: 2\n    emit F logical i: 3\n    emit F logical i: 4\n    emit F logical i: 5\n    emit F logical i: 6\n    emit F logical i: 7\n    emit F logical i: 8\n    emit F logical i: 9\n    emit F logical i: 10\n    emit F logical i: 11\n    emit F logical i: 12\n    emit F logical i: 13\n    emit F logical i: 14\n    emit F logical i: 15\n    emit F logical i: 16\n    emit F logical i: 17\n\nrule chain:\n    F f where f.i == 1\n->\n    emit G logical k: 1\n    emit G logical k: 2\n",
+  "expect": {
+    "kind": "introspection_assert",
+    "steps": [
+      { "op": "assert", "schema": "Trig", "slots": { "v": 1 }, "as": "t" },
+      { "op": "pump" },
+      { "op": "retract", "label": "t" },
+      { "op": "pump" }
+    ],
+    "checks": [
+      { "surface": "fact_count", "equals": 0 }
+    ]
+  }
+}

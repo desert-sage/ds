@@ -1,0 +1,85 @@
+{
+  "id": "LFAC.1.7.2",
+  "prefix": "LFAC",
+  "doc": "FACT_MODEL.md",
+  "parent": "LFAC.1.7",
+  "seq": 105,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LFAC.1.7.2] One rule covers the whole range: **two assertions\nwith the same key values are the same fact — the later one\nsupersedes the earlier, its payload replacing the prior.** The\nwidth of the key selects the behaviour:\n\n- key = ∅ (every slot `mutable`) — a **singleton**: one live\n  fact, latest payload wins.\n- key = one slot — **entity-state**: one live fact per entity.\n- key = several slots — a **composite key**.\n- key = all slots (every slot `key`, no payload) — a\n  **relation**: distinct tuples coexist and identical tuples\n  coalesce. This is the key-all case of [LLOG.2.7].\n\nA schema of one slot, marked `key`, is both the second case and the last. They\nare one behaviour there: one live fact per key value, which a reassertion\ncoalesces.\n\n",
+  "refs": [
+    "LLOG.2.7"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Lscp_1_3__lifecycle",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`Relation` is the clause's key = all slots case (identical tuples coalesce, distinct coexist), `Entity` its key = one slot case (latest payload wins, one live fact per key). The singleton (key = ∅) and composite-key cases are entity-state with a constant or a tupled key and have no separate constructor."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lfac_1_7_2__singleton",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_actions",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_events",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "Lnls_3_3__keyless_wm",
+        "tag": "spec",
+        "role": "definition"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lfac_1_7_2__one_live",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ONE LIVE FACT: two live facts of a singleton kind are one fact, from one live fact per key ([LFAC.1.2.2])."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_3_3__singleton_pins",
+        "tag": "derives",
+        "role": "lemma"
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "lnls_5_1__j_max_1_singleton_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven"
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/lfac.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ],
+    "souffle": [
+      {
+        "path": "formal/souffle/prelude.dl",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

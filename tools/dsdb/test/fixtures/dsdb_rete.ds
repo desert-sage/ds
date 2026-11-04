@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb's `rete` (DSTRACE_INTERACTIVE §4.13): the section's example, as a
+# program. A join, a `no` pattern, two rules with the same pattern (so the
+# same alpha node, [IRET.6.6]), and a rule with a docstring and a `where`
+# written over several lines ([LGRA.6.5], [LGRA.8.3.5]).
+
+use default
+
+schema DoorEvent scope ttl 60_s:
+    entity_id: String
+    action: String
+
+schema Motion scope ttl 60_s:
+    entity_id: String
+
+schema Ack scope logical:
+    corr: String key
+
+schema Thermometer scope logical:
+    entity_id: String key
+    temperature: Float mutable
+
+schema Entry scope logical:
+    entity_id: String key
+
+schema Heat scope logical:
+    entity_id: String key
+
+rule entry_detected:
+    DoorEvent d where d.action == "opened"
+    Motion m where m.entity_id == d.entity_id
+    no Ack a where a.corr == d.entity_id
+->
+    emit Entry logical entity_id: d.entity_id
+
+rule heat_warning:
+    Thermometer t where t.temperature > 90.0
+->
+    emit Heat logical entity_id: t.entity_id
+
+rule heat_log:
+    Thermometer t where t.temperature > 90.0
+->
+    log info "hot {t.entity_id}"
+
+rule heat_seen:
+    "A reading and the warning it raised."
+    Heat h
+    Thermometer t where (
+        t.entity_id == h.entity_id
+        and t.temperature > 90.0    # the warning's own threshold
+    )
+->
+    log info "seen {h.entity_id}"

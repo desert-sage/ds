@@ -1,0 +1,35 @@
+{
+  "id": "LFST.7.3.6_upsert_cascade_follows_assert",
+  "clauses": ["RFCS.6.7"],
+  "category": "logical",
+  "scenario": "[LFST.7.3.6] / [RFCS.6.7]: a host assert that replaces a keyed fact is the input event, and the truth-maintenance cascade the replacement causes is its effect, so the input's own record comes first. `derive` emits Main(1) logically from Ref(1). Pump 1 derives it. The second host assert gives Ref(1) a new note, which replaces the live Ref(1): the engine records the arriving FactAssert, then the old Ref's withdrawal (SUPERSEDED, RFCS.6.7's upsert pair), then Main(1)'s withdrawal, because Main's only justifier was the old Ref. Pump 2 fires `derive` on the new Ref and Main(1) is derived again. Exactly, strict: pump 1's input and firing; then fact_assert (the new Ref), fact_retract (the old Ref), fact_retract (Main, the cascade); then pump 2's firing. PATH PINNED: libds's host-assert bridge (ds_rete_wm_assert_bridge in wm_rete_bridge.c), which records the FactAssert and the superseded withdrawal and leaves the cascade buffered in engine_assert_body's defer bracket until the assert's records are out; Mercury's `replaced` arm in ds.engine's host_assert_live. The lockstep scenario 94_upsert_cascade (fixture 127_upsert_cascade) holds the two to each other. NOT PINNED HERE: the causes (SUPERSEDED, JUSTIFIER_ENDED); the stream callback's kinds carry none.",
+  "rules_ds": "schema Ref scope logical:\n    id: Int key\n    note: Int mutable\n\nschema Main scope logical:\n    id: Int key\n\nrule derive:\n    Ref r\n->\n    emit Main logical id: r.id\n",
+  "expect": {
+    "kind": "event_sequence_strict",
+    "steps": [
+      { "op": "assert", "schema": "Ref", "slots": { "id": 1, "note": 1 } },
+      { "op": "pump" },
+      { "op": "assert", "schema": "Ref", "slots": { "id": 1, "note": 2 } },
+      { "op": "pump" }
+    ],
+    "expected_kinds": [
+      "tick",
+      "fact_assert",
+      "pump",
+      "rule_lhs_facts",
+      "rule_fire_begin",
+      "fact_assert",
+      "action_emit",
+      "rule_fire_end",
+      "fact_assert",
+      "fact_retract",
+      "fact_retract",
+      "pump",
+      "rule_lhs_facts",
+      "rule_fire_begin",
+      "fact_assert",
+      "action_emit",
+      "rule_fire_end"
+    ]
+  }
+}

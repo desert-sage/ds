@@ -1,0 +1,14 @@
+{
+    "id": "LNUL.8.4.a_failed_parse_raises_no_fault",
+    "category": "logical",
+    "scenario": "The negative half of the failed-parse row, and the one that separates the two arms of the model: a fallible conversion that fails is ABSENCE, so none of the four fault kinds may appear. A runtime that raised a ComputationError here would abandon the activation instead of letting `??` or an `is null` guard handle it.",
+    "rules_ds": "schema S scope logical:\n    entity_id: String key\n    txt: String mutable\n\nrule r:\n    S s where (s.txt::Int?) is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "event_kinds_forbidden",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "entity_id": "a", "txt": "abc" } },
+            { "op": "pump" }
+        ],
+        "forbidden_kinds": ["computation_error", "type_error", "engine_error", "bounds_error"]
+    }
+}

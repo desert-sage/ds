@@ -1,0 +1,26 @@
+{
+    "id": "LDET.6.2.4_no_ftz",
+    "category": "temporal",
+    "scenario": "LDET.6.2.4 — denormal flush-to-zero is not permitted. Arithmetic on the smallest normal double (~2.225e-308) halved produces a denormal (~1.11e-308), which must remain strictly greater than zero. The rule fires only when (p.x * 0.5) > 0.0; if the runtime had FTZ enabled (via -ffast-math or SSE MXCSR.FZ), the multiplication would round the denormal to 0 and the rule would NOT fire. fact_count_after=2 (Probe + Sentinel) proves denormals are preserved.",
+    "rules_ds": "schema Probe scope logical:\n    x: Float key\n\nschema Sentinel scope logical:\n    fired: Bool key\n\nrule denormal_arith:\n    Probe p where (p.x * 0.5) > 0.0\n->\n    emit Sentinel logical fired: true\n",
+    "expect": {
+        "kind": "temporal_sequence",
+        "steps": [
+            {
+                "op": "set",
+                "now_ns": 1000000000
+            },
+            {
+                "op": "assert",
+                "schema": "Probe",
+                "slots": {
+                    "x": 2.2250738585072014e-308
+                }
+            },
+            {
+                "op": "pump"
+            }
+        ],
+        "fact_count_after": 2
+    }
+}

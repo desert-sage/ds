@@ -1,0 +1,57 @@
+{
+  "id": "LEXP.7.4",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.7",
+  "seq": 436,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LEXP.7.4] The `/` **operator** always produces `Float` (Python 3\n  semantics), even on two `Int` values. Two integer *literals*,\n  `INT_LIT / INT_LIT`, are a `Rational` literal — not an application of `/` —\n  reduced at parse time ([LUNI.2.2]); any\n  non-literal operand makes it the `/` operator → `Float`.\n",
+  "refs": [
+    "LUNI.2.2"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_2__int_op",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`/` on two Ints promotes both and yields a Float, where every other Int operator yields an Int. The parse-time Rational literal `INT_LIT / INT_LIT` is the compiler's and not modelled: the evaluator sees the operator alone."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_4__div_of_ints",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "partial",
+        "note": "For every pair of Ints with a nonzero divisor, `/` is the Float quotient of their promotions. The zero divisor is [LEXP.7.15.1]'s trap, stated there; the Rational literal is not modelled."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_4__guarded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`/` on two Ints once the divisor test is decided: the Float quotient, or [LEXP.7.15.1]'s trap on a zero divisor."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lexp_7_4__quotient",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The Float quotient of two Ints: their promotions divided in IEEE arithmetic, the value `/` always produces."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dsexpr.k",
+        "name": null,
+        "tag": "spec"
+      }
+    ]
+  }
+}

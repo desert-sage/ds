@@ -1,0 +1,36 @@
+{
+  "id": "LGRA.22.9_qualified_const",
+  "category": "logical",
+  "scenario": "LGRA.22.9 / LGRA.22.6: `p.NAME` in expression position, where `p` is an imported library's path and no binding is named `p`'s first segment, is the library's constant. Library `plant.limits` declares `const CEILING = 10`. The rule reads `plant.limits.CEILING` in a `where` (`r.v > plant.limits.CEILING`) and in an emit slot (`ceiling: plant.limits.CEILING`), and a second rule logs the emitted fact. Two Readings, `v` 5 and 20: only the second passes, and the emitted `ceiling` is 10. A compiler that read the chain as slot access refuses `plant` as an unknown name; one that typed the constant but did not lower it leaves the rule unlowered (DS_VALIDATE_RULE_NOT_LOWERED); one that inlined the wrong value logs another number. PATH PINNED: `dsc.resolve`'s `lgra_22_9_library_member`, typed by `dsc.typecheck`'s `limp_4_3_2_qualified_const` and inlined by `dsc.rete`'s `ex_slot` arm through `lgra_13_3_const`.",
+  "rules_ds": "import plant.limits\n\nschema Reading scope logical:\n    id: Int key\n    v: Int mutable\n\nschema High scope logical:\n    id: Int key\n    ceiling: Int mutable\n\nrule check_reading:\n    Reading r where r.v > plant.limits.CEILING\n->\n    emit High logical id: r.id ceiling: plant.limits.CEILING\n\nrule report:\n    High h\n->\n    log critical \"high {h.id} {h.ceiling}\"\n",
+  "libraries": {
+    "plant.limits": "const CEILING = 10\n"
+  },
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Reading",
+        "slots": {
+          "id": 1,
+          "v": 5
+        }
+      },
+      {
+        "op": "assert",
+        "schema": "Reading",
+        "slots": {
+          "id": 2,
+          "v": 20
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_messages": [
+      "high 2 10"
+    ]
+  }
+}

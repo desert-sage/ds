@@ -1,0 +1,43 @@
+{
+  "id": "RFCS.16.2",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.16",
+  "seq": 899,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[RFCS.16.2] A field number's **band** fixes the forward-compat disposition a reader\nwith **no table entry** for that number must apply — this is the entire number-encoded\nadjudication surface, exactly **three** dispositions:\n\n| Band | Range | Unknown-number disposition |\n|---|---|---|\n| inject | `1–127` | **reject** → `DS_ERR_FS_UNKNOWN_INJECT` |\n| reject-don't-skip | `128–255` | **reject** → `DS_ERR_DSC_VERSION` |\n| skip-don't-reject | `256–2047` | **skip** (log info) |\n\nThe boundaries are powers of two (128, 256, 2048) so band classification is a high-bit\ntest. `1–15` are simply the inject slots that carry a **1-byte** protobuf tag (field\nnumbers < 16); `16–2047` are 2-byte (2047 is the max 2-byte field number — 2048 tips to\n3). Skip-don't-reject is the large, growing band (all of `256–2047`); inject and\nreject-don't-skip stay small and bounded.\n\n",
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/atom_registry.als",
+        "name": "rfcs_16_2__atom_number_bands",
+        "tag": "spec"
+      }
+    ],
+    "cbmc": [
+      {
+        "path": "formal/cbmc/rfcs_16_2__band.c",
+        "name": "rfcs_16_2__band_is_total",
+        "tag": "spec",
+        "polarity": "positive",
+        "note": "UNBOUNDED over all 2^32 field numbers. Proves the SHAPE — the bands are total, disjoint and exhaustive — not the VALUES: it states the partition in the same constants the implementation uses, so a shifted boundary is still a partition. Seeding DS_ATOM_BAND_REJECT_HI 255->254 left this green."
+      },
+      {
+        "path": "formal/cbmc/rfcs_16_2__band.c",
+        "name": "rfcs_16_2__boundaries_are_exact",
+        "tag": "spec",
+        "polarity": "positive",
+        "note": "UNBOUNDED. Pins the VALUES with literals — 0/1/127/128/255/256/2047/2048 and the 1-byte sub-range of [RFCS.16.4]. This is the harness that caught the seeded 255->254 off-by-one, on the one assertion that names that boundary."
+      },
+      {
+        "path": "formal/cbmc/rfcs_16_2__band.c",
+        "name": "rfcs_16_3__unknown_is_decided_by_band_alone",
+        "tag": "spec",
+        "polarity": "positive",
+        "note": "BOUNDED, --unwind 9, and the bound is DERIVED not chosen: ds_pbf_lookup's binary search over DS_ATOM_REGISTRY_COUNT terminates in at most ceil(log2(N))+1 iterations, which for any N <= 255 is at most 8. The bound is slack. Run with --unwinding-assertions, and that assertion PASSED — so CBMC proved the bound sufficient rather than assuming it. The bound must rise if the registry exceeds 255 entries; the unwinding assertion is what will catch that."
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "RFCS.24.1",
+  "prefix": "RFCS",
+  "doc": "FACT_STREAM.md",
+  "parent": "RFCS.24",
+  "seq": 961,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RFCS.24.1] **A host input whose fact holds a fact reference is recorded as an\n`ExternalAssert`** (`proto/external_assert.proto#ExternalAssert`), not as a\n`FactAssert`. A fact body carries a reference as the handle of a fact recorded\nearlier in the same stream ([RFCS.6.3]). A host input's reference need not name\none: a `FactExternal` may carry a fact from another engine, which this stream\nnever recorded. So the input is recorded as the `FactExternal`, with each\nreferenced fact inlined ([RFCS.23.4]), and a replay resolves each reference as\nthe live run did ([RFCS.24.2]). Every host input that holds a reference takes\nthis one form, whether or not the facts it names were recorded.\n\nThe recorder must write one `ExternalAssert` for each such input, whichever\nentry point delivered it:\n\n- an `assert_external` ([NCBK.10.4]) whose `FactExternal` holds a reference: the\n  `FactExternal` exactly as the host passed it;\n- a direct host assert whose fact holds a non-null fact-reference slot: the fact\n  written as a `FactExternal` ([RFCS.23.4]), each referenced live fact inlined.\n\nEvery other host assert stays a `FactAssert`. The atom is written on arrival,\nbefore anything the input causes, like every input ([RFCS.6.7]).\n\nThe input is one step ([RFCS.23.7]): its `clock_ns` is the one clock sample the\nengine took for it, and every fact the delivery asserts carries that sample.\n\n**A delivery refused whole is not recorded** ([NCBK.10.4]). Examples are a\n`FactExternal` nested too deep, one naming a schema the program does not declare\nor carrying another `schema_hash`, one whose reference conflicts with a live\nfact's key ([RFCS.23.7]), and one holding a value over its slot's `capacity`.\nThe refusal is the entry point's status ([NCBK.10.4]). The engine\nrecords nothing for it, and nothing of it reaches working memory or the stream:\nit is a host call that delivered no input, the case [RFCS.6.7] records nothing\nfor. So every `ExternalAssert` in a stream is one the engine admitted.\n\n**Container-legality `stream`, stream-class `inject`, band `1–127`** (field 5).\n\n",
+  "refs": [
+    "NCBK.10.4",
+    "RFCS.23.4",
+    "RFCS.23.7",
+    "RFCS.24.2",
+    "RFCS.6.3",
+    "RFCS.6.7"
+  ],
+  "atoms": [
+    "ExternalAssert",
+    "FactAssert"
+  ],
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/external_assert.proto",
+        "name": "ExternalAssert",
+        "tag": "spec"
+      }
+    ]
+  }
+}

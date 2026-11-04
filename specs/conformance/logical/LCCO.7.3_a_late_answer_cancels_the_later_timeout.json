@@ -1,0 +1,22 @@
+{
+    "id": "LCCO.7.3_a_late_answer_cancels_the_later_timeout",
+    "clauses": ["LCCO.7.3"],
+    "category": "logical",
+    "scenario": "[LCCO.7.3]: on a call with two `timeout` clauses, the shorter one's firing leaves the capture fact for a late answer. Rule `r` binds `Job j` and calls `svc.get` as `c1` with `on response.code == 200:` logging `ok {j.id}`, `timeout 5_s:` logging `5s {j.id}` and `timeout 30_s:` logging `30s {j.id}`. A Job with id 7 is asserted and pumped; the clock moves 6 s and is pumped, so the 5 s timeout fires; it moves 4 s more (10 s), the answer, code 200, is asserted and pumped, so `ok 7` is logged; then 21 s more (31 s) and is pumped. The messages are exactly ['5s 7', 'ok 7']. The wrong reading fails: a 5 s firing that released the capture leaves the `on` sibling nothing to join, and `ok 7` is never logged. What this vector cannot pin: [LCCO.7.6]'s discharge of the 30 s timer. `Reply` is `ttl 1_h`, so at 31 s the answer is live and the 30 s sibling's NOT over `Reply` blocks it, whether or not the answer retracted its timer. `logical/LCCO.7.6_an_unmatched_answer_ends_a_later_timeout_with_a_capture` pins the discharge on a call with a capture. PATH PINNED: `dsc.rete`'s `timeout_sibling`, no capture release on a call with two clauses.",
+    "rules_ds": "schema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        on response.code == 200:\n            log info \"ok {j.id}\"\n        timeout 5_s:\n            log info \"5s {j.id}\"\n        timeout 30_s:\n            log info \"30s {j.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "code": 200 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 21000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["5s 7", "ok 7"]
+    }
+}

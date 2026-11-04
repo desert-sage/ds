@@ -1,0 +1,596 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# mercury.build — the Mercury runtime's and compiler's builds, the installable
+# runtime library, and the Mercury binding's library over it. ci.build imports
+# it for its gates and release.build for the release `dsc`, so they are one
+# graph, and `test_ds` is one product, read by the `mercury-runtime` gate and
+# by conformance's runtime differential alike.
+#
+# Public: nothing here may run or read a private file, so
+#
+#     python3 -m build_unit mercury.build .build/mdsc/dsc_cli
+#
+# builds the compiler from a public clone. The gates that run these products
+# are ci.build's, and the release rows that link `dsc` are release.build's.
+#
+# At the repository root: build-unit resolves `import mercury` against the
+# build root and then each `-L`, and every driver of ci.build builds from the
+# root with no `-L`. scripts/private/tests/pins/test_buildfile_imports.py holds
+# every import to a file that is there.
+#
+# The build directory is flat, because `mmc --make` finds a module as
+# `<module>.m` beside its target. Each tree is staged into
+# `.build/mercury/runtime/` by a step whose outputs are its files, one per glob
+# match, so a module added to either tree is staged with no edit here.
+#
+# A local step runs in a slot clone and only its declared outputs come back, so
+# `mmc --make`'s intermediates stay in the link's slot. A slot is cleaned when
+# a build first takes it.
+
+# ── the knobs a caller outside CI turns: which `mmc` links, and the two flat
+#    directories it links in. dev/mcp/dap.toml's Mercury launches build here
+#    with the debug grade's `mmc` and directories of their own. The defaults
+#    are the gates'.
+#
+#    The directories move with what is staged in them: `mmc --make` reads its
+#    modules from its own directory, and two grades' intermediates must not
+#    meet in one. The runtime's directory sits directly under `.build/mercury/`
+#    and the compiler's directly under `.build/`, because each link names the
+#    foreign object and the headers relative to it (`../include`,
+#    `../mercury/include`). The gates' stamps read the gates' binaries by their
+#    literal paths.
+param mmc = mmc
+param mercury_runtime_out = .build/mercury/runtime
+param mercury_compiler_out = .build/mdsc
+
+# ── the wasm32 `dsc`'s knobs: the cross toolchain ds-emsdk installs. The cross
+#    `mmc` (grade `hlc`); the prefix holding the wasm32 RE2 and Abseil and
+#    `re2-link.rsp`, their static link line; and `wasm-ld`, which emsdk does
+#    not put on PATH and which alone can combine wasm objects.
+param mmc_wasm32 = /opt/mercury-wasm32/bin/mmc
+param wasm32_deps = /opt/ds-wasm32
+param wasm_ld = /emsdk/upstream/bin/wasm-ld
+
+# ── the foreign units: the libds C and C++ the sanctioned foreign modules bind
+#    (docs/PROMISE_LEDGER.md) -- RE2's shim for `ds.re2`, the Float text for
+#    `ds.float_text`, CORE-MATH and libds's own `fma` for `ds.core_math`. The
+#    flags that decide a value are libds.build's: `-ffp-contract=off` on every
+#    unit (scripts/private/tests/pins/test_fp_contract.py), CORE-MATH with
+#    source.lock's flags (scripts/private/tests/pins/test_vendor_source.py).
+#    What libds.build adds only for an archive member -- the allocator and
+#    version defines, `-I../../include` -- is not here. One relocatable object
+#    comes out, so the link names one.
+table MercuryC
+  """One C unit the Mercury trees link: its object under .build/mercury/foreign/, its source, and the include flags beyond the compile step's own."""
+  obj                       src                                         iflags
+  float_fmt.o               runtime/src/libds/float_fmt.c               ""
+  ds_text.o                 runtime/src/libds/ds_text.c                 ""
+  core_math_unreachable.o   runtime/src/libds/core_math_unreachable.c   -Iruntime/src/libds
+
+table MercuryCxx
+  """One C++ unit the Mercury trees link: its object under .build/mercury/foreign/, its source, and the include flags beyond the compile step's own. A separate table from MercuryC because the two take different tools and a different -std, as libds.build's ObjCxx does."""
+  obj                src                                               iflags
+  ds_re2.o           runtime/src/libds/ds_re2.cc                       ""
+  float_parse.o      runtime/src/libds/float_text/float_parse.cc       -Ivendor
+  float_shortest.o   runtime/src/libds/float_text/float_shortest.cc    "-Ivendor/dragonbox/include -Ivendor"
+
+each MercuryC o
+  step mercury-foreign-{o.obj}
+    run   cc {o.iflags} -O2 -std=c99 -ffp-contract=off -D_POSIX_C_SOURCE=200809L -fPIC -c -o {{outputs}} {o.src}
+    reads {o.src}
+    makes .build/mercury/foreign/{o.obj}
+  extend mercury-foreign.o
+    reads .build/mercury/foreign/{o.obj}
+
+each MercuryCxx o
+  step mercury-foreign-{o.obj}
+    run   g++ {o.iflags} -O2 -std=c++17 -ffp-contract=off -fPIC -c -o {{outputs}} {o.src}
+    reads {o.src}
+    makes .build/mercury/foreign/{o.obj}
+  extend mercury-foreign.o
+    reads .build/mercury/foreign/{o.obj}
+
+# The headers each unit includes, so an edit to one re-keys its objects. A
+# table, because the release rows' copies of each unit read the same ones.
+# release.build says MercuryC, MercuryCxx and this table again, and ci.build
+# the two install tables below, since an import does not bring a table;
+# scripts/private/tests/pins/test_mercury_graph.py holds every copy equal to these.
+table MercuryHeader
+  """A file one foreign unit includes: the unit's object, and the file."""
+  obj                       hdr
+  float_fmt.o               runtime/src/libds/float_fmt.h
+  float_fmt.o               runtime/src/libds/ds_text.h
+  ds_text.o                 runtime/src/libds/ds_text.h
+  ds_text.o                 runtime/src/libds/float_fmt.h
+  core_math_unreachable.o   runtime/src/libds/core_math.h
+  # `atomic.h`, the one header of musl's internal tree `fma.c` includes.
+  libm_fma.o                runtime/src/libds/mcu_libm/atomic.h
+  ds_re2.o                  runtime/src/libds/ds_re2.h
+  float_parse.o             runtime/src/libds/float_fmt.h
+  float_parse.o             vendor/fast_float/fast_float.h
+  float_shortest.o          runtime/src/libds/float_fmt.h
+  float_shortest.o          vendor/dragonbox/include/dragonbox/dragonbox.h
+  float_shortest.o          vendor/dragonbox/include/dragonbox/dragonbox_to_chars.h
+  float_shortest.o          vendor/dragonbox/source/dragonbox_to_chars.cpp
+
+each MercuryHeader h
+  extend mercury-foreign-{h.obj}
+    reads {h.hdr}
+
+# CORE-MATH: one object per committed function, globbed, so the set is
+# the snapshot's and no list here can disagree with it. libds.build's CoreMath
+# line with -fPIC and without -g: the renames to `ds_cm_<fn>`, and `printf` and
+# `exit` to the libds-private reporters core_math_unreachable.c defines.
+each glob vendor/core-math/src/binary64/*/*.c c
+  step mercury-foreign-cm_{c.stem}.o
+    run   cc -O2 -std=gnu11 -ffp-contract=off -fPIC -Dcr_{c.stem}=ds_cm_{c.stem} -Dprintf=ds_cm_unreachable_report -Dexit=ds_cm_unreachable_exit -include runtime/src/libds/core_math_fenv.h -c -o {{outputs}} {c.name}
+    reads {c.name} runtime/src/libds/core_math_fenv.h vendor/core-math/src/binary64/*/*.h
+    makes .build/mercury/foreign/cm_{c.stem}.o
+  extend mercury-foreign.o
+    reads .build/mercury/foreign/cm_{c.stem}.o
+
+# libds's own `fma` ([IARC.7.14]): musl's `fma` and the `scalbn` it calls, as
+# libds.build's Libm rows compile them -- the [musl] pin's flags, both renamed
+# `ds_libm_<fn>` -- so `ds.core_math.fma` and the CORE-MATH objects above call
+# the same compiled function libds's `math.fma` does ([LDET.3.3a.8]). Nothing
+# else defines `ds_libm_fma`, so `test_ds` and `dsc` link only with these.
+# release.build says this table again for the release rows' units.
+table MercuryLibm
+  """One musl libm function the Mercury trees link ([IARC.7.14]): the stem of vendor/musl/src/math/<fn>.c, compiled as libds.build's Libm rows compile it, its name renamed `ds_libm_<fn>`."""
+  fn
+  fma
+  scalbn
+
+each MercuryLibm l
+  step mercury-foreign-libm_{l.fn}.o
+    run   cc -O2 -std=gnu11 -ffp-contract=off -fno-builtin -fPIC -Dfma=ds_libm_fma -Dscalbn=ds_libm_scalbn -Iruntime/src/libds/mcu_libm -c -o {{outputs}} vendor/musl/src/math/{l.fn}.c
+    reads vendor/musl/src/math/{l.fn}.c
+    makes .build/mercury/foreign/libm_{l.fn}.o
+  extend mercury-foreign.o
+    reads .build/mercury/foreign/libm_{l.fn}.o
+
+step mercury-foreign.o
+  run   ld -r -o {{outputs}} {{inputs}}
+  makes .build/mercury/foreign/mercury_foreign.o
+
+# The headers the generated C includes, and nothing else from libds, so no libds
+# header can answer an `#include` meant for the system.
+step mercury-foreign-headers
+  run   cp {{inputs}} {{outputs:dir}}
+  reads runtime/src/libds/ds_re2.h runtime/src/libds/float_fmt.h runtime/src/libds/core_math.h
+  makes .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+
+# ── ds.version ([LDET.1.10]): the loader accepts an artefact iff its
+#    `compiler_version` shares this runtime's `<major>.<minor>.`, so Mercury
+#    carries the version libds and pyds carry, in its provenance form
+#    `<VERSION>+<sha>`. Generated, never committed.
+#
+#    Never answered from cache (`effect external`): what it writes carries the
+#    commit, and no input declares the commit, so a cached copy would stamp the
+#    previous commit's sha into every binary linked after it. The link re-keys
+#    only when the file changes.
+step mercury-runtime-version
+  effect external
+  run   python3 scripts/build/gen_version_module.py {{outputs}}
+  reads scripts/build/gen_version_module.py scripts/build/ds-version.py VERSION
+  makes {mercury_runtime_out}/ds.version.m
+
+# ── staging: one step per tree, each output one module.
+step mercury-runtime-stage-src
+  run   cp {{inputs}} {{outputs:dir}}
+
+step mercury-runtime-stage-test
+  run   cp {{inputs}} {{outputs:dir}}
+
+# The link's objects of the runtime's own modules come back with `test_ds`:
+# `mmc --make` leaves each under `Mercury/os/`, and a census of what the runtime
+# links reads them, to show `math.fma` calls the `ds_libm_fma` the MercuryLibm
+# rows compile ([IARC.7.14]). The test modules' objects stay in the slot.
+each glob runtime/mercury/src/*.m m
+  extend mercury-runtime-stage-src
+    reads {m.name}
+    makes {mercury_runtime_out}/{m.stem}.m
+  extend mercury-runtime-test_ds
+    reads {mercury_runtime_out}/{m.stem}.m
+    makes {mercury_runtime_out}/Mercury/os/{m.stem}.o
+
+each glob runtime/mercury/test/*.m m
+  extend mercury-runtime-stage-test
+    reads {m.name}
+    makes {mercury_runtime_out}/{m.stem}.m
+  extend mercury-runtime-test_ds
+    reads {mercury_runtime_out}/{m.stem}.m
+
+# ── the link. `--cflags -ffp-contract=off` because `mmc` compiles the C it
+#    generates with flags of its own that carry no `-ffp-contract`, and GCC's
+#    default fuses `a * b + c` wherever the target has an FMA, aarch64 always
+#    ([LDET.3.6.1]); `test_ds` checks it. `--library`, not
+#    `--ld-libflags`: the latter reaches only a shared-library link, and an
+#    executable then fails on every RE2 and libstdc++ symbol.
+step mercury-runtime-test_ds
+  cwd   {mercury_runtime_out}
+  run   {mmc} --make --cflags -ffp-contract=off --c-include-directory ../include --link-object ../foreign/mercury_foreign.o --library re2 --library stdc++ test_ds
+  reads {mercury_runtime_out}/ds.version.m .build/mercury/foreign/mercury_foreign.o
+        .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes {mercury_runtime_out}/test_ds
+
+# ── the compiler. Its two trees and the runtime's `src/` -- the compiler
+#    imports `ds.*`, the vocabulary the two share -- flattened into
+#    `.build/mdsc/`, where every lane that compiles DS reads `dsc_cli`. The
+#    same foreign object and headers as the runtime's link, and the same
+#    `ds.version.m`.
+step mercury-compiler-stage-src
+  run   cp {{inputs}} {{outputs:dir}}
+
+step mercury-compiler-stage-test
+  run   cp {{inputs}} {{outputs:dir}}
+
+step mercury-compiler-stage-runtime
+  run   cp {{inputs}} {{outputs:dir}}
+  reads {mercury_runtime_out}/ds.version.m
+  makes {mercury_compiler_out}/ds.version.m
+
+each glob compiler/mercury/src/*.m m
+  extend mercury-compiler-stage-src
+    reads {m.name}
+    makes {mercury_compiler_out}/{m.stem}.m
+  extend mercury-compiler-dsc_cli
+    reads {mercury_compiler_out}/{m.stem}.m
+  extend mercury-compiler-test_dsc
+    reads {mercury_compiler_out}/{m.stem}.m
+
+each glob compiler/mercury/test/*.m m
+  extend mercury-compiler-stage-test
+    reads {m.name}
+    makes {mercury_compiler_out}/{m.stem}.m
+  extend mercury-compiler-test_dsc
+    reads {mercury_compiler_out}/{m.stem}.m
+
+each glob runtime/mercury/src/*.m m
+  extend mercury-compiler-stage-runtime
+    reads {m.name}
+    makes {mercury_compiler_out}/{m.stem}.m
+  extend mercury-compiler-dsc_cli
+    reads {mercury_compiler_out}/{m.stem}.m
+  extend mercury-compiler-test_dsc
+    reads {mercury_compiler_out}/{m.stem}.m
+
+# Two links, one per program: `dsc_cli` the command line, `test_dsc` the suite.
+# Separate links keep the suite's sources out of the key of `dsc_cli`, which
+# every lane that compiles DS reads; the shared modules compile twice on a
+# cold build. `dsc_cli` reads no test driver.
+step mercury-compiler-dsc_cli
+  cwd   {mercury_compiler_out}
+  run   {mmc} --make --cflags -ffp-contract=off --c-include-directory ../mercury/include --link-object ../mercury/foreign/mercury_foreign.o --library re2 --library stdc++ dsc_cli
+  reads {mercury_compiler_out}/ds.version.m .build/mercury/foreign/mercury_foreign.o
+        .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes {mercury_compiler_out}/dsc_cli
+
+step mercury-compiler-test_dsc
+  cwd   {mercury_compiler_out}
+  run   {mmc} --make --cflags -ffp-contract=off --c-include-directory ../mercury/include --link-object ../mercury/foreign/mercury_foreign.o --library re2 --library stdc++ test_dsc
+  reads {mercury_compiler_out}/ds.version.m .build/mercury/foreign/mercury_foreign.o
+        .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes {mercury_compiler_out}/test_dsc
+
+# ── the bundled library beside the compiler ([LIMP.3.3.1], [RCLI.1.11]).
+#    `dsc` finds its standard library at `../share/ds/stdlib` from its own
+#    directory, and refuses every compile that resolves a name without it, so
+#    the build lays it out there as a release does: the committed `.ds` files,
+#    copied. The compiler's directory sits directly under `.build/` (the knobs
+#    above), so for every grade that is `.build/share/ds/stdlib`. A copy, not a
+#    link: `dsc` does not follow one.
+#
+#    A step that runs `dsc_cli` reads these files as well as the binary, which
+#    is how build-unit puts them beside it; ci.build's `each glob` blocks say
+#    which steps. One step per directory, because `cp` into `{{outputs:dir}}`
+#    flattens: a stdlib directory no glob here names is laid out by nothing,
+#    and scripts/private/tests/pins/test_mercury_graph.py fails on one.
+step mercury-compiler-stdlib
+  run   cp {{inputs}} {{outputs:dir}}
+
+step mercury-compiler-stdlib-units
+  run   cp {{inputs}} {{outputs:dir}}
+
+each glob stdlib/*.ds s
+  extend mercury-compiler-stdlib
+    reads {s.name}
+    makes .build/share/ds/stdlib/{s.stem}.ds
+
+each glob stdlib/units/*.ds s
+  extend mercury-compiler-stdlib-units
+    reads {s.name}
+    makes .build/share/ds/stdlib/units/{s.stem}.ds
+
+# ── the compiler for wasm32: `dsc_cli` built for wasm32-unknown-emscripten,
+#    grade `hlc`, the compiler @ds-lang/ds's wasm target and dsdb run under
+#    Node and in a browser. Built as the native `dsc_cli` is, from the same
+#    tables and modules, with the toolchain the knobs above name. ds_dsc's
+#    package and its gate against the native `dsc` are release.build's.
+#
+#    Every step here is placed on ds-emsdk (`emscripten3.1.74`, build.ini's one
+#    such row), the stage included: emcc, `wasm-ld` and the cross `mmc` are
+#    there and in no other image. Staged there, the modules reach the link
+#    without a copy out each; the version module and the headers are the
+#    coordinator's, and build-unit stages them out. A step whose tool is a
+#    cross tool names `tool sh`, as release.build's placed steps do: a step's
+#    tool is resolved and hashed on the coordinator, which cannot find it.
+#
+#    `.build/wasm32/`, never a native directory: two targets' objects and
+#    `mmc --make` intermediates must not meet in one.
+#
+#    The foreign units are the native ones, the MercuryC, MercuryCxx,
+#    MercuryLibm and MercuryHeader tables and the CORE-MATH glob, through emcc
+#    and em++ with the same flags, so the wasm32 `dsc` binds the Float text and
+#    CORE-MATH the native one binds. wasm32 is emcc's default target, so no
+#    unit names one. RE2's shim is the
+#    one unit on a line of its own: it compiles against the wasm32 RE2.
+#    wasm32 has no fused multiply-add instruction, so the CORE-MATH objects
+#    call libds's own `fma` here too (core_math_fenv.h).
+each MercuryC o
+  step mercury-wasm32-foreign-{o.obj}
+    require amd64 linux emscripten3.1.74 py3.12
+    tool  sh
+    run   emcc {o.iflags} -O2 -std=c99 -ffp-contract=off -D_POSIX_C_SOURCE=200809L -fPIC -c -o {{outputs}} {o.src}
+    reads {o.src}
+    makes .build/wasm32/foreign/{o.obj}
+  extend mercury-wasm32-foreign.o
+    reads .build/wasm32/foreign/{o.obj}
+
+each MercuryCxx o where o.obj != "ds_re2.o"
+  step mercury-wasm32-foreign-{o.obj}
+    require amd64 linux emscripten3.1.74 py3.12
+    tool  sh
+    run   em++ {o.iflags} -O2 -std=c++17 -ffp-contract=off -fPIC -c -o {{outputs}} {o.src}
+    reads {o.src}
+    makes .build/wasm32/foreign/{o.obj}
+  extend mercury-wasm32-foreign.o
+    reads .build/wasm32/foreign/{o.obj}
+
+step mercury-wasm32-foreign-ds_re2.o
+  require amd64 linux emscripten3.1.74 py3.12
+  tool  sh
+  run   em++ -I{wasm32_deps}/re2/include -I{wasm32_deps}/abseil/include -O2 -std=c++17 -ffp-contract=off -fPIC -c -o {{outputs}} runtime/src/libds/ds_re2.cc
+  reads runtime/src/libds/ds_re2.cc
+  makes .build/wasm32/foreign/ds_re2.o
+
+each MercuryHeader h
+  extend mercury-wasm32-foreign-{h.obj}
+    reads {h.hdr}
+
+each glob vendor/core-math/src/binary64/*/*.c c
+  step mercury-wasm32-foreign-cm_{c.stem}.o
+    require amd64 linux emscripten3.1.74 py3.12
+    tool  sh
+    run   emcc -O2 -std=gnu11 -ffp-contract=off -fPIC -Dcr_{c.stem}=ds_cm_{c.stem} -Dprintf=ds_cm_unreachable_report -Dexit=ds_cm_unreachable_exit -include runtime/src/libds/core_math_fenv.h -c -o {{outputs}} {c.name}
+    reads {c.name} runtime/src/libds/core_math_fenv.h vendor/core-math/src/binary64/*/*.h
+    makes .build/wasm32/foreign/cm_{c.stem}.o
+  extend mercury-wasm32-foreign.o
+    reads .build/wasm32/foreign/cm_{c.stem}.o
+
+each MercuryLibm l
+  step mercury-wasm32-foreign-libm_{l.fn}.o
+    require amd64 linux emscripten3.1.74 py3.12
+    tool  sh
+    run   emcc -O2 -std=gnu11 -ffp-contract=off -fno-builtin -fPIC -Dfma=ds_libm_fma -Dscalbn=ds_libm_scalbn -Iruntime/src/libds/mcu_libm -c -o {{outputs}} vendor/musl/src/math/{l.fn}.c
+    reads vendor/musl/src/math/{l.fn}.c
+    makes .build/wasm32/foreign/libm_{l.fn}.o
+  extend mercury-wasm32-foreign.o
+    reads .build/wasm32/foreign/libm_{l.fn}.o
+
+# One relocatable object, as the native link has: `wasm-ld -r`, since binutils'
+# `ld` cannot read a wasm object (libds.build combines its wasm subdirectories
+# the same way).
+step mercury-wasm32-foreign.o
+  require amd64 linux emscripten3.1.74 py3.12
+  tool  sh
+  run   {wasm_ld} -r -o {{outputs}} {{inputs}}
+  reads .build/wasm32/foreign/ds_re2.o
+  makes .build/wasm32/foreign/mercury_foreign.o
+
+# The modules: the compiler's tree and the runtime's `src/`, and the one
+# `ds.version.m`, so the wasm32 `dsc` stamps the version the native one does.
+# The headers are the native link's, `.build/mercury/include/`: target-free.
+step mercury-wasm32-stage
+  require amd64 linux emscripten3.1.74 py3.12
+  run   cp {{inputs}} {{outputs:dir}}
+  reads {mercury_runtime_out}/ds.version.m
+  makes .build/wasm32/mdsc/ds.version.m
+
+each glob compiler/mercury/src/*.m m
+  extend mercury-wasm32-stage
+    reads {m.name}
+    makes .build/wasm32/mdsc/{m.stem}.m
+  extend mercury-wasm32-dsc_cli
+    reads .build/wasm32/mdsc/{m.stem}.m
+
+each glob runtime/mercury/src/*.m m
+  extend mercury-wasm32-stage
+    reads {m.name}
+    makes .build/wasm32/mdsc/{m.stem}.m
+  extend mercury-wasm32-dsc_cli
+    reads .build/wasm32/mdsc/{m.stem}.m
+
+# The link, with the cross `mmc`: an ES module factory (`createDsc`) for web,
+# worker and Node, `dsc_cli` beside its `dsc_cli.wasm`.
+#   - `--cflags -ffp-contract=off`, as the native links ([LDET.3.6.1]).
+#   - `--cflags -DMR_CHECK_FOR_OVERFLOW`: a compile past the fixed
+#     `hlc` heap is a fatal "heap overflow", never a write past it. The cross
+#     Mercury's runtime and library are built with it too; ds-emsdk.Dockerfile
+#     says why.
+#   - `--no-strip`: `mmc` strips an executable, which drops the wasm name
+#     section, and `--profiling-funcs` keeps names in wasm stack traces.
+#   - `-lc++ -lc++abi`: RE2 and its shim are C++, and `mmc` links with $CC.
+#   - the stack is raised because the `hlc` grade recurses on the C stack;
+#     `EXIT_RUNTIME` flushes Mercury's stdout at exit; `FS` and `callMain` are
+#     what @ds-lang/ds's runner drives (bindings/js/lib/dsc-wasm.js), with
+#     `INVOKE_RUN=0` so nothing runs at instantiation.
+#   - `-Wl,@{wasm32_deps}/re2-link.rsp`: libre2.a and Abseil's archives, one
+#     group, as a wasm-ld response file. Never a bare `@file`: `mmc` reads an
+#     argument beginning `@` as a response file of its own, and splices the
+#     link line into its options.
+# One `--ld-flag` per word, because `mmc` quotes each for the shell.
+step mercury-wasm32-dsc_cli
+  require amd64 linux emscripten3.1.74 py3.12
+  tool  sh
+  cwd   .build/wasm32/mdsc
+  run   {mmc_wasm32} --make --no-strip --cflags -ffp-contract=off --cflags -DMR_CHECK_FOR_OVERFLOW --c-include-directory ../../mercury/include --link-object ../foreign/mercury_foreign.o --ld-flag -lc++ --ld-flag -lc++abi --ld-flag -sALLOW_MEMORY_GROWTH=1 --ld-flag -sMAXIMUM_MEMORY=4GB --ld-flag -sSTACK_SIZE=67108864 --ld-flag -sINITIAL_MEMORY=134217728 --ld-flag -sEXIT_RUNTIME=1 --ld-flag -sMODULARIZE=1 --ld-flag -sEXPORT_ES6=1 --ld-flag -sEXPORT_NAME=createDsc --ld-flag -sINVOKE_RUN=0 --ld-flag -sENVIRONMENT=web,worker,node --ld-flag -sEXPORTED_RUNTIME_METHODS=callMain,FS --ld-flag --profiling-funcs --ld-flag -Wl,@{wasm32_deps}/re2-link.rsp dsc_cli
+  reads .build/wasm32/mdsc/ds.version.m .build/wasm32/foreign/mercury_foreign.o
+        .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes .build/wasm32/mdsc/dsc_cli .build/wasm32/mdsc/dsc_cli.wasm
+
+# ── the installable runtime: the Mercury library `mercury_ds_runtime`, built
+#    and installed into a prefix under `.build/`, for a host outside this tree
+#    -- mercury_ds first -- to link with `--ml mercury_ds_runtime`.
+#    `runtime/mercury/lib/mercury_ds_runtime.m` is its top module: Mercury
+#    names a library after the module it is built from, and `ds`'s name is
+#    the C runtime's archive's.
+#
+#    One step builds and installs: `.install` makes the library first, and a
+#    local step's intermediates stay in its slot, so a step that only made the
+#    library would leave the install to compile every module again.
+#
+#    `hlc.gc` only, ds-base's one library grade: `--no-libgrade --libgrade
+#    hlc.gc` keeps `.install` from building any other. The rest is the gate's
+#    links': the foreign object, which the archive then carries as a member,
+#    the headers, `--cflags -ffp-contract=off` ([LDET.3.6.1]), and `--library
+#    re2 --library stdc++`, which reach the shared library's link, so a shared
+#    host names neither and a static one names both.
+step mercury-lib-stage
+  run   cp {{inputs}} {{outputs:dir}}
+  reads runtime/mercury/lib/mercury_ds_runtime.m {mercury_runtime_out}/ds.version.m
+  makes .build/mercury/lib/mercury_ds_runtime.m .build/mercury/lib/ds.version.m
+
+each glob runtime/mercury/src/*.m m
+  extend mercury-lib-stage
+    reads {m.name}
+    makes .build/mercury/lib/{m.stem}.m
+  extend mercury-lib-install
+    reads .build/mercury/lib/{m.stem}.m
+
+step mercury-lib-install
+  cwd   .build/mercury/lib
+  run   {mmc} --make --grade hlc.gc --no-libgrade --libgrade hlc.gc --install-prefix ../prefix --cflags -ffp-contract=off --c-include-directory ../include --link-object ../foreign/mercury_foreign.o --library re2 --library stdc++ libmercury_ds_runtime.install
+  reads .build/mercury/lib/mercury_ds_runtime.m .build/mercury/lib/ds.version.m
+        .build/mercury/foreign/mercury_foreign.o
+        .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes .build/mercury/prefix/lib/mercury/lib/hlc.gc/libmercury_ds_runtime.a
+        .build/mercury/prefix/lib/mercury/lib/hlc.gc/libmercury_ds_runtime.so
+        .build/mercury/prefix/lib/mercury/modules/hlc.gc/mercury_ds_runtime.init
+        .build/mercury/prefix/lib/mercury/ints/ds.int0
+
+# Every installed file is an output, and ci.build's check reads each. Per
+# module, the files `.install` writes under the prefix's `lib/mercury/`: the
+# interfaces in `ints/`, the C headers in `inc/` and `lib/hlc.gc/inc/`.
+# Crossed with the staging's glob, so a module added to `src/` is installed
+# with no edit here, and a file `.install` stops writing fails the step by
+# name. `ds.int0` above is the one `.int0`: `ds` is the one parent module.
+table MercuryLibFile
+  """One file `.install` writes for every module: its directory under the prefix's lib/mercury/, and its extension."""
+  dir               ext
+  ints/             .int
+  ints/             .int2
+  ints/             .int3
+  ints/             .mh
+  ints/             .mih
+  ints/             .module_dep
+  inc/              .mh
+  lib/hlc.gc/inc/   .mih
+
+table MercuryLibModule
+  """A module the library installs from outside runtime/mercury/src/: the generated version, and the top module."""
+  name
+  ds.version
+  mercury_ds_runtime
+
+each glob runtime/mercury/src/*.m m
+  with MercuryLibFile f
+  extend mercury-lib-install
+    makes .build/mercury/prefix/lib/mercury/{f.dir}{m.stem}{f.ext}
+
+each MercuryLibModule x
+  with MercuryLibFile f
+  extend mercury-lib-install
+    makes .build/mercury/prefix/lib/mercury/{f.dir}{x.name}{f.ext}
+
+# The three foreign headers, which `.install` does not install and the
+# installed `.mih` files include. In the prefix's `inc/`, which `--mld` puts
+# on a host's include path, so a host names no directory of this tree.
+step mercury-lib-headers
+  run   cp {{inputs}} {{outputs:dir}}
+  reads .build/mercury/include/ds_re2.h .build/mercury/include/float_fmt.h
+        .build/mercury/include/core_math.h
+  makes .build/mercury/prefix/lib/mercury/inc/ds_re2.h
+        .build/mercury/prefix/lib/mercury/inc/float_fmt.h
+        .build/mercury/prefix/lib/mercury/inc/core_math.h
+
+# ── the binding's library: `mercury_ds`, the Mercury binding
+#    (bindings/mercury), built and installed over the installed runtime above,
+#    so a host builds with `--ml mercury_ds --ml mercury_ds_runtime`. Its own
+#    prefix, `.build/mercury_ds/prefix/`, so a host names each library's
+#    `--mld` and no step writes into another's outputs.
+#
+#    The runtime comes in as the installed library, never as source: the
+#    staging copies the binding's modules alone, and `--mld` / `--ml` are how
+#    `mmc` finds `ds.*`. So the library is built as a host outside the tree
+#    builds against the runtime, and it adds no foreign code (MER.6):
+#    the runtime's sanctioned foreign modules reach it through
+#    `mercury_ds_runtime`.
+#
+#    `Mercury.options` is staged with the modules, so each builds under its
+#    `--halt-at-warn` line (MERCURY_STYLE.md, "What the gate checks"). The
+#    grade, the `--libgrade` pair and `-ffp-contract=off` ([LDET.3.6.1]) are
+#    the runtime library's.
+step mercury-ds-lib-stage
+  run   cp {{inputs}} {{outputs:dir}}
+  reads bindings/mercury/Mercury.options
+  makes .build/mercury_ds/lib/Mercury.options
+
+each glob bindings/mercury/src/*.m m
+  extend mercury-ds-lib-stage
+    reads {m.name}
+    makes .build/mercury_ds/lib/{m.stem}.m
+  extend mercury-ds-lib-install
+    reads .build/mercury_ds/lib/{m.stem}.m
+
+step mercury-ds-lib-install
+  cwd   .build/mercury_ds/lib
+  run   {mmc} --make --grade hlc.gc --no-libgrade --libgrade hlc.gc --install-prefix ../prefix --cflags -ffp-contract=off --mld ../../mercury/prefix/lib/mercury --ml mercury_ds_runtime libmercury_ds.install
+  reads .build/mercury_ds/lib/Mercury.options
+        .build/mercury/prefix/lib/mercury/lib/hlc.gc/libmercury_ds_runtime.a
+        .build/mercury/prefix/lib/mercury/lib/hlc.gc/libmercury_ds_runtime.so
+        .build/mercury/prefix/lib/mercury/modules/hlc.gc/mercury_ds_runtime.init
+        .build/mercury/prefix/lib/mercury/ints/ds.int0
+        .build/mercury/prefix/lib/mercury/inc/ds_re2.h
+        .build/mercury/prefix/lib/mercury/inc/float_fmt.h
+        .build/mercury/prefix/lib/mercury/inc/core_math.h
+  makes .build/mercury_ds/prefix/lib/mercury/lib/hlc.gc/libmercury_ds.a
+        .build/mercury_ds/prefix/lib/mercury/lib/hlc.gc/libmercury_ds.so
+        .build/mercury_ds/prefix/lib/mercury/modules/hlc.gc/mercury_ds.init
+        .build/mercury_ds/prefix/lib/mercury/ints/mercury_ds.int0
+
+# Every file of the runtime's install is read, by the same tables and glob
+# its install declares them by; every file of the binding's is an output,
+# crossed with the binding's glob, so a module added to its `src/` installs
+# with no edit here. `mercury_ds.int0` above is the binding's one `.int0`:
+# `mercury_ds` is its one parent module.
+each glob runtime/mercury/src/*.m m
+  with MercuryLibFile f
+  extend mercury-ds-lib-install
+    reads .build/mercury/prefix/lib/mercury/{f.dir}{m.stem}{f.ext}
+
+each MercuryLibModule x
+  with MercuryLibFile f
+  extend mercury-ds-lib-install
+    reads .build/mercury/prefix/lib/mercury/{f.dir}{x.name}{f.ext}
+
+each glob bindings/mercury/src/*.m m
+  with MercuryLibFile f
+  extend mercury-ds-lib-install
+    makes .build/mercury_ds/prefix/lib/mercury/{f.dir}{m.stem}{f.ext}

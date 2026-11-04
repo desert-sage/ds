@@ -1,0 +1,33 @@
+{
+    "id": "RFCS.23.5_a_published_fact_carries_the_publish_instant",
+    "clauses": ["RFCS.23.5", "LTIM.2.8.3"],
+    "category": "cross-tier",
+    "scenario": "[RFCS.23.5]: \"A fact a rule publishes enters no working memory on its way out ([LTIE.4.3]), so its `asserted_at` is the instant of the `publish`\", the value `now()` would have given, and with no wall value there is none ([LTIM.2.8.3]). Tier `edge` starts with its wall clock unset ([RCTS.1.2.29]); rule `up` joins a `Trig` to the `Go` of the same `k` and publishes `Sig v: t.v`. No schema has a `ts` slot, so an unset clock abandons nothing ([LFAC.9.2]). Pump 1: Trig k=1 and Go k=1 are asserted with the clock unset, and the publish carries no instant. Then `wall_set` 1000, Trig k=2, and a pump that fires nothing, since no Go has k=2. Then `wall_set` 1700000000000000000, Go k=2, and a pump that publishes for k=2: the publish is at 1700000000000000000, and its Trig entered at 1000. `expected_published_asserted_at` ([RCTS.1.2.29]) reads the `asserted_at` of each publication's FactExternal: exactly [null, 1700000000000000000]. A publish has no fact of its own in `edge`, so `edge` holds its two Trigs and two Gos: 4. What it discriminates: an `asserted_at` taken from the matched Trig's entry gives 1000 for the second; a stamp of 0 for an unset clock gives 0 for the first; one taken from the monotonic clock gives 0 for both. PATH PINNED: libds's `bridge_publish` (engine_rete_adapters.c), which builds the event's FactExternal from the publish view; the Mercury runtime's `se_publish` FactExternal.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Trig scope explicit:\n    k: Int\n    v: Int\n\nschema Go scope explicit:\n    k: Int\n\nschema Sig scope explicit:\n    v: Int\n\nrule up:\n    Trig t\n    Go g where g.k == t.k\n->\n    publish Sig v: t.v\n",
+                "wall_clock": "unset"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "k": 1, "v": 1 } },
+            { "engine": "edge", "op": "assert", "schema": "Go", "slots": { "k": 1 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "edge", "op": "wall_set", "utc_ns": 1000 },
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "k": 2, "v": 2 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "edge", "op": "wall_set", "utc_ns": 1700000000000000000 },
+            { "engine": "edge", "op": "assert", "schema": "Go", "slots": { "k": 2 } },
+            { "engine": "edge", "op": "pump" }
+        ],
+        "expected_published_asserted_at": {
+            "edge": [null, 1700000000000000000]
+        },
+        "engine_fact_counts_after": {
+            "edge": 4
+        }
+    }
+}

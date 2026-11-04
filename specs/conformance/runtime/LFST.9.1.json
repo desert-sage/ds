@@ -1,0 +1,16 @@
+{
+    "id": "LFST.9.1",
+    "clauses": ["LTES.12.5"],
+    "category": "runtime",
+    "scenario": "LFST.9 replay semantics — a replayer consumes recorded inputs in seq order and the engine re-produces its internal events (rule_lhs_facts / rule_fire_begin / rule_fire_end) and actions (action_log) identically. Pins that engine-internal and action events are reproduced, not replayed from the recording, and match byte-for-byte (the LFST.9.3.5 determinism proof).",
+    "rules_ds": "schema Trigger scope logical:\n    v: Int key\n\nschema Derived scope logical:\n    v: Int key\n\nrule derive:\n    Trigger t\n->\n    emit Derived logical v: t.v\n",
+    "expect": {
+        "kind": "replay_determinism",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trigger", "slots": { "v": 5 } },
+            { "op": "pump" }
+        ],
+        "min_events": 3
+    }
+}

@@ -1,0 +1,87 @@
+{
+  "id": "IRET.6.1",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.6",
+  "seq": 454,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Alpha node",
+  "text": "### Alpha node [IRET.6.1]\n\nAn alpha node represents one pattern-schema participation\nin the network. It holds:\n\n- A reference to the schema it matches.\n- A list of inline alpha tests (constraints that can be\n  checked on the fact alone, without joining against\n  other patterns).\n- An alpha memory: the set of facts currently satisfying\n  this node's tests.\n- A list of downstream beta inputs to notify on\n  memory changes.\n\n`ds_rete_alpha_node_t` is declared in `runtime/src/libds/rete/alpha.h`.\n\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "Iret_6_1__alpha",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One pattern-schema participation: the schema, its inline tests over one fact [IRET.6.2] as a predicate, and its memory. The downstream-input list is not stored: a beta node references its alpha [IRET.6.6], so dispatch walks the chains instead. Expression evaluation is out of scope; a test is a Bool predicate."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Iret_19__view",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE VIEW of an engine: working memory distinct; every alpha memory distinct and equal to its schema's facts passing its tests in working-memory order; every chain consistent from the nil token. Kept by every operation below."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Rarc_5_6_5__recomputed",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the view says of an engine: every alpha memory is its schema's admitted facts, and every terminal holds exactly its chain's recompute over working memory, without duplicates."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "Rlow_4_2_1__shapes_kept",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The alphas keep their schemas and tests through every operation; only their memories change."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__reads",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The schema an alpha node matches, read off each node's alpha: what a chain reads is the schemas of its alphas."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkFrame.idr",
+        "name": "ltim_2_5_1__reads_same",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Alphas with the same schemas and tests are read alike."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Iret_6_1__same_alphas",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Two alpha lists of one shape: at every index the same schema and tests; the memories may differ."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_6_1__same_alphas_refl",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An alpha list has its own shape."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "iret_6_1__same_alphas_trans",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Alpha shapes compose."
+      }
+    ]
+  }
+}

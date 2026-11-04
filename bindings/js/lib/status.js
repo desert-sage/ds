@@ -1,0 +1,135 @@
+// SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+// SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+//
+// GENERATED from proto/status.proto — do not
+// edit. The `js` gate lane runs `--check`, so a hand edit is a red
+// build. The numbers are normative; the names are labels.
+
+export const DS_OK = 0;
+export const DS_ERR_INVAL = -1;
+export const DS_ERR_OOM = -2;
+export const DS_ERR_NOT_FOUND = -3;
+export const DS_ERR_STATE = -4;
+export const DS_ERR_OVERFLOW = -5;
+export const DS_ERR_UNSUPPORTED = -7;
+export const DS_ERR_INTERNAL = -8;
+export const DS_ERR_IO = -9;
+export const DS_ERR_ENGINE_HALTED = -10;
+export const DS_ERR_PARSE = -100;
+export const DS_ERR_SCHEMA_UNKNOWN = -101;
+export const DS_ERR_SLOT_UNKNOWN = -103;
+export const DS_ERR_SLOT_TYPE_MISMATCH = -104;
+export const DS_ERR_FACT_INVALID = -200;
+export const DS_ERR_ACTION_FAILED = -202;
+export const DS_ERR_TIME_RANGE = -205;
+export const DS_ERR_NAN_REJECTED = -216;
+export const DS_ERR_JSON_NONFINITE = -217;
+export const DS_ERR_SERIES_NO_BACKING = -218;
+export const DS_ERR_SCHEMA_HASH_MISMATCH = -219;
+export const DS_ERR_FACT_REF_CONFLICT = -220;
+export const DS_ERR_JSON_LIMIT = -221;
+export const DS_ERR_ENCODING = -222;
+export const DS_ERR_STORAGE_UNAVAILABLE = -400;
+export const DS_ERR_STORAGE_QUERY_FAILED = -401;
+export const DS_ERR_STORAGE_NOT_FOUND = -402;
+export const DS_ERR_DSC_TRUNCATED = -500;
+export const DS_ERR_DSC_BAD_MAGIC = -501;
+export const DS_ERR_DSC_VERSION = -502;
+export const DS_ERR_DSC_DECODE = -503;
+export const DS_ERR_DSC_SEMANTIC = -504;
+export const DS_ERR_DSC_DANGLING = -506;
+export const DS_ERR_DSC_DECOMPRESS = -507;
+export const DS_ERR_DSC_CAPABILITY_ABSENT = -514;
+export const DS_ERR_RETP_INVALID = -601;
+export const DS_ERR_RETP_INDEX_OOB = -602;
+export const DS_ERR_FN_NOT_FOUND = -604;
+export const DS_ERR_BUDGET_EXCEEDED = -605;
+export const DS_ERR_WM_FULL = -606;
+export const DS_ERR_TOKEN_BUDGET = -607;
+export const DS_ERR_RT_UNSAFE = -608;
+export const DS_ERR_RT_LIVE = -609;
+export const DS_ERR_RT_PRECOND = -610;
+export const DS_ERR_BACKEND_ABI_VERSION = -620;
+export const DS_ERR_BACKEND_BAD_MAGIC = -621;
+export const DS_ERR_BACKEND_BAD_AGGS = -622;
+export const DS_ERR_BACKEND_NOT_REGISTERED = -623;
+export const DS_ERR_BND_DSC_MISMATCH = -700;
+export const DS_ERR_BND_DIALECT_MISMATCH = -701;
+export const DS_ERR_BND_INCOMPLETE = -703;
+export const DS_ERR_BND_RT_CONFIG_MISMATCH = -704;
+export const DS_ERR_CONTRACT_BREACH = -710;
+export const DS_ERR_CONTRACT_MISSING = -711;
+export const DS_ERR_CONTRACT_INVALID = -712;
+export const DS_ERR_RTCT_PROFILE_REFUSES_DSRT = -713;
+export const DS_ERR_CONTRACT_WCET_HALT = -714;
+export const DS_ERR_FS_VERSION = -720;
+export const DS_ERR_FS_DIVERGENCE = -725;
+export const DS_ERR_FS_UNKNOWN_INJECT = -726;
+export const DS_ERR_FS_RECORDING_INCOMPLETE = -729;
+export const DS_ERR_FS_UNKNOWN_FACT_ID = -730;
+
+/** Every live status, name -> number. */
+export const STATUS = Object.freeze({
+    DS_OK,
+    DS_ERR_INVAL,
+    DS_ERR_OOM,
+    DS_ERR_NOT_FOUND,
+    DS_ERR_STATE,
+    DS_ERR_OVERFLOW,
+    DS_ERR_UNSUPPORTED,
+    DS_ERR_INTERNAL,
+    DS_ERR_IO,
+    DS_ERR_ENGINE_HALTED,
+    DS_ERR_PARSE,
+    DS_ERR_SCHEMA_UNKNOWN,
+    DS_ERR_SLOT_UNKNOWN,
+    DS_ERR_SLOT_TYPE_MISMATCH,
+    DS_ERR_FACT_INVALID,
+    DS_ERR_ACTION_FAILED,
+    DS_ERR_TIME_RANGE,
+    DS_ERR_NAN_REJECTED,
+    DS_ERR_JSON_NONFINITE,
+    DS_ERR_SERIES_NO_BACKING,
+    DS_ERR_SCHEMA_HASH_MISMATCH,
+    DS_ERR_FACT_REF_CONFLICT,
+    DS_ERR_JSON_LIMIT,
+    DS_ERR_ENCODING,
+    DS_ERR_STORAGE_UNAVAILABLE,
+    DS_ERR_STORAGE_QUERY_FAILED,
+    DS_ERR_STORAGE_NOT_FOUND,
+    DS_ERR_DSC_TRUNCATED,
+    DS_ERR_DSC_BAD_MAGIC,
+    DS_ERR_DSC_VERSION,
+    DS_ERR_DSC_DECODE,
+    DS_ERR_DSC_SEMANTIC,
+    DS_ERR_DSC_DANGLING,
+    DS_ERR_DSC_DECOMPRESS,
+    DS_ERR_DSC_CAPABILITY_ABSENT,
+    DS_ERR_RETP_INVALID,
+    DS_ERR_RETP_INDEX_OOB,
+    DS_ERR_FN_NOT_FOUND,
+    DS_ERR_BUDGET_EXCEEDED,
+    DS_ERR_WM_FULL,
+    DS_ERR_TOKEN_BUDGET,
+    DS_ERR_RT_UNSAFE,
+    DS_ERR_RT_LIVE,
+    DS_ERR_RT_PRECOND,
+    DS_ERR_BACKEND_ABI_VERSION,
+    DS_ERR_BACKEND_BAD_MAGIC,
+    DS_ERR_BACKEND_BAD_AGGS,
+    DS_ERR_BACKEND_NOT_REGISTERED,
+    DS_ERR_BND_DSC_MISMATCH,
+    DS_ERR_BND_DIALECT_MISMATCH,
+    DS_ERR_BND_INCOMPLETE,
+    DS_ERR_BND_RT_CONFIG_MISMATCH,
+    DS_ERR_CONTRACT_BREACH,
+    DS_ERR_CONTRACT_MISSING,
+    DS_ERR_CONTRACT_INVALID,
+    DS_ERR_RTCT_PROFILE_REFUSES_DSRT,
+    DS_ERR_CONTRACT_WCET_HALT,
+    DS_ERR_FS_VERSION,
+    DS_ERR_FS_DIVERGENCE,
+    DS_ERR_FS_UNKNOWN_INJECT,
+    DS_ERR_FS_RECORDING_INCOMPLETE,
+    DS_ERR_FS_UNKNOWN_FACT_ID,
+});

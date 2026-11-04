@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.9.8",
+    "category": "compiler",
+    "scenario": "Bare-name namespace per LIMP.9.8 / LIMP.4.2 \u2014 `from X import Y` brings library X's `Y` decl bare into the importing file. Pin: a rule pattern matching a schema imported via `from ha import Light` resolves cleanly. (The qualified `import X` form per LIMP.4.1 requires grammar support for dotted TypeRefs in pattern position; deferred. v1 resolution wires schemas only \u2014 the only importable surface across the resolver boundary today.)",
+    "rules_ds": "from ha import Light\n\nrule r:\n    Light l where l.is_on == true\n->\n    log info \"x\"\n",
+    "libraries": {
+        "ha": "schema Light scope logical:\n    is_on: Bool key\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

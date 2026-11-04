@@ -1,0 +1,75 @@
+{
+  "id": "LERR.1.4.11",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.1.4",
+  "seq": 218,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LERR.1.4.11] **Only the fault an expression yields reaches a surface.** A\nfault an operand raised is not the expression's fault when a deciding operand\nabsorbed it, or when [LNUL.4.2]'s order selected another — under `and` / `or`, or\nunder any other operator ([LNUL.4.10]). Such a fault is not recorded ([RFCS.21.1]),\nnot asserted as a fault fact ([LERR.9.9]), not delivered to a callback, and not\ncounted by any metric. [LNUL.4.2] and [LNUL.4.10] leave the evaluation order free,\nand reporting a fault the expression did not yield would make what an engine\nreports depend on that order.\n\n",
+  "refs": [
+    "LERR.9.9",
+    "LNUL.4.10",
+    "LNUL.4.2",
+    "RFCS.21.1"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "iret_9_5__v5_order_independent",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ORDER INDEPENDENCE: every order gives one answer and records one atom, over every `where` of up to three conjuncts. A positional pick breaks it (TEETH). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__rec",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "M1: the atom recorded -- a fault a filter raised, else the best fault when nothing false stopped it. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      },
+      {
+        "path": "formal/alloy/where_v5.als",
+        "name": "rfcs_21_1__v5_one_atom",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "ONE ATOM: kind then body is total over what is recorded, so at most one atom is recorded. Kind alone breaks it (TEETH). [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause)."
+      }
+    ],
+    "idris": [
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "iret_9_5__any_order",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Evaluating ANY reordering of the source, left to right and stopping at a false, gives the `where`'s answer and records its fault. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__pair_record_order_free",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A PAIR'S RECORD IS A FUNCTION OF THE PAIR, however its conjuncts are ordered or evaluated: what the trap record needs to be a function of the join relation, and [IRET.7.6]'s 'the pair yields the one fault [LNUL.4.2]'s order selects'. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      },
+      {
+        "path": "formal/idris/Rete/WhereV5.idr",
+        "name": "rfcs_21_1__record",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "M1: the fault recorded is the one the `where` yields. [LERR.1.4.11]: only the fault the expression yields reaches a surface -- recorded ([RFCS.21.1]), delivered to a callback or counted -- and the model's record stands for all three. Recording every evaluated fault (M2) is not order independent (`gap__m2_order_dependent`, a counterexample tied to no clause). V5 as stated by [LNUL.4.2] and [IRET.9.5]: a false decides wherever it stands; otherwise the faults resolve by kind, then by the fields of the record (T2I); the evaluation order is free."
+      }
+    ],
+    "k": [
+      {
+        "path": "formal/k/dswherev5.k",
+        "name": null,
+        "tag": "derives"
+      }
+    ]
+  }
+}

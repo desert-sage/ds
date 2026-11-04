@@ -1,0 +1,28 @@
+{
+    "id": "NCBK.10.2_emit_stays_on_its_tier",
+    "clauses": ["LTIE.9.2", "RARC.13.4"],
+    "category": "cross-tier",
+    "scenario": "[NCBK.10.2] / [LTIE.4.4] `emit` asserts locally and is not a cross-tier marker: a bridge gating on DS_EV_ACTION_PUBLISH carries nothing for it. The twin of LTIE.4.3_publish_leaves_nothing_on_its_tier with `emit` for `publish`: `edge` holds Trig and Sig (2), and the same `forward` step leaves `hub` empty (0). A runtime that raised ACTION_PUBLISH for an emit -- or a bridge keyed on FACT_ASSERT, which [NCBK.10.2] warns against -- puts Sig in `hub`.",
+    "rules_ds": "",
+    "expect": {
+        "kind": "cross_tier_fact_counts",
+        "engines": {
+            "edge": {
+                "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Sig scope logical:\n    v: Int key\n\nrule stay:\n    Trig t\n->\n    emit Sig logical v: t.v\n"
+            },
+            "hub": {
+                "rules_ds": "schema Sig scope logical:\n    v: Int key\n"
+            }
+        },
+        "steps": [
+            { "engine": "edge", "op": "assert", "schema": "Trig", "slots": { "v": 7 } },
+            { "engine": "edge", "op": "pump" },
+            { "engine": "hub", "op": "forward", "from": "edge" },
+            { "engine": "hub", "op": "pump" }
+        ],
+        "engine_fact_counts_after": {
+            "edge": 2,
+            "hub": 0
+        }
+    }
+}

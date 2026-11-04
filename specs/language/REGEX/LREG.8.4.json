@@ -1,0 +1,17 @@
+{
+  "id": "LREG.8.4",
+  "prefix": "LREG",
+  "doc": "REGEX.md",
+  "parent": "LREG.8",
+  "seq": 274,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LREG.8.4] **An unsupported construct is a compile error, and the\ndiagnostic names the feature.** RE2 refuses backreferences (`\\1`,\n`\\k<name>`), lookaround (`(?=`, `(?!`, `(?<=`, `(?<!`), possessive\nquantifiers (`*+`, `++`, `?+`, `{n,m}+`) and atomic groups (`(?>`) on\nits own, so this clause adds no rejection. It adds the two things RE2\ncannot:\n\n- the failure is at **compile time**, before a bundle exists; and\n- the message is DS's own, naming the construct in the author's terms —\n  \"positive lookahead `(?=...)` is not supported by the RE2-class\n  engine\" — rather than surfacing RE2's parse error, `invalid perl\n  operator: (?=`.\n\nThe code is `DS_VALIDATE_REGEX_UNSUPPORTED_FEATURE`.\n\n**A compiler must not be stricter than RE2 either.** Refusing a pattern\nRE2 accepts breaks [LREG.8.1] exactly as admitting a superset would,\nbecause the set of patterns an author may write again differs from\nRE2's. A scan that recognises unsupported constructs must therefore\nmodel enough of RE2's grammar not to fire on their spellings elsewhere —\ninside a character class, `[*+]` is two literal members, not a\npossessive quantifier.\n\nAuthors needing these features model the value structure upstream (in\nadapter parsing, a typed schema slot, etc.) rather than at rule time.\n\n",
+  "refs": [
+    "LREG.8.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_REGEX_UNSUPPORTED_FEATURE"
+  ]
+}

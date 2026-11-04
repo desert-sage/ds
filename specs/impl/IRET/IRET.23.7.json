@@ -1,0 +1,20 @@
+{
+  "id": "IRET.23.7",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.23",
+  "seq": 1614,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "7. [IRET.23.7] **A build without the `regex` capability links no RE2.**\n   A target that never loads a regex-using artefact builds against\n   a stub source in place of `ds_re2.cc`: the `ds_re2_compile` /\n   `ds_re2_match` symbols still resolve, but `ds_re2_compile`\n   always returns failure and nothing of RE2 is linked. Such a\n   build omits `regex` from the capabilities it reports\n   ([LCAP.1]), and refuses a DSC whose `requires` lists `regex`\n   with `DS_ERR_DSC_CAPABILITY_ABSENT` before decoding any body\n   ([RDSC.16.2.7]).\n\n   This check reads the artefact's `requires`, which the compiler\n   computes from content, never its settings, so it refuses a\n   regex-carrying DSC whatever its `regex` setting ([LNRE.4.2]).\n   Neither this build choice nor its absence changes what a\n   pattern means when regex support is present at all — that is\n   [IRET.23.1], unaffected.\n\n---\n\n",
+  "refs": [
+    "IRET.23.1",
+    "LCAP.1",
+    "LNRE.4.2",
+    "RDSC.16.2.7"
+  ],
+  "errors": [
+    "DS_ERR_DSC_CAPABILITY_ABSENT"
+  ]
+}

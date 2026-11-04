@@ -1,0 +1,19 @@
+{
+    "id": "LFAC.2.5.1_tolerance_bound_inclusive",
+    "category": "logical",
+    "scenario": "[LFAC.2.5.1]: the reassertion tolerance bound is INCLUSIVE: values are equal iff `|delta| <= tolerance`, so a change of exactly `tolerance` IS suppressed. PATH: libds's `slots_equal` (rete/wm_rete.c). Pin: `x: Float mutable tolerance 0.5`, then three asserts on one key — 1.0 establishes the fact and fires; 1.5 is a delta of EXACTLY the bound and must be suppressed, so the rule does NOT re-fire; 2.1 is a delta of 1.1 from the live value and must go through. Two firings, not three. The middle step is the whole fixture: a strict bound gives three. NB this pins the WORKING-MEMORY discipline (no new activation), not emission — a suppressed reassertion still emits FACT_ASSERT per [NFCT.5.4] / [RFCS.6.7], so an event-kind assertion could not tell the two apart.",
+    "rules_ds": "schema Tol scope logical:\n    e: Int key\n    x: Float mutable tolerance 0.5\n\nrule saw:\n    Tol\n->\n    log info \"fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": 1.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": 1.5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Tol", "slots": { "e": 1, "x": 2.1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fired", "fired"]
+    }
+}

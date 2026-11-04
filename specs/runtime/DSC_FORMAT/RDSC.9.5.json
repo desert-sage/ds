@@ -1,0 +1,18 @@
+{
+  "id": "RDSC.9.5",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.9",
+  "seq": 1996,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.9.5] An atom whose body fails protobuf-decode must\ncause the loader to error. The error names the atom, the\nbyte offset, and the protobuf decoder's reason.\n\nA loader **must** refuse with `DS_ERR_DSC_DECODE` a body in which a singular\nmessage field, or a message-typed member of a oneof, occurs more than once, at\nany depth, and one in which `proto/header.proto#DscHeader`'s `dsc_sha256`\noccurs more than once, since [RDSC.3.6] hashes the artefact with that one\nfield zeroed. Otherwise a loader **must** hold each body as\nprotobuf decodes it, whether it decodes with a protobuf library or walks the\nbytes itself: a scalar field that occurs more than once holds its last\noccurrence, a repeated field holds every occurrence in order, and a oneof holds\nonly the member that occurs last. No loader then merges two occurrences of a\nmessage, so no loader's answer rests on a library's merge, and two loaders of\none artefact hold the same atom. No conforming compiler writes a field twice\n([RDSC.9.9]).\n\n",
+  "refs": [
+    "RDSC.3.6",
+    "RDSC.9.9"
+  ],
+  "errors": [
+    "DS_ERR_DSC_DECODE"
+  ]
+}

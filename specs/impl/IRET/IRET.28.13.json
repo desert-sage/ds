@@ -1,0 +1,16 @@
+{
+  "id": "IRET.28.13",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.28",
+  "seq": 2400,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Per-table migration spec",
+  "text": "### Per-table behaviour [IRET.28.13]\n\nWhat a table of `[IRET.28.2]` keeps beyond its key, value and hash, by its\nnumber there:\n\n- **#1, #4** are iterated (`ds_oa_val_at`), #4 under bit-identity\n  (`[IRET.28.10]`).\n- **#5–#8** are multimaps: each value is an `oa_list`, freed by\n  `ds_oa_list_free`, and grown through `ds_oa_list_add`, which honours a\n  locked table.\n- **#10**'s doubly-linked `left_head` list stays beside it: the list gives\n  ordered traversal, the map lookup.\n- **#12** is iterated on the hot join scan (`ds_oa_val_at` loop), under\n  bit-identity (`[IRET.28.10]`).\n- **#13**'s discard path finds an activation by `act->token`, then checks the\n  stored value is that activation. The activation's doubly-linked list stays\n  beside it.\n\nA negated join's block count has no table of its own: it is the number of\nright facts a token's `ltok_idx_map` entry lists (`[IRET.7.9.4]`).\n\n",
+  "refs": [
+    "IRET.28.10",
+    "IRET.28.2",
+    "IRET.7.9.4"
+  ]
+}

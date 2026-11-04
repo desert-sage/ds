@@ -1,0 +1,13 @@
+{
+    "id": "LSTR.7.2.3_seed_surrogate_pair_admitted",
+    "category": "runtime",
+    "scenario": "[LSTR.7.2.3]: in JSON text a `\\u` escape names one UTF-16 code unit, and a high-surrogate escape followed at once by a low one names the codepoint above U+FFFF the pair encodes, so a host's text holding one is admitted. The site is the cache seed ([NSTG.9.1]): the seed's `value` is the string U+10348 GOTHIC LETTER HWAIR, and [RCTS.1.2.25] has the harness hand the runtime `json.dumps(value)`, which writes every character outside U+0020 to U+007E escaped, U+10348 as `\\ud800\\udf48`. The seed raises nothing, and nothing is asserted (fact_count 0); a runtime that refused the pair would raise, and the driver fails on that. Break tests: a reader that refuses every surrogate escape refuses the seed and the vector fails. PATH PINNED: on libds, `ds_json_parse` of the seed's text in pyds's `cache_seed`, through `json.c`'s `parse_string_literal` `u` arm, which joins the pair, then `ds_engine_cache_seed`; on the Mercury runtime, `test_behave.m`'s seed step hands `ds.engine.seed_cache_text` the same text, and `ds.json_text.escape` joins the pair.",
+    "rules_ds": "schema Blob scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "cache_seeds": [
+            { "key": "k", "value": "𐍈" }
+        ],
+        "fact_count_after": 0
+    }
+}

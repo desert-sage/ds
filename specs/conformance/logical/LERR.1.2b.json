@@ -1,0 +1,19 @@
+{
+  "id": "LERR.1.2b",
+  "clauses": ["LERR.1.2.3", "LERR.1.2.7"],
+  "category": "logical",
+  "scenario": "Errors-as-values runtime per LERR.1.2 — the integrator asserts a CallError fact (via ds_engine_assert after a failed call); a sibling rule pattern-matches the code and fires. Simulates the integrator's response role: harness directly asserts CallError, verifies handle_error fires.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule handle_error:\n    CallError e where e.code == \"timeout\"\n->\n    log critical \"timeout\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "CallError",
+        "slots": { "corr": "c1", "code": "timeout", "message": "timed out", "ts": 0 }
+      },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["timeout"]
+  }
+}

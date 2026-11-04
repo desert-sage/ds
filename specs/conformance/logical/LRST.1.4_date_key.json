@@ -1,0 +1,25 @@
+{
+    "id": "LRST.1.4_date_key",
+    "clauses": ["LRST.1.4"],
+    "category": "logical",
+    "scenario": "[LRST.1.4]: `Date` is a legal `as` key, and a key is compared by value. Three Req facts (distinct `entity_id`) each arm a 100ms timer keyed on `r.due`: a and b on 2024-02-29 (day 19782) at t=0, c on 2024-03-01 (day 19783) at t=50ms. b's arming supersedes a's, so that timer fires once, at 100ms; c's key differs and its timer fires at 150ms. Exact messages: armed x3, then `timer fired` twice. PATH PINNED: the compiler's Date `corr` slot (`dsc.rete.lrst_1_4_leaf_kind`) and the supersedure sweep's key equality on it, libds `rete/adapters.c` `corr_key_eq` and Mercury `ds.exec`'s sweep.",
+    "rules_ds": "schema Req scope logical:\n    entity_id: String key\n    due: Date mutable\n\nrule arm:\n    Req r\n->\n    log info \"armed\"\n    after 100ms as r.due:\n        log info \"timer fired\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "due": 19782 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "due": 19782 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 50000000 },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "due": 19783 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000 },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["armed", "armed", "armed", "timer fired", "timer fired"]
+    }
+}

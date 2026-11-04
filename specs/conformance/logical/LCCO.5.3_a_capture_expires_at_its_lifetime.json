@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.5.3_a_capture_expires_at_its_lifetime",
+    "clauses": ["LCCO.5.3", "RARC.5.2.4"],
+    "category": "logical",
+    "scenario": "[LCCO.5.3]: a capture fact lives the largest `ttl` of the facts the call's continuations match and the largest `timeout`, and [RARC.5.2.4]: the pump retracts a fact whose deadline is at or before the clock at its entry. Rule `r` binds `Job j`, logs `called`, and calls `svc.get` as `c1` with only `on response.code == 200:` logging `ok {j.id}`. The body reads `j`, so the call has a capture fact. `Reply` is `ttl 10_s`, and the call matches no `CallError` and has no `timeout`, so the capture's lifetime is 10 s. At 0 a Job with id 7 is asserted and pumped; the clock moves 20 s, the answer, code 200, is asserted and pumped. The messages are exactly ['called']: the capture expired at 10 s, so the `on` sibling has nothing to join. The wrong reading fails: a runtime that keeps the capture past its deadline joins the answer and logs `ok 7`. `logical/LCCO.5.3_an_answer_within_the_capture_lifetime_joins_it` is the control. PATH PINNED: libds's pump sweep (`ds_rete_wm_tick_ttl`) reaching the explicit-scope capture schema; the Mercury runtime's pump-entry expiry.",
+    "rules_ds": "schema Reply scope ttl 10_s:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    log info \"called\"\n    call svc.get n: j.id nocooldown as \"c1\"\n        on response.code == 200:\n            log info \"ok {j.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 20000000000 },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "code": 200 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["called"]
+    }
+}

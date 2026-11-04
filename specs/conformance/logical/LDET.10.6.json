@@ -1,0 +1,30 @@
+{
+  "id": "LDET.10.6",
+  "clauses": ["LDET.2.1"],
+  "category": "logical",
+  "scenario": "Output definition per [LDET.2.1]'s output column (LDET.10.6, the id, is a tombstone) — every observable event: activations, firings, emissions, retractions, calls, cache ops, logs, logical lifecycle. Pin: a rule's firing, its emission and its log are each an event on the stream, in source order: the host's fact_assert, then rule_fire_begin, the emitted Out's fact_assert, the emit's action_emit, the log's action_log, and rule_fire_end. A runtime that left any of the three out of the output fails it.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nschema Out scope ttl 1_h:\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Out v: t.v\n    log info \"out {t.v}\"\n",
+  "expect": {
+    "kind": "event_sequence",
+    "steps": [
+      {
+        "op": "assert",
+        "schema": "Trig",
+        "slots": {
+          "v": 1
+        }
+      },
+      {
+        "op": "pump"
+      }
+    ],
+    "expected_kinds": [
+      "fact_assert",
+      "rule_fire_begin",
+      "fact_assert",
+      "action_emit",
+      "action_log",
+      "rule_fire_end"
+    ]
+  }
+}

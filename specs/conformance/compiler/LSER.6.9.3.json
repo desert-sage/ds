@@ -1,0 +1,10 @@
+{
+    "id": "LSER.6.9.3",
+    "category": "compiler",
+    "scenario": "Cross-slot companion-slot read is ambiguous when multiple slots declare the same aggregation per LSER.6.9.3 — `m.mean` when both `Metrics.x` and `Metrics.y` declare `mean sliding 10_min` rejects with DS_VALIDATE_AMBIGUOUS_COMPANION_SLOT. Authors resolve via `as <label>` labels.",
+    "rules_ds": "use default\n\nschema Metrics scope ttl 1_min:\n    entity_id: String\n    x: Float\n    y: Float\n\nseries Metrics.x (by: entity_id):\n    mean sliding 10_min\n\nseries Metrics.y (by: entity_id):\n    mean sliding 10_min\n\nrule r:\n    Metrics m where m.mean > 0\n->\n    log info \"ambig\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_AMBIGUOUS_COMPANION_SLOT"
+    }
+}

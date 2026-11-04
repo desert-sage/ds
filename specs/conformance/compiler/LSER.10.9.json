@@ -1,0 +1,9 @@
+{
+    "id": "LSER.10.9",
+    "category": "compiler",
+    "scenario": "`direction` compares the two newest samples in the window per LSER.10.9; its output is an `Int?`: -1 falling, 0 steady, +1 rising, `null` while cold and over one sample ([LSER.17.2], [LSER.19.8]). `t.direction > 0` is the rising test. Compile-time pin only: a series declaring a `direction` aggregation parses cleanly and resolves the slot. The runtime answer is pinned by `logical/LSER.10.9_direction_is_int` and `logical/LSER.10.9_direction_newest_pair`.",
+    "rules_ds": "use default\n\nschema Sensor scope logical:\n    entity_id: String key\n    state: Float mutable\n\nseries Sensor.state:\n    direction sliding 10_s\n\nrule trig:\n    Sensor t where t.direction > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

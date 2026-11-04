@@ -1,0 +1,92 @@
+{
+  "id": "NCBK.2.6",
+  "prefix": "NCBK",
+  "doc": "CALLBACKS.md",
+  "parent": "NCBK.2",
+  "seq": 179,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NCBK.2.6] **Per-firing ordering.** Within one rule firing the seq order is:\n\n```\nRULE_LHS_FACTS   (if the firing matched ≥ 1 fact)\nRULE_FIRE_BEGIN\n  FACT_ASSERT      (if the RHS asserts)\n  ACTION_<verb>    (per RHS action, after its primary effect)\n  FACT_RETRACT     (if the RHS retracts)\nRULE_FIRE_END\nTIMER_ARMED      (if the rate gate admitted a `cooldown` rule's firing)\n```\n\n**`TIMER_ARMED` follows the bracket.** For a\nfiring of a `cooldown` rule that the rate gate admits ([RDSC.4a.8.2.3]), the\nengine **must** emit `TIMER_ARMED` immediately after `RULE_FIRE_END`, with no\nintervening event. For a firing the gate suppresses it **must not** emit one:\nthe gate records only the firings it admits ([LCDB.3.2.1]), so a suppressed\nfiring arms no window ([NCBK.2.3]). A consumer joins the event to its firing\nby `timetag` ([NCBK.2.12]). The event belongs to the rule-level cooldown alone:\nthe engine **must not** emit one for the gate of a `cooldown:` on a `call`\n([LCRS.8.2]), whether it admits the call or not.\n\n`RULE_LHS_FACTS` is conditional like the body events: a **factless firing** —\na rule with no positive fact pattern (e.g. a pure timer/tick rule), or a\nfiring whose matched facts don't resolve to a live working-memory fact — emits\nno `RULE_LHS_FACTS`; the `RULE_FIRE_BEGIN` bracket still opens. When present it\nis emitted **immediately before** `RULE_FIRE_BEGIN` with no intervening event\n(the two are produced atomically), and carries the resolved matched facts (≤\none per LHS pattern). An activation withheld before the bracket (a fire guard\nwhose condition is not `true`, [RDSC.4a.8.2.2]) emits neither.\n\n**An `after` body's firing is factless.** The\nfollow-up rule that runs it ([LTAC.3]) matches only the compiler's timer,\ntick and capture facts, and none of them is on the stream. The capture holds a\ncopy of the values the body reads, not the parent's facts ([LTAC.3.5]), so the\nfollow-up matched no fact of the parent firing and emits no `RULE_LHS_FACTS`.\n\nCross-tier bridges gate on `ACTION_PUBLISH`, not `FACT_ASSERT`: a `publish`\nasserts nothing here, and an `emit` is local-only ([NCBK.10]).\n\n",
+  "refs": [
+    "LCDB.3.2.1",
+    "LCRS.8.2",
+    "LTAC.3",
+    "LTAC.3.5",
+    "NCBK.10",
+    "NCBK.2.12",
+    "NCBK.2.3",
+    "RDSC.4a.8.2.2",
+    "RDSC.4a.8.2.3"
+  ],
+  "checks": {
+    "alloy": [
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__begin_iff_end",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "A BEGIN has an END and an END a BEGIN, at most one of each, whatever the fire guard did: a withheld activation has neither, a gate-suppressed firing and a full firing both. The pairing a consumer reads; bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__end_is_last",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__event",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__fact",
+        "tag": "spec",
+        "note": "A resolved live LHS fact the stream carries. The compiler's timer, tick and capture facts an `after` body's follow-up matches are live in working memory and not on the stream, so that firing resolves none of these and emits no RULE_LHS_FACTS: the clause's factless `after` body is an instance of `ncbk_2_6__lhs_iff_matched`, not an exception to it."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__firing",
+        "tag": "spec",
+        "note": "The firing a selected activation became, if it became one (`lone`): a withheld activation is no firing, RDSC.4a.8.2.2. Its matched facts are the activation's resolved facts."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__frame",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__kind",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__lhs_atomic_with_begin",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__lhs_iff_matched",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__lhs_is_frame_opener",
+        "tag": "derives"
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__position",
+        "tag": "spec",
+        "note": "A position in the global seq order, the ordered carrier: the positions rather than the events, so that a withheld activation can leave the stream with no event at all."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__seq_order",
+        "tag": "spec",
+        "note": "Two events never share a position: the stream order."
+      }
+    ]
+  }
+}

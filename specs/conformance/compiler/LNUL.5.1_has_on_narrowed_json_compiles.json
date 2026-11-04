@@ -1,0 +1,9 @@
+{
+    "id": "LNUL.5.1_has_on_narrowed_json_compiles",
+    "category": "compiler",
+    "scenario": "[LNUL.5.1] with [LNUL.5.4]: the twin of LNUL.5.1_has_on_unnarrowed_json_refused. `d.body is not null and has(d.body.x)` narrows the `Json?` root in the tail of the `where` conjunction, so `has`'s argument has a present root and the program compiles. Together the pair shows the refusal is the root's nullability: a compiler that refused every `has` on a `Json?` slot fails this one, and one that refused none fails the other. PATH PINNED: `dsc.typecheck`'s `lnul_5_1_builtin_arguments` reading the narrowed set (`narrowed_here`).",
+    "rules_ds": "schema D scope logical:\n    entity_id: String key\n    body: Json? mutable\n\nrule r:\n    D d where d.body is not null and has(d.body.x)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

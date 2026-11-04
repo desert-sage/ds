@@ -1,0 +1,17 @@
+{
+    "id": "LTAC.4.2",
+    "category": "logical",
+    "scenario": "Timer facts are one-shot per LTAC.4.2 — the follow-up rule fires exactly once after the delay, then the timer fact is retracted. Pin: parent fires, advance clock past the after duration, follow-up fires exactly once (one rule_fire_begin for the after rule).",
+    "rules_ds": "schema Motion scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nrule auto_off:\n    Motion m where m.state == true\n->\n    log info \"on\"\n    after 5_s:\n        log info \"off after delay\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Motion", "slots": { "entity_id": "m1", "state": true } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["auto_off", "$auto_off_after_0"]
+    }
+}

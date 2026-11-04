@@ -1,0 +1,19 @@
+{
+    "id": "RFCS.5.4_unheld_schema_partway_through",
+    "category": "runtime",
+    "scenario": "[RFCS.5.4] the same refusal partway through the replay: DS_ERR_SCHEMA_UNKNOWN (-101) at a FactAssert naming a schema the program does not hold, after earlier inputs have been delivered and a pump has run. The harness ([RCTS.1.2.18]) records an Arrival assert, a pump, a clock advance, a Parcel assert and a pump, then renames `Parcel` to `Parcex` throughout (`rename_schema`). `Arrival` is untouched, so a runtime that stops at the renamed `FactAssert`, as both paths below do, has replayed the `Arrival` assert and the first pump before it refuses. The harness observes only the code: the rename also reaches the `SchemaDef` announced at the stream's opening ([RFCS.5.1]), and a runtime that refused there with -101 would pass, so where the replay stops is not pinned here. The unaltered recording must replay. Paths: libds's `ds_rfcs_replay` FactAssert arm, which reads each assert's schema from the engine as it meets it; the Mercury runtime's `ds.replay`, whose host-assert arm ends the replay with `unknown_schema` at that atom. The clause asks for one code wherever the atom falls; `RFCS.5.4_unheld_schema_at_the_first_assert` is the stream's opening.",
+    "rules_ds": "use default\n\nschema Arrival scope logical:\n    id: String key\n    n: Int mutable\n\nschema Parcel scope logical:\n    id: String key\n    w: Int mutable\n\nrule arrive:\n    Arrival\n->\n    log info \"a\"\n\nrule weigh:\n    Parcel\n->\n    log info \"w\"\n",
+    "expect": {
+        "kind": "replay_refused",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Arrival", "slots": { "id": "x", "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Parcel", "slots": { "id": "a", "w": 1 } },
+            { "op": "pump" }
+        ],
+        "mutation": { "op": "rename_schema", "from": "Parcel", "to": "Parcex" },
+        "code": "-101"
+    }
+}

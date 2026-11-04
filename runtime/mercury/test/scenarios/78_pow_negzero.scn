@@ -1,0 +1,17 @@
+# A negative zero through `**` (109_pow_negzero), across both runtimes.
+#
+#   r1  x = -0.0      (-0.0) ** 3 is -0.0: `negative_zero` fires.
+#
+#   r2  x = 0.0       the control: 0.0 ** 3 is 0.0, `positive_zero` fires.
+#
+#   r3  x = -1e-200   the cube underflows, and IEEE keeps the sign: -0.0,
+#                     `negative_zero` fires. This is the negative-base path,
+#                     a different arm from r1's zero base.
+#
+# One fact per entity, never superseded, so no retraction re-tests a guard.
+assert Reading entity_id=r1 x=-0.0
+pump
+assert Reading entity_id=r2 x=0.0
+pump
+assert Reading entity_id=r3 x=-1e-200
+pump

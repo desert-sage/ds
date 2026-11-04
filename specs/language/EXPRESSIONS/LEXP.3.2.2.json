@@ -1,0 +1,37 @@
+{
+  "id": "LEXP.3.2.2",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.3.2",
+  "seq": 151,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LEXP.3.2.2] **`math.fma(x, y, z)` is IEEE 754's fused multiply-add.** The\nengine computes $x \\times y + z$ as if with unbounded range and precision and\nrounds it once to binary64, in [LDET.3.6.1]'s mode. It must not compute a\nrounded product and then a rounded sum. A compile-time fold must give the same\nvalue ([LDET.3.3a.8]).\n\nIts operands are those `x * y + z` admits, under that expression's unit rules\n([LUNI.8]). An `Int` operand converts to `Float` first ([LEXP.7.3]), and the\nresult is a `Float`. Its special values are IEEE 754's: an infinite or NaN\noperand, or $0 \\times \\infty$, gives the infinity or NaN that operation\ndefines, and nothing traps ([LERR.1.4.1]). It lowers to `FN_FMA`\n(`proto/builtin_fn.proto#BuiltinFn`).\n\n**It keeps the expression's null handling.** A null\noperand yields null ([LNUL.4.1]), a `Json` leaf's included, and raises no\nfault. So a `T?` operand is admitted as it is by `x * y + z`, and the call is\nnullable where an operand is ([LNUL.5.1]).\n\n",
+  "refs": [
+    "LDET.3.3a.8",
+    "LDET.3.6.1",
+    "LERR.1.4.1",
+    "LEXP.7.3",
+    "LNUL.4.1",
+    "LNUL.5.1",
+    "LUNI.8"
+  ],
+  "symbols": [
+    "FN_FMA"
+  ],
+  "defines": {
+    "symbols": [
+      "FN_FMA"
+    ]
+  },
+  "checks": {
+    "proto": [
+      {
+        "path": "proto/builtin_fn.proto",
+        "name": "BuiltinFn",
+        "tag": "spec"
+      }
+    ]
+  }
+}

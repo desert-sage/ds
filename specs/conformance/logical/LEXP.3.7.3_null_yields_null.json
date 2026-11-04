@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.3.7.3_null_yields_null",
+    "clauses": ["LEXP.3.7.3", "LNUL.4.1"],
+    "category": "logical",
+    "dead_rules_expected": ["type_fault", "computation_fault"],
+    "scenario": "[LEXP.3.7.3]: \"a null receiver or argument yields null\" ([LNUL.4.1]), with no fault, for each of the five members. `x` and `w` are `Int?`. Fact 1 has no `x`, so every member's receiver is null: rule `receiver` fires where `t.x.bits(t.lo, t.w)`, `t.x.sign_extend(t.w)`, `t.x.swap_bytes(t.w)`, `t.x.leading_zeros` and `t.x.trailing_zeros` are all null. Fact 2 has an `x` and no `w`: rule `argument` fires where `bits`, `sign_extend` and `swap_bytes` are null. Rules `type_fault` and `computation_fault` log any TypeError or ComputationError and must stay silent. Messages: `receiver 1`, `argument 2`. A builtin that classed the null as a type mismatch, as `bit_count` does, would log `type_fault` and neither line. PATH PINNED: the null arm ahead of the kind test in FN_BITS, FN_SIGN_EXTEND, FN_SWAP_BYTES, FN_LEADING_ZEROS and FN_TRAILING_ZEROS, in libds (`builtins.c`) and Mercury (`ds.eval`).",
+    "rules_ds": "schema T scope logical:\n    id: Int key\n    x: Int? mutable\n    lo: Int mutable\n    w: Int? mutable\n\nrule receiver:\n    T t where t.x.bits(t.lo, t.w) is null and t.x.sign_extend(t.w) is null and t.x.swap_bytes(t.w) is null and t.x.leading_zeros is null and t.x.trailing_zeros is null\n->\n    log info \"receiver {t.id}\"\n\nrule argument:\n    T t where t.x is not null and t.x.bits(t.lo, t.w) is null and t.x.sign_extend(t.w) is null and t.x.swap_bytes(t.w) is null\n->\n    log info \"argument {t.id}\"\n\nrule type_fault:\n    TypeError e\n->\n    log critical \"type {e.rule}\"\n\nrule computation_fault:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "id": 1, "lo": 0, "w": 16 } },
+            { "op": "assert", "schema": "T", "slots": { "id": 2, "x": 7, "lo": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["receiver 1", "argument 2"]
+    }
+}

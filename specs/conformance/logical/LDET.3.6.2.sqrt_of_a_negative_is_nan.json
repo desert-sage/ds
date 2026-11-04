@@ -1,0 +1,15 @@
+{
+    "id": "LDET.3.6.2.sqrt_of_a_negative_is_nan",
+    "category": "logical",
+    "scenario": "`sqrt` of a negative is NaN, as IEEE 754's is, and does not trap ([LDET.3.6.2]). PATH PINNED: `builtin_sqrt` in `runtime/src/libds/builtins.c`, the DS_FN_SQRT handler, and the Mercury `sqrt` arm. THE DISCRIMINATOR IS `not`: a NaN comparison yields a real `false`, so `not (sqrt(t.v) > 0.0)` is TRUE for the negative and `r_not_positive` fires; a trap abandons the activation, so on a runtime that traps it does not. A bare `sqrt(t.v) > 0.0` cannot tell the two apart. Pin: v=-4.0 fires `r_not_positive`, v=9.0 fires `r_positive`; `r_positive` first, because the terminal ordinal is the outer key of the agenda order ([LDET.5.4]).",
+    "rules_ds": "from math import sqrt\n\nschema T scope logical:\n    entity_id: String key\n    v: Float mutable\n\nrule r_positive:\n    T t where sqrt(t.v) > 0.0\n->\n    log info \"positive\"\n\nrule r_not_positive:\n    T t where not (sqrt(t.v) > 0.0)\n->\n    log info \"not positive\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "neg", "v": -4.0 } },
+            { "op": "assert", "schema": "T", "slots": { "entity_id": "pos", "v": 9.0 } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["r_positive", "r_not_positive"]
+    }
+}

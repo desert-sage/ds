@@ -1,0 +1,16 @@
+{
+    "id": "LINT.7.2_inverted_in_raises_domain",
+    "clauses": ["RLOW.6.1.7", "LERR.9.12"],
+    "category": "logical",
+    "dead_rules_expected": ["inside"],
+    "scenario": "[LINT.7.2]: evaluating `start .. end` over two non-null values that are not `start <= end` raises a ComputationError of kind DOMAIN, and every operation on the interval yields it. One S with `t` 6, `a` 5 and `b` 3: rule `inside` tests `s.t in (s.a .. s.b)`, which does not fire, and rule `handler` logs the fault fact's kind, schema and slot. It does not log `rule`: a trap raised during matching names the node, `$beta_<id>` ([LERR.9.2]), whose number is the compiler's to choose. The offending operand is the pair's start, `s.a`, a slot read, so the fault names `S` and `a` ([RLOW.6.1.7], [LERR.9.12]). `t` is 6 so that `a <= t` holds and only `t < b` is false: a lowering that put the check beside the endpoint comparisons inside an `and` would have that `false` absorb the fault ([LNUL.4.2]) and log nothing; the lowering that shipped before RLOW.6.1.7 answered false silently too. Expected: `DOMAIN [S] [a]`. PATH PINNED: `dsc.rete`'s `rlow_6_1_7_check` wrapping `in`'s comparison in FN_INTERVAL_CHECK(s, e, v); libds `eval_interval_check` (rete/eval.c) and Mercury `ds.eval.rlow_6_1_7_interval_check`, each raising DOMAIN with the pair's start as offending operand.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    t: Int mutable\n    a: Int mutable\n    b: Int mutable\n\nrule inside:\n    S s where s.t in (s.a .. s.b)\n->\n    log info \"inside {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} [{e.schema}] [{e.slot}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "t": 6, "a": 5, "b": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DOMAIN [S] [a]"]
+    }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "LERR.1.1c",
+  "clauses": ["LCRS.8.1", "LERR.1.1.6"],
+  "category": "compiler",
+  "scenario": "Compile-error policy per LERR.1.1.6 — a call action must carry cooldown: <dur> or nocooldown; omitting both is a static constraint the compiler can verify from the call syntax. Rejected with DS_VALIDATE_CALL_RATE_MOD.",
+  "rules_ds": "service light.turn_on:\n    kwarg entity_id: String\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig\n->\n    call light.turn_on entity_id: \"kitchen\"\n",
+  "expect": {
+    "kind": "compile_error",
+    "code": "DS_VALIDATE_CALL_RATE_MOD"
+  }
+}

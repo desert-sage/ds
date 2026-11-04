@@ -1,0 +1,9 @@
+{
+    "id": "LSER.16.7.1",
+    "category": "compiler",
+    "scenario": "v1 exact contains (LSER.16.7.1). `contains(cursor, value)` is exact set membership over a bounded `sliding` window's raw samples (SeriesBackendRingBuffer) — so it compiles with no accuracy phrase. The window is inherited from the series decl. Pin: a series declaring `contains sliding 10_min` and a rule using `contains(e.tag, \"error\")` as a Bool predicate compiles clean.",
+    "rules_ds": "use default\n\nschema Event scope logical:\n    entity_id: String key\n    tag: String mutable\n\nseries Event.tag:\n    contains sliding 10_min\n\nrule r:\n    Event e where contains(e.tag, \"error\")\n->\n    log critical \"{e.entity_id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

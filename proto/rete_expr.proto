@@ -1,0 +1,275 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+import "builtin_fn.proto";
+
+// Shared expression tree for BetaNode join tests and TerminalNode RHS actions.
+// Used by beta.proto and term.proto.
+
+message Expr {
+    oneof kind {
+        int64       lit_int    = 1;
+        double      lit_float  = 2;
+        string      lit_str    = 3;
+        bool        lit_bool   = 4;
+        VarExpr     var        = 5;
+        BinopExpr   binop      = 6;
+        UnopExpr    unop       = 7;
+        CallExpr    call       = 8;
+        bool        now        = 11;  // (now) clock read; value ignored
+        IfExpr      if_        = 12;
+        BindExpr    bind       = 13;
+        uint32      bind_ref   = 14;  // bind_ref.bind_index
+        JsonPathExpr json_path = 15;
+        // [LNUL.2.1] the canonical `null` literal. The oneof CASE signals
+        // null; the bool value is ignored (like `now`). Loads to
+        // DS_RETE_EXPR_LIT_NULL; eval gives it Kleene semantics ([LNUL.4]).
+        bool        lit_null   = 16;  // NULL literal
+        // [LNUL.8.9] `left ?? right` — evaluate left once; if null, evaluate
+        // right (lazy). Loads to DS_RETE_EXPR_COALESCE.
+        CoalesceExpr coalesce  = 17;  // ?? coalesce
+        // [LNUL.4.9] `x is <subject>` / `x is not <subject>` — the TOTAL tag
+        // test. Loads to DS_RETE_EXPR_IS_TEST.
+        IsTestExpr  is_test    = 18;  // is / is not
+        // An interpolated string, compiled whole (RLOW.6.4).
+        InterpExpr  interp     = 20;
+        // [LTIM.2.8.6] the entry stamp of the fact bound at this pattern
+        // index: the monotonic-clock sample when it entered working memory,
+        // as a Duration. Engine state, not a slot; `dwell` lowers to
+        // FN_MONOTONIC_NS minus this ([LEXP.9.5.1]).
+        uint32      entry_stamp = 21;  // pattern_index
+    }
+
+    // An interpolated string is one InterpExpr, and no format string reaches the runtime.
+    reserved 9, 10;
+    reserved "str_cat", "format";
+
+    // PROVENANCE ([IRET.9.6]) — true when this expression's value
+    // derives from a read of a `Json` slot. Outside the oneof, because it is a
+    // property OF a node rather than a kind of node.
+    //
+    // WHAT IT DECIDES: an ill-typed operation at runtime is a TypeError when an
+    // operand is tainted and an EngineError otherwise — abandon the activation,
+    // or halt the tier. `Json` is the one slot type whose shape is not
+    // schema-committed ([LADP.5.5.3]), so a wrong-typed leaf there is DATA:
+    // expected, and attributable to a node. Anywhere else the load-time shape
+    // said one thing and the value is another, which means the artefact lied.
+    //
+    // WHY THE COMPILER AND NOT THE RAISING SITE: a runtime value is a tag and a
+    // union carrying no provenance, and provenance is TRANSITIVE —
+    // `(j.a + 1) > 5` buries the projection a level down. Both runtimes have
+    // this problem identically, so it is not an artefact of either.
+    //
+    // PROPAGATION: taint FLOWS through a `let`, and CLEARS at a `::` cast and at
+    // `??`. Both of those ESTABLISH the type and carry their own disposition, so
+    // a value on the far side of one was checked and a later ill-typed operation
+    // on it means something else is wrong — which is the EngineError criterion
+    // exactly. Note the shape: the two constructs an author uses to HANDLE a
+    // `Json` value are the two that end its provenance.
+    //
+    // TERMINATION: taint is RULE-LOCAL. A value reaching a slot has passed
+    // through `emit` and the slot is schema-committed, so provenance ends at the
+    // fact boundary.
+    //
+    // ABSENT MEANS CLEAN: proto3 has no presence for a scalar. A reader that
+    // ignores the field gives the wrong disposition rather than no disposition,
+    // so the field is no additive change ([LDET.1.10]).
+    bool json_tainted = 19;
+}
+
+// COALESCE ([LNUL.8.9]): `left ?? right`.
+message CoalesceExpr {
+    Expr left  = 1;
+    Expr right = 2;
+}
+
+// IS TEST ([LNUL.4.9]): `x is <subject>` / `x is not <subject>`.
+//
+// TOTAL, and that is the whole point. It observes a value of any kind and
+// answers `true` or `false`; it never yields null and never raises. A guard
+// that could fail on the condition it guards is not a guard, and [LNUL.4.9]
+// carries the truth table this message is evaluated against.
+//
+// THE SUBJECT IS A CLOSED ENUM, NOT AN `Expr`, and the shape is the reason.
+// An `Expr` subject would be evaluated, and evaluation faults or yields null —
+// which would put a failure path inside the operator whose defining property
+// is that it has none. Six of the twelve subjects have no `Expr` form at all:
+// DS has no type values, and inventing one is the reified-type surface the
+// language declines. Closing the enum also means `x is (y + 1)` is
+// inexpressible rather than expressible-and-rejected, so the artefact carries
+// exactly the twelve legal subjects and no illegal thirteenth.
+message IsTestExpr {
+    Expr      operand = 1;
+    IsSubject subject = 2;
+    bool      negated = 3;   // `is not` — inverts AFTER the test, one operator
+}
+
+// The closed subject set of [LNUL.4.9]. Six distinguished constants and six
+// tag names. The source-level distinction between the two categories is not
+// carried here, because both are total predicates over one value: a CONSTANT
+// tests tag AND value, a TAG NAME tests the tag alone.
+enum IsSubject {
+    IS_SUBJECT_UNSPECIFIED = 0;   // refused at load
+
+    // Distinguished constants.
+    IS_SUBJECT_NULL    = 1;
+    IS_SUBJECT_TRUE    = 2;
+    IS_SUBJECT_FALSE   = 3;
+    IS_SUBJECT_INF     = 4;
+    IS_SUBJECT_NEG_INF = 5;
+    IS_SUBJECT_NAN     = 6;
+
+    // Tag names. `Time` is deliberately ABSENT — its membership is open, and
+    // adding it later is an append under [STYL.2.8.7] rather than a change.
+    IS_SUBJECT_INT     = 7;
+    IS_SUBJECT_FLOAT   = 8;
+    IS_SUBJECT_BOOL    = 9;
+    IS_SUBJECT_STRING  = 10;
+    IS_SUBJECT_BYTES   = 11;
+    IS_SUBJECT_JSON    = 12;
+}
+
+// VAR: read a slot from a fact in the token.
+// pattern_index 255 = the right-side candidate fact (join context); slot_index
+// 255 = the fact itself, as a reference. Every other index is 0..254
+// ([RDSC.4a.9.1]).
+message VarExpr {
+    uint32 pattern_index = 1;
+    uint32 slot_index    = 2;
+}
+
+message BinopExpr {
+    BinopOp op    = 1;
+    Expr    left  = 2;
+    Expr    right = 3;
+}
+
+enum BinopOp {
+    BINOP_ADD  = 0;
+    BINOP_SUB  = 1;
+    BINOP_MUL  = 2;
+    BINOP_DIV  = 3;
+    BINOP_IDIV = 4;
+    BINOP_MOD  = 5;
+    BINOP_EQ   = 6;
+    BINOP_NE   = 7;
+    BINOP_LT   = 8;
+    BINOP_GT   = 9;
+    BINOP_LE   = 10;
+    BINOP_GE   = 11;
+    BINOP_AND  = 12;
+    BINOP_OR   = 13;
+    BINOP_BAND = 14;
+    BINOP_BOR  = 15;
+    BINOP_BXOR = 16;
+    BINOP_SHL  = 17;
+    BINOP_SHR  = 18;
+}
+
+message UnopExpr {
+    UnopOp op      = 1;
+    Expr   operand = 2;
+}
+
+enum UnopOp {
+    UNOP_NOT  = 0;
+    UNOP_BNOT = 1;
+    UNOP_NEG  = 2;
+}
+
+
+message CallExpr {
+    reserved 1;            // a builtin named by string; `op` names it by number
+    reserved "name";
+    repeated Expr args = 2;
+    BuiltinFn     op   = 3;
+}
+
+// An interpolated string (RLOW.6.4). The runtime renders it in one pass over
+// `prims`, in order, appending each primitive's text. It interprets no format
+// string: every spec was resolved into the primitives' fields at compile time.
+message InterpExpr {
+    repeated FormatPrim prims = 1;
+}
+
+message FormatPrim {
+    oneof prim {
+        string    text  = 1;  // literal text, written as it is
+        ValuePrim value = 2;  // one value under a numeric or string spec
+        TimePrim  time  = 3;  // one Time under a timestamp spec
+    }
+}
+
+// One value rendered under [LGRA.2.9.6.10]'s rules. With every field at its
+// zero value this is the value's canonical text, unpadded.
+message ValuePrim {
+    Expr        value         = 1;
+    FormatAlign align         = 2;
+    bool        plus          = 3;  // `+`: a non-negative number carries `+`
+    bool        zero          = 4;  // `0`: pad with zeros after the sign
+    uint32      width         = 5;  // in code points; 0 = no minimum
+    bool        has_precision = 6;
+    uint32      precision     = 7;  // meaningful only when has_precision
+    FormatType  type          = 8;
+}
+
+enum FormatAlign {
+    FORMAT_ALIGN_DEFAULT = 0;  // a number right, a String or Bool left
+    FORMAT_ALIGN_LEFT    = 1;  // `<`
+    FORMAT_ALIGN_RIGHT   = 2;  // `>`
+}
+
+enum FormatType {
+    FORMAT_TYPE_CANONICAL = 0;  // no type: the value's canonical text
+    FORMAT_TYPE_D         = 1;
+    FORMAT_TYPE_F         = 2;
+    FORMAT_TYPE_S         = 3;
+    FORMAT_TYPE_X_LOWER   = 4;  // `x`
+    FORMAT_TYPE_X_UPPER   = 5;  // `X`
+    FORMAT_TYPE_B         = 6;
+}
+
+// One Time under a timestamp spec ([LGRA.2.9.6.4]). `value` is evaluated once;
+// `items` is the pattern resolved at compile time, rendered in order, every
+// field in the value's own UTC offset. `%%` is a `text` item.
+message TimePrim {
+    Expr              value = 1;
+    repeated TimeItem items = 2;
+}
+
+message TimeItem {
+    oneof item {
+        string    text  = 1;
+        TimeField field = 2;
+    }
+}
+
+enum TimeField {
+    TIME_FIELD_UNSPECIFIED = 0;  // refused at load
+    TIME_FIELD_YEAR        = 1;  // %Y
+    TIME_FIELD_MONTH       = 2;  // %m
+    TIME_FIELD_DAY         = 3;  // %d
+    TIME_FIELD_HOUR        = 4;  // %H
+    TIME_FIELD_MINUTE      = 5;  // %M
+    TIME_FIELD_SECOND      = 6;  // %S
+    TIME_FIELD_MICROSECOND = 7;  // %f
+    TIME_FIELD_UTC_OFFSET  = 8;  // %z
+}
+
+message IfExpr {
+    Expr cond  = 1;
+    Expr then_ = 2;
+    Expr else_ = 3;
+}
+
+message BindExpr {
+    uint32 bind_index = 1;
+    Expr   expr       = 2;
+}
+
+message JsonPathExpr {
+    Expr val  = 1;
+    Expr path = 2;
+}

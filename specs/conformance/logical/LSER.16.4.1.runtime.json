@@ -1,0 +1,42 @@
+{
+    "id": "LSER.16.4.1.runtime",
+    "category": "logical",
+    "scenario": "[LSER.16.4.1] percentiles compute end-to-end over the SeriesBackendRingBuffer raw-sample window (interpolated, LSER.17.2). Option B (RFC_builtin_op_enum): pN lowers to the single FN_SERIES_PERCENTILE op with the percentile N threaded as the call's value argument through query_with_value — so the runtime must route each pN to ds_series_ring_buffer_percentile(N), threading distinct N per call. This vector is DISCRIMINATING: over the ascending window 10,20,..,100 the median stays ~55 while p95 climbs to ~95, and the rule fires only when `p50 <= 60 AND p95 >= 80`. No single percentile value satisfies both bounds (60 < 80), so the log appears ONLY if p50 and p95 resolve to distinct, correct values — i.e. N (50 vs 95) is threaded to the right argument. A composition bug (N to the wrong arg, both reading the same kind, or the percentile off) leaves the condition unsatisfiable and drops the event. Pin: action_log appears.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    entity_id: String key\n    val: Float mutable\n\nseries Reading.val:\n    p50 sliding 1h\n    p95 sliding 1h\n\nrule pctl_discriminates:\n    Reading r where p50(r.val) <= 60.0 and p95(r.val) >= 80.0\n->\n    log info \"p50<=60 and p95>=80\"\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 10.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 20.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 30.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 40.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 50.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 5000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 60.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 6000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 70.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 7000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 80.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 8000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 90.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 9000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "entity_id": "d1", "val": 100.0 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": ["action_log"]
+    }
+}

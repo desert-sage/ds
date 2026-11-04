@@ -1,0 +1,99 @@
+{
+  "id": "LLEX.11.1",
+  "prefix": "LLEX",
+  "doc": "LEXER.md",
+  "parent": "LLEX.11",
+  "seq": 463,
+  "depth": 2,
+  "kind": "grammar",
+  "heading": "Integer (`INT_LIT`)",
+  "text": "### Integer (`INT_LIT`) [LLEX.11.1]\n\n```\nINT_LIT   ::= DEC_LIT | HEX_LIT | BIN_LIT | OCT_LIT\n\nDEC_LIT   ::= DIGIT ('_'? DIGIT)*\nHEX_LIT   ::= '0x' HEX_DIGIT ('_'? HEX_DIGIT)*\nBIN_LIT   ::= '0b' BIN_DIGIT ('_'? BIN_DIGIT)*\nOCT_LIT   ::= '0o' OCT_DIGIT ('_'? OCT_DIGIT)*\n\nHEX_DIGIT ::= DIGIT | 'a'..'f' | 'A'..'F'\nOCT_DIGIT ::= '0'..'7'\nBIN_DIGIT ::= '0' | '1'\n```\n\nA `_` that a unit suffix follows is the unit `_` of [LLEX.12.1] and ends the\nliteral. The lexer must refuse any other `_` that these productions and those\nof [LLEX.11.2] do not admit: one at the end of a digit run, beside a base\nprefix, a decimal point or an exponent marker, or beside another `_`.\n\n",
+  "refs": [
+    "LLEX.11.2",
+    "LLEX.12.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__accepted_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "LCST.4.5.7_int_formats_parse's eight texts executed through the `INT_LIT` reader: `31`, `3_1`, `0x1F`, `0x1f`, `0b1_1111`, `0o37`, `+31`, `-0x1F`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__digit",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The value of one digit of a base: `0` to `9`, then `a` to `f` and `A` to `F` for the bases that reach them, `HEX_DIGIT` admitting both cases."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__digits_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The digits after the first, a `_` admitted only where a digit follows: this clause's `('_'? DIGIT)*` in every base, LLEX.12.1's separator rule and LCST.4.5.7's fixture. A `_` at the end of the run or beside another `_` makes the text no `INT_LIT`, the refusal the clause's residue paragraph states."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "lcst_4_5_7__refused_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Spellings no `INT_LIT` admits, executed: a decimal point, an exponent, trailing whitespace, a unit suffix with and without the unit `_`, a `_` after the prefix, a leading `_`, a trailing `_` ([LLEX.12.1]'s rule), the uppercase `0X`, a digit outside the base."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_1__digits",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A digit run of a base: a first digit, then `lcst_4_5_7__digits_run`; the empty text and a text opening with anything but a digit of the base are no run."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_1__int_lit",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An `INT_LIT`'s magnitude: `DEC_LIT`, or after a leading `0` the `HEX_LIT`, `BIN_LIT` and `OCT_LIT` prefixes through `llex_11_1__prefixed`, each digit run `lcst_4_5_7__digits_run`'s: the four productions as this clause states them."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_1__prefixed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What follows a leading `0`: `x` then hex digits, `b` then binary, `o` then octal, nothing (the literal `0`), or more decimal digits; a prefix with no digit after it and an uppercase `0X` are no literal."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__dec_more",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "`DEC_LIT ::= DIGIT ('_'? DIGIT)*` after its first digit: a `_` continues the run only when a digit follows, so a `_` at the end of a run, before a decimal point or an exponent marker, or beside another `_` ends it unconsumed and the `FLOAT_LIT` is refused; a run that must open with a digit (`llex_11_2__dec_run`) refuses one at the start or after the point or the marker."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__dec_run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A `DEC_LIT` at the head of a text as the `FLOAT_LIT` grammar reads it: a digit, then `llex_11_2__dec_more`; its value, its digit count and the text after it. It serves `FLOAT_LIT`'s two `DEC_LIT`s and the exponent's; the `INT_LIT` reader is `llex_11_1__int_lit`."
+      },
+      {
+        "path": "formal/idris/Rete/Eval.idr",
+        "name": "llex_11_2__refused_spellings",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "`1_.5`, `1._5` and `1.5e_1` are no `FLOAT_LIT`, each `Refl`: a `_` beside the point or the marker, which this clause's residue refuses."
+      }
+    ]
+  }
+}

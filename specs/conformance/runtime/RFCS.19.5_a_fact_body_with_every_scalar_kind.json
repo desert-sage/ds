@@ -1,0 +1,15 @@
+{
+    "id": "RFCS.19.5_a_fact_body_with_every_scalar_kind",
+    "category": "runtime",
+    "scenario": "[RFCS.19.5] the fields of a fact body ascend by number, one per slot, for a schema with a slot of each wire shape a fact body carries: varint (Int, Bool), 64-bit (Float), and length-delimited (String, Bytes), with a nullable String set to a value. The harness ([RCTS.1.2.19]) records one host assert of a `Packet` with every slot set and a pump, and walks the recording as `RFCS.19.5` does, after showing the walk refuses the recording with two fields of one atom body swapped. Paths: libds's recorder (`Engine.record`) and its fact-body encoder; the Mercury runtime's `ds.rfcs` `encode_stream`.",
+    "rules_ds": "use default\n\nschema Packet scope logical:\n    id: String key\n    seq: Int mutable\n    ratio: Float mutable\n    flag: Bool mutable\n    payload: Bytes mutable\n    tag: String? mutable\n\nrule keep:\n    Packet p where p.seq > 0\n->\n    log info \"kept\"\n",
+    "expect": {
+        "kind": "field_order",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Packet", "slots": { "id": "p1", "seq": 300, "ratio": 0.25, "flag": true, "payload": { "$bytes": "00ff10" }, "tag": "t" } },
+            { "op": "pump" }
+        ],
+        "atoms": ["StreamHeader", "SchemaDef", "Slot", "FactAssert"]
+    }
+}

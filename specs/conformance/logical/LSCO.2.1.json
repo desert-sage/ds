@@ -1,0 +1,21 @@
+{
+    "id": "LSCO.2.1",
+    "category": "logical",
+    "scenario": "`scope explicit` (default) facts must be manually retracted per LSCO.2.1 — they do not participate in logical truth maintenance. Retract the trigger: the explicit-scoped emitted fact stays in working memory.",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Result:\n    entity_id: String\n\nrule make_result:\n    Trig t\n->\n    emit Result entity_id: t.entity_id\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" }, "as": "trig" },
+            { "op": "pump" },
+            { "op": "retract", "label": "trig" },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "rule_fire_end",
+            "fact_retract"
+        ]
+    }
+}

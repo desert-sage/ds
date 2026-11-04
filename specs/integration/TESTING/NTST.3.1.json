@@ -1,0 +1,243 @@
+{
+  "id": "NTST.3.1",
+  "prefix": "NTST",
+  "doc": "TESTING.md",
+  "parent": "NTST.3",
+  "seq": 152,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NTST.3.1] The mock clock moves only when the test moves it, and there are\ntwo ways to move it: set it to an absolute instant, or advance it by a\nduration. Both act on the monotonic clock ([LTIM.2.8.2]); an advance also moves\nthe wall clock by the same duration, and leaves a wall clock that has no value\nwithout one. A third, `ds_engine_wall_clock_set`, sets\nthe wall clock alone, to any instant, earlier or later — the way a test\nreproduces a host clock being stepped ([LTIM.2.8.3]).\n\nThe monotonic clock never decreases, so once the engine has taken its first\nsample, from an input or a pump ([LTIM.2.8.4]), `ds_engine_clock_set` to a\nvalue below the current one must return `DS_ERR_STATE` and leave both clocks as\nthey were, so nothing recorded goes backward. Before the first sample, it must\ntake any value, which is how a test fixes its epoch.\n\n**An advance never wraps a clock.** On a mock clock,\n`ds_engine_clock_advance` must return `DS_ERR_TIME_RANGE` and leave the engine as\nit was when any of these holds:\n\n- the duration is greater than $2^{63} - 1$, which no `Duration` holds\n  ([LTIM.1.3.1]);\n- the wall clock has a value, and that value plus the duration is greater than\n  $2^{63} - 1$, outside the `Time` range ([LTIM.1.1.5]);\n- the monotonic clock plus the duration is greater than $2^{64} - 1$, where it\n  would wrap and so decrease ([LTIM.2.8.2]).\n\nAn advance that lands exactly on the top of a range is taken. A wall clock that\nhas no value limits nothing.\n\nThe first two exist because tests need both. An absolute set establishes an epoch,\nwhich is what makes a computed deadline readable in the test's own text\n([NTST.6.1]). A relative advance steps past a known interval without the test\nhaving to know where the clock currently stands.\n\nNeither is legal in live mode ([NTST.3.2]). Neither is a sample: the next\ninput or pump observes and records the value it left ([NTST.3.3]), and\nneither on its own retracts anything, because time-driven work happens at the\nnext pump ([NTST.3.4]).\n\n",
+  "refs": [
+    "LTIM.1.1.5",
+    "LTIM.1.3.1",
+    "LTIM.2.8.2",
+    "LTIM.2.8.3",
+    "LTIM.2.8.4",
+    "NTST.3.2",
+    "NTST.3.3",
+    "NTST.3.4",
+    "NTST.6.1"
+  ],
+  "errors": [
+    "DS_ERR_STATE",
+    "DS_ERR_TIME_RANGE"
+  ],
+  "symbols": [
+    "ds_engine_clock_advance",
+    "ds_engine_clock_set",
+    "ds_engine_wall_clock_set"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "Ntst_3_1__mock",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The mock engine's clocks, and whether an input has been consumed -- the state the refusal is decided on."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "Ntst_3_1__mutation",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The three mutations the clause names: a set of the monotonic clock to an instant (`ds_engine_clock_set`), an advance of both clocks by a duration (`ds_engine_clock_advance`), a set of the wall clock alone (`ds_engine_wall_clock_set`)."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ltim_2_8_5__mock_replay_at_samples",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A mock run of the clause's three mutations and inputs, recorded at samples, replays from any starting clocks to the samples it held."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__advance_moves_both_alike",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AN ADVANCE MOVES BOTH CLOCKS ALIKE: across it each clock has moved by the duration, whatever the clocks were and whether or not an input has been consumed. 'An advance also moves the wall clock by the same duration.'"
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__after_it",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "AFTER IT the same set is refused and the clocks are as they were. Computed."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__before_the_first_input",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "BEFORE THE FIRST INPUT a set below the current value is taken: a test fixes its epoch. Computed."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__mono_never_decreases",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE MONOTONIC CLOCK NEVER DECREASES across one mutation once an input has been consumed, for every mutation and every pair of clocks: the refusal of a set below the current value is how [LTIM.2.8.2]'s first sentence is kept on the mock."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__mutate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "ONE MUTATION: a set before the first input takes any value ('how a test fixes its epoch'); after it `set_at` decides; an advance moves both clocks by the duration; a wall set moves the wall clock alone, to any instant."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__mutate_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No mutation un-consumes."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A run of mutations, in order."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__run_never_decreases",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "AND ACROSS ANY RUN: for every sequence of mutations from a state that has consumed an input, the monotonic clock ends at or above where it began."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__set_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A set once an input has been consumed, decided on the comparison: taken when the value is at or above the monotonic clock, refused below it. The clause's `DS_ERR_STATE` is the refusal; the error value itself is not modelled, only that the clocks stand."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__set_at_lte",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A decided set never puts the monotonic clock below where it was."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__set_at_shape",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No decided set un-consumes: the state after it is some pair of clocks with `consumed` still set."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__unguarded",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "An engine that takes every set, consumed or not. The refused shape."
+      },
+      {
+        "path": "formal/idris/MockClock.idr",
+        "name": "ntst_3_1__unguarded_goes_back",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "WITHOUT THE REFUSAL THE MONOTONIC CLOCK GOES BACK: set to 3 at 5 after an input, it reads below 5. What the refusal is for, by the engine that lacks it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "Ltim_2_8_3__step",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "A FIXTURE'S STEP WITH THE WALL: a wall step, or one of Rete/NetworkTimed.idr's -- a tick, a data input, a pump. The clause's three mutations are a tick (a set of the monotonic clock), a tick then a wall step (an advance of both) and a wall step (a set of the wall alone). LESS than the clause: the refusal of a monotonic set below the current value is MockClock.idr's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_2__wall_step_moves_no_monotonic_pump",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A wall set between two pumps changes nothing a `dwell` or `within` rule computes at the second: 'neither on its own retracts anything', and this one fires nothing either."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__no_wall_step_is_the_timed_run",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "WITH NO WALL STEP THE RUN IS Rete/NetworkTimed.idr's: step for step, verdict for verdict, over every program, step list and state. By induction on the steps. Every fixture whose lowering writes no wall step -- every fixture with no `now()` -- runs the run it ran before this rung."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__run_steps_wall",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The mutations and the inputs in the fixture's order, each inside one call. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_projects",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'Sets the wall clock alone': nothing of the monotonic clock, the deadlines or the facts moves. A transcription."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_sets_the_wall",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "'To any instant, earlier or later': the instant named is the one held. A transcription."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "`ds_engine_wall_clock_set` on the Idris model's engine, 'sets the wall clock alone, to any instant, earlier or later'; and the wall half of an advance, which the fixture lowering writes as a tick then a wall step. LESS than the clause: the refusal of a monotonic set below the current value is MockClock.idr's, and the lowering refuses such a fixture before anything is lowered."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ntst_3_1__advance",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "AN ADVANCE to `t`, from clocks that started together: a tick to `t` then a wall step to `t`. 'An advance also moves the wall clock by the same duration.' A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ntst_3_1__assert_ping",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The assert of the Ping, named. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ntst_3_1__pump",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A pump of fuel 3, named. A fixture."
+      }
+    ]
+  }
+}

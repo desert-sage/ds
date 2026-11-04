@@ -1,0 +1,18 @@
+{
+  "id": "LLSU.10.1",
+  "prefix": "LLSU",
+  "doc": "LANGUAGE_SURFACE.md",
+  "parent": "LLSU.10",
+  "seq": 266,
+  "depth": 2,
+  "kind": "table",
+  "heading": null,
+  "text": "[LLSU.10.1] Declared series naming the observations an author wants\non a slot's history (aggregation × time-model × accuracy);\nthe compiler picks backing structures from the matrix at\n[LSER.18.1].\nAggregations are accessible as expression atoms (via\n`expr_aggregation_atom` in the expressions category) and as\ncompanion slots on bindings.\n\n| Name | Explanation | Dependencies | Refactor hint |\n|---|---|---|---|\n| `series` | top-level declaration: `series <slot-ref> [block-opts]:` + block of observation lines (`<aggs> <time-model>`) | | not generally avoidable if any aggregation is used |\n| `series_block_options` | parenthesised block options on the declaration line: `(by: <slot>\\|none)` | `series` | omit (on `logical`, `by:` defaults to the schema's declared `key` slots per LSER.7.6.1; required on `ttl`) |\n| `series_time_model_all_time` | `all_time` time-model phrase | `series` | use `sliding <dur>` with a long window |\n| `series_time_model_sliding` | `sliding <dur>` true-window time-model phrase | `series` | not generally avoidable for windowed questions |\n| `series_time_model_tumbling` | `tumbling <dur>` non-overlapping bucketed time-model phrase | `series` | approximate with `sliding <dur>` (different read semantics) |\n| `series_time_model_sample` | `sample <n>` uniform-random reservoir time-model phrase ([LSMP]) | `series` | use `sliding` over a sized window |\n| `series_agg_descriptive` | `mean` `median` `min` `max` `sum` `count` | `series` | manually maintain via rule-based state |\n| `series_agg_dispersion` | `stdev` `pstdev` `variance` `pvariance` | `series` | manually compute via call target |\n| `series_agg_percentile` | `p1`..`p99` (excluding `p0`/`p100` — use `min`/`max`) | `series` | exact on a bounded window (`sliding` / `sample`); `all_time` / `tumbling` percentiles have no exact backing |\n| `series_agg_cardinality` | `count_distinct` | `series` | manually maintain set state per identity |\n| `series_agg_per_value_freq` | `count_of(s, value)` | `series` | manually maintain a frequency table per identity |\n| `series_agg_set_membership` | `contains(s, value)` | `series` | manually maintain a set per identity |\n| `series_agg_boolean` | `bool_and` `bool_or` (`Bool`-typed slots only) | `series` | use explicit `not` absence patterns |\n| `series_agg_temporal` | `first` `last` `rate` `direction` | `series` | inline via pattern-match on two timestamps |\n| `series_label` | `as <label>` namespacing on an observation line; produces `t.<label>.<agg>` companion slots | `series` | unique-aggregation triples per slot, drop `as` |\n| `series_companion_slot` | `t.<agg>` / `t.<label>.<agg>` companion-slot aliases on bindings | `series` | write the explicit `<agg>(t)` / `<agg>(t.<label>)` expression form |\n\nA `tolerance` / `confidence` / `delta` /\n`bound deterministic` phrase on an observation line is refused ([LSER.15.1]).\n\n`confidence`, `delta`, `bound` and `deterministic` are **ordinary identifiers**,\nnot reserved words.\n`tolerance` is reserved: it is the slot-level within-tolerance clause\n([LFAC.2]). See [LSER.15].\n\n",
+  "refs": [
+    "LFAC.2",
+    "LSER.15",
+    "LSER.15.1",
+    "LSER.18.1",
+    "LSER.7.6.1"
+  ]
+}

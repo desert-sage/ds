@@ -1,0 +1,30 @@
+{
+    "id": "RARC.5.6.8_a_cascade_lands_between_two_emits",
+    "clauses": ["RARC.5.6.8"],
+    "category": "logical",
+    "scenario": "[RARC.5.6.8]: \"Each RHS action's change to working memory is propagated through the network, truth-maintenance retractions included, before the change is recorded and before the next action of the same firing runs. ... a firing that emits twice, where only the second emit invalidates a `no (...)`, records the retraction between its two asserts.\" The program is the lockstep scenario 18_cascade_point's (fixture 39_cascade_point). Build(1) and RefusalText(1) are asserted and one pump runs. `make_artifact` fires first and emits Artifact(1) logically, justified by `no (Refusal ...)`. Then `two_emits` emits Bystander(9), which invalidates nothing, and emits Refusal(1) logically, which withdraws Artifact(1)'s justification. Per action, Refusal's assert is propagated before it is recorded, so the stream holds Bystander's assert and emit, then Artifact's retraction, then Refusal's assert and emit, all inside `two_emits`'s firing. What it discriminates: a runtime that propagates once per firing records the retraction after Refusal's emit, or after `rule_fire_end`, and fails the order; one that re-sorts the cascade after its cause fails the same way. With one emit the two readings put the retraction in the same place, which is why the firing emits twice. 18_cascade_point holds the two runtimes to each other; this vector holds them to the clause. PATHS: libds's action loop (rete/engine.c), whose ACTION_ASSERT asserts the fact through the network (`ds_rete_wm_assert`), cascade included, before the emit callback records it; the Mercury runtime's `ds.exec.fire`, which applies, propagates and only then announces each action (ds.exec.m).",
+    "rules_ds": "schema Build scope logical:\n    id: Int key\n\nschema RefusalText scope logical:\n    id: Int key\n\nschema Refusal scope logical:\n    id: Int key\n\nschema Artifact scope logical:\n    id: Int key\n\nschema Bystander scope ttl 1_h:\n    id: Int\n\nrule make_artifact:\n    Build b\n    no (Refusal r where r.id == b.id)\n->\n    emit Artifact logical id: b.id\n\nrule two_emits:\n    RefusalText t\n->\n    emit Bystander id: 9\n    emit Refusal logical id: t.id\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Build", "slots": { "id": 1 } },
+            { "op": "assert", "schema": "RefusalText", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_assert",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end",
+            "rule_fire_begin",
+            "fact_assert",
+            "action_emit",
+            "fact_retract",
+            "fact_assert",
+            "action_emit",
+            "rule_fire_end"
+        ]
+    }
+}

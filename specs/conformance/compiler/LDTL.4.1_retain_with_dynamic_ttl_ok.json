@@ -1,0 +1,9 @@
+{
+    "id": "LDTL.4.1_retain_with_dynamic_ttl_ok",
+    "category": "compiler",
+    "scenario": "LDTL.4.1 — with `+dynamic_ttl` declared, a per-emit `retain: <expr>` override on an `emit` to a ttl-lifecycle schema is permitted (any expression; here the literal `60_s`), so the program compiles. PINS ONLY THAT IT COMPILES: `compile_ok` observes neither the TerminalNode Action's `ttl_override` Expr nor the runtime's evaluation of it at fire time.",
+    "rules_ds": "use default:\n    dynamic_ttl: true\n\nschema Trig scope logical:\n    k: Int key\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: 60_s\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

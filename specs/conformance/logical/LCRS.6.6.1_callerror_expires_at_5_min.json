@@ -1,0 +1,22 @@
+{
+    "id": "LCRS.6.6.1_callerror_expires_at_5_min",
+    "clauses": ["LCRS.4.2.1", "RARC.5.2.4"],
+    "category": "logical",
+    "scenario": "[LCRS.6.6.1]: a `CallError` that no superseding call retracts lives exactly `CallError`'s TTL, 5_min ([LCRS.4.2.1]), and no other lifetime. The host delivers one `CallError`, corr `c1`, at t=0, and no call follows to supersede it. A probe asserted at t=299.999999999s sees it, so `seen` logs \"error 1\"; a probe asserted at t=300s exactly does not, because the pump retracts a fact due at the current instant before anything fires ([RARC.5.2.4], [RARC.5.6.3]). Exactly [\"error 1\"]. Each break moves the log: a shorter lifetime loses the line; no expiry, a longer one, or a sweep that keeps a fact due now adds \"error 2\". `CallError`'s TTL is independent of any response schema's, and the program's one service is `no response`, so one lifetime applied to both kinds cannot pass this and its twin, LCRS.6.6.1_response_expires_at_its_schema_ttl, together. PATH PINNED: the pump-entry TTL sweep over a host-asserted `CallError` -- libds `ds_engine_sweep_ttl_via_wrappers`, Mercury `ds.engine.sweep_expired`.",
+    "rules_ds": "service svc.read:\n    kwarg n: Int\n    no response\n\nschema Probe scope explicit:\n    k: Int\n\nrule seen:\n    Probe p\n    CallError\n->\n    log info \"error {p.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "CallError", "slots": { "corr": "c1", "code": "transport.timeout", "message": "no response", "ts": 0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 299999999999 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["error 1"]
+    }
+}

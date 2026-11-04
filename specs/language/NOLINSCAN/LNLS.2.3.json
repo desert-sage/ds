@@ -1,0 +1,25 @@
+{
+  "id": "LNLS.2.3",
+  "prefix": "LNLS",
+  "doc": "NOLINSCAN.md",
+  "parent": "LNLS.2",
+  "seq": 97,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "What `realtime` already enforces from `linear_scan: false`",
+  "text": "### What `realtime` already enforces from `linear_scan: false` [LNLS.2.3]\n\n`realtime` does not imply `linear_scan: false` in full, but it **automatically\nenforces a subset** of the `linear_scan: false` constraints — specifically the\nones where violation causes truly unbounded execution or allocation\n(not merely a larger T_wcet).  The following `linear_scan: false` exclusions\nare compile errors under `realtime` whether or not `linear_scan: false` is\ndeclared:\n\n| LNLS constraint | Why `realtime` also requires it |\n|---|---|\n| LNLS.3.2 — no novel strings | Intern table is locked after `go_live`; a novel string causes `DS_ERR_OOM` mid-firing. Must be a compile error, not a runtime error. |\n| LNLS.3.5 — no sketch backends | O(n) compaction can trigger any time in the pump; cost is unbounded and cannot be included in T_wcet. |\n| LNLS.3.7 — regex without `capacity` | O(L×P) where L is run-time length; unbounded without a declared `capacity`. |\n| LNLS.3.8 — string ordering without `capacity` | O(len) strncmp; unbounded without a declared `capacity`. |\n| LNLS.3.9 — JSON_PATH | Already blocked by the no-`json`-slots rule (LNLS.3.1); listed for completeness. |\n| LNLS.3.11 — series scan without `capacity` | O(D) scan where D (series depth) grows with the event trace; unbounded without a sample cap ([LSER.13.14]) — already a compile error under `realtime` (`DS_VALIDATE_RT_SERIES_UNBOUNDED`). |\n\n",
+  "deferred": true,
+  "refs": [
+    "LSER.13.14",
+    "LNLS.3.11",
+    "LNLS.3.2",
+    "LNLS.3.5",
+    "LNLS.3.7",
+    "LNLS.3.8",
+    "LNLS.3.9"
+  ],
+  "errors": [
+    "DS_ERR_OOM",
+    "DS_VALIDATE_RT_SERIES_UNBOUNDED"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+    "id": "LTAC.3.3_after_survives_parent_retract",
+    "category": "logical",
+    "scenario": "[LTAC.3.3] — an `after <dur>:` timer is asserted PLAINLY, not `emit ... logical`, so it carries no truth-maintenance link to the parent match and MUST survive the parent fact's retraction. Cancellation is only via `as`-keyed supersedure ([LTAC.2.2.1]), never parent-justification withdrawal. Pin: assert Trig (arms a 5_s timer on pump), RETRACT Trig before the delay elapses, advance past 5_s, pump — the after-body still fires and emits Delayed. The final fact_assert (Delayed) landing AFTER the parent's fact_retract is the proof the timer was not cancelled by the retract. The body emits a `ttl` Delayed because a `logical` emit in an `after` body is refused ([LLOG.11.9]).",
+    "rules_ds": "schema Trig scope logical:\n    entity_id: String key\n\nschema Delayed scope ttl 1_h:\n    dummy: Int\n\nrule delayed:\n    Trig\n->\n    after 5_s:\n        emit Delayed dummy: 0\n",
+    "expect": {
+        "kind": "event_sequence",
+        "steps": [
+            { "op": "set",     "now_ns": 0 },
+            { "op": "assert",  "schema": "Trig", "slots": { "entity_id": "t1" }, "as": "t" },
+            { "op": "pump" },
+            { "op": "retract", "label": "t" },
+            { "op": "advance", "delta_ns": 6000000000 },
+            { "op": "pump" }
+        ],
+        "expected_kinds": [
+            "fact_assert",
+            "fact_retract",
+            "fact_assert"
+        ]
+    }
+}

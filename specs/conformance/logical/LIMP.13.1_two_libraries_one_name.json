@@ -1,0 +1,20 @@
+{
+    "id": "LIMP.13.1_two_libraries_one_name",
+    "category": "logical",
+    "scenario": "[LIMP.13.1], [LIMP.13.2]: libraries `a` and `b` each declare `Reply`, with different slots, and the program imports both under aliases ([LIMP.2.1.7]). They are two schemas, `a.Reply` and `b.Reply`, so a host asserts each by its own name, and each rule reads its own fact through its own slots. Exactly [\"a 1\", \"b two\"]. A compiler that names both `Reply` writes one schema group, and `y.w` is refused with DS_VALIDATE_RULE_NOT_LOWERED or `x.v` reads the other schema's slot. PATH PINNED: `dsc.imports.limp_13_1_own_names`, then `dsc.lower.lower_one` and `dsc.rete.head_schema_name`, which write the own name on the schema atoms and each AlphaNode, and each runtime's lookup by that name.",
+    "rules_ds": "from a import Reply as AR\nfrom b import Reply as BR\n\nrule on_a:\n    AR x\n->\n    log info \"a {x.v}\"\n\nrule on_b:\n    BR y\n->\n    log info \"b {y.w}\"\n",
+    "libraries": {
+        "a": "schema Reply scope ttl 1_h:\n    corr: String\n    v: Int\n",
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    w: String\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "a.Reply", "slots": { "corr": "c1", "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c2", "w": "two" } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a 1", "b two"]
+    }
+}

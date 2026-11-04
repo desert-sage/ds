@@ -1,0 +1,21 @@
+{
+  "id": "NFCT.5.1",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.5",
+  "seq": 295,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.5.1] Every fact lifecycle event passes through the stream callback\n(`ds_engine_set_stream_callback`; [NCBK.2]):\n\n| Kind | Fires when | Payload |\n|---|---|---|\n| `DS_EV_FACT_ASSERT`  | an assert arrived ([RFCS.6.7]): a new fact entered working memory; or an upsert's replacement did, and the old fact's `DS_EV_FACT_RETRACT` follows; or a no-op reassertion left the live fact in place; or the engine refused the assert, and its `DS_EV_BOUNDS_ERROR` follows | `event->p.fact_assert.fact` |\n| `DS_EV_FACT_RETRACT` | a fact left working memory (your retract, the TTL sweep, a rule-side retract, or upsert replacement) | `event->p.fact_retract.fact` |\n\nThe payload of a refused assert's `DS_EV_FACT_ASSERT` is valid only for the\ncallback, and is not a working-memory handle: the fact never entered.\n\n`DS_EV_FACT_MODIFY` is reserved in the enum and **not emitted** — an upsert\nsurfaces as a `FACT_ASSERT` followed by a `FACT_RETRACT`, not a modify. A `switch` over\nthe kind still needs the case: the member is in the public enum. The full event catalogue is in [NCBK.2].\n\n",
+  "refs": [
+    "NCBK.2",
+    "RFCS.6.7"
+  ],
+  "symbols": [
+    "DS_EV_BOUNDS_ERROR",
+    "DS_EV_FACT_ASSERT",
+    "DS_EV_FACT_MODIFY",
+    "DS_EV_FACT_RETRACT"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.1_agg_preserves_dim",
+    "category": "compiler",
+    "scenario": "LUNI.9.1 — a unit-preserving aggregation keeps the slot's dimension. `mean(r.temp)` on a celsius-typed series has dimension `temperature`; the compare against `25_kilogram` (mass) fires the LUNI.8.2 cross-dimension check with DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck`'s `luni_9_1_agg_type`, then `adjacent_mismatches`.",
+    "rules_ds": "use default\n\nunit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    entity_id: String key\n    temp: celsius mutable\n\nseries Reading.temp:\n    mean sliding 10_s\n\nrule bad:\n    Reading r where mean(r.temp) > 25_kilogram\n->\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

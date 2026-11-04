@@ -1,0 +1,14 @@
+{
+  "id": "LERR.2.1",
+  "prefix": "LERR",
+  "doc": "ERRORS.md",
+  "parent": "LERR.2",
+  "seq": 223,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LERR.2.1] The condition a feature surfaces decides its rung ([LERR.1]). The\ntree walks **down** the axis — each question asks whether the condition gets\npast that rung, so the first `Yes` wins and the cost only rises:\n\n```\nCan the compiler detect this from static info?\n├── Yes → Compile error                        (rung 1)\n└── No:\n    Is a declared cap the thing being reached?\n    ├── Yes → Bounds refusal                   (rung 2)\n    │         The operation does not happen and the\n    │         caller is told; nothing is abandoned.\n    └── No:\n        Is this a legitimate runtime outcome the author\n        should react to via rules?\n        ├── Yes:\n        │   Is the feature's shape fact-plane (matching,\n        │   call-response, sibling-rule reaction)?\n        │   ├── Yes → Errors-as-values           (rung 3)\n        │   └── No → errors-as-values requires a fact-plane\n        │             surface; without one the condition\n        │             falls through to the rungs below.\n        └── No:\n            Is the value simply ABSENT — a missing optional\n            field, an unresolved path, a failed fallible\n            conversion — where \"don't match\" is right?\n            ├── Yes → Absence, reads as `null`   (rung 4)\n            └── No:  the activation cannot continue.\n                Is engine state still trustworthy?\n                ├── No  → EngineError            (rung 7)\n                └── Yes:\n                    Was the operation invalid on the\n                    value it was given?\n                    ├── Yes → TypeError          (rung 5)\n                    └── No  → ComputationError   (rung 6)\n                              Well typed, no answer exists.\n```\n\n**The last split is the one worth reading twice.** TypeError and\nComputationError cost the same — one activation — and differ only in why, which\nis what a consumer cannot recover afterwards if the two are merged.\n\n",
+  "refs": [
+    "LERR.1"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "id": "LCON.2.6.twos_complement_wrap",
+    "clauses": ["LEXP.7.13.1", "LCON.2.6.1"],
+    "category": "runtime",
+    "scenario": "LCON.2.6.1 integer determinism — near-overflow two's-complement wrap. `INT64_MAX + 1` wraps to `INT64_MIN` (silent two's-complement wrap per LEXP.7.13.1). The MIN value is carried in slot `y` and the guard `(t.x + 1) == t.y` gates the emit; fact_count 2 confirms the wrap.",
+    "rules_ds": "schema T scope logical:\n    x: Int key\n    y: Int mutable\n\nschema Hit scope logical:\n    d: Int key\n\nrule r:\n    T t where (t.x + 1) == t.y\n->\n    emit Hit logical d: 0\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [ { "schema": "T", "slots": { "x": 9223372036854775807, "y": -9223372036854775808 } } ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

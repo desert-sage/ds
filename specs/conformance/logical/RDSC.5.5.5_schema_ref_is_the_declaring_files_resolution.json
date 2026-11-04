@@ -1,0 +1,21 @@
+{
+    "id": "RDSC.5.5.5_schema_ref_is_the_declaring_files_resolution",
+    "category": "logical",
+    "scenario": "[RDSC.5.5.5] with [LIMP.13.2]: a slot's `schema_ref` is the own name of the schema its declaring file resolves. The program of `LIMP.1.5_library_slot_type_importer_binds_another`, read at the artefact: `c.Held.r` is `a.Reply`, though the program binds bare `Reply` to `b`'s. PATH PINNED: `dsc.imports.limp_1_5_tree`, then `dsc.lower`'s `rdsc_5_5_4_slot_kind` writing `Target ^ as_own`; read back through pyds's `Engine.schemas` over libds's `handle_slot` and test_behave's `slot_reference` over `ds.dsc_schema.kind_of`. The break is `b.Reply` here.",
+    "rules_ds": "from b import Reply\nimport a\nimport c\n\nrule make:\n    a.Reply x\n->\n    emit c.Held logical k: x.k r: x\n",
+    "libraries": {
+        "a": "schema Reply scope logical:\n    k: Int key\n    v: Int mutable\n",
+        "b": "schema Reply scope logical:\n    k: Int key\n    w: Int mutable\n",
+        "c": "from a import Reply\n\nschema Held scope logical:\n    k: Int key\n    r: Reply mutable\n"
+    },
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [
+            { "op": "assert", "schema": "a.Reply", "slots": { "k": 1, "v": 10 } },
+            { "op": "pump" }
+        ],
+        "checks": [
+            { "surface": "slot_schema_ref", "schema": "c.Held", "slot": "r", "equals": "a.Reply" }
+        ]
+    }
+}

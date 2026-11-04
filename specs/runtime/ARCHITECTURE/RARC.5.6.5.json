@@ -1,0 +1,503 @@
+{
+  "id": "RARC.5.6.5",
+  "prefix": "RARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "RARC.5.6",
+  "seq": 610,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "4. [RARC.5.6.5] Hands the change to the network, which propagates it\n   through its alpha and beta memories and populates or updates the agenda.\n",
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "rarc_5_6_5__neg_facts_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "And its `no` facts only through the kinds its `no` patterns name."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "rarc_5_6_5__prop_rule_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Re-propagation of a rule that does not read the changed kind is the identity on its table."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "rarc_5_6_5__tuples_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule's match tuples depend on working memory only through the kinds it matches."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "rarc_5_6_5__no_tokens",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "One empty table per rule."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "rarc_5_6_5__no_tokens_nth",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The r-th empty table exists for every rule index."
+      },
+      {
+        "path": "formal/idris/Lcyc/Termination.idr",
+        "name": "rarc_5_6_5__table_frame",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "After a change of kind k, a rule that does not read k keeps its table, still settled."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "rarc_5_6_5__neg_facts_frame_pred",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Negated-pattern facts over kinds outside the change are unchanged."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "rarc_5_6_5__prop_rule_frame_pred",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule reading no kind of the change keeps its propagation."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "rarc_5_6_5__table_frame_pred",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule reading no kind of the change keeps its table: frame and settledness."
+      },
+      {
+        "path": "formal/idris/Lcyc/TmsTermination.idr",
+        "name": "rarc_5_6_5__tuples_frame_pred",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Tuples over kinds outside the change are unchanged."
+      },
+      {
+        "path": "formal/idris/Lcyc/Witnesses.idr",
+        "name": "rarc_5_6_5__show_idris",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A state as an Idris expression, so a run's states can be pasted back as literals for the witness proofs."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "Rarc_5_6_5__state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The engine state Rete maintains: working memory and one token table per rule -- the agenda, populated and updated by propagation."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__any",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. any."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__concat_map",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. concatMap."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__elem",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. elem."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__find",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. find."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__init_state",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The initial state: the input working memory with every rule's tokens propagated from empty tables."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__nth",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. Indexing, `Nothing` past the end."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__prop_rule",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Re-propagate one rule after a working-memory change; factored through `rarc_5_6_5__prop_with` so it provably depends on working memory only through the kinds the rule reads."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__prop_with",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Re-propagate one rule from its current match tuples and the facts its `no` patterns see: keep the tokens that still match (refreshing their blocking), drop the rest, append the new matches."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__propagate",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Re-propagate every rule."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "rarc_5_6_5__set_at",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Structural-recursion list helper of the fire-loop model, defined here rather than taken from `Foldable` so that proofs unfold it; named under the propagation clause it serves. Apply a function at one position."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoopTms.idr",
+        "name": "rarc_5_6_5__init_tms",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The initial state: the core's, with an empty table."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_7_7__view",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The recompute the incremental network is proved to agree with: node by node, from the nil token, over working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__agree_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER OF CONTENT, closed at the top: after any history from a loaded network, every terminal holds exactly the unblocked matches FireLoop's recompute gives the rule its chain lowers to. Order and flags are part two."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__recompute_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The two recomputes are one: the network's and Rete/FireLoop.idr's agree on every chain and working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAgree.idr",
+        "name": "rlow_4_2_1__terminal_agrees",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "UNDER THE VIEW every terminal holds, as a set, exactly the unblocked matches of the rule its chain lowers to -- what Rete/FireLoop.idr's table holds with `blocked` clear."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkAnswer.idr",
+        "name": "iret_7_6__recompute_after_history_4",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE VIEW THEOREM WITH FOUR-VALUED TESTS: after any history every alpha memory and every terminal of the loaded four-valued network is the recompute over working memory. The view theorem is over any relation, so this is its instance; the lemmas beside it say the relations are the clauses'."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkCorollaries.idr",
+        "name": "iret_7_9_2__live_rejected",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "Read off the recompute: a NOT node passes a prefix only with zero blockers."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "Rarc_5_6_5__recomputed",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What the view says of an engine: every alpha memory is its schema's admitted facts, and every terminal holds exactly its chain's recompute over working memory, without duplicates."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_5__recompute_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE VIEW THEOREM, closed at the top: after any history from a loaded network -- every input pumped, in order [LFST.9.2.1] -- incremental propagation has left every alpha memory and every terminal exactly as the recompute over working memory would. Content only: the order theorem of [LDET.5.5] / [LDET.5.9] is the next increment."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDispatch.idr",
+        "name": "rarc_5_6_5__view_recomputed",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Under the view every terminal holds exactly its chain's recompute, without duplicates."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__fires_the_match_count",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE COUNT: under the view, the activations of every chain are as many as its matches, so the pump's firings are the number of distinct matches, summed over the rules."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "iret_11_3__match_count_from",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A terminal populated by propagation holds its recompute once, so its activations are as many as its matches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOnce.idr",
+        "name": "rarc_5_6_5__match_count",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What Rete propagates, counted: the recompute of every chain over the working memory it was handed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_6_5__view_distinct",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The recompute of a distinct front over distinct working memory is distinct."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "rarc_5_6_5__view_live",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The recompute of live tokens is live."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__prop_rule_settled_id",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A settled table re-propagated over the same memory is itself: every token kept, nothing added, no refresh changes a token."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__prop_rule_shrink_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER SUCCESSIVE RETRACTIONS COMPOSES: a table settled under a memory, propagated over a sub-memory and then over a sub-memory of that, is the table propagated over the last once -- neither propagation adds a match, both keep the same survivors in place, and refreshing along a shrink composes because a retraction only ever releases a `no` pattern. What lets a cascade retract one fact at a time and end where the batch does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__propagate_settled_id",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The tables of a well-formed state re-propagated over its memory are themselves: propagation is idempotent on a settled state."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__propagate_shrink_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "The tables of a well-formed state, propagated over a sub-memory and then over a sub-memory of that, are the tables propagated over the last once."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__zip_prop_settled_id",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rule by rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__zip_prop_shrink_compose",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Rule by rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsTransfer.idr",
+        "name": "rlow_4_2_1__transfer_tms",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM WITH TRUTH MAINTENANCE: run on one history from the loaded network and from FireLoopTms's empty state under the program the network lowers to, the two engines reach one working memory and one dependency table, and each table's unblocked tokens are the terminal's activations, in order and with their flags. Every theorem stated over FireLoopTms's run -- Rete/TmsRun.idr, Lcyc/TmsTermination.idr, Rete/PumpBoundary.idr -- is a theorem about the spec's network."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransfer.idr",
+        "name": "rlow_4_2_1__transfer",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE TRANSFER THEOREM: run on one history from the loaded network and from FireLoop's empty state under the program the network lowers to, the two engines reach one working memory, and each table's unblocked tokens are its terminal's activations, in order and with their flags. Against the plain pipeline, inputs without Rete/PumpBoundary.idr's TMS phase and without the clock; Rete/NetworkTmsTransfer.idr carries the phase and Rete/NetworkTtl.idr the clock, on this agreement."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "Rlow_4_2_1__agree",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE NETWORK AND FIRELOOP AGREE: one working memory; each rule the lowering of its chain; each table's unblocked tokens its terminal's activations, in order and with their flags; both sides well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__change_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE AGREEMENT SURVIVES A CHANGE OF WORKING MEMORY: given the network after the change, ordered; FireLoop's state after one propagation, well-formed; the shapes kept; and the flags persisting -- the two agree again."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__tables_agree_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Tables agree with the new terminals after a propagation, rule by rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Rarc_5_6_5__tables_well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Every table of a FireLoop state well-formed and settled against its rule."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "Rarc_5_6_5__well",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A WELL-FORMED FIRELOOP STATE: working memory distinct, ids unique, every table sorted, live and settled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__init_table_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A rule's first table over empty working memory is well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__init_tables_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Every rule's first table over empty working memory is well-formed and settled."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__init_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "THE INITIAL STATE over empty working memory is well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__propagate_well_grow",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One propagation after a fact enters keeps every table well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__propagate_well_shrink",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "One propagation after a fact leaves keeps every table well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "FIRELOOP'S STATE AFTER ANY HISTORY -- inputs applied without the TMS phase, each pumped -- is well-formed: every table in the key's order."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_assert",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "An assert that changes working memory keeps the state well-formed, whichever shape it takes."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_grow",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FRESH FACT APPENDED to a base contained in working memory keeps the state well-formed: the two working-memory invariants, and every table."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "rarc_5_6_5__well_shrink",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A FACT REMOVED keeps the state well-formed."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_5__init_tms_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The initial state satisfies the run invariant: the core's initial invariant, unique input ids, and an empty table."
+      },
+      {
+        "path": "formal/idris/Rete/TmsRun.idr",
+        "name": "rarc_5_6_5__state_inj",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Constructor injectivity for the core state."
+      }
+    ]
+  }
+}

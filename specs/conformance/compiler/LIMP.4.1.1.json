@@ -1,0 +1,12 @@
+{
+    "id": "LIMP.4.1.1",
+    "category": "compiler",
+    "scenario": "LIMP.4.1.1 — the expression-position qualifier rewrite descends every where-clause / let / kwarg expression of a whole-module-importing file to rewrite `<lib>.<name>` const refs. It must handle every Expression node, RegexMatch (`~`/`!~`), IntervalRel (`in`/`contains`/`overlaps`) and MethodCall among them. Pin: a whole-module import (qualified pattern refs `m.X`) whose rules use each of those node types in a where clause compiles cleanly. The MethodCall is `t.to_string(\"iso8601\")` on a `Time` slot (a format, because the formatless spelling is the cast `t::String`), and the method is incidental to what this pins.",
+    "rules_ds": "import m\n\nrule r_regex:\n    m.Foo f where f.text ~ /hi/\n->\n    log info \"x\"\n\nrule r_interval:\n    m.Win w where w.probe in (w.lo .. w.hi)\n->\n    log info \"x\"\n\nrule r_method:\n    m.Ev e where e.seen.to_string(\"iso8601\") == \"x\"\n->\n    log info \"x\"\n",
+    "libraries": {
+        "m": "schema Foo scope logical:\n    text: String key\n\nschema Win scope logical:\n    probe: Int key\n    lo: Int mutable\n    hi: Int mutable\n\nschema Ev scope logical:\n    id: Int key\n    seen: Time mutable\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

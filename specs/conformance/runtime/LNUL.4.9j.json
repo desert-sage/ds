@@ -1,0 +1,20 @@
+{
+    "id": "LNUL.4.9j",
+    "category": "runtime",
+    "scenario": "[LNUL.4.9] the String tag over a String slot, un-negated — the subject whose totality has a second obligation behind it. `is String` must answer off the value's tag BEFORE any conversion, which is what lets it answer for a Json string leaf without interning anything; this fixture pins the ordinary String case that the leaf case degenerates to. Drives the eval arm with IS_SUBJECT_STRING; the rule FIRES. Paired with LNUL.4.9d's wrong-tag negative so the tag comparison is pinned in both directions on a non-numeric type as well as a numeric one. fact_count 2.",
+    "rules_ds": "schema Label scope logical:\n    entity_id: String key\n    text: String? mutable\n\nschema Marker scope logical:\n    entity_id: String key\n\nrule r:\n    Label l where l.text is String\n->\n    emit Marker logical entity_id: l.entity_id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            {
+                "schema": "Label",
+                "slots": {
+                    "entity_id": "a",
+                    "text": "hello"
+                }
+            }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

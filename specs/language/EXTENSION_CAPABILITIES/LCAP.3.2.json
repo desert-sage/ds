@@ -1,0 +1,27 @@
+{
+  "id": "LCAP.3.2",
+  "prefix": "LCAP",
+  "doc": "EXTENSION_CAPABILITIES.md",
+  "parent": "LCAP.3",
+  "seq": 247,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "Rule 2 — the constant-space gate",
+  "text": "### Rule 2 — the constant-space gate [LCAP.3.2]\n\nThe constraints in the following table are compile errors under\n`constspace: true`, and so under `realtime: true`, which requires it\n([LCAP.3.7]), whatever `linear_scan` is set to ([LNLS.2.3]):\n\n| Constraint | Reason |\n|---|---|\n| No novel strings (LNLS.3.2) | Intern table bounded; under `realtime` it is locked after go_live, and a novel string → DS_ERR_OOM |\n| No sketch backends (LNLS.3.5) | O(n) compaction is unbounded; cannot appear in T_wcet |\n| No unbounded regex (LNLS.3.7) | O(L×P) with run-time L; must have `capacity` to bound |\n| No unbounded string ordering (LNLS.3.8) | O(len) strncmp; must have `capacity` |\n| No JSON_PATH (LNLS.3.9) | Unbounded allocation |\n\nConstraints the constant-space gate does **not** include: LNLS.3.1 (no JSON\nslots), LNLS.3.3 (identity join),\nLNLS.3.10 (bounded strings for all string ops). These apply under\n`linear_scan: false`.\n\n",
+  "deferred": true,
+  "refs": [
+    "LCAP.3.7",
+    "LNLS.2.3",
+    "LNLS.3.1",
+    "LNLS.3.10",
+    "LNLS.3.2",
+    "LNLS.3.3",
+    "LNLS.3.5",
+    "LNLS.3.7",
+    "LNLS.3.8",
+    "LNLS.3.9"
+  ],
+  "errors": [
+    "DS_ERR_OOM"
+  ]
+}

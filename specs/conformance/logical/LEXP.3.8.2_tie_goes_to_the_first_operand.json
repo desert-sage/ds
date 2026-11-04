@@ -1,0 +1,16 @@
+{
+    "id": "LEXP.3.8.2_tie_goes_to_the_first_operand",
+    "clauses": ["LEXP.3.8.2"],
+    "category": "logical",
+    "scenario": "[LEXP.3.8.2]: when the scalar `min(a, b)` / `max(a, b)` compares its operands equal, the engine returns `a`, kind and sign included. Every operand is a slot of the asserted fact, so nothing folds and each runtime's own `min` / `max` answers. The `Int` `2` beside the `Float` `2.0` compares equal once promoted ([LEXP.7.3]), and the two zeros compare equal, so every call here is a tie, in both orders. `==` cannot tell the winners apart. `r_kind` reads the kind with [LNUL.4.9]'s tag test: `max(i, f)` and `min(i, f)` are `Int`, and `max(f, i)` and `min(f, i)` are `Float`, so it logs `kinds`. `r_sign` reads the sign with `atan2(0.0, x)` (imported from `math`), which is `0.0` for `x = 0.0` and π for `x = -0.0` ([LEXP.3.9]): `min(z, nz)` and `max(z, nz)` are `0.0`, and `min(nz, z)` and `max(nz, z)` are `-0.0`, so it logs `signs`. A runtime that gives a tie to the second operand logs neither line. PATH PINNED: libds's `builtin_min` / `builtin_max` (`first_wins`, `<=` / `>=`), and Mercury's `ds.eval.pick` with `le` / `ge`.",
+    "rules_ds": "from math import atan2\n\nschema P scope logical:\n    id: Int key\n    i: Int mutable\n    f: Float mutable\n    z: Float mutable\n    nz: Float mutable\n\nrule r_kind:\n    P p where max(p.i, p.f) is Int and max(p.f, p.i) is Float and min(p.i, p.f) is Int and min(p.f, p.i) is Float\n->\n    log critical \"kinds\"\n\nrule r_sign:\n    P p where atan2(0.0, min(p.z, p.nz)) == 0.0 and atan2(0.0, min(p.nz, p.z)) > 3.0 and atan2(0.0, max(p.z, p.nz)) == 0.0 and atan2(0.0, max(p.nz, p.z)) > 3.0\n->\n    log critical \"signs\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P",
+              "slots": { "id": 1, "i": 2, "f": 2.0, "z": 0.0, "nz": -0.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["kinds", "signs"]
+    }
+}

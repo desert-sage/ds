@@ -1,0 +1,9 @@
+{
+    "id": "LEXP.7.20_equality_ok",
+    "category": "compiler",
+    "scenario": "LEXP.7.20: `==` and `!=` stay admitted on two pattern bindings. `same` compares two bindings of one schema with `==`, `other` two of different schemas with `!=`, and `alone` a binding against a negated pattern's candidate; the program compiles. The control for LEXP.7.20_ordering_refused: the refusal is the ordering operator's, not the bindings'.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nschema Alarm scope logical:\n    id: String key\n\nrule same:\n    Reading a\n    Reading b where a == b\n->\n    log info \"{a.id}\"\n\nrule other:\n    Reading a\n    Alarm b where a != b\n->\n    log info \"{a.id}\"\n\nrule alone:\n    Reading a\n    no Reading b where b != a\n->\n    log info \"{a.id}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

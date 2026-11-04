@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_initial_bitwise_and_shifts_fold",
+    "category": "logical",
+    "scenario": "[LEXP.8.8]: the bitwise and shift operators in a `const` fold ([LEXP.7.7], [LEXP.7.9], [LEXP.7.14.1]), and an `initial:` item may name one. Each `initial` fact carries one `Int` `const`'s folded value, and its rule compares that slot with the same `const` inlined and evaluated by the engine; the rule fires only if the two agree. `AND = 240 & 60`, `OR = 5 | 2`, `XOR = 6 ^ 3` and `NOT = ~0` are the bitwise operators; `SHL = 1 << 63` wraps to the most negative `Int`; `SHL64 = 1 << 64` is `0`, the count not reduced modulo 64; `SHR = -8 >> 1` is `-4`, the arithmetic shift; `SHR70 = -1 >> 70` is `-1`. Pin: all eight rules log, in source order. A compiler that does not fold these refuses the program with DS_VALIDATE_INITIAL_NOT_CONST. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `fold_int_binary` and `fold_unary`, against the rule's inlined `const` evaluated by each runtime's bitwise arm.",
+    "rules_ds": "const AND = 240 & 60\nconst OR = 5 | 2\nconst XOR = 6 ^ 3\nconst NOT = ~0\nconst SHL = 1 << 63\nconst SHL64 = 1 << 64\nconst SHR = -8 >> 1\nconst SHR70 = -1 >> 70\n\nschema VI scope explicit:\n    k: String\n    i: Int\n\ninitial:\n    VI k: \"and\" i: AND\n    VI k: \"or\" i: OR\n    VI k: \"xor\" i: XOR\n    VI k: \"not\" i: NOT\n    VI k: \"shl\" i: SHL\n    VI k: \"shl64\" i: SHL64\n    VI k: \"shr\" i: SHR\n    VI k: \"shr70\" i: SHR70\n\nrule r_and:\n    VI v where v.k == \"and\" and v.i == AND\n->\n    log info \"and\"\n\nrule r_or:\n    VI v where v.k == \"or\" and v.i == OR\n->\n    log info \"or\"\n\nrule r_xor:\n    VI v where v.k == \"xor\" and v.i == XOR\n->\n    log info \"xor\"\n\nrule r_not:\n    VI v where v.k == \"not\" and v.i == NOT\n->\n    log info \"not\"\n\nrule r_shl:\n    VI v where v.k == \"shl\" and v.i == SHL\n->\n    log info \"shl\"\n\nrule r_shl64:\n    VI v where v.k == \"shl64\" and v.i == SHL64\n->\n    log info \"shl64\"\n\nrule r_shr:\n    VI v where v.k == \"shr\" and v.i == SHR\n->\n    log info \"shr\"\n\nrule r_shr70:\n    VI v where v.k == \"shr70\" and v.i == SHR70\n->\n    log info \"shr70\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["and", "or", "xor", "not", "shl", "shl64", "shr", "shr70"]
+    }
+}

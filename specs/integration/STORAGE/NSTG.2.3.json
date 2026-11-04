@@ -1,0 +1,20 @@
+{
+  "id": "NSTG.2.3",
+  "prefix": "NSTG",
+  "doc": "STORAGE.md",
+  "parent": "NSTG.2",
+  "seq": 126,
+  "depth": 2,
+  "kind": "heading",
+  "heading": "set_cb",
+  "text": "### set_cb [NSTG.2.3]\n\nFires **after** the engine has applied a cache write, so the integrator\ncan persist it. It is a write-*through* notification, not a write\nauthority: the engine's own cache is already updated when the callback\nruns, and returning an error does not undo it ([LSTO.4.7]).\n\nIt receives the engine, a `const` pointer to the write, and the `user`\npointer registered alongside it, the shape every registered callback has\n([NCBK.1.1]). The write is a payload struct, borrowed for the callback's\nduration, with these members:\n\n| Member | Meaning |\n|---|---|\n| key | the cache key written |\n| value | the value, as a parsed JSON tree — **borrowed for the callback's duration only** |\n| ttl_ns | the entry's lifetime in nanoseconds; **zero means no expiry** |\n\nThe value being borrowed is the contract most easily got wrong: an\nintegrator that needs it after returning must copy it. Registering no\ncallback at all is legal and leaves the cache purely volatile.\n\nThe payload struct is `ds_cache_write_t` and the callback signature is\n`ds_cache_set_cb_t`, both declared in `runtime/include/libds.h`. A member a\nlater edition adds to the struct appends to it and breaks no registration,\nas [NSTG.2.4] gives the reason for the delete callback's payload.\n\n",
+  "refs": [
+    "LSTO.4.7",
+    "NCBK.1.1",
+    "NSTG.2.4"
+  ],
+  "symbols": [
+    "ds_cache_set_cb_t",
+    "ds_cache_write_t"
+  ]
+}

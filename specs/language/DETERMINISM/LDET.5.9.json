@@ -1,0 +1,521 @@
+{
+  "id": "LDET.5.9",
+  "prefix": "LDET",
+  "doc": "DETERMINISM.md",
+  "parent": "LDET.5",
+  "seq": 593,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LDET.5.9] **The order is a function of the activation set, never of how the\nset was reached.** [LDET.5.4] and [LDET.5.5] order the activations that are\neligible in this cycle. Whether an activation became eligible because a fact\nwas asserted, or because a negated condition stopped being satisfied and\nreleased it, **must not** affect where it fires.\n\nConcretely: **blocking does not unassign a creation timetag, and unblocking\ndoes not mint one.** [LDET.5.5]'s timetag is assigned when the partial match\ncompletes; a match that completed and was then held back by a negated\ncondition has already completed. When it is released it fires in the position\nits original timetag gives it. Two engines that agree on working memory and on\nthe match set therefore agree on the order, whatever bookkeeping either uses to\ntrack blocked tokens.\n\n**This is forced by [LDET.1.1], not chosen.** The guarantee is over the fact\nstream: the same rules and the same stream replay bit-for-bit. A replay\nreconstructs working memory **by assertion** — it has no blocker to retract,\nbecause the recording carries facts and not the network's internal history — so\nan order that depended on the traversal that released blocked tokens would\ndiffer between a run and its own replay, in the same runtime, on the same\nmachine. A determinism guarantee that fails on replay is not one. So\nrestoration order cannot be observable, and this clause says so rather than\nleaving it to be re-derived.\n\n**What it costs, stated plainly.** [IRET.7] calls a NOT node's bookkeeping an\nimplementation detail, and it is one only while its traversal order is\nunobservable. An engine that fires released activations in the order its\nblocked-token structure happens to yield does not conform.\n\n**What this does not settle** ([STYL.2.15.4]). It does not say how an engine\nrepresents a held-back match, nor that it must retain one at all: an engine\nfree to recompute the match on release conforms, provided the timetag it fires\nunder is the one the match first completed with. What is fixed is the\nobservable, and the observable is that the order carries no information about\nthe blocking.\n",
+  "refs": [
+    "IRET.7",
+    "LDET.1.1",
+    "LDET.5.4",
+    "LDET.5.5"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "ldet_5_9__refresh_settled",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing a settled token is the identity."
+      },
+      {
+        "path": "formal/idris/Lcyc/Propagation.idr",
+        "name": "ldet_5_9__refresh_with_settled",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing with the blocking it already has is the identity."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_9__refresh_tok",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Recompute a token's blocking against the live `no` facts."
+      },
+      {
+        "path": "formal/idris/Rete/FireLoop.idr",
+        "name": "ldet_5_9__refresh_with",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "Blocking never moves a token and release never mints a new one: the same entry stays at the same position and only `blocked` (and, on release, `fired`) changes -- the clause's \"blocking does not unassign a creation timetag, and unblocking does not mint one\"."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "iret_19_2__retract",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The retract dispatch stamps what it releases against the working memory the retraction found: a match a NOT node releases takes the timetag it first completed with, and the survivors' relative order is the same under either working memory (`ldet_5_9__before_remove`). The stamp is history-free by construction, and `iret_19_2__retract_ordered` proves the terminal stays sorted."
+      },
+      {
+        "path": "formal/idris/Rete/Network.idr",
+        "name": "ldet_5_5__before",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A function of the two matches and of working memory alone, never of how either was reached: a released match is inserted at the place its key gives it, which is the clause's 'the position its original timetag gives it'. That every agenda is sorted by it after any history is `ldet_5_9__order_after_history`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_5__canonical_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Under the canonical key the two histories agree."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__a1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The fact whose assertion completes both matches."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__b1",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact of the history: its id as [IRET.4.4] assigns it and the recording carries it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__b2",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact of the history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__b3",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "A fact of the history."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__dense_refuted",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE DENSE READING VIOLATES THE CLAUSE: same working memory, same match set, a different order -- the order depended on how the set was reached. The executable counterexample."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__keys_of",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The keys of each activation's facts, per rule: the order with the engine's ids abstracted."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__net",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The rule `A a, B b` loaded into Rete/Network.idr."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__network_agrees",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THROUGH THE MODEL the run and the replay agree: (a1, b2) then (a1, b3) in both. The clause held by computation on the instance the dense reading fails; held for every history by `ldet_5_9__order_after_history`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__network_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The model's order on the run: (a1, b2) then (a1, b3), the canonical key's."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__orders_differ",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The two orders differ, by computation."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__replay",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE REPLAY BY ASSERTION: working memory rebuilt as b2, b3, a1, as the clause says a replay does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__replay_events",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The replay's inputs under the model."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__replay_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Under the dense reading the replay orders (a1, b2) first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__run",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE RUN: assert b1, b2, b3; retract b1; assert a1."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__run_events",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The run's inputs under the model, ids minted by the engine."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__run_order",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "Under the dense reading the run orders (a1, b3) first."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__same_matches",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The two agree on the match set."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkDenseWitness.idr",
+        "name": "ldet_5_9__same_wm",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "The run and its replay agree on working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__before_keys_shift",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering preserves the key order between any two surviving keys, empty or not."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__before_remove",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ORDER BETWEEN TWO SURVIVING MATCHES IS THE SAME UNDER THE WORKING MEMORY BEFORE AND AFTER A RETRACTION: what lets the retract dispatch stamp a released match against the working memory it found, which is the match's original timetag."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__before_shift",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering preserves the key order between two surviving non-empty keys."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__key_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "No position of a surviving match's key is the removed position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__key_remove",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A surviving match's key after a retraction is its renumbered key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__latest_neq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The completion position of a match not built on the retracted fact is not the removed position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__latest_shift",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering commutes with the completion position of a surviving key."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__lex_shift",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering preserves the pattern-order tiebreak between surviving keys."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__pos_remove",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A surviving fact's position after a retraction is its renumbered position."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__shift",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The renumbering a retraction applies to assertion positions: those past the removed position step down by one; the removed position itself is never asked for."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__shift_eq",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering preserves equality and inequality of surviving positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__shift_lt",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering preserves the order of surviving positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__shift_max",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "The renumbering commutes with the larger-of on surviving positions."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrder.idr",
+        "name": "ldet_5_9__sorted_remove",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A sorted terminal of live activations, none built on the retracted fact, is sorted under the shrunk working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "Ldet_5_9__ordered",
+        "tag": "derives",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ORDERED VIEW: the view, and every terminal in agenda order under the engine's working memory."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__dispatch_retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "ALPHA DISPATCH ON RETRACT keeps the order, stamped against the working memory it found, over any distinct list of alphas to visit."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__dispatch_retract_ordered_step",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "ONE ALPHA VISITED ON RETRACT, admitting the fact, keeps the order under the working memory the retraction found: every chain is right-retracted from a memory that held the fact."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_19_2__retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RETRACTING A LIVE FACT keeps the order: the dispatch stamps against the working memory it found; afterwards every activation is live without the fact, so the survivors keep their order under the shrunk working memory. A released match sits at the position its original timetag gives it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "iret_7_7__right_retract_ordered",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "RIGHT-RETRACTION KEEPS THE ORDER under the working memory the retraction found: the matches the fact had completed end, and the matches a NOT node releases -- live, not built on the fact -- take the places their keys give them."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__order_after_history",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE ORDER THEOREM, closed at the top: after any history from a loaded network -- every input pumped, in order -- every terminal's activations are, in order, the canonical order over working memory of the chain's recompute."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__ordered_recompute",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "UNDER THE ORDERED VIEW every terminal is, in order, the canonical order over working memory of its chain's recompute: the agenda order is a function of the activation set and of working memory, never of how the set was reached. Batched equals incremental in order, and a released match fires where it first completed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkOrderKeep.idr",
+        "name": "ldet_5_9__sorted_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "TWO SORTED TERMINALS WITH THE SAME MATCHES ARE THE SAME LIST: the order is a function of the activation set, never of how the set was reached."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "iret_7_9__is_blocked_sub",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Blocking is monotone in working memory: a retraction can release a match, never block one -- why a released match's position is its original one."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "ldet_5_9__refresh_settled_id",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing a settled token leaves it: its blocking is current, and `fired` is cleared only on a release."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "ldet_5_9__refresh_tok_compose",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token settled under a memory, refreshed under a sub-memory and then a sub-memory of that, is the token refreshed under the last."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "ldet_5_9__refresh_with_compose",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token refreshed under a blocking that only ever releases, then refreshed again, is the token refreshed once: a release clears `fired` either way, a token that stays blocked or stays clear keeps it."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTmsCascade.idr",
+        "name": "rarc_5_6_5__prop_rule_shrink_compose",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER SUCCESSIVE RETRACTIONS COMPOSES: a table settled under a memory, propagated over a sub-memory and then over a sub-memory of that, is the table propagated over the last once -- neither propagation adds a match, both keep the same survivors in place, and refreshing along a shrink composes because a retraction only ever releases a `no` pattern. What lets a cascade retract one fact at a time and end where the batch does."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "ldet_5_9__refresh_fired_released",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A token released by a refresh is unfired: unblocking mints no history, as on the network side."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "ldet_5_9__refresh_fired_unblocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "An unblocked token keeps its `fired` flag through a refresh."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferAgree.idr",
+        "name": "rlow_4_2_1__prop_agree",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "THE UNBLOCKED TOKENS AFTER A PROPAGATION ARE THE NETWORK'S ACTIVATIONS after the same change: the tuples agree because both sides hold exactly the unblocked matches in the key's order and two sorted lists with the same members are one list; the flags agree because an activation whose match survives is kept on both sides, and a released or new match is unfired on both."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferOrder.idr",
+        "name": "ldet_5_9__sorted_tuples_unique",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "TWO SORTED TUPLE LISTS WITH THE SAME MEMBERS ARE ONE LIST: the key is a strict total order on live matches, so the activation set fixes the list. Two engines that agree on the match set agree on the order, as the clause says."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__prop_well_shrink",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "PROPAGATION AFTER A FACT LEAVES keeps the table well-formed: nothing is added, and the survivors keep their order under the shrunk memory -- a retraction reorders nothing."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "iret_8_1__refresh_well",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing flags keeps a table well-formed: no tuple moves."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTransferTable.idr",
+        "name": "ldet_5_9__refresh_tuples",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing a token's flags leaves its tuple: blocking and release change no match."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "ldet_5_9__refresh_live_inv",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "A refreshed token that is fired and unblocked was fired and unblocked: refreshing never sets `fired`, and unblocking clears it."
+      },
+      {
+        "path": "formal/idris/Rete/TmsBridge.idr",
+        "name": "ldet_5_9__refresh_unblocked",
+        "tag": "derives",
+        "role": "lemma",
+        "verdict": "proven",
+        "note": "Refreshing an unblocked token keeps its facts and its `fired`."
+      }
+    ],
+    "tla": [
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_9__completedAt",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/refraction_readings.tla",
+        "name": "ldet_5_9__released_fires_in_stamp_order",
+        "tag": "spec"
+      }
+    ]
+  }
+}

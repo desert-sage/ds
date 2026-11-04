@@ -1,0 +1,15 @@
+{
+    "id": "LEXP.7.20_same_fact",
+    "category": "logical",
+    "scenario": "LEXP.7.20: `a == b` on two pattern bindings is true exactly when the two bind the same fact, and two patterns may bind one fact in one activation. Two Readings, r1 then r2, and one pump: `Reading a, Reading b where a == b` fires once per fact, `r1/r1` then `r2/r2`, and never pairs two different facts. Each match completes when its one fact enters, so r1's fires first (LDET.5.5). The twin of LEXP.7.20_distinct_pair: the facts carry nothing but their key, so a runtime that compared keys or slots rather than the fact would answer these two vectors alike, and it cannot pass both. PATH PINNED: the join test `EQ(VAR(left, 0, whole fact), VAR(right, whole fact))`. The whole-fact read is no slot of the schema, so libds builds no EQ index on it (`rete/beta.c`) and the join is SCANNED, the EQ evaluated in `rete/eval.c` `val_eq_unordered`; Mercury has no index and answers in `ds.eval` `compare_outcome`. A runtime that raises a TypeError on every pair logs nothing.",
+    "rules_ds": "schema Reading scope logical:\n    id: String key\n\nrule same:\n    Reading a\n    Reading b where a == b\n->\n    log info \"{a.id}/{b.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r1"}},
+            {"op": "assert", "schema": "Reading", "slots": {"id": "r2"}},
+            {"op": "pump"}
+        ],
+        "expected_messages": ["r1/r1", "r2/r2"]
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "RCLI.1.4",
+  "prefix": "RCLI",
+  "doc": "COMPILER_CLI.md",
+  "parent": "RCLI.1",
+  "seq": 14,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RCLI.1.4] **`compile-project` builds a sketch.** Its argument names a sketch\ndirectory, which must contain a `rules/` directory holding at least one `.ds`\nfile; if it does not, the invocation fails with exit `2` ([RCLI.3.1]).\n\nEvery `.ds` file under `rules/`, at any depth, is compiled as `compile` would\ncompile it — its imports resolved against the `-L` search path, its dialect\nselected by its own `use` directive — and its `.dsc` is written beside it under\nthe same basename. Unless `--no-header` is given, each artefact is also written\nbeside it as `<basename>_dsc.h`, in the embedded form [NGST.4.3] states, for a\ntarget that cannot read files.\n\nA module that cannot be read or does not compile does not stop the others.\nEvery module is attempted, and the exit code is `1` if any failed.\nAn internal compiler error ends the invocation at once with `3`\n([RCLI.3.1]); the artefacts already written for earlier modules stay.\n\n",
+  "refs": [
+    "NGST.4.3",
+    "RCLI.3.1"
+  ],
+  "checks": {
+    "ebnf": [
+      {
+        "path": "compiler/dsc_cli.ebnf",
+        "name": "compile_project",
+        "tag": "spec"
+      }
+    ]
+  }
+}

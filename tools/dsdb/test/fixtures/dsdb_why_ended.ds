@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# dsdb's `why` on a fact that has ended (DSTRACE_INTERACTIVE §4.14 "why it
+# ended"), where what ended its support is an absence that stopped holding: a
+# room is quiet while it is occupied and nothing moves in it.
+
+use default
+
+schema Occupied scope logical:
+    room: String key
+
+schema Motion scope ttl 60_s:
+    room: String
+
+schema Quiet scope logical:
+    room: String key
+
+rule quiet:
+    Occupied o
+    no Motion m where m.room == o.room
+->
+    emit Quiet logical room: o.room

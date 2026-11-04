@@ -1,0 +1,11 @@
+{
+    "id": "LEXP.3.7.4_constant_out_of_range_refused",
+    "clauses": ["LEXP.3.7.4"],
+    "category": "compiler",
+    "scenario": "[LEXP.3.7.4]: the compiler refuses a `bits`, `sign_extend` or `swap_bytes` call whose compile-time constant arguments ([LEXP.8.8]) place it outside [LEXP.3.7.3]'s domain whatever its other arguments hold. `s.x.bits(70, s.w)`: a field starting at bit 70 lies outside the pattern for every width, so it is DS_VALIDATE_BIT_FIELD_RANGE though `w` is known only at run time. PATH PINNED: `dsc.validate.lexp_3_7_4_bit_field_range`, which reads each constant argument through `dsc.dstest.ltsl_4_1_constant`.",
+    "rules_ds": "schema Sensor scope logical:\n    id: String key\n    x: Int mutable\n    w: Int mutable\n\nrule r:\n    Sensor s where s.x.bits(70, s.w) > 0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_BIT_FIELD_RANGE"
+    }
+}

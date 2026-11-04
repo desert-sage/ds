@@ -1,0 +1,20 @@
+{
+    "id": "IRET.25.5.3_key_representation",
+    "category": "logical",
+    "scenario": "[IRET.25.5.3]: `1`, `\"1\"` and `true` are three activation keys. A typed slot holds one representation, so the one surface where the three meet in one key position is a `Json` slot: `by: e.j` makes that slot the key ([LCDB.3.3.4]; `dsc.rete.lcdb_3_3_4_key_var`), and the three documents differ only in that leaf. Four activations at one instant under a 10s cooldown: the three distinct documents fire, the repeat of the first is suppressed -- the control that the gate still gates. PATH PINNED: libds `adapter_ds_rate_allow`'s typed key (`rk_walk`, a Json component as its canonical serialization) and Mercury `ds.rate.activation_key`. A text key that writes nothing for a Json component makes all four one key and logs one `fire`.",
+    "rules_ds": "schema Ev scope ttl 1_min:\n    j: Json\n\nrule r cooldown 10_s by: e.j:\n    Ev e\n->\n    log info \"fire\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "j": { "v": 1 } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "j": { "v": "1" } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "j": { "v": true } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "j": { "v": 1 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [ "fire", "fire", "fire" ]
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "LDET.5.9_release_order",
+  "category": "logical",
+  "scenario": "[LDET.5.9] — 'blocking does not unassign a creation timetag, and unblocking does not mint one'. Item a's match completes FIRST but is held at the NOT node by a per-id Block; b and c complete after it and are never blocked. The Block is then retracted and all three fire in ONE pump, so the terminal ordinal is constant and the creation timetag is the only ordering key. a must fire first, because its match completed first and release carries no information about the blocking. Drives beta.c's not_right_retract release paths, which copied the released token with `engine->next_timetag++` — minting a fresh timetag on unblock, which is necessarily LARGER than b's and c's and therefore sorted the earliest-completing match last.",
+  "rules_ds": "schema Item scope logical:\n    id: String key\n    label: String mutable\n\nschema Block scope logical:\n    id: String key\n\nrule released:\n    Item i\n    no (Block b where b.id == i.id)\n->\n    log critical \"fired:{i.label}\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "Block", "slots": { "id": "1" }, "as": "blk" },
+      { "op": "assert", "schema": "Item", "slots": { "id": "1", "label": "a" } },
+      { "op": "assert", "schema": "Item", "slots": { "id": "2", "label": "b" } },
+      { "op": "assert", "schema": "Item", "slots": { "id": "3", "label": "c" } },
+      { "op": "retract", "label": "blk" },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["fired:a", "fired:b", "fired:c"]
+  }
+}

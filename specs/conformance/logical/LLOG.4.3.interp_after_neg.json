@@ -1,0 +1,15 @@
+{
+  "id": "LLOG.4.3.interp_after_neg",
+  "category": "logical",
+  "scenario": "Interpolating a binding introduced AFTER a mid-LHS negation must resolve, not silently drop the action. Rule `r` joins A, a `no N` negation, then B; the log action interpolates `{b.v}` — a binding declared after the negation. The activation token holds only the positive facts [A, B] (the negated N contributes none), so b is at token position 1. A lowering that uses the raw source pattern index (2) reads out of range and drops the interpolated log message.",
+  "rules_ds": "schema A scope logical:\n    x: String key\nschema N scope logical:\n    x: String key\nschema B scope logical:\n    x: String key\n    v: String mutable\nrule r:\n    A a\n    no N n where n.x == a.x\n    B b where b.x == a.x\n->\n    log critical \"joinedval:{b.v}\"\n",
+  "expect": {
+    "kind": "log_message_sequence",
+    "steps": [
+      { "op": "assert", "schema": "A", "slots": { "x": "foo" } },
+      { "op": "assert", "schema": "B", "slots": { "x": "foo", "v": "bar" } },
+      { "op": "pump" }
+    ],
+    "expected_messages": ["joinedval:bar"]
+  }
+}

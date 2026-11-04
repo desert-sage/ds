@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.4.2.not_over_true_false_and_null",
+    "category": "logical",
+    "scenario": "[LNUL.4.2]'s `not`, all three cells: `not true = false`, `not false = true`, `not null = null`. One P fact holds t = true, f = false and n = null. Each cell X is two rules: `X` fires only when X is true, and `not (X)` fires only when X is false, so a null cell fires neither and every cell's value is read off which of its pair fires. `not_t_not` and `not_f` fire; `not_n` and `not_n_not` fire neither, which `dead_rules_expected` requires. A runtime reading `not null` as `true` fires `not_n`; one reading null as false fires `not_n_not`. Agenda order is source order ([LDET.5.4]), so `expected_rule_names` lists the firing rules in that order. Path: each `where` is one join test over a slot (a bare Bool slot is no comparison with a literal, so nothing hoists); libds's rete/eval.c DS_RETE_UNOP_NOT arm, Mercury's ds.eval ev_node(e_unop(...)).",
+    "rules_ds": "schema P scope logical:\n    id: String key\n    t: Bool mutable\n    f: Bool mutable\n    n: Bool? mutable\n\nrule not_t:\n    P p where not p.t\n->\n    log info \"not_t\"\n\nrule not_t_not:\n    P p where not (not p.t)\n->\n    log info \"not_t_not\"\n\nrule not_f:\n    P p where not p.f\n->\n    log info \"not_f\"\n\nrule not_f_not:\n    P p where not (not p.f)\n->\n    log info \"not_f_not\"\n\nrule not_n:\n    P p where not p.n\n->\n    log info \"not_n\"\n\nrule not_n_not:\n    P p where not (not p.n)\n->\n    log info \"not_n_not\"\n",
+    "dead_rules_expected": ["not_t", "not_f_not", "not_n", "not_n_not"],
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": "p", "t": true, "f": false, "n": null } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["not_t_not", "not_f"]
+    }
+}

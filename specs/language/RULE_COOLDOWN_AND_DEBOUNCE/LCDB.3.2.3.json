@@ -1,0 +1,45 @@
+{
+  "id": "LCDB.3.2.3",
+  "prefix": "LCDB",
+  "doc": "RULE_COOLDOWN_AND_DEBOUNCE.md",
+  "parent": "LCDB.3.2",
+  "seq": 112,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [LCDB.3.2.3] **An on-delay is a `where` condition, not a modifier.** A\n  rule that must fire only once a match has held for `T` states it on the\n  matched fact, as `where x.dwell >= T` on a `logical` binding ([LEXP.9.5.1]).\n  The condition is time-dependent, so the engine re-evaluates it on every pump\n  ([LTIM.2.4.2]) and fires on the pump at which it first holds ([LTIM.2.5.1]).\n  If the fact is retracted or replaced before `T` has passed, the match ends\n  and nothing fires. The engine keeps no rate state for it; the rule header\n  has no on-delay modifier ([LCDB.5.1]).\n\n",
+  "refs": [
+    "LCDB.5.1",
+    "LEXP.9.5.1",
+    "LTIM.2.4.2",
+    "LTIM.2.5.1"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lcdb_3_2_3__on_delay",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "THE ON-DELAY as the clause writes it: `where x.dwell >= T` on the matched fact, `T` 2 here. A fixture."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lcdb_3_2_3__on_delay_fires_once",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "THE ON-DELAY FIRES ONCE, AT THE FIRST PUMP WHOSE SAMPLE REACHES T, AND NEVER AGAIN: a Motion asserted at 0 under `dwell >= 2`; the pump at 0 fires nothing, the pump at 3 fires, the pump at 6 does not -- logical/LCDB.3.2.3_dwell_on_delay's shape. Executed through the loader, the stamps and the gated pump: `[[], [(0, True)], []]`."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkTimed.idr",
+        "name": "lcdb_3_2_3__retracted_before_t_fires_nothing",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'If the fact is retracted or replaced before T has passed, the match ends and nothing fires': the Motion asserted at 0, retracted at 1, the pump at 3 -- logical/LCDB.3.2.3_dwell_on_delay_retracted's shape. Executed: `[[]]`."
+      }
+    ]
+  }
+}

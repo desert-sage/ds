@@ -1,0 +1,43 @@
+{
+  "id": "LTIM.2.1.2",
+  "prefix": "LTIM",
+  "doc": "TIME.md",
+  "parent": "LTIM.2.1",
+  "seq": 152,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LTIM.2.1.2] The runtime must drive `now()` from the engine's\nwall clock ([LTIM.2.8.3]), never from a platform clock read directly. Both\nengine clocks are mockable via test harness controls: `clock_set` and\n`clock_advance` move the monotonic clock, `clock_advance` moves the wall clock\nby the same interval, and `wall_clock_set` sets the wall clock alone\n([LTES.3.2.2]).\n\n",
+  "refs": [
+    "LTES.3.2.2",
+    "LTIM.2.8.3"
+  ],
+  "checks": {
+    "idris": [
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_1_1__now_tracks_the_clock_timed",
+        "tag": "derives",
+        "role": "witness",
+        "verdict": "proven",
+        "note": "'The runtime must drive `now()` from the engine's wall clock', which `clock_advance` moves: the gate opens when the advance moves the wall past the instant. Executed."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ltim_2_8_3__wall_set_timed",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "partial",
+        "note": "'`clock_advance` moves the wall clock by the same interval, and `wall_clock_set` sets the wall clock alone': the one step both reach, after the tick for an advance and by itself for a set. LESS than the clause: the harness controls by their effect on the sample, not by name."
+      },
+      {
+        "path": "formal/idris/Rete/NetworkWall.idr",
+        "name": "ntst_3_1__advance",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "'`clock_advance` moves the wall clock by the same interval': the two steps of one advance. A fixture."
+      }
+    ]
+  }
+}

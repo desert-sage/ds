@@ -1,0 +1,30 @@
+/* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
+/* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
+syntax = "proto3";
+
+package ds.v1;
+
+// FactAssert — atom body. Used in the DS fact stream recording format
+// (RFCS), and by any integrator transport that carries facts.
+//
+// `fact` is encoded using the protobuf message type defined by the
+// proto_source field of the schema's SchemaDef atom. A reader must already hold
+// that schema's SchemaDef + Slot atoms, which an encoder emits before the first
+// FactAssert for the schema ([RFCS.5.1]).
+//
+// A FactAssert records a host input ([RFCS.6.1]); a fact a rule produces is a
+// FactEmit. In an event trace an encoder writes clock_ns and seq, and leaves
+// rule_name empty ([RFCS.3.3]).
+message FactAssert {
+  uint64 fact_id     = 1;  // retraction handle; set by asserter; echoed in FactRetract
+  string schema_name = 2;  // name of the DS schema
+  bytes  fact        = 3;  // proto-encoded fact body (typed per SchemaDef proto_source)
+  int64  ttl_ns      = 4;  // TTL override; 0 = the schema's default
+  string rule_name   = 5;  // "" in an event trace ([RFCS.3.3])
+  uint64 clock_ns    = 6;  // engine monotonic clock at assertion (ns)
+  uint64 seq         = 7;  // the event's place in the delivered stream
+  string event_id    = 8;  // this engine's identity for the fact ([LFST.5.6]):
+                           // stamped on every FactAssert, derived from the run
+                           // identifier, the tier identifier and seq;
+                           // meaningless on another tier
+}

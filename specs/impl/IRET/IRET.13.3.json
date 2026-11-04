@@ -1,0 +1,22 @@
+{
+  "id": "IRET.13.3",
+  "prefix": "IRET",
+  "doc": "IRET.md",
+  "parent": "IRET.13",
+  "seq": 1064,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[IRET.13.3] **RT-safety.** A builtin registered via `ds_register_fn_rt` is\nflagged `rt_safe` (O(1)/bounded, no allocation). The action adapters register\nRT-safe; the general math/string builtins register via `ds_register_fn`\n(`rt_safe` defaults false).\n\n**The refusal belongs at load** ([RTCT.7.8]): an artefact whose rules can reach\na non-`rt_safe` op under `constspace: true` — and so under `realtime`, which\nrequires it — is rejected with `DS_ERR_RT_UNSAFE` before any fact is\nprocessed. An op that could fault in the pooled strategy and succeed in the\nordinary one would otherwise change a result by setting ([LDET.1.12]).\n\nIn the pooled strategy the CALL evaluator additionally rejects a non-`rt_safe` op before\ninvoking it. That check is **defence in depth, not the contract** — reaching it\nmeans an artefact got past the load gate, which is a defect in the gate rather\nthan a condition an author can produce. It is retained because the evaluator\ncannot verify that the gate ran.\n\n",
+  "refs": [
+    "LDET.1.12",
+    "RTCT.7.8"
+  ],
+  "errors": [
+    "DS_ERR_RT_UNSAFE"
+  ],
+  "symbols": [
+    "ds_register_fn",
+    "ds_register_fn_rt"
+  ]
+}

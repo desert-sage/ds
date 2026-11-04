@@ -1,0 +1,15 @@
+# Both identities absorb one sample at the same instant, then are re-read on
+# either side of the window edge -- see fixtures/100_window_edge.ds.
+#
+#   pump 1  both cold, `v` is 1.0: nothing fires
+#   pump 2  `i` read at W - 1 ns: `inside_count` fires
+#   pump 3  `e` read at exactly W: `edge_count` and `edge_mean` fire
+assert Reading entity_id=e v=1.0
+assert Reading entity_id=i v=1.0
+pump
+advance 599999999999
+assert Reading entity_id=i v=2.0
+pump
+advance 1
+assert Reading entity_id=e v=2.0
+pump

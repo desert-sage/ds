@@ -1,0 +1,24 @@
+{
+    "id": "LGRA.2.8.2_const_call_cooldown_gates",
+    "clauses": ["LCRS.8.1", "LCRS.8.2"],
+    "category": "adapter",
+    "scenario": "[LGRA.2.8.2]: a call's `cooldown:` takes a `time_expr`, and a `time` const gates the call for the window its value names ([LCRS.8.1], [LCRS.8.2]). `call svc.x id: d.id cooldown: W` with `const W = 30_s`, on `Dev` keyed by `id`. `a` fires the call at 0; `a` again at 1 s (a new `level`, so the rule fires again) is inside the window and held back; `a` again at 41 s is past it and issued. Expected: two calls, the first and the third firing's. A call with no gate, which a const read as 0 lowers to, issues three; a window of 41 s or more issues one. PATH PINNED: `dsc.rete.call_cooldown` reading the NAME through `dsc.dstest.lgra_2_8_1_time_value_ns`, the per-call gate `rlow_4_6_6_1_call_gates` builds from it, and each runtime's rate check of that gate.",
+    "rules_ds": "const W = 30_s\n\nschema Dev scope logical:\n    id: String key\n    level: Int mutable\n\nservice svc.x:\n    kwarg id: String\n    no response\n\nrule r:\n    Dev d\n->\n    call svc.x id: d.id cooldown: W\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 1}},
+            {"op": "pump"},
+            {"op": "advance", "delta_ns": 1000000000},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 2}},
+            {"op": "pump"},
+            {"op": "advance", "delta_ns": 40000000000},
+            {"op": "assert", "schema": "Dev", "slots": {"id": "a", "level": 3}},
+            {"op": "pump"}
+        ],
+        "expected_calls": [
+            {"service": "svc.x", "correlation": "$r_c0_g0", "body": {"id": "a"}},
+            {"service": "svc.x", "correlation": "$r_c0_g2", "body": {"id": "a"}}
+        ]
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "LCCO.5.1_continuation_through_an_aliased_response",
+    "category": "logical",
+    "scenario": "[LCCO.5.1]: LHS bindings are in scope in a continuation body, here when the service names its response through an import alias. `response BR` names `b`'s `Reply`, so the `on response` sibling must match the schema by its own name, `b.Reply` ([LIMP.13.1]). `r` calls `svc.get` as `c1`, and the answer, a `Reply` of that `corr`, fires the continuation, which logs the bound `j.id`. Exactly [\"got 1\"]. The break is a sibling built on the spelling `BR`, which names no schema in the artefact: the compile has no response schema for it, and nothing logs. PATH PINNED: `dsc.rete.response_schema`, through `call_response_schema` and `rf_response_names`.",
+    "rules_ds": "from b import Reply as BR\n\nservice svc.get:\n    kwarg k: Int\n    response BR\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get k: j.id nocooldown as \"c1\"\n        on response.ok == true:\n            log info \"got {j.id}\"\n",
+    "libraries": {
+        "b": "schema Reply scope ttl 1_h:\n    corr: String\n    ok: Bool\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "b.Reply", "slots": { "corr": "c1", "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["got 1"]
+    }
+}

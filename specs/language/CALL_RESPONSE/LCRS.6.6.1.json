@@ -1,0 +1,71 @@
+{
+  "id": "LCRS.6.6.1",
+  "prefix": "LCRS",
+  "doc": "CALL_RESPONSE.md",
+  "parent": "LCRS.6.6",
+  "seq": 355,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCRS.6.6.1] A response fact or `CallError` that no superseding call\nretracts ([LCRS.6.2.1]) expires at its schema's TTL ([LFAC.1.3.3]): the\nduration the response schema declares ([LCRS.4.3.2]), and 5_min for `CallError`\n([LCRS.4.2.1]). The engine must apply no other lifetime to them; no site\nsetting shortens or extends it.\n\n",
+  "refs": [
+    "LCRS.6.2.1",
+    "LFAC.1.3.3",
+    "LCRS.4.3.2",
+    "LCRS.4.2.1"
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__MAXAGE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__age",
+        "tag": "spec",
+        "note": "Ticks since the answer went live: the deadline counted from the assertion rather than on the clock, so `age >= TTL` is `clock >= deadline`."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__never_past_its_ttl",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "NEVER PAST ITS TTL: no reachable state holds a live answer at or past its TTL, so the tick that brings the deadline is the one that retracts it and nothing has extended it. With not_before_its_ttl, expiry is AT the schema's TTL. Bounded: two calls, two firings each, TTLs of 2 and 3 ticks in either order, the response schema's the shorter in call_response.cfg and the longer in call_response.scope.long.cfg, the clause's engine both times; the `late` and `unswept` teeth engines violate it, and so does `one_ttl` when the response schema's TTL is the longer (call_response.teeth.one_ttl_long.cfg)."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__no_orphan_forever",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "NO ORPHAN FOREVER: under weak fairness on the tick, every answer that goes live is eventually gone, superseded by a firing, superseded by an arrival, or expired; stated per answer by the request it answers, so a correlation kept live by a stream of answers is not read as one orphan. Same bound; the `stalled` and `unswept` teeth engines violate it, and so does dropping the fairness."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__not_before_its_ttl",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "NOT BEFORE ITS TTL: a tick that removes an answer finds it one tick short of its TTL, the response schema's for a response fact and 5_min for a CallError, so the sweep has shortened nothing. About the tick alone: the two supersedures retract earlier by design. Same bound; the `early` and `one_ttl` teeth engines violate it."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__sweeps_at",
+        "tag": "spec",
+        "note": "The clause's engine sweeps at the answer's own TTL; the other arms are the engines the clause rules out (early, late, one TTL for both kinds, never), each run by a .teeth. config that must end in a violation."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "lcrs_6_6_1__ttl_of",
+        "tag": "spec",
+        "note": "The TTL per kind: the response schema's for a response fact, 5_min for a CallError, and nothing else decides it."
+      },
+      {
+        "path": "formal/tla/call_response.tla",
+        "name": "rarc_5_2_4__Tick",
+        "tag": "derives",
+        "note": "The expiry is the engine's ordinary TTL sweep at the pump that follows a sample, not a mechanism of the call's: one tick ages every live answer and retracts each whose age has reached its TTL in the same step."
+      }
+    ]
+  }
+}

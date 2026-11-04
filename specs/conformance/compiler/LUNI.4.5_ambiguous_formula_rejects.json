@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.4.5_ambiguous_formula_rejects",
+    "category": "compiler",
+    "scenario": "LUNI.4.5 — when two implicit formulas bridge the same source/target dim pair, the compiler refuses to pick. `let period: nanosecond = s.freq` rejects with DS_VALIDATE_FORMULA_AMBIGUOUS because both `hz_period` and `hz_period_alt` declare `Hz → nanosecond` as implicit. Removing `implicit` from one of them resolves the ambiguity.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period implicit:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nunit formula hz_period_alt implicit:\n    hz_to_period_alt(x: Hz): nanosecond  = 1000000000.0 / x\n    period_to_hz_alt(x: nanosecond): Hz  = 1000000000.0 / x\n\nschema Signal scope logical:\n    freq: Hz key\n\nrule slow:\n    Signal s\n->\n    let period: nanosecond = s.freq\n    log info \"never\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_FORMULA_AMBIGUOUS"
+    }
+}

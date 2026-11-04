@@ -1,0 +1,15 @@
+{
+  "id": "LCCO.5.2",
+  "prefix": "LCCO",
+  "doc": "CALL_CONTINUATION.md",
+  "parent": "LCCO.5",
+  "seq": 219,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCCO.5.2] To make capture work across the outer rule's\nfiring-time and the continuation's matching-time, the compiler\nmust emit a synthetic capture fact alongside the lowered `call`:\n\n```\n$CaptureBindings_<outer>_c<N>\n  corr <corr>\n  <field>: <snapshot value> ...\n```\n\nThe capture fact carries snapshot values of each LHS binding the\ncontinuation bodies reference. Each `on` and `error` sibling must include this\nfact in its LHS, joined on `corr`. A `timeout` sibling joins its timer instead,\nwhich carries the correlation and the values its body reads ([LCCO.7.2]).\n\n**The fact is emitted for every call with continuations, even with nothing to\ncapture.** A generated correlation is per activation ([LCCO.3.4]), and\nso is an `as` whose value is computed from the firing — a binding, a slot read or\nan interpolated string — so this fact is what carries the correlation from the\nfiring to the `on` and `error` siblings; a call whose continuation bodies reference no binding\nemits it with the `corr` slot alone. Only a call whose `as` is a compile-time\nconstant, a plain literal or a `const`, may omit it when there is nothing to\ncapture, because the siblings then match that constant directly.\n\n",
+  "refs": [
+    "LCCO.3.4",
+    "LCCO.7.2"
+  ]
+}

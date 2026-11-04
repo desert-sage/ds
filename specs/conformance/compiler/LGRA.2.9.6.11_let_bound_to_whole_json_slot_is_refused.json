@@ -1,0 +1,8 @@
+{
+    "id": "LGRA.2.9.6.11_let_bound_to_whole_json_slot_is_refused",
+    "clauses": ["LGRA.2.9.6.9", "LGRA.2.9.6.2", "LLET.12.5"],
+    "category": "compiler",
+    "scenario": "[LGRA.2.9.6.11]: the compiler must refuse interpolating a whole `Json` value \"or a `let` bound to one ([LGRA.2.9.6.2])\". `let j = n.doc` binds the whole `Json` slot `doc`, `let k = j` names that `let`, and `{k}` is refused with DS_VALIDATE_INTERP_UNSUPPORTED ([LGRA.2.9.6.9]): a pure `let` is its right-hand side inlined ([LLET.12.5]), so the site interpolates `n.doc`. PATH PINNED: `dsc.validate.lgra_2_9_6_1_check_site`, through `lgra_2_9_6_11_whole_json`'s `let` arm twice, reading `rsc_let_exprs`, and then its slot arm.",
+    "rules_ds": "schema Note scope ttl 1_min:\n    doc: Json\n\nrule noted:\n    Note n\n->\n    let j = n.doc\n    let k = j\n    log info \"noted {k}\"\n",
+    "expect": { "kind": "compile_error", "code": "DS_VALIDATE_INTERP_UNSUPPORTED" }
+}

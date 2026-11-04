@@ -1,0 +1,15 @@
+{
+    "id": "LSCO.4.1.runtime",
+    "category": "logical",
+    "scenario": "An author-written `no` guard over a `scope activation` schema gates on the lock's absence per LSCO.4. With no Lock present, asserting Trig and pumping fires the rule.",
+    "rules_ds": "schema Lock scope activation:\n    entity_id: String\n\nschema Trig scope logical:\n    entity_id: String key\n\nrule gated:\n    no Lock l where l.entity_id == \"x\"\n    Trig\n->\n    log info \"gated fired\"\n",
+    "expect": {
+        "kind": "rule_fire_order",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "entity_id": "t1" } },
+            { "op": "pump" }
+        ],
+        "expected_rule_names": ["gated"]
+    },
+    "dead_rules_expected": []
+}

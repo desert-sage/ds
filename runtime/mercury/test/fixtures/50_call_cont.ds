@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Call continuations ([LCCO]): the on/timeout/error blocks desugar into
+# sibling rules and schemas, whose actions are their terminals'
+# `TerminalNode.actions`. The clause bodies bind nothing.
+
+schema WeatherGetForecastReply scope ttl 1_h:
+    corr: String
+    tomorrow_max: Int
+
+service weather.get_forecast:
+    kwarg entity_id: String
+    response WeatherGetForecastReply
+
+service switch.turn_on:
+    kwarg entity_id: String
+    no response
+
+schema Trig scope logical:
+    v: Int key
+
+rule with_continuations:
+    Trig
+->
+    call weather.get_forecast entity_id: "weather.home" cooldown: 1_h as "fc"
+        on response.tomorrow_max < 60:
+            call switch.turn_on entity_id: "switch.preheater" cooldown: 1_h
+        timeout 30_s:
+            log critical "forecast never arrived"
+        error adapter:
+            log error "adapter failed"

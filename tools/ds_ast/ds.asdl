@@ -1,0 +1,357 @@
+-- SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+-- SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+--
+-- ds.asdl -- every node of the DS syntax tree, once.
+--
+-- The notation is CPython's Parser/Python.asdl, read the same way: a type is
+-- a set of constructors, `?` is optional, `*` is a sequence, and `attributes`
+-- are carried by every constructor of the type without being fields. The
+-- Python node classes and the Mercury writer's field table are generated
+-- from this file by scripts/gen_ds_ast.py and never written by hand
+-- (compiler/ds_ast/DESIGN.md section 3).
+--
+-- Names follow Python's `ast` wherever DS has the same construct
+-- (Attribute, Subscript, Call, Compare, BoolOp, UnaryOp, keyword, alias,
+-- Import, ImportFrom, Constant), and are DS's own words elsewhere.
+--
+-- Every statement-like node also carries the trivia attributes: the comments
+-- on the lines before it, the comment trailing its first line, and the blank
+-- lines before it (DESIGN.md sections 4 and 6).
+
+module DS
+{
+    mod = Module(use? use, decl* body, comment* comments_end)
+
+    use = Use(identifier dialect, setting* settings)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    setting = Setting(identifier capability, bool value)
+
+    decl = Import(identifier* path, identifier? asname)
+         | ImportFrom(identifier* path, alias* names)
+         | Schema(identifier name, scope? scope, string? docstring,
+                  slot* slots)
+         | Rule(identifier name, rate* rate, string? docstring,
+                lhs* lhs, let* lets, action* actions, after* afters)
+         | Const(identifier name, annotation? annotation, expr value,
+                 bool colon_form)
+         | Series(identifier? schema, identifier slot, series_option* options,
+                  string? docstring, series_line* lines)
+         | Service(identifier* name, string? docstring,
+                   service_kwarg* kwargs, service_response? response,
+                   hydration_field* hydration)
+         | UnitDimension(identifier name, identifier storage,
+                         identifier base)
+         | UnitScalar(identifier name, identifier storage, string? label)
+         | UnitSymbol(identifier symbol, identifier dimension,
+                      unit_body body, string? label, identifier* aliases)
+         | UnitFormula(identifier name, formula_modifier* modifiers,
+                       formula_line* lines)
+         | UnitFxPair(identifier name, identifier from_unit,
+                      identifier to_unit, identifier via, expr where,
+                      identifier numerator, identifier denominator)
+         | Opaque(identifier name, identifier representation)
+         -- `test "<name>":` ([LTSL.2.1]); its sections in source order.
+         | Test(expr name, test_section* sections)
+         -- The ruleset's `initial:` block ([LGRA.24.1]): a test's
+         -- `initial` items, at the top level.
+         | InitialBlock(initial_item* items)
+         attributes (int lineno, int col_offset, int? end_lineno,
+                     int? end_col_offset, comment* comments_before,
+                     comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.2.3]'s sections. `Until`'s coordinate is a duration literal or,
+    -- in absolute mode, a `calendar.time(...)` call ([LTSL.3.2]).
+    test_section = Initial(initial_item* items)
+                 | Inputs(at_block* blocks)
+                 | Responses(stub* stubs)
+                 | Produces(assertion* assertions)
+                 | Until(expr when)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.5]: a fact placed before the run, `cache "k": v`, or a `cache:`
+    -- block of seeds ([LTSL.5.2] admits both spellings).
+    initial_item = InitialFact(fact fact)
+                 | CacheSeed(expr key, expr value)
+                 | CacheBlock(seed* seeds)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    seed = Seed(expr key, expr value)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.4.1]: a constructed fact, emit-style. Its schema is named as a
+    -- pattern names one, `Name` or `lib.Name` (LTSL.4.4).
+    fact = Fact(type_ref schema, keyword* args)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.3.3]: `at <coordinate>:` and the facts arriving then.
+    at_block = At(expr when, fact* facts)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.7.2]: `for call <service> [slot: val …] [as "<corr>"]
+    -- [after <dur>]:` and its replies.
+    stub = ForCall(identifier* library, identifier* service, keyword* args,
+                   expr? correlation, expr? after, reply* replies)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    reply = Reply(fact fact) | NoResponse
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.8.3]: a head and its polarity.
+    assertion = Assertion(bool never, test_head head)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- [LTSL.8.2]'s heads. `binding` and `where` are [LTSL.8.4]'s
+    -- `<binding> where <predicate>`, both or neither. On `Emitted` and
+    -- `Published`, `args` is empty when `where` is present: a head matches by
+    -- slot arguments or by the predicate, never both ([LTSL.8.4]). A head
+    -- naming a schema takes a pattern's `type_ref` (LTSL.4.4).
+    test_head = Activated(identifier rule)
+              | Emitted(type_ref schema, keyword* args, identifier? binding,
+                        expr? where)
+              | Published(type_ref schema, keyword* args,
+                          identifier? binding, expr? where)
+              | Retracted(type_ref schema, keyword* args)
+              | Recorded(identifier kind)
+              | Called(identifier* library, identifier* service,
+                       expr? correlation)
+              | Cached(expr key, expr? value)
+              | CacheDeleted(expr key)
+              | Logged(log_level level, expr? substring)
+              | WmHas(type_ref schema, keyword* args)
+              | WmCount(type_ref schema, expr count)
+              | WmEmpty
+
+    alias = alias(identifier name, identifier? asname)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset)
+
+    -- A comment exactly as written, `#` included.
+    comment = comment(string text)
+        attributes (int lineno, int col_offset, int blank_lines_before)
+
+    -- `scope <value>` after a schema's name, or its absence. Absent is NOT
+    -- `Explicit`: the tree records what was written ([LSCP.1.4] defaults it
+    -- later).
+    -- A service's last line ([LGRA.23.1]): `response T` or `no response`.
+    -- Absent is NOT `NoServiceResponse`: the tree records what was written,
+    -- and [LGRA.23.2] refuses the omission later. Not the `.dstest` reply
+    -- `NoResponse`, which is a stub's line and carries a position.
+    service_response = ResponseSchema(identifier name)
+                     | NoServiceResponse
+
+    scope = Explicit
+          | Activation
+          | Logical(bool ambient)
+          | Ttl(expr duration, bool ambient)
+          | Unprefixed(scope scope)
+          | BareAmbient
+
+    -- `capacity` is `capacity N` after the `?` ([LSTR.11.1]).
+    slot = Slot(identifier name, identifier type, bool nullable,
+                expr? capacity, marker* markers, expr? tolerance,
+                string? docstring)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    marker = Key | Mutable | Sampled | Retained
+        attributes (int lineno, int col_offset)
+
+    -- RateKey is `by:` ([LCDB.3.3.4]): each path an Attribute over a Name,
+    -- in the order written; `by: none` is the empty list. The only rate is
+    -- the cooldown.
+    rate = Cooldown(expr duration)
+         | RateKey(expr* paths)
+        attributes (int lineno, int col_offset)
+
+    lhs = PatternClause(pattern pattern)
+        | ThenClause(then_step step)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    pattern = Simple(pattern_body body)
+            | Negated(pattern_body body, bool parenthesised)
+            | Sequence(bool latest, pattern_body head, then_step* steps)
+
+    -- `captures`: [LREG.4.1]'s `where (a, b) = ...` list, empty when the
+    -- `where` has none. `where` is the whole condition either way.
+    pattern_body = PatternBody(type_ref type, identifier? binding,
+                               expr? within, expr? where,
+                               identifier* captures)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset)
+
+    then_step = Then(bool latest, pattern_body body, expr within)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset)
+
+    type_ref = TypeName(identifier name)
+             | QualifiedType(identifier* library, identifier name)
+
+    let = Let(let_binding* bindings)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    let_binding = LetName(identifier name, annotation? annotation,
+                          expr value)
+                | LetCapture(identifier* names, expr value)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    annotation = Annotation(identifier type, bool nullable)
+
+    -- One node per verb. `args` are the ones on the action's own line;
+    -- `block` the indented `name: value` lines under it. Both are kept apart
+    -- so unparse writes each where it was.
+    -- `Log` has `args` too: the parser takes arguments after every head so
+    -- that `validate` can refuse them by code ([LGRA.10.3.3]), and a tree
+    -- without them writes back a program that compiles where the source
+    -- was refused.
+    -- The three schema verbs take a pattern's `type_ref`, `Name` or
+    -- `lib.Name` (LGRA.8.1, LGRA.22.4).
+    action = Log(log_level level, expr message, keyword* args)
+           | ServiceCall(identifier* library, identifier* service,
+                         keyword* args, keyword* block,
+                         continuation* continuations, expr? correlation)
+           | Emit(type_ref schema, keyword* args, keyword* block)
+           | Publish(type_ref schema, keyword* args, keyword* block)
+           | Cache(keyword* args, keyword* block)
+           | CacheDelete(keyword* args, keyword* block)
+           | RecordEvent(type_ref schema, keyword* args, keyword* block)
+           | Withdraw(identifier binding, keyword* args)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- `Log`-prefixed so `from ds_ast import *` shadows no Python builtin
+    -- (`Warning`, and nearly `Error`).
+    log_level = LogDebug | LogInfo | LogWarning | LogError | LogCritical
+              | LogUnknown(string written)
+
+    -- `name: value`, or a bare flag (`nocooldown`), which has no value.
+    keyword = keyword(identifier arg, expr? value)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    continuation = OnResponse(expr test, action* body)
+                 | OnTimeout(expr duration, action* body)
+                 | OnError(identifier* code, action* body)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    after = After(expr duration, expr? correlation, action* body,
+                  after* nested)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    -- `Capacity` is `capacity: N` ([LSER.13.14]).
+    series_option = Persist(expr duration) | By(identifier? slot)
+                  | Capacity(expr samples)
+                  | Nulls(identifier policy)
+        attributes (int lineno, int col_offset)
+
+    series_line = SeriesLine(identifier* aggregations, time_model time,
+                             accuracy? accuracy, gap_policy? gap,
+                             identifier? asname)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    time_model = AllTime | Sliding(expr window) | Tumbling(expr window)
+               | Sample(expr size)
+
+    accuracy = Exact | Tolerance(expr value) | Confidence(expr value)
+             | Delta(expr value) | BoundDeterministic
+
+    gap_policy = GapHold | GapZero | GapSkip
+
+    service_kwarg = ServiceKwarg(identifier name, identifier type,
+                                 kwarg_modifier* modifiers)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    kwarg_modifier = Default(expr value) | Literal | Required
+
+    hydration_field = Hydrates(identifier* schemas)
+                    | MaxWindow(expr value)
+                    | MaxLimit(expr value)
+                    | FilterFields(filter_field* fields)
+        attributes (int lineno, int col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    filter_field = FilterField(identifier name, cmpop* ops)
+
+    unit_body = BaseUnit
+              | Affine(expr expr)
+              | Tier2(expr to_base, expr from_base)
+
+    formula_modifier = Inverting | Implicit
+
+    formula_line = FormulaLine(identifier name, identifier param,
+                               identifier param_type, identifier returns,
+                               expr body)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset, comment* comments_before,
+                    comment? comment_after, int blank_lines_before)
+
+    expr = BoolOp(boolop op, expr* values)
+         | UnaryOp(unaryop op, expr operand)
+         | BinOp(expr left, operator op, expr right)
+         | Compare(expr left, cmpop* ops, expr* comparators)
+         | Is(expr operand, bool negated, is_subject subject)
+         | Match(expr operand, bool negated, string pattern, string flags)
+         | Call(expr func, expr* args)
+         | Cast(expr operand, identifier type, bool nullable)
+         | Attribute(expr value, identifier attr)
+         | Subscript(expr value, expr index)
+         | Name(identifier id)
+         | QualifiedName(identifier* library, identifier id)
+         | Constant(constant value, string? raw)
+         | Quantity(string magnitude, string unit, string? raw)
+         -- A string with `{...}` interpolation sites, as Python's f-string:
+         -- the literal parts are `Constant`s, each site a `FormattedValue`.
+         -- `raw` is the whole literal as written.
+         | JoinedStr(expr* values, string? raw)
+         | FormattedValue(expr value, string? format_spec)
+        attributes (int lineno, int col_offset, int? end_lineno,
+                    int? end_col_offset)
+
+    boolop = And | Or
+
+    operator = Add | Sub | Mult | Div | FloorDiv | Mod | Pow
+             | BitOr | BitXor | BitAnd | LShift | RShift
+             | Coalesce | In | Contains | Overlaps | Range
+
+    unaryop = Not | UAdd | USub | Invert
+
+    cmpop = Eq | NotEq | Lt | LtE | Gt | GtE
+
+    is_subject = IsNull | IsBool(bool value) | IsInf(bool negative) | IsNaN
+               | IsTag(identifier tag)
+}

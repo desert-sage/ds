@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# A target a delivery's own asserts remove reads as gone ([RFCS.23.7]). `Ans`
+# is `svc.a`'s response schema, so an arriving `Ans` or `CallError`
+# supersedes the live answers with its `corr` ([LCRS.6.2.4]). `derive` gives a
+# logical `D` to the first answer alone, so that answer's supersede cascades
+# into `D`. `R`, `Rd` and `Re` are what a record refers to them from.
+
+schema Ans scope ttl 1_h:
+    corr: String
+    v: Int
+
+service svc.a:
+    kwarg n: Int
+    response Ans
+
+schema D scope logical:
+    k: Int key
+
+schema R scope logical:
+    k: Int key
+    a: Ans mutable
+    b: Ans mutable
+
+schema Rd scope logical:
+    k: Int key
+    d: D mutable
+    y: Ans mutable
+
+schema Re scope logical:
+    k: Int key
+    a: Ans mutable
+    e: CallError mutable
+
+rule derive:
+    Ans x where x.v == 1
+->
+    emit D logical k: x.v
+
+rule seen_error:
+    CallError
+->
+    log info "error"

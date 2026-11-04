@@ -1,0 +1,17 @@
+{
+  "id": "IARC.1.10",
+  "prefix": "IARC",
+  "doc": "ARCHITECTURE.md",
+  "parent": "IARC.1",
+  "seq": 107,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IARC.1.10] **Async-first, never depends on threads.**\n  Load-bearing design invariant across every libds\n  module, not just the consumption loop. libds\n  **never** depends on threads for anything: no\n  `pthread_*` calls, no `sleep` / `nanosleep`, no\n  internally-spawned threads, no background timers,\n  no thread-local state as a semantic mechanism, no\n  locks held across a callback. The consumption loop\n  exposes a pump function\n  (`ds_engine_pump(engine)`) that runs to agenda\n  exhaustion and returns ([NLFC.2.2]). Every other module —\n  `dispatcher`, `recorder`, `wm` — is equally\n  thread-free: they\n  produce callbacks, consume callbacks, mutate state\n  on the pump's call stack, and that is all.\n  The integrator may freely use threads in their\n  own code — e.g. running pump on a dedicated\n  thread, or calling pump from a thread pool — but\n  libds does not require them to, does not assume\n  them, and does not spawn them. The design\n  assumption is that integrators are comfortable\n  with async programming; we do not ship sync-mode\n  conveniences or thread wrappers.\n  **Pure async-event deployment (no threads at all)\n  is the primary target.** Any module design that\n  forces threading — \"this callback must run on a\n  different thread,\" \"this lock must be held across\n  an await,\" \"this operation blocks pending I/O\" —\n  is a design regression to flag and redesign. All\n  blocking I/O goes through callbacks the\n  integrator's runtime drives; libds never waits,\n  never spawns, never sleeps.\n",
+  "refs": [
+    "NLFC.2.2"
+  ],
+  "symbols": [
+    "ds_engine_pump"
+  ]
+}

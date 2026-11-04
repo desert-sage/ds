@@ -1,0 +1,12 @@
+{
+  "id": "LLOG.2.7.1.multi_justif_wrap",
+  "category": "runtime",
+  "scenario": "Two rules emitting the same keyed logical fact (multi-justification) must coalesce to ONE working-memory fact. The second emit coalesces to the existing rete fact (LFAC.1.7). A runtime that builds a SECOND DS wrapper for it double-counts the fact (3 instead of 2) and orphans a wrapper on a later TMS retract. fact_count_after = 2 (Trig + one Mark), not 3.",
+  "rules_ds": "schema Trig scope logical:\n    v: Int key\nschema Mark scope logical:\n    step: String key\nrule r1:\n    Trig\n->\n    emit Mark logical step: \"X\"\nrule r2:\n    Trig\n->\n    emit Mark logical step: \"X\"\n",
+  "expect": {
+    "kind": "runtime_fact_count",
+    "asserts": [ { "schema": "Trig", "slots": { "v": 1 } } ],
+    "pump": true,
+    "fact_count_after": 2
+  }
+}

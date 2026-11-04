@@ -1,0 +1,21 @@
+{
+  "id": "LGRA.10.1.3",
+  "prefix": "LGRA",
+  "doc": "GRAMMAR.md",
+  "parent": "LGRA.10.1",
+  "seq": 1352,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LGRA.10.1.3] **Nothing in a rule's RHS refers to a binding after it is\nwithdrawn.** A rule's actions run in source order, and `withdraw b` removes the\nfact bound to `b` when it runs ([LSCO.4.5.9]). No action after it in the same\nRHS may refer to `b`: not by reading a slot of `b`, anywhere in the action or in\na body nested in it, and not by withdrawing `b` again. The compiler **must**\nrefuse such a reference with `DS_VALIDATE_WITHDRAWN_BINDING_USED`, at the\naction that contains it, naming the binding and the `withdraw` before it. A body\nnested in a later action — a call continuation, an `after` body — counts,\nalthough it runs later: the values it reads are captured from the fact when the\naction containing it runs ([LCCO.5.2]), and that is after the `withdraw`. An\naction before the `withdraw` may refer to `b` freely. A `logical` emit after the\n`withdraw` in the same RHS is refused whether or not it refers to `b`\n([LLOG.11.9]).\n\nThe same rule holds inside a nested body that itself withdraws `b`\n([LGRA.10.1.4]): nothing after that `withdraw` in the body may refer to `b`. An\naction of the outer RHS after the one containing that body may still refer to\n`b`, because the body runs later.\n\n",
+  "refs": [
+    "LCCO.5.2",
+    "LGRA.10.1.4",
+    "LLOG.11.9",
+    "LSCO.4.5.9"
+  ],
+  "errors": [
+    "DS_VALIDATE_WITHDRAWN_BINDING_USED"
+  ]
+}

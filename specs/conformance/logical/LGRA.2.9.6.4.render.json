@@ -1,0 +1,21 @@
+{
+    "id": "LGRA.2.9.6.4.render",
+    "category": "logical",
+    "scenario": "[LGRA.2.9.6.4] — each timestamp directive rendered, as text. The pattern is resolved by the compiler into a TimePrim of fields and literal text (RLOW.6.4) and rendered by the runtime: libds's `render_time` here, Mercury's through the runtime differential. Fact 1 is 1234567890.123456789 s after the epoch, 2009-02-13T23:31:30Z: `%f` is `123456`, the nanoseconds TRUNCATED where rounding would give `123457`. Fact 2 is one nanosecond before the epoch: every field floors, to 1969-12-31T23:59:59.999999. A Time read from a slot is UTC ([LTIM.1.1.3]), so `%z` is `+0000` in both; an offset with a seconds part or a fraction needs `local()` and a timezone callback this harness does not configure, and is not reached here. The last line is one pattern mixing directives and literal text.",
+    "rules_ds": "schema E scope logical:\n    id: Int key\n    t: Time mutable\n\nrule show:\n    E e\n->\n    log critical \"Y={e.t:%Y} m={e.t:%m} d={e.t:%d} H={e.t:%H} M={e.t:%M} S={e.t:%S} f={e.t:%f} z={e.t:%z} pct={e.t:%%}\"\n    log critical \"iso=[{e.t:%Y-%m-%dT%H:%M:%S.%f%z}]\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "E", "slots": { "id": 1, "t": 1234567890123456789 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "E", "slots": { "id": 2, "t": -1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "Y=2009 m=02 d=13 H=23 M=31 S=30 f=123456 z=+0000 pct=%",
+            "iso=[2009-02-13T23:31:30.123456+0000]",
+            "Y=1969 m=12 d=31 H=23 M=59 S=59 f=999999 z=+0000 pct=%",
+            "iso=[1969-12-31T23:59:59.999999+0000]"
+        ]
+    }
+}

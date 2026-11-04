@@ -1,0 +1,14 @@
+{
+    "id": "LIMP.4.4.2",
+    "category": "compiler",
+    "scenario": "Bare `import B` does NOT propagate B's names through the importing library per LIMP.4.4.2 — only selective `from B import ...` re-exports. Pin: library `a` does `import b`; library `b` declares schema `Light`; rules-file does `from a import Light`. Library `a` did not selectively import `Light` from `b`, so Light is not part of A's exported surface; the rules-file's `from a import Light` rejects with DS_VALIDATE_UNKNOWN_IMPORT_NAME.",
+    "rules_ds": "from a import Light\n\nschema Trig scope logical:\n    v: Int key\n",
+    "libraries": {
+        "a": "import b\n\nschema A_only scope logical:\n    x: Int key\n",
+        "b": "schema Light scope logical:\n    is_on: Bool key\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNKNOWN_IMPORT_NAME"
+    }
+}
