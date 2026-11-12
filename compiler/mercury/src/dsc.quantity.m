@@ -80,6 +80,12 @@
 :- pred luni_4_3_tier2_to_base(resolved_file::in, string::in,
                                lgra_9_3_1_expr::out) is semidet.
 
+    % A tier-2 unit's `from_base` body; fails for any other unit.
+    %
+    %@spec [LUNI.4.3]
+:- pred luni_4_3_tier2_from_base(resolved_file::in, string::in,
+                                 lgra_9_3_1_expr::out) is semidet.
+
     % A base-unit value expressed in `Unit`. Fails when the body is tier-2, or
     % is not affine in `x`.
     %
@@ -113,6 +119,8 @@
     %@helper
 :- pred whole_number_dimension(resolved_file::in, decl_ref::in) is semidet.
 
+    % A whole number, of any size ([LUNI.2.4]).
+    %
     %@helper
 :- pred is_whole(rational::in) is semidet.
 
@@ -141,8 +149,8 @@
                        lgra_9_3_1_expr::in, decl_ref::out, rational::out)
     is semidet.
 
-    % Fails for a body that is not affine or, where the dimension is held as
-    % whole numbers, a unit that is not a positive whole number of base units.
+    % A base-unit value in `Unit`. Fails for a name that is no unit, and for a
+    % body that is neither affine nor tier-2.
     %
     %@spec [RLOW.7.3.9]
 :- pred rlow_7_3_9_conversion(resolved_file::in, decl_ref::in, string::in,
@@ -153,10 +161,69 @@
             % The kwarg's unit is its dimension's base unit.
     ;       cv_affine(float, float)
             % `(base - Offset) / Slope`.
-    ;       cv_div_exact(int64)
-            % `FN_INT_DIV_EXACT(base, Factor)`.
-    ;       cv_from_base(lgra_9_3_1_expr).
-            % A tier-2 unit's `from_base` body.
+    ;       cv_int(int64, int64, int64)
+            % Integer storage, tier-1:
+            % `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(base, Q, -R), P)`, as
+            % `cv_int(P, Q, R)`, with the unit's exact constants `a = P/Q` and
+            % `b = R/Q` over their least common denominator.
+    ;       cv_from_base(lgra_9_3_1_expr)
+            % A tier-2 unit's `from_base` body, on `float64` storage.
+    ;       cv_int_from_base(lgra_9_3_1_expr).
+            % A tier-2 unit's `from_base` body on integer storage: over the
+            % base value as `Float`, then [LUNI.7.2]'s cast.
+
+    % What a number asserted into `Symbol` becomes. Fails for a name that is no
+    % unit, and for a body that is neither affine nor tier-2.
+    %
+    %@spec [RLOW.6.1.10]
+:- pred rlow_6_1_10_assertion_of(resolved_file::in, string::in,
+                                 rlow_6_1_10_assertion::out) is semidet.
+
+:- type rlow_6_1_10_assertion
+    --->    asn_base
+            % The number is already in the base unit.
+    ;       asn_affine(float, float)
+            % `Slope * x + Offset`, with the baked constants ([LUNI.2.7.1]).
+    ;       asn_tier2(lgra_9_3_1_expr)
+            % A tier-2 unit's `to_base` body, on `float64` storage.
+    ;       asn_int(int64, int64, int64, bool)
+            % Integer storage, tier-1, as `asn_int(P, R, Q, Time)`:
+            % `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(x, P, R), Q)`, or the
+            % checked `P·x + R` alone when `Q = 1`, which raises past the `Int`
+            % range. `Time = yes` on the `time` dimension, where a negative
+            % result is `0`.
+    ;       asn_int_tier2(lgra_9_3_1_expr, bool)
+            % A tier-2 unit's `to_base` body on integer storage: over `x` as
+            % `Float`, then [LUNI.7.2]'s cast; `yes` on the `time` dimension.
+    ;       asn_duration(int64).
+            % A `time` unit that is a whole number of nanoseconds:
+            % `FN_DURATION_MUL(x, Factor)`.
+
+    % A tier-1 body whose coefficient of `x` folds to zero: it has no inverse
+    % ([LUNI.4.3]).
+    %
+    %@spec [LUNI.4.3]
+:- pred luni_4_3_zero_slope(ast_unit_body::in) is semidet.
+
+    % Which of a tier-1 unit's constants on `Dimension` does not fit the
+    % runtime value the compiler emits it as: in integer storage `P`, `Q`, `R`
+    % or `-R` past the 64-bit signed range; in `float64` storage `a` or `b` past
+    % the largest finite `Float`, or an `a` that is not zero and rounds to
+    % zero. Fails where every constant fits, for a body that is not a line, and
+    % for a zero slope, which [LUNI.4.3] refuses.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_unit_out_of_range(resolved_file::in, decl_ref::in,
+                                     ast_unit_body::in, string::out) is semidet.
+
+    % A unit literal's exact base value on `Dimension` does not fit what the
+    % compiler emits it as: an `Int` outside the 64-bit signed range, or a
+    % `Float` past the largest finite one. Fails where it fits, and for a value
+    % in integer storage that is not whole, which [LUNI.3.1.9] refuses.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_literal_out_of_range(resolved_file::in, decl_ref::in,
+                                        rational::in) is semidet.
 
     %@spec [LUNI.4.3]
 :- pred luni_4_3_tier2_fn(string::in, builtin_fn::out) is semidet.
@@ -246,6 +313,10 @@ luni_4_3_tier2_to_base(RF, Symbol, ToBase) :-
     unit_body(RF, Symbol, Body),
     Body = aub_tier2(ToBase, _, _).
 
+luni_4_3_tier2_from_base(RF, Symbol, FromBase) :-
+    unit_body(RF, Symbol, Body),
+    Body = aub_tier2(_, FromBase, _).
+
     %@helper
 :- pred storage_literal(resolved_file::in, string::in, rational::in,
                         ds_value::out) is semidet.
@@ -255,7 +326,8 @@ storage_literal(RF, Symbol, Exact, Value) :-
         luni_3_1_7_unit_of(RF, Symbol, Dimension, _),
         whole_number_dimension(RF, Dimension)
     then
-        Value = int(dsc.exact.truncate_wrapping_int64(Exact))
+        dsc.exact.luni_2_4_1_whole_int64(Exact, I),
+        Value = int(I)
     else
         dsc.exact.to_float(Exact, F),
         Value = float(F)
@@ -288,29 +360,130 @@ ladp_8_5_2_in_unit(RF, Unit, Base, Value) :-
 
 rlow_7_3_9_conversion(RF, Dimension, Unit, Conversion) :-
     ( if unit_line(RF, Unit, Line) then
-        (
-            Line = line_identity,
-            Conversion = cv_none
-        ;
-            Line = line_affine(Offset, Slope),
-            ( if whole_number_dimension(RF, Dimension) then
-                Offset = dsc.exact.from_int64(0i64),
-                is_whole(Slope),
-                Factor = dsc.exact.truncate_wrapping_int64(Slope),
-                Factor > 0i64,
-                Conversion = ( if Factor = 1i64 then cv_none
-                               else cv_div_exact(Factor) )
-            else
+        ( if whole_number_dimension(RF, Dimension) then
+            rlow_6_1_10_line_pqr(Line, P, Q, R),
+            Conversion =( if P = 1i64, Q = 1i64, R = 0i64 then cv_none
+                           else cv_int(P, Q, R) )
+        else
+            (
+                Line = line_identity,
+                Conversion = cv_none
+            ;
+                Line = line_affine(Offset, Slope),
                 dsc.exact.to_float(Offset, OffsetF),
                 dsc.exact.to_float(Slope, SlopeF),
                 Conversion = cv_affine(OffsetF, SlopeF)
             )
         )
     else
-        not whole_number_dimension(RF, Dimension),
         unit_body(RF, Unit, Body),
         Body = aub_tier2(_, FromBase, _),
-        Conversion = cv_from_base(FromBase)
+        Conversion = ( if whole_number_dimension(RF, Dimension)
+                       then cv_int_from_base(FromBase)
+                       else cv_from_base(FromBase) )
+    ).
+
+rlow_6_1_10_assertion_of(RF, Symbol, Assertion) :-
+    luni_3_1_7_unit_of(RF, Symbol, Dimension, _),
+    Time = ( if Dimension = time_dimension then yes else no ),
+    ( if unit_line(RF, Symbol, Line) then
+        ( if
+            ( Time = yes
+            ; whole_number_dimension(RF, Dimension)
+            )
+        then
+            rlow_6_1_10_line_pqr(Line, P, Q, R),
+            ( if Time = yes, Q = 1i64, R = 0i64 then
+                % The time row, its base unit included ([RLOW.6.1.10]).
+                Assertion = asn_duration(P)
+            else if P = 1i64, Q = 1i64, R = 0i64 then
+                Assertion = asn_base
+            else
+                Assertion = asn_int(P, R, Q, Time)
+            )
+        else
+            (
+                Line = line_identity,
+                Assertion = asn_base
+            ;
+                Line = line_affine(Offset, Slope),
+                dsc.exact.to_float(Slope, SlopeF),
+                dsc.exact.to_float(Offset, OffsetF),
+                Assertion = asn_affine(SlopeF, OffsetF)
+            )
+        )
+    else
+        luni_4_3_tier2_to_base(RF, Symbol, ToBase),
+        ( if
+            ( Time = yes
+            ; whole_number_dimension(RF, Dimension)
+            )
+        then
+            Assertion = asn_int_tier2(ToBase, Time)
+        else
+            Assertion = asn_tier2(ToBase)
+        )
+    ).
+
+    % A line's exact constants `a` and `b` over their least common denominator,
+    % `a = P/Q` and `b = R/Q`, with `Q > 0` ([RLOW.6.1.10]). Fails where one is
+    % outside the 64-bit signed range, which `dsc.validate` has refused at the
+    % unit's declaration ([LUNI.2.4.1]); none is wrapped.
+    %
+    %@spec [RLOW.6.1.10]
+    %@spec [LUNI.2.4.1]
+:- pred rlow_6_1_10_line_pqr(unit_line::in, int64::out, int64::out, int64::out)
+    is semidet.
+
+rlow_6_1_10_line_pqr(line_identity, 1i64, 1i64, 0i64).
+rlow_6_1_10_line_pqr(line_affine(Offset, Slope), P, Q, R) :-
+    dsc.exact.over_common_denominator(Slope, Offset, PI, QI, RI),
+    dsc.exact.luni_2_4_1_int64(PI, P),
+    dsc.exact.luni_2_4_1_int64(QI, Q),
+    dsc.exact.luni_2_4_1_int64(RI, R).
+
+luni_4_3_zero_slope(Body) :-
+    body_line(Body, line_affine(_, Slope)),
+    dsc.exact.sign(Slope) = 0.
+
+luni_2_4_1_unit_out_of_range(RF, Dimension, Body, Why) :-
+    body_line(Body, Line),
+    Line = line_affine(Offset, Slope),
+    dsc.exact.sign(Slope) \= 0,
+    ( if whole_number_dimension(RF, Dimension) then
+        ( if rlow_6_1_10_line_pqr(Line, _, _, R) then
+            % [RLOW.7.3.9] writes `-R` as one `Int` literal, and an `R` of
+            % -2^63 has no `-R` in range.
+            R = int64.min_int64,
+            Why = "on integer storage a value in it is read as "
+                ++ "`(Q·v - R) / P`, with `-R` written whole, and `-R` is "
+                ++ "2^63, past the 64-bit signed range"
+        else
+            Why = "on integer storage it is written as `(P·x + R) / Q` with "
+                ++ "`P`, `Q` and `R` whole, and one of them lies outside the "
+                ++ "64-bit signed range"
+        )
+    else if not dsc.exact.to_float(Slope, _) then
+        Why = "its factor rounds past the largest finite `Float`"
+    else if
+        dsc.exact.to_float(Slope, A),
+        dsc.exact.from_float(A, Rounded),
+        dsc.exact.sign(Rounded) = 0
+    then
+        Why = "its factor is not zero but rounds to `0.0`, so its inverse "
+            ++ "has no value"
+    else if not dsc.exact.to_float(Offset, _) then
+        Why = "its offset rounds past the largest finite `Float`"
+    else
+        fail
+    ).
+
+luni_2_4_1_literal_out_of_range(RF, Dimension, Base) :-
+    ( if whole_number_dimension(RF, Dimension) then
+        dsc.exact.to_integer(Base, Whole),
+        not dsc.exact.luni_2_4_1_int64(Whole, _)
+    else
+        not dsc.exact.to_float(Base, _)
     ).
 
     % The line `base = Slope * x + Offset` a unit's value lies on.
@@ -389,7 +562,7 @@ whole_number_dimension(RF, Dimension) :-
     luni_3_1_9_whole_dimension(RF ^ rf_unit_storage, Dimension).
 
 is_whole(R) :-
-    R = dsc.exact.from_int64(dsc.exact.truncate_wrapping_int64(R)).
+    dsc.exact.to_integer(R, _).
 
 quantity_literal(E, Negated, Magnitude, Suffix) :-
     ( if E = ex_unary(uo_neg, Inner, _) then

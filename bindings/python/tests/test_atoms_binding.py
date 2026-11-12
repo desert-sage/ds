@@ -78,9 +78,9 @@ def test_a_cut_is_a_tail_only_to_the_partial_reader(recording):
 
 
 def test_refusals():
-    # A number in the skip band with no registry entry has no message.
-    assert reg.BAND_SKIP_HI not in reg.REGISTRY
-    assert atoms.message_name(reg.BAND_SKIP_HI) is None
+    # A number with no registry entry has no message.
+    assert 2047 not in reg.REGISTRY
+    assert atoms.message_name(2047) is None
     with pytest.raises(pyds.Error) as caught:
         atoms.wire_fields(b"\x00\x01")  # field 0 is no field
     assert caught.value.status is pyds.Status.PARSE

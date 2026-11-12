@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
 # SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
-# Sliding `rate`, `(last - first) / elapsed_seconds` ([LSER.16.9]), over the
-# two end samples: (10.0 @ t, 30.0 @ t+2s) is 10.0 per second. `-1.0` stands
-# for `rate`'s null, outside every rate the scenario produces, so the two
-# no-elapsed-time cases stay distinct from a measured flat 0.0.
+# Sliding `rate`, (x_l - x_f) * 1e9 / (t_l - t_f) in that order of correctly
+# rounded operations ([LSER.16.9]), over the window's two end samples:
+# (10.0 @ t, 30.0 @ t+2s) is 10.0 per second. `-1.0` stands for `rate`'s
+# null, outside every rate the scenario produces, so the null reads -- cold, a
+# one-sample window, a window emptied underneath -- stay distinct from a
+# measured flat 0.0.
 use default
 
 

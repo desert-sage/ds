@@ -1,0 +1,25 @@
+{
+    "id": "LSER.19.7_onset_rate_t_first_is_not_moved_by_capacity",
+    "clauses": ["LSER.19.7", "LSIG.1.4.1", "LSIG.1.1"],
+    "category": "logical",
+    "scenario": "[LSER.19.7]: `t_first` is the instance's first absorbed sample, and persists for its life; [LSIG.1.4.1]: `onset_rate` is N₊(t, W) / min(W, t - t_first); [LSIG.1.1]: at `capacity` the ring buffer drops its oldest sample. `onset_rate sliding 100s` with `capacity: 2` on `Door.state`: `false` at 0 s, `true` at 10 s (a rising edge), `false` at 20 s, which drops the sample at 0 s. A `Probe` at 40 s reads one edge over min(100 s, 40 s - 0 s): 0.025. A runtime that takes the oldest sample it still holds as `t_first` divides by 30 s instead. The Probe is the rule's only trigger, so it logs once. PATH PINNED: libds SeriesBackendRingBuffer's `first_ever_ns` (`ring_buffer.c`, set once in `append_sample`); the Mercury runtime's `ds.series` row field `rw_first`, read by `onset_rate`.",
+    "rules_ds": "use default\n\nschema Door scope logical:\n    entity_id: String key\n    state: Bool mutable\n    n: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Door.state (by: entity_id, capacity: 2):\n    onset_rate sliding 100s\n\nrule read:\n    Probe\n    Door d\n->\n    log info \"{d.onset_rate}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false, "n": 3 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 40000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0.025"]
+    }
+}

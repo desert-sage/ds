@@ -12,6 +12,7 @@
 #include "ds_alloc.h"
 
 #include "engine.h"
+#include "backend.h"
 #include "state.h"
 
 /* FNV-1a over the 4 key strings and the window ([RDSC.5a.8.1]). */
@@ -315,20 +316,59 @@ ds_result_t ds_series_state_registry_grow_slots(
     return DS_OK_R;
 }
 
-/* The first series_decl record matching (schema, slot). The row's window and
-   identity slot are not compared. */
-static const struct ds_series_decl_record *
-find_decl_for_row(struct ds_engine            *engine,
-                   const ds_series_state_row_t *row)
+static bool str_eq(const char *a, const char *b)
 {
+    return strcmp(a != NULL ? a : "", b != NULL ? b : "") == 0;
+}
+
+/* Whether `d` is one of the backings that feed `row`: the row's whole key but
+   the identity value ([RDSC.5a.8.1]), so two labelled windows on one slot are
+   two rows, each fed by its own decls. */
+static bool decl_feeds_row(const struct ds_series_decl_record *d,
+                           const ds_series_state_row_t        *row)
+{
+    return str_eq(d->schema_name, row->schema_name)
+        && str_eq(d->slot_name, row->slot_name)
+        && str_eq(d->identity_slot_name, row->identity_slot_name)
+        && d->window_ns == row->window_ns;
+}
+
+/* [LSER.9.3.1]: a sliding backing that a window of silence leaves empty. The
+   ring, monotonic and FIFO backings hold samples alone, except a Bool ring
+   buffer: it carries `onset_rate`'s rising edges, its last value and `t_first`
+   ([LSER.19.7], [LSIG.1.4.1]), and the backing cannot tell whether the program
+   reads them. This reads [LSER.9.3.1]'s signal-state exception as covering
+   every backing a signal aggregation can read, whatever else reads it. The step
+   backings (interval pulse, numeric integral) are signal state ([LSIG.1.1]) and
+   never evicted. */
+static bool decl_evicts_on_silence(const struct ds_series_decl_record *d)
+{
+    switch (d->atom_field) {
+    case DS_ATOM_SERIES_BACKEND_RING_BUFFER:
+        return d->element_type != (uint32_t) DS_SERIES_ELEMENT_BOOL;
+    case DS_ATOM_SERIES_BACKEND_MONOTONIC_DEQUE:
+    case DS_ATOM_SERIES_BACKEND_FIFO_DEQUE:
+        return true;
+    default:
+        return false;
+    }
+}
+
+/* Whether a window of silence frees `row`. One row holds every backing on its
+   (schema, slot, identity, window), and a free is the whole row's
+   ([LSER.9.3.2]: the next sample cold-starts it), so one backing that must
+   persist keeps the row. A row with no decl feeding it is left alone. */
+static bool row_evicts_on_silence(struct ds_engine            *engine,
+                                  const ds_series_state_row_t *row)
+{
+    bool fed = false;
     for (size_t i = 0; i < engine->n_series_decls; i++) {
         const struct ds_series_decl_record *d = &engine->series_decls[i];
-        if (strcmp(d->schema_name, row->schema_name) == 0
-            && strcmp(d->slot_name,   row->slot_name)   == 0) {
-            return d;
-        }
+        if (!decl_feeds_row(d, row)) continue;
+        if (!decl_evicts_on_silence(d)) return false;
+        fed = true;
     }
-    return NULL;
+    return fed;
 }
 
 void ds_series_state_evict_stale(struct ds_engine *engine,
@@ -351,22 +391,18 @@ void ds_series_state_evict_stale(struct ds_engine *engine,
             vt->evict_stale(row->backend_state[s], now_ns);
         }
 
-        /* Pass 2: row-level free. `has_absorbed`, since 0 is a real instant. */
+        /* Pass 2: row-level free, by the row's own window ([LSER.9.3.1]).
+           `has_absorbed`, since 0 is a real instant. */
         if (!row->has_absorbed) continue;
-        const struct ds_series_decl_record *decl =
-            find_decl_for_row(engine, row);
-        if (decl == NULL) continue;
-        if (decl->atom_field != DS_ATOM_SERIES_BACKEND_RING_BUFFER
-            && decl->atom_field != DS_ATOM_SERIES_BACKEND_MONOTONIC_DEQUE
-            && decl->atom_field != DS_ATOM_SERIES_BACKEND_FIFO_DEQUE) continue;
-        if (decl->window_ns == 0) continue;  /* bounded by max_samples instead */
+        if (row->window_ns == 0) continue;  /* bounded by max_samples instead */
         if (now_ns <= row->last_absorbed_ts_ns) continue;
         /* Free once the newest sample is at least W old: under the half-open
            (t−W, t] window ([LSER.14.1]) a sample exactly W old is already
            out, so the row holds nothing in its window. */
-        if (now_ns - row->last_absorbed_ts_ns < decl->window_ns) {
+        if (now_ns - row->last_absorbed_ts_ns < row->window_ns) {
             continue;
         }
+        if (!row_evicts_on_silence(engine, row)) continue;
 
         for (size_t s = 0;
              s < row->n_slots && s < engine->n_backend_slots;
@@ -380,13 +416,10 @@ void ds_series_state_evict_stale(struct ds_engine *engine,
             row->backend_state[s] = NULL;
         }
         /* Row resets to "no samples": the next absorb cold-starts a
-           fresh instance (LSER.9.3.1). */
+           fresh instance (LSER.9.3.1). The value `nulls: hold` repeats is not
+           evicted ([LNUL.8.6]), so `last_value` and `held_str` stay. */
         row->last_absorbed_ts_ns = 0;
         row->has_absorbed        = false;
-        /* A cold start forgets the held value too ([LNUL.8.6]). */
-        DS_FREE(row->held_str);
-        row->held_str            = NULL;
-        row->has_last_value      = false;
     }
 }
 

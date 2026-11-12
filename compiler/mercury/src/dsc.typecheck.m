@@ -33,22 +33,12 @@
     --->    type_env(
                 te_file      :: resolved_file,
                 te_scope     :: rule_scope,
-                te_ambiguity :: dim_ambiguity,
 
                     % The paths an `x is not null and` guard to the left has
                     % established as present ([LNUL.5.4]). Starts empty at every
                     % rule and does not cross the arrow ([LNUL.5.2]).
                 te_narrowed  :: set(string)
             ).
-
-    % Whether a dimensioned-times-dimensioned result has an annotation to name
-    % its unit ([LUNI.8.4]): `r.w * r.h` is refused in a `where` and correct in
-    % `let area: meter_squared = …`.
-    %
-    %@helper
-:- type dim_ambiguity
-    --->    da_reported
-    ;       da_annotated.
 
     % How many `implicit` formulas bridge two dimensions, per declaration: both
     % lines of a `unit formula pair` bridge one pair.
@@ -89,6 +79,12 @@
                          lcst_4_5_2_kind::out, lcst_4_1_6_target::out)
     is semidet.
 
+    % The four that round in a value's own unit and keep it. `math.sign` reads
+    % its own unit and gives a bare `Int`, so it is not one of them.
+    %
+    %@spec [LUNI.8.9]
+:- pred luni_8_9_keeps_unit(string::in) is semidet.
+
     % A name that is a zero-argument member of some receiver type
     % ([LGRA.9.6.2]): `bit_count`, `bit_length`, `utc`, and the components.
     %
@@ -121,10 +117,11 @@
     %@spec [LTIM.2.4.1]
 :- pred ltim_2_4_1_series_read(type_env::in, lgra_9_3_1_expr::in) is semidet.
 
-    % Whether this expression, at its top, reads [LUNI.9.2]'s unit-changing
-    % aggregation, `integral`, over a slot that carries a unit: the
-    % aggregation, and the slot's unit (its dimension's name where the slot
-    % names a dimension). The caller walks the subexpressions.
+    % Whether this expression, at its top, reads one of [LUNI.9.2]'s
+    % unit-changing aggregations, `integral`, `variance`, `pvariance` or `rate`,
+    % over a slot that carries a unit: the aggregation, and the slot's unit (its
+    % dimension's name where the slot names a dimension). The caller walks the
+    % subexpressions.
     %
     %@spec [LUNI.9.2]
 :- pred luni_9_2_unit_changing_read(type_env::in, lgra_9_3_1_expr::in,
@@ -139,10 +136,38 @@
     %@spec [LTIM.2.6.2]
 :- pred ltim_2_4_1_zone_read(type_env::in, lgra_9_3_1_expr::in) is semidet.
 
+    % A shift by a negative literal, which the typing walk refuses with
+    % `DS_VALIDATE_NEGATIVE_SHIFT` when both operands are `Int`. `dsc.validate`
+    % reads it so a `const` that holds one is not refused a second time.
+    %
+    %@spec [LEXP.7.8]
+    %@spec [LEXP.10.2.3]
+:- pred lexp_7_8_negative_shift(lgra_9_3_1_binary_op::in, lgra_9_3_1_expr::in)
+    is semidet.
+
+    % A `::` whose operand has its kind only at runtime because it comes from a
+    % `Json` value ([LEXP.7.12.1]): a path read past a `Json` value, an
+    % operation over one, `x ?? d` with `x` one, or a `let` bound to one. It
+    % converts by the kind the value holds ([LCST.4.5.11]); `To` is the target
+    % it converts to.
+    %
+    %@spec [LCST.4.5.11]
+:- pred lcst_4_5_11_leaf_cast(type_env::in, lgra_9_3_1_expr::in, ident::in,
+                              lcst_4_1_6_target::out) is semidet.
+
+    % Whether a value has its kind only at runtime because it comes from a
+    % `Json` value ([LCST.4.5.11]), whatever static type it was given: `x ?? d`
+    % over one has `d`'s type ([LNUL.5.3]) and still holds `x`'s kind. A `let`
+    % annotation over one has nothing to be checked against ([LUNI.8.6]).
+    %
+    %@spec [LCST.4.5.11]
+:- pred lcst_4_5_11_value(type_env::in, lgra_9_3_1_expr::in) is semidet.
+
 %-----------------------------------------------------------------------------%
 :- implementation.
 
 :- import_module dsc.ast.
+:- import_module dsc.builtin_fns.
 :- import_module dsc.builtin_types.
 :- import_module dsc.builtins.
 :- import_module ds.capability.
@@ -213,7 +238,7 @@ lnul_5_2_unnarrowed_type(Env, Expr) = Type :-
         Type = ty_unknown
     ;
         Expr = ex_unit(Magnitude, Suffix, Pos),
-        Type = luni_3_1_7_literal_type(Env, Magnitude, Suffix, Pos)
+        Type = luni_3_1_7_literal_type(Env, as_written, Magnitude, Suffix, Pos)
     ;
         Expr = ex_name(Id),
         Type = lgra_22_7_value_name(Env, Id)
@@ -258,7 +283,19 @@ lnul_5_2_unnarrowed_type(Env, Expr) = Type :-
         Type = lexp_5_3_call(Env, Callee, Args, Pos)
     ;
         Expr = ex_unary(Op, Operand, Pos),
-        Type = lexp_7_10_unary(Env, Op, Operand, Pos)
+        ( if
+            % [LUNI.3.3]: a minus on a unit literal negates the literal's
+            % number, so the literal is judged by the value that gives it. A
+            % `time` literal takes the unary arm, which refuses a `Duration`.
+            Op = uo_neg,
+            Operand = ex_unit(Magnitude, Suffix, LiteralPos),
+            not luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), _)
+        then
+            Type = luni_3_1_7_literal_type(Env, negated, Magnitude, Suffix,
+                LiteralPos)
+        else
+            Type = lexp_7_10_unary(Env, Op, Operand, Pos)
+        )
     ;
         Expr = ex_match(Operand, _, _, _, Pos),
         Type = lreg_4_5_match_type(Env, Operand, Pos)
@@ -338,7 +375,7 @@ lexp_7_10_unary(Env, Op, Operand, Pos) = Type :-
     %@helper
 :- func scalar(leaf_kind) = lexp_7_type.
 
-scalar(Leaf) = ty_known(ds_type(Leaf, dimensionless, non_null)).
+scalar(Leaf) = ty_known(ds_type(Leaf, ltim_1_3_5_leaf_dim(Leaf), non_null)).
 
     %@helper
 :- func total_bool(type_env, lgra_9_3_1_expr) = lexp_7_type.
@@ -547,6 +584,12 @@ adjacent_mismatches(Env, [Step | Steps], Operands, Types) = Mismatches :-
                         ++ "two intervals ([LINT.5.3])"),
                     "order them by an endpoint: `a.start < b.start`")]
             else if
+                Beside = luni_8_8_intervals_beside(IntervalA, IntervalB,
+                    Step ^ cs_pos),
+                Beside = [_ | _]
+            then
+                Here = Beside
+            else if
                 ElementA = yes(EA),
                 ElementB = yes(EB),
                 settled_family(EA, FamilyA),
@@ -610,7 +653,13 @@ adjacent_mismatches(Env, [Step | Steps], Operands, Types) = Mismatches :-
             TB = ty_known(KB),
             settled_family(KA ^ dt_leaf, FamilyA),
             settled_family(KB ^ dt_leaf, FamilyB),
-            FamilyA \= FamilyB
+            FamilyA \= FamilyB,
+            % A `Duration` beside a number is [LUNI.8]'s ([LTIM.5.5]), and one
+            % `implicit` formula can bridge it to another dimension.
+            not (
+                ltim_1_3_5_arithmetic_leaf(KA ^ dt_leaf),
+                ltim_1_3_5_arithmetic_leaf(KB ^ dt_leaf)
+            )
         then
             Here = [with_hint(error_at(dv_type_mismatch, Step ^ cs_pos,
                 "cannot compare " ++ FamilyA ++ " with " ++ FamilyB
@@ -652,6 +701,15 @@ adjacent_mismatches(Env, [Step | Steps], Operands, Types) = Mismatches :-
                         ++ "`: they are different dimensions ([LUNI.8.2])"),
                     "convert one side, or strip both with `::Float`")]
             )
+        else if
+            TA = ty_known(BareKA),
+            TB = ty_known(BareKB),
+            ltim_1_3_5_arithmetic_leaf(BareKA ^ dt_leaf),
+            ltim_1_3_5_arithmetic_leaf(BareKB ^ dt_leaf),
+            luni_8_1_combine(op_additive, BareKA ^ dt_dim, BareKB ^ dt_dim)
+                = dr_bare_number(BareDim)
+        then
+            Here = [luni_8_3_bare_number(BareDim, Step ^ cs_pos)]
         else
             Here = []
         ),
@@ -816,7 +874,9 @@ lnul_5_3_binary_type(Env, Op, Left, Right, Pos) = Type :-
         Op = bo_or,
         Type = kleene_bool(Env, [Left, Right])
     ;
-        % The result takes the default's type ([LNUL.5.4]).
+        % The result takes the default's type ([LNUL.5.4]). A cast over one
+        % whose left is a [LCST.4.5.11] value still converts by the kind that
+        % value holds (`lcst_4_5_11_source`).
         Op = bo_coalesce,
         RightType = type_of_expr(Env, Right),
         LeftType = type_of_expr(Env, Left),
@@ -829,7 +889,15 @@ lnul_5_3_binary_type(Env, Op, Left, Right, Pos) = Type :-
             ),
             (
                 RightType = ty_known(K),
-                Type = ty_known(K ^ dt_null := non_null)
+                ( if
+                    LeftType = ty_known(LeftKnown),
+                    Beside = luni_8_8_beside(LeftKnown, K, Pos),
+                    Beside = [_ | _]
+                then
+                    Type = ty_error(Beside)
+                else
+                    Type = ty_known(K ^ dt_null := non_null)
+                )
             ;
                 RightType = ty_unknown,
                 Type = ty_unknown
@@ -889,6 +957,13 @@ lint_2_2_interval(Env, Left, Right, Pos) = Type :-
             "an interval ranges over `Int`, `Float`, `String`, `Time`, `Date` "
                 ++ "or `Duration`")])
     else if
+        LeftType = ty_known(BesideL),
+        RightType = ty_known(BesideR),
+        Beside = luni_8_8_beside(BesideL, BesideR, Pos),
+        Beside = [_ | _]
+    then
+        Type = ty_error(Beside)
+    else if
         LeftType = ty_known(L),
         RightType = ty_known(R),
         settled_family(L ^ dt_leaf, FamilyL),
@@ -921,7 +996,7 @@ lint_2_2_interval(Env, Left, Right, Pos) = Type :-
             Null = non_null
         ),
         Type = ty_known(ds_type(lk_interval(interval_element(LeftType,
-            RightType)), dimensionless, Null))
+            RightType)), luni_8_8_interval_dim(LeftType, RightType), Null))
     ).
 
     %@helper
@@ -979,6 +1054,13 @@ lint_3_1_3_in(Env, Left, Right, Pos) = Type :-
     ( if Errors = [_ | _] then
         Type = ty_error(Errors)
     else if
+        PointType = ty_known(BesideP),
+        IntervalType = ty_known(BesideI),
+        Beside = luni_8_8_beside(BesideP, luni_8_8_element(BesideI), Pos),
+        Beside = [_ | _]
+    then
+        Type = ty_error(Beside)
+    else if
         PointType = ty_known(P),
         IntervalType = ty_known(I),
         I ^ dt_leaf = lk_interval(yes(Element)),
@@ -1018,6 +1100,13 @@ lint_4_5_relation(Env, Op, Left, Right, Pos) = Type :-
                 ++ "literal of another kind ([LINT.4.5])"),
             "build the interval with `..`, or test a point with `in`")])
     else if
+        LeftType = ty_known(BesideL),
+        RightType = ty_known(BesideR),
+        Beside = luni_8_8_intervals_beside(BesideL, BesideR, Pos),
+        Beside = [_ | _]
+    then
+        Type = ty_error(Beside)
+    else if
         LeftType = ty_known(L),
         RightType = ty_known(R),
         L ^ dt_leaf = lk_interval(yes(ElementL)),
@@ -1043,18 +1132,24 @@ scalar_literal(ex_string(_, _)).
 scalar_literal(ex_bool(_, _)).
 scalar_literal(ex_unit(_, _, _)).
 
-    % An unknown element's `duration` types as `Duration`.
+    % An unknown element's `duration` types as `Duration`. An endpoint has the
+    % dimension its interval carries ([LUNI.8.8]).
     %
     %@spec [LINT.6.1]
     %@spec [LINT.6.2]
-:- func lint_6_1_component(maybe(leaf_kind), ident) = lexp_7_type.
+:- func lint_6_1_component(maybe(leaf_kind), luni_8_7_3_dim, ident)
+    = lexp_7_type.
 
-lint_6_1_component(Element, Field) = Type :-
+lint_6_1_component(Element, Dim, Field) = Type :-
     Name = Field ^ id_name,
     ( if ( Name = "start" ; Name = "end" ) then
         (
             Element = yes(E),
-            Type = ty_known(ds_type(E, dimensionless, non_null))
+            ( if Dim = dim(_, _) then
+                Type = ty_known(ds_type(E, Dim, non_null))
+            else
+                Type = scalar(E)
+            )
         ;
             Element = no,
             Type = ty_unknown
@@ -1099,17 +1194,19 @@ lexp_7_1a_arithmetic(Env, Op, Left, Right, Pos) = Type :-
     % A `T?` operand propagates ([LNUL.5.1]), and is refused where it escapes.
     ( if Both = both_known(LeftType, RightType) then
         Both = pair_of(L, R),
-        ( if Temporal = ltim_4_1_1_temporal(Op, L ^ dt_leaf, R ^ dt_leaf) then
+        ( if Temporal = ltim_4_1_1_temporal(Op, L, R) then
             Subday = ltim_4_2_2_whole_day(L, R, Left, Right, Pos),
             (
                 Subday = [_ | _],
                 Type = ty_error(Subday)
             ;
                 Subday = [],
-                Type = ty_known(ds_type(Temporal, dimensionless,
-                    propagated(L, R)))
+                Type = ty_known(ds_type(Temporal,
+                    ltim_4_1_1_result_dim(Temporal, L, R), propagated(L, R)))
             )
-        else if lexp_7_1a_numeric(L ^ dt_leaf), lexp_7_1a_numeric(R ^ dt_leaf)
+        else if
+            ltim_1_3_5_arithmetic_leaf(L ^ dt_leaf),
+            ltim_1_3_5_arithmetic_leaf(R ^ dt_leaf)
         then
             Dim = luni_8_1_combine(luni_8_3_class_of(Op), L ^ dt_dim, R ^ dt_dim),
             (
@@ -1123,8 +1220,11 @@ lexp_7_1a_arithmetic(Env, Op, Left, Right, Pos) = Type :-
                         ++ "` are different dimensions ([LUNI.8.2])"),
                     "convert one side, or strip both with `::Float`")])
             ;
+                Dim = dr_bare_number(BareDim),
+                Type = ty_error([luni_8_3_bare_number(BareDim, Pos)])
+            ;
                 Dim = dr_needs_annotation(LeftDim, RightDim),
-                Type = luni_8_4_ambiguous(Env, LeftDim, RightDim, Pos)
+                Type = luni_8_4_ambiguous(LeftDim, RightDim, Pos)
             )
         else
             Type = ty_error([with_hint(error_at(dv_bad_operand_type, Pos,
@@ -1224,26 +1324,20 @@ described(Expr) =
 narrowing_hint(Expr) =
     ( if Path = lnul_5_4_path(Expr) then Path else "<value>" ).
 
-    % The annotated case is `ty_unknown`: the annotation's type is the binding's
-    % ([LUNI.8.6]), read through `rsc_let_types`.
+    % Under a `let` annotation too: an annotation checks a type the value already
+    % has ([LUNI.8.6]).
     %
     %@spec [LUNI.8.4]
-:- func luni_8_4_ambiguous(type_env, decl_ref, decl_ref, pos) = lexp_7_type.
+:- func luni_8_4_ambiguous(decl_ref, decl_ref, pos) = lexp_7_type.
 
-luni_8_4_ambiguous(Env, LeftDim, RightDim, Pos) = Type :-
-    (
-        Env ^ te_ambiguity = da_annotated,
-        Type = ty_unknown
-    ;
-        Env ^ te_ambiguity = da_reported,
-        Type = ty_error([with_hint(error_at(dv_dim_ambiguous, Pos,
-            "a result combining `" ++ LeftDim ^ dr_name ++ "` and `"
-                ++ RightDim ^ dr_name
-                ++ "` has no inferrable unit: DS performs no unit "
-                ++ "algebra ([LUNI.8.4])"),
-            "annotate the result with `let x: <unit> = …`, or strip "
-                ++ "the units with `::Float`")])
-    ).
+luni_8_4_ambiguous(LeftDim, RightDim, Pos) =
+    ty_error([with_hint(error_at(dv_dim_ambiguous, Pos,
+        "a result combining `" ++ LeftDim ^ dr_name ++ "` and `"
+            ++ RightDim ^ dr_name
+            ++ "` has no dimension DS can state: DS performs no unit "
+            ++ "algebra ([LUNI.8.4])"),
+        "strip the operands with `::Float`, and assert a unit on the result "
+            ++ "with `::<unit>` if it has one")]).
 
     %@spec [LEXP.7.2]
     %@spec [LEXP.7.3]
@@ -1284,10 +1378,109 @@ lexp_7_3a_pow_leaf(L, R, RightExpr) = Leaf :-
 luni_8_3_class_of(Op) = Class :-
     ( if Op = bo_pow then
         Class = op_exponent
-    else if ( Op = bo_mul ; Op = bo_div ; Op = bo_floordiv ) then
+    else if Op = bo_mul then
         Class = op_multiplicative
+    else if ( Op = bo_div ; Op = bo_floordiv ) then
+        Class = op_division
     else
         Class = op_additive
+    ).
+
+    %@spec [LUNI.8.3]
+:- func luni_8_3_bare_number(decl_ref, pos) = diagnostic.
+
+luni_8_3_bare_number(Dimension, Pos) =
+    with_hint(error_at(dv_dim_mismatch, Pos,
+        "a number with no unit is dimensionless, and takes no unit from the `"
+            ++ Dimension ^ dr_name ++ "` value beside it ([LUNI.8.3])"),
+        "give the number a unit, or strip the value with `::Float`").
+
+    % Two values standing beside each other as the operands of `+` do. Only a
+    % number or a `Duration` has a dimension to judge; any other pair is the
+    % caller's to refuse.
+    %
+    %@spec [LUNI.8.8]
+:- func luni_8_8_beside(ds_type, ds_type, pos) = list(diagnostic).
+
+luni_8_8_beside(A, B, Pos) = Errors :-
+    ( if
+        ltim_1_3_5_arithmetic_leaf(A ^ dt_leaf),
+        ltim_1_3_5_arithmetic_leaf(B ^ dt_leaf)
+    then
+        Dim = luni_8_1_combine(op_additive, A ^ dt_dim, B ^ dt_dim),
+        (
+            Dim = dr_cross_dimension(DimA, DimB),
+            Errors = [with_hint(error_at(dv_dim_mismatch, Pos,
+                "`" ++ DimA ^ dr_name ++ "` and `" ++ DimB ^ dr_name
+                    ++ "` are different dimensions ([LUNI.8.2], [LUNI.8.8])"),
+                "convert one side, or strip both with `::Float`")]
+        ;
+            Dim = dr_bare_number(BareDim),
+            Errors = [luni_8_3_bare_number(BareDim, Pos)]
+        ;
+            ( Dim = dr_ok(_)
+            ; Dim = dr_needs_annotation(_, _)
+            ),
+            Errors = []
+        )
+    else
+        Errors = []
+    ).
+
+    % An interval's endpoints as one value. An interval whose element type is
+    % unknown stands as an operand with nothing to judge.
+    %
+    %@spec [LUNI.8.8]
+:- func luni_8_8_element(ds_type) = ds_type.
+
+luni_8_8_element(Interval) = Element :-
+    ( if Interval ^ dt_leaf = lk_interval(yes(Leaf)) then
+        Element = ds_type(Leaf, Interval ^ dt_dim, non_null)
+    else
+        Element = Interval
+    ).
+
+    %@spec [LUNI.8.8]
+:- func luni_8_8_intervals_beside(ds_type, ds_type, pos) = list(diagnostic).
+
+luni_8_8_intervals_beside(A, B, Pos) =
+    luni_8_8_beside(luni_8_8_element(A), luni_8_8_element(B), Pos).
+
+    % The dimension an interval carries: its endpoints', or the one endpoint's
+    % whose type is known.
+    %
+    %@spec [LUNI.8.8]
+:- func luni_8_8_interval_dim(lexp_7_type, lexp_7_type) = luni_8_7_3_dim.
+
+luni_8_8_interval_dim(LeftType, RightType) = Dim :-
+    ( if LeftType = ty_known(L), L ^ dt_dim = dim(_, _) then
+        Dim = L ^ dt_dim
+    else if RightType = ty_known(R), R ^ dt_dim = dim(_, _) then
+        Dim = R ^ dt_dim
+    else
+        Dim = dimensionless
+    ).
+
+    % The two-argument `min` and `max` over operands of one dimension have that
+    % dimension. Fails for two bare operands, whose winner's kind is not static.
+    %
+    %@spec [LUNI.8.8]
+:- pred luni_8_8_min_max_type(type_env::in, ds_type::in, ds_type::in, pos::in,
+                              lexp_7_type::out) is semidet.
+
+luni_8_8_min_max_type(Env, A, B, Pos, Type) :-
+    Beside = luni_8_8_beside(A, B, Pos),
+    (
+        Beside = [_ | _],
+        Type = ty_error(Beside)
+    ;
+        Beside = [],
+        ltim_1_3_5_arithmetic_leaf(A ^ dt_leaf),
+        ltim_1_3_5_arithmetic_leaf(B ^ dt_leaf),
+        A ^ dt_dim = dim(Dimension, Unit),
+        Type = ty_known(ds_type(
+            luni_8_7_3_leaf(Env ^ te_file ^ rf_unit_storage, Dimension),
+            dim(Dimension, Unit), propagated(A, B)))
     ).
 
     %@spec [LEXP.7.1a]
@@ -1295,6 +1488,16 @@ luni_8_3_class_of(Op) = Class :-
 
 lexp_7_1a_numeric(lk_int).
 lexp_7_1a_numeric(lk_float).
+
+    % A `Duration` pair no row of [LTIM.4.1.1] takes reaches the rules of
+    % [LUNI.8] as a dimensioned number ([LTIM.1.3.5]).
+    %
+    %@spec [LTIM.1.3.5]
+:- pred ltim_1_3_5_arithmetic_leaf(leaf_kind::in) is semidet.
+
+ltim_1_3_5_arithmetic_leaf(lk_int).
+ltim_1_3_5_arithmetic_leaf(lk_float).
+ltim_1_3_5_arithmetic_leaf(lk_duration).
 
 %-----------------------------------------------------------------------------%
 % Calls
@@ -1744,7 +1947,7 @@ member_result(K, Name, Args, ArgTypes, Pos) = Type :-
         then
             Type = ty_error(Errors)
         else
-            Type = ty_known(ds_type(Leaf, dimensionless, Null))
+            Type = ty_known(ds_type(Leaf, ltim_1_3_5_leaf_dim(Leaf), Null))
         )
     else if Name = "to_string", Args = [Format] then
         Type = ltim_8_3_2_format(Format,
@@ -2250,6 +2453,24 @@ lexp_5_3_plain_call(Env, Callee, Args, Pos) = Type :-
         then
             Type = lgra_9_8_11_formula_call(Env, Id, Line, ArgTypes, Pos)
         else if
+            % [LUNI.8.9]: rounded in the value's own unit, and of that unit.
+            Callee = ex_name(Id),
+            luni_8_9_keeps_unit(Id ^ id_name),
+            ArgTypes = [ty_known(RoundArg)],
+            RoundArg ^ dt_dim = dim(RoundDim, _),
+            ltim_1_3_5_arithmetic_leaf(RoundArg ^ dt_leaf)
+        then
+            Type = ty_known(ds_type(
+                luni_8_7_3_leaf(Env ^ te_file ^ rf_unit_storage, RoundDim),
+                RoundArg ^ dt_dim, RoundArg ^ dt_null))
+        else if
+            Callee = ex_name(Id),
+            DimErrors = luni_8_9_dimensioned_arguments(Env, Id ^ id_name,
+                ArgTypes, Pos),
+            DimErrors = [_ | _]
+        then
+            Type = ty_error(DimErrors)
+        else if
             Callee = ex_name(Id),
             Id ^ id_name = "distance.great_circle",
             lgra_9_8_11_builtin_call(Id, list.length(Args), Pos) = ty_unknown,
@@ -2271,12 +2492,137 @@ lexp_5_3_plain_call(Env, Callee, Args, Pos) = Type :-
             IntErrors = [_ | _]
         then
             Type = ty_error(IntErrors)
+        else if
+            Callee = ex_name(Id),
+            ( Id ^ id_name = "min" ; Id ^ id_name = "max" ),
+            ArgTypes = [ty_known(MinA), ty_known(MinB)],
+            luni_8_8_min_max_type(Env, MinA, MinB, Pos, MinMaxType)
+        then
+            Type = MinMaxType
+        else if
+            % [LEXP.3.2]: the argument's type, dimension included.
+            Callee = ex_name(Id),
+            Id ^ id_name = "abs",
+            ArgTypes = [ty_known(AbsArg)],
+            ltim_1_3_5_arithmetic_leaf(AbsArg ^ dt_leaf)
+        then
+            Type = ty_known(AbsArg)
+        else if
+            % [LUNI.8.4]: `math.pow` is `**`.
+            Callee = ex_name(Id),
+            Id ^ id_name = "math.pow",
+            ArgTypes = [ty_known(PowA), ty_known(PowB)],
+            ltim_1_3_5_arithmetic_leaf(PowA ^ dt_leaf),
+            ltim_1_3_5_arithmetic_leaf(PowB ^ dt_leaf),
+            luni_8_1_combine(op_exponent, PowA ^ dt_dim, PowB ^ dt_dim)
+                = dr_needs_annotation(PowLeft, PowRight)
+        then
+            Type = luni_8_4_ambiguous(PowLeft, PowRight, Pos)
         else if Callee = ex_name(Id) then
             Type = lgra_9_8_11_builtin_call(Id, list.length(Args), Pos)
         else
             Type = ty_unknown
         )
     ).
+
+luni_8_9_keeps_unit("round").
+luni_8_9_keeps_unit("math.floor").
+luni_8_9_keeps_unit("math.ceil").
+luni_8_9_keeps_unit("math.trunc").
+
+    % A dimensioned argument to a builtin [LEXP.17.2] gives a number parameter,
+    % refused. A `unit scalar` group's value and a `Duration` are dimensioned
+    % ([LUNI.4.2], [LTIM.1.3.5]). An argument of unknown type is not judged, and
+    % a `calendar` field that is no `Int` is [LTIM.14.1]'s.
+    %
+    %@spec [LUNI.8.9]
+:- func luni_8_9_dimensioned_arguments(type_env, string, list(lexp_7_type),
+                                       pos) = list(diagnostic).
+
+luni_8_9_dimensioned_arguments(Env, Name, ArgTypes, Pos) = Errors :-
+    ( if
+        lexp_17_2_number_parameter(Name),
+        not luni_8_9_takes_a_quantity(Name),
+        list.find_first_match(luni_8_9_refused_argument(Env, Name), ArgTypes,
+            ty_known(Arg)),
+        Arg ^ dt_dim = dim(Dimension, _)
+    then
+        Strip = ( if Arg ^ dt_leaf = lk_float then "::Float" else "::Int" ),
+        Errors = [with_hint(error_at(dv_dim_mismatch, Pos,
+            "`" ++ Name ++ "` takes a bare number, and this argument is a `"
+                ++ Dimension ^ dr_name ++ "` value ([LUNI.8.9])"),
+            "strip the unit first with `" ++ Strip ++ "`, which gives the "
+                ++ "base-unit number")]
+    else
+        Errors = []
+    ).
+
+    % The builtins [LUNI.8.9]'s refusal does not reach: the four that keep the
+    % unit, `math.sign`, `abs`, `min`, `max`, `math.fma`, and `math.pow`, which is
+    % [LUNI.8.4]'s.
+    %
+    %@spec [LUNI.8.9]
+:- pred luni_8_9_takes_a_quantity(string::in) is semidet.
+
+luni_8_9_takes_a_quantity(Name) :-
+    ( luni_8_9_keeps_unit(Name)
+    ; Name = "math.sign"
+    ; Name = "abs"
+    ; Name = "min"
+    ; Name = "max"
+    ; Name = "math.fma"
+    ; Name = "math.pow"
+    ).
+
+    %@helper
+:- pred luni_8_9_refused_argument(type_env::in, string::in, lexp_7_type::in)
+    is semidet.
+
+luni_8_9_refused_argument(Env, Name, ty_known(Arg)) :-
+    Arg ^ dt_dim = dim(Dimension, _),
+    not (
+        lexp_3_9_1_takes_an_angle(Name),
+        Dimension = luni_4_2_angle(Env ^ te_file)
+    ),
+    not (
+        ( Name = "calendar.time" ; Name = "calendar.date" ),
+        Arg ^ dt_leaf \= lk_int
+    ).
+
+    % The functions an `angle` argument is admitted to, in radians or, for
+    % `distance.great_circle`, converted to `degree` ([LEXP.3.9.1],
+    % [LEXP.5.11.1]).
+    %
+    %@spec [LEXP.3.9.1]
+    %@spec [LEXP.5.11.1]
+:- pred lexp_3_9_1_takes_an_angle(string::in) is semidet.
+
+lexp_3_9_1_takes_an_angle("math.exp").
+lexp_3_9_1_takes_an_angle("math.ln").
+lexp_3_9_1_takes_an_angle("math.log2").
+lexp_3_9_1_takes_an_angle("math.log10").
+lexp_3_9_1_takes_an_angle("math.sin").
+lexp_3_9_1_takes_an_angle("math.cos").
+lexp_3_9_1_takes_an_angle("math.tan").
+lexp_3_9_1_takes_an_angle("math.asin").
+lexp_3_9_1_takes_an_angle("math.acos").
+lexp_3_9_1_takes_an_angle("math.atan").
+lexp_3_9_1_takes_an_angle("math.atan2").
+lexp_3_9_1_takes_an_angle("math.sinh").
+lexp_3_9_1_takes_an_angle("math.cosh").
+lexp_3_9_1_takes_an_angle("math.tanh").
+lexp_3_9_1_takes_an_angle("distance.great_circle").
+
+    % The `angle` group: the file's, else `units.si`'s, as `dsc.rete` resolves it
+    % for `distance.great_circle`.
+    %
+    %@spec [LUNI.4.2]
+:- func luni_4_2_angle(resolved_file) = decl_ref.
+
+luni_4_2_angle(RF) =
+    ( if map.search(RF ^ rf_types, "angle", te_unit(uk_scalar, Bound))
+    then Bound
+    else decl_ref("units.si", "angle") ).
 
     % Typed as `x * y + z`, with a `Float` leaf. The expression built here is
     % never lowered.
@@ -2397,8 +2743,7 @@ lgra_9_8_11_builtin_call(Id, Arity, Pos) = Type :-
     ( if lexp_5_8_1_arity(Name, Arities) then
         ( if list.member(Arity, Arities) then
             ( if lgra_9_8_1_returns(Name, Result) then
-                Type = ty_known(ds_type(result_leaf(Result), dimensionless,
-                    non_null))
+                Type = scalar(result_leaf(Result))
             else
                 Type = ty_unknown
             )
@@ -2417,7 +2762,8 @@ lgra_9_8_11_builtin_call(Id, Arity, Pos) = Type :-
     ).
 
     % The argument is checked by [LUNI.8.1]'s additive row, so a bare number
-    % passes. The result is nullable when the argument is.
+    % beside a dimensioned parameter is refused ([LUNI.8.3]). The result is
+    % nullable when the argument is.
     %
     %@spec [LGRA.9.8.11]
     %@spec [LUNI.4.5]
@@ -2447,6 +2793,13 @@ lgra_9_8_11_formula_call(Env, Id, Line, ArgTypes, Pos) = Type :-
                         ++ "`), not `" ++ ArgDim ^ dr_name ++ "` ([LGRA.9.8.11])"),
                     "pass a value in `" ++ Line ^ afl_param_type ^ id_name
                         ++ "`'s dimension")])
+            else if
+                ArgType = ty_known(BareArg),
+                BareArg ^ dt_dim = dimensionless,
+                lexp_7_1a_numeric(BareArg ^ dt_leaf),
+                ParamType ^ dt_dim = dim(BareParam, _)
+            then
+                Type = ty_error([luni_8_3_bare_number(BareParam, Pos)])
             else
                 ( if ArgType = ty_known(Known) then
                     Null = Known ^ dt_null
@@ -2485,9 +2838,8 @@ lcst_4_6_1_coercion_head(RF, Name, Rewrite) :-
 
     % `binding.NAME` in expression position, a library member ([LGRA.22.9]).
     %
-    % A constant is typed with none of the importer's `const`s in scope: a bare
-    % name in its right-hand side means the library's. A library constant naming
-    % another is therefore `ty_unknown`. Another name the library declares
+    % A constant is typed in its own file ([LIMP.1.5]): a bare name in its
+    % right-hand side means the library's. Another name the library declares
     % passes untyped, and so does a binding with no recorded surface.
     %
     %@spec [LIMP.4.3.2]
@@ -2501,8 +2853,7 @@ limp_4_3_2_qualified_const(Env, Lib, NameId, Pos) = Type :-
     File = Env ^ te_file,
     ( if map.search(File ^ rf_qualified_consts, Binding ++ ";" ++ Name, Const)
     then
-        Type = lgra_13_3_const_type((Env ^ te_file ^ rf_consts := map.init),
-            Name, Const)
+        Type = lgra_13_3_const_type(Env, Name, Const)
     else if
         map.search(File ^ rf_qualified_surface, Binding, Surface),
         not list.member(Name, Surface)
@@ -2563,24 +2914,90 @@ result_leaf(br_duration) = lk_duration.
 %-----------------------------------------------------------------------------%
 
     % Fails for a pair that is not temporal, which sends the caller to the
-    % numeric rule.
+    % numeric rule. A number here is a bare one: a dimensioned `Int` beside a
+    % `Duration` is two dimensions ([LUNI.8.4]).
     %
     %@spec [LTIM.4.1.1]
     %@spec [LTIM.4.2.1]
-:- func ltim_4_1_1_temporal(lgra_9_3_1_binary_op, leaf_kind, leaf_kind)
+:- func ltim_4_1_1_temporal(lgra_9_3_1_binary_op, ds_type, ds_type)
     = leaf_kind is semidet.
 
-ltim_4_1_1_temporal(bo_sub, lk_time, lk_time) = lk_duration.
-ltim_4_1_1_temporal(bo_sub, lk_date, lk_date) = lk_duration.
-ltim_4_1_1_temporal(bo_add, lk_time, lk_duration) = lk_time.
-ltim_4_1_1_temporal(bo_sub, lk_time, lk_duration) = lk_time.
-ltim_4_1_1_temporal(bo_add, lk_date, lk_duration) = lk_date.
-ltim_4_1_1_temporal(bo_sub, lk_date, lk_duration) = lk_date.
-ltim_4_1_1_temporal(bo_add, lk_duration, lk_duration) = lk_duration.
-ltim_4_1_1_temporal(bo_sub, lk_duration, lk_duration) = lk_duration.
-ltim_4_1_1_temporal(bo_mul, lk_int, lk_duration) = lk_duration.
-ltim_4_1_1_temporal(bo_mul, lk_duration, lk_int) = lk_duration.
-ltim_4_1_1_temporal(bo_div, lk_duration, lk_int) = lk_duration.
+ltim_4_1_1_temporal(Op, L, R) = Leaf :-
+    temporal_operand(L, LeftOperand),
+    temporal_operand(R, RightOperand),
+    ltim_4_1_1_row(Op, LeftOperand, RightOperand) = Leaf.
+
+    %@helper
+:- type temporal_operand
+    --->    to_time
+    ;       to_date
+    ;       to_duration
+    ;       to_int
+    ;       to_float.
+
+    %@helper
+:- pred temporal_operand(ds_type::in, temporal_operand::out) is semidet.
+
+temporal_operand(Type, Operand) :-
+    Leaf = Type ^ dt_leaf,
+    (
+        Leaf = lk_time,
+        Operand = to_time
+    ;
+        Leaf = lk_date,
+        Operand = to_date
+    ;
+        Leaf = lk_duration,
+        Operand = to_duration
+    ;
+        Leaf = lk_int,
+        Type ^ dt_dim = dimensionless,
+        Operand = to_int
+    ;
+        Leaf = lk_float,
+        Type ^ dt_dim = dimensionless,
+        Operand = to_float
+    ).
+
+    %@spec [LTIM.4.1.1]
+    %@spec [LTIM.4.2.1]
+:- func ltim_4_1_1_row(lgra_9_3_1_binary_op, temporal_operand,
+                       temporal_operand) = leaf_kind is semidet.
+
+ltim_4_1_1_row(bo_sub, to_time, to_time) = lk_duration.
+ltim_4_1_1_row(bo_sub, to_date, to_date) = lk_duration.
+ltim_4_1_1_row(bo_add, to_time, to_duration) = lk_time.
+ltim_4_1_1_row(bo_sub, to_time, to_duration) = lk_time.
+ltim_4_1_1_row(bo_add, to_date, to_duration) = lk_date.
+ltim_4_1_1_row(bo_sub, to_date, to_duration) = lk_date.
+ltim_4_1_1_row(bo_add, to_duration, to_duration) = lk_duration.
+ltim_4_1_1_row(bo_sub, to_duration, to_duration) = lk_duration.
+ltim_4_1_1_row(bo_mul, to_int, to_duration) = lk_duration.
+ltim_4_1_1_row(bo_mul, to_duration, to_int) = lk_duration.
+ltim_4_1_1_row(bo_mul, to_float, to_duration) = lk_duration.
+ltim_4_1_1_row(bo_mul, to_duration, to_float) = lk_duration.
+ltim_4_1_1_row(bo_div, to_duration, to_int) = lk_duration.
+ltim_4_1_1_row(bo_floordiv, to_duration, to_int) = lk_duration.
+ltim_4_1_1_row(bo_div, to_duration, to_float) = lk_duration.
+ltim_4_1_1_row(bo_floordiv, to_duration, to_float) = lk_duration.
+ltim_4_1_1_row(bo_mod, to_duration, to_duration) = lk_duration.
+ltim_4_1_1_row(bo_div, to_duration, to_duration) = lk_float.
+ltim_4_1_1_row(bo_floordiv, to_duration, to_duration) = lk_int.
+
+    % A `Duration` result keeps the unit its `Duration` operand displays in, the
+    % left one first, a presentation choice as [LUNI.8.1]'s is.
+    %
+    %@spec [LTIM.1.3.5]
+:- func ltim_4_1_1_result_dim(leaf_kind, ds_type, ds_type) = luni_8_7_3_dim.
+
+ltim_4_1_1_result_dim(Leaf, L, R) = Dim :-
+    ( if Leaf = lk_duration, L ^ dt_leaf = lk_duration then
+        Dim = L ^ dt_dim
+    else if Leaf = lk_duration, R ^ dt_leaf = lk_duration then
+        Dim = R ^ dt_dim
+    else
+        Dim = ltim_1_3_5_leaf_dim(Leaf)
+    ).
 
 %-----------------------------------------------------------------------------%
 % Bitwise -- [LEXP.7.7], [LEXP.7.8]
@@ -2615,11 +3032,6 @@ lexp_7_7_bitwise(Env, Op, Left, Right, Pos) = Type :-
     else
         Type = merge_unknown(LeftType, RightType)
     ).
-
-    %@spec [LEXP.7.8]
-    %@spec [LEXP.10.2.3]
-:- pred lexp_7_8_negative_shift(lgra_9_3_1_binary_op::in, lgra_9_3_1_expr::in)
-    is semidet.
 
 lexp_7_8_negative_shift(Op, Right) :-
     ( Op = bo_shl ; Op = bo_shr ),
@@ -2682,9 +3094,7 @@ llet_3_6_let_type(Env, Name, Rhs) = Type :-
     Scope0 = Env ^ te_scope,
     Scope = (Scope0 ^ rsc_lets := map.delete(Scope0 ^ rsc_lets, Name))
         ^ rsc_let_exprs := map.delete(Scope0 ^ rsc_let_exprs, Name),
-    Own = ((Env ^ te_scope := Scope)
-        ^ te_ambiguity := da_reported)
-        ^ te_narrowed := set.init,
+    Own = (Env ^ te_scope := Scope) ^ te_narrowed := set.init,
     RhsType = type_of_expr(Own, Rhs),
     (
         RhsType = ty_known(_),
@@ -2713,8 +3123,9 @@ lgra_13_3_const_type(Env, Name, Const) = Type :-
             map.search(const_scope(Env ^ te_file, Const) ^ rf_types,
                 Ann ^ aan_type ^ id_name, Entry)
         then
+            % [LGRA.4.5]: a `?` on the annotation is inert.
             Type = ty_known(luni_7_1_slot_type(Env ^ te_file ^ rf_unit_storage,
-                Entry, Ann ^ aan_nullable))
+                Entry, non_null))
         else
             Type = ty_unknown
         )
@@ -2728,9 +3139,8 @@ lgra_13_3_const_type(Env, Name, Const) = Type :-
             ^ rsc_captures := map.init)
             ^ rsc_let_types := map.init)
             ^ rsc_let_exprs := map.init,
-        Own = (((Env ^ te_file := File)
+        Own = ((Env ^ te_file := File)
             ^ te_scope := Scope)
-            ^ te_ambiguity := da_reported)
             ^ te_narrowed := set.init,
         RhsType = type_of_expr(Own, Rhs),
         (
@@ -2869,7 +3279,7 @@ luni_7_1_access_type(Env, Base, Field, _Pos) = Type :-
         ( if Leaf = lk_fact(SchemaName) then
             Type = schema_slot(Env, SchemaName, Field)
         else if Leaf = lk_interval(Element) then
-            Type = lint_6_1_component(Element, Field)
+            Type = lint_6_1_component(Element, K ^ dt_dim, Field)
         else if Leaf = lk_json then
             % A leaf's type is known only at runtime ([LEXP.7.12.1]).
             Type = ty_unknown
@@ -3003,6 +3413,28 @@ ltim_2_4_1_series_read(Env, Expr) :-
     ).
 
 luni_9_2_unit_changing_read(Env, Expr, Agg, Unit) :-
+    luni_9_2_read(Env, Expr, Agg, Known),
+    Known ^ dt_dim = dim(Dimension, MaybeUnit),
+    Unit = ( if MaybeUnit = yes(U) then U ^ dr_name else Dimension ^ dr_name ).
+
+    % What a `::` strip reads of a unit-changing read: its representation, a
+    % `Float` with the slot's dimension and the read's own nullability
+    % ([LUNI.9.2], [LCST.4.3.1]).
+    %
+    %@spec [LUNI.9.2]
+:- pred luni_9_2_strip_source(type_env::in, lgra_9_3_1_expr::in, ds_type::out)
+    is semidet.
+
+luni_9_2_strip_source(Env, Expr, Source) :-
+    luni_9_2_read(Env, Expr, Agg, Known),
+    Known ^ dt_dim = dim(_, _),
+    Source = ds_type(lk_float, Known ^ dt_dim, lser_19_8_cold_nullability(Agg)).
+
+    %@helper
+:- pred luni_9_2_read(type_env::in, lgra_9_3_1_expr::in, string::out,
+                      ds_type::out) is semidet.
+
+luni_9_2_read(Env, Expr, Agg, Known) :-
     (
         Expr = ex_slot(Base, Field, Pos),
         cursor_chain(Base, Root, Leading),
@@ -3021,11 +3453,20 @@ luni_9_2_unit_changing_read(Env, Expr, Agg, Unit) :-
     ),
     lser_6_11_1_cursor(Env ^ te_file, SchemaName, Components, Pos)
         = cursor_resolved(Observation, Agg),
-    Agg = "integral",
+    luni_9_2_unit_changing(Agg),
     declared_slot(Env, SchemaName, Observation ^ so_slot, Slot),
-    schema_slot(Env, SchemaName, Slot ^ af_name) = ty_known(Known),
-    Known ^ dt_dim = dim(Dimension, MaybeUnit),
-    Unit = ( if MaybeUnit = yes(U) then U ^ dr_name else Dimension ^ dr_name ).
+    schema_slot(Env, SchemaName, Slot ^ af_name) = ty_known(Known).
+
+    % `onset_rate` reads only a `Bool` slot, which carries no unit, so it is not
+    % one of them.
+    %
+    %@spec [LUNI.9.2]
+:- pred luni_9_2_unit_changing(string::in) is semidet.
+
+luni_9_2_unit_changing("integral").
+luni_9_2_unit_changing("variance").
+luni_9_2_unit_changing("pvariance").
+luni_9_2_unit_changing("rate").
 
 ltim_2_4_1_zone_read(Env, Expr) :-
     Expr = ex_call(ex_slot(Receiver, Member, _), [Zone], _),
@@ -3149,7 +3590,7 @@ lser_10_4_dwell_read(Env, Base, Field, Type) :-
     ;
         % `monotonic_ns()` minus the fact's entry stamp ([LEXP.9.5.1]).
         Schema ^ as_lifecycle = al_logical(_),
-        Type = ty_known(ds_type(lk_duration, dimensionless, non_null))
+        Type = scalar(lk_duration)
     ).
 
 %-----------------------------------------------------------------------------%
@@ -3167,8 +3608,9 @@ hydrated_corr_read(Env, Base, Field) :-
     not declared_slot(Env, SchemaName, "hydrated_corr", _).
 
     % The statistical family is `Float`, with the slot's dimension: they
-    % interpolate. `variance`, `pvariance` and `rate` are typed only over a
-    % dimensionless slot: over another their unit has no spelling ([LUNI.8.4]).
+    % interpolate. Over a `Duration` it is a `Duration`, which the lowering
+    % rounds ([LSER.17.2]). `variance`, `pvariance` and `rate` are typed only over
+    % a dimensionless slot: over another their unit has no spelling ([LUNI.8.4]).
     % `integral` and `onset_rate` stay `ty_unknown`.
     %
     %@spec [LUNI.9.1]
@@ -3193,8 +3635,14 @@ luni_9_1_agg_type(Env, SchemaName, Slot, Agg) = Type :-
         % Its nullability is the aggregation's, not the slot's.
         SlotType = schema_slot(Env, SchemaName, Field ^ af_name),
         ( if SlotType = ty_known(Known) then
-            Leaf = ( if lser_17_2_slot_typed(Agg) then Known ^ dt_leaf
-                     else lk_float ),
+            Leaf = ( if
+                         ( lser_17_2_slot_typed(Agg)
+                         ; Known ^ dt_leaf = lk_duration
+                         )
+                     then
+                         Known ^ dt_leaf
+                     else
+                         lk_float ),
             Type = ty_known(ds_type(Leaf, Known ^ dt_dim, Null))
         else
             Type = SlotType
@@ -3341,6 +3789,9 @@ find_field([F | Fs], Name, Found) :-
     = lexp_7_type.
 
 lcst_4_5_1_identity_cast(Env, Operand, Target, Written) :-
+    % A [LCST.4.5.11] value converts by the kind it holds, whatever its static
+    % type, so no cast of one is an identity.
+    not lcst_4_5_11_source(Env, Operand, _),
     type_of_expr(Env, Operand) = ty_known(Source),
     Resolved = lcst_4_1_6_target_of(Env, Target),
     lcst_4_cast(luni_8_7_3_cast_kind(Source), Source ^ dt_null,
@@ -3349,8 +3800,20 @@ lcst_4_5_1_identity_cast(Env, Operand, Target, Written) :-
 lcst_4_1_5_cast_type(Env, Operand, Target, Written, Pos) = Type :-
     ( if Operand = ex_null(_) then
         Type = lcst_4_2_3_null_cast_type(Env, Target, Written, Pos)
+    else if lcst_4_5_11_source(Env, Operand, SourceNull) then
+        % Before the known-source arm: `x ?? d` has its default's type
+        % ([LNUL.5.3]), and still converts by the kind `x` holds.
+        Type = lcst_4_5_11_cast_type(Env, Target, SourceNull, Written, Pos)
     else
-        SourceType = type_of_expr(Env, Operand),
+        OperandType = type_of_expr(Env, Operand),
+        ( if
+            OperandType = ty_unknown,
+            luni_9_2_strip_source(Env, Operand, Stripped)
+        then
+            SourceType = ty_known(Stripped)
+        else
+            SourceType = OperandType
+        ),
         (
             SourceType = ty_error(Ds),
             Type = ty_error(Ds)
@@ -3367,6 +3830,129 @@ lcst_4_1_5_cast_type(Env, Operand, Target, Written, Pos) = Type :-
                 Type = lcst_4_1_6_bad_target(Target)
             )
         )
+    ).
+
+lcst_4_5_11_leaf_cast(Env, Operand, Target, To) :-
+    lcst_4_5_11_source(Env, Operand, _),
+    Resolved = lcst_4_1_6_target_of(Env, Target),
+    To = Resolved ^ rt_target.
+
+lcst_4_5_11_value(Env, E) :-
+    lcst_4_5_11_source(Env, E, _).
+
+    % A [LCST.4.5.11] value, and whether it may be `null`: a path read past a
+    % `Json` value or an operation over one ([LEXP.7.12.1]), which may; `x ?? d`
+    % with `x` one, whatever type `??` was given, since `??` yields a present
+    % `x` as it is ([IRET.9.6]), which may be `null` unless `d` is known not to
+    % be ([LNUL.5.4]); or a `let` bound to one, which is that value
+    % ([LLET.3.5]). A `let` annotated over one is refused ([LUNI.8.6]), so an
+    % annotation never stands in for the kind it holds.
+    %
+    %@spec [LCST.4.5.11]
+    %@spec [IRET.9.6]
+:- pred lcst_4_5_11_source(type_env::in, lgra_9_3_1_expr::in, nullability::out)
+    is semidet.
+
+lcst_4_5_11_source(Env, E, SourceNull) :-
+    ( if E = ex_binary(bo_coalesce, X, D, _) then
+        lcst_4_5_11_source(Env, X, _),
+        ( if
+            type_of_expr(Env, D) = ty_known(DefaultType),
+            DefaultType ^ dt_null = non_null
+        then
+            SourceNull = non_null
+        else
+            SourceNull = nullable
+        )
+    else if
+        E = ex_name(Id),
+        Name = Id ^ id_name,
+        Scope0 = Env ^ te_scope,
+        not map.contains(Scope0 ^ rsc_bindings, Name),
+        map.search(Scope0 ^ rsc_let_exprs, Name, Rhs)
+    then
+        % The name leaves scope while its right-hand side is read, which ends
+        % a cycle, as `llet_3_6_let_type` does.
+        Scope = (Scope0 ^ rsc_lets := map.delete(Scope0 ^ rsc_lets, Name))
+            ^ rsc_let_exprs := map.delete(Scope0 ^ rsc_let_exprs, Name),
+        lcst_4_5_11_source((Env ^ te_scope := Scope) ^ te_narrowed := set.init,
+            Rhs, SourceNull)
+    else
+        lcst_4_5_11_json_valued(Env, E),
+        SourceNull = nullable
+    ).
+
+    % [LCST.4.3.1]'s table for a [LCST.4.5.11] value. The conversion is
+    % fallible to `Int`, `Float` and `Bool`, which a `String` reaches by a
+    % parse, and total to any other target. A missing or a redundant `?` is
+    % `DS_VALIDATE_CAST_NULLABILITY` ([LCST.4.3.2]).
+    %
+    %@spec [LCST.4.5.11]
+    %@spec [LCST.4.3.1]
+    %@spec [LCST.4.3.2]
+:- func lcst_4_5_11_cast_type(type_env, ident, nullability, nullability, pos)
+    = lexp_7_type.
+
+lcst_4_5_11_cast_type(Env, Target, SourceNull, Written, Pos) = Type :-
+    ( if Resolved = lcst_4_1_6_target_of(Env, Target) then
+        To = Resolved ^ rt_target,
+        Fallibility = ( if ( To = ct_int ; To = ct_float ; To = ct_bool )
+                        then cf_fallible else cf_total ),
+        Verdict = lcst_4_3_1_check(SourceNull, Fallibility, Written),
+        (
+            Verdict = cv_ok(ResultNull),
+            Outcome = co_ok(ResultNull, cs_conversion)
+        ;
+            Verdict = cv_missing_q(Why),
+            Outcome = co_missing_q(Why)
+        ;
+            Verdict = cv_redundant_q,
+            Outcome = co_redundant_q
+        ),
+        Type = lcst_4_3_2_outcome_type(Resolved, Target, Outcome, Pos)
+    else
+        Type = lcst_4_1_6_bad_target(Target)
+    ).
+
+    % A value whose kind is known only at runtime because it comes from a `Json`
+    % value ([LEXP.7.12.1]): a path read past one, or an operation over one, its
+    % type unknown here. A cast establishes its operand's type, so a value past
+    % one is not of these; the provenance flag ends there too ([IRET.9.6]).
+    %
+    %@spec [LCST.4.5.11]
+:- pred lcst_4_5_11_json_valued(type_env::in, lgra_9_3_1_expr::in) is semidet.
+
+lcst_4_5_11_json_valued(Env, E) :-
+    type_of_expr(Env, E) = ty_unknown,
+    (
+        ( E = ex_slot(Base, _, _)
+        ; E = ex_index(Base, _, _)
+        ),
+        type_of_expr(Env, Base) = ty_known(K),
+        K ^ dt_leaf = lk_json
+    ;
+        list.any_true(lcst_4_5_11_json_valued(Env), json_operands(E))
+    ).
+
+    % The operands a value is computed from. A cast's is not one: a cast ends
+    % the provenance.
+    %
+    %@helper
+:- func json_operands(lgra_9_3_1_expr) = list(lgra_9_3_1_expr).
+
+json_operands(E) = Operands :-
+    ( if E = ex_unary(_, A, _) then
+        Operands = [A]
+    else if E = ex_binary(_, L, R, _) then
+        Operands = [L, R]
+    else if E = ex_slot(A, _, _) then
+        Operands = [A]
+    else if E = ex_index(A, I, _) then
+        Operands = [A, I]
+    else if E = ex_call(_, Args, _) then
+        Operands = Args
+    else
+        Operands = []
     ).
 
     % The `null` literal has no leaf kind for `dsc.cast`'s table, and needs none:
@@ -3402,7 +3988,11 @@ lcst_4_1_6_bad_target(Target) =
 
 lcst_4_cast_pair(Env, Operand, Target, luni_8_7_3_cast_kind(Source),
         Resolved ^ rt_target) :-
-    type_of_expr(Env, Operand) = ty_known(Source),
+    ( if type_of_expr(Env, Operand) = ty_known(Known) then
+        Source = Known
+    else
+        luni_9_2_strip_source(Env, Operand, Source)
+    ),
     Resolved = lcst_4_1_6_target_of(Env, Target).
 
     % A unit alias is a valid cast target, though not a valid slot type
@@ -3419,7 +4009,8 @@ lcst_4_1_6_target_of(Env, Id) = Resolved :-
         (
             Entry = te_builtin(B),
             builtin_target(B) = yes(Target),
-            Resolved = resolved_target(Target, dimensionless)
+            Resolved = resolved_target(Target,
+                ltim_1_3_5_leaf_dim(target_leaf(Target)))
         ;
             Entry = te_unit(uk_symbol(Dimension), Sym),
             Resolved = resolved_target(ct_unit(Sym,
@@ -3542,6 +4133,7 @@ target_leaf(ct_bytes) = lk_bytes.
 target_leaf(ct_json) = lk_json.
 target_leaf(ct_unit(_, st_float)) = lk_float.
 target_leaf(ct_unit(_, st_int)) = lk_int.
+target_leaf(ct_unit(_, st_time)) = lk_duration.
 target_leaf(ct_time) = lk_time.
 target_leaf(ct_date) = lk_date.
 target_leaf(ct_duration) = lk_duration.
@@ -3550,30 +4142,67 @@ target_leaf(ct_duration) = lk_duration.
 % Unit literals
 %-----------------------------------------------------------------------------%
 
+    % Whether a unit literal stands under a unary minus, which negates its
+    % number before the unit's formula converts it ([LUNI.3.3]).
+    %
+    %@spec [LUNI.3.3]
+:- type luni_3_3_sign
+    --->    as_written
+    ;       negated.
+
+    % A negated literal is judged by its negated value, by [LUNI.3.1.9] and
+    % [LUNI.2.4.1] alike: `-1152921504606846976_byte` is -2^63 bits and fits,
+    % though its operand alone does not.
+    %
     %@spec [LUNI.3.1.7]
     %@spec [LUNI.3.1.9]
-:- func luni_3_1_7_literal_type(type_env, string, string, pos) = lexp_7_type.
+    %@spec [LUNI.2.4.1]
+:- func luni_3_1_7_literal_type(type_env, luni_3_3_sign, string, string, pos)
+    = lexp_7_type.
 
-luni_3_1_7_literal_type(Env, Magnitude, RawSuffix, Pos) = Type :-
+luni_3_1_7_literal_type(Env, Sign, Magnitude, RawSuffix, Pos) = Type :-
     Suffix = llex_12_5_symbol_of(RawSuffix),
     RF = Env ^ te_file,
+    Literal = ex_unit(Magnitude, RawSuffix, Pos),
+    (
+        Sign = as_written,
+        Written = Literal,
+        Text = Magnitude ++ RawSuffix
+    ;
+        Sign = negated,
+        Written = ex_unary(uo_neg, Literal, Pos),
+        Text = "-" ++ Magnitude ++ RawSuffix
+    ),
     ( if luni_3_1_7_unit_of(RF, RawSuffix, Dimension, Canonical) then
-        % A literal whose value cannot be folded is not judged here. A literal
-        % is judged as written, where [LUNI.3.1.9] judges a negated one after
-        % negation: the two differ only for a body with a fractional offset.
+        % A literal whose value cannot be folded is not judged here.
         ( if
             luni_3_1_9_whole_dimension(RF ^ rf_unit_storage, Dimension),
-            luni_4_3_base_value(RF, Magnitude, RawSuffix, Base),
+            quantity_base(RF, Written, Base),
             not is_whole(Base)
         then
             Type = ty_error([with_hint(error_at(dv_unit_literal_not_whole, Pos,
-                "`" ++ Magnitude ++ RawSuffix ++ "` is not a whole number of "
+                "`" ++ Text ++ "` is not a whole number of "
                     ++ "the `" ++ Dimension ^ dr_name
                     ++ "` dimension's base unit, which "
                     ++ "stores whole numbers; it is never truncated "
                     ++ "([LUNI.3.1.9])"),
                 "write the value in a smaller unit, or as a whole number of "
                     ++ "this one")])
+        else if
+            quantity_base(RF, Written, Base),
+            luni_2_4_1_literal_out_of_range(RF, Dimension, Base)
+        then
+            Type = ty_error([with_hint(error_at(dv_constant_out_of_range, Pos,
+                "`" ++ Text ++ "` in the `"
+                    ++ Dimension ^ dr_name ++ "` dimension's base unit "
+                    ++ "lies outside the "
+                    ++ ( if luni_3_1_9_whole_dimension(RF ^ rf_unit_storage,
+                            Dimension)
+                         then "64-bit signed range of the `Int` it is held as"
+                         else "range of the `Float` it is held as" )
+                    ++ "; it is never wrapped or saturated ([LUNI.2.4.1])"),
+                "write a smaller value; a quantity past this range has no "
+                    ++ "runtime value")])
         else
             Type = ltim_1_3_2_dimensioned(RF ^ rf_unit_storage, Dimension,
                 Canonical)
@@ -3585,21 +4214,17 @@ luni_3_1_7_literal_type(Env, Magnitude, RawSuffix, Pos) = Type :-
                 ++ "the library that does")])
     ).
 
-    % A `time`-dimensioned literal is a `Duration`, whichever unit it names, and
-    % `dimensionless` as a `Duration` slot is. Any other dimension's takes its
-    % storage's leaf kind ([LUNI.8.7.3]).
+    % A `time`-dimensioned literal is a `Duration`, whichever unit it names
+    % ([LTIM.1.3.5]). Any other dimension's takes its storage's leaf kind
+    % ([LUNI.8.7.3]).
     %
     %@spec [LTIM.1.3.2]
 :- func ltim_1_3_2_dimensioned(map(decl_ref, string), decl_ref, decl_ref)
     = lexp_7_type.
 
-ltim_1_3_2_dimensioned(Storage, Dimension, Symbol) = Type :-
-    ( if Dimension = time_dimension then
-        Type = ty_known(ds_type(lk_duration, dimensionless, non_null))
-    else
-        Type = ty_known(ds_type(luni_8_7_3_leaf(Storage, Dimension),
-            dim(Dimension, yes(Symbol)), non_null))
-    ).
+ltim_1_3_2_dimensioned(Storage, Dimension, Symbol) =
+    ty_known(ds_type(luni_8_7_3_leaf(Storage, Dimension),
+        dim(Dimension, yes(Symbol)), non_null)).
 
 %-----------------------------------------------------------------------------%
 :- end_module dsc.typecheck.

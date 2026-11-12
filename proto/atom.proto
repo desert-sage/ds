@@ -7,17 +7,9 @@ package ds.v1;
 // The unified atom registry — one oneof over one field-number space
 // (PBF1). A `.dsc` is a `Dsc` (repeated Atom carrying the DSC-legal subset);
 // a recorded fact stream is a `Stream` (the stream-legal subset).
-// An atom's field number IS its
-// wire identity in both, and the number's band is its blind forward-compat
-// disposition:
-//
-//   inject             1–127     (reject unknown → DS_ERR_FS_UNKNOWN_INJECT)
-//   reject-don't-skip  128–255   (reject unknown → DS_ERR_DSC_VERSION)
-//   skip-don't-reject  256–2047  (skip unknown)
-//
-// Field numbers 1–15 carry a 1-byte tag; 16–2047 are 2-byte (2047 is the
-// max 2-byte field number). The runtime hand-parses; this file is the
-// machine-readable registry + the compiler's emit type.
+// An atom's field number IS its wire identity in both, and nothing else.
+// The runtime hand-parses; this file is the machine-readable registry + the
+// compiler's emit type.
 //
 // An atom is named by its body message ([RDSC.1.2]), and each oneof field is
 // that message's name in snake case, so the field, the message and the census
@@ -26,7 +18,7 @@ package ds.v1;
 // PACKAGE: ds.v1 — the one unified namespace. Every
 // body is same-package here and referenced unqualified.
 
-// ── inject band: recorded external inputs (fact bodies) ──
+// ── recorded external inputs (fact bodies) ──
 import "fact_assert.proto";
 import "fact_retract.proto";
 import "fact_emit.proto";           // FactEmit ([RFCS.6a])
@@ -37,7 +29,7 @@ import "cache_seed.proto";          // CacheSeed ([RFCS.26])
 // ── stream structural/compare (fact-stream bodies) ──
 import "stream_header.proto";        // StreamHeader, ClockAdvance, RuleFireAnnotation
 import "call_issued.proto";          // CallIssued
-// ── reject band + all DSC bodies ──
+// ── DSC bodies ──
 import "realtime_contract.proto";
 import "series_backend_interval_pulse.proto";
 import "series_backend_numeric_integral.proto";
@@ -77,7 +69,7 @@ import "initial.proto";              // InitialFact, InitialCacheSeed ([LGRA.24]
 
 message Atom {
   oneof body {
-    // ── inject 1–127 (1–15 = 1-byte tag) ──
+    // ── recorded external inputs ──
     FactAssert      fact_assert     = 1;
     FactRetract     fact_retract    = 2;
     ClockAdvance    clock_advance   = 3;
@@ -85,53 +77,42 @@ message Atom {
     ExternalAssert  external_assert = 5;   // host input carrying a fact reference ([RFCS.24])
     CacheSeed       cache_seed      = 6;   // host cache seed, in the prelude ([RFCS.26])
 
-    // ── reject-don't-skip 128–255 ──
+    // ── program content ──
     RealtimeContract              realtime_contract               = 128;
     SeriesBackendIntervalPulse    series_backend_interval_pulse   = 129;  // active_fraction
     SeriesBackendNumericIntegral  series_backend_numeric_integral = 130;  // integral
-    // A ruleset's `initial:` block ([LGRA.24]). Program content, so reject
-    // band: a reader that skipped one would start the program from another
-    // working memory. initial.proto says why these differ from TestFact /
-    // TestCacheSeed.
+    // A ruleset's `initial:` block ([LGRA.24]). initial.proto says why these
+    // differ from TestFact / TestCacheSeed.
     InitialFact                   initial_fact                    = 131;
     InitialCacheSeed              initial_cache_seed              = 132;
 
-    // ── skip-don't-reject 256–2047 ──
     // shared (DSC + stream)
     SchemaDef schema_def = 256;
     Slot      slot       = 257;
     // stream-only structural/compare
     StreamHeader        stream_header        = 258;
     // 259 is held for Checkpoint ([RFCS.9]), which is deferred: its census row
-    // ([RFCS.3.1]) keeps the number and nothing else may take it. It is not
-    // allocated here, so a reader meets 259 as an unknown skip-band atom.
+    // ([RFCS.3.1]) keeps the number and nothing else may take it.
     // 260 is reserved at MESSAGE level below.
     RuleFireAnnotation  rule_fire_annotation = 261;  // compare
     CallIssued          call_issued          = 262;  // outbound-call provenance (compare, [RFCS.15])
     // 323 is held for TextNote ([RFCS.25]), which is deferred: its census row
-    // ([RFCS.3.1]) keeps the number and nothing else may take it. It is not
-    // allocated here, so a reader meets 323 as an unknown skip-band atom.
+    // ([RFCS.3.1]) keeps the number and nothing else may take it.
     // ComputationError lands at the end of the oneof rather than beside the
     // other stream compare atoms: 258-262 is full and a registry number is
-    // never inserted into a gap ([STYL.2.8.7]). 325 is inside the
-    // skip-don't-reject band 256-2047 ([RFCS.16.2]), which is where a
-    // provenance atom belongs — a replayer that does not know it should replay
-    // the run, not refuse it.
+    // never inserted into a gap ([STYL.2.8.7]).
     ComputationError computation_error = 325;  // trap provenance ([LERR.1.4.7], [RFCS.21])
     // [RFCS.6a] / [RFCS.7a] — the author-emitted half of the fact surface.
-    // FactAssert / FactRetract are the INTEGRATOR's atoms and stay inject-class
-    // in the 1-127 band; these are the ENGINE's and are compare-class, so they
-    // belong in skip-don't-reject where a replayer that does not know them
-    // skips rather than refuses. Additive by [RFCS.3.4]: a new inject-class atom
-    // would force a version reject.
+    // FactAssert / FactRetract are the INTEGRATOR's atoms and are
+    // inject-class; these are the ENGINE's and are compare-class ([RFCS.3.4]).
     FactEmit     fact_emit     = 326;  // author-emitted fact (compare, [RFCS.6a])
     FactWithdraw fact_withdraw = 327;  // engine withdrawal + cause (compare, [RFCS.7a])
     // The fault taxonomy: THREE messages and not one shared body with a
     // discriminator. The atom's field number IS the class ([RFCS.16.1]), so a
     // `kind` enum spanning them would be a second copy of it.
     //
-    // Same band and same reasoning as FactEmit / FactWithdraw above:
-    // compare-class, stream-only, skip-don't-reject. Stream-only means a census
+    // Same reasoning as FactEmit / FactWithdraw above: compare-class,
+    // stream-only. Stream-only means a census
     // row in [RFCS.3.1] and NONE in [RDSC.7.1] — a fault is something a run
     // produces, never something a bundle carries.
     TypeError    type_error   = 328;  // invalid op at this site (compare)
@@ -161,9 +142,7 @@ message Atom {
     OracleWorkingMemory oracle_working_memory = 297;
     // OracleExclusive lands at the END of the oneof rather than beside its
     // family: 290-297 is full and 298 onward is allocated, and a registry
-    // number is never inserted into a gap ([STYL.2.8.7]). 324 is still inside
-    // the skip-don't-reject band 256-2047 ([RFCS.16.2]), which is where every
-    // test atom belongs.
+    // number is never inserted into a gap ([STYL.2.8.7]).
     OracleExclusive     oracle_exclusive      = 324;
     // AOT
     CompiledCode compiled_code = 298;

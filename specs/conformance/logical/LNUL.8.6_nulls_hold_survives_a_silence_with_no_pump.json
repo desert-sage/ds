@@ -1,0 +1,21 @@
+{
+    "id": "LNUL.8.6_nulls_hold_survives_a_silence_with_no_pump",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] / [LSER.9.3.2]: the answer does not depend on pump cadence. The program and the readings of LNUL.8.6_nulls_hold_survives_a_swept_eviction, with no fact at 120 s, so no pump ran during the silence. `mean sliding 1_min` over a `Float?` slot under `nulls: hold`. 5.0 at t=0; `null` at 180 s, three windows later, absorbs the held 5.0; a value at 190 s reads `s.mean` before its own sample ([LSER.8.6.1]) over (130 s, 190 s], which holds the held sample alone: `mean 5.0`, once. Whether the sweep ran during the silence decides only when the allocation is freed, never what a `null` repeats. PATH PINNED: libds `ds_series_absorb_one`'s HOLD arm over the row's `last_value`, the sweep having run after that absorb; the Mercury runtime's `ds.series` `held_value`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n    n: Int mutable\n\nseries Reading.level (by: dev, nulls: hold):\n    mean sliding 1_min\n\nrule r:\n    Reading s where s.n == 3 and s.mean is not null\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5.0, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 180000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 190000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7.0, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 5.0"]
+    }
+}

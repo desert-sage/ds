@@ -133,6 +133,7 @@
     ;       ds_validate_unit_literal_not_whole
     ;       ds_validate_unit_import_alias
     ;       ds_validate_unit_body_missing
+    ;       ds_validate_constant_out_of_range
     ;       ds_validate_const_annotation_mismatch
     ;       ds_validate_const_bad_annotation
     ;       ds_validate_const_not_foldable
@@ -171,6 +172,7 @@
     ;       ds_validate_ts_marked
     ;       ds_validate_negated_binding_out_of_scope
     ;       ds_validate_rule_too_many_patterns
+    ;       ds_validate_within_exceeds_ttl
     ;       ds_validate_call_cool_inside_rule_cool
     ;       ds_validate_call_rate_mod
     ;       ds_validate_rule_cycle
@@ -431,6 +433,7 @@ ds_validate_code(ds_validate_finance_deferred) = 1626.
 ds_validate_code(ds_validate_unit_literal_not_whole) = 1627.
 ds_validate_code(ds_validate_unit_import_alias) = 1628.
 ds_validate_code(ds_validate_unit_body_missing) = 1629.
+ds_validate_code(ds_validate_constant_out_of_range) = 1631.
 ds_validate_code(ds_validate_const_annotation_mismatch) = 1700.
 ds_validate_code(ds_validate_const_bad_annotation) = 1701.
 ds_validate_code(ds_validate_const_not_foldable) = 1702.
@@ -469,6 +472,7 @@ ds_validate_code(ds_validate_ts_read_only) = 1824.
 ds_validate_code(ds_validate_ts_marked) = 1825.
 ds_validate_code(ds_validate_negated_binding_out_of_scope) = 1826.
 ds_validate_code(ds_validate_rule_too_many_patterns) = 1827.
+ds_validate_code(ds_validate_within_exceeds_ttl) = 1828.
 ds_validate_code(ds_validate_call_cool_inside_rule_cool) = 1901.
 ds_validate_code(ds_validate_call_rate_mod) = 1902.
 ds_validate_code(ds_validate_rule_cycle) = 1903.
@@ -724,6 +728,7 @@ ds_validate_name(ds_validate_finance_deferred) = "DS_VALIDATE_FINANCE_DEFERRED".
 ds_validate_name(ds_validate_unit_literal_not_whole) = "DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE".
 ds_validate_name(ds_validate_unit_import_alias) = "DS_VALIDATE_UNIT_IMPORT_ALIAS".
 ds_validate_name(ds_validate_unit_body_missing) = "DS_VALIDATE_UNIT_BODY_MISSING".
+ds_validate_name(ds_validate_constant_out_of_range) = "DS_VALIDATE_CONSTANT_OUT_OF_RANGE".
 ds_validate_name(ds_validate_const_annotation_mismatch) = "DS_VALIDATE_CONST_ANNOTATION_MISMATCH".
 ds_validate_name(ds_validate_const_bad_annotation) = "DS_VALIDATE_CONST_BAD_ANNOTATION".
 ds_validate_name(ds_validate_const_not_foldable) = "DS_VALIDATE_CONST_NOT_FOLDABLE".
@@ -762,6 +767,7 @@ ds_validate_name(ds_validate_ts_read_only) = "DS_VALIDATE_TS_READ_ONLY".
 ds_validate_name(ds_validate_ts_marked) = "DS_VALIDATE_TS_MARKED".
 ds_validate_name(ds_validate_negated_binding_out_of_scope) = "DS_VALIDATE_NEGATED_BINDING_OUT_OF_SCOPE".
 ds_validate_name(ds_validate_rule_too_many_patterns) = "DS_VALIDATE_RULE_TOO_MANY_PATTERNS".
+ds_validate_name(ds_validate_within_exceeds_ttl) = "DS_VALIDATE_WITHIN_EXCEEDS_TTL".
 ds_validate_name(ds_validate_call_cool_inside_rule_cool) = "DS_VALIDATE_CALL_COOL_INSIDE_RULE_COOL".
 ds_validate_name(ds_validate_call_rate_mod) = "DS_VALIDATE_CALL_RATE_MOD".
 ds_validate_name(ds_validate_rule_cycle) = "DS_VALIDATE_RULE_CYCLE".

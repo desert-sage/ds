@@ -71,6 +71,19 @@ typedef enum {
 ds_result_t ds_dsc_rete_body_decodes(dsc_rete_kind_t kind,
                                   const uint8_t *body, size_t len);
 
+/*
+ * [RDSC.5.5.9]: one of a Slot's conversions decoded, its one input `bind_ref` 0,
+ * the outermost Expr at depth 0 ([RDSC.11.3]). A bind index past that input is
+ * kept, and faults where the conversion reads it ([RDSC.4a.9.6]). With `re` NULL
+ * nothing is interned and the refusals are the same: handle_slot's check, as
+ * the walk's is a network atom's. *out is the caller's to free on DS_OK.
+ */
+struct Ds__V1__Expr;
+struct ds_rete_expr;
+ds_result_t ds_dsc_slot_conversion(struct ds_rete_engine *re,
+                                   const struct Ds__V1__Expr *msg,
+                                   struct ds_rete_expr **out);
+
 typedef struct {
     const char *name;
     int         is_logical; /* 1 = SchemaLogical, 0 = SchemaTtl */

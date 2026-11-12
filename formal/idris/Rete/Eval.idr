@@ -207,10 +207,13 @@
 ||| side (`lnul_4_2__trap_absorbed`). A left-to-right reading differs on exactly one
 ||| input, `trap and false`.
 |||
+||| A `no` node BLOCKS on a trap, as on `true` and `null`: `[LNUL.4.7]` is
+||| satisfied only where the test evaluates to `false`, and a fault is not
+||| `false`. That the fault is recorded as any fault is ([LERR.1.4]) is the
+||| fault fact's, which this module does not carry.
+|||
 ||| NAMED RESIDUE, what no clause here states and the module decides:
 |||
-|||   * A `no` node BLOCKS on a trap. `[LNUL.4.7]` blocks on `true` and
-|||     `null`; on a trap this module reads "blocked unless false".
 |||   * An ordering (`<` `<=` `>` `>=`) on two Bools is a trap HERE. That is
 |||     not DS: the compiler refuses the form, and so does the lowering,
 |||     rather than let it reach this function.
@@ -220,7 +223,8 @@
 |||   * ONE TRAP KIND. [LERR.1.4.3]'s zero divisor is a ComputationError and
 |||     an ill-typed operand a TypeError; the evaluator has one `RTrap` and
 |||     does not tell them apart. Which of two faults an expression yields is
-|||     [LNUL.4.2]'s order by kind, and Rete/WhereV5.idr is where kinds live.
+|||     [LNUL.4.2]'s order by kind, and formal/alloy/where_v5.als and
+|||     formal/k/dswherev5.k are where kinds live.
 |||   * A NaN is a value of the evaluator and no value of working memory
 |||     ([LEXP.4.2]): the fixture runner codes no tuple that holds one (Fixture.idr,
 |||     THE VALUE CODE), and the lowering refuses a NaN slot.
@@ -631,8 +635,8 @@ lnul_4_3__admits _     = False
 
 --@spec [LNUL.4.7]
 ||| A `no` node is blocked by a candidate unless its tests answer `false`:
-||| `true` and `null` block per the clause; a trap blocks per the residue
-||| in the header.
+||| `true`, `null` and a trap block, as the clause has it, since none of
+||| them is `false`.
 public export
 lnul_4_7__blocks : Lnul_4_2__answer -> Bool
 lnul_4_7__blocks KFalse = False
@@ -3261,7 +3265,7 @@ lnul_4_7__null_comparison_blocks _ _ _ _ = Refl
 ||| binary operator is the expression's answer whatever the other operand
 ||| is, `null` included -- [LNUL.4.1]'s propagation applies only when no
 ||| operand faults. (Which of two faults, by kind, is [LNUL.4.2]'s order and
-||| Rete/WhereV5.idr's; the evaluator has one trap.)
+||| formal/alloy/where_v5.als's; the evaluator has one trap.)
 public export
 lnul_4_10__null_beside_a_trap_is_the_trap :
   (f : Lnul_2_1__value -> Lnul_2_1__value -> Lerr_1_4_1__result) -> (v : Lnul_2_1__value) ->

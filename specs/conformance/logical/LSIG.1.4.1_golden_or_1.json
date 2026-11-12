@@ -2,12 +2,15 @@
     "id": "LSIG.1.4.1_golden_or_1",
     "clauses": ["LSIG.1.4.1", "LSIG.1.4.2"],
     "category": "logical",
-    "scenario": "Golden vector OR-1 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: the warm-up denominator min(W, elapsed). `onset_rate sliding 20s` with one rising edge at 2 s, read at 4 s, is 1 / min(20, 4 - 2) = 0.5 Hz; the full-window divisor would give 0.05 (LSIG.1.4.2). At 4 s a `Probe` arrives and `read` logs the binding's `onset_rate` ([NSBK.6.3]).",
+    "scenario": "Golden vector OR-1 (specs/conformance/SERIES_SIGNAL_VECTORS.md), read by a rule: the warm-up denominator min(W, elapsed). `onset_rate sliding 20s` on `Door.state` absorbs `false` at 2 s, its first absorption and `t_first`, and `true` at 3 s, a `true` while the slot holds `false`, so a rising edge ([LSIG.1.4.1]). Read at 4 s it is 1 / min(20, 4 - 2) = 0.5 Hz; the full-window divisor would give 0.05 ([LSIG.1.4.2]). At 4 s a `Probe` arrives and `read` logs the binding's `onset_rate` ([NSBK.6.3]). Path: libds `ds_series_ring_buffer_update_bool`'s edge test against `last_bool` and `ds_series_ring_buffer_onset_rate_at`'s denominator over `first_ever_ns`; Mercury `ds.series` `rising_edges` and `onset_rate` over `rw_first`.",
     "rules_ds": "use default\n\nschema Door scope logical:\n    entity_id: String key\n    state: Bool mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Door.state:\n    onset_rate sliding 20s\n\nrule read:\n    Probe\n    Door d\n->\n    log info \"{d.onset_rate}\"\n",
     "expect": {
         "kind": "log_message_sequence",
         "steps": [
             { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
             { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true } },
             { "op": "pump" },
             { "op": "set", "now_ns": 4000000000 },

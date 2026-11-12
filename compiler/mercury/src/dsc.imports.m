@@ -74,7 +74,23 @@
 
                     % The dimensions, scalar groups, unit symbols and opaque
                     % types each of those libraries declares ([LIMP.1.5]).
-                im_library_types :: list(pair(string, list(ast_decl)))
+                im_library_types :: list(pair(string, list(ast_decl))),
+
+                    % Every library's scope for its constants, by library.
+                im_const_scopes :: map(string, library_const_scope)
+            ).
+
+    % What a name in a library's `const` resolves against ([LIMP.1.5]): that
+    % library's constants, its `_`-prefixed ones and those it imported included,
+    % and its own qualified imports. The tree answers which bindings those are.
+    %
+    %@spec [LIMP.1.5]
+:- type library_const_scope
+    --->    library_const_scope(
+                lcs_consts    :: map(string, ast_const),
+                lcs_qualified :: map(string, ast_const),
+                lcs_surface   :: map(string, list(string)),
+                lcs_ast       :: ast_file
             ).
 
     %@helper
@@ -158,7 +174,7 @@
 
 no_imports = imports(map.init, map.init, map.init, [], map.init, map.init,
     map.init, map.init, map.init, map.init, map.init, map.init, map.init, [],
-    []).
+    [], map.init).
 
 limp_3_3_4_builtin_module("math").
 limp_3_3_4_builtin_module("distance").
@@ -180,7 +196,8 @@ load_libraries_in(Libs, Decls, Imports0, Diagnostics) :-
                 Library ^ af_decls) is semidet :-
             library_tree(Libs, Name, Library)
         ), Imports2 ^ im_library_schemas),
-    luni_4_1_2_preload_core(Libs, Imports3, Imports0).
+    Imports4 = Imports3 ^ im_const_scopes := Libs ^ le_const_scopes,
+    luni_4_1_2_preload_core(Libs, Imports4, Imports0).
 
     % From the closure, not the import lines. A later declaration of one name
     % replaces the earlier; `lcrs_14_9_duplicate_services` refuses the program.
@@ -309,7 +326,9 @@ luni_4_1_2_core_unparsed(Libs) = Diagnostics :-
                     % `no` for a source that did not parse.
                 le_trees   :: map(string, maybe(ast_file)),
 
-                le_ambiguous :: map(string, list(string))
+                le_ambiguous :: map(string, list(string)),
+
+                le_const_scopes :: map(string, library_const_scope)
             ).
 
 library_env(Sources, Decls) = library_env_on_disk(Sources, map.init, Decls).
@@ -318,8 +337,29 @@ library_env_on_disk(Sources, Ambiguous, Decls) = Libs :-
     parse_reachable(Sources,
         ["units.core" | list.filter_map(import_name, Decls)],
         map.init, Trees),
-    Parsed = lenv(Sources, Trees, Ambiguous),
-    Libs = Parsed ^ le_trees := map.map_values(limp_1_5_tree(Parsed), Trees).
+    Parsed = lenv(Sources, Trees, Ambiguous, map.init),
+    Stamped = Parsed ^ le_trees := map.map_values(limp_1_5_tree(Parsed), Trees),
+    Libs = Stamped ^ le_const_scopes := map.foldl(limp_1_5_const_scope(Stamped),
+        Stamped ^ le_trees, map.init).
+
+    % One library's scope, added to `Scopes0`. It reads the trees already
+    % stamped, so what it holds names its own declaring library.
+    %
+    %@spec [LIMP.1.5]
+:- func limp_1_5_const_scope(library_env, string, maybe(ast_file),
+                             map(string, library_const_scope))
+    = map(string, library_const_scope).
+
+limp_1_5_const_scope(_, _, no, Scopes) = Scopes.
+limp_1_5_const_scope(Libs, Name, yes(Ast), Scopes) =
+        map.set(Scopes, Name, Scope) :-
+    % The diagnostics are the library's own compile's to report.
+    list.foldl2(load_one(Libs), Ast ^ af_decls, no_imports, Imported, [], _),
+    Own = list.foldl(
+        ( func(C, M) = map.set(M, C ^ acn_name ^ id_name, C) ),
+        list.filter_map(const_of_decl, Ast ^ af_decls), map.init),
+    Scope = library_const_scope(map.overlay(Imported ^ im_consts, Own),
+        Imported ^ im_qualified_consts, Imported ^ im_qualified_surface, Ast).
 
     % A slot typed by a schema takes the schema's own name; one typed by a unit or
     % an opaque type holds its declaration in `af_decl`. A dimension, scalar group,
@@ -435,9 +475,10 @@ limp_1_5_default_suffixes(Modifier) =
     %@spec [LIMP.1.5]
 :- func limp_1_5_const(library_env, string, ast_file, ast_const) = ast_const.
 
-limp_1_5_const(Libs, Name, Ast, Const) = Const ^ acn_units :=
-    list.filter_map(limp_1_5_const_unit(Libs, Name, Ast),
-        limp_1_5_const_suffixes(Const ^ acn_form)).
+limp_1_5_const(Libs, Name, Ast, Const) = (Const ^ acn_library := Name)
+    ^ acn_units :=
+        list.filter_map(limp_1_5_const_unit(Libs, Name, Ast),
+            limp_1_5_const_suffixes(Const ^ acn_form)).
 
     %@helper
 :- func limp_1_5_const_unit(library_env, string, ast_file, string)

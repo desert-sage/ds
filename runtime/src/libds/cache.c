@@ -204,6 +204,21 @@ uint64_t ds_cache_held_ttl_max(const ds_cache_t *c)
     return max;
 }
 
+void ds_cache_next_deadline(const ds_cache_t *c, uint64_t now_ns,
+                            uint64_t *io_best, bool *io_has)
+{
+    uint32_t n = oa_len(&c->map);
+    for (uint32_t i = 0; i < n; i++) {
+        const ds_cache_entry_t *e =
+            (const ds_cache_entry_t *) ds_oa_val_at(&c->map, i);
+        if (e == NULL || e->ttl_deadline_ns <= now_ns) continue;
+        if (!*io_has || e->ttl_deadline_ns < *io_best) {
+            *io_best = e->ttl_deadline_ns;
+            *io_has  = true;
+        }
+    }
+}
+
 void ds_cache_resolve_held(ds_cache_t *c, uint64_t now_ns)
 {
     uint32_t n = oa_len(&c->map);

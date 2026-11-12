@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.8.3_formula_body_compiles",
+    "category": "compiler",
+    "scenario": "[LUNI.8.3]: the clause does not reach the body of a unit declaration or a `unit formula`, which is arithmetic on plain numbers. `x + 273.15` in a unit and `69.0 + 12.0 * log2(x / 440.0)` in a formula both add a bare number to a value of the declared unit. Pin: the program compiles. PATH PINNED: `dsc.validate`'s unit and formula checks, which do not type a body through `dsc.types.luni_8_1_combine`.",
+    "rules_ds": "from math import log2\n\nunit celsius: temperature = x + 273.15\n\nunit dimension pitch storage float64 base midi\nunit midi: pitch\nunit dimension tone storage float64 base hertz_t\nunit hertz_t: tone\n\nunit formula midi_tone:\n    midi_to_tone(x: midi): hertz_t = 440.0 * 2.0 ** ((x - 69.0) / 12.0)\n    tone_to_midi(x: hertz_t): midi = 69.0 + 12.0 * log2(x / 440.0)\n\nschema R scope logical:\n    id: Int key\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

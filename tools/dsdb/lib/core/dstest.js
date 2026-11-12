@@ -557,7 +557,8 @@ export const CAP_NAMES = new Map([[1, "WM_MAX"], [2, "AGENDA"], [3, "MAX_FIRES_P
                                   [12, "VALUE_CAPACITY"]]);
 /** @type {ReadonlyMap<number, string>} */
 export const ENGINE_FAULTS = new Map([[1, "ARTEFACT_LIED"], [2, "PATTERN_INDEX"], [3, "BINDING_ORDER"],
-                                      [4, "ORDER_KEY"], [6, "ALLOCATION"], [7, "PUMP_WCET"]]);
+                                      [4, "ORDER_KEY"], [6, "ALLOCATION"], [7, "PUMP_WCET"],
+                                      [8, "INTERNAL"]]);
 
 /**
  * A fault event as [RTIM.14.16] reports it.
@@ -697,15 +698,25 @@ class Run {
         stamps.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
         if (!stamps.length) stamps.push(this.#startNs);     // arrange only: one pump to quiescence
 
-        // [RTIM.14.5]: the clock moves across the input stamps, `until` and
-        // each delayed reply's deadline, found as its call is made. At a shared
-        // instant the inputs go before the replies.
+        // [RTIM.14.5]: the clock moves across the input stamps, `until`, each
+        // delayed reply's deadline, found as its call is made, and the engine's
+        // deadlines. At a shared instant the inputs go before the replies.
         let i = 0;
         while (i < stamps.length || this.#scheduled.length) {
             const nextInput = i < stamps.length ? stamps[i] : null;
             const nextReply = this.#scheduled.length ? this.#scheduled[0].atNs : null;
             const t = nextInput === null ? /** @type {bigint} */ (nextReply)
                 : nextReply === null || nextInput <= nextReply ? nextInput : nextReply;
+            // Read after every pump, since a firing can arm a deadline or make
+            // a call whose reply is due sooner. One at `t` takes no step of its
+            // own: the inputs and replies go first, and the one pump follows.
+            const deadline = this.#nextDeadline();
+            if (deadline !== null && deadline < t) {
+                this.#setClocks(deadline);
+                this.#pump(deadline);
+                this.#answer(deadline);
+                continue;
+            }
             this.#setClocks(t);
             if (t === nextInput) {
                 for (const f of [...(byStamp.get(t) ?? [])].sort((x, y) => x.order - y.order))
@@ -738,6 +749,15 @@ class Run {
             const name = Object.entries(this.#ds.status).find(([, n]) => n === status)?.[0] ?? `status ${status}`;
             throw new Refused(`${what} refused: ${name}${detail ? `: ${detail}` : ""}`);
         }
+    }
+
+    /**
+     * The engine's next deadline ([NLFC.2.5]) as a timeline coordinate, or null.
+     * @returns {bigint | null}
+     */
+    #nextDeadline() {
+        const at = this.#step("next deadline", () => this.#e.clock.nextDeadline);
+        return at === null ? null : at + this.#startNs;
     }
 
     /** @param {bigint} stampNs */

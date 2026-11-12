@@ -7,9 +7,16 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[LSTO.4.6.1] Optional per-write via `ttl: <dur>` on `cache`; expired\nkeys read as not-found. No TTL means durable until\nexplicit `cache_delete`. **Nothing evicts it.**\n\nThat is worth an author's attention because the opposite\nwould be easy to assume. A cache under a memory cap does\nnot make room by discarding an entry: a write that would\nbreach the cap **fails**, and everything already cached\nstays ([RTCT.7.1]). So a key with no TTL is durable in\nguarantee and not merely in intent, and a rule may rely on\nreading back what it cached.\n\nThe cost lands on the writer instead. Under pressure it is\nthe `cache` action that fails, not a silent loss the reader\ndiscovers later — which is the trade DS wants, since a rule\nwhose behaviour depended on how full the cache was would\nnot be reproducible ([LDET.2.1]).\n\n---\n\n",
+  "text": "[LSTO.4.6.1] Optional per-write via `ttl: <dur>` on `cache`; expired\nkeys read as not-found. No TTL means durable until\nexplicit `cache_delete`. **Nothing evicts it.**\n\nThe compiler must refuse a `ttl:` expression whose type is not `Duration` with\n`DS_VALIDATE_TYPE_MISMATCH`, as it refuses a `retain:` expression ([LDTL.4.1]),\nand an un-narrowed `Duration?` expression with\n`DS_VALIDATE_NULLABLE_UNNARROWED` ([LNUL.5.1]). A TTL of zero is no TTL, and the\nentry does not expire. That includes a `Duration` expression that saturates to\nzero ([LTIM.1.3.1]).\n\nThat a key with no TTL stays is worth an author's attention because the opposite\nwould be easy to assume. A cache under a memory cap does\nnot make room by discarding an entry: a write that would\nbreach the cap **fails**, and everything already cached\nstays ([RTCT.7.1]). So a key with no TTL is durable in\nguarantee and not merely in intent, and a rule may rely on\nreading back what it cached.\n\nThe cost lands on the writer instead. Under pressure it is\nthe `cache` action that fails, not a silent loss the reader\ndiscovers later — which is the trade DS wants, since a rule\nwhose behaviour depended on how full the cache was would\nnot be reproducible ([LDET.2.1]).\n\n---\n\n",
   "refs": [
     "LDET.2.1",
+    "LDTL.4.1",
+    "LNUL.5.1",
+    "LTIM.1.3.1",
     "RTCT.7.1"
+  ],
+  "errors": [
+    "DS_VALIDATE_NULLABLE_UNNARROWED",
+    "DS_VALIDATE_TYPE_MISMATCH"
   ]
 }

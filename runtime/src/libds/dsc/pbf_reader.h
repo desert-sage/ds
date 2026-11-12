@@ -30,24 +30,6 @@ typedef enum {
     DS_PBF_MALFORMED = 2
 } ds_pbf_step_t;
 
-/*
- * What a reader must do with a field number it has no table entry for
- * ([RFCS.16.2], [RFCS.16.3]), from the number's band alone.
- *
- *   DS_PBF_DISP_SKIP           -> DS_OK, log info ([RDSC.9.4])
- *   DS_PBF_DISP_REJECT_INJECT  -> DS_ERR_FS_UNKNOWN_INJECT
- *   DS_PBF_DISP_REJECT_VERSION -> DS_ERR_DSC_VERSION
- *   DS_PBF_DISP_MALFORMED      -> a malformed frame ([RDSC.11.1]):
- *                                 DS_ERR_DSC_DECODE after the first,
- *                                 DS_ERR_DSC_BAD_MAGIC as the first
- */
-typedef enum {
-    DS_PBF_DISP_SKIP           = 0,
-    DS_PBF_DISP_REJECT_INJECT  = 1,
-    DS_PBF_DISP_REJECT_VERSION = 2,
-    DS_PBF_DISP_MALFORMED      = 3   /* outside 1..2047 */
-} ds_pbf_disposition_t;
-
 /* ------------------------------------------------------------------ */
 /*  Framing                                                            */
 /* ------------------------------------------------------------------ */
@@ -68,7 +50,7 @@ typedef struct {
  *     outer:  0x0A varint(len)          the container's `repeated Atom atoms = 1`
  *     inner:  tag(N) varint(len) body   N is the atom's oneof field number
  *
- * `atom`/`atom_len` are the whole inner `Atom`, for [RFCS.18.8]'s backstop.
+ * `atom`/`atom_len` are the whole inner `Atom`.
  */
 typedef struct {
     uint32_t       field;
@@ -98,29 +80,20 @@ ds_pbf_step_t ds_pbf_next_atom(const uint8_t *data, size_t len, size_t pos,
 ds_pbf_container_t ds_pbf_container_of(const uint8_t *data, size_t len);
 
 /* ------------------------------------------------------------------ */
-/*  Band adjudication                                                  */
+/*  Lookup                                                             */
 /* ------------------------------------------------------------------ */
 
-ds_atom_band_t ds_pbf_band(uint32_t field);
-
-/* NULL if this reader has no entry for the field. */
+/* NULL if this reader has no entry for the field. An atom whose number has no
+   entry is no member of `Atom`'s oneof, so its frame is malformed ([RFCS.19.3],
+   [RDSC.11.1]): every atom a reader meets is in its series' registry
+   ([LDET.1.10]). */
 const ds_atom_reg_entry_t *ds_pbf_lookup(uint32_t field);
-
-/* DS_PBF_DISP_SKIP for anything this reader knows, otherwise its band's blind
-   disposition ([RFCS.16.3]). Not a dispatch decision: ask `ds_pbf_lookup` first. */
-ds_pbf_disposition_t ds_pbf_disposition(uint32_t field);
-
-/* [RFCS.18.8]: the worst disposition over every field in one inner `Atom`, since a
- * second, unknown field in the inject band is a dropped input. MALFORMED if the
- * message does not parse.
- */
-ds_pbf_disposition_t ds_pbf_atom_backstop(const uint8_t *atom, size_t atom_len);
 
 /* ------------------------------------------------------------------ */
 /*  Container legality and replay class                                */
 /* ------------------------------------------------------------------ */
 
-/* [RFCS.17.3]. An unknown atom cannot make this diagnosis; its band governs. */
+/* [RFCS.17.3]. False for an atom with no entry. */
 bool ds_pbf_legal_in(uint32_t field, ds_pbf_container_t container);
 
 /* [RFCS.17.5], [RFCS.3.4]. DS_ATOM_CLASS_NONE for an atom that is not stream-legal or

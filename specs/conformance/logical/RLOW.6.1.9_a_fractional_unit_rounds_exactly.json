@@ -1,0 +1,16 @@
+{
+    "id": "RLOW.6.1.9_a_fractional_unit_rounds_exactly",
+    "clauses": ["RLOW.6.1.9", "RLOW.6.1.10"],
+    "category": "logical",
+    "dead_rules_expected": ["rounded"],
+    "scenario": "[RLOW.6.1.9]: on integer storage a rounding works on the exact value in the unit, `(Q·x - R) / P`, and the builtin's integer goes back as `n::<unit>` does, raising as that lowering does when `n` units are not a whole number of base units. `wide` is `x * 1.5` bits, so P = 3, Q = 2, R = 0. Slot `d` holds 4 bits, 8/3 wide. `math.floor(r.d)` is 2 wide, 3 bits, so rule `floor` logs. `round(r.d)` is 3 wide, 4.5 bits, which is not whole: the test raises a ComputationError of kind NOT_REPRESENTABLE and `rounded` does not fire. The trap is raised during matching, so its `rule` is the node's `$alpha_<id>` ([LERR.9.2]), and rule `handler` logs the kind alone, after `floor` by source order ([LDET.5.4]). Exactly [\"floor\", \"NOT_REPRESENTABLE\"]. A rounding of the base number gives 4 bits for both and raises nothing. PATH PINNED: `dsc.rete.rlow_6_1_9_tier1` and its way back through `rlow_6_1_10_int`'s `FN_INT_DIV_EXACT`, evaluated by each runtime.",
+    "rules_ds": "import math\n\nunit dimension data storage int64 base bit\nunit bit: data\nunit wide: data = x * 1.5\n\nschema W scope logical:\n    id: String key\n    d: wide mutable\n\nrule floor:\n    W r where math.floor(r.d) == 3_bit\n->\n    log info \"floor\"\n\nrule rounded:\n    W r where round(r.d) > 0_bit\n->\n    log info \"rounded\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "W", "slots": { "id": "x", "d": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["floor", "NOT_REPRESENTABLE"]
+    }
+}

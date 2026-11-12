@@ -1,0 +1,25 @@
+# `count_distinct`, `count_of` and `contains` with the value recorded, -0.0
+# beside 0.0, and a String slot -- see fixtures/160_series_value_reads.ds.
+# `CF` reads `count_of(f.v, 0.0)` and `contains(f.v, 0.0)`; `CS` the same for
+# "error":
+#
+#   pump 1  cold: 0, 0, false
+#   pump 2  [-0.0]: 1, 1, true;  [error]: 1, 1, true
+#   pump 3  [-0.0, 1.0]: 2, 1, true;  [error, ok]: 2, 1, true
+#   pump 4  [-0.0, 1.0, 0.0]: 2, 2, true;  [error, ok, error]: 2, 2, true
+#
+# A bitwise equality reads pump 2's Float row as 1, 0, false. Every assert
+# changes its value, so each is a sample ([LFAC.2.5.1]).
+# @spec [LSER.16.5.1] [LSER.16.6.1] [LSER.16.7.1]
+assert CF k=a v=-0.0
+assert CS k=a tag=error
+pump
+assert CF k=a v=1.0
+assert CS k=a tag=ok
+pump
+assert CF k=a v=0.0
+assert CS k=a tag=error
+pump
+assert CF k=a v=2.0
+assert CS k=a tag=warn
+pump

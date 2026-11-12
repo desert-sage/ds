@@ -7,10 +7,15 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[RFCS.10.5] A replaying reader ([LFST.9.6]) MUST apply each `ClockAdvance` by\nadvancing the replay engine's monotonic clock to `clock_ns` and setting its\nwall clock to `wall_ns` before processing the next atom. When `has_wall` is\nfalse the recorded wall clock had no value: the reader leaves the replay\nengine's wall clock without one and ignores `wall_ns`, so a `now()` the\nrecording faulted ([LTIM.2.8.3]) faults again in the replay.\n\n---\n\n",
+  "text": "[RFCS.10.5] A replaying reader ([LFST.9.6]) MUST apply each `ClockAdvance` by\nadvancing the replay engine's monotonic clock to `clock_ns` and setting its\nwall clock to `wall_ns` before processing the next atom. When `has_wall` is\nfalse the recorded wall clock had no value: the reader leaves the replay\nengine's wall clock without one and ignores `wall_ns`, so a `now()` the\nrecording faulted ([LTIM.2.8.3]) faults again in the replay.\n\nThe reader **must** end the replay with `DS_ERR_TIME_RANGE` at a `ClockAdvance`\nwhose `clock_ns` is outside the monotonic clock's range ([LTIM.2.8.2]), as a\nhost's move past the range is refused ([NTST.3.1]).\n\n---\n\n",
   "refs": [
     "LFST.9.6",
-    "LTIM.2.8.3"
+    "LTIM.2.8.2",
+    "LTIM.2.8.3",
+    "NTST.3.1"
+  ],
+  "errors": [
+    "DS_ERR_TIME_RANGE"
   ],
   "atoms": [
     "ClockAdvance",

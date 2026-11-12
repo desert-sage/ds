@@ -1,0 +1,21 @@
+# The half-open window as a recorded value -- see
+# fixtures/161_series_half_open.ds. One new fact per pump, each a sample:
+#
+#   pump 1  t = 0: cold: 0, 0.0, -1.0
+#   pump 2  t = 1 ns: [a @0]: 1, 1.0, 1.0
+#   pump 3  t = 10 s: (0, 10 s] -- `a` is exactly 10 s old and outside, `b`
+#           inside: 1, 2.0, 2.0 (a closed window reads 2, 3.0, 1.5)
+#   pump 4  t = 10 s + 1 ns: (1 ns, 10 s + 1 ns] -- `b` is now exactly 10 s
+#           old and outside, `c` inside: 1, 4.0, 4.0
+# @spec [LSER.14.1] [LSIG.2.2.4] [LSER.19.8]
+assert W k=a v=1.0
+pump
+advance 1
+assert W k=b v=2.0
+pump
+advance 9999999999
+assert W k=c v=4.0
+pump
+advance 1
+assert W k=d v=8.0
+pump

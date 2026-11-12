@@ -56,6 +56,16 @@ The monotonic clock's current value, as a host reads it between calls: the capab
 
 *(Source: bindings/mercury/src/mercury_ds.session.m, runtime/mercury/src/ds.engine.m)*
 
+### `next_deadline`
+
+**`:- func next_deadline(session) = read(maybe(instant)).`**
+
+The earliest deadline later than the monotonic clock's current value, `yes(At)`, or `no` when the engine holds none: the capability of [`ds_engine_next_deadline_ns`](inv:integrator:std:doc#engine/clock).
+
+It is a read, as [`now`](#now) is: it takes no sample, and changes nothing a later call does.
+
+*(Source: bindings/mercury/src/mercury_ds.session.m, Spec: [NLFC.2.5])*
+
 ## Moving a mock clock
 
 ### `advance`
@@ -83,9 +93,11 @@ Sets the mock monotonic clock: the capability of [`ds_engine_clock_set`](inv:int
 | `step_outcome` | Condition |
 |---|---|
 | `error`, `engine_halted` | the session has halted |
-| `error`, `state` | [`clock_mode`](#clock_mode) answers `live_clock`; or, after the engine's first sample, the instant is below the current value, and both clocks stay as they were |
+| `error`, `state` | [`clock_mode`](#clock_mode) answers `live_clock` |
+| `error`, `time_range` | the instant is above 2^63 - 1, the top of the monotonic clock's range, before the engine's first sample or after it; both clocks stay as they were |
+| `error`, `state` | after the engine's first sample, the instant is below the current value; both clocks stay as they were |
 
-`step_reports` and `step_duties` are empty.
+The first row that applies is the refusal. `step_reports` and `step_duties` are empty.
 
 *(Source: bindings/mercury/src/mercury_ds.session.m, runtime/mercury/src/ds.engine.m, runtime/mercury/src/ds.chrono.m, Spec: [NTST.3.1])*
 

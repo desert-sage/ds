@@ -1,0 +1,24 @@
+{
+    "id": "LNUL.8.6_nulls_hold_survives_a_swept_eviction",
+    "category": "logical",
+    "scenario": "[LNUL.8.6]: under `hold`, the engine must keep the value a `null` repeats for the instance's life; eviction ([LSER.9.3.2]) does not forget it, and a `null` arriving after eviction absorbs it into the fresh allocation. `mean sliding 1_min` over a `Float?` slot, a ring buffer over a non-Bool slot, so a window of silence frees the row ([LSER.9.3.1]). 5.0 at t=0. At 120 s an unrelated `Other` fact is asserted and pumped, so a pump reads a clock two windows past the last sample and the sweep frees the row. `null` arrives at 180 s and absorbs the held 5.0. At 190 s a value arrives whose `where` reads `s.mean` before its own sample ([LSER.8.6.1]): (130 s, 190 s] holds the held sample alone, so `mean 5.0`, once. The `s.n == 3` conjunct keeps the earlier facts, whose `where` is re-read at each pump ([LTIM.2.4.1]), from firing. An engine that forgot the value at the sweep absorbs nothing for the `null`, the read is cold, and the rule never fires. PATH PINNED: libds `ds_series_state_evict_stale` pass 2, which frees the backing and keeps `last_value`, then `ds_series_absorb_one`'s HOLD arm into a fresh instance; the Mercury runtime's `ds.series` `held_value`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float? mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Reading.level (by: dev, nulls: hold):\n    mean sliding 1_min\n\nrule r:\n    Reading s where s.n == 3 and s.mean is not null\n->\n    log info \"mean {s.mean}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 5.0, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 180000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": null, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 190000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "level": 7.0, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["mean 5.0"]
+    }
+}

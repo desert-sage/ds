@@ -1,0 +1,25 @@
+{
+    "id": "LFAC.2.5.1_int_tolerance_delta_is_exact",
+    "clauses": ["LFAC.2.5.1"],
+    "category": "logical",
+    "scenario": "[LFAC.2.5.1]: for a slot with a declared tolerance, a reassertion is a no-op iff `|delta| <= tolerance`, the bound included, and `delta` is the true difference on an `Int` slot at any magnitude. `W.x` is `Int` with tolerance 1, and rule `saw` logs each W that enters working memory. Three keys, two asserts each, a pump after each. Key 1: the largest Int, then the smallest: a delta of 2^64 - 1, a change, so `saw` fires twice. A delta taken in 64-bit Int arithmetic wraps to -1, within the tolerance, and suppresses it. Key 2: 2^54, then 2^54 + 2: a delta of 2, a change, so `saw` fires twice. A delta taken over the operands rounded to doubles finds both 2^54 and suppresses it. Key 3: 2^53 + 1, then 2^53 + 2: a delta of exactly 1, so the second is a no-op and `saw` fires once. Rounded to doubles they are 2^53 and 2^53 + 2, a delta of 2, which is taken as a change. Five firings: `1 1 2 2 3`. PATH PINNED: libds `slots_equal`'s Int arm, through `int_within` (rete/wm_rete.c); the Mercury runtime's `ds.fact.slot_unchanged`, through `lfac_2_5_1_int_within`.",
+    "rules_ds": "schema W scope logical:\n    e: Int key\n    x: Int mutable tolerance 1\n\nrule saw:\n    W w\n->\n    log info \"{w.e}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "W", "slots": { "e": 1, "x": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "W", "slots": { "e": 1, "x": -9223372036854775808 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "W", "slots": { "e": 2, "x": 18014398509481984 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "W", "slots": { "e": 2, "x": 18014398509481986 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "W", "slots": { "e": 3, "x": 9007199254740993 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "W", "slots": { "e": 3, "x": 9007199254740994 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["1", "1", "2", "2", "3"]
+    }
+}

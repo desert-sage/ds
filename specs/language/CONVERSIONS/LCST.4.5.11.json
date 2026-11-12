@@ -1,0 +1,27 @@
+{
+  "id": "LCST.4.5.11",
+  "prefix": "LCST",
+  "doc": "CONVERSIONS.md",
+  "parent": "LCST.4.5",
+  "seq": 155,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LCST.4.5.11] **A `Json` leaf converts as the value it holds.** A leaf a path\nreads from a `Json` value, and a value computed from one, has its kind only at\nruntime ([LEXP.7.12.1]). `x ?? d` with `x` such a value is one too, whatever\ntype [LNUL.5.3] gives it, because `??` yields a present `x` as it is\n([IRET.9.6]); so is a `let` name bound to one ([LLET.3.5]). A conversion of such\na value takes [LCST.4.5.2]'s row for the kind the value holds when it is\nconverted, and that row's class.\n\n[LCST.4.3.1] decides the `?`. Such a value is a nullable source: a path leaf may\nbe `null`, from an absent path or a JSON `null` ([LNUL.8.4]). A guard\n`is not null` does not change that, because [LNUL.5.4] narrows a `T?` to a `T`\nand such a value has no `T` until it is converted. The one exception is\n`x ?? d` with a `d` that is not nullable, and a `let` name bound to one: it is\nnot `null` ([LNUL.5.3]), so it is not a nullable source. The\nconversion is fallible when `T` is `Int`, `Float` or `Bool`, which a `String`\nreaches by a parse, and total otherwise. The compiler **must** refuse a missing\n`?` and a redundant one with `DS_VALIDATE_CAST_NULLABILITY` ([LCST.4.3.2]), and\nthe result's type is `T?` exactly when the source is nullable or the conversion\nfallible. When the conversion runs, the engine **must** give:\n\n- for `null`, `null` ([LCST.4.2.3]);\n- for a value of a kind with a row to `T`, that row's result: a total row's\n  value, a fallible row's value or `null`, a trap as the row states\n  ([LCST.4.5.4]);\n- for a value of a kind with no row to `T`, an array or an object among them, a\n  `TypeError` ([IRET.9.6]).\n\nSo a JSON `31` and a JSON `31.5` both convert under `::Float?`, a JSON `\"31.5\"`\nparses as a `String` does, and a JSON `true` is a `TypeError`. With `j.a` a\nJSON `31.5`, `(j.a ?? 0)::Float?` is `31.5`, and `(j.a ?? 0)::String` takes no\n`?`. `j.a::String?` takes its `?` after `j.a is not null and` as well. A whole `Json` value read with no path is [LCST.4.5.2]'s `Json` row, and is\nrefused.\n\n",
+  "refs": [
+    "IRET.9.6",
+    "LCST.4.2.3",
+    "LCST.4.3.1",
+    "LCST.4.3.2",
+    "LCST.4.5.2",
+    "LCST.4.5.4",
+    "LEXP.7.12.1",
+    "LLET.3.5",
+    "LNUL.5.3",
+    "LNUL.5.4",
+    "LNUL.8.4"
+  ],
+  "errors": [
+    "DS_VALIDATE_CAST_NULLABILITY"
+  ]
+}

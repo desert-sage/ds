@@ -15,8 +15,8 @@
 ||| (`rarc_5_6_3__prepare`: a tick advances the clock and sweeps; a data
 ||| event is swept for, then applied) and its pump (`iret_11_4__run_ttl`)
 ||| sweeps nothing; every engine built on it (Rete/NetworkTtl.idr,
-||| Rete/NetworkClocked.idr, Rete/NetworkSampled.idr and their frames)
-||| inherits the placement. On a tick followed by a pump the two agree:
+||| Rete/NetworkClocked.idr and their frames) inherits the placement. On a
+||| tick followed by a pump the two agree:
 ||| advance, sweep, run is the clause's advance, then the pump's sweep and
 ||| run. On a data event they differ inside the boundary: the clause applies
 ||| the event to a working memory still holding the expired fact, which it
@@ -238,7 +238,8 @@ rarc_5_6_3__advance : Nat -> Iret_19_3__clocked -> Iret_19_3__clocked
 rarc_5_6_3__advance t (MkClocked s dl c) = MkClocked s dl (rarc_5_6_3__next_clock c t)
 
 --@spec [RARC.5.6.2]
-||| An input pulled from the inbound queue: a clock tick, or a data event.
+||| The input a call carries ([RARC.5.6.2]): a clock tick, the new clock
+||| value, or a data event.
 public export
 data Rarc_5_6_2__input : Type where
   Tick : (clock_ns : Nat) -> Rarc_5_6_2__input

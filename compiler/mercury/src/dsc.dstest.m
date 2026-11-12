@@ -146,6 +146,42 @@
 :- pred lexp_8_8_int_constant(resolved_file::in, lgra_9_3_1_expr::in,
                               int64::out) is semidet.
 
+    % The nanoseconds of the `Duration` an expression folds to.
+    %
+    %@spec [LEXP.8.8]
+:- pred lexp_8_8_duration_ns(resolved_file::in, lgra_9_3_1_expr::in,
+                             int64::out) is semidet.
+
+    % Whether an expression has a value at compile time.
+    %
+    %@spec [LEXP.8.8.1]
+:- pred lexp_8_8_1_folds(resolved_file::in, lgra_9_3_1_expr::in) is semidet.
+
+    %@spec [LEXP.7.1a]
+:- pred lexp_7_1a_folds_to_string(resolved_file::in, lgra_9_3_1_expr::in)
+    is semidet.
+
+    % The type a right-hand side's folded value has, as an annotation names it.
+    %
+    %@spec [LGRA.4.1]
+:- pred lgra_4_1_folded_kind(resolved_file::in, lgra_9_3_1_expr::in,
+                             string::out) is semidet.
+
+    % A folded `const`, in the shape a read lowers to. A `String` is not yet
+    % interned.
+    %
+    %@spec [RLOW.6.1.8]
+:- type rlow_6_1_8_literal
+    --->    rl_value(ds_value)
+    ;       rl_string(string).
+
+    % The literal a read of `Const` lowers to, in the scope of the file declaring
+    % it. Fails for a `const` that does not fold, which `dsc.validate` has refused.
+    %
+    %@spec [RLOW.6.1.8]
+:- pred rlow_6_1_8_const_literal(resolved_file::in, ast_const::in,
+                                 rlow_6_1_8_literal::out) is semidet.
+
     %@helper
 :- type ltim_14_3_calendar
     --->    lc_time
@@ -247,6 +283,7 @@
 :- implementation.
 
 :- import_module ds.core_math.
+:- import_module ds.format.
 :- import_module ds.schema.
 :- import_module dsc.builtins.
 :- import_module dsc.exact.
@@ -645,11 +682,18 @@ ltsl_3_1_coordinate(RF, E, Ns, !Errors) :-
 ltim_14_3_calendar_fold(RF, E, Kind, Answer) :-
     E = ex_call(ex_name(Fn), Args, _),
     list.map(folded_int(RF), Args, Is),
-    ( if Fn ^ id_name = "calendar.date", Is = [Y, Mo, D] then
+    calendar_answer(Fn ^ id_name, Is, Kind, Answer).
+
+    %@helper
+:- pred calendar_answer(string::in, list(int64)::in, ltim_14_3_calendar::out,
+                        ltim_14_2_answer::out) is semidet.
+
+calendar_answer(Fn, Is, Kind, Answer) :-
+    ( if Fn = "calendar.date", Is = [Y, Mo, D] then
         Kind = lc_date,
         Answer = ltim_14_2_date(Y, Mo, D)
     else
-        Fn ^ id_name = "calendar.time",
+        Fn = "calendar.time",
         ( if Is = [Y, Mo, D] then
             Fields = [Y, Mo, D, 0i64, 0i64, 0i64, 0i64]
         else if Is = [Y, Mo, D, H, Mi, S] then
@@ -674,7 +718,7 @@ ltim_14_3_calendar_raises(RF, E) :-
     is semidet.
 
 folded_int(RF, E, I) :-
-    ltsl_4_1_fold(RF, 0, E, f_int(I)).
+    ltsl_4_1_fold(RF, E, f_int(I), map.init, _).
 
 %-----------------------------------------------------------------------------%
 % Facts -- [LTSL.4.1], [LTSL.5.3], [LTSL.6]
@@ -918,17 +962,60 @@ ltsl_4_1_literal(RF, E, MaybeV, !Errors) :-
     ).
 
     % `LIMIT * 2` written as the value is refused; a `const` declared `= LIMIT * 2`
-    % folds. The depth bound stops a cyclic `const`, which the same pass refuses.
+    % folds.
     %
 ltsl_4_1_constant(RF, E, V) :-
-    constant_leaf(RF, 64, E, V).
+    leaf_or_const(RF, E, F, map.init, _),
+    folded_value(F) = V.
 
 ltsl_4_1_string_constant(RF, E, S) :-
     ltsl_4_1_constant(RF, E, tv_string(S)).
 
 lexp_8_8_int_constant(RF, E, I) :-
-    constant_within(RF, 64, E, V),
-    V = tv_int(I).
+    ltsl_4_1_fold(RF, E, f_int(I), map.init, _).
+
+lexp_8_8_duration_ns(RF, E, Ns) :-
+    ltsl_4_1_fold(RF, E, F, map.init, _),
+    F = f_duration(_),
+    folded_value(F) = tv_duration(U),
+    Ns = int64.cast_from_uint64(U).
+
+lexp_8_8_1_folds(RF, E) :-
+    ltsl_4_1_fold(RF, E, _, map.init, _).
+
+lexp_7_1a_folds_to_string(RF, E) :-
+    ltsl_4_1_fold(RF, E, f_string(_), map.init, _).
+
+lgra_4_1_folded_kind(RF, E, folded_kind(F)) :-
+    ltsl_4_1_fold(RF, E, F, map.init, _).
+
+    %@helper
+:- func folded_kind(folded) = string.
+
+folded_kind(f_int(_)) = "Int".
+folded_kind(f_float(_)) = "Float".
+folded_kind(f_bool(_)) = "Bool".
+folded_kind(f_string(_)) = "String".
+folded_kind(f_duration(_)) = "Duration".
+folded_kind(f_json(_)) = "Json".
+folded_kind(f_time(_)) = "Time".
+folded_kind(f_date(_)) = "Date".
+
+rlow_6_1_8_const_literal(RF, Const, Literal) :-
+    const_folded(RF, Const, F, map.init, _),
+    folded_literal(F, Literal).
+
+    %@helper
+:- pred folded_literal(folded::in, rlow_6_1_8_literal::out) is semidet.
+
+folded_literal(f_int(I), rl_value(int(I))).
+folded_literal(f_float(X), rl_value(float(X))).
+folded_literal(f_bool(B), rl_value(bool(B))).
+folded_literal(f_string(S), rl_string(S)).
+folded_literal(f_date(Days), rl_value(int(Days))).
+folded_literal(f_duration(R), rl_value(int(int64.cast_from_uint64(U)))) :-
+    folded_value(f_duration(R)) = tv_duration(U).
+folded_literal(f_time(Utc), rl_value(time(ds_time(Utc, 0i64)))).
 
 lgra_2_8_1_time_expr_ns(RF, [Tok], Ns) :-
     T = Tok ^ tk_tok,
@@ -945,30 +1032,16 @@ lgra_2_8_1_time_value_ns(RF, E, Ns) :-
     (
         E = ex_unit(Magnitude, Suffix, _),
         luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier),
-        Ns = luni_3_1_5_magnitude_ns(Magnitude, Multiplier)
+        luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Ns)
     ;
         E = ex_name(_),
         ltsl_4_1_constant(RF, E, tv_duration(U)),
         Ns = int64.cast_from_uint64(U)
     ).
 
-    %@helper
-:- pred constant_within(resolved_file::in, int::in, lgra_9_3_1_expr::in,
-                        test_value::out) is semidet.
-
-constant_within(RF, Depth, E, V) :-
-    ( if constant_leaf(RF, Depth, E, V0) then
-        V = V0
-    else
-        ltsl_4_1_fold(RF, Depth, E, F),
-        folded_value(F) = V
-    ).
-
     % The same value the runtime computes, operation by operation ([LDET.3.3a.8]):
-    % a `const` a rule names is inlined and evaluated by the engine, and a value
-    % folded here from it must agree to the bit. So each step's exact result is
-    % rounded to the nearest double, as the engine rounds, never with the host's
-    % floating point.
+    % each step's exact result is rounded to the nearest double, as the engine
+    % rounds, never with the host's floating point.
     %
     % An expression that would make a NaN, or that the engine would trap on, does
     % not fold.
@@ -979,18 +1052,34 @@ constant_within(RF, Depth, E, V) :-
     ;       f_float(float)                  % finite or infinite, never NaN
     ;       f_bool(bool)
     ;       f_string(string)
-    ;       f_duration(rational).           % nanoseconds
+    ;       f_duration(rational)            % nanoseconds
+    ;       f_json(string)
+    ;       f_time(int64)                   % UTC nanoseconds, at offset 0
+    ;       f_date(int64).                  % days since the epoch
+
+    % What each `const` read so far folded to. `fe_pending` is a `const` being
+    % folded, so meeting one is a cycle, which does not fold. A `const` is folded
+    % once, so a chain costs its length. The key holds `acn_library`, so one text
+    % at one position in two libraries is two entries.
+    %
+    %@helper
+:- type fold_entry
+    --->    fe_pending
+    ;       fe_done(folded).
+
+    %@helper
+:- type fold_memo == map(ast_const, fold_entry).
 
     % A transcendental or `pow` has no exact value to fold to: its value is
     % `ds.core_math`'s, the function both runtimes compute.
     %
     %@spec [LEXP.8.8]
-:- pred ltsl_4_1_fold(resolved_file::in, int::in, lgra_9_3_1_expr::in,
-                      folded::out) is semidet.
+:- pred ltsl_4_1_fold(resolved_file::in, lgra_9_3_1_expr::in, folded::out,
+                      fold_memo::in, fold_memo::out) is semidet.
 
-ltsl_4_1_fold(RF, Depth, E, F) :-
-    ( if constant_leaf(RF, Depth, E, V) then
-        folded_of(V, F)
+ltsl_4_1_fold(RF, E, F, !Memo) :-
+    ( if leaf_or_const(RF, E, Leaf, !Memo) then
+        F = Leaf
     else if
         % Before the unary arm: a minus on a unit literal negates its number
         % before the unit converts it. A time literal is a `Duration`.
@@ -998,11 +1087,17 @@ ltsl_4_1_fold(RF, Depth, E, F) :-
         Symbol = llex_12_5_symbol_of(Suffix),
         not luni_10_2_time_unit(Symbol, _)
     then
-        fold_unit_literal(RF, Depth, Negated, Magnitude, Symbol, F)
+        fold_unit_literal(RF, Negated, Magnitude, Symbol, F, !Memo)
     else if E = ex_cast(Operand, Target, non_null, _) then
-        ltsl_4_1_fold(RF, Depth, Operand, F0),
-        ( if lcst_4_5_2_folded_cast(RF, Target ^ id_name, F0, F1) then
+        ltsl_4_1_fold(RF, Operand, F0, !Memo),
+        ( if lcst_4_5_2_folded_cast(RF, Target ^ id_name, Operand, F0, F1) then
             F = F1
+        else if
+            luni_3_1_7_unit_of(RF, Target ^ id_name, _, _),
+            not carries_unit(RF, 64, Operand)
+        then
+            rlow_6_1_10_assertion_of(RF, Target ^ id_name, Assertion),
+            rlow_6_1_10_folded(RF, Assertion, F0, F, !Memo)
         else
             identity_cast(RF, Target ^ id_name, F0),
             F = F0
@@ -1011,25 +1106,159 @@ ltsl_4_1_fold(RF, Depth, E, F) :-
         E = ex_name(Id),
         lexp_4_1_math_constant_value(Id ^ id_name, X)
     then
+        not float.is_nan(X),
         F = f_float(X)
     else if E = ex_unary(Op, Inner, _) then
-        ltsl_4_1_fold(RF, Depth, Inner, F0),
+        ltsl_4_1_fold(RF, Inner, F0, !Memo),
         fold_unary(Op, F0, F)
     else if E = ex_not(Inner, _) then
-        ltsl_4_1_fold(RF, Depth, Inner, f_bool(B)),
+        ltsl_4_1_fold(RF, Inner, f_bool(B), !Memo),
         F = f_bool(bool.not(B))
     else if E = ex_binary(Op, L, R, _) then
-        ltsl_4_1_fold(RF, Depth, L, FL),
-        ltsl_4_1_fold(RF, Depth, R, FR),
+        ltsl_4_1_fold(RF, L, FL, !Memo),
+        ltsl_4_1_fold(RF, R, FR, !Memo),
         fold_binary(Op, FL, FR, F)
     else if E = ex_compare(First, Steps, _) then
-        ltsl_4_1_fold(RF, Depth, First, F0),
-        fold_chain(RF, Depth, F0, Steps, yes, B),
+        ltsl_4_1_fold(RF, First, F0, !Memo),
+        fold_chain(RF, F0, Steps, yes, B, !Memo),
         F = f_bool(B)
     else
         E = ex_call(ex_name(Fn), Args, _),
-        list.map(ltsl_4_1_fold(RF, Depth), Args, Folded),
-        fold_builtin(Fn ^ id_name, Folded, F)
+        fold_args(RF, Args, Folded, !Memo),
+        ( if list.map(folded_int_of, Folded, Is),
+            calendar_answer(Fn ^ id_name, Is, Kind, Answer)
+        then
+            Answer = calendar_value(V),
+            (
+                Kind = lc_time,
+                F = f_time(V)
+            ;
+                Kind = lc_date,
+                F = f_date(V)
+            )
+        else if
+            ( rounding_builtin(Fn ^ id_name)
+            ; Fn ^ id_name = "math.sign"
+            ),
+            Args = [Arg],
+            carries_unit(RF, 64, Arg)
+        then
+            fold_unit_of(RF, 64, Arg, Dimension, Unit),
+            Folded = [F0],
+            rlow_6_1_9_folded(RF, Fn ^ id_name, Dimension, Unit, F0, F, !Memo)
+        else
+            fold_builtin(Fn ^ id_name, Folded, F)
+        )
+    ).
+
+    %@helper
+:- pred folded_int_of(folded::in, int64::out) is semidet.
+
+folded_int_of(f_int(I), I).
+
+    %@helper
+:- pred fold_args(resolved_file::in, list(lgra_9_3_1_expr)::in,
+                  list(folded)::out, fold_memo::in, fold_memo::out) is semidet.
+
+fold_args(_, [], [], !Memo).
+fold_args(RF, [E | Es], [F | Fs], !Memo) :-
+    ltsl_4_1_fold(RF, E, F, !Memo),
+    fold_args(RF, Es, Fs, !Memo).
+
+    % A literal, or a read of a `const`, in place or through a library.
+    %
+    %@helper
+:- pred leaf_or_const(resolved_file::in, lgra_9_3_1_expr::in, folded::out,
+                      fold_memo::in, fold_memo::out) is semidet.
+
+leaf_or_const(RF, E, F, !Memo) :-
+    ( if literal_leaf(E, F0) then
+        F = F0
+    else
+        const_read(RF, E, Scope, Const),
+        const_folded(Scope, Const, F, !Memo)
+    ).
+
+    %@helper
+:- pred literal_leaf(lgra_9_3_1_expr::in, folded::out) is semidet.
+
+literal_leaf(E, F) :-
+    ( if E = ex_int(I, _) then
+        F = f_int(I)
+    else if E = ex_unary(uo_neg, ex_int(I, _), _) then
+        F = f_int(-I)
+    else if E = ex_float(X, _) then
+        F = f_float(X)
+    else if E = ex_unary(uo_neg, ex_float(X, _), _) then
+        F = f_float(neg(X))
+    else if E = ex_bool(B, _) then
+        F = f_bool(B)
+    else if duration_literal_ns(E, Ns) then
+        F = f_duration(dsc.exact.from_int64(int64.cast_from_uint64(Ns)))
+    else if E = ex_string(_, _) then
+        string_lit(E) = sl_ok(S),
+        F = f_string(S)
+    else
+        E = ex_call(ex_name(Fn), [ex_string(Text, _)], _),
+        Fn ^ id_name = "json",
+        lgra_2_9_4_decode(string.to_char_list(Text)) = decoded(Chars),
+        F = f_json(string.from_char_list(Chars))
+    ).
+
+    % The `const` a name or a library member reads, and the scope its value is
+    % folded in, the declaring file's ([LIMP.1.5]).
+    %
+    %@helper
+:- pred const_read(resolved_file::in, lgra_9_3_1_expr::in, resolved_file::out,
+                   ast_const::out) is semidet.
+
+const_read(RF, E, Scope, Const) :-
+    ( if E = ex_name(Id) then
+        map.search(RF ^ rf_consts, Id ^ id_name, Const),
+        Scope = const_scope(RF, Const)
+    else
+        lgra_22_9_library_member(RF, E, Path, Member),
+        LibKey = string.join_list(".",
+            list.map((func(I) = I ^ id_name), Path)) ++ ";" ++ Member ^ id_name,
+        map.search(RF ^ rf_qualified_consts, LibKey, Const),
+        Scope = const_scope(RF, Const)
+    ).
+
+    %@helper
+:- pred const_value(ast_const::in, lgra_9_3_1_expr::out) is det.
+
+const_value(Const, Value) :-
+    Form = Const ^ acn_form,
+    (
+        Form = acf_value(_, Value)
+    ;
+        Form = acf_colon_literal(Value)
+    ).
+
+    % What a `const` holds, for every read of it: an `Int` under `: Float` holds
+    % the `Float`.
+    %
+    %@spec [LEXP.8.8.1]
+:- pred const_folded(resolved_file::in, ast_const::in, folded::out,
+                     fold_memo::in, fold_memo::out) is semidet.
+
+const_folded(Scope, Const, F, !Memo) :-
+    ( if map.search(!.Memo, Const, Entry) then
+        Entry = fe_done(F)
+    else
+        const_value(Const, Value),
+        map.det_insert(Const, fe_pending, !Memo),
+        ltsl_4_1_fold(Scope, Value, F0, !Memo),
+        ( if
+            Const ^ acn_form = acf_value(yes(Annotation), _),
+            Annotation ^ aan_type ^ id_name = "Float",
+            F0 = f_int(I)
+        then
+            F = f_float(int_to_float(I))
+        else
+            F = F0
+        ),
+        map.det_update(Const, fe_done(F), !Memo)
     ).
 
     %@helper
@@ -1048,10 +1277,11 @@ fold_unary(uo_bitnot, f_int(I), f_int(\ I)).
     % is its `to_base` body at `x = magnitude`, folded one operation at a time.
     %
     %@helper
-:- pred fold_unit_literal(resolved_file::in, int::in, bool::in, string::in,
-                          string::in, folded::out) is semidet.
+:- pred fold_unit_literal(resolved_file::in, bool::in, string::in, string::in,
+                          folded::out, fold_memo::in, fold_memo::out)
+    is semidet.
 
-fold_unit_literal(RF, Depth, Negated, Magnitude, Symbol, F) :-
+fold_unit_literal(RF, Negated, Magnitude, Symbol, F, !Memo) :-
     ( if
         (
             Negated = no,
@@ -1074,7 +1304,7 @@ fold_unit_literal(RF, Depth, Negated, Magnitude, Symbol, F) :-
         dsc.exact.from_decimal(string.replace_all(Magnitude, "_", ""), Exact),
         dsc.exact.to_float(Exact, X0),
         X = ( if Negated = yes then -X0 else X0 ),
-        ltsl_4_1_fold(RF, Depth, with_x(X, ToBase), F)
+        ltsl_4_1_fold(RF, with_x(X, ToBase), F, !Memo)
     ).
 
     % `dsc.validate` has checked the body's vocabulary, so these are the only
@@ -1096,22 +1326,349 @@ with_x(X, E) = R :-
         R = E
     ).
 
-    % The two casts between a `Duration` and an `Int`, as `dsc.rete` lowers them.
+    % A cast that converts, as `dsc.rete` lowers it and the engine evaluates it.
+    % A `Float` quantity cast to `Int` strips the unit and keeps its number
+    % ([LUNI.8.5]). A `String` is folded only as a literal ([LEXP.8.8]), so none
+    % parses here.
     %
     %@spec [LCST.4.5.2]
-:- pred lcst_4_5_2_folded_cast(resolved_file::in, string::in, folded::in,
-                               folded::out) is semidet.
+:- pred lcst_4_5_2_folded_cast(resolved_file::in, string::in,
+                               lgra_9_3_1_expr::in, folded::in, folded::out)
+    is semidet.
 
-lcst_4_5_2_folded_cast(RF, Target, F0, F) :-
+lcst_4_5_2_folded_cast(RF, Target, Operand, F0, F) :-
     ( if F0 = f_duration(R), Target = "Int" then
         F = f_int(dsc.exact.truncate_wrapping_int64(R))
+    else if
+        F0 = f_duration(_),
+        ( Target = "Duration"
+        ; luni_10_2_time_unit(Target, _)
+        ; map.search(RF ^ rf_types, Target, te_unit(uk_symbol(TargetDim), _)),
+          TargetDim = time_dimension
+        )
+    then
+        F = F0
+    else if F0 = f_duration(R), Target = "String" then
+        F = f_string(ltim_8_4_render_duration(
+            dsc.exact.truncate_wrapping_int64(R)))
+    else if F0 = f_time(Utc), Target = "String" then
+        F = f_string(render_iso8601(Utc, 0i64))
+    else if F0 = f_date(Days), Target = "String" then
+        ltim_1_2_2_date_in_range(Days),
+        F = f_string(ltim_8_2_1_render_date(Days))
+    else if F0 = f_int(I), Target = "String" then
+        F = f_string(bare_int(I))
+    else if F0 = f_float(X), Target = "String" then
+        F = f_string(bare_float(X))
+    else if F0 = f_bool(B), Target = "String" then
+        F = f_string(bare_bool(B))
+    else if F0 = f_int(I), Target = "Float" then
+        F = f_float(int_to_float(I))
+    else if F0 = f_float(X), Target = "Int" then
+        ( if
+            known_quantity(RF,
+                ( pred(_::in, _::out) is semidet :- fail ),
+                ( pred(_::in) is semidet :- fail ),
+                Operand, _, _)
+        then
+            F = F0
+        else
+            not float.is_inf(X),
+            integer.to_int64(dsc.exact.truncate_integer(exact(X)), I),
+            F = f_int(I)
+        )
     else
-        F0 = f_int(N),
-        ( luni_10_2_time_unit(Target, _)
-        ; map.search(RF ^ rf_types, Target, te_unit(uk_symbol(Dimension), _)),
-          Dimension = time_dimension
+        fail
+    ).
+
+    % A number asserted into a unit, the value `dsc.rete` lowers it to: one
+    % operation at a time, each rounded once ([LUNI.2.7.1]), and the time row's
+    % `FN_DURATION_MUL`, which does not fold past the range.
+    %
+    %@spec [RLOW.6.1.10]
+:- pred rlow_6_1_10_folded(resolved_file::in, rlow_6_1_10_assertion::in,
+                           folded::in, folded::out,
+                           fold_memo::in, fold_memo::out) is semidet.
+
+rlow_6_1_10_folded(_, asn_base, F, F, !Memo) :-
+    ( F = f_int(_)
+    ; F = f_float(_)
+    ).
+rlow_6_1_10_folded(_, asn_affine(Slope, Offset), f_float(X), F, !Memo) :-
+    ( if Slope = 1.0 then
+        Scaled = X
+    else
+        fold_float_binary(bo_mul, Slope, X, f_float(Scaled))
+    ),
+    ( if Offset = 0.0 then
+        F = f_float(Scaled)
+    else
+        fold_float_binary(bo_add, Scaled, Offset, F)
+    ).
+rlow_6_1_10_folded(RF, asn_tier2(ToBase), f_float(X), F, !Memo) :-
+    ltsl_4_1_fold(RF, with_x(X, ToBase), F, !Memo).
+rlow_6_1_10_folded(_, asn_int(P, R, Q, Time), f_int(N), F, !Memo) :-
+    rlow_7_3_9_mul_add_folded(N, P, integer.from_int64(R), Shifted),
+    ( if Q = 1i64 then
+        Whole = Shifted
+    else
+        % `FN_INT_DIV_EXACT`: a result that is not a whole number of base
+        % units raises when the lowering runs, and does not fold.
+        Shifted mod Q = 0i64,
+        Whole = Shifted div Q
+    ),
+    F = f_int(( if Time = yes, Whole < 0i64 then 0i64 else Whole )).
+rlow_6_1_10_folded(RF, asn_int_tier2(ToBase, Time), f_int(N), F, !Memo) :-
+    ltsl_4_1_fold(RF, with_x(int_to_float(N), ToBase), f_float(Y), !Memo),
+    fold_math_builtin("round", [f_float(Y)], f_int(Stored)),
+    F = f_int(( if Time = yes, Stored < 0i64 then 0i64 else Stored )).
+rlow_6_1_10_folded(_, asn_duration(Factor), f_int(N), F, !Memo) :-
+    rlow_6_1_6_checked_fold(dsc.exact.mul(dsc.exact.from_int64(N),
+        dsc.exact.from_int64(Factor)), F).
+
+    % `round`, `math.floor`, `math.ceil`, `math.trunc` and `math.sign` of a
+    % quantity, the value `dsc.rete.rlow_6_1_9_in_unit` lowers it to: out of the
+    % base unit and back, each operation rounded once, for a `float64`
+    % dimension; on integer storage, the rounding of the exact `(Q·x - R) / P`
+    % taken back as `n::<unit>` is for a tier-1 unit, and a tier-2 unit out
+    % through its `from_base` as a `Float`. A unit with no conversion to bake,
+    % and a result the lowering would raise on, do not fold.
+    %
+    %@spec [RLOW.6.1.9]
+:- pred rlow_6_1_9_folded(resolved_file::in, string::in, decl_ref::in,
+                          maybe(string)::in, folded::in, folded::out,
+                          fold_memo::in, fold_memo::out) is semidet.
+
+rlow_6_1_9_folded(RF, Fn, Dimension, Unit, F0, F, !Memo) :-
+    ( if whole_number_dimension(RF, Dimension) then
+        (
+            F0 = f_int(X)
+        ;
+            F0 = f_duration(R0),
+            X = dsc.exact.truncate_wrapping_int64(R0)
         ),
-        F = f_duration(rlow_6_1_6_saturated(dsc.exact.from_int64(N)))
+        ( if Unit = yes(Name) then
+            rlow_6_1_10_assertion_of(RF, Name, Asn)
+        else
+            Asn = asn_base
+        ),
+        (
+            Asn = asn_base,
+            ( if Fn = "math.sign" then
+                fold_math_builtin("math.sign", [f_int(X)], F)
+            else
+                F = F0
+            )
+        ;
+            Asn = asn_int(P, R, Q, _),
+            rlow_6_1_9_tier1_folded(RF, Fn, P, Q, R, X, Asn, F, !Memo)
+        ;
+            Asn = asn_duration(P),
+            rlow_6_1_9_tier1_folded(RF, Fn, P, 1i64, 0i64, X, Asn, F, !Memo)
+        ;
+            Asn = asn_int_tier2(_, _),
+            Unit = yes(TierName),
+            luni_4_3_tier2_from_base(RF, TierName, FromBase),
+            ltsl_4_1_fold(RF, with_x(int_to_float(X), FromBase), f_float(Y),
+                !Memo),
+            ( if Fn = "math.sign" then
+                fold_math_builtin("math.sign", [f_float(Y)], F)
+            else
+                fold_math_builtin(Fn, [f_float(Y)], f_int(I)),
+                rlow_6_1_10_folded(RF, Asn, f_int(I), F, !Memo)
+            )
+        )
+        % No arm for `asn_affine` or `asn_tier2`: `rlow_6_1_10_assertion_of`
+        % gives them on `float64` storage alone, so on integer storage the
+        % fold fails there.
+    else
+        F0 = f_float(X),
+        ( if Unit = yes(Name) then
+            rlow_7_3_9_conversion(RF, Dimension, Name, Conv),
+            fold_out_of_base(RF, Conv, X, Y, !Memo),
+            rlow_6_1_10_assertion_of(RF, Name, Back)
+        else
+            Y = X,
+            Back = asn_base
+        ),
+        ( if Fn = "math.sign" then
+            fold_math_builtin("math.sign", [f_float(Y)], F)
+        else
+            fold_math_builtin(Fn, [f_float(Y)], f_int(I)),
+            rlow_6_1_10_folded(RF, Back, f_float(int_to_float(I)), F, !Memo)
+        )
+    ).
+
+    % A tier-1 unit's rounding or sign on integer storage, as
+    % `dsc.rete.rlow_6_1_9_tier1` lowers it: the numerator `Q·x - R`, negated
+    % where `P` is negative, rounded over `|P|`, and the integer taken back by
+    % `Back`, the unit's own assertion.
+    %
+    %@spec [RLOW.6.1.9]
+:- pred rlow_6_1_9_tier1_folded(resolved_file::in, string::in, int64::in,
+                                int64::in, int64::in, int64::in,
+                                rlow_6_1_10_assertion::in, folded::out,
+                                fold_memo::in, fold_memo::out) is semidet.
+
+rlow_6_1_9_tier1_folded(RF, Fn, P, Q, R, X, Back, F, !Memo) :-
+    NegR = -integer.from_int64(R),
+    ( if Fn = "math.sign" then
+        rlow_7_3_9_mul_add_folded(X, Q, NegR, Numerator),
+        fold_math_builtin("math.sign", [f_int(Numerator)], f_int(S)),
+        F = f_int(( if P < 0i64 then -S else S ))
+    else
+        ( if P < 0i64 then
+            rlow_7_3_9_mul_add_folded(X, -Q, integer.from_int64(R), Signed),
+            Divisor = -P
+        else
+            rlow_7_3_9_mul_add_folded(X, Q, NegR, Signed),
+            Divisor = P
+        ),
+        rlow_6_1_10_folded(RF, Back, f_int(rounded_multiple(Fn, Signed,
+            Divisor)), F, !Memo)
+    ).
+
+    % `M·X + A` as `FN_INT_MUL_ADD_CHECKED` computes it: fails where the
+    % product, or then the sum, leaves the `Int` range, so a conversion that
+    % would raise does not fold ([RLOW.6.1.10], [LDET.3.3a.8]). `A` is exact,
+    % so the sum is checked against the range and never formed by a wrap.
+    %
+    %@spec [RLOW.7.3.9]
+:- pred rlow_7_3_9_mul_add_folded(int64::in, int64::in, integer::in,
+                                  int64::out) is semidet.
+
+rlow_7_3_9_mul_add_folded(X, M, A, S) :-
+    integer.to_int64(integer.from_int64(M) * integer.from_int64(X), Product),
+    integer.to_int64(integer.from_int64(Product) + A, S).
+
+    % A base-unit value in a unit, as `dsc.rete.rlow_7_3_9_converted` lowers it.
+    %
+    %@spec [RLOW.7.3.9]
+:- pred fold_out_of_base(resolved_file::in, rlow_7_3_9_conversion::in,
+                         float::in, float::out,
+                         fold_memo::in, fold_memo::out) is semidet.
+
+fold_out_of_base(_, cv_none, X, X, !Memo).
+fold_out_of_base(_, cv_affine(Offset, Slope), X, Y, !Memo) :-
+    ( if Offset = 0.0 then
+        Shifted = X
+    else
+        fold_float_binary(bo_sub, X, Offset, f_float(Shifted))
+    ),
+    ( if Slope = 1.0 then
+        Y = Shifted
+    else
+        fold_float_binary(bo_div, Shifted, Slope, f_float(Y))
+    ).
+fold_out_of_base(RF, cv_from_base(Body), X, Y, !Memo) :-
+    ltsl_4_1_fold(RF, with_x(X, Body), f_float(Y), !Memo).
+    % No clause for `cv_int` or `cv_int_from_base`: they are integer storage's,
+    % which `rlow_6_1_9_folded` takes through its own arm, so no `Float`
+    % reaches them.
+
+    % The multiple of `F` that rounding `X` in a unit of `F` base units picks:
+    % `X div F` and `X mod F` floor, as `//` and `%` do ([LEXP.7.5],
+    % [LEXP.7.6]), and `round` takes ties to the even multiple.
+    %
+    %@helper
+:- func rounded_multiple(string, int64, int64) = int64.
+
+rounded_multiple(Fn, X, F) = M :-
+    Q = X div F,
+    R = X mod F,
+    ( if Fn = "math.floor" then
+        M = Q
+    else if Fn = "math.ceil" then
+        M = ( if R > 0i64 then Q + 1i64 else Q )
+    else if Fn = "math.trunc" then
+        M = ( if X < 0i64, R > 0i64 then Q + 1i64 else Q )
+    else if R > F - R then
+        M = Q + 1i64
+    else if R < F - R then
+        M = Q
+    else
+        M = Q + Q mod 2i64
+    ).
+
+    % The unit a foldable quantity's static type names ([LUNI.8.9]), `no` for a
+    % value in its dimension's base unit: a literal's, a cast's target, and, for
+    % an operation, its left operand's when the left one has a dimension
+    % ([LUNI.8.1]). Fails where it cannot tell, and the call does not fold.
+    %
+    %@helper
+:- pred fold_unit_of(resolved_file::in, int::in, lgra_9_3_1_expr::in,
+                     decl_ref::out, maybe(string)::out) is semidet.
+
+fold_unit_of(RF, Depth, E, Dimension, Unit) :-
+    ( if quantity_literal(E, _, _, Suffix) then
+        luni_3_1_7_unit_of(RF, Suffix, Dimension, Canonical),
+        Unit = yes(Canonical ^ dr_name)
+    else if const_read(RF, E, Scope, Const) then
+        Depth > 0,
+        const_value(Const, Value),
+        fold_unit_of(Scope, Depth - 1, Value, Dimension, Unit)
+    else if E = ex_cast(_, Target, _, _) then
+        luni_3_1_7_unit_of(RF, Target ^ id_name, Dimension, Canonical),
+        Unit = yes(Canonical ^ dr_name)
+    else if E = ex_unary(_, Inner, _) then
+        fold_unit_of(RF, Depth, Inner, Dimension, Unit)
+    else if E = ex_binary(Op, L, R, _) then
+        ( if carries_unit(RF, Depth, L) then
+            not ( Op = bo_div, carries_unit(RF, Depth, R) ),
+            fold_unit_of(RF, Depth, L, Dimension, Unit)
+        else
+            Op = bo_mul,
+            fold_unit_of(RF, Depth, R, Dimension, Unit)
+        )
+    else
+        E = ex_call(ex_name(Fn), [Arg | _], _),
+        ( rounding_builtin(Fn ^ id_name)
+        ; Fn ^ id_name = "abs"
+        ; Fn ^ id_name = "min"
+        ; Fn ^ id_name = "max"
+        ),
+        fold_unit_of(RF, Depth, Arg, Dimension, Unit)
+    ).
+
+    % Whether a foldable expression has a dimension. The folder holds a bare
+    % number either way, and `::<unit>` keeps a quantity's value and converts a
+    % number's ([LUNI.8.5]). The quotient of two quantities is a number
+    % ([LUNI.8.1]). `Depth` stops a cycle of `const`s.
+    %
+    %@helper
+:- pred carries_unit(resolved_file::in, int::in, lgra_9_3_1_expr::in)
+    is semidet.
+
+carries_unit(RF, Depth, E) :-
+    (
+        E = ex_unit(_, _, _)
+    ;
+        Depth > 0,
+        const_read(RF, E, Scope, Const),
+        const_value(Const, Value),
+        carries_unit(Scope, Depth - 1, Value)
+    ;
+        E = ex_cast(_, Target, _, _),
+        luni_3_1_7_unit_of(RF, Target ^ id_name, _, _)
+    ;
+        E = ex_unary(_, Inner, _),
+        carries_unit(RF, Depth, Inner)
+    ;
+        E = ex_binary(Op, L, R, _),
+        ( if Op = bo_div then
+            ( if carries_unit(RF, Depth, L) then
+                not carries_unit(RF, Depth, R)
+            else
+                carries_unit(RF, Depth, R)
+            )
+        else
+            ( carries_unit(RF, Depth, L)
+            ; carries_unit(RF, Depth, R)
+            )
+        )
+    ;
+        E = ex_call(_, Args, _),
+        list.any_true(carries_unit(RF, Depth), Args)
     ).
 
     % A cast the runtime does not perform: the value is the stored number.
@@ -1120,7 +1677,7 @@ lcst_4_5_2_folded_cast(RF, Target, F0, F) :-
 :- pred identity_cast(resolved_file::in, string::in, folded::in) is semidet.
 
 identity_cast(RF, Target, F) :-
-    ( if map.search(RF ^ rf_types, Target, te_unit(_, _)) then
+    ( if luni_3_1_7_unit_of(RF, Target, _, _) then
         ( F = f_int(_)
         ; F = f_float(_)
         )
@@ -1146,15 +1703,15 @@ luni_7_2_storage_value(RF, Field, V0, V) :-
     ).
 
     %@helper
-:- pred fold_chain(resolved_file::in, int::in, folded::in,
-                   list(lgra_9_3_2_compare_step)::in, bool::in, bool::out)
-    is semidet.
+:- pred fold_chain(resolved_file::in, folded::in,
+                   list(lgra_9_3_2_compare_step)::in, bool::in, bool::out,
+                   fold_memo::in, fold_memo::out) is semidet.
 
-fold_chain(_, _, _, [], B, B).
-fold_chain(RF, Depth, Left, [Step | Steps], B0, B) :-
-    ltsl_4_1_fold(RF, Depth, Step ^ cs_right, Right),
+fold_chain(_, _, [], B, B, !Memo).
+fold_chain(RF, Left, [Step | Steps], B0, B, !Memo) :-
+    ltsl_4_1_fold(RF, Step ^ cs_right, Right, !Memo),
     fold_compare(Step ^ cs_op, Left, Right, Holds),
-    fold_chain(RF, Depth, Right, Steps, bool.and(B0, Holds), B).
+    fold_chain(RF, Right, Steps, bool.and(B0, Holds), B, !Memo).
 
     %@helper
 :- pred fold_binary(lgra_9_3_1_binary_op::in, folded::in, folded::in,
@@ -1165,28 +1722,45 @@ fold_binary(Op, FL, FR, F) :-
         fold_int_binary(Op, A, B, F)
     else if float_operand(FL, A), float_operand(FR, B) then
         fold_float_binary(Op, A, B, F)
+    else if ltim_4_1_fold_temporal(Op, FL, FR, F0) then
+        F = F0
+    else if FL = f_duration(D), FR = f_float(X) then
+        fold_float_scale(Op, whole_ns_float(D), X, F)
+    else if FL = f_float(X), FR = f_duration(D), Op = bo_mul then
+        fold_float_scale(Op, X, whole_ns_float(D), F)
     else if FL = f_duration(A), FR = f_duration(B) then
+        IA = dsc.exact.truncate_wrapping_int64(A),
+        IB = dsc.exact.truncate_wrapping_int64(B),
         (
             Op = bo_add,
-            F = f_duration(dsc.exact.add(A, B))
+            rlow_6_1_6_checked_fold(dsc.exact.add(A, B), F)
         ;
             Op = bo_sub,
-            F = f_duration(rlow_6_1_6_saturated(dsc.exact.sub(A, B)))
+            F = f_duration(rlow_6_1_6_saturated(wrapped_ns(dsc.exact.sub(A, B))))
+        ;
+            % As on two `Int`s ([RLOW.6.1.6]).
+            Op = bo_div,
+            fold_int_binary(bo_div, IA, IB, F)
+        ;
+            Op = bo_floordiv,
+            fold_int_binary(bo_floordiv, IA, IB, F)
+        ;
+            Op = bo_mod,
+            fold_int_binary(bo_mod, IA, IB, f_int(M)),
+            F = f_duration(dsc.exact.from_int64(M))
         )
     else if FL = f_duration(D), FR = f_int(N), Op = bo_mul then
-        F = f_duration(rlow_6_1_6_saturated(
-            dsc.exact.mul(D, dsc.exact.from_int64(N))))
+        rlow_6_1_6_checked_fold(dsc.exact.mul(D, dsc.exact.from_int64(N)), F)
     else if FL = f_int(N), FR = f_duration(D), Op = bo_mul then
-        F = f_duration(rlow_6_1_6_saturated(
-            dsc.exact.mul(dsc.exact.from_int64(N), D)))
-    else if FL = f_duration(D), FR = f_int(N), Op = bo_div then
+        rlow_6_1_6_checked_fold(dsc.exact.mul(dsc.exact.from_int64(N), D), F)
+    else if FL = f_duration(D), FR = f_int(N),
+        ( Op = bo_div ; Op = bo_floordiv )
+    then
         % As `dsc.rete` lowers it. A zero `n` traps and does not fold.
         N \= 0i64,
         dsc.exact.divide(D, dsc.exact.from_int64(N), Q),
         F = f_duration(rlow_6_1_6_saturated(
             dsc.exact.from_integer(dsc.exact.floor_integer(Q))))
-    else if FL = f_string(A), FR = f_string(B), Op = bo_add then
-        F = f_string(A ++ B)
     else
         FL = f_bool(A),
         FR = f_bool(B),
@@ -1198,6 +1772,117 @@ fold_binary(Op, FL, FR, F) :-
             F = f_bool(bool.or(A, B))
         )
     ).
+
+    % `FN_DURATION_ADD` and `FN_DURATION_MUL` as the engine evaluates them on
+    % `Duration` operands: a negative result is `0`, and one above 2^63 - 1 raises
+    % and does not fold ([LTIM.4.1.1]).
+    %
+    %@spec [RLOW.6.1.6]
+:- pred rlow_6_1_6_checked_fold(rational::in, folded::out) is semidet.
+
+rlow_6_1_6_checked_fold(R, F) :-
+    I = dsc.exact.floor_integer(R),
+    ( if I < integer.zero then
+        F = f_duration(dsc.exact.from_int64(0i64))
+    else
+        integer.to_int64(I, N),
+        F = f_duration(dsc.exact.from_int64(N))
+    ).
+
+    %@helper
+:- func whole_ns_float(rational) = float.
+
+whole_ns_float(R) = int_to_float(dsc.exact.truncate_wrapping_int64(R)).
+
+    % The `Float` operation over the nanoseconds, its result rounded ties to even
+    % to a whole `Duration` and saturated at zero. A non-finite result, or one
+    % outside `Int`, raises and does not fold ([LTIM.4.1.1]).
+    %
+    %@spec [RLOW.6.1.6]
+:- pred fold_float_scale(lgra_9_3_1_binary_op::in, float::in, float::in,
+                         folded::out) is semidet.
+
+fold_float_scale(Op, A, B, F) :-
+    ( Op = bo_mul ; Op = bo_div ; Op = bo_floordiv ),
+    fold_float_binary(Op, A, B, f_float(X)),
+    not float.is_inf(X),
+    integer.to_int64(round_half_even(exact(X)), N),
+    F = f_duration(rlow_6_1_6_saturated(dsc.exact.from_int64(N))).
+
+    % A `Duration` is an `Int` of nanoseconds, so its arithmetic wraps as `Int`
+    % arithmetic does ([LEXP.7.13.1]).
+    %
+    %@helper
+:- func wrapped_ns(rational) = rational.
+
+wrapped_ns(R) = dsc.exact.from_int64(dsc.exact.truncate_wrapping_int64(R)).
+
+    % `Time` and `Date` arithmetic, as the engine evaluates it: a result outside
+    % the type's range raises and does not fold ([LTIM.1.1.5], [LTIM.1.2.2]), and
+    % a `Date` moves only by whole days ([LTIM.4.2.2]). `Time - Time` and
+    % `Date - Date` are `Duration`s, and an earlier first operand is `0`
+    % ([RLOW.6.1.6], [LTIM.1.3.1]).
+    %
+    %@spec [LTIM.4.1]
+    %@spec [LTIM.4.2.3]
+:- pred ltim_4_1_fold_temporal(lgra_9_3_1_binary_op::in, folded::in, folded::in,
+                               folded::out) is semidet.
+
+ltim_4_1_fold_temporal(bo_add, f_time(T), f_duration(D), f_time(Sum)) :-
+    exact_int64(integer.from_int64(T) + whole_ns(D), Sum).
+ltim_4_1_fold_temporal(bo_add, f_duration(D), f_time(T), f_time(Sum)) :-
+    exact_int64(whole_ns(D) + integer.from_int64(T), Sum).
+ltim_4_1_fold_temporal(bo_sub, f_time(T), f_duration(D), f_time(Diff)) :-
+    exact_int64(integer.from_int64(T) - whole_ns(D), Diff).
+ltim_4_1_fold_temporal(bo_sub, f_time(A), f_time(B), f_duration(R)) :-
+    Exact = integer.from_int64(A) - integer.from_int64(B),
+    ( if exact_int64(Exact, Ns) then
+        R = rlow_6_1_6_saturated(dsc.exact.from_int64(Ns))
+    else
+        A < B,
+        R = dsc.exact.from_int64(0i64)
+    ).
+ltim_4_1_fold_temporal(bo_add, f_date(Days), f_duration(D), f_date(Shifted)) :-
+    ltim_4_2_3_shift(Days, D, 1i64, Shifted).
+ltim_4_1_fold_temporal(bo_sub, f_date(Days), f_duration(D), f_date(Shifted)) :-
+    ltim_4_2_3_shift(Days, D, -1i64, Shifted).
+ltim_4_1_fold_temporal(bo_sub, f_date(A), f_date(B), f_duration(R)) :-
+    ltim_1_2_2_date_in_range(A),
+    ltim_1_2_2_date_in_range(B),
+    ( if A =< B then
+        R = dsc.exact.from_int64(0i64)
+    else
+        exact_int64((integer.from_int64(A) - integer.from_int64(B))
+            * integer.from_int64(ns_per_day), Ns),
+        R = dsc.exact.from_int64(Ns)
+    ).
+
+    %@helper
+:- pred ltim_4_2_3_shift(int64::in, rational::in, int64::in, int64::out)
+    is semidet.
+
+ltim_4_2_3_shift(Days, D, Sign, Shifted) :-
+    integer.to_int64(whole_ns(D), Ns),
+    Ns rem ns_per_day = 0i64,
+    ltim_1_2_2_date_in_range(Days),
+    Shifted = Days + Sign * (Ns // ns_per_day),
+    ltim_1_2_2_date_in_range(Shifted).
+
+    %@helper
+:- func ns_per_day = int64.
+
+ns_per_day = 86400000000000i64.
+
+    %@helper
+:- func whole_ns(rational) = integer.
+
+whole_ns(R) = dsc.exact.truncate_integer(R).
+
+    %@helper
+:- pred exact_int64(integer::in, int64::out) is semidet.
+
+exact_int64(I, N) :-
+    integer.to_int64(I, N).
 
     % The value the lowering's `FN_MAX(<op>, 0)` gives.
     %
@@ -1548,6 +2233,10 @@ fold_compare(Op, L, R, Holds) :-
         compare(Order, A, B)
     else if L = f_bool(A), R = f_bool(B) then
         Order = bool_order(A, B)
+    else if L = f_time(A), R = f_time(B) then
+        compare(Order, A, B)
+    else if L = f_date(A), R = f_date(B) then
+        compare(Order, A, B)
     else
         L = f_duration(A),
         R = f_duration(B),
@@ -1646,6 +2335,8 @@ fold_math_builtin(Fn, Args, F) :-
     else if Fn = "abs", Args = [f_float(X)] then
         % Not `float.abs`, whose answer for a zero is a comparison's.
         F = f_float(( if dsc.exact.sign_bit(X) = yes then neg(X) else X ))
+    else if Fn = "abs", Args = [f_duration(R)] then
+        F = f_duration(R)
     else if Fn = "math.sign", Args = [f_int(I)] then
         F = f_int(( if I > 0i64 then 1i64 else if I < 0i64 then -1i64
             else 0i64 ))
@@ -1668,8 +2359,12 @@ fold_math_builtin(Fn, Args, F) :-
         Args = [A, B],
         ( if Fn = "min" then Op = co_le
         else Fn = "max", Op = co_ge ),
-        float_operand(A, _),
-        float_operand(B, _),
+        ( if A = f_duration(_), B = f_duration(_) then
+            true
+        else
+            float_operand(A, _),
+            float_operand(B, _)
+        ),
         fold_compare(Op, A, B, Holds),
         F = ( if Holds = yes then A else B )
     ).
@@ -1905,19 +2600,8 @@ round_half_even(R) = N :-
         N = Floor + integer.one
     ).
 
-    %@helper
-:- pred folded_of(test_value::in, folded::out) is semidet.
-
-folded_of(tv_int(I), f_int(I)).
-folded_of(tv_float(X), f_float(X)) :-
-    not float.is_nan(X).
-folded_of(tv_bool(B), f_bool(B)).
-folded_of(tv_string(S), f_string(S)).
-folded_of(tv_duration(Ns), f_duration(dsc.exact.from_int64(
-    int64.cast_from_uint64(Ns)))).
-
     % A `Duration` that is not a whole, non-negative number of nanoseconds does
-    % not fold.
+    % not fold. A test value has no form for a `Time`, a `Date` or `null`.
     %
     %@helper
 :- func folded_value(folded) = test_value is semidet.
@@ -1926,49 +2610,11 @@ folded_value(f_int(I)) = tv_int(I).
 folded_value(f_float(X)) = tv_float(X).
 folded_value(f_bool(B)) = tv_bool(B).
 folded_value(f_string(S)) = tv_string(S).
+folded_value(f_json(S)) = tv_json(S).
 folded_value(f_duration(R)) = tv_duration(uint64.cast_from_int64(I)) :-
     I = dsc.exact.truncate_wrapping_int64(R),
     R = dsc.exact.from_int64(I),
     I >= 0i64.
-
-    %@helper
-:- pred constant_leaf(resolved_file::in, int::in, lgra_9_3_1_expr::in,
-                      test_value::out) is semidet.
-
-constant_leaf(RF, Depth, E, V) :-
-    ( if E = ex_int(I, _) then
-        V = tv_int(I)
-    else if E = ex_unary(uo_neg, ex_int(I, _), _) then
-        V = tv_int(-I)
-    else if E = ex_float(F, _) then
-        V = tv_float(F)
-    else if E = ex_unary(uo_neg, ex_float(F, _), _) then
-        V = tv_float(neg(F))
-    else if E = ex_bool(B, _) then
-        V = tv_bool(B)
-    else if duration_literal_ns(E, Ns) then
-        V = tv_duration(Ns)
-    else if E = ex_string(_, _) then
-        string_lit(E) = sl_ok(S),
-        V = tv_string(S)
-    else if
-        E = ex_call(ex_name(Fn), [ex_string(Text, _)], _),
-        Fn ^ id_name = "json"
-    then
-        lgra_2_9_4_decode(string.to_char_list(Text)) = decoded(Chars),
-        V = tv_json(string.from_char_list(Chars))
-    else
-        E = ex_name(Id),
-        Depth > 0,
-        map.search(RF ^ rf_consts, Id ^ id_name, Const),
-        Form = Const ^ acn_form,
-        (
-            Form = acf_value(_, Value)
-        ;
-            Form = acf_colon_literal(Value)
-        ),
-        constant_within(const_scope(RF, Const), Depth - 1, Value, V)
-    ).
 
     %@helper
 :- pred string_literal_checked(lgra_9_3_1_expr::in, maybe(string)::out,
@@ -2071,7 +2717,7 @@ brace_escapes(Text) =
 
 duration_literal_ns(ex_unit(Magnitude, Suffix, _), Ns) :-
     luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier),
-    N = luni_3_1_5_magnitude_ns(Magnitude, Multiplier),
+    luni_3_1_5_magnitude_ns(Magnitude, Multiplier, N),
     N >= 0i64,
     Ns = uint64.cast_from_int64(N).
 

@@ -120,6 +120,8 @@ describe("pack.mjs: the DS tools package", () => {
             assert.ok(names.has(`package/${f}`), `package/${f}`);
         assert.ok(!names.has("package/test/pack.test.mjs"), "what `files` leaves out is not packed");
         for (const f of ["package/LICENSE", "package/THIRD_PARTY_NOTICES.md"]) assert.ok(names.has(f), f);
+        assert.ok(member(file, "package/README.md").equals(readFileSync(join(dsdb, "npm", "README.md"))),
+                  "npm builds the package's page from package/README.md: tools/dsdb/npm/README.md");
         const pkg = JSON.parse(member(file, "package/package.json").toString("utf8"));
         assert.equal(pkg.version, VERSION, "`ds --version` and `ds lsp`'s serverInfo read it");
         assert.deepEqual(pkg.dependencies, { "@ds-lang/ds": VERSION });
@@ -234,6 +236,9 @@ describe("pack.mjs --binding: @ds-lang/ds alone", () => {
         assert.equal(member(alone, "package/build/share/ds/stdlib/units/si.ds").toString(), "# si\n");
         for (const f of ["package/LICENSE", "package/THIRD_PARTY_NOTICES.md"])
             assert.ok(have.includes(f), `${f}: the package carries libds and the compiler, so their notices`);
+        assert.ok(member(alone, "package/README.md").equals(readFileSync(join(ROOT, "bindings", "js", "npm", "README.md"))),
+                  "npm builds the package's page from package/README.md: bindings/js/npm/README.md, "
+                  + "not the contributors' README beside package.json");
     });
 
     test("its manifest: stamped, publishable, and @emnapi/runtime bundled with what it depends on", () => {
@@ -241,6 +246,8 @@ describe("pack.mjs --binding: @ds-lang/ds alone", () => {
         const pkg = JSON.parse(member(file, "package/package.json").toString("utf8"));
         assert.equal(pkg.name, "@ds-lang/ds");
         assert.equal(pkg.version, VERSION);
+        assert.doesNotMatch(pkg.description, /native|Node-API/i,
+                            "npm shows the description above the README, and the package has no native target");
         assert.deepEqual(pkg.dependencies, { "@emnapi/runtime": "1.11.3" });
         assert.deepEqual(pkg.bundleDependencies, ["@emnapi/runtime"], "so npm installs it offline, and from the tarball");
         assert.ok(!("private" in pkg));

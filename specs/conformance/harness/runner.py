@@ -432,7 +432,7 @@ def run_test(t: ConformanceTest) -> Result:
     """
     unread = t.malformed is not None or bool(t.repeated_members)
     misplaced = None if unread else (
-        _splice_field_misplaced(t) or _tamper_misplaced(t)
+        _tamper_misplaced(t)
         or _timetag_offset_misplaced(t)
         or _replay_cache_cap_misplaced(t)
         or _runtime_error_fields_misplaced(t)
@@ -465,17 +465,6 @@ def run_test(t: ConformanceTest) -> Result:
     if why is None:
         return result
     return Result(t.id, "failed", why, result.artefacts)
-
-
-def _splice_field_misplaced(t: ConformanceTest) -> str | None:
-    """Why a fixture carrying `expect.splice_field` fails before it runs, or
-    None ([RCTS.1.2.20]): the field is `rfcs_roundtrip`'s alone, and on any
-    other kind nothing would read it."""
-    kind = t.expect.get("kind")
-    if "splice_field" in t.expect and kind != "rfcs_roundtrip":
-        return (f"expect.splice_field is `rfcs_roundtrip`'s alone ([RCTS.1.2.20]); "
-                f"this fixture's kind is `{kind}`")
-    return None
 
 
 def _timetag_offset_misplaced(t: ConformanceTest) -> str | None:
@@ -572,7 +561,7 @@ def _add_schema_ref_misplaced(t: ConformanceTest) -> str | None:
 
 
 # [RCTS.1.2.23]: the fields `rfcs_roundtrip` alone reads, beside
-# `expected_atoms`, `splice_field` and the two RCTS.1.2.10 names. Its
+# `expected_atoms` and the two RCTS.1.2.10 names. Its
 # `late_start` is `replay_refused`'s too ([RCTS.1.2.18]), so it is not here.
 _RECORDING_FIELDS = ("run_id", "tier_id", "expected_event_ids",
                      "expected_fact_ids", "expected_emits",
@@ -1309,6 +1298,12 @@ def _is_positive(v) -> bool:
     return _is_count(v) and v > 0
 
 
+def _is_number(v) -> bool:
+    """A JSON number: an `Int` when written with neither a fraction nor an
+    exponent, which `json` reads as `int`, and a `Float` otherwise."""
+    return _is_int(v) or isinstance(v, float)
+
+
 _SURFACES = {
     "fact_count": {"equals": _is_count},
     "justifiers": {"fact_id": _is_positive, "expect_rules": _is_str_list},
@@ -1317,7 +1312,50 @@ _SURFACES = {
     "slot_schema_ref": {"schema": lambda v: isinstance(v, str),
                         "slot": lambda v: isinstance(v, str),
                         "equals": lambda v: v is None or isinstance(v, str)},
+    "slot_conversion": {"schema": _is_str, "slot": _is_str,
+                        "direction": lambda v: v in ("to_stored", "from_stored"),
+                        "in": _is_number,
+                        "equals": lambda v: v is None or _is_number(v)},
 }
+
+
+def _same_number(got, want) -> bool:
+    """`got` is `want`, of its kind and with its bits: an `int` equal to it,
+    or a `float` whose IEEE-754 bits are its, so -0.0 is not 0.0."""
+    import struct
+    if type(got) is not type(want):
+        return False
+    if isinstance(want, float):
+        return struct.pack("<d", got) == struct.pack("<d", want)
+    return got == want
+
+
+def _slot_conversion_failure(eng, chk: dict) -> str | None:
+    """Why a `slot_conversion` check does not hold, or None ([RCTS.1.2.26]):
+    the slot's conversion in `direction`, through pyds's `slot_to_stored` or
+    `slot_from_stored` (libds's `ds_schema_slot_to_stored` and
+    `ds_schema_slot_from_stored`, [NFCT.1.4.6]), on `in`, gives `equals`, or,
+    when `equals` is null, is refused NOT_REPRESENTABLE. Any other refusal
+    fails the check: no such slot, a slot that names no unit, `in` of the
+    wrong kind, a NaN, or an EngineError. `test_behave.m`'s
+    `slot_conversion_failure` judges the Mercury runtime the same way."""
+    import pyds
+    convert = (eng.slot_to_stored if chk["direction"] == "to_stored"
+               else eng.slot_from_stored)
+    want = chk["equals"]
+    where = (f"slot_conversion {chk['schema']}.{chk['slot']} "
+             f"{chk['direction']}({chk['in']!r})")
+    try:
+        got = convert(chk["schema"], chk["slot"], chk["in"])
+    except pyds.Error as e:
+        if want is None and e.status is pyds.Status.NOT_REPRESENTABLE:
+            return None
+        return f"{where}: want {want!r}, refused {e.status!r}"
+    if want is None:
+        return f"{where}: want no result, got {got!r}"
+    if not _same_number(got, want):
+        return f"{where}: want {want!r}, got {got!r}"
+    return None
 
 
 def _introspection_refusal(expect: dict) -> str | None:
@@ -1347,32 +1385,6 @@ def _introspection_refusal(expect: dict) -> str | None:
         return (f"expect.add_schema_ref is not {{\"schema\", \"slot\", "
                 f"\"ref\"}} of three strings: {add_ref!r} ([RCTS.1.2.26])")
     return None
-
-
-def _splice_field(expect: dict) -> tuple[int | None, str | None]:
-    """The field number `rfcs_roundtrip` splices its unknown atom at, or why
-    the fixture's `expect.splice_field` is refused ([RCTS.1.2.20]).
-
-    Absent, it is `UNKNOWN_SKIP_FIELD`. Given, it must be an
-    integer in the skip band, 256 through 2047 ([RFCS.16.2]), that the
-    registry does not name: `AtomKind`, libds's registry, holds every field
-    of `Atom`'s `oneof body` and none of its `reserved` numbers, which are the
-    case the field exists for. A known number would be decoded as that atom
-    and not skipped, so the vector would test something other than
-    [RFCS.16.3]."""
-    from pyds import AtomKind
-
-    from future_atom import UNKNOWN_SKIP_FIELD
-    field = expect.get("splice_field", UNKNOWN_SKIP_FIELD)
-    if type(field) is not int:
-        return None, f"expect.splice_field is not an integer: {field!r} ([RCTS.1.2.20])"
-    if not 256 <= field <= 2047:
-        return None, (f"expect.splice_field {field} is outside the skip band, "
-                      f"256-2047 ([RCTS.1.2.20], [RFCS.16.2])")
-    if field in AtomKind:
-        return None, (f"expect.splice_field {field} is an atom the registry names, "
-                      f"which a reader decodes rather than skips ([RCTS.1.2.20])")
-    return field, None
 
 
 # [RCTS.1.2.17]: the kinds that observe every rule that fires, so whose
@@ -2783,7 +2795,7 @@ def _run_field_order(t: ConformanceTest) -> Result:
 PBF_VECTORS = CONFORMANCE_ROOT / "PBF_FRAMING_VECTORS.json"
 
 # The groups the corpus may contain. `_run_pbf_framing` fails on any other.
-_PBF_PY_GROUPS = frozenset({"encode", "decode", "band"})
+_PBF_PY_GROUPS = frozenset({"encode", "decode"})
 
 
 def _run_pbf_framing(t: ConformanceTest) -> Result:
@@ -2806,7 +2818,7 @@ def _run_pbf_framing(t: ConformanceTest) -> Result:
     """
     from pyds.proto import atom_pb2 as _atom
 
-    from pyds import AtomKind, atoms
+    from pyds import atoms
     from pyds._atom_registry import FIELD_BY_MESSAGE
 
     try:
@@ -2890,7 +2902,6 @@ def _run_pbf_framing(t: ConformanceTest) -> Result:
     divergences: dict[str, list[str]] = {
         "ds_weaker_truncation": [],   # protobuf refuses, DS reads on
         "ds_stricter": [],            # protobuf accepts, DS refuses
-        "unnameable_atom": [],        # protobuf keeps it, the band decides
     }
     if "decode" in want:
         for v in corpus["decode"]["vectors"]:
@@ -2934,53 +2945,22 @@ def _run_pbf_framing(t: ConformanceTest) -> Result:
                 divergences["ds_stricter"].append(name)
                 continue
 
-            # An atom whose number is not in the `Atom` oneof lands in protobuf's
-            # unknown-field set, where `WhichOneof` cannot name it; DS decides
-            # by the number's band ([RFCS.18.8]). A number for the atoms
-            # protobuf knows, `None` for the rest: a row where those disagree
-            # means the framing desynchronised.
+            # Every atom of an accepted row is one the `Atom` oneof names
+            # ([RFCS.16.1]), so protobuf must name each, in the vector's order:
+            # a row where they disagree means the framing desynchronised, or
+            # the row frames a number no atom has.
             got_fields = [
                 a.DESCRIPTOR.fields_by_name[w].number
                 if (w := a.WhichOneof("body")) else None
                 for a in parsed.atoms
             ]
-            protobuf_can_name = [
-                f if _pbf_field_name(_atom, f) is not None else None
-                for f in want_fields
-            ]
-            if got_fields != protobuf_can_name:
+            if got_fields != want_fields:
                 return Result(
                     t.id, "failed",
                     f"decode/{name}: protobuf reads atoms {got_fields}, "
-                    f"the vector says {want_fields} "
-                    f"(as far as protobuf can name them, "
-                    f"{protobuf_can_name})",
+                    f"the vector says {want_fields}",
                     artefacts={"vector": name})
-            if None in protobuf_can_name:
-                divergences["unnameable_atom"].append(name)
             checked += 1
-
-    if "band" in want:
-        for v in corpus["band"]["vectors"]:
-            field = v["field"]
-            if atoms.band(field) != v["band"]:
-                return Result(
-                    t.id, "failed",
-                    f"band/{field}: libds says {str(atoms.band(field))!r}, "
-                    f"the vector says {v['band']!r}")
-            in_registry = field in AtomKind
-            if in_registry != bool(v["known"]):
-                return Result(
-                    t.id, "failed",
-                    f"band/{field}: pyds's registry says known={in_registry}, "
-                    f"the vector says known={bool(v['known'])}")
-            if atoms.disposition(field) != v["disposition"]:
-                return Result(
-                    t.id, "failed",
-                    f"band/{field}: libds dispositions it "
-                    f"{str(atoms.disposition(field))!r}, the vector says "
-                    f"{v['disposition']!r}")
-            checked += 3
 
     if not checked:
         return Result(t.id, "failed",
@@ -2994,7 +2974,7 @@ def _run_pbf_framing(t: ConformanceTest) -> Result:
             return Result(
                 t.id, "failed",
                 f"no vector exercises {empty} any more. The corpus pins "
-                f"three ways DS and protobuf differ, and a reader built "
+                f"two ways DS and protobuf differ, and a reader built "
                 f"against only the agreeing rows is wrong in each of them",
                 artefacts={"divergences": divergences})
 
@@ -3061,17 +3041,16 @@ def _pbf_field_name(atom_module, number: int) -> str | None:
 
 def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
     """Record a live session with libds's own recorder
-    (`Engine.record`, `ds_rfcs_record_to`), splice an unknown atom into the
-    stream, read it back with libds's reader and replay it with libds's
-    replayer, and assert the stream-level invariants. This pins the
-    fact-stream FILE format (LFST/RFCS) as libds writes it;
-    `compiler/mercury/test/test_behave.m` checks the same vector against the
-    Mercury runtime's writer.
+    (`Engine.record`, `ds_rfcs_record_to`), read it back with libds's reader
+    and replay it with libds's replayer, and assert the stream-level
+    invariants. This pins the fact-stream FILE format (LFST/RFCS) as libds
+    writes it; `compiler/mercury/test/test_behave.m` checks the same vector
+    against the Mercury runtime's writer.
 
     Invariants checked: StreamHeader is the first atom [RFCS.4.1]; framing
-    is parseable end-to-end by libds's reader [RFCS.19.1]; an unknown
-    skip-band atom spliced into the stream is skipped by libds's replayer
-    without breaking the atoms after it [RFCS.16.3]; the header's `session_id`
+    is parseable end-to-end by libds's reader [RFCS.19.1]; every atom is one
+    the registry names [RFCS.16.1]; libds's replayer takes the recording and
+    verifies its header; the header's `session_id`
     and `ds_version` round-trip [LDET.1.10]; and the atoms the registry names,
     `Slot` included, in stream order, equal `expected_atoms`, each named by its
     body message. `test_behave` lists the same atoms.
@@ -3087,10 +3066,6 @@ def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
     `correlation` of each `CallIssued` atom the recording holds, in stream order,
     read straight off each atom's message through libds's reader. An absent
     correlation reads as "".
-
-    `splice_field` (optional, [RCTS.1.2.20]) is the field number of the
-    spliced unknown atom, 2000 when absent: a skip-band number the registry
-    does not name, such as a retired or deferred atom's (`_splice_field`).
 
     `expected_withdraw_causes` (optional, [RFCS.7a.2]) is the cause of
     every `FactWithdraw` in stream order, by its name in the proto's
@@ -3149,8 +3124,7 @@ def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
       "expected_atoms": ["StreamHeader", "SchemaDef", "Slot",
                          "ClockAdvance", "FactAssert"],
       "expected_first_seq": 0,
-      "expected_call_correlations": ["$r_c0_g0"],
-      "splice_field": 260
+      "expected_call_correlations": ["$r_c0_g0"]
     }
     ```"""
     import tempfile
@@ -3159,9 +3133,6 @@ def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
     from pyds import AtomKind, atoms
 
     expect = t.expect
-    splice_field, refused = _splice_field(expect)
-    if refused is not None or splice_field is None:
-        return Result(t.id, "failed", refused or "expect.splice_field refused")
     refused = _recording_fields_refusal(expect)
     if refused is not None:
         return Result(t.id, "failed", refused)
@@ -3270,21 +3241,16 @@ def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
                     f"[RFCS.6.5]: a FactAssert of {name!r} at byte "
                     f"{a.offset} precedes its SchemaDef")
 
-    # Splice an unknown skip-band atom (`splice_field`, [RCTS.1.2.20]) into
-    # libds's own bytes, right after the StreamHeader, to exercise
-    # skip-unknown [RFCS.16.3] without disturbing the rest of the stream. The
-    # bytes either side are libds's, not re-framed.
-    from future_atom import frame_future_atom
-    cut = next(atoms.iter_atoms(as_recorded)).end
-    spliced = (as_recorded[:cut]
-               + frame_future_atom(splice_field, b"future-atom-body")
-               + as_recorded[cut:])
-    fields = [int(a.kind) for a in atoms.iter_atoms(spliced)]
-    if fields[1:2] != [splice_field]:
+    # Every atom of the recording is one its series' registry names
+    # ([LDET.1.10], [RFCS.16.1]), so a field number no AtomKind names is libds
+    # writing what no reader of its series reads.
+    unnamed = [a.kind for a in recorded if not isinstance(a.kind, AtomKind)]
+    if unnamed:
         return Result(t.id, "failed",
-            f"the spliced atom is not the second atom libds reads: {fields}")
+            f"libds recorded atom(s) at field number(s) {unnamed}, which its "
+            f"own registry does not name ([RFCS.16.1])")
 
-    # libds's replayer must skip the unknown atom and reproduce the run. Not on
+    # libds's replayer must reproduce the run from libds's own bytes. Not on
     # the mock clocks: the recording carries its first clock sample
     # ([LTIM.2.8.5]). No effect callback ([NDET.8.2]). Not after a `late_start`:
     # that recording begins part-way through the run, which a replayer refuses
@@ -3293,22 +3259,17 @@ def _run_rfcs_roundtrip(t: ConformanceTest) -> Result:
     reader.load_dsc(dsc)
     if not late:
         try:
-            res = reader.replay(spliced)
+            res = reader.replay(as_recorded)
         except pyds.Error as e:
             return Result(t.id, "failed",
-                f"[RFCS.16.3]: libds's replayer refused the stream with the "
-                f"unknown atom field {splice_field} "
-                f"({atoms.band(splice_field)} band) spliced in: {e}")
+                f"libds's replayer refused libds's own recording: {e}")
         if not res.header_verified:
             return Result(t.id, "failed",
                 "libds's replayer did not verify the stream header against "
                 "the loaded artefact")
 
-    # Every atom the registry names, by its body message; the spliced future
-    # atom is a plain field number, which no AtomKind names, so it drops out
-    # here exactly as a reader skips it ([RFCS.16.3]).
-    got_atoms = [a.kind.message for a in atoms.iter_atoms(spliced)
-                 if isinstance(a.kind, AtomKind)]
+    # Every atom, by its body message.
+    got_atoms = [a.kind.message for a in recorded]
     want_atoms = expect.get("expected_atoms")
     if want_atoms is not None and got_atoms != want_atoms:
         return Result(t.id, "failed",
@@ -3896,6 +3857,10 @@ def _run_logical_test(t: ConformanceTest) -> Result:
         #    "equals": null}
         #       — the schema the loaded slot S.n names as its reference, or
         #         null for none ([RDSC.5.5.5], [NFCT.1.4.1]).
+        #   {"surface": "slot_conversion", "schema": "S", "slot": "t",
+        #    "direction": "to_stored", "in": 21.5, "equals": 294.65}
+        #       — the slot's unit conversion on `in` gives `equals`, or none
+        #         when it is null (`_slot_conversion_failure`, [RDSC.5.5.9]).
         for chk in expect.get("checks", []):
             surface = chk.get("surface")
             if surface == "fact_count":
@@ -3945,6 +3910,10 @@ def _run_logical_test(t: ConformanceTest) -> Result:
                         f"slot_schema_ref {chk['schema']}.{chk['slot']}: want "
                         f"{chk['equals']!r}, got {slot.schema_ref!r}",
                         artefacts=artefacts)
+            elif surface == "slot_conversion":
+                why = _slot_conversion_failure(eng, chk)
+                if why is not None:
+                    return Result(t.id, "failed", why, artefacts=artefacts)
             else:
                 return Result(t.id, "failed",
                     f"introspection check has unknown/missing surface: {chk!r}",

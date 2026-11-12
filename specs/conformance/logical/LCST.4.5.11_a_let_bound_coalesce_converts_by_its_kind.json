@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.5.11_a_let_bound_coalesce_converts_by_its_kind",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11] with [LLET.3.5]: a pure `let` bound to `x ?? d`, with `x` a `Json` leaf, is that value, so a cast of the name converts by the kind the leaf holds. Rule `convert` binds `let v = d.body.c ?? 0` on its right-hand side and emits `Hit` with `c: v::Float? ?? -1.0`; the leaf holds the Float `31.5`, so `c` is 31.5. Rule `seen` logs `Hit`'s `c`: exactly [\"31.5\"]. A compiler that converted by the default's `Int` row halts the tier on the Float, and `seen` logs nothing. PATH PINNED: `dsc.typecheck.lcst_4_5_11_source`'s `let` arm, through the scope's `rsc_let_exprs`, and `dsc.rete.lcst_4_5_11_dispatch`'s `is_float` arm in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nschema Hit scope logical:\n    id: String key\n    c: Float mutable\n\nrule convert:\n    Doc d\n->\n    let v = d.body.c ?? 0\n    emit Hit logical id: \"h\" c: v::Float? ?? -1.0\n\nrule seen:\n    Hit h\n->\n    log info \"{h.c}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "f", "body": { "c": 31.5 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["31.5"]
+    }
+}

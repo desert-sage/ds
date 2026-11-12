@@ -359,8 +359,9 @@ The cause of an `engine_error`, the C mirror of `proto/engine_fault.proto`'s `En
 | `DS_ENGINE_FAULT_ORDER_KEY` | two activations held one agenda order key |
 | `DS_ENGINE_FAULT_ALLOCATION` | an allocation failed, with no declared cap as the limit |
 | `DS_ENGINE_FAULT_PUMP_WCET` | a pump overran its time bound |
+| `DS_ENGINE_FAULT_INTERNAL` | libds found its own invariant broken, leaving engine state untrustworthy |
 
-*(libds.h: ds_engine_fault_t, proto: engine_fault.proto, Spec: [NCBK.2.10], [RARC.5.3.3], [RARC.5.6.11], [RARC.5.4.9], [RDSC.4a.9.1])*
+*(libds.h: ds_engine_fault_t, proto: engine_fault.proto, Spec: [NCBK.2.10], [RARC.5.3.3], [RARC.5.6.11], [RARC.5.4.9], [RDSC.4a.9.1], [IERR.1.7])*
 
 ### `ds_cap_name_t`
 

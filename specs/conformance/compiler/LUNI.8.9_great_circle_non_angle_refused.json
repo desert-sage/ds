@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.9_great_circle_non_angle_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.9]: `distance.great_circle` admits an `angle` argument ([LEXP.5.11.1]) and no other dimensioned one, so a `meter` latitude is DS_VALIDATE_DIM_MISMATCH. logical/LEXP.5.11.1_angle_argument_converts is the admitted `angle`. PATH PINNED: `dsc.typecheck.luni_8_9_dimensioned_arguments`, ahead of `lexp_5_3_plain_call`'s `meter`-typed `great_circle` arm.",
+    "rules_ds": "import distance\n\nschema S scope logical:\n    id: String key\n    d: meter mutable\n\nrule r:\n    S s where distance.great_circle(s.d, 0.0, 0.0, 0.0) > 1_meter\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

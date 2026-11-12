@@ -1937,6 +1937,93 @@ static napi_value f_schema_at(napi_env env, napi_callback_info info) {
     return schema_to_js(env, s);
 }
 
+/* NFCT.1.4.6: slotConvert(engine, schema, slot, value, toStored), a number
+   through a slot's unit conversion. A name the engine has no schema or slot by
+   is DS_ERR_SCHEMA_UNKNOWN or DS_ERR_SLOT_UNKNOWN, as an assert's is. A value
+   is taken as a slot's is: an Int as a BigInt or a safe integer Number, a
+   Float as a Number. A value that is neither for the slot reaches libds with
+   the kind it has, a Bool as one and a Number that is no Int as a Float, and
+   libds refuses it by kind. An Int comes back as a BigInt, a Float as a
+   Number. */
+static napi_value f_slot_convert(napi_env env, napi_callback_info info) {
+    ARGS(5);
+    ENGINE_ARG;
+    bool to_stored = false;
+    if (napi_get_value_bool(env, argv[4], &to_stored) != napi_ok)
+        return throw_type(env, "slotConvert: want a boolean direction");
+    char *schema_name = get_string(env, argv[1]);
+    if (schema_name == NULL)
+        return throw_type(env, "slotConvert: want a schema name");
+    const ds_schema_t *s = NULL;
+    ds_result_t r = ds_engine_schema_find(je->e, schema_name, &s);
+    free(schema_name);
+    if (r.status != DS_OK)
+        return throw_ds(env, r);
+    if (s == NULL)
+        return throw_status(env, DS_ERR_SCHEMA_UNKNOWN,
+                            "the engine has no schema of that name");
+    char *slot_name = get_string(env, argv[2]);
+    if (slot_name == NULL)
+        return throw_type(env, "slotConvert: want a slot name");
+    uint32_t n = 0, index = 0;
+    ds_slot_desc_t d;
+    memset(&d, 0, sizeof d);
+    r = ds_schema_get_slot_count(s, &n);
+    for (index = 0; r.status == DS_OK && index < n; index++) {
+        r = ds_schema_get_slot(s, index, &d);
+        if (r.status == DS_OK && d.name != NULL && strcmp(d.name, slot_name) == 0)
+            break;
+    }
+    free(slot_name);
+    if (r.status != DS_OK)
+        return throw_ds(env, r);
+    if (index == n)
+        return throw_status(env, DS_ERR_SLOT_UNKNOWN,
+                            "the schema has no slot of that name");
+
+    ds_slot_value_t in;
+    memset(&in, 0, sizeof in);
+    napi_valuetype vt;
+    napi_typeof(env, argv[3], &vt);
+    if (vt == napi_bigint) {
+        bool lossless = false;
+        in.kind = DS_SLOT_INT;
+        napi_get_value_bigint_int64(env, argv[3], &in.v.i, &lossless);
+        if (!lossless)
+            return throw_status(env, DS_ERR_SLOT_TYPE_MISMATCH,
+                                "a BigInt outside int64");
+    } else if (vt == napi_number) {
+        double x = 0;
+        napi_get_value_double(env, argv[3], &x);
+        /* Number.isSafeInteger, exactly, as js_to_slot. */
+        if (d.type != DS_SLOT_TYPE_FLOAT && isfinite(x) && x == trunc(x)
+            && fabs(x) <= 9007199254740991.0) {
+            in.kind = DS_SLOT_INT;
+            in.v.i = (int64_t) x;
+        } else {
+            in.kind = DS_SLOT_FLOAT;
+            in.v.f = x;
+        }
+    } else if (vt == napi_boolean) {
+        in.kind = DS_SLOT_BOOL;
+        napi_get_value_bool(env, argv[3], &in.v.b);
+    } else {
+        return throw_type(env, "slotConvert: want a BigInt or a Number");
+    }
+
+    ds_slot_value_t out;
+    r = to_stored ? ds_schema_slot_to_stored(s, index, &in, &out)
+                  : ds_schema_slot_from_stored(s, index, &in, &out);
+    if (r.status != DS_OK)
+        return throw_ds(env, r);
+    napi_value v;
+    if (out.kind == DS_SLOT_FLOAT)
+        napi_create_double(env, out.v.f, &v);
+    else
+        napi_create_bigint_int64(env, out.v.i, &v);
+    return v;
+}
+
 /* NCBK.10.4: a FactExternal another engine handed out, asserted here. libds
    resolves its references and refuses the whole record, asserting nothing;
    it returns no fact. */
@@ -2255,6 +2342,22 @@ static napi_value f_clock_now(napi_env env, napi_callback_info info) {
         return throw_ds(env, r);
     napi_value out;
     napi_create_bigint_uint64(env, ns, &out);
+    return out;
+}
+
+static napi_value f_clock_next_deadline(napi_env env, napi_callback_info info) {
+    ARGS(1);
+    ENGINE_ARG;
+    uint64_t ns = 0;
+    bool has = false;
+    ds_result_t r = ds_engine_next_deadline_ns(je->e, &ns, &has);
+    if (r.status != DS_OK)
+        return throw_ds(env, r);
+    napi_value out;
+    if (has)
+        napi_create_bigint_uint64(env, ns, &out);
+    else
+        napi_get_null(env, &out);
     return out;
 }
 
@@ -3415,6 +3518,7 @@ NAPI_MODULE_INIT() {
         FN("loadDsc", f_load_dsc),
         FN("schemaCount", f_schema_count),
         FN("schemaAt", f_schema_at),
+        FN("slotConvert", f_slot_convert),
         FN("assert", f_assert),
         FN("assertExternal", f_assert_external),
         FN("applyExternalAssert", f_apply_external_assert),
@@ -3432,6 +3536,7 @@ NAPI_MODULE_INIT() {
         FN("clockSetMode", f_clock_set_mode),
         FN("wallClockSet", f_wall_clock_set),
         FN("clockNow", f_clock_now),
+        FN("clockNextDeadline", f_clock_next_deadline),
         FN("clockSet", f_clock_set),
         FN("clockAdvance", f_clock_advance),
         FN("platformSignature", f_platform_signature),

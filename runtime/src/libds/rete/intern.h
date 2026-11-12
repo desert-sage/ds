@@ -71,10 +71,20 @@ void ds_rete_intern_acquire_ptr(ds_rete_intern_t *intern,
                                  size_t            len);
 
 /* Once per String/Bytes slot at fact retract. A no-op on a pinned entry or a pointer
-   not found; a release below 0 trips an assertion. */
+   not found. A release past zero changes nothing and calls the fault hook. */
 void ds_rete_intern_release(ds_rete_intern_t *intern,
                              const char       *ptr,
                              size_t            len);
+
+/* [IERR.1.7]: called from inside a release that would pass zero, so the work stops
+   where it is found. */
+typedef void (*ds_rete_intern_fault_fn)(void *ctx);
+
+void ds_rete_intern_set_fault_hook(ds_rete_intern_t *intern,
+                                   ds_rete_intern_fault_fn fn, void *ctx);
+
+/* [IERR.1.7]: from here on a release past zero calls no hook. */
+void ds_rete_intern_begin_teardown(ds_rete_intern_t *intern);
 
 /* Stays flat under dynamic-value churn: a value mis-routed to pinned would grow it. */
 size_t ds_rete_intern_pinned_count(const ds_rete_intern_t *intern);
@@ -82,7 +92,8 @@ size_t ds_rete_intern_pinned_count(const ds_rete_intern_t *intern);
 /* Flat under churn: a steady assert/retract cycle recycles through the freelist. */
 size_t ds_rete_intern_counted_mallocs(const ds_rete_intern_t *intern);
 
-/* After this, a PINNED insert of a new string trips an assertion. Idempotent. */
+/* After this, a PINNED insert of a new string is DS_ERR_INTERNAL ([IERR.1.7]).
+   Idempotent. */
 void ds_rete_intern_freeze(ds_rete_intern_t *intern);
 
 /* Pre-grows to at least cap buckets. Call before ds_rete_intern_lock. */

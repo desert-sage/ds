@@ -602,6 +602,42 @@ static int test_regex_match_null_subject(void)
     return rc;
 }
 
+/* @spec [LNUL.8.4]: a path read whose root is `null`, a `Json?` slot holding
+   none, is `null` and no fault, through the builtin a slot read lowers to and
+   through the expression node alike. A path that is not a String is still the
+   mismatch. Mercury's test_ds checks the same answers. */
+static int test_json_path_null_root(void)
+{
+    ds_rete_engine_t *e = make_engine();
+    int rc = 0;
+
+    ds_rete_expr_t *a[2] = {
+        ds_rete_expr_alloc(DS_RETE_EXPR_LIT_NULL), lit_str(e, "c"),
+    };
+    ds_rete_val_t v = eval1(e, call_expr(e, DS_FN_JSON_PATH, a, 2));
+    if (g_eval1_faulted || v.kind != DS_RETE_VAL_NULL)
+        rc = fail("json-path null root: the builtin reads null");
+
+    ds_rete_eval_ctx_t ctx = { .engine = e };
+    ds_rete_expr_t *expr = ds_rete_expr_alloc(DS_RETE_EXPR_JSON_PATH);
+    expr->json_path.val  = ds_rete_expr_alloc(DS_RETE_EXPR_LIT_NULL);
+    expr->json_path.path = lit_str(e, "c");
+    v = ds_rete_eval(&ctx, expr);
+    ds_rete_expr_free_tree(expr);
+    if (rc == 0 && (ctx.faulted || v.kind != DS_RETE_VAL_NULL))
+        rc = fail("json-path null root: the expression node reads null");
+
+    ds_rete_expr_t *b[2] = {
+        ds_rete_expr_alloc(DS_RETE_EXPR_LIT_NULL), lit_int(1),
+    };
+    (void)eval1(e, call_expr(e, DS_FN_JSON_PATH, b, 2));
+    if (rc == 0 && !g_eval1_faulted)
+        rc = fail("json-path null root: a non-String path is still a mismatch");
+
+    ds_rete_engine_destroy(e);
+    return rc;
+}
+
 /* [LREG.4.1]'s captures. These build the engine by hand, so
    engine->regex_cache is NULL and the builtin compiles per call. A loaded
    artefact takes the precompiled path, whose walk (regex_walk_expr) visits
@@ -1149,6 +1185,7 @@ int main(void)
     RUN(test_now);
     RUN(test_json_path);
     RUN(test_json_path_expr_node);
+    RUN(test_json_path_null_root);
     RUN(test_json_path_composite);
     RUN(test_retired_ops_have_no_handler);
     RUN_RE2(test_regex_match_flags);

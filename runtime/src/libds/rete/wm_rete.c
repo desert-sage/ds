@@ -592,6 +592,25 @@ static void wm_remove(ds_rete_engine_t *e, ds_rete_fact_t *f)
 
 /* ---- No-op reassertion dedup -------------------------------------- */
 
+/* [LFAC.2.5.1]: |a - b| <= tol, exactly. The difference is taken unsigned, so it
+   cannot overflow, and a whole number is within `tol` iff it is within `tol`'s
+   floor. A `tol` of 2^64 or more, an infinity included, holds every difference.
+   The floor is taken by a conversion to int64_t, in range below 2^63; a `tol` in
+   [2^63, 2^64) is 2^63 plus `tol - 2^63`, which is exact, so no double is
+   converted to an unsigned type. Mercury: ds.fact.lfac_2_5_1_int_within. */
+static bool int_within(int64_t a, int64_t b, double tol)
+{
+    uint64_t diff = a >= b ? (uint64_t)a - (uint64_t)b
+                           : (uint64_t)b - (uint64_t)a;
+    if (!(tol < 18446744073709551616.0)) return true;
+    if (tol >= 9223372036854775808.0) {
+        if (diff < UINT64_C(9223372036854775808)) return true;
+        return diff - UINT64_C(9223372036854775808)
+               <= (uint64_t)(int64_t)(tol - 9223372036854775808.0);
+    }
+    return diff <= (uint64_t)(int64_t)tol;
+}
+
 /* Under each slot's tolerance (IRET.3.4). An engine slot such as `ts` is not
    compared (LFAC.9.1, LFAC.2.5.1): the live fact keeps the `ts` it entered
    with. Mercury: ds.wm.slot_tests. */
@@ -618,9 +637,7 @@ static bool slots_equal(const ds_rete_schema_t *schema,
         /* [LFAC.2.5.1]: equal iff |delta| <= tolerance, the bound included. */
         case DS_RETE_VAL_INT:
             if (d->tolerance > 0.0) {
-                double diff = (double)(a[i].i - b[i].i);
-                if (diff < 0) diff = -diff;
-                if (diff > d->tolerance) return false;
+                if (!int_within(a[i].i, b[i].i, d->tolerance)) return false;
             } else if (a[i].i != b[i].i) return false;
             break;
         case DS_RETE_VAL_FLOAT:
@@ -1039,7 +1056,7 @@ bool ds_rete_deadline_in_range(const ds_rete_engine_t *engine,
     else if (schema->scope == DS_RETE_SCOPE_TTL && schema->default_ttl_ns > 0)
         window = schema->default_ttl_ns;
     if (window <= 0) return true;
-    return now_ns >= 0 && window <= INT64_MAX - now_ns;
+    return window <= INT64_MAX - now_ns;
 }
 
 ds_result_t ds_rete_wm_assert_ex(ds_rete_engine_t    *engine,
@@ -1296,6 +1313,43 @@ ds_result_t ds_rete_wm_retract(ds_rete_engine_t *engine,
 size_t ds_rete_wm_count(const ds_rete_engine_t *engine)
 {
     return engine ? oa_len(&engine->wm_map) : 0;
+}
+
+/* `at`, when it is later than `now_ns` and earlier than the best so far. */
+static void note_deadline(uint64_t at, uint64_t now_ns,
+                          uint64_t *io_best, bool *io_has)
+{
+    if (at <= now_ns) return;
+    if (!*io_has || at < *io_best) {
+        *io_best = at;
+        *io_has  = true;
+    }
+}
+
+/* [NLFC.2.5]. A scan: nothing holds a timer's `fire_at`, and a facts' queue head
+   may be at or before `now_ns` with a later deadline behind it. */
+void ds_rete_wm_next_deadline(const ds_rete_engine_t *engine, uint64_t now_ns,
+                              uint64_t *io_best, bool *io_has)
+{
+    if (engine == NULL) return;
+    uint32_t n = oa_len(&engine->wm_map);
+    for (uint32_t i = 0; i < n; i++) {
+        ds_rete_fact_t *const *vp =
+            (ds_rete_fact_t *const *) ds_oa_val_at(&engine->wm_map, i);
+        if (vp == NULL || *vp == NULL) continue;
+        const ds_rete_fact_t *f = *vp;
+        if (f->deadline_ns > 0)
+            note_deadline((uint64_t) f->deadline_ns, now_ns, io_best, io_has);
+        /* [LTAC.3.2]: `fire_at` is a timer schema's first slot. */
+        if (f->schema != NULL && f->schema->name != NULL
+                && f->schema->slot_count > 0
+                && strncmp(f->schema->name, DS_RETE_TIMER_PREFIX,
+                           DS_RETE_TIMER_PREFIX_LEN) == 0
+                && f->slots[0].kind == DS_RETE_VAL_INT
+                && f->slots[0].i > 0) {
+            note_deadline((uint64_t) f->slots[0].i, now_ns, io_best, io_has);
+        }
+    }
 }
 
 ds_rete_fact_t *ds_rete_wm_find_by_id(const ds_rete_engine_t *engine,

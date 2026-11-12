@@ -42,7 +42,8 @@ typedef struct ds_series_state_row {
     uint32_t  cap_ts_cap;
 
     /* [LNUL.8.6] `nulls: hold`: the last value absorbed, whether or not the
-       window still holds it. A STRING is copied into row-owned `held_str`. */
+       window still holds it, and across an eviction. A STRING is copied into
+       row-owned `held_str`. */
     ds_slot_value_t last_value;
     char    *held_str;
     bool     has_last_value;
@@ -110,9 +111,11 @@ ds_result_t ds_series_state_registry_grow_slots(
     ds_series_state_registry_t *reg,
     size_t                      new_slot_count);
 
-/* [LSER.9.3]. Two passes per row: evict_stale on each populated backend; then
-   instance_free on a silent ring, monotonic or FIFO row, whose next absorb
-   cold-starts. */
+/* [LSER.9.3]. Two passes per row: evict_stale on each populated backend; then,
+   once the row's own window has passed with no sample, instance_free on every
+   backing of a row that holds samples alone (ring but Bool, monotonic, FIFO),
+   whose next absorb cold-starts. A row holding signal state ([LSER.9.3.1]: an
+   interval pulse, a numeric integral, a Bool ring) is never freed. */
 void ds_series_state_evict_stale(struct ds_engine *engine,
                                   uint64_t          now_ns);
 

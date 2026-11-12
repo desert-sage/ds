@@ -174,9 +174,8 @@ iret_11_4__pump_inv p pos ct dom litsIn (S fuel) (MkTms (MkState wm tables) rows
 --@derives [RARC.5.6.6]
 ||| THE AGENDA EMPTIES. For a positive program certified as [LCYC.3.1.1]
 ||| admits it, from an invariant state some fuel makes the pump halt on
-||| an empty agenda -- the clause's first disjunct, which the abstract
-||| loop of ConsumptionLoop.idr could not state -- and the invariant holds
-||| there.
+||| an empty agenda -- the clause's first disjunct -- and the invariant
+||| holds there.
 export
 rarc_5_6_6__pump_quiesces : (p : Lcyc_3_2_1__program) -> Iret_7_9__positive p -> (ct : Lcyc_3_1_1__certified_tms p) -> (dom : List (Nat, Nat)) ->
                             ((x : (Nat, Nat)) -> Elem x (tmsLits ct) -> Elem x dom) ->

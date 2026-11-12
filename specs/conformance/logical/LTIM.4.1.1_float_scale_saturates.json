@@ -1,0 +1,14 @@
+{
+    "id": "LTIM.4.1.1_float_scale_saturates",
+    "category": "logical",
+    "scenario": "[LTIM.4.1.1]: a `Duration`-valued row whose exact result is negative yields `0_s`, so `t.d * -1.5` on a 5 s slot is `0_s`. Pin: the rule logs. A lowering with no `FN_MAX` compares -7500000000 with 0 and the rule does not fire. PATH PINNED: `dsc.rete.rlow_6_1_6_saturate` over the `sat_rounded` row, on each runtime.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule saturated:\n    Trig t where t.d * -1.5 == 0_s\n->\n    log info \"saturated\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1, "d": 5000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["saturated"]
+    }
+}

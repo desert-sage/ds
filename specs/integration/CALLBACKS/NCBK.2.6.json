@@ -30,8 +30,10 @@
       },
       {
         "path": "formal/alloy/firing_event_frame.als",
-        "name": "ncbk_2_6__end_is_last",
-        "tag": "derives"
+        "name": "ncbk_2_6__end_closes_the_bracket",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "Every event of the firing but TIMER_ARMED precedes RULE_FIRE_END: END closes the bracket. Not 'END is the firing's last event', which TIMER_ARMED after it refutes for an admitted `cooldown` firing (the armed probe's instance). Bounded at seven positions and events."
       },
       {
         "path": "formal/alloy/firing_event_frame.als",
@@ -86,6 +88,40 @@
         "name": "ncbk_2_6__seq_order",
         "tag": "spec",
         "note": "Two events never share a position: the stream order."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__suppressed_arms_no_timer",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "'For a firing the gate suppresses it must not emit one': the gate's `false` leaves no TIMER_ARMED. The fact's iff read backwards, a transcription. Bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__timer_armed",
+        "tag": "spec",
+        "note": "TIMER_ARMED follows the bracket: at most one, present exactly when the rate gate admitted the firing, and then immediately after RULE_FIRE_END. The model's stream is this one firing's events, so 'no intervening event' is drawn against them alone: an event from outside the firing is not in the model. The payload and the timetag join (NCBK.2.12) are not drawn. A call's `cooldown:` gate (LCRS.8.2) is not in the model; TIMER_ARMED answers to the rule's gate alone, which is that sentence's instance and no more."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__timer_armed_follows_end",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "When present, TIMER_ARMED is after RULE_FIRE_END with no event between: the fact's conjunct restated, a transcription. Within this one-firing model the no-intervening half is also a consequence of the frame, since every other event is before END. Bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__timer_armed_iff_admitted",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "TIMER_ARMED exists exactly when there is a firing, its rule carries `cooldown` (its guard has the rate gate, RLOW.4.6.1), and the gate admitted it. From TIMER_ARMED's rule and the gate's (RDSC.4a.8.2.3: a verdict exactly for a gated firing). So a withheld activation, a firing with no gate and a suppressed firing arm nothing. Bounded at seven positions and events."
+      },
+      {
+        "path": "formal/alloy/firing_event_frame.als",
+        "name": "ncbk_2_6__timer_armed_is_last",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "When present, every other event of the firing precedes TIMER_ARMED: from END closing the bracket and TIMER_ARMED right after END. Bounded at seven positions and events."
       }
     ]
   }

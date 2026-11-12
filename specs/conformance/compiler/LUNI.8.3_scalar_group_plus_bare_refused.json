@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.3_scalar_group_plus_bare_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.3]: a value of a `unit scalar` group ([LUNI.4.2]) is dimensioned for this clause, so `s.a + 1` on a slot of such a unit is refused. Pin: DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.types.luni_8_1_combine`'s `dr_bare_number` row, on a `dim` that `luni_7_1_slot_type` gives a scalar group.",
+    "rules_ds": "unit scalar bearing storage float64\nunit compass_deg: bearing\n\nschema R scope logical:\n    id: Int key\n    a: compass_deg mutable\n\nrule r:\n    R s where s.a + 1 > 1_compass_deg\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

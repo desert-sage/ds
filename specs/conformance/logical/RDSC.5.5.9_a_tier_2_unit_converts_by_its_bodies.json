@@ -1,0 +1,16 @@
+{
+    "id": "RDSC.5.5.9_a_tier_2_unit_converts_by_its_bodies",
+    "clauses": ["RDSC.5.5.9"],
+    "category": "logical",
+    "scenario": "[RDSC.5.5.9]: a slot naming a tier-2 unit ([LUNI.4.3]) converts by the unit's bodies: `to_stored` is its `to_base` and `from_stored` its `from_base`, each correctly rounded ([LEXP.3.9.2]), so both runtimes give the same bits ([LUNI.2.7.1]). `Reading.a` is a `pH` slot of a declared `acidity` dimension stored as `Float` `molar_h`, `to_base: 10.0 ** (-x)` and `from_base: -log10(x)`. 7.0 pH stores 1e-07, the double nearest 10^-7, and that double reads back as exactly 7.0, its logarithm lying within half an ulp of -7. A `from_base` of -1.0 is the negation of a NaN, so that conversion has no result ([NFCT.1.4.6]), and the check's `equals` is null ([RCTS.1.2.26]). A runtime that evaluated the bodies otherwise than CORE-MATH's correctly rounded `pow` and `log10`, or gave the NaN as a number, fails a check. PATH PINNED: libds's `ds_schema_slot_to_stored` and `ds_schema_slot_from_stored` through pyds's `Engine.slot_to_stored` / `slot_from_stored`, and the Mercury runtime's `ds.engine.nfct_1_4_6_convert`, each evaluating the artefact's Slot `to_stored` / `from_stored` Expr with `bind_ref` 0 holding the number.",
+    "rules_ds": "from math import log10\n\nunit dimension acidity storage float64 base molar_h\nunit molar_h: acidity\nunit pH: acidity:\n    to_base:   10.0 ** (-x)\n    from_base: -log10(x)\n\nschema Reading scope logical:\n    id: String key\n    a: pH mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [],
+        "checks": [
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "a", "direction": "to_stored", "in": 7.0, "equals": 1e-07 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "a", "direction": "from_stored", "in": 1e-07, "equals": 7.0 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "a", "direction": "from_stored", "in": -1.0, "equals": null }
+        ]
+    }
+}

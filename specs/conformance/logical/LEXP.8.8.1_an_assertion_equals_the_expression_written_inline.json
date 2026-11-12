@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.8.8.1_an_assertion_equals_the_expression_written_inline",
+    "clauses": ["LEXP.8.8.1", "RLOW.6.1.10", "LDET.3.3a.8"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1], [RLOW.6.1.10]: a `const` holds the value the engine computes, so `const C = 35.0::celsius` folds to what the same cast written inline evaluates to, to the bit. The `initial` fact carries C's folded value, and rule `inline` compares that slot with the inline cast. Rule `read` reads C in a rule and compares it with the inline cast. Exactly [\"inline\", \"read\"]. A folder that left the number unconverted misses both. PATH PINNED: `dsc.dstest.rlow_6_1_10_folded`'s `asn_affine` arm, against each runtime's evaluation of the lowering `rlow_6_1_10_asserted` writes.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nconst C = 35.0::celsius\n\nschema V scope explicit:\n    k: String\n    t: celsius\n\ninitial:\n    V k: \"c\" t: C\n\nrule inline:\n    V v where v.k == \"c\" and v.t == 35.0::celsius\n->\n    log info \"inline\"\n\nrule read:\n    V v where v.k == \"c\" and C == 35.0::celsius\n->\n    log info \"read\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["inline", "read"]
+    }
+}

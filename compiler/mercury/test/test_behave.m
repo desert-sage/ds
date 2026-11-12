@@ -47,13 +47,13 @@
 %     same engine, whose two streams must agree and carry `min_events` events
 %     and `min_rule_fires` fires, then `after_free` on one of them, which
 %     must fire `min_rule_fires_after_free` (see `run_clone_determinism`);
-%   * `rfcs_roundtrip` -- the run's RFCS recording, with an unknown atom
-%     spliced in, decodes; StreamHeader leads, a SchemaDef precedes the first
+%   * `rfcs_roundtrip` -- the run's RFCS recording decodes; StreamHeader
+%     leads, a SchemaDef precedes the first
 %     FactAssert, the header round-trips, and the known atoms equal
 %     `expected_atoms`;
 %   * `rfcs_artefact_strip` -- the recording decoded without the artefact
 %     gives every FactAssert's id, seq, schema name and slots as asserted;
-%   * `pbf_framing` -- `PBF_FRAMING_VECTORS.json`'s encode, band and decode
+%   * `pbf_framing` -- `PBF_FRAMING_VECTORS.json`'s encode and decode
 %     groups through `ds.atom` / `ds.wire`, without the protobuf legs;
 %   * `runtime_error` -- after `asserts` and an optional pump, or `steps`, a
 %     fault was raised whose `libds.h` code is `code` and whose text contains
@@ -272,8 +272,7 @@ run(Pass, Fail, !IO) :-
             ( if stdlib_is_read(Stdlib) then yes else no ),
             tally(0, 0), T0, !IO),
         report(Names, Results, T0, T1, !IO),
-        dead_rules_checks(T1, T2, !IO),
-        splice_field_checks(T2, T3, !IO),
+        dead_rules_checks(T1, T3, !IO),
         tamper_checks(T3, T4, !IO),
         recording_fields_checks(T4, T5, !IO),
         kind_fields_checks(T5, T5a, !IO),
@@ -467,11 +466,11 @@ classify(Registry, Stdlib, Repeats, Fixture, Result) :-
             Result = steps_placed(Members, Expect, Kind,
                 kind_fields_placed(Kind, Expect,
                 recording_fields_placed(Kind, Expect,
-                tamper_placed(Kind, Expect, splice_field_placed(Kind,
-                Expect, timetag_offset_placed(Kind, Expect,
+                tamper_placed(Kind, Expect,
+                timetag_offset_placed(Kind, Expect,
                 replay_cache_cap_placed(Kind, Expect,
                 dead_rules_result(Members, no,
-                    run_cross_tier(Registry, Kind, Libraries, Expect)))))))))
+                    run_cross_tier(Registry, Kind, Libraries, Expect))))))))
         else if supported_kind(Kind) then
             Format = well_formed(Libraries),
             lookup_member(Members, "rules_ds", SourceJ),
@@ -485,10 +484,10 @@ classify(Registry, Stdlib, Repeats, Fixture, Result) :-
             Result = steps_placed(Members, Expect, Kind,
                 kind_fields_placed(Kind, Expect,
                 recording_fields_placed(Kind, Expect,
-                tamper_placed(Kind, Expect, splice_field_placed(Kind,
-                Expect, timetag_offset_placed(Kind, Expect,
+                tamper_placed(Kind, Expect,
+                timetag_offset_placed(Kind, Expect,
                 replay_cache_cap_placed(Kind, Expect,
-                dead_rules_result(Members, Fired, Result0))))))))
+                dead_rules_result(Members, Fired, Result0)))))))
         else if callback_kind(Kind) then
             Format = well_formed(_),
             Result = behave_result(bo_fail, Kind, no_callback_kind)
@@ -2280,7 +2279,7 @@ libds_load_status(E, -602,
         "loader: TerminalNode parent_beta_id not found") :-
     E ^ le_kind = lek_retp_index_oob.
     % [RDSC.11.1]: an artefact whose first atom is not a
-    % DscHeader, whatever its number and band, is not a `.dsc`.
+    % DscHeader, whatever its number, is not a `.dsc`.
 libds_load_status(E, -501,
         "dsc: the first atom is not a DscHeader (RDSC.11.1)") :-
     E ^ le_kind = lek_bad_first_atom.
@@ -2302,10 +2301,10 @@ libds_load_status(E, -503, "dsc: malformed atom frame (RDSC.11.1)") :-
     E ^ le_kind = lek_empty_atom,
     clause_id_string(E ^ le_clause) = "RDSC.11.1".
     % [RDSC.11.1]: a frame after the first whose `Atom`'s field number
-    % is in no band ([RFCS.16.3]), 0 or past 2047, which this runtime names as
-    % its own kind and libds refuses in `handle_unknown_field`.
+    % has no registry entry ([RFCS.19.3]), which this runtime names as its
+    % own kind and libds refuses in `ds_dsc_load`'s atom walk.
 libds_load_status(E, -503,
-        "dsc: an atom's field number is in no band (RDSC.11.1, RFCS.16.3)") :-
+        "dsc: an atom's field number names no atom (RDSC.11.1, RFCS.19.3)") :-
     E ^ le_kind = lek_malformed_field_number,
     clause_id_string(E ^ le_clause) = "RDSC.11.1".
     %
@@ -3640,11 +3639,9 @@ field_order_result(Kind, Expect, P, EA, Stamped) = Result :-
     ).
 
     % `rfcs_roundtrip` over this runtime's writer and reader: encode the run
-    % to RFCS, splice an unknown skip-band atom in after the `StreamHeader`
-    % (at field 2000, or the fixture's `splice_field`, [RCTS.1.2.20]),
-    % decode, and require:
+    % to RFCS, decode, and require:
     %
-    %   * the stream decodes past the spliced atom [RFCS.16.3];
+    %   * the stream decodes;
     %   * `StreamHeader` is the first atom [RFCS.4.1];
     %   * a `SchemaDef` precedes the first `FactAssert` [RFCS.6.5];
     %   * the header's `ds_version` and `session_id` round-trip
@@ -3735,33 +3732,20 @@ rfcs_roundtrip_checked(Kind, Expect, P, E, Stamped, Kinds) = Result :-
     else if Unencodable = [_ | _] then
         Result = behave_result(bo_unsupported, Kind,
             "the run emitted events the recorder cannot encode")
-    else if rcts_1_2_20_splice_field(Expect) = sf_refused(SpliceWhy) then
-        Result = behave_result(bo_fail, Kind, SpliceWhy)
-    else if
-        frame_starts(init_reader(from_bytes(Bytes)), [], Starts),
-        Starts = [_, Second | _],
-        rcts_1_2_20_splice_field(Expect) = sf_field(SpliceField)
-    then
-        list.det_split_list(Second, Bytes, FirstAtom, RestAtoms),
-        put_delimited(SpliceField,
-            list.map((func(C) = uint8.det_from_int(char.to_int(C))),
-                string.to_char_list("future-atom-body")),
-            init_builder, Inner),
-        put_delimited(1u32, builder_bytes(Inner), init_builder, Outer),
-        Spliced = FirstAtom ++ builder_bytes(Outer) ++ RestAtoms,
-        Atoms = known_atom_names(init_reader(from_bytes(Spliced)), []),
-        decode_stream(from_bytes(Spliced), init_interns, Decoded),
+    else
+        Atoms = known_atom_names(init_reader(from_bytes(Bytes)), []),
+        decode_stream(from_bytes(Bytes), init_interns, Decoded),
         Want = string_array(array_member(Expect, "expected_atoms")),
         ( if Decoded = decode_failed(Clause, Offset) then
             Result = behave_result(bo_fail, Kind,
                 string.format(
-                    "the spliced stream does not decode: %s at %d",
+                    "the stream does not decode: %s at %d",
                     [s(Clause), i(Offset)]))
         else if Decoded = unannounced_schema(_, USeq, UOffset) then
             % Its own arm, or the `decoded(DS)` checks below would fail to
             % match it and let the stream through.
             Result = behave_result(bo_fail, Kind,
-                string.format("the spliced stream's FactAssert at seq %s "
+                string.format("the stream's FactAssert at seq %s "
                     ++ "(byte %d) names a schema no SchemaDef announced "
                     ++ "([RFCS.5.4])",
                     [s(string.string(USeq)), i(UOffset)]))
@@ -3802,7 +3786,7 @@ rfcs_roundtrip_checked(Kind, Expect, P, E, Stamped, Kinds) = Result :-
             lookup_member(Expect, "expected_call_correlations", _),
             WantCorrs = string_array(
                 array_member(Expect, "expected_call_correlations")),
-            GotCorrs = call_correlations(init_reader(from_bytes(Spliced)), []),
+            GotCorrs = call_correlations(init_reader(from_bytes(Bytes)), []),
             GotCorrs \= WantCorrs
         then
             Result = behave_result(bo_fail, Kind,
@@ -3906,62 +3890,6 @@ rfcs_roundtrip_checked(Kind, Expect, P, E, Stamped, Kinds) = Result :-
         else
             Result = behave_result(bo_pass, Kind, "")
         )
-    else
-        Result = behave_result(bo_fail, Kind,
-            "the recording has fewer than two atoms to splice between")
-    ).
-
-    % [RCTS.1.2.20]: the field number `rfcs_roundtrip` splices its unknown atom
-    % at. Absent, 2000. Given, an integer in the skip band ([RFCS.16.2]) that
-    % `atom_of_field` does not know, since a known one is decoded rather than
-    % skipped.
-    %
-:- type splice_field
-    --->    sf_field(uint32)
-    ;       sf_refused(string).
-
-:- func rcts_1_2_20_splice_field(json_members) = splice_field.
-
-rcts_1_2_20_splice_field(Expect) = Result :-
-    ( if lookup_member(Expect, "splice_field", J) then
-        ( if J = j_int(N) then
-            ( if N < 256i64 ; N > 2047i64 then
-                Result = sf_refused(string.format(
-                    "expect.splice_field %d is outside the skip band, "
-                        ++ "256-2047 ([RCTS.1.2.20], [RFCS.16.2])",
-                    [i(int64.cast_to_int(N))]))
-            else
-                Field = uint32.det_from_int(int64.cast_to_int(N)),
-                ( if atom_of_field(Field, _) then
-                    Result = sf_refused(string.format(
-                        "expect.splice_field %d is an atom the registry names, "
-                            ++ "which a reader decodes rather than skips "
-                            ++ "([RCTS.1.2.20])",
-                        [i(int64.cast_to_int(N))]))
-                else
-                    Result = sf_field(Field)
-                )
-            )
-        else
-            Result = sf_refused("expect.splice_field is not an integer "
-                ++ "([RCTS.1.2.20])")
-        )
-    else
-        Result = sf_field(2000u32)
-    ).
-
-    % [RCTS.1.2.20]: a fixture of another kind carrying `expect.splice_field`
-    % fails.
-    %
-:- func splice_field_placed(string, json_members, behave_result)
-    = behave_result.
-
-splice_field_placed(Kind, Expect, Result0) =
-    ( if Kind \= "rfcs_roundtrip", lookup_member(Expect, "splice_field", _) then
-        behave_result(bo_fail, Kind, "expect.splice_field is `rfcs_roundtrip`'s "
-            ++ "alone ([RCTS.1.2.20]); this fixture's kind is `" ++ Kind ++ "`")
-    else
-        Result0
     ).
 
     % `test_runner_codes.py`'s `TestTimetagOffset` and `TestMergeTimetags`
@@ -4101,51 +4029,6 @@ timetag_offset_placed(Kind, Expect, Result0) =
     else
         Result0
     ).
-
-    % `test_conformance.py`'s `test_rcts_1_2_20__*` cases.
-    % @spec [RCTS.1.2.20]
-    %
-:- pred splice_field_checks(tally::in, tally::out, io::di, io::uo) is det.
-
-splice_field_checks(!T, !IO) :-
-    Field = (func(Pairs) = rcts_1_2_20_splice_field(object(Pairs))),
-    check("RCTS.1.2.20:absent, the field is 2000",
-        ( if Field([]) = sf_field(2000u32) then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:260, a reserved number, is admitted",
-        ( if Field(["splice_field" - j_int(260i64)]) = sf_field(260u32)
-          then yes else no ), !T, !IO),
-    % The band's low end, 256, is the SchemaDef's number, so only its high end
-    % is a free number to admit; 256 is the registry case below.
-    check("RCTS.1.2.20:the band's high end, 2047, is admitted",
-        ( if Field(["splice_field" - j_int(2047i64)]) = sf_field(2047u32)
-          then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:256, the SchemaDef, is a number the registry names",
-        ( if Field(["splice_field" - j_int(256i64)]) = sf_refused(Why256),
-             string.sub_string_search(Why256, "registry names", _)
-          then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:255, 2048 and 120 are outside the skip band",
-        ( if Field(["splice_field" - j_int(255i64)]) = sf_refused(_),
-             Field(["splice_field" - j_int(2048i64)]) = sf_refused(_),
-             Field(["splice_field" - j_int(120i64)]) = sf_refused(_)
-          then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:258, the StreamHeader, is a number the registry names",
-        ( if Field(["splice_field" - j_int(258i64)]) = sf_refused(Why258),
-             string.sub_string_search(Why258, "registry names", _)
-          then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:a string is not an integer",
-        ( if Field(["splice_field" - j_string("260")]) = sf_refused(_)
-          then yes else no ), !T, !IO),
-    Passed = (func(K) = behave_result(bo_pass, K, "")),
-    check("RCTS.1.2.20:the field on another kind fails",
-        ( if splice_field_placed("replay_determinism",
-                object(["splice_field" - j_int(2000i64)]),
-                Passed("replay_determinism")) ^ br_outcome = bo_fail
-          then yes else no ), !T, !IO),
-    check("RCTS.1.2.20:and on `rfcs_roundtrip` it stands",
-        ( if splice_field_placed("rfcs_roundtrip",
-                object(["splice_field" - j_int(2000i64)]),
-                Passed("rfcs_roundtrip")) ^ br_outcome = bo_pass
-          then yes else no ), !T, !IO).
 
     % [RCTS.1.2.21]: `expect.tamper` is `runtime_error`'s,
     % `replay_determinism`'s and `runtime_fact_count`'s alone. On
@@ -4797,7 +4680,10 @@ check_refusal(Check, Why) :-
     ;       mt_positive
     ;       mt_strings
     ;       mt_string
-    ;       mt_string_or_null.
+    ;       mt_string_or_null
+    ;       mt_direction
+    ;       mt_number
+    ;       mt_number_or_null.
 
     % [RCTS.1.2.26]'s closed set: each surface, and the members a check of it
     % takes. `runner.py`'s `_SURFACES` is the same table.
@@ -4812,6 +4698,9 @@ surface_members("justifier_count", ["fact_id" - mt_positive, "count" - mt_count]
 surface_members("rete_network", ["min_nodes" - mt_count, "min_edges" - mt_count]).
 surface_members("slot_schema_ref",
     ["schema" - mt_string, "slot" - mt_string, "equals" - mt_string_or_null]).
+surface_members("slot_conversion",
+    ["schema" - mt_string, "slot" - mt_string, "direction" - mt_direction,
+     "in" - mt_number, "equals" - mt_number_or_null]).
 
 :- pred of_member_type(member_type::in, json::in) is semidet.
 
@@ -4824,6 +4713,12 @@ of_member_type(mt_strings, j_array(Js)) :-
 of_member_type(mt_string, j_string(_)).
 of_member_type(mt_string_or_null, J) :-
     ( J = j_null ; J = j_string(_) ).
+of_member_type(mt_direction, j_string(S)) :-
+    unit_direction_name(S, _).
+of_member_type(mt_number, J) :-
+    conversion_input(J, _).
+of_member_type(mt_number_or_null, J) :-
+    ( J = j_null ; conversion_input(J, _) ).
 
 :- pred add_schema_ref_shape(json::in) is semidet.
 
@@ -5190,6 +5085,7 @@ off_octets_form(Form, P) :-
     --->    st_string
     ;       st_object
     ;       st_count
+    ;       st_instant
     ;       st_int
     ;       st_any.
 
@@ -5203,7 +5099,7 @@ step_ops(Cross) = Base ++ CrossOps :-
         "retract" - [sm("label", yes, st_string)],
         "pump" - [],
         "advance" - [sm("delta_ns", yes, st_count)],
-        "set" - [sm("now_ns", yes, st_count)],
+        "set" - [sm("now_ns", yes, st_instant)],
         "wall_set" - [sm("utc_ns", yes, st_int)],
         % `ttl_ns` is read as an int64, so 0 to 2^63 - 1.
         "cache_seed" - [sm("key", yes, st_string), sm("value", yes, st_any),
@@ -5448,8 +5344,19 @@ step_vocabulary_checks(Registry, Stdlib, !T, !IO) :-
 of_step_type(st_string, J) :- J = j_string(_).
 of_step_type(st_object, J) :- J = j_object(_).
 of_step_type(st_count, J) :- J = j_int(N), N >= 0i64.
+of_step_type(st_instant, J) :- step_instant(J, _).
 of_step_type(st_int, J) :- J = j_int(_).
 of_step_type(st_any, _).
+
+    % A `set`'s `now_ns`, a count. The fixture reader reads an integer outside
+    % int64 as a `Float`, and 2^63, the first past the top of the clock's range
+    % ([NTST.3.1]), is exactly one.
+    %
+:- pred step_instant(json::in, instant::out) is semidet.
+
+step_instant(j_int(N), from_ns(uint64.cast_from_int64(N))) :-
+    N >= 0i64.
+step_instant(j_float(9223372036854775808.0), from_ns(9223372036854775808u64)).
 
     % [RCTS.1.2.23]'s fields, `runner.py`'s `_RECORDING_FIELDS`, less
     % `late_start`, which is `replay_refused`'s too ([RCTS.1.2.18]).
@@ -6908,7 +6815,39 @@ kind_fields_checks(!T, !IO) :-
             Malformed(j_array([Check(["surface" - j_string("rete_network"),
                 "min_nodes" - j_int(1i64)])])),
             Malformed(j_array([Check(["surface" - j_string("slot_schema_ref"),
-                "schema" - j_string("S"), "slot" - j_string("n")])]))
+                "schema" - j_string("S"), "slot" - j_string("n")])])),
+            Malformed(j_array([Check(["surface" - j_string("slot_conversion"),
+                "schema" - j_string("S"), "slot" - j_string("t"),
+                "direction" - j_string("to_stored"),
+                "in" - j_float(1.0)])]))
+          then yes else no ), !T, !IO),
+    Conv = (func(CDir, CIn, CEq) = Check(["surface" - j_string("slot_conversion"),
+        "schema" - j_string("S"), "slot" - j_string("t"),
+        "direction" - CDir, "in" - CIn, "equals" - CEq])),
+    check("RCTS.1.2.26:a slot_conversion of another direction, or a value "
+            ++ "that is not a number, is refused",
+        ( if
+            Malformed(j_array([Conv(j_string("sideways"), j_float(1.0),
+                j_null)])),
+            Malformed(j_array([Conv(j_string("to_stored"), j_string("1"),
+                j_null)])),
+            Malformed(j_array([Conv(j_string("to_stored"), j_null, j_null)])),
+            Malformed(j_array([Conv(j_string("from_stored"), j_int(1i64),
+                j_string("1"))]))
+          then yes else no ), !T, !IO),
+    % Negative zero as IEEE multiplication makes it: Mercury's unary minus
+    % on `0.0` need not give it.
+    NegZero = -1.0 * 0.0,
+    check("RCTS.1.2.26:a slot_conversion's numbers keep their kind and bits",
+        ( if
+            same_number(int(5i64), j_int(5i64)),
+            same_number(float(0.5), j_float(0.5)),
+            not same_number(int(5i64), j_float(5.0)),
+            not same_number(float(5.0), j_int(5i64)),
+            float.float64_bits_string(NegZero)
+                \= float.float64_bits_string(0.0),
+            not same_number(float(NegZero), j_float(0.0)),
+            not same_number(float(0.5), j_float(0.25))
           then yes else no ), !T, !IO),
     check("RCTS.1.2.26:a surface outside the set, an extra member, or a "
             ++ "value of another type is refused",
@@ -6941,7 +6880,11 @@ kind_fields_checks(!T, !IO) :-
                     "min_nodes" - j_int(0i64), "min_edges" - j_int(0i64)]),
                 Check(["surface" - j_string("slot_schema_ref"),
                     "schema" - j_string("S"), "slot" - j_string("n"),
-                    "equals" - j_null])])])) = _
+                    "equals" - j_null]),
+                Conv(j_string("to_stored"), j_float(21.5), j_float(294.65)),
+                Conv(j_string("from_stored"), j_int(12i64), j_null),
+                Conv(j_string("from_stored"), j_int(96i64), j_int(12i64))])]))
+                = _
           then yes else no ), !T, !IO).
 
     % `rewrite_withdraw_cause` ([RFCS.7a.2]): `{"index": I, "cause": N}`
@@ -7047,9 +6990,6 @@ fwth_cause_name(rc_activation_completed) = "ACTIVATION_COMPLETED".
     %   encode  `put_delimited(1, put_delimited(field, body))` equals the
     %           vector's prefix + body, and the registry names `field` with
     %           the vector's `atom`, its body message.
-    %   band    `band_of`, whether `atom_of_field` knows the number, and the
-    %           disposition (`skip` for a known atom, else
-    %           `disposition_of_unknown`) equal the vector's.
     %   decode  the `next_frame` walk yields each atom's (field, body length,
     %           end offset) in order; the walk ends at EOF or malformed as the
     %           vector's `terminal` says, a half-written tail being EOF
@@ -7096,8 +7036,6 @@ pbf_vector_failure(Group, j_object(V), Why) :-
              else "?" ),
     ( if Group = "encode" then
         encode_vector_failure(V, Detail)
-    else if Group = "band" then
-        band_vector_failure(V, Detail)
     else if Group = "decode" then
         decode_vector_failure(V, Detail)
     else
@@ -7131,34 +7069,6 @@ encode_vector_failure(V, Why) :-
         then
             Why = "the registry does not name field "
                 ++ string.int_to_string(Field) ++ " " ++ Message
-        else
-            fail
-        )
-    else
-        Why = "a vector this driver cannot read"
-    ).
-
-:- pred band_vector_failure(json_members::in, string::out) is semidet.
-
-band_vector_failure(V, Why) :-
-    ( if
-        int_member(V, "field", Field), Field >= 0,
-        lookup_member(V, "band", BJ), BJ = j_string(WantBand),
-        lookup_member(V, "known", KJ), KJ = j_bool(WantKnown),
-        lookup_member(V, "disposition", DJ), DJ = j_string(WantDisp)
-    then
-        U = uint32.det_from_int(Field),
-        GotBand = band_name(band_of(U)),
-        GotKnown = ( if atom_of_field(U, _) then yes else no ),
-        GotDisp = ( if GotKnown = yes then "skip"
-                    else disposition_name(disposition_of_unknown(U)) ),
-        ( if GotBand \= WantBand then
-            Why = "band " ++ GotBand ++ ", vector says " ++ WantBand
-        else if GotKnown \= WantKnown then
-            Why = "known " ++ string.string(GotKnown) ++ ", vector says "
-                ++ string.string(WantKnown)
-        else if GotDisp \= WantDisp then
-            Why = "disposition " ++ GotDisp ++ ", vector says " ++ WantDisp
         else
             fail
         )
@@ -7210,9 +7120,10 @@ walk_frames(R0, Acc, Atoms, Terminal) :-
     next_frame(Res, R0, R1),
     (
         Res = fr_ok(frame(Ref, Body, _)),
-        ( if Ref = unknown(N), band_of(N) = band_none then
-            % A number in no band, 0 or 2048+, is malformed. `next_frame`
-            % leaves the band to its caller.
+        ( if Ref = unknown(0u32) then
+            % Field number 0 is no field, and the frame is malformed, as
+            % libds's `ds_pbf_next_atom` refuses it. `next_frame` leaves it to
+            % its caller.
             Atoms = list.reverse(Acc),
             Terminal = "malformed"
         else
@@ -7251,20 +7162,6 @@ container_name(Atoms, Terminal) =
       else if Atoms = [{263, _, _} | _] then "dsc"
       else if Atoms = [{258, _, _} | _] then "stream"
       else "unknown" ).
-
-:- func band_name(band) = string.
-
-band_name(band_inject) = "inject".
-band_name(band_reject) = "reject".
-band_name(band_skip) = "skip".
-band_name(band_none) = "none".
-
-:- func disposition_name(disposition) = string.
-
-disposition_name(disp_skip) = "skip".
-disposition_name(disp_reject_inject) = "reject_inject".
-disposition_name(disp_reject_version) = "reject_version".
-disposition_name(disp_malformed) = "malformed".
 
 :- pred vector_body(json_members::in, list(uint8)::out) is semidet.
 
@@ -7376,21 +7273,10 @@ program_schema_name(P, Id, Name) :-
 comparable(IT, V) =
     ( if V = str(Ref), expand(IT, Ref, S) then text(S) else V ).
 
-    % The byte offset at which each frame begins, in order.
-    %
-:- pred frame_starts(reader::in, list(int)::in, list(int)::out) is det.
-
-frame_starts(R0, Acc, Starts) :-
-    Pos = position(R0),
-    next_frame(Res, R0, R1),
-    ( if Res = fr_ok(_) then
-        frame_starts(R1, [Pos | Acc], Starts)
-    else
-        Starts = list.reverse(Acc)
-    ).
-
-    % The body messages of the known atoms, in order; an unknown atom is
-    % skipped.
+    % The body messages of the atoms, in order. A number the registry does not
+    % name is no atom of the series ([RFCS.16.1], [LDET.1.10]), and stands in
+    % the list as `field N`, so no `expected_atoms` matches a recording that
+    % holds one.
     %
 :- func known_atom_names(reader, list(string)) = list(string).
 
@@ -7398,8 +7284,9 @@ known_atom_names(R0, Acc) = Names :-
     next_frame(Res, R0, R1),
     ( if Res = fr_ok(frame(known(Id), _, _)) then
         Names = known_atom_names(R1, [atom_message(Id) | Acc])
-    else if Res = fr_ok(frame(unknown(_), _, _)) then
-        Names = known_atom_names(R1, Acc)
+    else if Res = fr_ok(frame(unknown(N), _, _)) then
+        Names = known_atom_names(R1,
+            ["field " ++ string.int_to_string(uint32.cast_to_int(N)) | Acc])
     else
         Names = list.reverse(Acc)
     ).
@@ -7885,7 +7772,7 @@ known_surface(j_object(Ms)) :-
     lookup_member(Ms, "surface", SJ),
     SJ = j_string(S),
     ( S = "fact_count" ; S = "justifiers" ; S = "justifier_count"
-    ; S = "rete_network" ; S = "slot_schema_ref" ).
+    ; S = "rete_network" ; S = "slot_schema_ref" ; S = "slot_conversion" ).
 
     % Why a check does not hold. Fails when it holds, or when its surface is
     % one this driver does not read (`known_surface`).
@@ -7937,6 +7824,8 @@ introspection_failure(P, E, j_object(Ms), Why) :-
             Why = string.format("slot_schema_ref: no slot %s.%s",
                 [s(SchemaName), s(SlotName)])
         )
+    else if Surface = "slot_conversion" then
+        slot_conversion_failure(P, E, Ms, Why)
     else
         Surface = "rete_network",
         Net = network(P),
@@ -7981,6 +7870,81 @@ slot_reference(P, E, Schema, Slot, Ref) :-
     else
         Ref = no
     ).
+
+    % `slot_conversion` ([RCTS.1.2.26]): the conversion of the slot
+    % `schema`.`slot` in `direction` ([RDSC.5.5.9]), through
+    % `ds.engine.nfct_1_4_6_convert` as `mercury_ds` calls it, on `in`, gives
+    % `equals`, of its kind and with its bits, or `uo_not_representable` when
+    % `equals` is null. Any other outcome fails the check. Fails when the check
+    % holds. `runner.py`'s `_slot_conversion_failure` judges libds the same way.
+    %
+:- pred slot_conversion_failure(program::in, engine::in, json_members::in,
+    string::out) is semidet.
+
+slot_conversion_failure(P, E, Ms, Why) :-
+    lookup_member(Ms, "schema", SchemaJ), SchemaJ = j_string(SchemaName),
+    lookup_member(Ms, "slot", SlotJ), SlotJ = j_string(SlotName),
+    lookup_member(Ms, "direction", DirJ), DirJ = j_string(DirName),
+    lookup_member(Ms, "in", InJ),
+    lookup_member(Ms, "equals", WantJ),
+    Where = string.format("slot_conversion %s.%s %s(%s)",
+        [s(SchemaName), s(SlotName), s(DirName), s(string.string(InJ))]),
+    ( if
+        unit_slot(P, E, SchemaName, SlotName, Schema, Index),
+        unit_direction_name(DirName, Dir),
+        conversion_input(InJ, In)
+    then
+        nfct_1_4_6_convert(Schema, Index, Dir, In, Outcome, _, E, _),
+        not (
+            WantJ = j_null,
+            Outcome = uo_not_representable
+        ),
+        not (
+            Outcome = uo_ok(Got),
+            same_number(Got, WantJ)
+        ),
+        Why = Where ++ ": want " ++ string.string(WantJ) ++ ", got "
+            ++ string.string(Outcome)
+    else
+        Why = Where ++ ": no such slot is loaded"
+    ).
+
+    % The loaded schema `SchemaName` and the index of its slot `SlotName`.
+    %
+:- pred unit_slot(program::in, engine::in, string::in, string::in,
+    schema::out, int::out) is semidet.
+
+unit_slot(P, E, SchemaName, SlotName, Schema, Index) :-
+    IT = engine_interns(E),
+    list.find_first_match(
+        (pred(S::in) is semidet :-
+            expand(IT, schema_name_ref(S ^ s_name), SchemaName)),
+        schemas(P), Schema),
+    list.find_index_of_match(
+        (pred(C::in) is semidet :- expand(IT, C ^ sc_name, SlotName)),
+        slot_commons(Schema), 0, Index).
+
+:- pred unit_direction_name(string::in, unit_direction::out) is semidet.
+
+unit_direction_name("to_stored", ud_to_stored).
+unit_direction_name("from_stored", ud_from_stored).
+
+    % A JSON number as the value a host hands the conversion: an `Int` when
+    % written with neither a fraction nor an exponent, a `Float` otherwise.
+    %
+:- pred conversion_input(json::in, ds_value::out) is semidet.
+
+conversion_input(j_int(I), int(I)).
+conversion_input(j_float(F), float(F)).
+
+    % `Got` is the number `WantJ` writes, of its kind and with its bits, so
+    % -0.0 is not 0.0.
+    %
+:- pred same_number(ds_value::in, json::in) is semidet.
+
+same_number(int(I), j_int(I)).
+same_number(float(G), j_float(W)) :-
+    float.float64_bits_string(G) = float.float64_bits_string(W).
 
     % The rule name of every live justification of a fact, sorted.
     %
@@ -9398,6 +9362,7 @@ halted_fault_mismatch(Expect, E) = Why :-
 
 halt_fault(ee_expr_fault(F)) = expr_engine_fault(F).
 halt_fault(ee_duplicate_order_key) = 4u32.
+halt_fault(ee_internal) = 8u32.
 
     % `pyds.EngineFault`'s members, by name, with their numbers.
     %
@@ -9409,6 +9374,7 @@ engine_fault_number("BINDING_ORDER", 3u32).
 engine_fault_number("ORDER_KEY", 4u32).
 engine_fault_number("ALLOCATION", 6u32).
 engine_fault_number("PUMP_WCET", 7u32).
+engine_fault_number("INTERNAL", 8u32).
 
     % `libds.h`'s code and libds's status text, for the refusals this runtime
     % raises as events.
@@ -10322,11 +10288,23 @@ run_step_call(P, Step, Status, !E, !Handles, !RevEffects) :-
             !:RevEffects = [{engine_now(!.E), Effects} | !.RevEffects],
             Status = run_ok
         else if Op = "advance", int_member(Ms, "delta_ns", Ns), Ns >= 0 then
-            advance(duration_from_ns(uint64.det_from_int(Ns)), Effects, !E),
-            !:RevEffects = [{engine_now(!.E), Effects} | !.RevEffects],
-            Status = run_ok
-        else if Op = "set", int_member(Ms, "now_ns", At), At >= 0 then
-            Instant = from_ns(uint64.det_from_int(At)),
+            D = duration_from_ns(uint64.det_from_int(Ns)),
+            ( if
+                engine_halted(!.E) = no,
+                engine_advance_past_range(!.E, D)
+            then
+                Status = run_refused(refused_status(-205, "an advance past a "
+                    ++ "clock's range ([NTST.3.1])"))
+            else
+                advance(D, Effects, !E),
+                !:RevEffects = [{engine_now(!.E), Effects} | !.RevEffects],
+                Status = run_ok
+            )
+        else if
+            Op = "set",
+            lookup_member(Ms, "now_ns", AtJ),
+            step_instant(AtJ, Instant)
+        then
             set_clock(Instant, Effects, !E),
             !:RevEffects = [{engine_now(!.E), Effects} | !.RevEffects],
             % `set_clock` refuses by leaving the clock where it was (below
@@ -10341,10 +10319,13 @@ run_step_call(P, Step, Status, !E, !Handles, !RevEffects) :-
                 )
             then
                 Status = run_ok
+            else if ntst_3_1_set_past_range(Instant) then
+                Status = run_refused(refused_status(-205, "a set past the "
+                    ++ "monotonic clock's range ([NTST.3.1])"))
             else
                 Status = run_refused(refused_status(-4, "a set of the mock "
-                    ++ "clock to " ++ string.int_to_string(At) ++ " ns is "
-                    ++ "refused ([NTST.3.1])"))
+                    ++ "clock to " ++ uint64_to_string(instant_ns(Instant))
+                    ++ " ns is refused ([NTST.3.1])"))
             )
         else if Op = "wall_set", int_member(Ms, "utc_ns", Utc) then
             % [NTST.3.1]: the wall clock alone. Not a sample, so no effects

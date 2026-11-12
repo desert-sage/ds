@@ -53,10 +53,11 @@ typedef struct ds_series_ring_buffer {
     uint64_t last_sample_ns;                /* engine clock at most-recent absorb */
     bool     has_sample;
 
-    /* LSIG.2.4: empty for non-Bool element types. */
+    /* LSIG.2.4.1: empty for non-Bool element types. */
     uint64_t *edge_ts;                      /* rising-edge timestamps, insert order */
     size_t    n_edges;
     size_t    cap_edges;
+    /* LSIG.1.4.1: the value the slot holds; none before the first absorption. */
     bool      has_last_bool;
     bool      last_bool;
 
@@ -119,6 +120,11 @@ double  ds_series_ring_buffer_pstdev(
    the value over `n >= 1` sorted samples, `pct` clamped to [0, 100]. */
 void   ds_series_sort_for_quantile(double *vals, size_t n);
 double ds_series_quantile_type7(const double *sorted, size_t n, unsigned pct);
+
+/* [LSER.17.2]: whether `a` comes before `b` in the order the quantiles sort by,
+   -0 before +0. Every backend's `min` and `max` select under it, so of the two
+   zeros `min` is -0 and `max` is +0 whatever order they arrived in. */
+bool   ds_series_signed_before(double a, double b);
 
 typedef enum ds_series_ring_pctl {
     DS_SERIES_RING_PCTL_VALUE,

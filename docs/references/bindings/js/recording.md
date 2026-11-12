@@ -80,19 +80,18 @@ While `source` is being iterated, a [`Fact`](facts.md#fact) of this engine that 
 | `DsError`, `DS_ERR_FS_DIVERGENCE` | a re-derived atom differs from the record, breaks a timetag's pairing with an earlier atom, or has no recorded twin; a recorded compare atom is not re-derived; a `CacheSeed` follows an event atom or is refused; an `ExternalAssert` delivery is refused, or asserts a number of facts other than the record lists |
 | `DsError`, `DS_ERR_FS_VERSION` | the stream was written by another DS minor series |
 | `DsError`, `DS_ERR_FS_RECORDING_INCOMPLETE` | the recording's first event has a `seq` other than `0`: it was attached after the engine's first input or sample |
-| `DsError`, `DS_ERR_FS_UNKNOWN_INJECT` | an unknown atom in the inject band |
 | `DsError`, `DS_ERR_FS_UNKNOWN_FACT_ID` | a `FactRetract` names an unknown `fact_id` |
 | `DsError`, `DS_ERR_BND_DSC_MISMATCH` or `DS_ERR_BND_DIALECT_MISMATCH` | the `StreamHeader` and the loaded artefact disagree on the dialect binding |
 | `DsError`, `DS_ERR_BND_INCOMPLETE` | a `StreamHeader` holds one of a 32-byte `dsc_hash` and a 32-byte `dialect_def_sha256` without the other |
 | `DsError`, `DS_ERR_SCHEMA_UNKNOWN` | a `FactAssert` names a schema no `SchemaDef` in the stream announced, or one the engine does not have |
-| `DsError`, `DS_ERR_PARSE` | a malformed atom; a `FactAssert`'s `String` or `Json` field whose text is not well-formed UTF-8; a fact-reference handle that names no earlier record; an unknown atom in the reject band or in no band; an atom declares more than `maxAtomBytes`; the stream ends inside an atom |
+| `DsError`, `DS_ERR_PARSE` | a malformed atom; a `FactAssert`'s `String` or `Json` field whose text is not well-formed UTF-8; a fact-reference handle that names no earlier record; an atom whose field number has no registry entry; an atom declares more than `maxAtomBytes`; the stream ends inside an atom |
 | `DsError`, `DS_ERR_INVAL` | a `FactAssert`'s schema has more than 256 slots |
 | `DsError`, `DS_ERR_OOM` | an allocation fails |
 | `DsError`, the call's status | [`ds_engine_set_stream_callback`](inv:integrator:std:doc#callbacks/stream), [`ds_engine_schema_find`](inv:integrator:std:doc#facts/schemas), [`ds_engine_assert` or `ds_engine_retract`](inv:integrator:std:doc#facts/asserting), [`ds_engine_pump`](inv:integrator:std:doc#engine/pump), or a [clock call](inv:integrator:std:doc#engine/clock) returns a failure |
 
 `DS_ERR_CONTRACT_BREACH` for a `FactAssert` or a `PumpBoundary` does not end the replay, nor does `DS_ERR_ENGINE_HALTED` for a halt that the atom's own assert, retract, delivery or pump raises, nor do `DS_ERR_NAN_REJECTED` and `DS_ERR_SERIES_NO_BACKING` for a `PumpBoundary`. Atoms applied before a failure stay applied.
 
-*(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js, bindings/js/src/ds.c, runtime/src/libds/rfcs/rfcs.h, runtime/src/libds/rfcs/codec.c, Spec: [NDET.8.2], [NCBK.2.9], [RBND.5.2], [RBND.2.1], [RFCS.7.3], [LDET.1.10], [LTIM.2.8.5], [RFCS.18.8], [RFCS.16.3], [RFCS.24.2], [RFCS.26.2], [RFCS.5.3], [RFCS.5.4], [RFCS.6.3], [RFCS.6.7], [NCBK.2.11])*
+*(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js, bindings/js/src/ds.c, runtime/src/libds/rfcs/rfcs.h, runtime/src/libds/rfcs/codec.c, Spec: [NDET.8.2], [NCBK.2.9], [RBND.5.2], [RBND.2.1], [RFCS.7.3], [LDET.1.10], [LTIM.2.8.5], [RFCS.24.2], [RFCS.26.2], [RFCS.5.3], [RFCS.5.4], [RFCS.6.3], [RFCS.6.7], [NCBK.2.11])*
 
 ### `ReplayCounts`
 
@@ -108,7 +107,7 @@ What a replay did.
 | `ruleFires` | `RuleFireAnnotation` atoms compared and matching the record |
 | `calls` | `CallIssued` atoms compared and matching the record |
 | `withdrawals` | `FactWithdraw` atoms compared and identical |
-| `skipped` | `SchemaDef` and `Slot` atoms; other allocated atoms with no arm; unknown skip-band atoms; a `BoundsError` left uncompared |
+| `skipped` | `SchemaDef` and `Slot` atoms; other allocated atoms with no arm; a `BoundsError` left uncompared |
 | `headerVerified` | whether a `StreamHeader` matched the engine's session header |
 
 *(Source: bindings/js/types/types.d.ts, runtime/src/libds/rfcs/codec.c)*

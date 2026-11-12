@@ -41,11 +41,13 @@ series Reading.ok:
 
 **`onset_rate(cursor)`**
 
-`onset_rate` is the number of false-to-true transitions per second within the sliding window.
+`onset_rate` is the number of rising edges per second within the sliding window.
 
-`onset_rate = N / min(W, elapsed)`, where `N` counts rising edges in `(t-W, t]` and `elapsed` is the time since the series instance absorbed its first sample. At the first edge `elapsed` is `0`, and the read is `0` until `elapsed` is greater than `0`. `elapsed` restarts when the backing is [evicted](reading.md#eviction).
+`onset_rate = N / min(W, elapsed)`, where `N` counts rising edges whose instant lies in `(t-W, t]` and `elapsed` is the time since the series instance absorbed its first sample. While `elapsed` is `0` the read is `0`.
 
-*(Spec: [LSER.19.7], [LSIG.1.4.1], [LSIG.1.4.2])*
+A rising edge is the absorption of a `true` while the slot holds `false`, at that sample's instant. The slot holds the value it last absorbed through any silence, and nothing before its first absorption: a first `true` is no rising edge, and neither is a `true` after a held `true`. Under `nulls: skip` a `null` leaves the held value in place. The time of the first sample does not reset, so `min(W, elapsed)` is less than `W` over the instance's first `W` only.
+
+*(Spec: [LSER.19.7], [LSIG.1.4.1], [LSIG.1.4.2], [LSIG.5.4], [LSER.9.3.1])*
 
 ### `integral`
 
@@ -53,7 +55,7 @@ series Reading.ok:
 
 `integral` is the time-weighted integral of a slot, by the rectangle rule over the slot's step function.
 
-`integral = Σ x_i (t_{i+1} - t_i)`, the newest sample held to the query time. A slot in units `U` gives `U·s`, and [Result units](aggregations.md#integral-result-unit) states the annotation it takes. The rectangle rule is exact over the facts. Against a continuously varying signal, its absolute error is at most the slot's `tolerance` or quantisation step times `W`. `integral` over `all_time` accumulates in a `Float` from `0.0` at the first assertion.
+`integral = Σ x_i (t_{i+1} - t_i)`, the newest sample held to the query time. A slot in units `U` gives `U·s`, and [Unit-changing aggregations](aggregations.md#unit-changing-aggregations) states what a `let` over it takes. The rectangle rule is exact over the facts. Against a continuously varying signal, its absolute error is at most the slot's `tolerance` or quantisation step times `W`. `integral` over `all_time` accumulates in a `Float` from `0.0` at the first assertion.
 
 ```ds declaration
 series Reading.level:
@@ -97,7 +99,7 @@ Each aggregation is exact over the observed event stream; its fidelity to the ph
 | Aggregation | Exact with respect to | Assumption | If it breaks |
 |---|---|---|---|
 | `active_fraction` | the observed transitions | every transition is observed, and `true` is asserted at connection | a lost falling edge biases it high and does not correct itself; an already-on signal under-reports for up to `W` |
-| `onset_rate` | the observed rising edges | edges are genuine onsets | chatter inflates it; `min(W, elapsed)` restarts after each idle gap |
+| `onset_rate` | the observed rising edges | edges are genuine onsets | un-debounced chatter inflates it |
 | `integral` | the step function over the facts | every value change is observed, and the `gap` policy fits | `gap hold` over a dead source accrues without bound |
 
 *(Spec: [LSIG.6.1])*

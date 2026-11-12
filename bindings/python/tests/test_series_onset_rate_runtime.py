@@ -4,7 +4,7 @@
 
 `onset_rate` is a v1 signal aggregation on a Bool slot: rising edges
 (false→true) per second over the sliding window. It rides the
-SeriesBackendRingBuffer ring (LSIG.2.4) — no new backend atom — with a
+SeriesBackendRingBuffer ring (LSIG.2.4.1) — no new backend atom — with a
 per-instance `t_first` supplying the `min(W, elapsed)` denominator. This drives
 it through the full stack: compiler backing-selection + emit
 (SeriesBackendRingBuffer, element_type BOOL) → DSC load → the
@@ -50,7 +50,8 @@ def test_onset_rate_fires_after_rising_edges():
     alerts: list[str] = []
     capture_critical(eng, alerts)
 
-    # Rising edges at t=0s, 2s, 4s (with falling edges between). Well inside
+    # Rising edges at t=2s and 4s, each a `true` after a `false`; the first
+    # `true`, at 0s, follows nothing and is no edge (LSIG.1.4.1). Well inside
     # the 10s window, elapsed grows to seconds → rate is O(1)/s ≫ 0.1.
     for t, v in [(0, True), (1, False), (2, True), (3, False), (4, True)]:
         _assert_at(eng, t * 1_000_000_000, v)

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.3_dim_mod_bare_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.3]: `%` is refused with a bare number beside a dimensioned value, so `s.d % 3` on a `meter` slot is refused. Pin: DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck.luni_8_3_class_of`, which classes `%` as additive, and `dsc.types.luni_8_1_combine`'s `dr_bare_number` row.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n\nrule r:\n    R s where s.d % 3 > 1_meter\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

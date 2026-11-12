@@ -27,7 +27,7 @@ This form opens the shell on the program and what it is given.
 - A trace that embeds its program needs no other.
 - A `.ds` given with a `.dsc` is checked against it, and is its source if the `.dsc` embeds none.
 - With a trace, the session replays it. Without one, the session is live, and its wall clock reads the Unix epoch at its clock's `0`.
-- [Fact files](#fact-files) start a live session: each row is fed as in [batch](#batch), and point opens at the end. Fact files and a trace together are a usage error.
+- [Fact files](#fact-files) start a live session: each row is fed as in [batch](#batch), deadline stops included. Each row and each deadline stop is a step of its own on the session's timeline, and point opens at the end. Fact files and a trace together are a usage error.
 
 *(Source: tools/dsdb/lib/cli/main.js, tools/dsdb/lib/cli/open.js, tools/dsdb/lib/api/open.js, tools/dsdb/lib/core/engine-timeline.js, Spec: [LDEB.2.2], [LDEB.2.3])*
 
@@ -40,9 +40,9 @@ ds -b (PROG.dsc | PROG.ds -L DIR...) FACTS... [--out DIR --format csv|tsv|jsonl]
 
 This form runs the facts through the program with no shell, and reads nothing from stdin.
 
-The engine runs on a mock clock from `0`. Each merged row moves the clock forward to its `@at`, never back, then is asserted and pumped. The wall clock reads the Unix epoch at `0` and moves with the mock clock, so `now()`, and a `ts` a rule's `emit` or `publish` fills, read a row's `@at`.
+The engine runs on a mock clock from `0`. Each merged row moves the clock forward to its `@at`, never back, then is asserted and pumped. Before the clock moves to a later row, it stops at each [engine deadline](inv:integrator:std:doc#engine/clock) earlier than that row, and the engine pumps there; a deadline a stop's pump arms is read before the clock moves on, and a deadline at the row's own `@at` takes no step of its own. The wall clock reads the Unix epoch at `0` and moves with the mock clock, so `now()`, and a `ts` a rule's `emit` or `publish` fills, read a row's `@at`.
 
-With `--until D`, after the rows and the reply cycles, the clock moves to `D` and the engine pumps once. A row past `D` is refused with exit `1`, naming the file and line. Without it, the run ends at the last row's time.
+With `--until D`, after the rows and the reply cycles, the clock moves to `D` through each engine deadline earlier than `D`, pumping at each, and the engine pumps once at `D`. A row past `D` is refused with exit `1`, naming the file and line. Without it, the run ends at the last row's time.
 
 The output is what the rules `publish`, every schema keyed, each slot as it was when published. An emitted fact is not output. A run that emitted and published nothing says so on stderr.
 
@@ -55,7 +55,7 @@ A `call` is reported on stderr, and is made only with `--calls` or `--listen`.
 ds -b -q rules.dsc Reading.csv --out out --format jsonl --until 10_s
 ```
 
-*(Source: tools/dsdb/lib/cli/main.js, tools/dsdb/lib/core/batch.js, tools/dsdb/lib/core/facts-out.js)*
+*(Spec: [NLFC.2.5], Source: tools/dsdb/lib/cli/main.js, tools/dsdb/lib/core/batch.js, tools/dsdb/lib/core/facts.js, tools/dsdb/lib/core/facts-out.js)*
 
 ### Listing
 

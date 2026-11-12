@@ -204,6 +204,22 @@ def test_assert_missing_slot_rejected():
         eng.assert_("Pair", a=1)
 
 
+def test_assert_missing_hydrated_corr_slot_rejected():
+    """A slot named `hydrated_corr` is an author's slot like any other.
+
+    No clause in force gives the name a meaning (hydration is deferred), so
+    omitting a non-nullable one is refused as any missing slot is, and
+    supplying it is admitted: the control, so the refusal is the omission's.
+    """
+    eng = _engine_with(
+        "schema Reading scope logical:\n    dev: String key\n    hydrated_corr: String mutable\n"
+    )
+    with pytest.raises(TypeError, match="missing kwarg for slot `hydrated_corr`"):
+        eng.assert_("Reading", dev="a")
+    eng.assert_("Reading", dev="a", hydrated_corr="x")
+    assert len(eng.facts) == 1
+
+
 def test_assert_misspelled_slot_rejected():
     """A right kwarg count with a wrong slot name names the unmatched slot.
 

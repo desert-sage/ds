@@ -1,0 +1,18 @@
+{
+    "id": "LSER.8.5.1_seventeen_series_slots_absorb_once",
+    "clauses": ["LSER.8.5.1"],
+    "category": "logical",
+    "scenario": "[LSER.8.5.1]: a series takes one sample of its tracked slot per fact that enters working memory, however many slots of the schema carry a series. `Reading` is keyed on `dev` and has seventeen tracked Int slots: `s1` to `s16` carry one `count sliding 10_min` line each, and `s17`, declared last, carries two labelled lines, `recent` over 10 min and `wide` over 20 min, so it is the seventeenth slot the absorb walk meets. Two asserts to `a` before the first pump, every slot 1 and then every slot 2: the second supersedes the first, and both are samples ([LSER.8.6]), the first through the superseded-sample queue and the second through the end-of-pump walk. A `Probe` at the second pump reads 2 on `s1`, `recent` and `wide`. A walk that tracks the slots it has already absorbed in a fixed table of sixteen never records `s17`, takes its sample once per line and gives each one to both lines, so `recent` and `wide` read 4 while `s1` reads 2. PATH PINNED: libds `series_walk_fact` (engine_rete_adapters.c), whose calls `ds_series_absorb_one` (series/dispatch.c) and the queue's drain each walk one (schema, slot, identity slot) group once, the group's repeats marked at load (dsc/loader.c, `group_repeat`); the Mercury runtime's `ds.engine.absorb_fact`, one sample per declaration.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    s1: Int mutable\n    s2: Int mutable\n    s3: Int mutable\n    s4: Int mutable\n    s5: Int mutable\n    s6: Int mutable\n    s7: Int mutable\n    s8: Int mutable\n    s9: Int mutable\n    s10: Int mutable\n    s11: Int mutable\n    s12: Int mutable\n    s13: Int mutable\n    s14: Int mutable\n    s15: Int mutable\n    s16: Int mutable\n    s17: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.s1:\n    count sliding 10_min\n\nseries Reading.s2:\n    count sliding 10_min\n\nseries Reading.s3:\n    count sliding 10_min\n\nseries Reading.s4:\n    count sliding 10_min\n\nseries Reading.s5:\n    count sliding 10_min\n\nseries Reading.s6:\n    count sliding 10_min\n\nseries Reading.s7:\n    count sliding 10_min\n\nseries Reading.s8:\n    count sliding 10_min\n\nseries Reading.s9:\n    count sliding 10_min\n\nseries Reading.s10:\n    count sliding 10_min\n\nseries Reading.s11:\n    count sliding 10_min\n\nseries Reading.s12:\n    count sliding 10_min\n\nseries Reading.s13:\n    count sliding 10_min\n\nseries Reading.s14:\n    count sliding 10_min\n\nseries Reading.s15:\n    count sliding 10_min\n\nseries Reading.s16:\n    count sliding 10_min\n\nseries Reading.s17:\n    count sliding 10_min as recent\n    count sliding 20_min as wide\n\nrule read:\n    Probe\n    Reading r\n->\n    let a = count(r.s1)\n    let n = count(r.recent)\n    let w = count(r.wide)\n    log info \"{r.dev} s1={a} recent={n} wide={w}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "s1": 1, "s2": 1, "s3": 1, "s4": 1, "s5": 1, "s6": 1, "s7": 1, "s8": 1, "s9": 1, "s10": 1, "s11": 1, "s12": 1, "s13": 1, "s14": 1, "s15": 1, "s16": 1, "s17": 1 } },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "s1": 2, "s2": 2, "s3": 2, "s4": 2, "s5": 2, "s6": 2, "s7": 2, "s8": 2, "s9": 2, "s10": 2, "s11": 2, "s12": 2, "s13": 2, "s14": 2, "s15": 2, "s16": 2, "s17": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a s1=2 recent=2 wide=2"]
+    }
+}

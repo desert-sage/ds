@@ -12,9 +12,9 @@ package ds.v1;
 // number and by name. The transcendentals (8-11, 13-22) are correctly rounded
 // ([LEXP.3.9.2]).
 //
-// The number space is 1..154 with 38, 39, 42, 43, 53, 68, 71, 72, 73, 74, 77,
+// The number space is 1..156 with 38, 39, 42, 43, 53, 68, 71, 72, 73, 74, 77,
 // 80, 84, 85, 100, 109, 110, 121, 135 and 136 reserved (see below), so a value
-// above 154 or in
+// above 156 or in
 // {38,39,42,43,53,68,71,72,73,74,77,80,84,85,100,109,110,121,135,136} is not an
 // op of this enum.
 // This range is stated because a dispatch table built from the comment rather
@@ -332,4 +332,23 @@ enum BuiltinFn {
   FN_CALENDAR_TIME     = 153;
   //   (year, month, day:Int) -> Date
   FN_CALENDAR_DATE     = 154;
+
+  // `Duration` arithmetic that does not wrap ([LTIM.4.1.1], RLOW.6.1.6). The
+  // compiler lowers the operators to these; they have no author syntax. A
+  // Duration reaches the runtime as an Int, and Int arithmetic wraps
+  // ([LEXP.7.13.1]). An exact result above 2^63 - 1 raises NOT_REPRESENTABLE,
+  // and a null operand yields null.
+  // A negative exact result raises NOT_REPRESENTABLE: no two Durations have one.
+  //   (a:Duration, b:Duration) -> Duration
+  FN_DURATION_ADD      = 155;
+  // A negative exact result yields 0 ([LTIM.1.3.1]).
+  //   (n:Int, dur:Duration) -> Duration
+  FN_DURATION_MUL      = 156;
+
+  // An integer-stored unit's conversion that does not wrap (RLOW.6.1.10,
+  // RLOW.7.3.9): m*x + a, the product and then the sum each checked against
+  // the Int range. Past it raises NOT_REPRESENTABLE; a null x yields null. The
+  // compiler emits it with m and a literals; it has no author syntax.
+  //   (x:Int, m:Int, a:Int) -> Int
+  FN_INT_MUL_ADD_CHECKED = 157;
 }

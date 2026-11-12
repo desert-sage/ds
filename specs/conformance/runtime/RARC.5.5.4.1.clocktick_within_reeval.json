@@ -1,8 +1,8 @@
 {
     "id": "RARC.5.5.4.1.clocktick_within_reeval",
     "category": "runtime",
-    "scenario": "RLOW.5.4 — a negated temporal-window pattern (`no X within T`) lowers to a Rete network whose NOT beta re-evaluates on every pump tick through a synthetic `$ClockTick` beta. The compiler must register the `$ClockTick` schema for negated-`within` rules, not only for after-clause / timeout programs; otherwise the Rete loader rejects the alpha node with 'schema not registered'. Pin: a rule with `no AE e within 20min` and no after-clause loads under the native Rete engine and fires (the negation holds when no AE fact is present).",
-    "rules_ds": "schema P scope logical:\n    id: Int key\n    ts: Time\n\nschema AE scope ttl 60s:\n    kind: String\n    ts: Time\n\nrule t cooldown 5min:\n    P\n    no AE e within 20min where e.kind == \"x\"\n->\n    log info \"e\"\n",
+    "scenario": "RLOW.5.4 — a negated temporal-window pattern (`no X within T`) lowers to a Rete network whose NOT beta re-evaluates on every pump tick through a synthetic `$ClockTick` beta. The compiler must register the `$ClockTick` schema for negated-`within` rules, not only for after-clause / timeout programs; otherwise the Rete loader rejects the alpha node with 'schema not registered'. Pin: a rule with `no AE e within 20min` and no after-clause loads under the native Rete engine and fires (the negation holds when no AE fact is present). `AE`'s TTL is `1h`, so the window does not outlast its facts ([LTIM.2.7.3]); no AE is asserted, so the TTL decides nothing here.",
+    "rules_ds": "schema P scope logical:\n    id: Int key\n    ts: Time\n\nschema AE scope ttl 1h:\n    kind: String\n    ts: Time\n\nrule t cooldown 5min:\n    P\n    no AE e within 20min where e.kind == \"x\"\n->\n    log info \"e\"\n",
     "expect": {
         "kind": "runtime_fact_count",
         "asserts": [

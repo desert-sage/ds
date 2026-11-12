@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.8_a_literal_date_reads_as_a_date",
+    "clauses": ["RLOW.6.1.8"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.8]: a `calendar.date` call over constants and a read of a `Date` `const` each lower to `lit_int`, the day count. Each rule compares its literal with a `Date` slot and renders it through `::String`. Fact 1's `d` is 19782, 2024-02-29: `call 1 ...` then `const 1 ...`, in source order ([LDET.5.4]). Fact 2's is the day before: neither fires. A compiler that wrote another day count fires for fact 2 or not for fact 1; one that lost the `Date` type renders digits. PATH PINNED: `dsc.rete.rlow_6_1_8_calendar_literal` and `lgra_13_3_const`.",
+    "rules_ds": "import calendar\n\nconst LEAP = calendar.date(2024, 2, 29)\n\nschema Ev scope logical:\n    id: Int key\n    d: Date mutable\n\nrule from_a_call:\n    Ev e where e.d == calendar.date(2024, 2, 29)\n->\n    let s = calendar.date(2024, 2, 29)::String\n    log info \"call {e.id} {s}\"\n\nrule from_a_const:\n    Ev e where e.d == LEAP\n->\n    let s = LEAP::String\n    log info \"const {e.id} {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "d": 19782 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "d": 19781 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["call 1 2024-02-29", "const 1 2024-02-29"]
+    }
+}

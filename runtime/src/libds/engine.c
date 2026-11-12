@@ -317,6 +317,10 @@ ds_result_t ds_engine_free(ds_engine_t *engine)
        returns into. */
     DS_ENGINE_REFUSE_IF_REENTERED(engine);
 
+    /* [IERR.1.7]: teardown raises nothing, and finishes what it holds. */
+    if (engine->rete_engine != NULL)
+        ds_rete_intern_begin_teardown(engine->rete_engine->intern);
+
     /* In reverse of init order. Teardown fires no callback ([NLFC.6.4]). */
     ds_dispatcher_destroy(&engine->dispatcher);
     ds_wm_destroy(&engine->wm);
@@ -431,6 +435,31 @@ ds_result_t ds_engine_halted(const ds_engine_t *engine, bool *out_halted,
         *out_fault = engine->halted ? engine->halt_fault
                                     : DS_ENGINE_FAULT_UNSPECIFIED;
     }
+    return DS_OK_R;
+}
+
+/* [NLFC.2.5]: reads the clock's source as ds_engine_clock_now does, so a mock
+   clock moved since the last pump counts, and takes no sample. */
+ds_result_t ds_engine_next_deadline_ns(ds_engine_t *engine, uint64_t *out_ns,
+                                       bool *out_has)
+{
+    if (engine == NULL) {
+        return DS_ERR_R(DS_ERR_INVAL, "engine must not be null");
+    }
+    DS_ENGINE_REFUSE_IF_HALTED(engine);
+    if (out_ns == NULL || out_has == NULL) {
+        return DS_ERR_R(DS_ERR_INVAL, "out_ns and out_has must not be null");
+    }
+    uint64_t now_ns = 0;
+    ds_result_t r = ds_clock_source_ns(&engine->clock, &now_ns);
+    if (r.status != DS_OK) return r;
+
+    uint64_t best = 0;
+    bool     has  = false;
+    ds_rete_wm_next_deadline(engine->rete_engine, now_ns, &best, &has);
+    ds_cache_next_deadline(&engine->cache, now_ns, &best, &has);
+    *out_ns  = best;
+    *out_has = has;
     return DS_OK_R;
 }
 

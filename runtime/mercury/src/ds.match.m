@@ -209,20 +209,25 @@
                             % alpha node_id -> the candidate slots some beta
                             % joins on
 
-                ni_roots :: list(beta_node)
+                ni_roots :: list(beta_node),
                             % every negative beta with no left parent
+
+                ni_join_keys :: map(uint32, join_key)
+                            % beta node_id -> the decided equality it probes on
             ).
 
 build_index(N, Schemas) = Index :-
     ByName = list.foldl(add_schema_name, Schemas, map.init),
+    Keys = list.foldl(iret_7_5_1_join_key(Schemas), beta_nodes(N), map.init),
     Index = net_index(
         list.foldl(add_alpha_for_schema(ByName), alpha_nodes(N), map.init),
         map.map_values_only(deepest_first,
             list.foldl(add_beta_of_alpha, beta_nodes(N), map.init)),
         list.foldl(add_child, beta_nodes(N), map.init),
         list.foldl(add_terminal_of, terminal_nodes(N), map.init),
-        list.foldl(add_alpha_key, beta_nodes(N), map.init),
-        list.filter(is_root_beta, beta_nodes(N))).
+        list.foldl(add_alpha_key(Keys), beta_nodes(N), map.init),
+        list.filter(is_root_beta, beta_nodes(N)),
+        Keys).
 
 :- pred is_root_beta(beta_node::in) is semidet.
 
@@ -230,12 +235,12 @@ is_root_beta(B) :-
     B ^ bn_parent = no,
     B ^ bn_negative = yes.
 
-:- func add_alpha_key(beta_node, map(uint32, list(uint32)))
-    = map(uint32, list(uint32)).
+:- func add_alpha_key(map(uint32, join_key), beta_node,
+                      map(uint32, list(uint32))) = map(uint32, list(uint32)).
 
-add_alpha_key(B, M) = Out :-
+add_alpha_key(Keys, B, M) = Out :-
     ( if
-        join_key_of(B) = yes(JK),
+        map.search(Keys, node_id_value(B ^ bn_id), JK),
         Alpha = node_id_value(B ^ bn_right ^ an_id),
         Slot = slot_index_value(JK ^ jk_cand),
         Prior = ( if map.search(M, Alpha, P) then P else [] ),
@@ -721,9 +726,10 @@ test_slot(Ctx, Fact, Slot, Op, Lit) :-
 :- func ctx_for(match_ctx, list(fact_id), maybe(fact_id)) = eval_ctx.
 
 ctx_for(Ctx, Token, Candidate) =
+    % A node's test has no bind frame [RDSC.4a.9.6].
     eval_ctx(Token, Candidate, Ctx ^ mc_wm, Ctx ^ mc_schemas,
-        Ctx ^ mc_interns, Ctx ^ mc_now, Ctx ^ mc_wall, map.init, Ctx ^ mc_cache,
-        Ctx ^ mc_series).
+        Ctx ^ mc_interns, Ctx ^ mc_now, Ctx ^ mc_wall, map.init, 0,
+        Ctx ^ mc_cache, Ctx ^ mc_series).
 
 %-----------------------------------------------------------------------------%
 
@@ -1117,7 +1123,7 @@ add_activation(Token, Terminal, !Delta) :-
                       rete_state::in, rete_state::out) is det.
 
 left_activate(Index, Ctx, Token, Beta, !Delta, !S) :-
-    Facts = right_candidates(Ctx, !.S, Beta, Token),
+    Facts = right_candidates(Index, Ctx, !.S, Beta, Token),
     (
         Beta ^ bn_negative = no,
         list.foldl2(join_against(Index, Ctx, Beta, Token), Facts, !Delta, !S)
@@ -1246,7 +1252,7 @@ not_in(Passing, Token) :-
                       rete_state::in, rete_state::out) is det.
 
 maybe_unblock(Index, Ctx, Beta, Token, !Delta, !S) :-
-    Facts = right_candidates(Ctx, !.S, Beta, Token),
+    Facts = right_candidates(Index, Ctx, !.S, Beta, Token),
     % The faults and expired cache keys are dropped: a retraction evaluates no join
     % test ([IRET.7.7], [IRET.7.9.3]). The blockers are not stored, so this re-tests
     % to decide, over pairs that were live before and so derive nothing
@@ -1481,16 +1487,59 @@ alpha_put(Key, AM, !S) :-
                 jk_slot  :: slot_read       % and which of its slots
             ).
 
-    % The first usable equality. The index narrows the candidates; `join_against`
-    % still runs the full `join_verdict`.
+    % [IRET.7.5.1]: the beta's first usable equality, kept only where it is decided:
+    % both its slots non-nullable and not `Json` by their declared schemas, so the
+    % comparison answers `true` or `false` and raises nothing. Probing skips every
+    % pair whose keys differ, which is sound only where the equality would have
+    % answered a plain `false`; an undecided key's `null` or fault would be lost
+    % ([IRET.7.6], [LERR.1.4.11]). A beta with no decided key joins against its whole
+    % right memory. libds decides the same, once per node (rete/beta.c,
+    % `eq_key_decided`). The index narrows the candidates; `join_against` still runs
+    % the full `join_verdict`.
     %
-:- func join_key_of(beta_node) = maybe(join_key).
+    %@spec [IRET.7.5.1]
+:- func iret_7_5_1_join_key(list(schema), beta_node, map(uint32, join_key))
+    = map(uint32, join_key).
 
-join_key_of(Beta) = Key :-
-    ( if list.filter_map(usable_equality, Beta ^ bn_tests, [K | _]) then
-        Key = yes(K)
+iret_7_5_1_join_key(Schemas, Beta, Keys) =
+    ( if
+        list.filter_map(usable_equality, Beta ^ bn_tests, [K | _]),
+        decided_slot(Schemas, Beta ^ bn_right ^ an_schema, K ^ jk_cand),
+        K ^ jk_fact = token_fact(I),
+        list.index0(token_alphas(Beta), I, Alpha),
+        K ^ jk_slot = slot(TokSlot),
+        decided_slot(Schemas, Alpha ^ an_schema, TokSlot)
+    then
+        map.set(Keys, node_id_value(Beta ^ bn_id), K)
     else
-        Key = no
+        Keys
+    ).
+
+    % The slot of the named schema is neither nullable ([LNUL.3.1]) nor `Json`.
+    %
+:- pred decided_slot(list(schema)::in, schema_name::in, slot_index::in)
+    is semidet.
+
+decided_slot(Schemas, Name, Slot) :-
+    list.find_first_match(
+        ( pred(S::in) is semidet :- S ^ s_name = Name ), Schemas, Schema),
+    list.find_first_match(
+        ( pred(C::in) is semidet :- C ^ sc_index = Slot ),
+        slot_commons(Schema), Common),
+    Common ^ sc_nullable = non_null,
+    Common ^ sc_kind \= k_json.
+
+    % The alphas whose facts a token reaching this beta carries, in token order:
+    % each positive ancestor's, the root's first. A NOT node adds no fact.
+    %
+:- func token_alphas(beta_node) = list(alpha_node).
+
+token_alphas(Beta) =
+    ( if Beta ^ bn_parent = yes(Parent) then
+        token_alphas(Parent)
+            ++ ( if Parent ^ bn_negative = no then [Parent ^ bn_right] else [] )
+    else
+        []
     ).
 
 :- pred usable_equality(expr::in, join_key::out) is semidet.
@@ -1512,25 +1561,26 @@ usable_equality(e_binop(op_eq, L, R), Key) :-
     % The candidates a token could join with: the whole memory unless the shape is
     % an indexable equality, the slot is indexed and the token supplies a value.
     %
-:- func right_candidates(match_ctx, rete_state, beta_node, token) = list(fact).
+:- func right_candidates(net_index, match_ctx, rete_state, beta_node, token)
+    = list(fact).
 
-right_candidates(Ctx, S, Beta, Token) = Facts :-
+right_candidates(Index, Ctx, S, Beta, Token) = Facts :-
     ( if map.search(S ^ rs_alpha, node_id_value(Beta ^ bn_right ^ an_id), AM)
     then
-        Facts = right_candidates_in(Ctx, AM, Beta, Token)
+        Facts = right_candidates_in(Index, Ctx, AM, Beta, Token)
     else
         Facts = []
     ).
 
-:- func right_candidates_in(match_ctx, alpha_mem, beta_node, token)
+:- func right_candidates_in(net_index, match_ctx, alpha_mem, beta_node, token)
     = list(fact).
 
-right_candidates_in(Ctx, AM, Beta, Token) = Facts :-
+right_candidates_in(Index, Ctx, AM, Beta, Token) = Facts :-
     ( if
         % Positive betas only: a negated pattern must also test the candidates
         % whose key makes the equality `null` [LNUL.4.7].
         Beta ^ bn_negative = no,
-        join_key_of(Beta) = yes(JK),
+        map.search(Index ^ ni_join_keys, node_id_value(Beta ^ bn_id), JK),
         token_key_value(Ctx, Token, JK, Value),
         map.search(AM ^ am_index, slot_index_value(JK ^ jk_cand), ByValue)
     then

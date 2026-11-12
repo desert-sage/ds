@@ -1,0 +1,22 @@
+{
+    "id": "LSER.9.3.1_active_fraction_survives_a_swept_silence",
+    "clauses": ["LSER.9.3.1"],
+    "category": "logical",
+    "scenario": "[LSER.9.3.1]: the engine must not evict the state a signal aggregation reads after a window of silence, so a stuck `true` keeps reading `true`. `active_fraction sliding 10_s` on `Pump.state` takes `true` at t=0. At 30 s an unrelated `Other` fact is asserted and pumped, so a pump reads a clock three windows past the last sample and an eviction sweep runs. At 60 s the pump is re-asserted with `state` still `true` and `n` 2, a supersede, and the rule's `where` reads `p.active_fraction` before that fact's own sample ([LSER.8.6]): the window holds no sample, the carry holds `true`, and it reads 1.0, so the rule fires once. The `n == 2` conjunct keeps the first fact, whose `where` is re-read at each pump ([LTIM.2.4.1]), from firing at 30 s. A sweep that freed the silent row at 30 s leaves a cold read, 0.0, and the rule never fires. Path: libds `ds_series_state_evict_stale` pass 2, which never frees an interval-pulse row; the Mercury runtime's `ds.series` `carry_backing`, which keeps the carry for SeriesBackendIntervalPulse.",
+    "rules_ds": "use default\n\nschema Pump scope logical:\n    id: String key\n    state: Bool mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Pump.state (by: id):\n    active_fraction sliding 10_s\n\nrule r:\n    Pump p where p.n == 2 and p.active_fraction > 0.9\n->\n    log info \"held\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 30000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 60000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["held"]
+    }
+}

@@ -229,8 +229,8 @@ class ReplayResult:
     """Calls re-derived and found identical to the recording's."""
     withdrawals: int
     skipped: int
-    """Atoms passed over as carrying nothing to replay: announcements, and an
-    atom this build does not know in a band that may be skipped."""
+    """Atoms passed over as carrying nothing to replay: announcements, and a
+    BoundsError on ``pump_wcet_ns``."""
     header_verified: bool
     """Whether the stream's header names the artefact this engine loaded."""
     tail_bytes: int
@@ -662,6 +662,15 @@ class Clock:
         """The monotonic clock's value. Reading it takes no sample."""
         return self._engine._clock_now()
 
+    @property
+    def next_deadline_ns(self) -> int | None:
+        """The earliest deadline after the clock's current value, or ``None``.
+
+        A deadline is a live timer's ``fire_at``, a live fact's TTL expiry or a
+        cache entry's expiry. Reading it takes no sample and records nothing.
+        """
+        return self._engine._clock_next_deadline()
+
     def set(self, now_ns: int, /) -> None:
         """Set the mock monotonic clock to ``now_ns``.
 
@@ -1082,6 +1091,30 @@ class Engine(_Engine):
     def schemas(self) -> Schemas:
         """The schemas the engine knows, by name: a ``Mapping`` view."""
         return Schemas(self)
+
+    def slot_to_stored(self, schema: str, slot: str, value: int | float) -> int | float:
+        """Return a number in the unit a slot names as the number the slot stores.
+
+        The slot's declared type is a unit symbol (NFCT.1.4.6): ``value`` is in
+        that unit, and the result is what ``value::<unit>`` gives a rule, which
+        ``assert_`` takes. An ``int`` for a slot stored as an integer, a
+        ``Duration``'s nanoseconds among them, and a ``float`` for one stored as
+        a float. Changes nothing. Refused with ``pyds.Error``:
+        ``SCHEMA_UNKNOWN`` or ``SLOT_UNKNOWN`` for a name the engine has no
+        schema or slot by, then libds's statuses: ``INVAL`` for a slot that
+        names no unit, ``SLOT_TYPE_MISMATCH``, ``NAN_REJECTED``, and
+        ``NOT_REPRESENTABLE`` where the conversion has no result for the
+        number.
+        """
+        return self._slot_convert(schema, slot, value, True)
+
+    def slot_from_stored(self, schema: str, slot: str, value: int | float) -> int | float:
+        """Return a number a slot stores in the unit the slot names.
+
+        The inverse of ``slot_to_stored``: what a kwarg of the slot's unit
+        receives (NFCT.1.4.6), and refused as it is.
+        """
+        return self._slot_convert(schema, slot, value, False)
 
     @property
     def rules(self) -> Rules:

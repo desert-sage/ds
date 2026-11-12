@@ -7,7 +7,12 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "- [IERR.1.5] **libds never `abort()`s, never `exit()`s,\n  never `longjmp()`s.** All failures surface through\n  `ds_result_t`, including OOM, including internal\n  invariant violations. Asserts are allowed in debug\n  builds for bug-catching; release builds return\n  `DS_ERR_INTERNAL`.\n",
+  "text": "- [IERR.1.5] **libds never `abort()`s, never `exit()`s,\n  never `longjmp()`s.** All failures surface through\n  `ds_result_t`, including OOM, including internal\n  invariant violations ([IERR.1.7]). An assert is allowed only in a\n  build that defines `DS_DEBUG` ([IRET.28.15]).\n\n  This binds every object libds compiles and the `libprotobuf-c` archive\n  shipped beside it, which is built with its asserts compiled out. It does\n  not bind the RE2 and Abseil objects folded into a libds archive; libds's\n  seam over them reports what they raise as a C++ exception. One path in a\n  libds object traps: the CORE-MATH branch of `pow` and `atan2` that upstream\n  holds unreachable, where the routine has no correctly rounded value to\n  return ([LEXP.3.9.2]).\n",
+  "refs": [
+    "IERR.1.7",
+    "IRET.28.15",
+    "LEXP.3.9.2"
+  ],
   "errors": [
     "DS_ERR_INTERNAL"
   ]

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.2_unannotated_duration_variance_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.9.2] with [LTIM.1.3.5]: `q` is a `Duration` slot, a value of the `time` dimension, so `let x = f.variance` is a unit-changing read with no unit to state. Pin: DS_VALIDATE_DIM_AGG_UNANNOTATED. PATH PINNED: `dsc.validate.luni_9_2_unannotated`, through `dsc.typecheck.luni_9_2_unit_changing_read` on a slot whose type carries `dim(time)`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Duration mutable\n\nseries Flow.q:\n    variance sliding 5_min\n\nrule r:\n    Flow f\n->\n    let x = f.variance\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+    }
+}

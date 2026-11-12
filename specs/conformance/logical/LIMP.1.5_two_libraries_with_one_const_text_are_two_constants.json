@@ -1,0 +1,20 @@
+{
+    "id": "LIMP.1.5_two_libraries_with_one_const_text_are_two_constants",
+    "clauses": ["LIMP.1.5", "LEXP.8.8"],
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: each library's constant is read in its own file. Libraries `a` and `b` each hold, at the same positions, `const _B = <n>` and `const V = _B * 2`; `a`'s `_B` is 1 and `b`'s is 5. The importer's `const SUM = a.V + b.V` folds both in one fold, so it is 2 + 10 = 12. A fact of 12 logs and a fact of 4 does not. Exactly [\"hit 1\"]. A fold memo keyed on the text and position alone hands `b.V` the entry `a.V` left, and `SUM` is 4, which logs `hit 2`. PATH PINNED: `dsc.dstest`'s `fold_memo`, whose key holds `acn_library`.",
+    "rules_ds": "import a\nimport b\n\nconst SUM = a.V + b.V\n\nschema S scope logical:\n    k: Int key\n    v: Int mutable\n\nrule r:\n    S x where x.v == SUM\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "a": "const _B = 1\nconst V = _B * 2\n",
+        "b": "const _B = 5\nconst V = _B * 2\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "v": 12 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "v": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

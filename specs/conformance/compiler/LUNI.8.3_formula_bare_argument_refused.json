@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.3_formula_bare_argument_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.3] with [LGRA.9.8.11]: a `unit formula`'s function checks a bare argument as a bare number beside its dimensioned parameter, so `hz_to_period(440.0)` is refused. Pin: DS_VALIDATE_DIM_MISMATCH. PATH PINNED: the bare-argument arm of `dsc.typecheck.lgra_9_8_11_formula_call`.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nunit formula hz_period:\n    hz_to_period(x: Hz): nanosecond  = 1e9 / x\n    period_to_hz(x: nanosecond): Hz  = 1e9 / x\n\nschema R scope logical:\n    id: Int key\n\nrule r:\n    R s where s.id == 1 and hz_to_period(440.0) > 1_nanosecond\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "id": "IRET.9.6_coalesce_keeps_json_provenance",
+    "category": "logical",
+    "scenario": "[IRET.9.6]: provenance flows through `??`, which passes a present value through whatever its kind and so establishes nothing. `x`'s leaf is the String `\"x\"`, so `d.body.c ?? 0` is `\"x\"`, and `+ 1` mismatches on a flagged node: a TypeError, which `handler` logs. A second fact, `two` with `2`, then matches `adds`, so the tier was not halted. Were the flag cleared at `??`, the `+` would raise an EngineError, which halts the tier ([LERR.1.4.7]); the step would return DS_ERR_ENGINE_HALTED, which fails the fixture ([RCTS.1.2.28]). Exactly [\"type error\", \"adds two\"]. PATH PINNED: `dsc.rete.provflag1_stamp`, whose `provflag1_clears` names only a cast, stamping the coalesce and the `+` above it.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule adds:\n    Doc d where (d.body.c ?? 0) + 1 > 0\n->\n    log info \"adds {d.k}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "x", "body": { "c": "x" } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "two", "body": { "c": 2 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error", "adds two"]
+    }
+}

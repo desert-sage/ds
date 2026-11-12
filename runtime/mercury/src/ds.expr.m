@@ -200,21 +200,25 @@
 % Bindings
 %-----------------------------------------------------------------------------%
 
-    % A `bind_ref` index, local to a terminal. `bind_index/3` range-checks it
-    % against that terminal's `bind_count` [RDSC.4a], [RDSC.8.7].
+    % A `bind_ref` index into its site's frame. `bind_index/3` makes one inside a
+    % frame of the given size, for code that builds a frame.
     %
 :- type bind_index.
 :- func bind_index_int(bind_index) = int.
 :- pred bind_index(int::in, int::in, bind_index::out) is semidet.
 
-    % Whether a bind frame is in scope. A `fire_guard` has its terminal's; a
-    % `BetaNode`'s `join_tests` have none, so any non-negative index is accepted.
+    % An index as the artefact wrote it, whatever its site's frame. A loader
+    % keeps it: one outside the frame is `ARTEFACT_LIED` where the engine reads
+    % or writes it, never a load refusal [RDSC.4a.9.6].
+    %
+:- func bind_index_of(uint32) = bind_index.
+
+    % The frame an expression's site has. A `fire_guard` has its terminal's; a
+    % `BetaNode`'s `join_tests` have none.
     %
 :- type bind_scope
     --->    no_bind_frame
     ;       bind_frame(int).        % TerminalNode.bind_count
-
-:- pred bind_index_in(bind_scope::in, int::in, bind_index::out) is semidet.
 
 %-----------------------------------------------------------------------------%
 % The expression
@@ -346,10 +350,7 @@ bind_index(BindCount, N, bind_index(N)) :-
 
 bind_index_int(bind_index(N)) = N.
 
-bind_index_in(no_bind_frame, N, bind_index(N)) :-
-    N >= 0.
-bind_index_in(bind_frame(Count), N, Ix) :-
-    bind_index(Count, N, Ix).
+bind_index_of(N) = bind_index(uint32.cast_to_int(N)).
 
 %-----------------------------------------------------------------------------%
 

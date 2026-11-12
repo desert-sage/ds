@@ -102,8 +102,9 @@ Identity and this table are the complete set of legal conversions.
 |---|---|---|
 | `Int` to `Float` | total | widening |
 | `Float` to `Int` | total | the truncation toward zero; a trap if that is no `Int`, as for a non-finite value or one outside `Int` |
-| unit to its storage kind | total | `Float` for a `float64` dimension, `Int` for an `int64` or `int32` one; strips the dimension tag |
-| storage kind to unit | total | `Float` to a `float64` unit, `Int` to an `int64` or `int32` unit; asserts the dimension tag and applies no affine factor. A negative `Int` to a `time` unit gives `0_s` |
+| unit to its storage kind | total | `Float` for a `float64` dimension, `Int` for an `int64` or `int32` one; a [strip](../units/checking.md#assertion-and-strip), a runtime identity |
+| storage kind to unit | total | `Float` to a `float64` unit, `Int` to an `int64` or `int32` unit; the number is in that unit, and the result is held in the base unit ([assertion](../units/checking.md#assertion-and-strip)). A negative `Int` to a `time` unit gives `0_s` |
+| `Duration` to a `time` unit, and back | total | a runtime identity |
 | `Int`, `Float`, `Bool` to `String` | total | see [String rendering](#string-rendering) |
 | `Time`, `Date`, `Duration` to `String` | total | see [Temporal text](#temporal-text) |
 | `Duration` to `Int` | total | its nanoseconds |
@@ -115,7 +116,7 @@ Identity and this table are the complete set of legal conversions.
 
 A pair that is no identity and no defined conversion is refused with `DS_VALIDATE_CAST_UNDEFINED`.
 
-Among them: numeric with `Bool` in either direction, a unit with the other numeric kind, `String` to `Time`, `Date` or `Duration`, a scalar to `Json`, and `Json` to a scalar. `Bytes` with `String` is refused [with its own code](strings.md#bytes-and-string-conversion), an opaque source [with its own](opaque.md#elimination), and a fact to `Json` with `DS_VALIDATE_RULE_NOT_LOWERED`.
+Among them: numeric with `Bool` in either direction, a unit with the other numeric kind, `String` to `Time`, `Date` or `Duration`, a scalar to `Json`, and a whole `Json` value to a scalar. A leaf a path reads from a `Json` value, and a value computed from one, a `??` over one included, converts as the value it holds ([Json leaf conversion](json.md#json-leaf-conversion)). `Bytes` with `String` is refused [with its own code](strings.md#bytes-and-string-conversion), an opaque source [with its own](opaque.md#elimination), and a fact to `Json` with `DS_VALIDATE_RULE_NOT_LOWERED`.
 
 A defined conversion a compiler does not implement is refused with `DS_VALIDATE_CAST_UNSUPPORTED`.
 
@@ -123,7 +124,7 @@ A defined conversion a compiler does not implement is refused with `DS_VALIDATE_
 r.n::Json
 ```
 
-*(Spec: [LCST.4.5.2], [LCST.4.5.3])*
+*(Spec: [LCST.4.5.2], [LCST.4.5.3], [LCST.4.5.11])*
 
 ### String rendering
 

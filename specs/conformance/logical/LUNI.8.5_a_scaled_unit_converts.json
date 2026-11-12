@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_a_scaled_unit_converts",
+    "category": "logical",
+    "scenario": "[LUNI.8.5]: a `Float` slot holding 2, asserted into `km`, is 2000 meters, so the rule logs. A compiler that only tags the value compares 2 m. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s tier-1 arm with an offset of zero, `1000.0 * x`, evaluated by each runtime's `BINOP_MUL`.",
+    "rules_ds": "unit km: length = x * 1000\n\nschema S scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    S s where s.v::km == 2000_meter\n->\n    log info \"scaled\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "v": 2.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["scaled"]
+    }
+}

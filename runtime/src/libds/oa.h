@@ -104,8 +104,9 @@ ds_result_t ds_oa_clone_into(oa_t *dst, const oa_t *src,
                           oa_remap_fn remap_key, oa_remap_fn remap_val,
                           void *ctx);
 
-#ifndef NDEBUG
-/* Asserts the representation invariant, RI-1..RI-7; tests call it after every op. */
+#ifdef DS_DEBUG
+/* Asserts the representation invariant, RI-1..RI-7; tests call it after every op
+ * ([IRET.28.15]: compiled under DS_DEBUG). */
 void        ds_oa_check(const oa_t *t);
 #endif
 

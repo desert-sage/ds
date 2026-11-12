@@ -2,14 +2,15 @@
 /* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
 /*
  * @spec [NTST.3.1]
- * On a mock clock, ds_engine_clock_advance "must return DS_ERR_TIME_RANGE and
- * leave the engine as it was" for a duration above 2^63 - 1, a wall clock
- * that would pass 2^63 - 1, and a monotonic clock that would pass 2^64 - 1.
- * One that lands on the top of a range is taken, and a wall clock with no
- * value limits nothing.
+ * On a mock clock, ds_engine_clock_set and ds_engine_clock_advance "must return
+ * DS_ERR_TIME_RANGE and leave the engine as it was" when the monotonic clock
+ * would end above 2^63 - 1, and the advance when a wall clock with a value
+ * would. One that lands on the top of a range is taken, and a wall clock with
+ * no value limits nothing.
  *
- * THE PATH: ds_engine_clock_advance -> engine_clock_advance_body ->
- * ds_clock_advance, read through libds.h ([STYL.5.10.8]).
+ * THE PATH: ds_engine_clock_set -> engine_clock_set_body -> ds_clock_set, and
+ * ds_engine_clock_advance -> engine_clock_advance_body -> ds_clock_advance,
+ * read through libds.h ([STYL.5.10.8]).
  *
  * Each refusal asserts the status and then that nothing moved: the monotonic
  * clock by ds_engine_clock_now, ds.clock.advance_total by its metric, and the
@@ -159,11 +160,17 @@ static int the_monotonic_clocks_top(void)
     seen_t s;
     uint64_t now = 0;
     if (mock_engine(&e, &s)) return 1;
-    EXPECT_OK("clock_set", ds_engine_clock_set(e, UINT64_MAX));
-    if (refused_without_a_sample("monotonic at 2^64 - 1, advance 1", e, &s, 1)) return 1;
-    EXPECT_OK("monotonic at 2^64 - 1, advance 0", ds_engine_clock_advance(e, 0));
+    EXPECT_STATUS("clock_set to 2^63", ds_engine_clock_set(e, TOP + 1u),
+                  DS_ERR_TIME_RANGE);
     EXPECT_OK("clock_now", ds_engine_clock_now(e, &now));
-    if (now != UINT64_MAX || s.advances != 1)
+    if (now != 0) return fail("clock_set to 2^63", "the monotonic clock moved");
+    EXPECT_OK("clock_set to 2^63 - 1", ds_engine_clock_set(e, TOP));
+    if (refused_without_a_sample("monotonic at 2^63 - 1, advance 1", e, &s, 1)) return 1;
+    EXPECT_STATUS("clock_set above the top from the top",
+                  ds_engine_clock_set(e, UINT64_MAX), DS_ERR_TIME_RANGE);
+    EXPECT_OK("monotonic at 2^63 - 1, advance 0", ds_engine_clock_advance(e, 0));
+    EXPECT_OK("clock_now", ds_engine_clock_now(e, &now));
+    if (now != TOP || s.advances != 1)
         return fail("advance 0", "not taken, or the clock moved");
     EXPECT_OK("free", ds_engine_free(e));
     return 0;

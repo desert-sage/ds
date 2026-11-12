@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.4.1.1_duration_add_past_range_raises",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6", "LERR.1.4.10"],
+    "category": "logical",
+    "dead_rules_expected": ["seen"],
+    "scenario": "[LTIM.4.1.1]: `Duration + Duration` is exact, and a result above 2^63 - 1 nanoseconds raises a `ComputationError` of kind NOT_REPRESENTABLE, never a wrap. `s.a` is 2^63 - 1 and `s.b` is 1, so the sum is one past the range, and `emit Out v: s.a + s.b` raises. `handler` logs the kind, and `seen`, which would log an `Out`, does not fire: no fact was emitted. Exactly [\"NOT_REPRESENTABLE\"]. A runtime that wraps emits an `Out` holding a negative `Duration`. PATH PINNED: `dsc.rete.rlow_6_1_6_checked` lowering to `FN_DURATION_ADD`, against libds's `adapter_ds_duration_add` and the Mercury runtime's `ltim_4_1_1_duration_add`.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    a: Duration mutable\n    b: Duration mutable\n\nschema Out scope ttl 1_h:\n    v: Duration\n\nrule make:\n    S s\n->\n    emit Out v: s.a + s.b\n\nrule seen:\n    Out o\n->\n    log info \"out {o.v}\"\n\nrule handler:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "a": 9223372036854775807, "b": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE"]
+    }
+}

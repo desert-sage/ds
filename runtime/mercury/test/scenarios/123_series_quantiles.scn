@@ -1,0 +1,28 @@
+# `median`, `p25`, `p75` and `p99` on sliding and sample, one non-dyadic sample
+# per pump, and `median` on an `Int` slot -- see fixtures/158_series_quantiles.ds.
+# `v` takes 0.1, 0.7, 0.2, 1.3, 2.9, 0.3; `n` takes 1, 2, 3. Pump 1 reads cold;
+# pump k reads the k - 1 samples before it ([LSER.8.6]). `QI` reads [1, 2] as
+# 1.5 at its third pump ([LSER.17.2]'s example). Every assert changes its
+# value, so each is a sample ([LFAC.2.5.1]).
+# @spec [LSER.17.2] [LSER.16.4.1] [LSMP.2.3]
+assert QW k=a v=0.1
+assert QS k=a v=0.1
+assert QI k=a n=1
+pump
+assert QW k=a v=0.7
+assert QS k=a v=0.7
+assert QI k=a n=2
+pump
+assert QW k=a v=0.2
+assert QS k=a v=0.2
+assert QI k=a n=3
+pump
+assert QW k=a v=1.3
+assert QS k=a v=1.3
+pump
+assert QW k=a v=2.9
+assert QS k=a v=2.9
+pump
+assert QW k=a v=0.3
+assert QS k=a v=0.3
+pump

@@ -69,6 +69,36 @@ An id is found by walking working memory through `ds_engine_for_each_fact`, and 
 
 *(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js, bindings/js/src/ds.c)*
 
+## Unit conversion
+
+### `slotToStored`
+
+**`slotToStored(schema: string, slot: string, value: bigint | number): bigint | number;`**
+
+Converts a number in the unit a slot names to the number the slot stores, through [`ds_schema_slot_to_stored`](inv:integrator:std:doc#facts/schemas).
+
+`schema` is the schema's own name, as [`assert`](#assert) takes it, and `slot` the slot's name. An `Int` value is a `BigInt` or a safe-integer `Number`, and a `Float` value a `Number`. An `Int` result is a `BigInt`, and a `Float` result a `Number`. A `Boolean`, and a `Number` that is no safe integer on a slot stored as an integer, reach libds with their own kind, which it refuses by kind.
+
+| Throws | Condition |
+|---|---|
+| [`DsError`](errors.md#dserror), `DS_ERR_SCHEMA_UNKNOWN` | the engine has no schema named `schema` |
+| `DsError`, `DS_ERR_SLOT_UNKNOWN` | the schema has no slot named `slot` |
+| `DsError`, `DS_ERR_SLOT_TYPE_MISMATCH` | a `BigInt` outside `int64` |
+| `DsError`, the call's status | `ds_schema_slot_to_stored` returns a failure |
+| `TypeError` | `schema` or `slot` is not a string; `value` is not a `BigInt`, a `Number` or a `Boolean` |
+
+*(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js, bindings/js/src/ds.c)*
+
+### `slotFromStored`
+
+**`slotFromStored(schema: string, slot: string, value: bigint | number): bigint | number;`**
+
+Converts a number a slot stores to a number in the unit the slot names, through [`ds_schema_slot_from_stored`](inv:integrator:std:doc#facts/schemas).
+
+It takes its arguments, and throws, as [`slotToStored`](#slottostored) does.
+
+*(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js, bindings/js/src/ds.c)*
+
 ## Reading working memory
 
 ### Reads inside a callback

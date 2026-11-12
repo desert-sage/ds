@@ -1,9 +1,0 @@
-{
-    "id": "LUNI.9.2_annotated_integral_ok",
-    "category": "compiler",
-    "scenario": "LUNI.9.2: any unit symbol answers the annotation, as for LUNI.8.4's products. The author declares the compound dimension `absement` (length × time) with the unit `meter_second`, and `let x: meter_second = integral(f)` compiles. A compiler that gives the read no such answer refuses this with DS_VALIDATE_LET_TYPE_MISMATCH: LUNI.8.6 fails closed on a `ty_unknown` right-hand side. PATH: dsc.validate's `luni_8_6_unit_annotation`, whose `ty_unknown` arm admits the value through `luni_9_2_answered`, which finds the read through dsc.typecheck's `luni_9_2_unit_changing_read` (the call form).",
-    "rules_ds": "use default\n\nunit dimension absement storage float64 base meter_second\nunit meter_second: absement\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f\n->\n    let x: meter_second = integral(f)\n    log info \"{x}\"\n",
-    "expect": {
-        "kind": "compile_ok"
-    }
-}

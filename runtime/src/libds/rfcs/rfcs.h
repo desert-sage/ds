@@ -432,7 +432,8 @@ ds_result_t ds_rfcs_recorder_on_event(ds_engine_t *engine,
  *   RuleFireAnnotation / CallIssued / FactEmit  never injected — re-derived by the pumps and
  *         byte-compared against the recorded atom; a mismatch, or a
  *         re-derived atom with no recorded twin, is DS_ERR_FS_DIVERGENCE.
- *   SchemaDef / Slot / unknown skip-band atoms are skipped (counted in `skipped`).
+ *   SchemaDef / Slot are skipped (counted in `skipped`).
+ *   A field number with no registry entry is DS_ERR_PARSE ([RFCS.19.3]).
  *
  * Neither `stream` nor `strbuf` needs to outlive the call: the engine keeps interned copies.
  *
@@ -454,7 +455,7 @@ typedef struct ds_rfcs_replay_result {
     uint64_t withdrawals;    /* FactWithdraw atoms matched (compare atom; not applied — [RFCS.7a.3]) */
     uint64_t publishes;      /* FactPublish atoms matched (compare atom; not applied — [RFCS.27.2]) */
     uint64_t skipped;        /* atoms carrying nothing to apply or compare:
-                                announcements, skip-band atoms, and a BoundsError
+                                announcements and a BoundsError
                                 on pump_wcet_ns ([LFST.9.2.1]) */
     bool     header_verified; /* a StreamHeader header matched the engine session header */
     uint64_t tail_bytes;     /* bytes of a partial trailing atom left unapplied:
@@ -553,12 +554,8 @@ void ds_rfcs_reader_init(ds_rfcs_reader_t *r, const uint8_t *stream, size_t len)
  *
  * At end of stream: *out_done = true (the other out-params are untouched).
  *
- * An unallocated number is judged by its band ([RFCS.16.3]): the skip band is
- * read past, the inject band is DS_ERR_FS_UNKNOWN_INJECT, anything else is
- * DS_ERR_PARSE.
- *
- * Errors: DS_ERR_PARSE on a truncated atom header or body; DS_ERR_INVAL on
- * NULL args.
+ * Errors: DS_ERR_PARSE on a truncated atom header or body, or on a field
+ * number with no registry entry ([RFCS.19.3]); DS_ERR_INVAL on NULL args.
  */
 ds_result_t ds_rfcs_next(ds_rfcs_reader_t *r,
                          uint32_t *out_atom,
@@ -569,8 +566,8 @@ ds_result_t ds_rfcs_next(ds_rfcs_reader_t *r,
  * For a stream that may still be growing: a partial trailing atom is
  * DS_RFCS_STEP_INCOMPLETE, and `r->pos` is where it starts, for ds_rfcs_reader_extend.
  *
- * Only bytes no append can repair are an error: a complete frame that is not a valid atom, or an
- * unallocated number its band refuses. `r->pos` is then the offending atom's first byte.
+ * Only bytes no append can repair are an error: a complete frame that is not a valid atom, or a
+ * field number with no registry entry. `r->pos` is then the offending atom's first byte.
  *
  * On DS_RFCS_STEP_ATOM the out-params are as for ds_rfcs_next; otherwise they are untouched.
  */
@@ -644,13 +641,17 @@ typedef bool (*ds_rfcs_field_fn)(void *ctx, const ds_rfcs_field_t *field);
 /*
  * Visit `body[0..len)` as the message field number `atom` carries.
  *
- * DS_ERR_NOT_FOUND  the field number has no registry entry: skip or refuse by its band
- *                   ([RFCS.16.3])
+ * DS_ERR_NOT_FOUND  the field number has no registry entry
  * DS_ERR_PARSE      the body does not unpack as that message, or nests deeper than
  *                   DS_RFCS_VISIT_MAX_DEPTH ([RDSC.9.9])
  * DS_ERR_INVAL      NULL fn, or NULL body with len > 0
+ *
+ * The bound admits every artefact [RDSC.11.3] admits. A SlotAssign's `Expr` is at
+ * depth 3 in its TerminalNode, each of the 48 levels below it can cost four
+ * messages (Expr, InterpExpr, FormatPrim, ValuePrim), and the deepest `Expr` can
+ * hold four more (InterpExpr, FormatPrim, TimePrim, TimeItem): 3 + 4 * 48 + 4.
  */
-#define DS_RFCS_VISIT_MAX_DEPTH 64u
+#define DS_RFCS_VISIT_MAX_DEPTH 199u
 
 ds_result_t ds_rfcs_visit_atom(uint32_t atom,
                                const uint8_t *body, size_t len,

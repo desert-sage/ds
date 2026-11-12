@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.9_sign_reads_its_own_unit",
+    "category": "logical",
+    "scenario": "[LUNI.8.9]: `math.sign` reads a value in its own unit and gives a bare `Int`. A `celsius` slot holding -5 celsius (268.15 K): `math.sign(r.t) == -1`, and the rule logs. The base number's sign is 1. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit`'s `float64` arm for FN_SIGN, the conversion out of the base unit and the builtin, with nothing back.",
+    "rules_ds": "import math\n\nunit celsius: temperature = x + 273.15\n\nschema R scope logical:\n    id: String key\n    t: celsius mutable\n\nrule r:\n    R r where math.sign(r.t) == -1\n->\n    log info \"negative\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": "a", "t": 268.15 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["negative"]
+    }
+}

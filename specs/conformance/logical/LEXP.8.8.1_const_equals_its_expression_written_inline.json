@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8.1_const_equals_its_expression_written_inline",
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1] with [LDET.3.3a.8]: a `const` holds the value the engine computes for its right-hand side, operation by operation. Each `initial:` fact carries one `const`'s folded value, and its rule compares that slot with the same expression written inline, which the engine evaluates, so the rule fires only if the two agree to the bit. `A = 0.1 + 0.2 + 0.3` rounds after each `+` to 0.6000000000000001, where one rounding of the exact sum gives 0.6. `B = 9007199254740993 + 0.5` converts the `Int` to the nearest double, 9007199254740992.0, before it adds, and the sum rounds to 9007199254740992.0, where the exact sum rounds to 9007199254740994.0. `S = sin(1.0)` is a transcendental, whose value is [LEXP.3.9.2]'s. Pin: all three rules log, in source order. A fold that rounds once at the end misses `a` and `b`. PATH PINNED: `dsc.dstest.ltsl_4_1_fold`'s `Float` arithmetic, rounded per operation (`fold_float_binary`, `float_operand`), and `fold_builtin`'s transcendental row, against each runtime's evaluation of the inline expression.",
+    "rules_ds": "from math import sin\n\nconst A = 0.1 + 0.2 + 0.3\nconst B = 9007199254740993 + 0.5\nconst S = sin(1.0)\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VF k: \"a\" f: A\n    VF k: \"b\" f: B\n    VF k: \"s\" f: S\n\nrule ra:\n    VF v where v.k == \"a\" and v.f == 0.1 + 0.2 + 0.3\n->\n    log info \"a\"\n\nrule rb:\n    VF v where v.k == \"b\" and v.f == 9007199254740993 + 0.5\n->\n    log info \"b\"\n\nrule rs:\n    VF v where v.k == \"s\" and v.f == sin(1.0)\n->\n    log info \"s\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a", "b", "s"]
+    }
+}

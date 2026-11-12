@@ -1,0 +1,24 @@
+{
+  "id": "RLOW.6.1.9",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.6.1",
+  "seq": 789,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.6.1.9] **A rounding of a dimensioned value lowers through its own unit.** A\nvalue carries no unit at run time: the compiler resolves the value's own unit\n([LUNI.8.9]) from its static type. Where the dimension's storage is `float64`\n([LUNI.7.2]), the compiler must lower `round(x)`, `math.floor(x)`, `math.ceil(x)`\nand `math.trunc(x)` to the conversion of `x` from the base unit that\n[RLOW.7.3.9] builds, then the builtin, then `FN_INT_TO_FLOAT`, then the unit's\nconversion to the base unit, from the arithmetic expression nodes the engine\nalready evaluates. A `Float` with no `Int` answer raises as [LEXP.3.2] states.\n\nWhere the storage is an integer, `int64` or `int32` ([LUNI.4.1.1]), and the unit\nis tier-1, the compiler must lower each of the four in `Int` arithmetic, with no\n`Float` operand, so that no value loses precision. With $P$, $Q$ and $R$ as\n[RLOW.6.1.10] states them, the value in the unit is the exact quotient\n$(Q x - R) / P$, for either sign of $P$ ([LUNI.4.3]). The builtin gives its\ninteger $n$, ties to even for `round`, and the result is $n$ taken back to the\nbase unit as [RLOW.6.1.10] lowers `n::<unit>`, raising as that lowering does\nwhen $n$ units are not a whole number of base units. Where the unit is tier-2, the\nfour lower as on `float64` storage, with `x` converted round-to-nearest-even\nand the result cast as [LUNI.7.2] states.\n\nWhere the storage is `float64`, the compiler must lower `math.sign(x)` to the\nsame conversion from the base unit, then the builtin. Where it is an integer and\nthe unit is tier-1, the compiler must lower `math.sign(x)` to the builtin over\n`Q·x - R`, negated when $P$ is negative: the sign of $(Q x - R) / P$, with no\ndivision. Where it is an integer and the unit is tier-2, `math.sign(x)` lowers as\non `float64` storage. The compiler's constant folder\nmust fold each of the five to the value its lowering computes ([LDET.3.3a.8]).\n\n",
+  "refs": [
+    "LDET.3.3a.8",
+    "LEXP.3.2",
+    "LUNI.4.1.1",
+    "LUNI.4.3",
+    "LUNI.7.2",
+    "LUNI.8.9",
+    "RLOW.6.1.10",
+    "RLOW.7.3.9"
+  ],
+  "symbols": [
+    "FN_INT_TO_FLOAT"
+  ]
+}

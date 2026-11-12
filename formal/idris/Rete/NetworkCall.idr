@@ -13,8 +13,8 @@
 ||| this file threads the call sites through and whose timed state it carries
 ||| beside a second tracker table, and to formal/tla/call_response.tla, the
 ||| bounded model of the same clauses over one service and a numbered
-||| correlation; the Idris side is the kinds, the correlation as a String
-||| text and any history.
+||| correlation; the Idris side is the kinds and the correlation as a String
+||| text, one operation at a time over every state.
 |||
 ||| WHAT IS MODELLED. A program's ANSWER KINDS (`Lcrs_4_2_2__answers`): the
 ||| kinds of its response schemas and the kind of `CallError`. Where a kind
@@ -72,13 +72,12 @@
 ||| tracker name `<rule>#call<N>` ([RLOW.4.6.6.1]) is a site index here. A
 ||| site's arguments are evaluated results; one that traps is recorded as
 ||| such, where the engine abandons the activation at the action ([LNUL.11.1]),
-||| so a trapping argument is a divergence and never a silent agreement. The
-||| clause's consequence -- one answer per correlation -- presupposes that
-||| no rule emits an answer kind: a rule's `emit` into a response schema or
-||| `CallError` enters working memory with no sweep, the supersede being on
-||| the host's assert ([NCBK.6.4]), and no clause says otherwise; the
-||| history theorem takes it as a hypothesis (`Lcrs_6_2_4__no_rule_answers`),
-||| and the lowering enforces it by refusal (`emit:answer-schema`).
+||| so a trapping argument is a divergence and never a silent agreement. A
+||| rule asserts no answer: the compiler rejects an `emit` or a `publish` of
+||| a response schema or `CallError` ([LCRS.4.3.4]), so every answer enters
+||| by the host's assert, where the supersede is ([NCBK.6.4]); the lowering
+||| refuses such a program too (`emit:answer-kind`), so no fixture reaches
+||| it.
 |||
 ||| PROVED, each over every program, environment, kind table, site table,
 ||| state and tracker table.
@@ -120,28 +119,6 @@
 |||     a refused one leaves the net, the stamps and the records as they were
 |||     (`lcrs_8_2__site_refused`), so a call its cooldown suppresses is not
 |||     issued and retracts nothing (`lcrs_6_2_1__suppressed_retracts_nothing`).
-|||   * ONE ANSWER PER CORRELATION OVER ANY HISTORY ([LCRS.6.2.4]'s third
-|||     paragraph, `Lcrs_6_2_4__one_answer`: two distinct live answers carrying
-|||     one non-empty correlation are of different response schemas and
-|||     neither is `CallError`): from the loaded state, after any steps of
-|||     ticks, data inputs and pumps under any fuel, provided no rule emits an
-|||     answer kind (`lcrs_6_2_4__one_answer_per_corr_after_history`, on the
-|||     fold `lcrs_6_2_4__history_called`, which is the fixture runner's state
-|||     by `lcrs_6_2_4__history_is_run_steps`). The invariant
-|||     (`Lcrs_6_2_4__inv`) carries Rete/NetworkFrame.idr's frame -- the view
-|||     and the shapes kept, so the fired chain's actions are the loaded
-|||     rule's -- and unique ids, and is kept by every operation the called
-|||     engine performs: the correlation sweep and the TTL sweep, which only
-|||     remove; an action that mints no answer; the cascade; the re-time; the
-|||     mark; the wall step; and THE ARRIVAL (`lcrs_6_2_4__arrival_keeps_one_answer`):
-|||     what the arrival's sweep leaves of the swept kinds carries no longer
-|||     the answer's correlation (`lcrs_6_2_1__issued_call_sweeps`), so a
-|||     survivor beside the minted answer is of another response schema and
-|||     neither is `CallError` (`lcrs_6_2_4__survivor_kinds`), a `CallError`
-|||     arriving leaving no answer beside it. In the witness world the
-|||     theorem holds for every site and every schedule
-|||     (`lcrs_6_2_4__witnesses_keep_one_answer`,
-|||     `lcrs_6_2_4__witness_arrivals_keep_one_answer`).
 |||   * EXECUTED, `Refl` through the loader, the stamps, the gated pump and
 |||     the arrival, the twelve fixtures' shapes: a call issued again past its
 |||     window retracts the live reply of its correlation
@@ -164,8 +141,10 @@
 ||| order on an arrival (the answer's `FactAssert` first, the withdrawals
 ||| after, [RFCS.6.7]) is not modelled: the model has the retractions
 ||| precede the answer in working memory and says nothing of the stream.
-||| The history theorem's hypothesis that no rule emits an answer kind is
-||| the lowering's refusal, not a clause's. That a response
+||| That one answer per correlation holds after every history
+||| ([LCRS.6.2.4]'s third paragraph) is not proved here: the sweep theorems
+||| are per operation, and formal/tla/call_response.tla holds the consequence
+||| within its bounds. That a response
 ||| schema is `ttl` and declares `corr` as a non-nullable String is the
 ||| validator's ([LCRS.4.3.2]); the kind table and the corr table are the
 ||| lowering's, read off the program's declarations, and a kind that reads
@@ -180,11 +159,9 @@
 ||| `retain:`, `every` and the adapter's own dedup are outside the fragment.
 module Rete.NetworkCall
 
--- The imports are Rete/NetworkTimed.idr's whole, with Rete/NetworkTimed.idr,
--- Rete/NetworkWall.idr and the frame modules whose working-memory lemmas
--- the sweep theorems take, for the reason Rete/NetworkThen.idr's comment
--- gives: a run evaluated in a witness unfolds only through modules the file
--- imports.
+-- The imports are Rete/NetworkTimed.idr's whole, with Rete/NetworkTimed.idr
+-- and Rete/NetworkWall.idr: a run evaluated in a witness unfolds only
+-- through modules the file imports.
 import Rete.FireLoop
 import Rete.FireLoopTms
 import Rete.PumpBoundary
@@ -210,11 +187,6 @@ import Rete.NetworkTick
 import Rete.NetworkClocked
 import Rete.NetworkEdges
 import Rete.NetworkTwoClocks
-import Rete.NetworkOnce
-import Rete.NetworkFrame
-import Rete.NetworkFrameClocked
-import Rete.NetworkFrameRetime
-import Rete.NetworkWindowLapse
 import Rete.NetworkCooldown
 import Rete.NetworkTimed
 import Rete.NetworkWall
@@ -1044,20 +1016,82 @@ lcrs_6_2_4__no_corr_arrival_is_the_input pg ttl env corrOf nocorr ans (Assert k 
        (nocorr k)
 
 -- ---------------------------------------------------------------------
+-- The retraction of ids and the cascade only remove [IRET.12.2]
+-- ---------------------------------------------------------------------
+
+--@derives [IRET.12.2]
+||| Retracting ids only removes facts.
+export
+iret_12_2__retract_ids_net_sub : (ids : List Nat) -> (eng : Iret_19__engine) -> (g : Lfac_1_7_1__fact) ->
+                                 Elem g (ewm (iret_12_2__retract_ids_net ids eng)) -> Elem g (ewm eng)
+iret_12_2__retract_ids_net_sub [] eng g e = e
+iret_12_2__retract_ids_net_sub (i :: is) eng g e with (rarc_5_6_4__lookup_fact i (ewm eng))
+  iret_12_2__retract_ids_net_sub (i :: is) eng g e | Nothing = iret_12_2__retract_ids_net_sub is eng g e
+  iret_12_2__retract_ids_net_sub (i :: is) eng g e | (Just f) =
+    fst (rarc_5_6_4__remove_exact_elem_inv f (ewm eng) g (iret_12_2__retract_ids_net_sub is (iret_19_2__retract f eng) g e))
+
+--@derives [IRET.12.2]
+||| ONE PHASE, BY CASES: it ends nothing and is the identity, or it ends rows
+||| and the engine it leaves is the retraction of the zeroed ids from the
+||| engine it started with, the engine named rather than existential.
+export
+iret_12_2__phase_step_net_split : (pg : Lcyc_3_2_1__program) -> (eng : Iret_19__engine) -> (rows : Iret_12_4__table) ->
+  Either ( iret_12_2__ended_net eng rows = []
+         , iret_12_2__phase_step_net pg (MkTmsNet eng rows) = MkTmsNet eng rows )
+         (x : Iret_12_4__row ** (xs : Iret_12_4__table **
+            ( iret_12_2__ended_net eng rows = x :: xs
+            , iret_12_2__phase_step_net pg (MkTmsNet eng rows)
+                = MkTmsNet (iret_12_2__retract_ids_net (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng) (iret_12_2__kept_net eng rows) )))
+iret_12_2__phase_step_net_split pg eng rows with (iret_12_2__ended_net eng rows)
+  iret_12_2__phase_step_net_split pg eng rows | [] = Left (Refl, Refl)
+  iret_12_2__phase_step_net_split pg eng rows | (x :: xs) = Right (x ** (xs ** (Refl, Refl)))
+
+--@derives [IRET.12.2]
+||| A CASCADE ONLY REMOVES FACTS: a fact in working memory after any number of
+||| phases was in it before. An ending phase is a retraction of ids
+||| (`iret_12_2__retract_ids_net_sub`); a quiet phase changes nothing.
+export
+iret_12_2__phase_n_net_wm_sub : (n : Nat) -> (pg : Lcyc_3_2_1__program) -> (s : Iret_12__net_state) -> (g : Lfac_1_7_1__fact) ->
+                                Elem g (ewm (ncore (iret_12_2__phase_n_net n pg s))) -> Elem g (ewm (ncore s))
+iret_12_2__phase_n_net_wm_sub Z pg s g e = e
+iret_12_2__phase_n_net_wm_sub (S m) pg (MkTmsNet eng rows) g e = case iret_12_2__phase_step_net_split pg eng rows of
+  Left (_, eq) =>
+    iret_12_2__phase_n_net_wm_sub m pg (MkTmsNet eng rows) g
+      (replace {p = \t => Elem g (ewm (ncore t))} (iret_12_2__phase_n_net_succ m pg (MkTmsNet eng rows) eng rows eq) e)
+  Right (x ** (xs ** (_, eq))) =>
+    iret_12_2__retract_ids_net_sub (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng g
+      (iret_12_2__phase_n_net_wm_sub m pg
+         (MkTmsNet (iret_12_2__retract_ids_net (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng) (iret_12_2__kept_net eng rows)) g
+         (replace {p = \t => Elem g (ewm (ncore t))}
+                  (iret_12_2__phase_n_net_succ m pg (MkTmsNet eng rows)
+                     (iret_12_2__retract_ids_net (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng) (iret_12_2__kept_net eng rows) eq)
+                  e))
+
+--@derives [IRET.12.2]
+--@derives [IRET.4.4]
+||| Retracting ids one at a time leaves the batch's working memory under
+||| unique ids, for an engine given whole: Rete/NetworkTms.idr's
+||| `iret_12_2__retract_ids_net_wm` on the engine's two fields.
+export
+iret_12_2__retract_ids_net_wm_eng : (ids : List Nat) -> (eng : Iret_19__engine) -> Iret_4_4__unique (ewm eng) ->
+                                    ewm (iret_12_2__retract_ids_net ids eng) = iret_12_2__retract_ids ids (ewm eng)
+iret_12_2__retract_ids_net_wm_eng ids (MkEngine wm net) uq = iret_12_2__retract_ids_net_wm ids wm uq net
+
+-- ---------------------------------------------------------------------
 -- The sweep [LCRS.6.2.1], [LCRS.6.2.4], [IRET.12.2]
 -- ---------------------------------------------------------------------
 
 --@derives [LCRS.6.2]
 --@derives [IRET.12.2]
 ||| A SWEEP ONLY REMOVES: a fact live after it was live before. The
-||| retraction of ids only removes (Rete/NetworkFrameClocked.idr), and so
-||| does the cascade (Rete/NetworkWindowLapse.idr).
+||| retraction of ids only removes (`iret_12_2__retract_ids_net_sub`), and so
+||| does the cascade (`iret_12_2__phase_n_net_wm_sub`).
 export
 lcrs_6_2__sweep_ids_net_sub : (pg : Lcyc_3_2_1__program) -> (ids : List Nat) -> (cs : Iret_19_3__clocked_net) -> (g : Lfac_1_7_1__fact) ->
                               Elem g (lcrs_6_2_1__wm (lcrs_6_2__sweep_ids_net pg ids cs)) -> Elem g (lcrs_6_2_1__wm cs)
 lcrs_6_2__sweep_ids_net_sub pg [] cs g e = e
 lcrs_6_2__sweep_ids_net_sub pg (i :: is) (MkClockedNet (MkTmsNet eng rows) dl c) g e =
-  Rete.NetworkFrameClocked.iret_12_2__retract_ids_net_sub (i :: is) eng g
+  iret_12_2__retract_ids_net_sub (i :: is) eng g
     (iret_12_2__phase_n_net_wm_sub (S (length rows)) pg (MkTmsNet (iret_12_2__retract_ids_net (i :: is) eng) rows) g e)
 
 --@derives [LCRS.6.2]
@@ -1065,7 +1099,7 @@ lcrs_6_2__sweep_ids_net_sub pg (i :: is) (MkClockedNet (MkTmsNet eng rows) dl c)
 --@derives [IRET.4.4]
 ||| WHAT A SWEEP WAS ASKED TO REMOVE IS GONE: under unique ids, a fact live
 ||| after a sweep of some ids carries none of them. The retraction leaves the
-||| batch's working memory (Rete/NetworkWindowLapse.idr), the filter of the
+||| batch's working memory (`iret_12_2__retract_ids_net_wm_eng`), the filter of the
 ||| ids, and the cascade only removes.
 export
 lcrs_6_2__swept_not_live : (pg : Lcyc_3_2_1__program) -> (ids : List Nat) -> (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) ->
@@ -1327,1005 +1361,6 @@ lcrs_6_2_1__suppressed_retracts_nothing pg env corrOf ans r n site tok cs st trk
            (lcrs_8_2__window_suppresses_call window c0 (nclock cs) (r, n, kf tok) trk lk lt))
 
 -- ---------------------------------------------------------------------
--- One answer per correlation over any history [LCRS.6.2.4]: the invariant
--- ---------------------------------------------------------------------
-
---@spec [LCRS.6.2.4]
-||| ONE ANSWER PER CORRELATION, the clause's third paragraph as a predicate
-||| on working memory: two distinct live answers carrying one non-empty
-||| correlation are of different kinds, and neither is `CallError` -- so for
-||| each correlation either one `CallError` is live and no response fact is,
-||| or no `CallError` is live and at most one fact of each response schema
-||| is. The empty correlation is exempt, as the clause has it.
-public export
-Lcrs_6_2_4__one_answer : Iret_7_6__env -> Lcrs_4_3_2__corr_of -> Lcrs_4_2_2__answers -> Rarc_5_6_4__wm -> Type
-Lcrs_6_2_4__one_answer env corrOf ans wm =
-  (f, g : Lfac_1_7_1__fact) -> Elem f wm -> Elem g wm -> Not (f = g) ->
-  lcrs_4_2_2__is_answer ans (fkind f) = True -> lcrs_4_2_2__is_answer ans (fkind g) = True ->
-  (c : Nat) -> (cs : List Nat) ->
-  lcrs_4_3_2__corr_read env corrOf f = Just (c :: cs) -> lcrs_4_3_2__corr_read env corrOf g = Just (c :: cs) ->
-  (Not (fkind f = fkind g), Not (fkind f = aerror ans), Not (fkind g = aerror ans))
-
---@spec [LCRS.6.2.4]
---@spec [IRET.4.4]
---@spec [RLOW.4.2.1]
-||| WHAT THE HISTORY CARRIES beside the answers: Rete/NetworkFrame.idr's
-||| frame invariant -- the view, and the shapes kept against the loaded
-||| network, which is how the fired chain's actions are the loaded rule's --
-||| and unique ids ([IRET.4.4]), under which a sweep removes exactly its
-||| victims.
-public export
-Lcrs_6_2_4__carried : List Iret_6_1__alpha -> List Rlow_4_2_1__chain -> Iret_19__engine -> Type
-Lcrs_6_2_4__carried alphas0 chains0 eng = (Ltim_2_5_1__frame_inv alphas0 chains0 eng, Iret_4_4__unique (ewm eng))
-
---@spec [LCRS.6.2.4]
-||| THE INVARIANT on a clocked net: what is carried, and one answer per
-||| correlation in its working memory.
-public export
-Lcrs_6_2_4__inv : List Iret_6_1__alpha -> List Rlow_4_2_1__chain -> Iret_7_6__env -> Lcrs_4_3_2__corr_of -> Lcrs_4_2_2__answers -> Iret_19_3__clocked_net -> Type
-Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans cn =
-  (Lcrs_6_2_4__carried alphas0 chains0 (ncore (nengine cn)), Lcrs_6_2_4__one_answer env corrOf ans (lcrs_6_2_1__wm cn))
-
---@spec [LCRS.6.2.4]
-||| The kind an action mints: an emit's; a withdraw mints none.
-public export
-lcrs_6_2_4__action_kind : Lgra_10_1__action -> Maybe Nat
-lcrs_6_2_4__action_kind (Emit k _)   = Just k
-lcrs_6_2_4__action_kind (Withdraw _) = Nothing
-
---@spec [LCRS.6.2.4]
-||| AN ACTION MINTS NO ANSWER: an emit's kind is no answer kind; a withdraw
-||| mints nothing. The hypothesis the firing needs: an answer a rule emitted
-||| would enter working memory with no sweep, the clause's supersede being
-||| on the host's assert ([NCBK.6.4]) -- the header's reading, which the
-||| lowering enforces by refusal (`emit:answer-schema`).
-public export
-lcrs_6_2_4__action_no_answer : Lcrs_4_2_2__answers -> Lgra_10_1__action -> Bool
-lcrs_6_2_4__action_no_answer ans (Emit k _)   = not (lcrs_4_2_2__is_answer ans k)
-lcrs_6_2_4__action_no_answer ans (Withdraw _) = True
-
---@spec [LCRS.6.2.4]
-||| No action of a list mints an answer.
-public export
-lcrs_6_2_4__emits_no_answer : Lcrs_4_2_2__answers -> List Lgra_10_1__action -> Bool
-lcrs_6_2_4__emits_no_answer ans []            = True
-lcrs_6_2_4__emits_no_answer ans (act :: acts) = lcrs_6_2_4__action_no_answer ans act && lcrs_6_2_4__emits_no_answer ans acts
-
---@spec [LCRS.6.2.4]
-||| No chain's actions mint an answer: decided by computation over the
-||| loaded chains.
-public export
-lcrs_6_2_4__chains_emit_no_answer : Lcrs_4_2_2__answers -> List Rlow_4_2_1__chain -> Bool
-lcrs_6_2_4__chains_emit_no_answer ans []          = True
-lcrs_6_2_4__chains_emit_no_answer ans (ch :: chs) = lcrs_6_2_4__emits_no_answer ans (cactions ch) && lcrs_6_2_4__chains_emit_no_answer ans chs
-
---@spec [LCRS.6.2.4]
-||| NO RULE ANSWERS: every chain of the loaded network, by ordinal, has
-||| actions that mint no answer. The history theorem's hypothesis.
-public export
-Lcrs_6_2_4__no_rule_answers : Lcrs_4_2_2__answers -> List Rlow_4_2_1__chain -> Type
-Lcrs_6_2_4__no_rule_answers ans chains0 =
-  (r : Nat) -> (ch0 : Rlow_4_2_1__chain) -> rarc_5_6_5__nth r chains0 = Just ch0 -> lcrs_6_2_4__emits_no_answer ans (cactions ch0) = True
-
---@derives [LCRS.6.2.4]
-||| The computed form implies the hypothesis, by induction on the chains.
-export
-lcrs_6_2_4__chains_no_answer_sound : (ans : Lcrs_4_2_2__answers) -> (chains : List Rlow_4_2_1__chain) ->
-                                     lcrs_6_2_4__chains_emit_no_answer ans chains = True -> Lcrs_6_2_4__no_rule_answers ans chains
-lcrs_6_2_4__chains_no_answer_sound ans []          h r     ch0 n = absurd n
-lcrs_6_2_4__chains_no_answer_sound ans (ch :: chs) h Z     ch0 n =
-  replace {p = \x => lcrs_6_2_4__emits_no_answer ans (cactions x) = True} (iret_11_4__just_inj n)
-          (lcyc_1_1__and_true_l (lcrs_6_2_4__emits_no_answer ans (cactions ch)) (lcrs_6_2_4__chains_emit_no_answer ans chs) h)
-lcrs_6_2_4__chains_no_answer_sound ans (ch :: chs) h (S r) ch0 n =
-  lcrs_6_2_4__chains_no_answer_sound ans chs
-    (lcyc_1_1__and_true_r (lcrs_6_2_4__emits_no_answer ans (cactions ch)) (lcrs_6_2_4__chains_emit_no_answer ans chs) h) r ch0 n
-
---@derives [LCRS.6.2.4]
-||| ONE ANSWER PER CORRELATION SURVIVES REMOVAL: a working memory every
-||| fact of which was live before inherits it.
-export
-lcrs_6_2_4__one_answer_sub : (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (wm, wm' : Rarc_5_6_4__wm) ->
-                             ((g : Lfac_1_7_1__fact) -> Elem g wm' -> Elem g wm) ->
-                             Lcrs_6_2_4__one_answer env corrOf ans wm -> Lcrs_6_2_4__one_answer env corrOf ans wm'
-lcrs_6_2_4__one_answer_sub env corrOf ans wm wm' sub oa f g ef eg ne af ag c cs cf cg = oa f g (sub f ef) (sub g eg) ne af ag c cs cf cg
-
---@derives [LCRS.6.2.4]
-||| A kind an action mints under the hypothesis is no answer kind.
-export
-lcrs_6_2_4__new_kind_is_no_answer : (ans : Lcrs_4_2_2__answers) -> (act : Lgra_10_1__action) -> lcrs_6_2_4__action_no_answer ans act = True ->
-                                    (x : Nat) -> lcrs_6_2_4__action_kind act = Just x -> lcrs_4_2_2__is_answer ans x = True -> Void
-lcrs_6_2_4__new_kind_is_no_answer ans (Emit k value) na x pk ax =
-  lcyc_1_1__bool_not_both (lcrs_4_2_2__is_answer ans x) ax
-    (replace {p = \y => lcrs_4_2_2__is_answer ans y = False} (iret_11_4__just_inj pk) (lcyc_1_1__not_true_is_false (lcrs_4_2_2__is_answer ans k) na))
-lcrs_6_2_4__new_kind_is_no_answer ans (Withdraw i) na x pk ax = absurd pk
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
-||| ONE ANSWER PER CORRELATION SURVIVES AN ACTION THAT MINTS NO ANSWER:
-||| every fact live after is live before or is the minted one, whose kind
-||| is no answer kind.
-export
-lcrs_6_2_4__one_answer_action : (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (act : Lgra_10_1__action) ->
-                                (wm, wm' : Rarc_5_6_4__wm) -> lcrs_6_2_4__action_no_answer ans act = True ->
-                                ((g : Lfac_1_7_1__fact) -> Elem g wm' -> Either (Elem g wm) (lcrs_6_2_4__action_kind act = Just (fkind g))) ->
-                                Lcrs_6_2_4__one_answer env corrOf ans wm -> Lcrs_6_2_4__one_answer env corrOf ans wm'
-lcrs_6_2_4__one_answer_action env corrOf ans act wm wm' na mem oa f g ef eg ne af ag c cs cf cg =
-  case (mem f ef, mem g eg) of
-    (Left ef', Left eg') => oa f g ef' eg' ne af ag c cs cf cg
-    (Right pf, _)        => void (lcrs_6_2_4__new_kind_is_no_answer ans act na (fkind f) pf af)
-    (_, Right pg)        => void (lcrs_6_2_4__new_kind_is_no_answer ans act na (fkind g) pg ag)
-
--- ---------------------------------------------------------------------
--- What each operation leaves live, and what it carries
--- ---------------------------------------------------------------------
-
---@derives [LCRS.6.2.4]
---@derives [IRET.19.1]
---@derives [LFAC.2.5.3]
-||| WHAT AN ASSERT LEAVES LIVE: a fact live after an assert under any
-||| lifecycle was live before, or is the fact minted -- a no-op leaves the
-||| memory, an insert appends, a replace removes the old and appends.
-export
-lcrs_6_2_4__assert_elem : (life : Nat -> Lscp_1_3__lifecycle) -> (avoid : List Nat) -> (k, key, pay : Nat) -> (eng : Iret_19__engine) -> (g : Lfac_1_7_1__fact) ->
-                          Elem g (ewm (iret_19_1__assert life avoid k key pay eng)) ->
-                          Either (Elem g (ewm eng)) (g = MkFact (lfac_2_5_3__fresh_id avoid (ewm eng)) k key pay)
-lcrs_6_2_4__assert_elem life avoid k key pay eng g e with (life k)
-  lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Explicit = case lcyc_1_1__elem_append_inv (ewm eng) e of
-    Left e'  => Left e'
-    Right e' => Right (iret_12__elem_singleton e')
-  lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Relation with (iret_19_1__find_relation k key pay (ewm eng))
-    lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Relation | (Just old) = Left e
-    lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Relation | Nothing = case lcyc_1_1__elem_append_inv (ewm eng) e of
-      Left e'  => Left e'
-      Right e' => Right (iret_12__elem_singleton e')
-  lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Entity with (iret_19_1__find_entity k key (ewm eng))
-    lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Entity | Nothing = case lcyc_1_1__elem_append_inv (ewm eng) e of
-      Left e'  => Left e'
-      Right e' => Right (iret_12__elem_singleton e')
-    lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Entity | (Just old) with (fpay old == pay)
-      lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Entity | (Just old) | True = Left e
-      lcrs_6_2_4__assert_elem life avoid k key pay eng g e | Entity | (Just old) | False =
-        case lcyc_1_1__elem_append_inv (rarc_5_6_4__remove_exact old (ewm eng)) e of
-          Left e'  => Left (fst (rarc_5_6_4__remove_exact_elem_inv old (ewm eng) g e'))
-          Right e' => Right (iret_12__elem_singleton e')
-
---@derives [LCRS.6.2.4]
---@derives [LSCP.2.1.1]
-||| A WITHDRAW ONLY REMOVES.
-export
-lcrs_6_2_4__withdraw_sub : (f : Lfac_1_7_1__fact) -> (eng : Iret_19__engine) -> (g : Lfac_1_7_1__fact) ->
-                           Elem g (ewm (lscp_2_1_1__withdraw f eng)) -> Elem g (ewm eng)
-lcrs_6_2_4__withdraw_sub f eng g e with (rarc_5_6_5__any (\h => lfac_2_5_4__same_fact h f) (ewm eng))
-  lcrs_6_2_4__withdraw_sub f eng g e | True  = fst (rarc_5_6_4__remove_exact_elem_inv f (ewm eng) g e)
-  lcrs_6_2_4__withdraw_sub f eng g e | False = e
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
-||| WHAT ONE ACTION LEAVES LIVE on the plain network: live before, or
-||| minted by the action, of the kind the action mints.
-export
-lcrs_6_2_4__do_action_net_elem : (life : Nat -> Lscp_1_3__lifecycle) -> (bound : List Lfac_1_7_1__fact) -> (act : Lgra_10_1__action) -> (eng : Iret_19__engine) ->
-                                 (g : Lfac_1_7_1__fact) -> Elem g (ewm (rarc_5_6_7__do_action_net life bound act eng)) ->
-                                 Either (Elem g (ewm eng)) (lcrs_6_2_4__action_kind act = Just (fkind g))
-lcrs_6_2_4__do_action_net_elem life bound (Emit k value) eng g e =
-  case lcrs_6_2_4__assert_elem life (iret_11_3__fact_ids bound) k (fst (value bound)) (snd (value bound)) eng g e of
-    Left e'  => Left e'
-    Right eq => Right (cong Just (sym (cong fkind eq)))
-lcrs_6_2_4__do_action_net_elem life bound (Withdraw i) eng g e with (rarc_5_6_5__nth i bound)
-  lcrs_6_2_4__do_action_net_elem life bound (Withdraw i) eng g e | Nothing  = Left e
-  lcrs_6_2_4__do_action_net_elem life bound (Withdraw i) eng g e | (Just f) = Left (lcrs_6_2_4__withdraw_sub f eng g e)
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
-||| ONE ACTION KEEPS WHAT IS CARRIED on the plain network: an emit is an
-||| assert, a withdraw of a bound fact a withdraw (Rete/NetworkFrame.idr and
-||| Rete/NetworkFrameClocked.idr).
-export
-lcrs_6_2_4__do_action_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (life : Nat -> Lscp_1_3__lifecycle) ->
-                                  (bound : List Lfac_1_7_1__fact) -> (act : Lgra_10_1__action) -> (eng : Iret_19__engine) ->
-                                  Lcrs_6_2_4__carried alphas0 chains0 eng -> Lcrs_6_2_4__carried alphas0 chains0 (rarc_5_6_7__do_action_net life bound act eng)
-lcrs_6_2_4__do_action_net_keeps alphas0 chains0 life bound (Emit k value) eng (inv, uq) =
-  ( iret_19_1__assert_inv alphas0 chains0 life (iret_11_3__fact_ids bound) k (fst (value bound)) (snd (value bound)) eng inv
-  , Rete.NetworkFrameClocked.iret_19_1__assert_unique life (iret_11_3__fact_ids bound) k (fst (value bound)) (snd (value bound)) eng uq )
-lcrs_6_2_4__do_action_net_keeps alphas0 chains0 life bound (Withdraw i) eng (inv, uq) with (rarc_5_6_5__nth i bound)
-  lcrs_6_2_4__do_action_net_keeps alphas0 chains0 life bound (Withdraw i) eng (inv, uq) | Nothing  = (inv, uq)
-  lcrs_6_2_4__do_action_net_keeps alphas0 chains0 life bound (Withdraw i) eng (inv, uq) | (Just f) =
-    (lscp_2_1_1__withdraw_inv alphas0 chains0 f eng inv, Rete.NetworkFrameClocked.lscp_2_1_1__withdraw_unique f eng uq)
-
---@derives [LCRS.6.2.4]
---@derives [IRET.12.2]
-||| ONE PHASE KEEPS WHAT IS CARRIED: it ends nothing, or it retracts the
-||| zeroed ids (Rete/NetworkWindowLapse.idr's split).
-export
-lcrs_6_2_4__phase_step_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) ->
-                                   (eng : Iret_19__engine) -> (rows : Iret_12_4__table) ->
-                                   Lcrs_6_2_4__carried alphas0 chains0 eng -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (iret_12_2__phase_step_net pg (MkTmsNet eng rows)))
-lcrs_6_2_4__phase_step_net_keeps alphas0 chains0 pg eng rows (inv, uq) = case iret_12_2__phase_step_net_split pg eng rows of
-  Left (_, eq) => replace {p = \t => Lcrs_6_2_4__carried alphas0 chains0 (ncore t)} (sym eq) (inv, uq)
-  Right (x ** (xs ** (_, eq))) =>
-    replace {p = \t => Lcrs_6_2_4__carried alphas0 chains0 (ncore t)} (sym eq)
-      ( iret_12_2__retract_ids_net_inv alphas0 chains0 (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng inv
-      , Rete.NetworkFrameClocked.iret_12_2__retract_ids_net_unique (iret_12_2__zeroed (x :: xs) (iret_12_2__kept_net eng rows)) eng uq )
-
---@derives [LCRS.6.2.4]
---@derives [IRET.12.2]
-||| PHASES KEEP WHAT IS CARRIED, by induction on their number, as
-||| Rete/NetworkFrameClocked.idr's `iret_12_2__phase_n_net_inv` does.
-export
-lcrs_6_2_4__phase_n_net_keeps : (n : Nat) -> (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (s : Iret_12__net_state) ->
-                                Lcrs_6_2_4__carried alphas0 chains0 (ncore s) -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (iret_12_2__phase_n_net n pg s))
-lcrs_6_2_4__phase_n_net_keeps Z     alphas0 chains0 pg s c = c
-lcrs_6_2_4__phase_n_net_keeps (S m) alphas0 chains0 pg (MkTmsNet eng rows) c =
-  let c1 = lcrs_6_2_4__phase_step_net_keeps alphas0 chains0 pg eng rows c
-      eq = the (iret_12_2__phase_n_net (S m) pg (MkTmsNet eng rows)
-                = iret_12_2__phase_n_net m pg (MkTmsNet (ncore (iret_12_2__phase_step_net pg (MkTmsNet eng rows))) (ndeps (iret_12_2__phase_step_net pg (MkTmsNet eng rows)))))
-             (iret_12_2__phase_n_net_succ m pg (MkTmsNet eng rows) (ncore (iret_12_2__phase_step_net pg (MkTmsNet eng rows))) (ndeps (iret_12_2__phase_step_net pg (MkTmsNet eng rows)))
-                (sym (iret_12__net_state_eta (iret_12_2__phase_step_net pg (MkTmsNet eng rows)))))
-  in replace {p = \x => Lcrs_6_2_4__carried alphas0 chains0 (ncore x)} (sym eq)
-       (lcrs_6_2_4__phase_n_net_keeps m alphas0 chains0 pg (MkTmsNet (ncore (iret_12_2__phase_step_net pg (MkTmsNet eng rows))) (ndeps (iret_12_2__phase_step_net pg (MkTmsNet eng rows)))) c1)
-
---@derives [LCRS.6.2.4]
---@derives [IRET.12.2]
-||| THE CASCADE TO ITS FIXPOINT keeps what is carried.
-export
-lcrs_6_2_4__phase_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (s : Iret_12__net_state) ->
-                              Lcrs_6_2_4__carried alphas0 chains0 (ncore s) -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (iret_12_2__phase_net pg s))
-lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg s c = lcrs_6_2_4__phase_n_net_keeps (S (length (ndeps s))) alphas0 chains0 pg s c
-
---@derives [LCRS.6.2.4]
---@derives [IRET.12.2]
-||| THE CASCADE ONLY REMOVES: Rete/NetworkWindowLapse.idr's, at the
-||| fixpoint's fuel.
-export
-lcrs_6_2_4__phase_net_sub : (pg : Lcyc_3_2_1__program) -> (s : Iret_12__net_state) -> (g : Lfac_1_7_1__fact) ->
-                            Elem g (ewm (ncore (iret_12_2__phase_net pg s))) -> Elem g (ewm (ncore s))
-lcrs_6_2_4__phase_net_sub pg s g e = iret_12_2__phase_n_net_wm_sub (S (length (ndeps s))) pg s g e
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2]
---@derives [IRET.12.2]
-||| A CORRELATION SWEEP KEEPS WHAT IS CARRIED: the retraction of ids and
-||| the cascade.
-export
-lcrs_6_2_4__sweep_ids_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ids : List Nat) ->
-                                  (cn : Iret_19_3__clocked_net) ->
-                                  Lcrs_6_2_4__carried alphas0 chains0 (ncore (nengine cn)) -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (nengine (lcrs_6_2__sweep_ids_net pg ids cn)))
-lcrs_6_2_4__sweep_ids_net_keeps alphas0 chains0 pg []        cn c = c
-lcrs_6_2_4__sweep_ids_net_keeps alphas0 chains0 pg (i :: is) (MkClockedNet (MkTmsNet eng rows) dl c0) (inv, uq) =
-  lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (iret_12_2__retract_ids_net (i :: is) eng) rows)
-    ( iret_12_2__retract_ids_net_inv alphas0 chains0 (i :: is) eng inv
-    , Rete.NetworkFrameClocked.iret_12_2__retract_ids_net_unique (i :: is) eng uq )
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2]
-||| A CORRELATION SWEEP KEEPS THE INVARIANT: what is carried, and one answer
-||| per correlation since the sweep only removes.
-export
-lcrs_6_2_4__sweep_ids_net_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) ->
-                                (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (ids : List Nat) -> (cn : Iret_19_3__clocked_net) ->
-                                Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans cn -> Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (lcrs_6_2__sweep_ids_net pg ids cn)
-lcrs_6_2_4__sweep_ids_net_inv alphas0 chains0 pg env corrOf ans ids cn (c, oa) =
-  ( lcrs_6_2_4__sweep_ids_net_keeps alphas0 chains0 pg ids cn c
-  , lcrs_6_2_4__one_answer_sub env corrOf ans (lcrs_6_2_1__wm cn) (lcrs_6_2_1__wm (lcrs_6_2__sweep_ids_net pg ids cn)) (lcrs_6_2__sweep_ids_net_sub pg ids cn) oa )
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.3]
---@derives [IRET.19.3]
-||| THE TTL SWEEP ONLY REMOVES: the expired ids' retraction and the cascade.
-export
-lcrs_6_2_4__sweep_net_sub : (pg : Lcyc_3_2_1__program) -> (cn : Iret_19_3__clocked_net) -> (g : Lfac_1_7_1__fact) ->
-                            Elem g (lcrs_6_2_1__wm (rarc_5_6_3__sweep_net pg cn)) -> Elem g (lcrs_6_2_1__wm cn)
-lcrs_6_2_4__sweep_net_sub pg (MkClockedNet (MkTmsNet eng rows) dl c) g e =
-  Rete.NetworkFrameClocked.iret_12_2__retract_ids_net_sub (ldtl_6_1__order dl (iret_19_3__expired c dl)) eng g
-    (lcrs_6_2_4__phase_net_sub pg (MkTmsNet (iret_12_2__retract_ids_net (ldtl_6_1__order dl (iret_19_3__expired c dl)) eng) rows) g e)
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.3]
-||| THE TTL SWEEP KEEPS THE INVARIANT.
-export
-lcrs_6_2_4__sweep_net_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) ->
-                            (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (cn : Iret_19_3__clocked_net) ->
-                            Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans cn -> Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (rarc_5_6_3__sweep_net pg cn)
-lcrs_6_2_4__sweep_net_inv alphas0 chains0 pg env corrOf ans (MkClockedNet (MkTmsNet eng rows) dl c) ((inv, uq), oa) =
-  ( lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (iret_12_2__retract_ids_net (ldtl_6_1__order dl (iret_19_3__expired c dl)) eng) rows)
-      ( iret_12_2__retract_ids_net_inv alphas0 chains0 (ldtl_6_1__order dl (iret_19_3__expired c dl)) eng inv
-      , Rete.NetworkFrameClocked.iret_12_2__retract_ids_net_unique (ldtl_6_1__order dl (iret_19_3__expired c dl)) eng uq )
-  , lcrs_6_2_4__one_answer_sub env corrOf ans (ewm eng) (lcrs_6_2_1__wm (rarc_5_6_3__sweep_net pg (MkClockedNet (MkTmsNet eng rows) dl c)))
-      (lcrs_6_2_4__sweep_net_sub pg (MkClockedNet (MkTmsNet eng rows) dl c)) oa )
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
---@derives [IRET.12.2]
-||| ONE ACTION WITH TRUTH MAINTENANCE KEEPS WHAT IS CARRIED: the network's
-||| dispatch, the record (rows alone), the cascade.
-export
-lcrs_6_2_4__do_action_tms_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (r : Nat) -> (a : Iret_8_1__act) ->
-                                      (act : Lgra_10_1__action) -> (s : Iret_12__net_state) ->
-                                      Lcrs_6_2_4__carried alphas0 chains0 (ncore s) -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (rarc_5_6_7__do_action_tms_net pg r a act s))
-lcrs_6_2_4__do_action_tms_net_keeps alphas0 chains0 pg r a act (MkTmsNet eng rows) c with (rarc_5_6_7__do_action_net (life pg) (atuple a) act eng) proof da
-  lcrs_6_2_4__do_action_tms_net_keeps alphas0 chains0 pg r a act (MkTmsNet eng rows) c | (MkEngine wm' net') =
-    lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (MkEngine wm' net') (iret_10_2__record pg r (iret_11_3__fact_ids (atuple a)) (atuple a) act wm' rows))
-      (replace {p = \e => Lcrs_6_2_4__carried alphas0 chains0 e} da (lcrs_6_2_4__do_action_net_keeps alphas0 chains0 (life pg) (atuple a) act eng c))
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
---@derives [IRET.12.2]
-||| WHAT ONE ACTION WITH TRUTH MAINTENANCE LEAVES LIVE: live before, or
-||| minted by the action; the cascade only removes.
-export
-lcrs_6_2_4__do_action_tms_net_elem : (pg : Lcyc_3_2_1__program) -> (r : Nat) -> (a : Iret_8_1__act) -> (act : Lgra_10_1__action) -> (s : Iret_12__net_state) ->
-                                     (g : Lfac_1_7_1__fact) -> Elem g (ewm (ncore (rarc_5_6_7__do_action_tms_net pg r a act s))) ->
-                                     Either (Elem g (ewm (ncore s))) (lcrs_6_2_4__action_kind act = Just (fkind g))
-lcrs_6_2_4__do_action_tms_net_elem pg r a act (MkTmsNet eng rows) g e with (rarc_5_6_7__do_action_net (life pg) (atuple a) act eng) proof da
-  lcrs_6_2_4__do_action_tms_net_elem pg r a act (MkTmsNet eng rows) g e | (MkEngine wm' net') =
-    lcrs_6_2_4__do_action_net_elem (life pg) (atuple a) act eng g
-      (replace {p = \x => Elem g (ewm x)} (sym da)
-         (lcrs_6_2_4__phase_net_sub pg (MkTmsNet (MkEngine wm' net') (iret_10_2__record pg r (iret_11_3__fact_ids (atuple a)) (atuple a) act wm' rows)) g e))
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.7]
-||| ONE ACTION ON THE CLOCKED NETWORK KEEPS THE INVARIANT when it mints no
-||| answer: the deadlines ride beside.
-export
-lcrs_6_2_4__do_action_ttl_net_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                    (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) -> (a : Iret_8_1__act) ->
-                                    (act : Lgra_10_1__action) -> (cn : Iret_19_3__clocked_net) -> lcrs_6_2_4__action_no_answer ans act = True ->
-                                    Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans cn -> Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (rarc_5_6_7__do_action_ttl_net pg ttl r a act cn)
-lcrs_6_2_4__do_action_ttl_net_inv alphas0 chains0 pg ttl env corrOf ans r a act (MkClockedNet (MkTmsNet eng rows) dl c) na (cd, oa) =
-  ( lcrs_6_2_4__do_action_tms_net_keeps alphas0 chains0 pg r a act (MkTmsNet eng rows) cd
-  , lcrs_6_2_4__one_answer_action env corrOf ans act (ewm eng) (ewm (ncore (rarc_5_6_7__do_action_tms_net pg r a act (MkTmsNet eng rows)))) na
-      (lcrs_6_2_4__do_action_tms_net_elem pg r a act (MkTmsNet eng rows)) oa )
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.4]
-||| A DATA EVENT KEEPS WHAT IS CARRIED: a no-op leaves the net; an assert
-||| or the retraction of a live fact, then the cascade.
-export
-lcrs_6_2_4__apply_ttl_net_keeps : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                  (ev : Rarc_5_6_1__event) -> (cn : Iret_19_3__clocked_net) ->
-                                  Lcrs_6_2_4__carried alphas0 chains0 (ncore (nengine cn)) -> Lcrs_6_2_4__carried alphas0 chains0 (ncore (nengine (rarc_5_6_4__apply_ttl_net pg ttl ev cn)))
-lcrs_6_2_4__apply_ttl_net_keeps alphas0 chains0 pg ttl (Assert k key pay) (MkClockedNet (MkTmsNet eng rows) dl c) (inv, uq) =
-  case iret_12__maybe_split (iret_19_1__assert_fact (life pg k) [] k key pay (ewm eng)) of
-    Left an => replace {p = \x => Lcrs_6_2_4__carried alphas0 chains0 (ncore x)} (sym (rarc_5_6_4__apply_tms_net_assert_nothing pg k key pay eng rows an)) (inv, uq)
-    Right (w ** aj) =>
-      replace {p = \x => Lcrs_6_2_4__carried alphas0 chains0 (ncore x)} (sym (rarc_5_6_4__apply_tms_net_assert_just pg k key pay eng rows w aj))
-        (lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (iret_19_1__assert (life pg) [] k key pay eng) rows)
-           ( iret_19_1__assert_inv alphas0 chains0 (life pg) [] k key pay eng inv
-           , Rete.NetworkFrameClocked.iret_19_1__assert_unique (life pg) [] k key pay eng uq ))
-lcrs_6_2_4__apply_ttl_net_keeps alphas0 chains0 pg ttl (Retract i) (MkClockedNet (MkTmsNet eng rows) dl c) (inv, uq) =
-  case iret_12__maybe_split (rarc_5_6_4__lookup_fact i (ewm eng)) of
-    Left ln => replace {p = \x => Lcrs_6_2_4__carried alphas0 chains0 (ncore x)} (sym (rarc_5_6_4__apply_tms_net_retract_nothing pg i eng rows ln)) (inv, uq)
-    Right (f ** lj) =>
-      replace {p = \x => Lcrs_6_2_4__carried alphas0 chains0 (ncore x)} (sym (rarc_5_6_4__apply_tms_net_retract_just pg i eng rows f lj))
-        (lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (iret_19_2__retract f eng) rows)
-           ( iret_19_2__retract_inv alphas0 chains0 f eng (fst (rarc_5_6_4__lookup_elem i (ewm eng) f lj)) inv
-           , Rete.NetworkFrameClocked.iret_19_2__retract_unique f eng uq ))
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.4]
---@derives [IRET.19.1]
-||| WHAT A HOST ASSERT LEAVES LIVE: live before, or the fact minted.
-export
-lcrs_6_2_4__apply_ttl_assert_elem : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (k, key, pay : Nat) -> (cn : Iret_19_3__clocked_net) -> (g : Lfac_1_7_1__fact) ->
-                                    Elem g (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay) cn)) ->
-                                    Either (Elem g (lcrs_6_2_1__wm cn)) (g = MkFact (lfac_2_5_3__fresh_id [] (lcrs_6_2_1__wm cn)) k key pay)
-lcrs_6_2_4__apply_ttl_assert_elem pg ttl k key pay (MkClockedNet (MkTmsNet eng rows) dl c) g e =
-  case iret_12__maybe_split (iret_19_1__assert_fact (life pg k) [] k key pay (ewm eng)) of
-    Left an => Left (replace {p = \x => Elem g (ewm (ncore x))} (rarc_5_6_4__apply_tms_net_assert_nothing pg k key pay eng rows an) e)
-    Right (w ** aj) =>
-      lcrs_6_2_4__assert_elem (life pg) [] k key pay eng g
-        (lcrs_6_2_4__phase_net_sub pg (MkTmsNet (iret_19_1__assert (life pg) [] k key pay eng) rows) g
-           (replace {p = \x => Elem g (ewm (ncore x))} (rarc_5_6_4__apply_tms_net_assert_just pg k key pay eng rows w aj) e))
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.4]
---@derives [IRET.19.2]
-||| A HOST RETRACTION ONLY REMOVES.
-export
-lcrs_6_2_4__apply_ttl_retract_sub : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (i : Nat) -> (cn : Iret_19_3__clocked_net) -> (g : Lfac_1_7_1__fact) ->
-                                    Elem g (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Retract i) cn)) -> Elem g (lcrs_6_2_1__wm cn)
-lcrs_6_2_4__apply_ttl_retract_sub pg ttl i (MkClockedNet (MkTmsNet eng rows) dl c) g e =
-  case iret_12__maybe_split (rarc_5_6_4__lookup_fact i (ewm eng)) of
-    Left ln => replace {p = \x => Elem g (ewm (ncore x))} (rarc_5_6_4__apply_tms_net_retract_nothing pg i eng rows ln) e
-    Right (f ** lj) =>
-      fst (rarc_5_6_4__remove_exact_elem_inv f (ewm eng) g
-             (lcrs_6_2_4__phase_net_sub pg (MkTmsNet (iret_19_2__retract f eng) rows) g
-                (replace {p = \x => Elem g (ewm (ncore x))} (rarc_5_6_4__apply_tms_net_retract_just pg i eng rows f lj) e)))
-
---@derives [LCRS.6.2.4]
---@derives [IRET.19.5]
---@derives [LTIM.2.4.3]
-||| THE RE-TIME STAGE KEEPS THE INVARIANT: the tick changes no fact and
-||| keeps the frame (Rete/NetworkFrameRetime.idr), and the cascade only
-||| removes.
-export
-lcrs_6_2_4__retime_clocked_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) ->
-                                 (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (ts : List (Maybe Ltim_2_4_1__timed)) -> (cn : Iret_19_3__clocked_net) ->
-                                 Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans cn -> Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (iret_19_5__retime_clocked pg ts cn)
-lcrs_6_2_4__retime_clocked_inv alphas0 chains0 pg env corrOf ans ts (MkClockedNet (MkTmsNet eng rows) dl c) ((inv, uq), oa) =
-  ( lcrs_6_2_4__phase_net_keeps alphas0 chains0 pg (MkTmsNet (iret_19_5__tick ts c eng) rows) (iret_19_5__tick_inv alphas0 chains0 ts c eng inv, uq)
-  , lcrs_6_2_4__one_answer_sub env corrOf ans (ewm eng) (lcrs_6_2_1__wm (iret_19_5__retime_clocked pg ts (MkClockedNet (MkTmsNet eng rows) dl c)))
-      (lcrs_6_2_4__phase_net_sub pg (MkTmsNet (iret_19_5__tick ts c eng) rows)) oa )
-
---@derives [LCRS.6.2.4]
---@derives [IDAT.6.2.2]
-||| MARKING AN ACTIVATION FIRED KEEPS THE INVARIANT: working memory is
-||| untouched.
-export
-lcrs_6_2_4__mark_net_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) ->
-                           (ans : Lcrs_4_2_2__answers) -> (r, j : Nat) -> (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) -> (c : Nat) ->
-                           Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (MkClockedNet (MkTmsNet eng rows) dl c) ->
-                           Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (MkClockedNet (MkTmsNet (idat_6_2_2__mark_net r j eng) rows) dl c)
-lcrs_6_2_4__mark_net_inv alphas0 chains0 env corrOf ans r j eng rows dl c ((inv, uq), oa) = ((idat_6_2_2__mark_net_inv alphas0 chains0 r j eng inv, uq), oa)
-
--- ---------------------------------------------------------------------
--- The arrival keeps one answer per correlation [LCRS.6.2.4]
--- ---------------------------------------------------------------------
-
---@derives [LCRS.6.2.4]
-||| Not in a list: not its head, not in its tail.
-export
-lcrs_6_2_4__not_elem_cons : (x, y : Nat) -> (ys : List Nat) -> rarc_5_6_5__elem x (y :: ys) = False -> (Not (x = y), rarc_5_6_5__elem x ys = False)
-lcrs_6_2_4__not_elem_cons x y ys h with (y == x) proof yx
-  lcrs_6_2_4__not_elem_cons x y ys h | True  = absurd h
-  lcrs_6_2_4__not_elem_cons x y ys h | False = (\e => lcyc_1_1__nat_neq_false y x yx (sym e), h)
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.4.2.2]
-||| An answer kind is `CallError`'s or a response schema's.
-export
-lcrs_6_2_4__is_answer_cases : (ans : Lcrs_4_2_2__answers) -> (x : Nat) -> lcrs_4_2_2__is_answer ans x = True ->
-                              Either (x = aerror ans) (rarc_5_6_5__elem x (aresponses ans) = True)
-lcrs_6_2_4__is_answer_cases ans x h = case iret_12__or_inv (x == aerror ans) (rarc_5_6_5__elem x (aresponses ans)) h of
-  Left xe  => Left (lcyc_1_1__nat_eq_true x (aerror ans) xe)
-  Right xr => Right xr
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.4.2.1]
-||| THE KINDS THAT SURVIVE AN ARRIVAL'S SWEEP, by the two tests on the
-||| arriving kind: an answer kind not among the swept kinds is of a response
-||| schema other than the arriving kind's, and neither is `CallError`; a
-||| `CallError` arriving sweeps every answer kind, so no answer survives
-||| beside it; a kind that is no answer sweeps nothing and is none.
-export
-lcrs_6_2_4__survivor_kinds_if : (ans : Lcrs_4_2_2__answers) -> (k, x : Nat) -> (ke, ek : Bool) ->
-                                (k == aerror ans) = ke -> rarc_5_6_5__elem k (aresponses ans) = ek ->
-                                lcrs_4_2_2__is_answer ans k = True -> lcrs_4_2_2__is_answer ans x = True ->
-                                rarc_5_6_5__elem x (lcrs_6_2_4__swept_if ans k ke ek) = False ->
-                                (Not (k = x), Not (k = aerror ans), Not (x = aerror ans))
-lcrs_6_2_4__survivor_kinds_if ans k x True ek pke pek ak ax h =
-  let (nxe, nxr) = lcrs_6_2_4__not_elem_cons x (aerror ans) (aresponses ans) h
-  in case lcrs_6_2_4__is_answer_cases ans x ax of
-       Left xe  => void (nxe xe)
-       Right xr => void (lcyc_1_1__bool_not_both (rarc_5_6_5__elem x (aresponses ans)) xr nxr)
-lcrs_6_2_4__survivor_kinds_if ans k x False True pke pek ak ax h =
-  let (nxk, h1) = lcrs_6_2_4__not_elem_cons x k [aerror ans] h
-      (nxe, _)  = lcrs_6_2_4__not_elem_cons x (aerror ans) [] h1
-  in (\e => nxk (sym e), lcyc_1_1__nat_neq_false k (aerror ans) pke, nxe)
-lcrs_6_2_4__survivor_kinds_if ans k x False False pke pek ak ax h =
-  let ak1 = the ((False || rarc_5_6_5__elem k (aresponses ans)) = True)
-                (replace {p = \b => (b || rarc_5_6_5__elem k (aresponses ans)) = True} pke ak)
-  in absurd (replace {p = \b => (False || b) = True} pek ak1)
-
---@derives [LCRS.6.2.4]
-||| The same, on the arriving kind's own tests.
-export
-lcrs_6_2_4__survivor_kinds : (ans : Lcrs_4_2_2__answers) -> (k, x : Nat) ->
-                             lcrs_4_2_2__is_answer ans k = True -> lcrs_4_2_2__is_answer ans x = True ->
-                             rarc_5_6_5__elem x (lcrs_6_2_4__swept_by ans k) = False ->
-                             (Not (k = x), Not (k = aerror ans), Not (x = aerror ans))
-lcrs_6_2_4__survivor_kinds ans k x ak ax h =
-  lcrs_6_2_4__survivor_kinds_if ans k x (k == aerror ans) (rarc_5_6_5__elem k (aresponses ans)) Refl Refl ak ax h
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
---@derives [IRET.4.4]
-||| THE ARRIVING ANSWER AGAINST A SURVIVOR: an answer live after the
-||| arrival's sweep on a non-empty correlation, carrying that correlation,
-||| is of none of the swept kinds (`lcrs_6_2_1__issued_call_sweeps`), so of a
-||| response schema other than the arriving kind, and neither is
-||| `CallError`.
-export
-lcrs_6_2_4__new_against_survivor : (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (k : Nat) ->
-                                   (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) -> (c0 : Nat) -> (c : Nat) -> (cs : List Nat) ->
-                                   Iret_4_4__unique (ewm eng) -> (g : Lfac_1_7_1__fact) ->
-                                   Elem g (lcrs_6_2_1__wm (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) (c :: cs) (ewm eng))
-                                                                                     (MkClockedNet (MkTmsNet eng rows) dl c0))) ->
-                                   lcrs_4_2_2__is_answer ans k = True -> lcrs_4_2_2__is_answer ans (fkind g) = True ->
-                                   lcrs_4_3_2__corr_read env corrOf g = Just (c :: cs) ->
-                                   (Not (k = fkind g), Not (k = aerror ans), Not (fkind g = aerror ans))
-lcrs_6_2_4__new_against_survivor pg env corrOf ans k eng rows dl c0 c cs uq g eg ak ag cg =
-  let isv = the ((rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k) && lcrs_6_2__corr_is (lcrs_4_3_2__corr_read env corrOf g) (c :: cs)) = False)
-                (lcrs_6_2_1__issued_call_sweeps pg env corrOf (lcrs_6_2_4__swept_by ans k) c cs eng rows dl c0 uq g eg)
-      isv' = the ((rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k) && lstr_3_1__eq (c :: cs) (c :: cs)) = False)
-                 (replace {p = \m => (rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k) && lcrs_6_2__corr_is m (c :: cs)) = False} cg isv)
-      nk = the (rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k) = False)
-               (iret_12__bool_false_of (rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k))
-                  (\pe => lcyc_1_1__bool_not_both (rarc_5_6_5__elem (fkind g) (lcrs_6_2_4__swept_by ans k) && lstr_3_1__eq (c :: cs) (c :: cs))
-                            (rewrite pe in lstr_3_1__eq_refl (c :: cs)) isv'))
-  in lcrs_6_2_4__survivor_kinds ans k (fkind g) ak ag nk
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
-||| THE SAME, FOR THE FACT THE ARRIVAL MINTED: its correlation is the one
-||| asserted, so the sweep's.
-export
-lcrs_6_2_4__new_against_survivor_at : (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                                      (k, key, pay : Nat) -> (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) -> (c0 : Nat) ->
-                                      (t : Lstr_1_1__text) -> lcrs_4_3_2__corr_at env (corrOf k) key pay = Just t -> Iret_4_4__unique (ewm eng) ->
-                                      (c : Nat) -> (cs : List Nat) -> (f, g : Lfac_1_7_1__fact) -> (id : Nat) -> f = MkFact id k key pay ->
-                                      Elem g (lcrs_6_2_1__wm (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng))
-                                                                                        (MkClockedNet (MkTmsNet eng rows) dl c0))) ->
-                                      lcrs_4_2_2__is_answer ans (fkind f) = True -> lcrs_4_2_2__is_answer ans (fkind g) = True ->
-                                      lcrs_4_3_2__corr_read env corrOf f = Just (c :: cs) -> lcrs_4_3_2__corr_read env corrOf g = Just (c :: cs) ->
-                                      (Not (fkind f = fkind g), Not (fkind f = aerror ans), Not (fkind g = aerror ans))
-lcrs_6_2_4__new_against_survivor_at pg env corrOf ans k key pay eng rows dl c0 t kt uq c cs f g id pf eg af ag cf cg =
-  let cf' = the (lcrs_4_3_2__corr_at env (corrOf k) key pay = Just (c :: cs))
-                (replace {p = \h => lcrs_4_3_2__corr_read env corrOf h = Just (c :: cs)} pf cf)
-      tK  = the (t = c :: cs) (iret_11_4__just_inj (trans (sym kt) cf'))
-      eg' = replace {p = \u => Elem g (lcrs_6_2_1__wm (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) u (ewm eng))
-                                                                                  (MkClockedNet (MkTmsNet eng rows) dl c0)))} tK eg
-      ak  = the (lcrs_4_2_2__is_answer ans k = True) (replace {p = \h => lcrs_4_2_2__is_answer ans (fkind h) = True} pf af)
-  in replace {p = \h => (Not (fkind h = fkind g), Not (fkind h = aerror ans), Not (fkind g = aerror ans))} (sym pf)
-       (lcrs_6_2_4__new_against_survivor pg env corrOf ans k eng rows dl c0 c cs uq g eg' ak ag cg)
-
---@derives [LCRS.6.2.4]
-||| A HOST ASSERT THAT READS NO CORRELATION keeps one answer per
-||| correlation: the minted fact carries none, and the rest were live.
-export
-lcrs_6_2_4__no_corr_assert_keeps : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                                   (k, key, pay : Nat) -> (cn : Iret_19_3__clocked_net) -> lcrs_4_3_2__corr_at env (corrOf k) key pay = Nothing ->
-                                   Lcrs_6_2_4__one_answer env corrOf ans (lcrs_6_2_1__wm cn) ->
-                                   Lcrs_6_2_4__one_answer env corrOf ans (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay) (rarc_5_6_3__sweep_net pg cn)))
-lcrs_6_2_4__no_corr_assert_keeps pg ttl env corrOf ans k key pay cn kn oa f g ef eg ne af ag c cs cf cg =
-  case ( lcrs_6_2_4__apply_ttl_assert_elem pg ttl k key pay (rarc_5_6_3__sweep_net pg cn) f ef
-       , lcrs_6_2_4__apply_ttl_assert_elem pg ttl k key pay (rarc_5_6_3__sweep_net pg cn) g eg ) of
-    (Left ef', Left eg') => oa f g (lcrs_6_2_4__sweep_net_sub pg cn f ef') (lcrs_6_2_4__sweep_net_sub pg cn g eg') ne af ag c cs cf cg
-    (Right pf, _)        => absurd (trans (sym kn) (replace {p = \h => lcrs_4_3_2__corr_read env corrOf h = Just (c :: cs)} pf cf))
-    (_, Right qg)        => absurd (trans (sym kn) (replace {p = \h => lcrs_4_3_2__corr_read env corrOf h = Just (c :: cs)} qg cg))
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
---@derives [IRET.4.4]
-||| AN ARRIVAL ON A CORRELATION KEEPS ONE ANSWER PER CORRELATION: after its
-||| sweep and the TTL sweep, every live fact was live before or is the
-||| answer minted; two old ones inherit it, the minted one against an old
-||| survivor is `lcrs_6_2_4__new_against_survivor_at`'s case, and the minted
-||| one is one fact.
-export
-lcrs_6_2_4__arrival_sweep_keeps : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                                  (k, key, pay : Nat) -> (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) -> (c0 : Nat) ->
-                                  (t : Lstr_1_1__text) -> lcrs_4_3_2__corr_at env (corrOf k) key pay = Just t -> Iret_4_4__unique (ewm eng) ->
-                                  Lcrs_6_2_4__one_answer env corrOf ans (ewm eng) ->
-                                  Lcrs_6_2_4__one_answer env corrOf ans
-                                    (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay)
-                                       (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng))
-                                                                                          (MkClockedNet (MkTmsNet eng rows) dl c0)))))
-lcrs_6_2_4__arrival_sweep_keeps pg ttl env corrOf ans k key pay eng rows dl c0 t kt uq oa f g ef eg ne af ag c cs cf cg =
-  case ( lcrs_6_2_4__apply_ttl_assert_elem pg ttl k key pay
-           (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0))) f ef
-       , lcrs_6_2_4__apply_ttl_assert_elem pg ttl k key pay
-           (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0))) g eg ) of
-    (Left ef', Left eg') =>
-      oa f g (lcrs_6_2__sweep_ids_net_sub pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0) f
-                (lcrs_6_2_4__sweep_net_sub pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)) f ef'))
-             (lcrs_6_2__sweep_ids_net_sub pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0) g
-                (lcrs_6_2_4__sweep_net_sub pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)) g eg'))
-             ne af ag c cs cf cg
-    (Right pf, Right qg) => void (ne (trans pf (sym qg)))
-    (Right pf, Left eg') =>
-      lcrs_6_2_4__new_against_survivor_at pg env corrOf ans k key pay eng rows dl c0 t kt uq c cs f g _ pf
-        (lcrs_6_2_4__sweep_net_sub pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)) g eg')
-        af ag cf cg
-    (Left ef', Right qg) =>
-      let (n1, n2, n3) = lcrs_6_2_4__new_against_survivor_at pg env corrOf ans k key pay eng rows dl c0 t kt uq c cs g f _ qg
-                           (lcrs_6_2_4__sweep_net_sub pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2__victims env corrOf (lcrs_6_2_4__swept_by ans k) t (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)) f ef')
-                           ag af cg cf
-      in (\e => n1 (sym e), n3, n2)
-
---@derives [LCRS.6.2.4]
---@derives [NCBK.6.4]
-||| A HOST ASSERT KEEPS ONE ANSWER PER CORRELATION, with the arrival's
-||| sweep before it: one that reads no correlation mints no answer the
-||| predicate sees; one that reads a correlation sweeps it first.
-export
-lcrs_6_2_4__arrival_keeps_one_answer : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                                       (k, key, pay : Nat) -> (cn : Iret_19_3__clocked_net) -> Iret_4_4__unique (lcrs_6_2_1__wm cn) ->
-                                       Lcrs_6_2_4__one_answer env corrOf ans (lcrs_6_2_1__wm cn) ->
-                                       Lcrs_6_2_4__one_answer env corrOf ans
-                                         (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay)
-                                            (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2_4__arrival_victims env corrOf ans (Assert k key pay) (lcrs_6_2_1__wm cn)) cn))))
-lcrs_6_2_4__arrival_keeps_one_answer pg ttl env corrOf ans k key pay (MkClockedNet (MkTmsNet eng rows) dl c0) uq oa =
-  case iret_12__maybe_split (lcrs_4_3_2__corr_at env (corrOf k) key pay) of
-    Left kn =>
-      replace {p = \m => Lcrs_6_2_4__one_answer env corrOf ans
-                           (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay)
-                              (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2_4__victims_of env corrOf ans k m (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)))))}
-              (sym kn) (lcrs_6_2_4__no_corr_assert_keeps pg ttl env corrOf ans k key pay (MkClockedNet (MkTmsNet eng rows) dl c0) kn oa)
-    Right (t ** kj) =>
-      replace {p = \m => Lcrs_6_2_4__one_answer env corrOf ans
-                           (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Assert k key pay)
-                              (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2_4__victims_of env corrOf ans k m (ewm eng)) (MkClockedNet (MkTmsNet eng rows) dl c0)))))}
-              (sym kj) (lcrs_6_2_4__arrival_sweep_keeps pg ttl env corrOf ans k key pay eng rows dl c0 t kj uq oa)
-
---@derives [LCRS.6.2.4]
---@derives [NCBK.6.4]
---@derives [LTIM.2.8.6]
-||| A DATA INPUT ARRIVING KEEPS THE INVARIANT: an assert through the
-||| arrival's sweep, the TTL sweep and the event; a retraction through the
-||| TTL sweep and the event, both only removing.
-export
-lcrs_6_2_4__arrive_timed_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                               (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (ev : Rarc_5_6_1__event) -> (s : Lcrs_6_2_1__called_state) ->
-                               Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                               Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (lcrs_6_2_4__arrive_timed pg ttl env corrOf ans ev s)))
-lcrs_6_2_4__arrive_timed_inv alphas0 chains0 pg ttl env corrOf ans (Assert k key pay) ((MkSampled net w st, trk), ctrk) inv =
-  let inv1 = lcrs_6_2_4__sweep_ids_net_inv alphas0 chains0 pg env corrOf ans (lcrs_6_2_4__arrival_victims env corrOf ans (Assert k key pay) (lcrs_6_2_1__wm net)) net inv
-      inv2 = lcrs_6_2_4__sweep_net_inv alphas0 chains0 pg env corrOf ans
-               (lcrs_6_2__sweep_ids_net pg (lcrs_6_2_4__arrival_victims env corrOf ans (Assert k key pay) (lcrs_6_2_1__wm net)) net) inv1
-  in ( lcrs_6_2_4__apply_ttl_net_keeps alphas0 chains0 pg ttl (Assert k key pay)
-         (rarc_5_6_3__sweep_net pg (lcrs_6_2__sweep_ids_net pg (lcrs_6_2_4__arrival_victims env corrOf ans (Assert k key pay) (lcrs_6_2_1__wm net)) net)) (fst inv2)
-     , lcrs_6_2_4__arrival_keeps_one_answer pg ttl env corrOf ans k key pay net (snd (fst inv)) (snd inv) )
-lcrs_6_2_4__arrive_timed_inv alphas0 chains0 pg ttl env corrOf ans (Retract i) ((MkSampled net w st, trk), ctrk) inv =
-  let inv2 = lcrs_6_2_4__sweep_net_inv alphas0 chains0 pg env corrOf ans net inv
-  in ( lcrs_6_2_4__apply_ttl_net_keeps alphas0 chains0 pg ttl (Retract i) (rarc_5_6_3__sweep_net pg net) (fst inv2)
-     , lcrs_6_2_4__one_answer_sub env corrOf ans (lcrs_6_2_1__wm (rarc_5_6_3__sweep_net pg net))
-         (lcrs_6_2_1__wm (rarc_5_6_4__apply_ttl_net pg ttl (Retract i) (rarc_5_6_3__sweep_net pg net)))
-         (lcrs_6_2_4__apply_ttl_retract_sub pg ttl i (rarc_5_6_3__sweep_net pg net)) (snd inv2) )
-
---@derives [LCRS.6.2.4]
---@derives [LTIM.2.8.4]
-||| A TICK KEEPS THE INVARIANT: the clock advances and the TTL sweep runs.
-export
-lcrs_6_2_4__tick_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                              (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (t : Nat) -> (s : Lcrs_6_2_1__called_state) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (lcrs_6_2_1__tick_called pg ttl t s)))
-lcrs_6_2_4__tick_called_inv alphas0 chains0 pg ttl env corrOf ans t ((MkSampled (MkClockedNet s dl c) w st, trk), ctrk) inv =
-  lcrs_6_2_4__sweep_net_inv alphas0 chains0 pg env corrOf ans (MkClockedNet s dl (rarc_5_6_3__next_clock c t)) inv
-
---@derives [LCRS.6.2.4]
---@derives [LTIM.2.8.3]
-||| THE WALL STEP KEEPS THE INVARIANT: the net stands.
-export
-lcrs_6_2_4__wall_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) ->
-                              (ans : Lcrs_4_2_2__answers) -> (w : Nat) -> (s : Lcrs_6_2_1__called_state) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (lcrs_6_2_1__wall_called w s)))
-lcrs_6_2_4__wall_called_inv alphas0 chains0 env corrOf ans w ((MkSampled net w0 st, trk), ctrk) inv = inv
-
--- ---------------------------------------------------------------------
--- The firing keeps the invariant [LCRS.6.2.4], [LCRS.6.2.1]
--- ---------------------------------------------------------------------
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.8.2]
---@derives [LCRS.6.2.1]
-||| A CALL SITE KEEPS THE INVARIANT: admitted, its issue is a correlation
-||| sweep; refused, the net stands.
-export
-lcrs_6_2_4__call_site_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) ->
-                            (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) -> (ns : (Nat, Lcrs_6_2_1__site)) -> (tok : Iret_7_1__token) ->
-                            (acc : Rlow_7_3_8__acc) ->
-                            Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet acc) ->
-                            Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet (lcrs_8_2__call_site pg env corrOf ans r ns tok acc))
-lcrs_6_2_4__call_site_inv alphas0 chains0 pg env corrOf ans r ns tok acc inv with (lcrs_8_2__admit_gate (sgate (snd ns)) r (fst ns) (nclock (anet acc)) tok (atrk acc))
-  lcrs_6_2_4__call_site_inv alphas0 chains0 pg env corrOf ans r ns tok acc inv | (True, trk') =
-    lcrs_6_2_4__sweep_ids_net_inv alphas0 chains0 pg env corrOf ans
-      (lcrs_6_2__victims env corrOf (lcrs_6_2_1__swept_by_call ans (sresponse (snd ns))) (scorr (snd ns) tok) (lcrs_6_2_1__wm (anet acc))) (anet acc) inv
-  lcrs_6_2_4__call_site_inv alphas0 chains0 pg env corrOf ans r ns tok acc inv | (False, trk') = inv
-
---@derives [LCRS.6.2.4]
---@derives [RLOW.7.3.8]
-||| THE SITES OF A POSITION KEEP THE INVARIANT, one after the other.
-export
-lcrs_6_2_4__run_sites_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (env : Iret_7_6__env) ->
-                            (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) -> (ss : List (Nat, Lcrs_6_2_1__site)) -> (tok : Iret_7_1__token) ->
-                            (acc : Rlow_7_3_8__acc) ->
-                            Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet acc) ->
-                            Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet (rlow_7_3_8__run_sites pg env corrOf ans r ss tok acc))
-lcrs_6_2_4__run_sites_inv alphas0 chains0 pg env corrOf ans r []        tok acc inv = inv
-lcrs_6_2_4__run_sites_inv alphas0 chains0 pg env corrOf ans r (s :: ss) tok acc inv =
-  lcrs_6_2_4__run_sites_inv alphas0 chains0 pg env corrOf ans r ss tok (lcrs_8_2__call_site pg env corrOf ans r s tok acc)
-    (lcrs_6_2_4__call_site_inv alphas0 chains0 pg env corrOf ans r s tok acc inv)
-
---@derives [LCRS.6.2.4]
---@derives [RLOW.7.3.8]
-||| ONE EMIT OR WITHDRAW ON THE ACCUMULATOR KEEPS THE INVARIANT when it
-||| mints no answer: the stamped action's net is Rete/NetworkTtl.idr's.
-export
-lcrs_6_2_4__do_action_acc_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) -> (a : Iret_8_1__act) ->
-                                (act : Lgra_10_1__action) -> (acc : Rlow_7_3_8__acc) -> lcrs_6_2_4__action_no_answer ans act = True ->
-                                Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet acc) ->
-                                Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet (rlow_7_3_8__do_action_acc pg ttl r a act acc))
-lcrs_6_2_4__do_action_acc_inv alphas0 chains0 pg ttl env corrOf ans r a act acc na inv =
-  lcrs_6_2_4__do_action_ttl_net_inv alphas0 chains0 pg ttl env corrOf ans r a act (anet acc) na inv
-
---@derives [LCRS.6.2.4]
---@derives [RLOW.7.3.8]
-||| THE RHS WITH CALLS KEEPS THE INVARIANT when its actions mint no answer:
-||| by induction on the actions, the sites of each position before it.
-export
-lcrs_6_2_4__do_actions_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                    (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) -> (sites : List (Nat, Lcrs_6_2_1__site)) ->
-                                    (i : Nat) -> (a : Iret_8_1__act) -> (acts : List Lgra_10_1__action) -> (acc : Rlow_7_3_8__acc) ->
-                                    lcrs_6_2_4__emits_no_answer ans acts = True ->
-                                    Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet acc) ->
-                                    Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (anet (rlow_7_3_8__do_actions_called pg ttl env corrOf ans r sites i a acts acc))
-lcrs_6_2_4__do_actions_called_inv alphas0 chains0 pg ttl env corrOf ans r sites i a [] acc na inv =
-  lcrs_6_2_4__run_sites_inv alphas0 chains0 pg env corrOf ans r (rlow_7_3_8__sites_at i sites) (atuple a) acc inv
-lcrs_6_2_4__do_actions_called_inv alphas0 chains0 pg ttl env corrOf ans r sites i a (act :: acts) acc na inv =
-  lcrs_6_2_4__do_actions_called_inv alphas0 chains0 pg ttl env corrOf ans r sites (S i) a acts
-    (rlow_7_3_8__do_action_acc pg ttl r a act (rlow_7_3_8__run_sites pg env corrOf ans r (rlow_7_3_8__sites_at i sites) (atuple a) acc))
-    (lcyc_1_1__and_true_r (lcrs_6_2_4__action_no_answer ans act) (lcrs_6_2_4__emits_no_answer ans acts) na)
-    (lcrs_6_2_4__do_action_acc_inv alphas0 chains0 pg ttl env corrOf ans r a act (rlow_7_3_8__run_sites pg env corrOf ans r (rlow_7_3_8__sites_at i sites) (atuple a) acc)
-       (lcyc_1_1__and_true_l (lcrs_6_2_4__action_no_answer ans act) (lcrs_6_2_4__emits_no_answer ans acts) na)
-       (lcrs_6_2_4__run_sites_inv alphas0 chains0 pg env corrOf ans r (rlow_7_3_8__sites_at i sites) (atuple a) acc inv))
-
---@derives [LCRS.6.2.4]
---@derives [LTIM.2.5.4]
---@derives [LCRS.6.2.1]
-||| THE GATED RHS WITH CALLS KEEPS THE INVARIANT: admitted, the RHS with
-||| calls from position 0; refused, the marked net stands.
-export
-lcrs_6_2_4__rhs_gated_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                   (co : Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (r : Nat) ->
-                                   (sites : List (Nat, Lcrs_6_2_1__site)) -> (a : Iret_8_1__act) -> (acts : List Lgra_10_1__action) -> (c : Nat) -> (trk : Iret_10_4__trackers) ->
-                                   (x : (Iret_19_3__clocked_net, Ltim_2_8_6__stamps)) -> (ctrk : Rlow_4_6_6_1__trackers) ->
-                                   lcrs_6_2_4__emits_no_answer ans acts = True ->
-                                   Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (fst x) ->
-                                   Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (onet (lcrs_6_2_1__rhs_gated_called pg ttl co env corrOf ans r sites a acts c trk x ctrk))
-lcrs_6_2_4__rhs_gated_called_inv alphas0 chains0 pg ttl Nothing env corrOf ans r sites a acts c trk x ctrk na inv =
-  lcrs_6_2_4__do_actions_called_inv alphas0 chains0 pg ttl env corrOf ans r sites 0 a acts (MkAcc (fst x) (snd x) ctrk []) na inv
-lcrs_6_2_4__rhs_gated_called_inv alphas0 chains0 pg ttl (Just (window, kf)) env corrOf ans r sites a acts c trk x ctrk na inv
-  with (iret_10_4__allow window c (r, kf (atuple a)) trk)
-  lcrs_6_2_4__rhs_gated_called_inv alphas0 chains0 pg ttl (Just (window, kf)) env corrOf ans r sites a acts c trk x ctrk na inv | (True, trk') =
-    lcrs_6_2_4__do_actions_called_inv alphas0 chains0 pg ttl env corrOf ans r sites 0 a acts (MkAcc (fst x) (snd x) ctrk []) na inv
-  lcrs_6_2_4__rhs_gated_called_inv alphas0 chains0 pg ttl (Just (window, kf)) env corrOf ans r sites a acts c trk x ctrk na inv | (False, trk') = inv
-
---@derives [LCRS.6.2.4]
---@derives [LCDB.3.2.1]
---@derives [IRET.11.1]
-||| THE SELECTED CHAIN IS AT ITS ORDINAL.
-export
-lcrs_6_2_4__selected_nth : (eng : Iret_19__engine) -> (r, j : Nat) -> (ch : Rlow_4_2_1__chain) -> (a : Iret_8_1__act) ->
-                           lcdb_3_2_1__selected eng = Just (r, j, ch, a) -> rarc_5_6_5__nth r (nchains (enet eng)) = Just ch
-lcrs_6_2_4__selected_nth eng r j ch a e with (iret_11_1__select (nchains (enet eng)))
-  lcrs_6_2_4__selected_nth eng r j ch a e | Nothing = absurd e
-  lcrs_6_2_4__selected_nth eng r j ch a e | (Just (r', j')) with (rarc_5_6_5__nth r' (nchains (enet eng))) proof n
-    lcrs_6_2_4__selected_nth eng r j ch a e | (Just (r', j')) | Nothing = absurd e
-    lcrs_6_2_4__selected_nth eng r j ch a e | (Just (r', j')) | (Just ch') with (rarc_5_6_5__nth j' (cacts ch'))
-      lcrs_6_2_4__selected_nth eng r j ch a e | (Just (r', j')) | (Just ch') | Nothing = absurd e
-      lcrs_6_2_4__selected_nth eng r j ch a e | (Just (r', j')) | (Just ch') | (Just a') =
-        replace {p = \q => rarc_5_6_5__nth (fst q) (nchains (enet eng)) = Just (fst (snd (snd q)))} (iret_11_4__just_inj e) n
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
-||| THE FIRING AT A SELECTION KEEPS THE INVARIANT: the selected chain is at
-||| its ordinal, so its actions are the loaded rule's (the shapes kept),
-||| which mint no answer; the mark, then the gated RHS with calls.
-export
-lcrs_6_2_4__fire_at_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                          (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                          (sites : List (List (Nat, Lcrs_6_2_1__site))) -> Lcrs_6_2_4__no_rule_answers ans chains0 ->
-                          (eng : Iret_19__engine) -> (rows : Iret_12_4__table) -> (dl : Iret_4_3__deadlines) -> (c, w : Nat) -> (st : Ltim_2_8_6__stamps) ->
-                          (trk : Iret_10_4__trackers) -> (ctrk : Rlow_4_6_6_1__trackers) -> (m : Maybe (Nat, Nat, Rlow_4_2_1__chain, Iret_8_1__act)) ->
-                          ((r, j : Nat) -> (ch : Rlow_4_2_1__chain) -> (a : Iret_8_1__act) -> m = Just (r, j, ch, a) -> rarc_5_6_5__nth r (nchains (enet eng)) = Just ch) ->
-                          Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (MkClockedNet (MkTmsNet eng rows) dl c) ->
-                          (f : Lcrs_6_2_1__firing) -> (s1 : Lcrs_6_2_1__called_state) ->
-                          lcrs_6_2_1__fire_at pg ttl cools env corrOf ans sites eng rows dl c w st trk ctrk m = Just (f, s1) ->
-                          Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s1))
-lcrs_6_2_4__fire_at_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra eng rows dl c w st trk ctrk Nothing sel inv f s1 e = absurd e
-lcrs_6_2_4__fire_at_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra eng rows dl c w st trk ctrk (Just (r, j, ch, a)) sel ((fi, uq), oa) f s1 e =
-  let n = the (rarc_5_6_5__nth r (nchains (enet eng)) = Just ch) (sel r j ch a Refl)
-      (ch0 ** n0) = lcyc_1_1__nth_length r chains0 (nchains (enet eng)) (fst (snd (snd fi))) n
-      acEq = the (cactions ch = cactions ch0) (snd ((snd (snd (snd fi))) r ch0 ch n0 n))
-      na = the (lcrs_6_2_4__emits_no_answer ans (cactions ch) = True)
-               (replace {p = \l => lcrs_6_2_4__emits_no_answer ans l = True} (sym acEq) (nra r ch0 n0))
-      invO = lcrs_6_2_4__rhs_gated_called_inv alphas0 chains0 pg ttl (lcdb_3_2_1__cool_at cools r) env corrOf ans r (lcrs_6_2_1__sites_at sites r) a (cactions ch) c trk
-               (MkClockedNet (MkTmsNet (idat_6_2_2__mark_net r j eng) rows) dl c, st) ctrk na
-               (lcrs_6_2_4__mark_net_inv alphas0 chains0 env corrOf ans r j eng rows dl c ((fi, uq), oa))
-  in replace {p = \z => Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst z))} (cong snd (iret_11_4__just_inj e)) invO
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
-||| THE CALLED FIRING KEEPS THE INVARIANT: at the selection the engine
-||| makes, whose chain is at its ordinal.
-export
-lcrs_6_2_4__fire_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                              (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                              (sites : List (List (Nat, Lcrs_6_2_1__site))) -> Lcrs_6_2_4__no_rule_answers ans chains0 -> (s : Lcrs_6_2_1__called_state) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                              (f : Lcrs_6_2_1__firing) -> (s1 : Lcrs_6_2_1__called_state) ->
-                              lcrs_6_2_1__fire_called pg ttl cools env corrOf ans sites s = Just (f, s1) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s1))
-lcrs_6_2_4__fire_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra ((MkSampled (MkClockedNet (MkTmsNet eng rows) dl c) w st, trk), ctrk) inv f s1 e =
-  lcrs_6_2_4__fire_at_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra eng rows dl c w st trk ctrk (lcdb_3_2_1__selected eng)
-    (\r, j, ch, a, eq => lcrs_6_2_4__selected_nth eng r j ch a eq) inv f s1 e
-
---@derives [LCRS.6.2.4]
---@derives [IRET.11.4]
-||| THE CALLED RUN KEEPS THE INVARIANT, for any fuel: by induction on the
-||| fuel through the firing, as Rete/RunFold.idr's traced fold unfolds.
-export
-lcrs_6_2_4__run_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                             (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                             (sites : List (List (Nat, Lcrs_6_2_1__site))) -> Lcrs_6_2_4__no_rule_answers ans chains0 -> (fuel : Nat) -> (s : Lcrs_6_2_1__called_state) ->
-                             Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                             (s' : Lcrs_6_2_1__called_state ** (h : Iret_11_4__halt ** (tr : List Lcrs_6_2_1__firing **
-                               ( lcrs_6_2_1__run_called pg ttl cools env corrOf ans sites fuel s = (s', h, tr)
-                               , Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s')) ))))
-lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra Z s inv = (s ** (FuelOut ** ([] ** (Refl, inv))))
-lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra (S fuel) s inv with (lcrs_6_2_1__fire_called pg ttl cools env corrOf ans sites s) proof e
-  lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra (S fuel) s inv | Nothing =
-    (s ** (Quiescent ** ([] ** (Refl, inv))))
-  lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra (S fuel) s inv | (Just (f, s1)) =
-    let (s' ** (h ** (tr ** (rE, inv')))) = lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra fuel s1
-                                              (lcrs_6_2_4__fire_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra s inv f s1 e)
-    in (s' ** (h ** ((f :: tr) ** (rewrite rE in Refl, inv'))))
-
---@derives [LCRS.6.2.4]
---@derives [LTIM.2.4.2]
-||| THE CALLED PUMP KEEPS THE INVARIANT: the re-time at entry, then the run.
-export
-lcrs_6_2_4__pump_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                              (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                              (sites : List (List (Nat, Lcrs_6_2_1__site))) -> Lcrs_6_2_4__no_rule_answers ans chains0 -> (tests : List (Maybe Ltim_2_4_1__ttest)) ->
-                              (fuel : Nat) -> (s : Lcrs_6_2_1__called_state) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                              (s' : Lcrs_6_2_1__called_state ** (h : Iret_11_4__halt ** (tr : List Lcrs_6_2_1__firing **
-                                ( lcrs_6_2_1__pump_called pg ttl cools env corrOf ans sites tests fuel s = (s', h, tr)
-                                , Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s')) ))))
-lcrs_6_2_4__pump_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra tests fuel ((MkSampled net w st, trk), ctrk) inv =
-  lcrs_6_2_4__run_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra fuel
-    ((MkSampled (iret_19_5__retime_clocked pg (ltim_2_4_1__tests_at w st tests) net) w st, trk), ctrk)
-    (lcrs_6_2_4__retime_clocked_inv alphas0 chains0 pg env corrOf ans (ltim_2_4_1__tests_at w st tests) net inv)
-
--- ---------------------------------------------------------------------
--- The history [LCRS.6.2.4], [RARC.5.6.1]
--- ---------------------------------------------------------------------
-
---@spec [LCRS.6.2.4]
---@spec [RARC.5.6.1]
-||| ONE STEP OF A FIXTURE on the called engine, the state alone, as
-||| `lcrs_6_2_1__run_steps_called` takes it: a tick, a data input through the
-||| arrival, a pump under its fuel.
-public export
-lcrs_6_2_4__step_called : Lcyc_3_2_1__program -> Iret_4_2__ttl -> List Lcdb_3_2_1__cool -> Iret_7_6__env -> Lcrs_4_3_2__corr_of -> Lcrs_4_2_2__answers ->
-                          List (List (Nat, Lcrs_6_2_1__site)) -> List (Maybe Ltim_2_4_1__ttest) -> Rarc_5_6_2__step -> Lcrs_6_2_1__called_state -> Lcrs_6_2_1__called_state
-lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests (SInput (Tick t))  s = lcrs_6_2_1__tick_called pg ttl t s
-lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests (SInput (Data ev)) s = lcrs_6_2_4__arrive_timed pg ttl env corrOf ans ev s
-lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests (SPumpT fuel)      s = fst (lcrs_6_2_1__pump_called pg ttl cools env corrOf ans sites tests fuel s)
-
---@spec [LCRS.6.2.4]
---@spec [RARC.5.6.1]
-||| A HISTORY: the steps folded over the state.
-public export
-lcrs_6_2_4__history_called : Lcyc_3_2_1__program -> Iret_4_2__ttl -> List Lcdb_3_2_1__cool -> Iret_7_6__env -> Lcrs_4_3_2__corr_of -> Lcrs_4_2_2__answers ->
-                             List (List (Nat, Lcrs_6_2_1__site)) -> List (Maybe Ltim_2_4_1__ttest) -> List Rarc_5_6_2__step -> Lcrs_6_2_1__called_state -> Lcrs_6_2_1__called_state
-lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests []        s = s
-lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests (x :: xs) s =
-  lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests xs (lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests x s)
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.1]
-||| ONE STEP KEEPS THE INVARIANT.
-export
-lcrs_6_2_4__step_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                              (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                              (sites : List (List (Nat, Lcrs_6_2_1__site))) -> (tests : List (Maybe Ltim_2_4_1__ttest)) -> Lcrs_6_2_4__no_rule_answers ans chains0 ->
-                              (x : Rarc_5_6_2__step) -> (s : Lcrs_6_2_1__called_state) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                              Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests x s)))
-lcrs_6_2_4__step_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra (SInput (Tick t)) s inv =
-  lcrs_6_2_4__tick_called_inv alphas0 chains0 pg ttl env corrOf ans t s inv
-lcrs_6_2_4__step_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra (SInput (Data ev)) s inv =
-  lcrs_6_2_4__arrive_timed_inv alphas0 chains0 pg ttl env corrOf ans ev s inv
-lcrs_6_2_4__step_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra (SPumpT fuel) s inv =
-  let (s' ** (h ** (tr ** (pE, inv')))) = lcrs_6_2_4__pump_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites nra tests fuel s inv
-  in replace {p = \z => Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (fst z)))} (sym pE) inv'
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.1]
-||| A HISTORY KEEPS THE INVARIANT, by induction on the steps.
-export
-lcrs_6_2_4__history_called_inv : (alphas0 : List Iret_6_1__alpha) -> (chains0 : List Rlow_4_2_1__chain) -> (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) ->
-                                 (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                                 (sites : List (List (Nat, Lcrs_6_2_1__site))) -> (tests : List (Maybe Ltim_2_4_1__ttest)) -> Lcrs_6_2_4__no_rule_answers ans chains0 ->
-                                 (steps : List Rarc_5_6_2__step) -> (s : Lcrs_6_2_1__called_state) ->
-                                 Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst s)) ->
-                                 Lcrs_6_2_4__inv alphas0 chains0 env corrOf ans (ltim_2_4_1__net_of (fst (lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests steps s)))
-lcrs_6_2_4__history_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra []        s inv = inv
-lcrs_6_2_4__history_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra (x :: xs) s inv =
-  lcrs_6_2_4__history_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra xs (lcrs_6_2_4__step_called pg ttl cools env corrOf ans sites tests x s)
-    (lcrs_6_2_4__step_called_inv alphas0 chains0 pg ttl cools env corrOf ans sites tests nra x s inv)
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.1]
-||| THE HISTORY IS THE FIXTURE'S STEPS' STATE: `lcrs_6_2_1__run_steps_called`'s
-||| state is the fold, whatever it reports per pump. By induction on the
-||| steps; at a pump the two lifted case blocks over the recursive call are
-||| bridged as Rete/NetworkWall.idr's run is.
-export
-lcrs_6_2_4__history_is_run_steps : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) ->
-                                   (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (sites : List (List (Nat, Lcrs_6_2_1__site))) ->
-                                   (tests : List (Maybe Ltim_2_4_1__ttest)) -> (steps : List Rarc_5_6_2__step) -> (s : Lcrs_6_2_1__called_state) ->
-                                   fst (lcrs_6_2_1__run_steps_called pg ttl cools env corrOf ans sites tests steps s)
-                                     = lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests steps s
-lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests [] s = Refl
-lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests (SInput (Tick t) :: ss) s =
-  lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests ss (lcrs_6_2_1__tick_called pg ttl t s)
-lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests (SInput (Data ev) :: ss) s =
-  lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests ss (lcrs_6_2_4__arrive_timed pg ttl env corrOf ans ev s)
-lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests (SPumpT fuel :: ss) s with (lcrs_6_2_1__pump_called pg ttl cools env corrOf ans sites tests fuel s)
-  lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests (SPumpT fuel :: ss) s | (s', h, tr)
-    with (lcrs_6_2_1__run_steps_called pg ttl cools env corrOf ans sites tests ss s') proof rr
-    lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests (SPumpT fuel :: ss) s | (s', h, tr) | (s'', vs) =
-      replace {p = \z => fst z = lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests ss s'} rr
-              (lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests ss s')
-
---@spec [LCRS.6.2.1]
-||| THE LOADED CALLED STATE of a program: no rows, no deadlines, the clock
-||| at 0, the wall at 0, no stamps, no tracker of either kind.
-public export
-lcrs_6_2_1__loaded : List (Nat, Lfac_1_7_1__fact -> Bool) -> List (List (Nat, Iret_7_5__join, Bool), List Lgra_10_1__action) -> Lcrs_6_2_1__called_state
-lcrs_6_2_1__loaded alphas rules = ((MkSampled (MkClockedNet (MkTmsNet (rdsc_4a_5__load alphas rules) []) [] 0) 0 [], []), [])
-
---@derives [LCRS.6.2.4]
---@derives [RDSC.4a.5]
---@derives [IRET.4.4]
-||| THE LOADED CALLED STATE HAS THE INVARIANT: the view and its own shapes,
-||| no fact.
-export
-lcrs_6_2_4__loaded_inv : (env : Iret_7_6__env) -> (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) ->
-                         (alphas : List (Nat, Lfac_1_7_1__fact -> Bool)) -> (rules : List (List (Nat, Iret_7_5__join, Bool), List Lgra_10_1__action)) ->
-                         Lcrs_6_2_4__inv (nalphas (enet (rdsc_4a_5__load alphas rules))) (nchains (enet (rdsc_4a_5__load alphas rules))) env corrOf ans
-                           (ltim_2_4_1__net_of (fst (lcrs_6_2_1__loaded alphas rules)))
-lcrs_6_2_4__loaded_inv env corrOf ans alphas rules =
-  ( ( (rdsc_4a_5__load_view alphas rules, rlow_4_2_1__shapes_kept_refl (rdsc_4a_5__load alphas rules))
-    , \f, g, ef, eg, eq => absurd ef )
-  , \f, g, ef, eg, ne, af, ag, c, cs, cf, cg => absurd ef )
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
---@derives [IRET.4.4]
-||| ONE ANSWER PER CORRELATION AFTER ANY HISTORY: from the loaded called
-||| state, after any steps of ticks, data inputs and pumps under any fuel,
-||| for any program whose rules mint no answer, every non-empty correlation
-||| has at most one live answer of each response schema, and a live
-||| `CallError` has no response fact beside it -- the clause's third
-||| paragraph, on the engine `Fixture.idr` runs.
-export
-lcrs_6_2_4__one_answer_per_corr_after_history : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) ->
-                                                (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (sites : List (List (Nat, Lcrs_6_2_1__site))) ->
-                                                (tests : List (Maybe Ltim_2_4_1__ttest)) -> (alphas : List (Nat, Lfac_1_7_1__fact -> Bool)) ->
-                                                (rules : List (List (Nat, Iret_7_5__join, Bool), List Lgra_10_1__action)) ->
-                                                Lcrs_6_2_4__no_rule_answers ans (nchains (enet (rdsc_4a_5__load alphas rules))) -> (steps : List Rarc_5_6_2__step) ->
-                                                Lcrs_6_2_4__one_answer env corrOf ans
-                                                  (lcrs_6_2_1__wm (ltim_2_4_1__net_of (fst (lcrs_6_2_4__history_called pg ttl cools env corrOf ans sites tests steps (lcrs_6_2_1__loaded alphas rules)))))
-lcrs_6_2_4__one_answer_per_corr_after_history pg ttl cools env corrOf ans sites tests alphas rules nra steps =
-  snd (lcrs_6_2_4__history_called_inv (nalphas (enet (rdsc_4a_5__load alphas rules))) (nchains (enet (rdsc_4a_5__load alphas rules))) pg ttl cools env corrOf ans sites tests nra steps
-         (lcrs_6_2_1__loaded alphas rules) (lcrs_6_2_4__loaded_inv env corrOf ans alphas rules))
-
---@derives [LCRS.6.2.4]
---@derives [RARC.5.6.1]
-||| THE SAME, ON THE FIXTURE RUNNER'S STATE: what `lcrs_6_2_1__run_steps_called`
-||| leaves after any steps from the loaded state.
-export
-lcrs_6_2_4__one_answer_after_run_steps : (pg : Lcyc_3_2_1__program) -> (ttl : Iret_4_2__ttl) -> (cools : List Lcdb_3_2_1__cool) -> (env : Iret_7_6__env) ->
-                                         (corrOf : Lcrs_4_3_2__corr_of) -> (ans : Lcrs_4_2_2__answers) -> (sites : List (List (Nat, Lcrs_6_2_1__site))) ->
-                                         (tests : List (Maybe Ltim_2_4_1__ttest)) -> (alphas : List (Nat, Lfac_1_7_1__fact -> Bool)) ->
-                                         (rules : List (List (Nat, Iret_7_5__join, Bool), List Lgra_10_1__action)) ->
-                                         Lcrs_6_2_4__no_rule_answers ans (nchains (enet (rdsc_4a_5__load alphas rules))) -> (steps : List Rarc_5_6_2__step) ->
-                                         Lcrs_6_2_4__one_answer env corrOf ans
-                                           (lcrs_6_2_1__wm (ltim_2_4_1__net_of (fst (fst (lcrs_6_2_1__run_steps_called pg ttl cools env corrOf ans sites tests steps (lcrs_6_2_1__loaded alphas rules))))))
-lcrs_6_2_4__one_answer_after_run_steps pg ttl cools env corrOf ans sites tests alphas rules nra steps =
-  replace {p = \z => Lcrs_6_2_4__one_answer env corrOf ans (lcrs_6_2_1__wm (ltim_2_4_1__net_of (fst z)))}
-          (sym (lcrs_6_2_4__history_is_run_steps pg ttl cools env corrOf ans sites tests steps (lcrs_6_2_1__loaded alphas rules)))
-          (lcrs_6_2_4__one_answer_per_corr_after_history pg ttl cools env corrOf ans sites tests alphas rules nra steps)
-
--- ---------------------------------------------------------------------
 -- Executed: the fixtures' shapes on this engine
 -- ---------------------------------------------------------------------
 
@@ -2435,6 +1470,13 @@ lcrs_6_2_1__rule_trig = [([(0, lcdb_3_2_1__any_join, False)], [])]
 public export
 lcrs_6_2_1__sites_one : Lcrs_6_2_1__site -> List (List (Nat, Lcrs_6_2_1__site))
 lcrs_6_2_1__sites_one site = [[(0, site)]]
+
+--@spec [LCRS.6.2.1]
+||| THE LOADED CALLED STATE of a program: no rows, no deadlines, the clock
+||| at 0, the wall at 0, no stamps, no tracker of either kind.
+public export
+lcrs_6_2_1__loaded : List (Nat, Lfac_1_7_1__fact -> Bool) -> List (List (Nat, Iret_7_5__join, Bool), List Lgra_10_1__action) -> Lcrs_6_2_1__called_state
+lcrs_6_2_1__loaded alphas rules = ((MkSampled (MkClockedNet (MkTmsNet (rdsc_4a_5__load alphas rules) []) [] 0) 0 [], []), [])
 
 --@spec [LCRS.6.2.1]
 ||| THE RESULTS OF A SCHEDULE from the loaded network on the witnesses'
@@ -2653,48 +1695,3 @@ lcrs_6_2_4__empty_corr_retracts_nothing :
     [SInput (Data (Assert 1 1 30)), SInput (Data (Assert 1 1 31)), SInput (Data (Assert 2 1 33)), SPumpT 3]
     = [MkFact 0 1 1 30, MkFact 1 1 1 31, MkFact 2 2 1 33]
 lcrs_6_2_4__empty_corr_retracts_nothing = Refl
-
--- ---------------------------------------------------------------------
--- The history theorem at the witnesses' programs
--- ---------------------------------------------------------------------
-
---@derives [LCRS.6.2.4]
-||| THE WITNESSES' RULE MINTS NO ANSWER, computed: the one rule is
-||| action-free, its RHS the call alone.
-export
-lcrs_6_2_4__witness_rule_answers_nothing :
-  lcrs_6_2_4__chains_emit_no_answer lcrs_6_2_1__wanswers (nchains (enet (rdsc_4a_5__load lcdb_3_2_1__alphas_one lcrs_6_2_1__rule_trig))) = True
-lcrs_6_2_4__witness_rule_answers_nothing = Refl
-
---@derives [LCRS.6.2.4]
---@derives [LCRS.6.2.1]
-||| ONE ANSWER PER CORRELATION IN THE WITNESS WORLD, OVER EVERY HISTORY: for
-||| any site on the witnesses' rule -- cooled, plain or `no response` --
-||| and any schedule of inputs, ticks and pumps, the working memory
-||| `lcrs_6_2_1__wm_after` reads holds one answer per correlation. The
-||| theorem at the witnesses' program; the schedules the call fixtures'
-||| shapes run are among them.
-export
-lcrs_6_2_4__witnesses_keep_one_answer : (site : Lcrs_6_2_1__site) -> (steps : List Rarc_5_6_2__step) ->
-                                        Lcrs_6_2_4__one_answer lcrs_6_2_1__wenv lcrs_6_2_1__wcorr lcrs_6_2_1__wanswers
-                                          (lcrs_6_2_1__wm_after lcrs_6_2_1__life lcdb_3_2_1__alphas_one lcrs_6_2_1__rule_trig (lcrs_6_2_1__sites_one site) steps)
-lcrs_6_2_4__witnesses_keep_one_answer site steps =
-  lcrs_6_2_4__one_answer_after_run_steps (lcyc_3_2_1__program_of lcrs_6_2_1__life (enet (rdsc_4a_5__load lcdb_3_2_1__alphas_one lcrs_6_2_1__rule_trig)))
-    lcdb_3_2_1__no_ttl [Nothing] lcrs_6_2_1__wenv lcrs_6_2_1__wcorr lcrs_6_2_1__wanswers (lcrs_6_2_1__sites_one site) [Nothing] lcdb_3_2_1__alphas_one lcrs_6_2_1__rule_trig
-    (lcrs_6_2_4__chains_no_answer_sound lcrs_6_2_1__wanswers (nchains (enet (rdsc_4a_5__load lcdb_3_2_1__alphas_one lcrs_6_2_1__rule_trig)))
-       lcrs_6_2_4__witness_rule_answers_nothing)
-    steps
-
---@derives [LCRS.6.2.4]
-||| THE SAME FOR THE ARRIVAL SHAPES' PROGRAM, which has no rule: every
-||| schedule of host answers, ticks and pumps holds one answer per
-||| correlation; the seven arrival fixtures' schedules are among them.
-export
-lcrs_6_2_4__witness_arrivals_keep_one_answer : (steps : List Rarc_5_6_2__step) ->
-                                               Lcrs_6_2_4__one_answer lcrs_6_2_1__wenv lcrs_6_2_1__wcorr lcrs_6_2_1__wanswers
-                                                 (lcrs_6_2_1__wm_after lcrs_6_2_4__life lcdb_3_2_1__alphas_one [] [] steps)
-lcrs_6_2_4__witness_arrivals_keep_one_answer steps =
-  lcrs_6_2_4__one_answer_after_run_steps (lcyc_3_2_1__program_of lcrs_6_2_4__life (enet (rdsc_4a_5__load lcdb_3_2_1__alphas_one [])))
-    lcdb_3_2_1__no_ttl [Nothing] lcrs_6_2_1__wenv lcrs_6_2_1__wcorr lcrs_6_2_1__wanswers [] [Nothing] lcdb_3_2_1__alphas_one []
-    (lcrs_6_2_4__chains_no_answer_sound lcrs_6_2_1__wanswers (nchains (enet (rdsc_4a_5__load lcdb_3_2_1__alphas_one []))) Refl)
-    steps

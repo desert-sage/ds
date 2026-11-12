@@ -838,7 +838,7 @@ static bool rate_entry_evictable(const ds_rate_entry_t *e, int64_t now_ns)
 {
     if (!e->has_fired)         return true;
     if (e->cooldown_ns <= 0)   return true;
-    return now_ns >= e->last_fire_ns + e->cooldown_ns;
+    return now_ns - e->last_fire_ns >= e->cooldown_ns;
 }
 
 static ds_rate_entry_t *rate_get_or_create(ds_rete_engine_t    *engine,
@@ -952,8 +952,10 @@ static ds_result_t adapter_ds_rate_allow(ds_rete_engine_t   *engine,
     if (!entry) { *out = ds_rete_val_bool(true); return DS_OK_R; }
     entry->cooldown_ns = cooldown_ns;
 
+    /* The elapsed time, since the sum of an instant and a window can pass the
+       top of the clock's range ([LCDB.3.2.1], [LTIM.2.8.2]). */
     if (entry->has_fired
-        && now_ns < entry->last_fire_ns + cooldown_ns) {
+        && now_ns - entry->last_fire_ns < cooldown_ns) {
         *out = ds_rete_val_bool(false);
         return DS_OK_R;
     }
@@ -2005,6 +2007,67 @@ static ds_result_t adapter_ds_date_diff(ds_rete_engine_t   *engine,
     return DS_OK_R;
 }
 
+/*
+ * (ds_duration_add <a> <b>), [LTIM.4.1.1] / RLOW.6.1.6: the exact sum of two
+ * Durations' ns. A sum above 2^63 - 1, or a negative one, is NOT_REPRESENTABLE.
+ */
+static ds_result_t adapter_ds_duration_add(ds_rete_engine_t   *engine,
+                                           ds_rete_eval_ctx_t *ctx,
+                                           ds_rete_val_t      *args,
+                                           uint32_t            argc,
+                                           ds_rete_val_t      *out)
+{
+    (void)engine;
+    if (args[0].kind == DS_RETE_VAL_NULL || args[1].kind == DS_RETE_VAL_NULL) {
+        *out = ds_rete_val_null();
+        return DS_OK_R;
+    }
+    if (args[0].kind != DS_RETE_VAL_INT || args[1].kind != DS_RETE_VAL_INT) {
+        *out = FAULT(ds_rete_mismatch_cause(args, argc));
+        return DS_OK_R;
+    }
+    int64_t ns;
+    if (__builtin_add_overflow(args[0].i, args[1].i, &ns) || ns < 0) {
+        *out = FAULT(DS_FAULT_NOT_REPRESENTABLE);
+        return DS_OK_R;
+    }
+    *out = ds_rete_val_int(ns);
+    return DS_OK_R;
+}
+
+/*
+ * (ds_duration_mul <n:Int> <dur>), [LTIM.4.1.1] / RLOW.6.1.6: the exact product
+ * in ns. A product above 2^63 - 1 is NOT_REPRESENTABLE, and a negative one is 0
+ * ([LTIM.1.3.1]), however far below the integer range it lies.
+ */
+static ds_result_t adapter_ds_duration_mul(ds_rete_engine_t   *engine,
+                                           ds_rete_eval_ctx_t *ctx,
+                                           ds_rete_val_t      *args,
+                                           uint32_t            argc,
+                                           ds_rete_val_t      *out)
+{
+    (void)engine;
+    if (args[0].kind == DS_RETE_VAL_NULL || args[1].kind == DS_RETE_VAL_NULL) {
+        *out = ds_rete_val_null();
+        return DS_OK_R;
+    }
+    if (args[0].kind != DS_RETE_VAL_INT || args[1].kind != DS_RETE_VAL_INT) {
+        *out = FAULT(ds_rete_mismatch_cause(args, argc));
+        return DS_OK_R;
+    }
+    int64_t ns;
+    if (__builtin_mul_overflow(args[0].i, args[1].i, &ns)) {
+        if ((args[0].i < 0) != (args[1].i < 0)) {
+            *out = ds_rete_val_int(0);
+        } else {
+            *out = FAULT(DS_FAULT_NOT_REPRESENTABLE);
+        }
+        return DS_OK_R;
+    }
+    *out = ds_rete_val_int(ns < 0 ? 0 : ns);
+    return DS_OK_R;
+}
+
 
 /* ---- ds_gensym ------------------------------------------------------ */
 
@@ -2255,6 +2318,8 @@ ds_result_t ds_rete_register_adapters(ds_rete_engine_t              *engine,
     REG(DS_FN_DATE_ADD_DURATION,  adapter_ds_date_add_duration);
     REG(DS_FN_DATE_SUB_DURATION,  adapter_ds_date_sub_duration);
     REG(DS_FN_DATE_DIFF,          adapter_ds_date_diff);
+    REG(DS_FN_DURATION_ADD,       adapter_ds_duration_add);
+    REG(DS_FN_DURATION_MUL,       adapter_ds_duration_mul);
 
     REG(DS_FN_GENSYM,             adapter_ds_gensym);
 

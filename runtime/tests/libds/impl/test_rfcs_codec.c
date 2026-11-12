@@ -75,8 +75,8 @@ static void test_pack_atom(void)
 }
 
 /* [RFCS.19.6]: a writer must not frame at an unallocated field number, and
-   must fail rather than emit one; [RFCS.16.3]'s band rules would read such an
-   atom as though a future version had meant it. */
+   must fail rather than emit one; a reader refuses such a frame
+   ([RFCS.19.3]). */
 static void test_rfcs_19_6__writer_refuses_unallocated_field(void)
 {
     const uint8_t body[3] = { 0xAA, 0xBB, 0xCC };
@@ -309,29 +309,24 @@ static void test_reader(void)
     CHECK(saw_parse_err, "reader rejects truncated stream");
 }
 
-/* [RFCS.16.3]: an unknown atom's band decides, in the reader.
-   "A reader must determine the band of any unknown field number from the
-   number alone and apply the band's disposition." Each stream is [ClockAdvance][X]
-   [ClockAdvance], X a hand-framed atom ([RFCS.19.1]: 0A <len> <tag> <len> <body>) at an
-   unallocated number. The body is the varint field 1 = 1.
-     - 322, skip band (reserved in atom.proto, kept free by
-       PBF_FRAMING_VECTORS.json for this case): read past; both readers yield
-       the two CLKAs and end.
-     - 100, inject band: DS_ERR_FS_UNKNOWN_INJECT ([RFCS.18.8], [NERR.13]).
-     - 200, reject-don't-skip band: DS_ERR_PARSE, until [NERR.13] gives a
-       stream a code of its own.
-     - 3000, no band: DS_ERR_PARSE, not an atom at all.
-     - 260, skip band: reserved in atom.proto. Read past as 322 is.
-     - 323, skip band: TextNote, deferred and held out of `Atom.oneof body`.
-       Read past as 322 is.
-   PATH PINNED: rfcs_read_step -> rfcs_unknown_atom (ds_pbf_disposition), from
-   ds_rfcs_next and from ds_rfcs_next_incremental. */
-static const uint8_t X_SKIP_322[]    = { 0x0A, 0x05, 0x92, 0x14, 0x02, 0x08, 0x01 };
-static const uint8_t X_INJECT_100[]  = { 0x0A, 0x05, 0xA2, 0x06, 0x02, 0x08, 0x01 };
-static const uint8_t X_REJECT_200[]  = { 0x0A, 0x05, 0xC2, 0x0C, 0x02, 0x08, 0x01 };
-static const uint8_t X_NOBAND_3000[] = { 0x0A, 0x06, 0xC2, 0xBB, 0x01, 0x02, 0x08, 0x01 };
-static const uint8_t X_SEAL_260[]    = { 0x0A, 0x05, 0xA2, 0x10, 0x02, 0x08, 0x01 };
-static const uint8_t X_TEXT_323[]    = { 0x0A, 0x05, 0x9A, 0x14, 0x02, 0x08, 0x01 };
+/* [RFCS.19.3]: a field number with no registry entry is no member of Atom's
+   `body` oneof, so the reader refuses the frame, wherever the number lies.
+   Each stream is [ClockAdvance][X][ClockAdvance], X a hand-framed atom
+   ([RFCS.19.1]: 0A <len> <tag> <len> <body>) at an unallocated number. The
+   body is the varint field 1 = 1. Every case is DS_ERR_PARSE with the first
+   ClockAdvance read and the second not:
+     - 100, 200, 322 and 3000: unallocated numbers across the field-number
+       range, low and high, with 1- and 2-byte tags and one past 2047.
+     - 260: reserved in atom.proto (the retired Seal).
+     - 323: TextNote, deferred and held out of `Atom.oneof body`.
+   PATH PINNED: rfcs_read_step's ds_pbf_lookup refusal, from ds_rfcs_next and
+   from ds_rfcs_next_incremental. */
+static const uint8_t X_UNKNOWN_322[]  = { 0x0A, 0x05, 0x92, 0x14, 0x02, 0x08, 0x01 };
+static const uint8_t X_UNKNOWN_100[]  = { 0x0A, 0x05, 0xA2, 0x06, 0x02, 0x08, 0x01 };
+static const uint8_t X_UNKNOWN_200[]  = { 0x0A, 0x05, 0xC2, 0x0C, 0x02, 0x08, 0x01 };
+static const uint8_t X_UNKNOWN_3000[] = { 0x0A, 0x06, 0xC2, 0xBB, 0x01, 0x02, 0x08, 0x01 };
+static const uint8_t X_SEAL_260[]     = { 0x0A, 0x05, 0xA2, 0x10, 0x02, 0x08, 0x01 };
+static const uint8_t X_TEXT_323[]     = { 0x0A, 0x05, 0x9A, 0x14, 0x02, 0x08, 0x01 };
 
 /* [ClockAdvance][x][ClockAdvance] into buf; its length, or 0. */
 static size_t clka_around(const uint8_t *x, size_t xlen, uint8_t *buf, size_t cap)
@@ -383,27 +378,21 @@ static ds_status_t walk_incremental(const uint8_t *buf, size_t len, int *clkas)
     }
 }
 
-static void test_rfcs_16_3__reader_applies_bands(void)
+static void test_rfcs_19_3__reader_refuses_an_unknown_field_number(void)
 {
     static const struct {
         const uint8_t *x;
         size_t         xlen;
-        ds_status_t    want;
-        int            clkas;   /* read before the walk ends */
         const char    *what;
     } cases[] = {
-        { X_SKIP_322,    sizeof X_SKIP_322,    DS_OK,                    2,
-          "322, skip band: read past, both CLKAs read" },
-        { X_INJECT_100,  sizeof X_INJECT_100,  DS_ERR_FS_UNKNOWN_INJECT, 1,
-          "100, inject band: DS_ERR_FS_UNKNOWN_INJECT (RFCS.18.8)" },
-        { X_REJECT_200,  sizeof X_REJECT_200,  DS_ERR_PARSE,             1,
-          "200, reject-don't-skip band: DS_ERR_PARSE" },
-        { X_NOBAND_3000, sizeof X_NOBAND_3000, DS_ERR_PARSE,             1,
-          "3000, no band: DS_ERR_PARSE" },
-        { X_SEAL_260,    sizeof X_SEAL_260,    DS_OK,                    2,
-          "260, the retired Seal: read past, both CLKAs read" },
-        { X_TEXT_323,    sizeof X_TEXT_323,    DS_OK,                    2,
-          "323, the deferred TextNote: read past, both CLKAs read" },
+        { X_UNKNOWN_100,  sizeof X_UNKNOWN_100,  "100: DS_ERR_PARSE after one CLKA" },
+        { X_UNKNOWN_200,  sizeof X_UNKNOWN_200,  "200: DS_ERR_PARSE after one CLKA" },
+        { X_UNKNOWN_322,  sizeof X_UNKNOWN_322,  "322: DS_ERR_PARSE after one CLKA" },
+        { X_UNKNOWN_3000, sizeof X_UNKNOWN_3000, "3000: DS_ERR_PARSE after one CLKA" },
+        { X_SEAL_260,     sizeof X_SEAL_260,
+          "260, the retired Seal: DS_ERR_PARSE after one CLKA" },
+        { X_TEXT_323,     sizeof X_TEXT_323,
+          "323, the deferred TextNote: DS_ERR_PARSE after one CLKA" },
     };
     for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
         uint8_t buf[128];
@@ -413,8 +402,22 @@ static void test_rfcs_16_3__reader_applies_bands(void)
         int whole = -1, incr = -1;
         ds_status_t sw = walk_whole(buf, len, &whole);
         ds_status_t si = walk_incremental(buf, len, &incr);
-        CHECK(sw == cases[i].want && whole == cases[i].clkas, cases[i].what);
-        CHECK(si == cases[i].want && incr == cases[i].clkas, cases[i].what);
+        CHECK(sw == DS_ERR_PARSE && whole == 1, cases[i].what);
+        CHECK(si == DS_ERR_PARSE && incr == 1, cases[i].what);
+    }
+
+    /* The control: the same walk over [ClockAdvance][ClockAdvance] ends
+       cleanly with both read, so a refusal above is the unknown frame's. */
+    {
+        static const uint8_t none[1] = { 0 };   /* not NULL: memcpy's operand */
+        uint8_t buf[128];
+        size_t len = clka_around(none, 0, buf, sizeof buf);
+        int whole = -1, incr = -1;
+        CHECK(len > 0, "build [ClockAdvance][ClockAdvance]");
+        CHECK(walk_whole(buf, len, &whole) == DS_OK && whole == 2,
+              "control: ds_rfcs_next reads both CLKAs");
+        CHECK(walk_incremental(buf, len, &incr) == DS_OK && incr == 2,
+              "control: ds_rfcs_next_incremental reads both CLKAs");
     }
 }
 
@@ -610,7 +613,7 @@ int main(void)
     test_call();
     test_header();
     test_reader();
-    test_rfcs_16_3__reader_applies_bands();
+    test_rfcs_19_3__reader_refuses_an_unknown_field_number();
     test_event_id();
     test_header_ids_decode_whole();
     test_fact_strings_decode_whole();

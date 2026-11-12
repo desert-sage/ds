@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.3.2_abs_keeps_the_dimension",
+    "category": "compiler",
+    "scenario": "[LEXP.3.2]: `abs` preserves its argument's type, dimension included. `abs(s.d)` is a `meter`, so comparing it with the bare `25` is [LUNI.8.3]'s refusal, DS_VALIDATE_DIM_MISMATCH. A compiler that types the result as a bare number compiles this. PATH PINNED: the `abs` arm of `dsc.typecheck.lexp_5_3_plain_call`, read by `adjacent_mismatches`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n\nrule r:\n    R s where abs(s.d) > 25\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

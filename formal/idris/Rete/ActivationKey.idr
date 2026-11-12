@@ -60,7 +60,8 @@
 ||| value no representation carries -- libds's `RK_UNBOUND`, the Mercury
 ||| runtime's `kp_unexpanded` for a broken artefact -- since the clause
 ||| composes a key from values; and the composition of the key from the
-||| bound facts, which is Lcdb/RuleGlobal.idr's ([LCDB.3.3.3]). The
+||| bound facts ([LCDB.3.3.3]), which is the fixture lowering's, run on
+||| Rete/NetworkCooldown.idr's engine. The
 ||| decidable test `rlow_4_6_2_1__same_b` is run (Main.idr) and not proved
 ||| equal to the relation. Standalone, importing nothing of the lane, so it
 ||| carries two list lemmas of its own (`rlow_4_6_2_1__take_app`,

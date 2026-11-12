@@ -33,6 +33,7 @@
 #include "sha256.h"
 #include "rete/alpha.h"
 #include "rete/engine.h"
+#include "rete/expr.h"
 #include "rete/fault_fact.h"
 #include "rete/schema_reg.h"
 #include "builtins.h"
@@ -81,6 +82,10 @@ typedef struct {
     double           tolerance;       /* 0.0: exact */
     bool             nullable;
     uint32_t         capacity;        /* [LSTR.11.1]; 0 = none */
+    /* [RDSC.5.5.9]: the Slot's conversions, detached from its unpacked body
+       once judged; both or neither. Decoded onto the rete schema at apply. */
+    Ds__V1__Expr    *to_stored;
+    Ds__V1__Expr    *from_stored;
 } dsc_slot_acc_t;
 
 /* Per-schema accumulator, keyed by (module_id, name). A conforming compiler writes
@@ -203,6 +208,22 @@ static void dsc_slot_acc_dispose(dsc_slot_acc_t *s)
     DS_FREE(s->schema_ref_name);
     s->slot_name = NULL;
     s->schema_ref_name = NULL;
+    if (s->to_stored != NULL)
+        ds__v1__expr__free_unpacked(s->to_stored, &ds_pb_allocator);
+    if (s->from_stored != NULL)
+        ds__v1__expr__free_unpacked(s->from_stored, &ds_pb_allocator);
+    s->to_stored = s->from_stored = NULL;
+}
+
+/* [RDSC.5.5.9]: the conversion trees of a slot-descriptor array the rete
+   engine did not take. */
+static void dsc_rslots_free_conversions(ds_rete_slot_desc_t *rslots, size_t n)
+{
+    for (size_t s = 0; s < n; s++) {
+        ds_rete_expr_free_tree(rslots[s].to_stored);
+        ds_rete_expr_free_tree(rslots[s].from_stored);
+        rslots[s].to_stored = rslots[s].from_stored = NULL;
+    }
 }
 
 static void dsc_schema_acc_dispose(dsc_schema_acc_t *a)
@@ -230,45 +251,25 @@ static void dsc_rule_acc_dispose(dsc_rule_acc_t *r)
     r->rule_name = r->src_file = r->debug_name_template = NULL;
 }
 
-/* [RFCS.16.3]: an atom this reader has no table entry for. An inject-band atom in a
- * DSC is a misplaced input, refused as the reject band is: DS_ERR_FS_UNKNOWN_INJECT
- * is the fact stream's code.
- */
-static ds_result_t handle_unknown_field(struct ds_engine *engine,
-                                        dsc_load_state_t *s, ds_pbf_atom_t atom,
-                                        size_t pos)
+/* [RDSC.9.4]: an atom the loader steps over, logged at info by name and offset. */
+static void log_skipped_atom(struct ds_engine *engine, uint32_t field,
+                             const char *name, size_t pos, const char *why)
 {
-    (void)s;
-    switch (ds_pbf_disposition(atom.field)) {
-    case DS_PBF_DISP_SKIP: {
-        /* [RDSC.9.4]: skipped, and logged. */
-        char msg[128];
-        ds_text_t t = ds_text(msg, sizeof msg);
-        ds_text_str(&t, "skipping unrecognised atom ");
-        ds_text_u64(&t, atom.field);
-        ds_text_str(&t, " at byte offset ");
-        ds_text_u64(&t, (uint64_t)pos);
-        ds_text_str(&t, " (RDSC.9.4)");
-        ds_log_event_t ev = {
-            .level    = DS_LOG_INFO,
-            .category = "dsc-load",
-            .message  = msg,
-        };
-        ds_telemetry_emit_log(engine, &ev);
-        return DS_OK_R;
-    }
-    case DS_PBF_DISP_REJECT_INJECT:
-    case DS_PBF_DISP_REJECT_VERSION:
-        return DS_ERR_R(DS_ERR_DSC_VERSION,
-                        "dsc: unknown atom in a reject band — this bundle "
-                        "needs a newer runtime (RFCS.16.3)");
-    case DS_PBF_DISP_MALFORMED:
-    default:
-        /* [RFCS.16.3], [RDSC.11.1]. Only a later frame reaches here. */
-        return DS_ERR_R(DS_ERR_DSC_DECODE,
-                        "dsc: an atom's field number is in no band "
-                        "(RDSC.11.1, RFCS.16.3)");
-    }
+    char msg[192];
+    ds_text_t t = ds_text(msg, sizeof msg);
+    ds_text_str(&t, "skipping atom ");
+    ds_text_u64(&t, field);
+    ds_text_str(&t, " (");
+    ds_text_str(&t, name);
+    ds_text_str(&t, ") at byte offset ");
+    ds_text_u64(&t, (uint64_t)pos);
+    ds_text_str(&t, why);
+    ds_log_event_t ev = {
+        .level    = DS_LOG_INFO,
+        .category = "dsc-load",
+        .message  = msg,
+    };
+    ds_telemetry_emit_log(engine, &ev);
 }
 
 static void dsc_load_state_dispose(dsc_load_state_t *s)
@@ -482,6 +483,27 @@ static ds_result_t handle_slot(dsc_load_state_t *st,
         return DS_ERR_R(DS_ERR_DSC_SEMANTIC,
                         "dsc: Slot.tolerance is less than zero (RDSC.9.11)");
     }
+    /* [RDSC.5.5.9]: both conversions or neither, each decoded here with no
+       engine, so a refusal is this atom's, at its offset, as Mercury's is:
+       `to_stored` first. */
+    if ((m->to_stored == NULL) != (m->from_stored == NULL)) {
+        ds__v1__slot__free_unpacked(m, &ds_pb_allocator);
+        return DS_ERR_R(DS_ERR_DSC_SEMANTIC,
+                        "dsc: a Slot carries one unit conversion and not the "
+                        "other (RDSC.5.5.9)");
+    }
+    if (m->to_stored != NULL) {
+        const Ds__V1__Expr *conv[2] = { m->to_stored, m->from_stored };
+        for (int c = 0; c < 2; c++) {
+            ds_rete_expr_t *probe = NULL;
+            r = ds_dsc_slot_conversion(NULL, conv[c], &probe);
+            ds_rete_expr_free_tree(probe);
+            if (r.status != DS_OK) {
+                ds__v1__slot__free_unpacked(m, &ds_pb_allocator);
+                return r;
+            }
+        }
+    }
 
     dsc_schema_acc_t *a = dsc_state_get_schema(st, m->module_id, m->schema_name);
     if (a == NULL) {
@@ -535,6 +557,10 @@ static ds_result_t handle_slot(dsc_load_state_t *st,
     default:
         s->identity_role = DS_IDENTITY_UNSPECIFIED; break;
     }
+    s->to_stored   = m->to_stored;      /* [RDSC.5.5.9], detached */
+    s->from_stored = m->from_stored;
+    m->to_stored   = NULL;
+    m->from_stored = NULL;
     ds__v1__slot__free_unpacked(m, &ds_pb_allocator);
     return DS_OK_R;
 }
@@ -2750,6 +2776,20 @@ static ds_result_t dsc_apply(struct ds_engine *engine,
             st->series_decls[i].slot_name = NULL;
             st->series_decls[i].identity_slot_name = NULL;
         }
+        /* [LSER.8.5.1]: one sample per fact for each (schema, slot, identity slot),
+           whatever the number of slots. The loader refused a NULL name above. */
+        for (size_t i = 0; i < st->n_series_decls; i++) {
+            const struct ds_series_decl_record *d = &engine->series_decls[i];
+            bool repeat = false;
+            for (size_t j = 0; j < i && !repeat; j++) {
+                const struct ds_series_decl_record *p = &engine->series_decls[j];
+                repeat = strcmp(p->schema_name, d->schema_name) == 0
+                         && strcmp(p->slot_name, d->slot_name) == 0
+                         && strcmp(p->identity_slot_name,
+                                   d->identity_slot_name) == 0;
+            }
+            engine->series_decls[i].group_repeat = repeat;
+        }
         engine->n_series_decls = st->n_series_decls;
     }
 
@@ -2791,6 +2831,24 @@ static ds_result_t dsc_apply(struct ds_engine *engine,
                     rslots[s].type =
                         ds_rete_val_kind_for_slot_type(a->slots[s].type);
                 }
+                /* [RDSC.5.5.9]: handle_slot decoded each conversion already,
+                   so only an allocation can fail here. */
+                ds_result_t cr = DS_OK_R;
+                for (size_t s = 0; s < a->n_slots && cr.status == DS_OK; s++) {
+                    if (a->slots[s].to_stored == NULL) continue;
+                    cr = ds_dsc_slot_conversion(engine->rete_engine,
+                                                a->slots[s].to_stored,
+                                                &rslots[s].to_stored);
+                    if (cr.status == DS_OK)
+                        cr = ds_dsc_slot_conversion(engine->rete_engine,
+                                                    a->slots[s].from_stored,
+                                                    &rslots[s].from_stored);
+                }
+                if (cr.status != DS_OK) {
+                    dsc_rslots_free_conversions(rslots, a->n_slots);
+                    DS_FREE(rslots);
+                    return cr;
+                }
             }
             /* [RDSC.5.4.5]: the atom's lifecycle decides the scope, and the slots'
                roles key the identity. */
@@ -2816,6 +2874,10 @@ static ds_result_t dsc_apply(struct ds_engine *engine,
                                                       a->has_sttl ? (int64_t)a->ttl_ns : 0,
                                                       rslots, (uint16_t)a->n_slots,
                                                       &out_schema);
+            /* A registered schema owns its conversions; a refused one does
+               not, and they go with the array. */
+            if (rr.status != DS_OK && rslots != NULL)
+                dsc_rslots_free_conversions(rslots, a->n_slots);
             DS_FREE(rslots);
             if (rr.status != DS_OK && rr.status != DS_ERR_STATE)
                 return rr;
@@ -2997,12 +3059,22 @@ static bool rdsc_9_5_pre_unpack(uint32_t field, const uint8_t *body,
     const ProtobufCMessageDescriptor *desc =
         rdsc_9_5_unpacked(field, &repeated, &bad_string);
     if (desc == NULL) return false;
-    switch (ds_pb_rdsc_11_4_judge(desc, NULL, 0u, body, len)) {
+    /* [RDSC.11.3]: a Slot's conversions are Exprs ([RDSC.5.5.9]), bounded
+       here because protobuf-c's unpack has no recursion bound. */
+    const ProtobufCMessageDescriptor *nested =
+        field == DS_ATOM_SLOT ? &ds__v1__expr__descriptor : NULL;
+    switch (ds_pb_rdsc_11_4_judge(desc, nested, nested != NULL ? 48u : 0u,
+                                  body, len)) {
     case DS_PB_JUDGE_REPEATED:
         *out = DS_ERR_R(DS_ERR_DSC_DECODE, repeated);
         return true;
     case DS_PB_JUDGE_BAD_STRING:
         *out = DS_ERR_R(DS_ERR_DSC_DECODE, bad_string);
+        return true;
+    case DS_PB_JUDGE_TOO_DEEP:
+        *out = DS_ERR_R(DS_ERR_DSC_SEMANTIC,
+                        "dsc: a Slot conversion's Expr is nested deeper than "
+                        "48 (RDSC.11.3)");
         return true;
     case DS_PB_JUDGE_DECODES:
         if (!rdsc_9_12_text_bytes_ok(field, body, len)) {
@@ -3082,15 +3154,14 @@ ds_result_t ds_dsc_load(struct ds_engine *engine,
                            "dsc: malformed atom frame (RDSC.11.1)");
         }
 
-        /* [RFCS.16.3]: an unallocated number is disposed of by its band. */
+        /* [RFCS.19.3], [RDSC.11.1]: a number with no registry entry is no member of
+           `Atom`'s oneof, so the frame is malformed. A first frame never reaches
+           here: it must be a DscHeader. */
         if (ds_pbf_lookup(atom.field) == NULL) {
-            ds_result_t ur = handle_unknown_field(engine, &st, atom, pos);
-            if (ur.status != DS_OK) {
-                dsc_load_state_dispose(&st);
-                return ur;
-            }
-            pos = atom.next;
-            continue;
+            dsc_load_state_dispose(&st);
+            return DS_ERR_R(DS_ERR_DSC_DECODE,
+                            "dsc: an atom's field number names no atom "
+                            "(RDSC.11.1, RFCS.19.3)");
         }
         blen  = (uint32_t)atom.body_len;
         body  = atom.body;
@@ -3145,7 +3216,9 @@ ds_result_t ds_dsc_load(struct ds_engine *engine,
         } else if (atom.field == DS_ATOM_LINE_SPAN) {
             r = handle_line(&st, body, blen);
         } else if (atom.field == DS_ATOM_DOC_STRING) {
-            /* [RDSC.9.4] */
+            /* [RDSC.9.4], [RDSC.14.4.4] */
+            log_skipped_atom(engine, atom.field, "DocString", pos,
+                             ": tooling metadata (RDSC.14.4.4)");
             r = DS_OK_R;
         } else if (atom.field == DS_ATOM_DIALECT_INFO) {
             /* [RDSC.15.1]: informational; the engine executes under CapabilityInfo. */
@@ -3175,38 +3248,16 @@ ds_result_t ds_dsc_load(struct ds_engine *engine,
             if (r.status == DS_OK) RETE_APPEND(&st, term, body, blen, pos, r);
         } else if (atom.field == DS_ATOM_COMPILED_CODE) {
             /* [RDSC.4c.3]: skipped undecoded, whatever its `arch`. */
-            char msg[128];
-            ds_text_t t = ds_text(msg, sizeof msg);
-            ds_text_str(&t, "skipping atom ");
-            ds_text_u64(&t, atom.field);
-            ds_text_str(&t, " (CompiledCode) at byte offset ");
-            ds_text_u64(&t, (uint64_t)pos);
-            ds_text_str(&t, ": this edition runs no compiled code (RDSC.4c.3)");
-            ds_log_event_t ev = {
-                .level    = DS_LOG_INFO,
-                .category = "dsc-load",
-                .message  = msg,
-            };
-            ds_telemetry_emit_log(engine, &ev);
+            log_skipped_atom(engine, atom.field, "CompiledCode", pos,
+                             ": this edition runs no compiled code (RDSC.4c.3)");
             r = DS_OK_R;
         } else {
-            /* [RDSC.9.4]: an allocated atom with no handler. */
-            const ds_atom_reg_entry_t *known = ds_pbf_lookup(atom.field);
-            char msg[160];
-            ds_text_t t = ds_text(msg, sizeof msg);
-            ds_text_str(&t, "skipping atom ");
-            ds_text_u64(&t, atom.field);
-            ds_text_str(&t, " (");
-            ds_text_str(&t, known != NULL ? known->message : "?");
-            ds_text_str(&t, ") at byte offset ");
-            ds_text_u64(&t, (uint64_t)pos);
-            ds_text_str(&t, ": this loader does not read it (RDSC.9.4)");
-            ds_log_event_t ev = {
-                .level    = DS_LOG_INFO,
-                .category = "dsc-load",
-                .message  = msg,
-            };
-            ds_telemetry_emit_log(engine, &ev);
+            /* [RDSC.9.4]: a registry atom this loader does not read, the test and
+               oracle atoms among them ([RDSC.7.6]). Every number reaching here
+               has an entry: one with none was refused above. */
+            log_skipped_atom(engine, atom.field,
+                             ds_pbf_lookup(atom.field)->message, pos,
+                             ": this loader does not read it (RDSC.9.4)");
             r = DS_OK_R;
         }
         /* [RDSC.9.5]: a handler's decode refusal gains the frame's offset here. */

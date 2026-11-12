@@ -1,0 +1,21 @@
+{
+    "id": "LIMP.13.2_an_after_body_reads_a_qualified_head",
+    "clauses": ["LIMP.13.2", "LTAC.3.5"],
+    "category": "logical",
+    "scenario": "[LIMP.13.2]: a rule reads one schema whatever a file calls it, so a `lib.Schema` head behaves as a bare one. [LTAC.3.5]: an `after` body's reads of a parent binding travel on `$CaptureBindings_<rule>_after_<key>`. Rule `r` matches `shapes.Event e` and its `after 500_ms as e.topic` body logs `e.topic`. An `Event` with topic `t1` is asserted and pumped at 0, the clock moves 600 ms, and the pump fires the follow-up. Exactly [\"t1\"]. The break is the capture schema left out because the binding's head was read only when bare: the artefact's alpha node names a schema no group declares, and the load is refused with -506. PATH PINNED: `dsc.rete.body_binding_head`, through `head_schema_name`, feeding `clause_capture_schema`.",
+    "rules_ds": "import shapes\n\nrule r:\n    shapes.Event e\n->\n    after 500_ms as e.topic:\n        log info \"{e.topic}\"\n",
+    "libraries": {
+        "shapes": "schema Event scope ttl 1_s:\n    topic: String\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "shapes.Event", "slots": { "topic": "t1" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 600000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["t1"]
+    }
+}

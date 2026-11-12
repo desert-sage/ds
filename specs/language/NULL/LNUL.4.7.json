@@ -27,7 +27,7 @@
         "name": "lnul_4_7__decides",
         "tag": "spec",
         "verdict": "partial",
-        "note": "A positive pattern fires on true ([LNUL.4.3]); a `no` pattern is blocked unless false or filtered out, a trap included -- [LNUL.4.7] blocks on true and on null and says nothing of a trap."
+        "note": "A positive pattern fires on true ([LNUL.4.3]); a `no` pattern is blocked unless the answer is false or the candidate was filtered out, so a trap blocks as the clause has it. DIFFERS from the clause on one case: a candidate a hoisted filter answered `null` to is filtered out and does not block, where the clause blocks on `null`. That is the null anchor `iret_7_5_1__v5_null_anchor_escapes` exhibits, and [IRET.7.5.1]'s non-null anchor is what keeps it from arising."
       },
       {
         "path": "formal/alloy/where_v5.als",
@@ -43,16 +43,16 @@
         "name": "iret_7_6__blocks_join",
         "tag": "spec",
         "role": "definition",
-        "verdict": "partial",
-        "note": "A no node's join relation over the extended token. A trap BLOCKS under `no`. The clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false'), so this proves more than the clause states. The where fragment the Idris model runs produces no trap."
+        "verdict": "proven",
+        "note": "A no node's join relation over the extended token: the candidate blocks unless the test answers false. True, null and a trap block alike, the clause's 'C has not evaluated to false'. That the fault is recorded as any fault is ([LERR.1.4]) is the fault fact's, which the model does not carry; the engine comparison sets fault facts aside."
       },
       {
         "path": "formal/idris/Rete/Eval.idr",
         "name": "lnul_4_7__blocks",
         "tag": "spec",
         "role": "definition",
-        "verdict": "partial",
-        "note": "A no node is blocked by a candidate unless its tests answer false. A trap BLOCKS under `no`. The clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false'), so this proves more than the clause states. The where fragment the Idris model runs produces no trap."
+        "verdict": "proven",
+        "note": "A no node is blocked by a candidate unless its tests answer false: true, null and a trap block, as the clause has it, since none of them is false. The fault's recording ([LERR.1.4]) is the fault fact's, outside the model."
       },
       {
         "path": "formal/idris/Rete/Eval.idr",
@@ -67,104 +67,16 @@
         "name": "lnul_4_7__only_false_passes",
         "tag": "derives",
         "role": "theorem",
-        "verdict": "partial",
-        "note": "Only false lets a no pattern pass. A trap BLOCKS under `no`. The clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false'), so this proves more than the clause states. The where fragment the Idris model runs produces no trap."
+        "verdict": "proven",
+        "note": "Only false lets a no pattern pass: the clause's 'satisfied iff, for every fact matching P, C evaluates to false', per candidate, with a trap among the answers that are not false."
       },
       {
         "path": "formal/idris/Rete/Eval.idr",
         "name": "lnul_4_7__undecided_neither_admits_nor_passes",
         "tag": "derives",
         "role": "theorem",
-        "verdict": "partial",
-        "note": "The clause's 'one rule, two sites': an answer that is neither true nor false is not admitted positively and blocks under no. A trap BLOCKS under `no`. The clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false'), so this proves more than the clause states. The where fragment the Idris model runs produces no trap."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "iret_7_5_1__null_anchor_escapes_probe",
-        "tag": "derives",
-        "role": "witness",
         "verdict": "proven",
-        "note": "WHY THE CONDITION: a candidate whose anchor answers null blocks under the whole test ([LNUL.4.7]) and is in no bucket -- one blocker against none. The clause is safe because a `linear_scan: false` anchor pins non-null `key` slots; an engine indexing a `no` join on a nullable slot outside `linear_scan: false` must still count the null-keyed candidates, and no clause says so because none specifies that index."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "iret_7_5_1__probe_negated",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "THE PROBE IS TRANSPARENT AT A `no` NODE when the anchor is decided on every candidate: the blockers found in the bucket are exactly the whole list's. Under `linear_scan: false` the condition holds by construction (`iret_7_5_1__typed_anchor_decided`); without it the probe is not transparent (`iret_7_5_1__null_anchor_escapes_probe`)."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "iret_7_6__node_join",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "The relation a node reads from its test: a positive node admits a pair answering true, a `no` node counts a candidate as a blocker unless it answers false. One test, two relations -- RLOW.5.3's 'the same join tests as the positive form'."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "lnul_4_7__blocks_and_decided",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "A candidate whose first conjunct is decided blocks iff that conjunct holds and the rest blocks -- for any reading of a trap, since the decided conjunct is not one."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "lnul_4_7__no_blockers_iff_false",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "partial",
-        "note": "No candidate blocks a token iff every candidate answers false. A trap BLOCKS under `no`, as Rete/Eval.idr's `lnul_4_7__blocks` has it: the clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false')."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "lnul_4_7__passes_iff_all_false",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "partial",
-        "note": "The clause's sentence at the node: a `no` node passes a token it receives iff every candidate of its right memory answers false. A trap BLOCKS under `no`, as Rete/Eval.idr's `lnul_4_7__blocks` has it: the clause blocks on true and on null and says nothing of a trap; blocking on it is the reading this model takes ('blocked unless false')."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAnswer.idr",
-        "name": "lnul_4_7__succ_not_zero",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "A count with a blocker in it is not zero."
-      },
-      {
-        "path": "formal/idris/Rete/WhereV5.idr",
-        "name": "iret_7_5_1__v5_probe_negated",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "And at a `no` node when the anchor is decided on every candidate -- hoisting's own condition, carried to `iret_7_5_1__probe_negated`'s by `rlow_5_5__decided_answer`."
-      },
-      {
-        "path": "formal/idris/Rete/WhereV5.idr",
-        "name": "lnul_4_7__decide",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "partial",
-        "note": "The decision: a positive pattern fires on true ([LNUL.4.3]); a `no` pattern is blocked unless false, a trap included -- [LNUL.4.7] blocks on true and on null and says nothing of a trap, as Rete/NetworkAnswer.idr's `iret_7_6__node_join` has it."
-      },
-      {
-        "path": "formal/idris/Rete/WhereV5.idr",
-        "name": "lnul_4_7__decide_is_node_join",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "The node's decision is NetworkAnswer's `iret_7_6__node_join` of the V5 test."
-      },
-      {
-        "path": "formal/idris/Rete/WhereV5.idr",
-        "name": "rlow_5_5__null_filter_differs",
-        "tag": "derives",
-        "role": "witness",
-        "verdict": "proven",
-        "note": "WHY NON-NULL: a filter answering null rejects the candidate, where the `where` answers null and so blocks a `no` pattern ([LNUL.4.7])."
+        "note": "The clause's 'one rule, two sites': an answer that is neither true nor false -- null, or a trap -- is not admitted positively and blocks under no, as the clause has both."
       }
     ],
     "k": [

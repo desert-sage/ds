@@ -112,7 +112,7 @@
 
 :- type load_error_kind
     --->    lek_truncated           % DS_ERR_DSC_TRUNCATED
-    ;       lek_version             % DS_ERR_DSC_VERSION -- also the 128-255 band
+    ;       lek_version             % DS_ERR_DSC_VERSION
     ;       lek_decode              % DS_ERR_DSC_DECODE
     ;       lek_semantic            % DS_ERR_DSC_SEMANTIC
             % No duplicate-atom kind: a runtime checks for no second atom
@@ -129,10 +129,9 @@
             % accepts silently.
 
     ;       lek_malformed_field_number
-            % Field number 0 or >= 2048: outside all three bands [RFCS.16.2].
-
-    ;       lek_unknown_inject
-            % DS_ERR_FS_UNKNOWN_INJECT: an unallocated number in 1-127 [RFCS.18.8].
+            % DS_ERR_DSC_DECODE: a later frame whose field number has no
+            % registry entry, and so names no member of `Atom`'s oneof
+            % [RDSC.11.1], [RFCS.19.3].
 
             % No kind for a missing network: an artefact with no rule network
             % loads ([RDSC.4a.2]).
@@ -194,8 +193,12 @@
             % A slot value the schema does not admit: carries the slot index and
             % why. The fact does not enter, and the firing's earlier actions stand.
 
-    ;       ee_duplicate_order_key.
+    ;       ee_duplicate_order_key
             % Two activations claimed one agenda order key [RARC.5.4.9].
+
+    ;       ee_internal.
+            % libds found its own invariant broken [IERR.1.7]. This runtime has
+            % no intern counts and never raises it.
 
     % Which rule a refused slot value broke:
     %
@@ -323,12 +326,14 @@ disposition(ee_contract_breach(_)) = rejected.
 disposition(ee_slot_invalid(_, _)) = rejected.
 disposition(ee_fire_budget_exceeded(_)) = reported.
 disposition(ee_duplicate_order_key) = latched.
+disposition(ee_internal) = latched.
 
 fault_class(ee_expr_fault(Fault))      = expr_fault_class(Fault).
 fault_class(ee_slot_invalid(_, _))     = fc_computation.
 fault_class(ee_contract_breach(_))     = fc_bounds.
 fault_class(ee_fire_budget_exceeded(_)) = fc_bounds.
 fault_class(ee_duplicate_order_key)    = fc_engine.
+fault_class(ee_internal)               = fc_engine.
 
 expr_fault_class(rf_type_error)          = fc_type.
 expr_fault_class(rf_artefact_lied)       = fc_engine.

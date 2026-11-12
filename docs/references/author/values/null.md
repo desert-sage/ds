@@ -253,7 +253,7 @@ A series over a `T?` source declares what it does with a sample that carries `nu
 | Policy | Effect |
 |---|---|
 | `skip` | drops the sample |
-| `hold` | repeats the last absorbed value; a `null` before any absorbed value absorbs nothing, and the read stays cold |
+| `hold` | repeats the last absorbed value, kept for the series instance's life: [eviction](../series/reading.md#eviction) after a window of silence does not forget it, and a `null` after eviction absorbs it into the fresh backing. A `null` before any absorbed value absorbs nothing, and the read stays cold |
 | `zero` | absorbs 0 |
 
 - A series over a `T?` source without `nulls:` is refused with `DS_VALIDATE_SERIES_NULLS_REQUIRED`.
@@ -262,7 +262,7 @@ A series over a `T?` source declares what it does with a sample that carries `nu
 
 `nulls:` is a value policy, one per series, covering every aggregation over the slot. It is not the time-axis `gap` phrase.
 
-*(Spec: [LNUL.8.6])*
+*(Spec: [LNUL.8.6], [LSER.9.3.2])*
 
 ## Absent arguments on the right-hand side
 

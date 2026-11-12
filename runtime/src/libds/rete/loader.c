@@ -161,6 +161,34 @@ static const ds_rete_beta_node_t *beta_root(const ds_rete_beta_node_t *b,
     return b;
 }
 
+/* [RDSC.4a.5]: every left_parent chain ends at a root beta, or the artefact is
+   refused with DS_ERR_RETP_INVALID. A beta has one parent at most, so a walk down
+   the children from the roots reaches each beta once, and one it never reaches is
+   on or below a cycle. One pass, linear in the betas ([RDSC.9.9]); beta_root and
+   every later walk up a chain rely on it. */
+static ds_result_t rdsc_4a_5_chains_end_at_a_root(ds_rete_beta_node_t **betas,
+                                                  uint32_t              n)
+{
+    if (n == 0) return DS_OK_R;
+    ds_rete_beta_node_t **stack = DS_MALLOC((size_t)n * sizeof(*stack));
+    if (!stack) return DS_ERR_R(DS_ERR_OOM, "loader: beta chain check");
+    uint32_t top = 0, reached = 0;
+    for (uint32_t i = 0; i < n; i++)
+        if (betas[i]->left_parent == NULL) stack[top++] = betas[i];
+    while (top > 0) {
+        const ds_rete_beta_node_t *b = stack[--top];
+        reached++;
+        for (uint32_t c = 0; c < b->beta_child_count; c++)
+            stack[top++] = b->beta_children[c];
+    }
+    DS_FREE(stack);
+    if (reached < n)
+        return DS_ERR_R(DS_ERR_RETP_INVALID,
+                        "loader: BetaNode left_parent_id references form a cycle "
+                        "(RDSC.4a.5)");
+    return DS_OK_R;
+}
+
 static void alpha_outputs_deepest_first(ds_rete_alpha_node_t *alpha)
 {
     uint32_t n = alpha->beta_output_count;
@@ -450,6 +478,11 @@ ds_result_t ds_rete_load_network(ds_rete_engine_t        *engine,
         r = ds_rete_beta_add_terminal(bslot->ptr, term_ptrs[i]);
         if (r.status != DS_OK) goto cleanup;
     }
+
+    /* ---- 4a. No left_parent cycle, before anything walks a chain --- */
+
+    r = rdsc_4a_5_chains_end_at_a_root(beta_ptrs, network->beta_count);
+    if (r.status != DS_OK) goto cleanup;
 
     /* ---- 4b. Each alpha right-activates its chains deepest node first */
 

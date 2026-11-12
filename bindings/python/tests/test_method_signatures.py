@@ -57,8 +57,6 @@ def test_the_extension_engine_shows_its_constructor_parameters():
         ("build_capabilities", "()"),
         ("next_atom", "(buf, pos, partial, /)"),
         ("frame", "(field, body, /)"),
-        ("atom_band", "(field, /)"),
-        ("atom_disposition", "(field, /)"),
         ("container_of", "(buf, /)"),
         ("wire_fields", "(body, /)"),
         ("visit_atom", "(field, body, /)"),

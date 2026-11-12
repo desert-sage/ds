@@ -7,9 +7,12 @@
   "depth": 2,
   "kind": "normative",
   "heading": "Temporal",
-  "text": "### Temporal [LSER.16.9]\n\n| Function | Meaning | Returns |\n|---|---|---|\n| `first(cursor)` | value of first (oldest) sample | slot type, nullable |\n| `last(cursor)` | value of last (newest) sample | slot type, nullable |\n| `rate(cursor)` | `(last - first) / elapsed_seconds` | `Float?` |\n| `direction(cursor)` | `-1` falling, `0` steady or `+1` rising, the sign of the two newest samples' difference ([LSER.10.9]) | `Int?` |\n\nEach is `null` exactly when the read is cold ([LSER.19.8]); `direction` is\nalso `null` when the window holds one sample ([LSER.10.9]), and `rate` is also\n`null` when no time elapses between the window's first and last samples — a\nwindow of one sample included — since there is no elapsed time to divide by.\n\n",
+  "text": "### Temporal [LSER.16.9]\n\n| Function | Meaning | Returns |\n|---|---|---|\n| `first(cursor)` | value of first (oldest) sample | slot type, nullable |\n| `last(cursor)` | value of last (newest) sample | slot type, nullable |\n| `rate(cursor)` | `(last - first) / elapsed_seconds` | `Float?` |\n| `direction(cursor)` | `-1` falling, `0` steady or `+1` rising, the sign of the two newest samples' difference ([LSER.10.9]) | `Int?` |\n\nEach is `null` exactly when the read is cold ([LSER.19.8]); `direction` is\nalso `null` when the window holds one sample ([LSER.10.9]), and `rate` is also\n`null` when no time elapses between the window's first and last samples — a\nwindow of one sample included — since there is no elapsed time to divide by.\n\n**`rate` is computed in one order.** $x_f$ and $x_l$ are the window's first and\nlast samples as `Float`, an `Int` sample converting round-to-nearest-even\n([LSER.16.3.3]). $t_f$ and $t_l$ are the monotonic instants, in nanoseconds, at\nwhich the engine absorbed them ([LTIM.2.8.2]); on `all_time` the first sample is\nthe first the instance absorbed. `rate` is\n\n$\\frac{(x_l - x_f) \\cdot 10^9}{t_l - t_f}$\n\nand the engine **must** evaluate it as correctly rounded IEEE-754 binary64\noperations in exactly this order: the subtraction $x_l - x_f$, the\nmultiplication by $10^9$, and the division by $t_l - t_f$, the exact `Int`\ndifference converted round-to-nearest-even. A window whose first and last\nsamples are the same infinity reads NaN, which no slot admits ([LEXP.4.2]).\n\n",
   "refs": [
+    "LEXP.4.2",
     "LSER.10.9",
-    "LSER.19.8"
+    "LSER.16.3.3",
+    "LSER.19.8",
+    "LTIM.2.8.2"
   ]
 }

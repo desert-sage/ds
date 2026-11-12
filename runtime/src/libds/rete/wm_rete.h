@@ -89,6 +89,11 @@ ds_result_t ds_rete_wm_retract(ds_rete_engine_t *engine,
 
 size_t ds_rete_wm_count(const ds_rete_engine_t *engine);
 
+/* [NLFC.2.5]: lowers `*io_best`, setting `*io_has`, to the earliest TTL expiry or
+   timer `fire_at` later than `now_ns`. A NULL engine holds none. */
+void ds_rete_wm_next_deadline(const ds_rete_engine_t *engine, uint64_t now_ns,
+                              uint64_t *io_best, bool *io_has);
+
 /* NULL when the fact is not live. */
 ds_rete_fact_t *ds_rete_wm_find_by_id(const ds_rete_engine_t *engine,
                                         uint32_t                id);

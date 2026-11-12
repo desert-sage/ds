@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_a_base_unit_assert_is_unchanged",
+    "category": "logical",
+    "scenario": "[LUNI.8.5], [RLOW.6.1.10]: an assertion into a dimension's base unit is the number itself. A `Float` slot holding 35, asserted into `kelvin`, is 35 K, so the rule logs. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s `asn_base` arm, the operand, reached through `dsc.quantity.rlow_6_1_10_assertion_of`'s `line_identity` row.",
+    "rules_ds": "schema S scope logical:\n    id: String key\n    raw: Float mutable\n\nrule r:\n    S s where s.raw::kelvin == 35_kelvin\n->\n    log info \"base\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "raw": 35.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["base"]
+    }
+}

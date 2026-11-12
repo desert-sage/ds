@@ -159,7 +159,7 @@ A schema without it is `ttl` and carries a `SchemaTtl` instead. The runtime refu
 
 `Slot` carries one slot: `schema_name`, `slot_name`, `kind` and, for `SLOT_KIND_SCHEMA`, `schema_ref`, the referenced schema.
 
-For every other kind the compiler leaves `schema_ref` empty and a runtime ignores it, in an artefact and in a recording alike. The runtime applies type-checked conversion by `kind` at assert and retract. `kind` is the declared type. A `Time`, `Date` or `Duration` slot is `SLOT_KIND_TIME`, `SLOT_KIND_DATE` or `SLOT_KIND_DURATION`, never `SLOT_KIND_INT`. Each is a signed 64-bit integer on the wire: a `Time` as UTC nanoseconds since the epoch with no zone offset, a `Date` as days since the epoch, a `Duration` as nanoseconds. A runtime stores and compares the three as it does `INT`, and reports the declared type where it reports a slot's type.
+For every other kind the compiler leaves `schema_ref` empty and a runtime ignores it, in an artefact and in a recording alike. The runtime applies type-checked conversion by `kind` at assert and retract. `kind` is the declared type. A `Time`, `Date` or `Duration` slot is `SLOT_KIND_TIME`, `SLOT_KIND_DATE` or `SLOT_KIND_DURATION`, never `SLOT_KIND_INT`, and a slot declared a `time` unit or `time` is `SLOT_KIND_DURATION`. Each is a signed 64-bit integer on the wire: a `Time` as UTC nanoseconds since the epoch with no zone offset, a `Date` as days since the epoch, a `Duration` as nanoseconds. A runtime stores and compares the three as it does `INT`, and reports the declared type where it reports a slot's type.
 
 | `identity_role` | Slot |
 |---|---|
@@ -170,7 +170,9 @@ For every other kind the compiler leaves `schema_ref` empty and a runtime ignore
 
 The runtime reads a `logical` schema's identity key from its `KEY` slots alone, and compares its `KEY` and `MUTABLE` slots for the no-op test.
 
-*(Spec: [RDSC.5.5.1], [RDSC.5.5.2], [RDSC.5.5.3], [RDSC.5.5.4], [RDSC.5.5.5], [RDSC.5.5.7], [RDSC.5.5.8], proto: slot.proto)*
+A slot whose declared type is a unit symbol carries `to_stored` and `from_stored`, and no other slot carries either. Each is an `Expr` whose one input is `bind_ref` 0: `to_stored` is the lowering of `x::<unit>` ([Unit assertion](../engine/lowering.md#unit-assertion)), and `from_stored` the conversion from the base unit that a kwarg of that unit lowers to ([Quantity arguments](../engine/lowering.md#quantity-arguments)). A loader refuses a `Slot` carrying one and not the other with `DS_ERR_DSC_SEMANTIC`. The engine evaluates a conversion only when a host asks for it, with `bind_ref` 0 holding the host's number. Each conversion's outermost `Expr` is at depth 0 toward the nesting limit.
+
+*(Spec: [RDSC.5.5.1], [RDSC.5.5.2], [RDSC.5.5.3], [RDSC.5.5.4], [RDSC.5.5.5], [RDSC.5.5.7], [RDSC.5.5.8], [RDSC.5.5.9], [RDSC.11.3], proto: slot.proto)*
 
 ### SchemaSource
 
@@ -340,7 +342,9 @@ The loader processes the network atoms in one forward pass, and the compiler emi
 
 `BetaNode`-to-`BetaNode` parent references and `BetaNode`-to-`TerminalNode` wiring accumulate as pending references, resolved in one sweep after the stream ends. The loader then seeds every root beta, one with `left_parent_id == 0`, with a nil token, so a right activation produces a single-fact token at pattern index 0. The steps are [Load](../engine/rete-network.md#load).
 
-*(Spec: [RDSC.4a.5])*
+Every `left_parent_id` chain ends at a root beta. The compiler emits no `left_parent_id` cycle, and a loader refuses one with `DS_ERR_RETP_INVALID`, in the sweep.
+
+*(Spec: [RDSC.4a.5], [RDSC.11.1])*
 
 ### AlphaNode
 
@@ -484,19 +488,13 @@ Reading in stream order does not mean acting in stream order. Bodies are decoded
 
 *(Spec: [RDSC.9.1], [RDSC.12.1], [RDSC.12.4])*
 
-### Unknown atoms
+### Atoms stepped over
 
-An atom whose field number the loader has no entry for is disposed of by its [band](fact-stream.md#bands).
+The loader steps over, by name, the atoms a runtime does not consume: the test and oracle atoms, `DocString` and `CompiledCode`.
 
-| Band | Loader |
-|---|---|
-| 256–2047 | skips the frame and logs at info level, category `dsc-load`, with the field number and the byte offset |
-| 128–255 | rejects with `DS_ERR_DSC_VERSION` |
-| 1–127 | rejects with `DS_ERR_DSC_VERSION`; no `.dsc` atom occupies the inject band |
+For each, it logs at info level, category `dsc-load`, naming the atom and its byte offset, and loads the rest of the artefact as it would without it. Every atom a loader meets is in its series' registry. An atom in a container its legality does not admit is refused ([Container legality and stream class](fact-stream.md#container-legality-and-stream-class)). Renaming an atom's body message, with its field number and fields kept, is no format change.
 
-A loader that knows the atom rejects it on its container legality instead ([Container legality and stream class](fact-stream.md#container-legality-and-stream-class)). Every additive atom is allocated in the skip band. Renaming an atom's body message, with its field number and fields kept, is no format change.
-
-*(Spec: [RDSC.9.4], [RDSC.16.3.7b], Source: runtime/src/libds/dsc/loader.c)*
+*(Spec: [RDSC.9.4], [RDSC.16.3.7b], [RFCS.17.3], Source: runtime/src/libds/dsc/loader.c)*
 
 ### Load errors
 
@@ -548,7 +546,7 @@ The first failure is the one reported.
 
 A `.dsc` is trusted input: its provenance is the integration's, and a runtime spends no load time or memory analysing it for malicious construction.
 
-A loader may refuse an artefact for compatibility, the version series or an unknown atom's band, or for a cheap structural need of its own, and never on the ground that it may be hostile. Heavier verification belongs to a separate tool, never to a load. A program a trace embeds is trusted the same way, as are a recorded fact stream and a `FactExternal`, which the integration accepts only from a source it trusts. Whatever bytes it is handed, a loader loads or refuses them, and an engine running what it loaded faults rather than reading or writing outside what it allocated.
+A loader may refuse an artefact for compatibility, the version series, or for a cheap structural need of its own, and never on the ground that it may be hostile. Heavier verification belongs to a separate tool, never to a load. A program a trace embeds is trusted the same way, as are a recorded fact stream and a `FactExternal`, which the integration accepts only from a source it trusts. Whatever bytes it is handed, a loader loads or refuses them, and an engine running what it loaded faults rather than reading or writing outside what it allocated.
 
 *(Spec: [RDSC.9.9])*
 

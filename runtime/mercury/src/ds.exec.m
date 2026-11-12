@@ -104,9 +104,14 @@
                 xc_fault_schemas :: list(schema_id),
                     % Whose facts never count against `wm_max` [LERR.9.10].
 
-                xc_service_responses :: map(string, string)
+                xc_service_responses :: map(string, string),
                     % Each service's response schema by name, `""` for `no response`
                     % [LCRS.6.2.1].
+
+                xc_frame :: int
+                    % The terminal's `bind_count`: its frame's size. An index past
+                    % it is ARTEFACT_LIED where it is read or written
+                    % [RDSC.4a.9.6].
             ).
 
     % A slot's value, by name, as the backing atom carries it.
@@ -314,7 +319,7 @@ lser_13_14_decl_over(Interns, Series, Now, Schema, WM0, New, Decl,
     identity_text(Interns, Schema, New, Decl ^ sd_id_slot, Id),
     Key = series_key(Decl ^ sd_schema, Decl ^ sd_slot, Decl ^ sd_id_slot, Id,
         Decl ^ sd_window),
-    Retained = lser_13_14_retained(Key, Now, Series),
+    Retained = lser_13_14_retained(Decl ^ sd_backing, Key, Now, Series),
     Held0 = ( if held_value(Key, Series, _) then yes else no ),
     list.filter_map(lser_13_14_pending(Interns, Schema, Decl, Id),
         unabsorbed_of_schema(WM0, Schema ^ s_id), Readings),
@@ -772,7 +777,7 @@ guard_verdict(Ctx, Activation, S, yes(Guard)) = Verdict :-
 eval_context(Ctx, Activation, S, Frame) =
     eval_ctx(Activation ^ ac_token ^ t_facts, no, S ^ xs_wm,
         Ctx ^ xc_schemas, S ^ xs_interns, Ctx ^ xc_now, Ctx ^ xc_wall, Frame,
-        S ^ xs_cache, S ^ xs_series).
+        Ctx ^ xc_frame, S ^ xs_cache, S ^ xs_series).
 
     % `let` slots to their bound values, for one firing [IRET.9.4]: threaded through
     % the action fold, not engine state.
@@ -819,8 +824,13 @@ run_action(Ctx, Activation, Fire, Action, !Frame, !Log, !S) :-
         Action = a_bind(Ix, Bound),
         % The one step that writes the frame [IRET.9.4]. `FN_GENSYM` is answered here,
         % since it interns and advances a counter; the compiler emits it only as a
-        % whole bind's expression [LTAC.3.5].
-        ( if Bound = e_call(fn_gensym, []) then
+        % whole bind's expression [LTAC.3.5]. A slot outside the frame names
+        % nothing [RDSC.4a.9.6].
+        ( if bind_index_int(Ix) >= Ctx ^ xc_frame then
+            BindCtx = eval_context(Ctx, Activation, !.S, !.Frame),
+            abandon(Ctx, Activation,
+                raised_in(e_bind(Ix, Bound), BindCtx, rf_artefact_lied), !Log, !S)
+        else if Bound = e_call(fn_gensym, []) then
             gensym(Generated, !S),
             map.set(bind_index_int(Ix), Generated, !Frame)
         else

@@ -1,0 +1,29 @@
+{
+    "id": "RLOW.7.3.9_a_fractional_unit_kwarg_is_exact",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[RLOW.7.3.9]: on integer storage a base-unit value on a tier-1 kwarg is `FN_INT_DIV_EXACT(Q·v - R, P)`. `half` is `x * 0.5` bits (P = 1, Q = 2, R = 0) and `off` is `x * 8 + 1` bits (P = 8, Q = 1, R = 1). Rule `put_half` passes blob 1's 3 bits to `store.half`'s `size: half`, and the integrator receives 6. Rule `put_off` passes blob 2's 16 bits to `store.off`'s `size: off`: 16 - 1 is not a multiple of 8, so the conversion raises a ComputationError of kind NOT_REPRESENTABLE and no call is issued. A lowering that drops `Q` sends 3 for blob 1; one that drops `R` sends 2 for blob 2. PATH PINNED: `dsc.quantity.rlow_7_3_9_conversion`'s `cv_int(P, Q, R)`, and `dsc.rete.rlow_7_3_9_converted` with `rlow_7_3_9_numerator`; libds's `builtin_int_div_exact` answers it here.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit half: data = x * 0.5\nunit off: data = x * 8 + 1\n\nservice store.half:\n    kwarg size: half required\n    no response\n\nservice store.off:\n    kwarg size: off required\n    no response\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule put_half:\n    Blob b where b.id == 1\n->\n    call store.half size: b.size nocooldown\n\nrule put_off:\n    Blob b where b.id == 2\n->\n    call store.off size: b.size nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": 1, "size": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Blob", "slots": { "id": 2, "size": 16 } },
+            { "op": "pump" }
+        ],
+        "expected_stream_kind_counts": {
+            "action_call": 1,
+            "computation_error": 1
+        },
+        "expected_calls": [
+            {
+                "service": "store.half",
+                "correlation": "$put_half_c0_g0",
+                "body": {
+                    "size": 6
+                }
+            }
+        ]
+    }
+}

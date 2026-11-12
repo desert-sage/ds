@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.9.2_unitless_variance_let_ok",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: over a slot with no unit there is no dimension to state, and the `let` needs none. `q` is a plain `Float`, so `let x = f.variance` compiles unannotated. PATH: dsc.typecheck's `luni_9_1_agg_type` types `variance` over a dimensionless slot `Float?`, which is not `ty_unknown`, so dsc.validate's `luni_9_2_unannotated` raises nothing; and `luni_9_2_unit_changing_read` fails on a slot whose type carries no dimension.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: Float mutable\n\nseries Flow.q:\n    variance sliding 5_min\n\nrule r:\n    Flow f\n->\n    let x = f.variance\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

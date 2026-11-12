@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_a_float_factor_that_rounds_to_zero_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1]: in `float64` storage an `a` that is not zero and rounds to zero is refused at the unit's declaration with DS_VALIDATE_CONSTANT_OUT_OF_RANGE, since its inverse has no value. `unit tiny: length = x * 1e-300 * 1e-300` folds exactly to a = 10^-600, which is not zero, so [LUNI.4.3]'s zero-slope refusal (DS_VALIDATE_UNIT_BODY_NOT_AFFINE) does not take it, and it rounds below the smallest subnormal to 0.0. A compiler that emits the rounded `a` writes a conversion whose inverse divides by zero, and compiles. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants`, through `dsc.quantity.luni_2_4_1_unit_out_of_range`'s rounds-to-zero arm, over `dsc.exact.to_float`.",
+    "rules_ds": "unit tiny: length = x * 1e-300 * 1e-300\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

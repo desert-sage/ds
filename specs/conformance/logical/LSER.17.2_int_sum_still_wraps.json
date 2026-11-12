@@ -1,0 +1,23 @@
+{
+    "id": "LSER.17.2_int_sum_still_wraps",
+    "clauses": ["LSER.17.2", "LSER.16.2.2"],
+    "category": "logical",
+    "scenario": "[LSER.17.2]: the check on a `sum` read is the `time` slot's alone. This is `LSER.17.2_duration_sum_past_range_raises`'s totals over an `Int` slot on `all_time`: 2^63 - 1 and 2 wrap to -9223372036854775807 and the read does not raise. `read` logs the value, once per fact of the `ttl` schema, and `handler` does not fire. Exactly [\"-9223372036854775807\", \"-9223372036854775807\"]. A compiler that checked every `sum` read raises here. PATH PINNED: `dsc.rete`'s series read, whose `k_duration` test keeps `FN_DURATION_ADD` off an `Int` slot.",
+    "dead_rules_expected": ["handler"],
+    "rules_ds": "use default\n\nschema T scope ttl 1_h:\n    k: String\n    v: Int\n\nschema Probe scope explicit:\n    k: Int\n\nseries T.v (by: k):\n    sum all_time\n\nrule read:\n    Probe\n    T t\n->\n    log info \"{t.sum}\"\n\nrule handler:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "T", "slots": { "k": "g", "v": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "T", "slots": { "k": "g", "v": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["-9223372036854775807", "-9223372036854775807"]
+    }
+}

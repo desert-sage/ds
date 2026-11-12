@@ -19,76 +19,12 @@
         "note": "A fixture's steps on the called engine: a tick, a data input through the arrival, a pump; per pump, the verdicts and the calls."
       },
       {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__history_called",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "A history: the steps folded over the state. A definition the theorems and the witnesses read."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__history_called_inv",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "A history keeps the invariant. By induction on the steps."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__history_is_run_steps",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "The history is the fixture runner's state: `lcrs_6_2_1__run_steps_called`'s state is the fold, whatever it reports per pump."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__one_answer_after_run_steps",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "partial",
-        "note": "The history theorem on the fixture runner's state. ONE ANSWER PER CORRELATION OVER ANY HISTORY: from the loaded state, after any ticks, data inputs and pumps under any fuel, two distinct live answers carrying one non-empty correlation are of different response schemas and neither is CallError. Over every program, environment, kind table, site table, cooldown table and schedule. THE EMPTY CORRELATION IS EXEMPT from the arrival's sweep, as the clause has it: an answer whose `corr` is the empty String supersedes nothing, and the consequence holds for each non-empty correlation. LESS than the clause: THE CLAUSE'S CONSEQUENCE PRESUPPOSES THAT NO RULE EMITS AN ANSWER KIND, which [LCRS.4.3.4] states: the compiler rejects an `emit` or a `publish` into a response schema or CallError with DS_VALIDATE_ANSWER_EMIT_FORBIDDEN, since such a fact would enter working memory with no sweep, the supersede being on the host's assert (NCBK.6.4). The history theorem takes it as a hypothesis over the loaded chains; the fixture lowering refuses an emit into an answer kind by its own reason (`emit:answer-kind`) and admits no library or import, so every program the model runs satisfies it. The clause's sentence that each live answer is the last of its kind asserted with that correlation is not proved: the theorem gives at most one live answer per kind and not which one; the witnesses alone show the last asserted staying. The stream's record order (the answer's FactAssert first, the withdrawals after) is not modelled."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__step_called",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "One step of a fixture on the called engine, the state alone: a tick, a data input through the arrival, a pump under its fuel. A definition the theorems and the witnesses read."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkCall.idr",
-        "name": "lcrs_6_2_4__step_called_inv",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "A step of the history keeps the invariant: what is carried, and one answer per correlation. Over every state."
-      },
-      {
         "path": "formal/idris/Rete/NetworkTimed.idr",
         "name": "ltim_2_4_1__run_steps_timed",
         "tag": "spec",
         "role": "definition",
         "verdict": "proven",
         "note": "The consumption loop's inputs and pumps in the fixture's order, each inside one call. A fixture."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkTimer.idr",
-        "name": "ltac_5_1__cycle_steps",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "The consumption loop's inputs and pumps of a tick history. A fixture."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkTimer.idr",
-        "name": "ltac_5_1__cycles_are_the_steps",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "The steps a fixture drives and the cycles the theorems are stated over are one run."
       },
       {
         "path": "formal/idris/Rete/NetworkTraced.idr",
@@ -176,7 +112,7 @@
         "tag": "spec",
         "role": "definition",
         "verdict": "proven",
-        "note": "An event entering working memory from outside a firing: an adapter assert of a value into a kind, or the retraction of a live fact by id. The other event kinds the clause lists (publish arrival, call response, cache mirror, clock tick) are not modelled."
+        "note": "An event entering working memory from outside a firing: the integrator's assert of a value into a kind, or its retraction of a live fact by id -- the input of the clause's assert and retract calls. A clock move is Rete/TtlSweep.idr's `Rarc_5_6_2__input`, and the TTL sweep's retractions are its own; what else reaches working memory from outside -- an answer, a cross-tier arrival -- is not told apart from an assert here."
       },
       {
         "path": "formal/idris/Rete/PumpBoundary.idr",

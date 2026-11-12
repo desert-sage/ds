@@ -1,0 +1,20 @@
+{
+    "id": "LSER.17.2_duration_statistics",
+    "category": "logical",
+    "scenario": "[LSER.17.2]: `min` over a `Duration` slot is a `Duration`, and `mean` over one returns `Duration?`, its `Float` rounded as a `Duration` scaled by a `Float` is. Each read is pre-sample ([LSER.8.6.1]), so the third fact, `d` 3 ns, reads a window holding 1 ns and 2 ns: the mean 1.5 rounds, ties to even, to `2_ns`, and `min` is `1_ns`. Pin: `lowest` and `rounded` log on that fact, in source order. A read typed `Float?` is refused beside a duration literal, and a read not rounded compares 1.5 with 2 and `rounded` does not fire. PATH PINNED: `dsc.series.lser_17_2_applies` over `lk_duration`, `dsc.rete.lser_17_2_rounds_over_duration`'s `FN_ROUND` wrap, and each runtime's series backend over a `SLOT_KIND_DURATION` slot.",
+    "rules_ds": "use default\n\nschema Wait scope logical:\n    id: String key\n    d: Duration mutable\n\nseries Wait.d (by: id):\n    count, min, mean sliding 1_h\n\nrule lowest:\n    Wait w where w.d == 3_ns and w.count == 2 and w.min == 1_ns\n->\n    log info \"lowest\"\n\nrule rounded:\n    Wait w where w.d == 3_ns and w.count == 2 and w.mean == 2_ns\n->\n    log info \"rounded\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Wait", "slots": { "id": "a", "d": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Wait", "slots": { "id": "a", "d": 2 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Wait", "slots": { "id": "a", "d": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["lowest", "rounded"]
+    }
+}

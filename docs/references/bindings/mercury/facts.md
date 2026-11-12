@@ -109,6 +109,48 @@ Only a halt an assert raises stops the delivery after these checks. The outcome 
 
 *(Source: bindings/mercury/src/mercury_ds.session.m, runtime/mercury/src/ds.fact_receive.m, runtime/mercury/src/ds.wire.m, runtime/mercury/src/ds.json_text.m, Spec: [NCBK.10.4], [RFCS.23.7], [NLFC.9.5], [LSTR.1.5], [LSTR.11.3], [LTIM.10.9], [RFCS.6.7], [LERR.1.4.7], [LGRA.24.3])*
 
+## Unit conversion
+
+### `slot_to_stored`
+
+**`:- pred slot_to_stored(schema::in, int::in, storable::in, unit_step::out, session::in, session::out) is det.`**
+
+Converts a number in the unit the slot at a zero-based index names to the number the slot stores: the capability of [`ds_schema_slot_to_stored`](inv:integrator:std:doc#facts/schemas).
+
+The schema is one [`lookup_schema`](program.md#lookup_schema) gives. The value, and the result, is an `int` on a slot stored as an integer, a `Duration` among them, and a `float` on one stored as a float. It changes nothing, save for an `EngineError` the conversion raises, which halts the session as any call that raises one does. The first row that applies is the refusal:
+
+| `error` with [`status`](errors.md#status) | Condition |
+|---|---|
+| `engine_halted` | the session has halted |
+| `not_found` | the index names no slot |
+| `inval` | the slot names no unit |
+| `slot_type_mismatch` | the value is not an `int` on a slot stored as an integer, or a `float` on one stored as a float |
+| `nan_rejected` | the value is NaN |
+| `engine_halted` | the conversion raised an `EngineError`; `unit_step_reports` holds it |
+| `not_representable` | the conversion has no result for the value |
+
+*(Source: bindings/mercury/src/mercury_ds.session.m, Spec: [NFCT.1.4.6], [NCBK.2.9])*
+
+### `slot_from_stored`
+
+**`:- pred slot_from_stored(schema::in, int::in, storable::in, unit_step::out, session::in, session::out) is det.`**
+
+Converts a number the slot at a zero-based index stores to a number in the unit it names: the capability of [`ds_schema_slot_from_stored`](inv:integrator:std:doc#facts/schemas).
+
+It takes its arguments, and refuses, as [`slot_to_stored`](#slot_to_stored) does.
+
+*(Source: bindings/mercury/src/mercury_ds.session.m)*
+
+### `unit_step`
+
+**`:- type unit_step ---> unit_step(unit_step_result :: maybe_error(storable, ds_error), unit_step_reports :: list(report)).`**
+
+What [`slot_to_stored`](#slot_to_stored) or [`slot_from_stored`](#slot_from_stored) did.
+
+`unit_step_result` is `ok` with the converted value, or `error` with a [`ds_error`](errors.md#ds_error). `unit_step_reports` holds the `EngineError` and the [`report`](reports.md#report)s dispatched beside it, and is otherwise empty.
+
+*(Source: bindings/mercury/src/mercury_ds.session.m)*
+
 ## Values
 
 ### `storable`

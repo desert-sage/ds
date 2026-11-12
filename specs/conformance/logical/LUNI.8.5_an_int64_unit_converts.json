@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_an_int64_unit_converts",
+    "category": "logical",
+    "scenario": "[LUNI.8.5], [RLOW.6.1.10]: an `Int` slot holding 3, asserted into `byte`, is 24 bits, as `Int` arithmetic with no `Float` operand, so the rule logs. A compiler that only tags the value compares 3 bits. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s `asn_int` arm, `x * 8` on two `Int`s.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema S scope logical:\n    id: String key\n    n: Int mutable\n\nrule r:\n    S s where s.n::byte == 24_bit\n->\n    log info \"bytes\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["bytes"]
+    }
+}

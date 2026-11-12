@@ -9,7 +9,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-    FactFileError, factFileName, feed, loadFactFiles, merge, parseCsv, parseJsonl, parseTsv, typedRows,
+    FactFileError, factFileName, feed, loadFactFiles, merge, parseCsv, parseJsonl, parseTsv, stepDeadline, stepDeadlines,
+    typedRows,
 } from "../lib/core/facts.js";
 
 const S = 1_000_000_000n;
@@ -234,6 +235,23 @@ test("load: an @ttl column is refused, naming the file and the column, with no a
     throwsAt(() => loadFactFiles([{ path: "Reading.csv", text: "@when,id,n,x,ok\n1,b,2,0,false\n" }], e), 1,
              /`@when` is not a fact-file column: `@at` is the only one that is not a slot$/);
     assert.deepEqual(e.calls, []);
+});
+
+// [NLFC.2.5]: what batch mode, the shell's live session and `ds dap` all take
+// before a row.
+test("stepDeadlines: each deadline before the target is a pump at its own instant, read again after each; one at the target is not", () => {
+    const e = standIn([READING]);
+    const due = [3n * S, 5n * S, 9n * S];
+    Object.defineProperty(e.clock, "nextDeadline", { get: () => due.find((d) => d > e.clock.now) ?? null });
+    // The firing at 5 s arms a deadline at 7 s.
+    const pump = e.pump;
+    e.pump = () => { pump(); if (e.clock.now === 5n * S && !due.includes(7n * S)) due.splice(2, 0, 7n * S); };
+    stepDeadlines(e, 9n * S);
+    assert.deepEqual(e.calls, [["advance", 3n * S], ["pump"], ["advance", 2n * S], ["pump"], ["advance", 2n * S], ["pump"]]);
+    assert.equal(e.clock.now, 7n * S, "9 s is the target's own instant: the row's pump takes it");
+    assert.equal(stepDeadline(e, 9n * S), false);
+    assert.equal(stepDeadline(e, 10n * S), true, "past it, 9 s is a stop");
+    assert.equal(e.clock.now, 9n * S);
 });
 
 test("feed: an engine's refusal names the file and line", () => {

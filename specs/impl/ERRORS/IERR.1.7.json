@@ -1,0 +1,20 @@
+{
+  "id": "IERR.1.7",
+  "prefix": "IERR",
+  "doc": "ERRORS.md",
+  "parent": "IERR.1",
+  "seq": 58,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "- [IERR.1.7] **What libds does on finding its own invariant broken depends on\n  the state it is left with.** Where libds detects the violation before changing\n  anything, it must refuse the operation with `DS_ERR_INTERNAL`, and the engine\n  goes on: a new pinned intern entry after the pinned set has frozen\n  ([IRET.1.4]). Where the violation means engine state cannot be trusted,\n  the engine must raise an `EngineError` of fault `ENGINE_FAULT_INTERNAL`\n  (`proto/engine_fault.proto#EngineFault`) and halt the tier ([LERR.1.4.7]): an\n  intern reference count released past zero. During `ds_engine_free` it must\n  finish releasing what it holds and raises nothing ([NCBK.2.9]).\n\n  The disposition follows the state and not the code: a `DS_ERR_INTERNAL` that\n  a callback returns halts nothing ([NCBK.1.5]).\n",
+  "refs": [
+    "IRET.1.4",
+    "LERR.1.4.7",
+    "NCBK.1.5",
+    "NCBK.2.9"
+  ],
+  "errors": [
+    "DS_ERR_INTERNAL"
+  ]
+}

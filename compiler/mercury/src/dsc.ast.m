@@ -309,11 +309,15 @@
                 acn_name :: ident,
                 acn_form :: ast_const_form,
                 acn_pos  :: pos,
-                acn_units :: assoc_list(string, decl_ref)
+                acn_units :: assoc_list(string, decl_ref),
                     % The declaration each unit suffix in a library's constant
                     % means in that library, from
                     % `dsc.imports.limp_1_5_const`. Empty for the program's own
                     % file and for a `units.core` unit, which every file has.
+                acn_library :: string
+                    % The library declaring it, or "" for the program's own
+                    % file, from `dsc.imports.limp_1_5_const`. Two libraries can
+                    % hold one text at one position, so this tells them apart.
             ).
     %@helper
 :- type ast_const_form

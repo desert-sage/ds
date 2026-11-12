@@ -10,5 +10,14 @@
   "text": "[LSER.19.7] **First-assertion timestamp (`t_first`).** The runtime records,\nper series instance (per `by:` identity), the timestamp of the first sample\nabsorbed into a fresh backing allocation — `t_first`. It is internal backing\nstate, not an author-facing value. An aggregation whose windowed estimate is biased low until a\nfull window of history exists may divide by the elapsed-aware denominator\n`min(W, now − t_first)` instead of the full window `W`, removing the warm-up\nundercount at no extra state or accuracy cost. `t_first` is set on the first\nabsorbed sample. Its consumer is `onset_rate`'s ÷`min(W, elapsed)` denominator,\nwhose state is never evicted ([LSER.9.3.1]), so `t_first` persists for the\ninstance's life and the correction applies over the instance's first `W` only.\n\n---\n\n",
   "refs": [
     "LSER.9.3.1"
-  ]
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_7__t_first",
+        "tag": "spec"
+      }
+    ]
+  }
 }

@@ -1,0 +1,20 @@
+{
+    "id": "RDSC.4a.9.6_a_terminal_bind_index_past_its_frame_faults",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.6]: a terminal's bind frame has `bind_count` slots, and an `Expr.bind_ref` outside it is not refused at load; where the engine reads it, it raises an EngineError with fault ENGINE_FAULT_ARTEFACT_LIED and halts the tier. It must not read a value or answer null. The harness compiles rule `on_t`, `T t -> let m = monotonic_ns()` then `emit U logical k: t.v w: m`. Its network is `T`'s alpha (node 1), its beta (2) and the terminal (3), whose `bind_count` is 1: the sync-impure `let` is the RHS's one bind ([RLOW.4.5.3.1]), action 0, and `emit` is action 1, its second assignment, `w`, reading `m` as `bind_ref` 0. `runtime_error`'s `tamper: {set_field: {node: 3, path: [6, 1, 4, 1, 2, 0, 14], value: 1}}` ([RCTS.1.2.21]) writes that assignment's `bind_ref` (action 1, `assigns` 1, `expr`, field 14) as 1: the frame has one slot, so 1 names nothing. The artefact must load. Input 0 asserts `T` `v` 1 and is accepted; input 1 pumps, `on_t` fires, its bind writes slot 0, and its `emit` reads slot 1: the pump returns DS_ERR_ENGINE_HALTED (-10) ([NCBK.2.9]), the stream's fault events are exactly one `engine_error`, its last event, and the halt latch holds ARTEFACT_LIED. What it discriminates: a runtime that refuses the artefact at load fails the load; one that reads the unbound slot as null emits `U` with a null `w` or refuses the emit as a TypeError, and records a `type_error` or no fault; one that treats the index as a read before its bind records BINDING_ORDER. PATHS: libds's `ds_rete_eval` BIND_REF arm, from `eval_actions`' assign loop, through pyds; the Mercury runtime's `ds.eval` `e_bind_ref` arm against the firing's frame (`ds.engine.frame_of`), from `ds.exec`'s emit arm, through test_behave.m's `field_set` and `run_runtime_error`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    k: Int key\n    w: Duration mutable\n\nrule on_t:\n    T t\n->\n    let m = monotonic_ns()\n    emit U logical k: t.v w: m\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 3, "path": [6, 1, 4, 1, 2, 0, 14], "value": 1}},
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "op": "pump" }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

@@ -1250,6 +1250,118 @@ test "a response cancels the timeout":
 `);
     });
 
+    // @spec [RTIM.14.5]
+    test("RTIM.14.5_a_timeout_before_its_answer_fires_at_its_deadline", { skip: NO_DSC }, async () => {
+        await allPass(`import calendar
+
+${TYPED}
+schema Timed scope ttl 1_min:
+    v: Int
+
+rule outer:
+    Trig
+->
+    call svc.foo nocooldown as "c1"
+        on response.ok == true:
+            log critical "got-response"
+        timeout 5_s:
+            emit Timed v: 1
+
+rule on_timed:
+    Timed
+->
+    let t = now()
+    log critical "timed-out-at={t}"
+
+rule on_reply:
+    Reply
+->
+    let t = now()
+    log critical "reply-at={t}"
+
+test "the deadline comes first":
+    inputs:
+        at calendar.time(2026, 6, 18, 14, 0, 0):
+            Trig v: 1
+    responses:
+        for call svc.foo as "c1" after 8_s:
+            Reply corr: "c1" ok: true
+    produces:
+        logged critical "timed-out-at=2026-06-18T14:00:05Z"
+        logged critical "reply-at=2026-06-18T14:00:08Z"
+        logged critical "got-response"
+`);
+    });
+
+    // @spec [RTIM.14.5]
+    test("RTIM.14.5_an_answer_on_the_deadline_suppresses_the_timeout", { skip: NO_DSC }, async () => {
+        await allPass(`import calendar
+
+${TYPED}
+rule outer:
+    Trig
+->
+    call svc.foo nocooldown as "c1"
+        on response.ok == true:
+            log critical "got-response"
+        timeout 5_s:
+            log critical "timed-out"
+
+test "the reply goes first at a shared instant":
+    inputs:
+        at calendar.time(2026, 6, 18, 14, 0, 0):
+            Trig v: 1
+    responses:
+        for call svc.foo as "c1" after 5_s:
+            Reply corr: "c1" ok: true
+    produces:
+        logged critical "got-response"
+        never logged critical "timed-out"
+`);
+    });
+
+    // @spec [RTIM.14.5]
+    test("RTIM.14.5_a_firing_arms_a_deadline_the_interpreter_reaches", { skip: NO_DSC }, async () => {
+        await allPass(`import calendar
+
+${TYPED}
+schema Armed scope ttl 1_min:
+    v: Int
+schema Later scope ttl 1_min:
+    v: Int
+
+rule outer:
+    Trig
+->
+    call svc.foo nocooldown as "c1"
+        timeout 5_s:
+            emit Armed v: 1
+
+rule armed:
+    Armed
+->
+    after 2_s:
+        emit Later v: 1
+
+rule on_later:
+    Later
+->
+    let t = now()
+    log critical "later-at={t}"
+
+test "the timeout's body arms a deadline before the end":
+    inputs:
+        at calendar.time(2026, 6, 18, 14, 0, 0):
+            Trig v: 1
+    until calendar.time(2026, 6, 18, 14, 0, 20)
+    responses:
+        for call svc.foo as "c1":
+            no response
+    produces:
+        logged critical "later-at=2026-06-18T14:00:07Z"
+`);
+    });
+
     test("a reply that writes no corr is given the correlation the compiler generated for the call "
          + "([LTSL.7.2])", { skip: NO_DSC }, async () => {
         await allPass(`import calendar

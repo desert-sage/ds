@@ -3,6 +3,7 @@
 syntax = "proto3";
 
 package ds.v1;
+import "rete_expr.proto";
 
 // Slot atom body. Per [RDSC.5.5].
 message Slot {
@@ -28,8 +29,7 @@ message Slot {
   // LGRA.5.10): the schema's identity key is the set of KEY slots (∅ ⇒
   // singleton, all ⇒ relation), and `same KEY tuple ⇒ supersede`. On a
   // non-`logical` schema every slot is UNSPECIFIED. The loader reads the
-  // KEY set into the Rete schema's identity-key tuple. Reject-don't-skip — a
-  // runtime that skipped this field would mis-key the fact.
+  // KEY set into the Rete schema's identity-key tuple.
   IdentityRole identity_role = 9;
   uint32   module_id   = 10;
   // [LNUL.3.1] the slot was declared nullable (`T?`). The runtime admits a
@@ -43,6 +43,11 @@ message Slot {
   // without the field reads. The runtime refuses a longer value at assert and
   // at emit ([LSTR.11.3]).
   uint32   capacity    = 12;
+  // [RDSC.5.5.9] the conversions of a slot whose declared type is a unit
+  // symbol, each over one input, `bind_ref` 0: from the unit the slot names to
+  // the stored number, and back. Set together, and only on such a slot.
+  Expr     to_stored   = 13;
+  Expr     from_stored = 14;
 
   reserved 8;
   reserved "is_identity";

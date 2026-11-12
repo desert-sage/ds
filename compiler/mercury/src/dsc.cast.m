@@ -42,7 +42,8 @@
     %@spec [LCST.4.5.2]
 :- type lcst_4_5_2_storage
     --->    st_float
-    ;       st_int.
+    ;       st_int
+    ;       st_time.    % the `time` dimension: an `Int` of nanoseconds, typed `Duration`
 
     %@spec [LCST.4.1.6]
     %@spec [LCST.4.5.9]
@@ -202,10 +203,12 @@ lcst_4_5_2_classify(ck_int, Target) = Class :-
         Target = ct_json,
         Class = cc_rejected(cr_json_not_fact)
     ;
-        % Tag-only ([LUNI.8.5]).
+        % The number is in that unit ([LUNI.8.5]): `5::second` is 5 seconds.
         Target = ct_unit(_, Storage),
         (
-            Storage = st_int,
+            ( Storage = st_int
+            ; Storage = st_time
+            ),
             Class = cc_total
         ;
             Storage = st_float,
@@ -235,13 +238,15 @@ lcst_4_5_2_classify(ck_float, Target) = Class :-
         Target = ct_string,
         Class = cc_total
     ;
-        % Tag-only ([LUNI.8.5]): `20.0::celsius` is 20 celsius.
+        % The number is in that unit ([LUNI.8.5]): `20.0::celsius` is 20 celsius.
         Target = ct_unit(_, Storage),
         (
             Storage = st_float,
             Class = cc_total
         ;
-            Storage = st_int,
+            ( Storage = st_int
+            ; Storage = st_time
+            ),
             Class = cc_rejected(cr_no_conversion)
         )
     ;
@@ -382,6 +387,8 @@ storage_strip(st_float, Target) =
     ( if Target = ct_float then cc_total else cc_rejected(cr_no_conversion) ).
 storage_strip(st_int, Target) =
     ( if Target = ct_int then cc_total else cc_rejected(cr_no_conversion) ).
+    % A `time` value is `ck_duration`, whose row this is not.
+storage_strip(st_time, _) = cc_rejected(cr_no_conversion).
 
 lcst_4_5_2_classify(ck_fact(_), Target) = Class :-
     (
@@ -419,9 +426,11 @@ lcst_4_5_2_classify(ck_opaque(_), Target) = Class :-
 
 lcst_4_5_2_classify(ck_time, Target) = temporal_row(ct_time, Target).
 lcst_4_5_2_classify(ck_date, Target) = temporal_row(ct_date, Target).
-    % `Duration → Int` is its nanoseconds.
+    % `Duration → Int` is its nanoseconds, and a `time` unit is one type with
+    % `Duration` ([LTIM.1.3.5]).
 lcst_4_5_2_classify(ck_duration, Target) =
     ( if Target = ct_int then cc_total
+    else if Target = ct_unit(_, st_time) then cc_identity
     else temporal_row(ct_duration, Target) ).
 lcst_4_5_2_classify(ck_interval, Target) = no_conversion_row(Target).
 

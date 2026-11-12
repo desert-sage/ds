@@ -1,0 +1,18 @@
+{
+    "id": "LCCO.7.2_a_timeout_past_the_top_raises",
+    "clauses": ["LCCO.7.2", "RLOW.6.1.6", "LTIM.4.1.1"],
+    "category": "logical",
+    "scenario": "[LCCO.7.2] with [RLOW.6.1.6]: a call's `timeout` timer's `fire_at` is a `Duration` sum, and one past the top of the clock's range raises NOT_REPRESENTABLE and is never wrapped. The call uses a literal `as` and its body reads no binding, so there is no capture fact to raise first ([LCCO.3.4]). The clock is set to 2^63 - 1 - 1 s, a Job is asserted and pumped, and `timeout 1_h` would put `fire_at` past the top. `trapped` logs the fault's kind. The clock advances 1 s to the top and is pumped, and the timeout body does not run. Exactly [\"NOT_REPRESENTABLE\"]. A plain add wraps negative, so the timer comes due at the next pump and logs `late`. PATH PINNED: `dsc.rete.ltac_3_3_fire_at` in `clause_timer`, against libds's `adapter_ds_duration_add` and the Mercury runtime's `ltim_4_1_1_duration_add`.",
+    "rules_ds": "schema Reply scope ttl 1_min:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    call svc.get n: j.id nocooldown as \"c1\"\n        timeout 1_h:\n            log info \"late\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "assert", "schema": "Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE"]
+    }
+}

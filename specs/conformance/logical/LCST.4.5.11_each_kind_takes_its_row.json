@@ -1,0 +1,17 @@
+{
+    "id": "LCST.4.5.11_each_kind_takes_its_row",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11]: a `Json` leaf takes [LCST.4.5.2]'s row for the kind it holds when the conversion runs. One fact per case, each matched by its own rule on `k`: `a`'s Float leaf `31.7` under `::Int?` is 31, the Float row to `Int`; `b`'s String leaf `\"31.5\"` under `::Float?` parses as a `String` does, 31.5; `c`'s String leaf `\"abc\"` under `::Float?` does not parse, so the fallible row gives `null`; `d`'s absent path reads `null` ([LNUL.8.4]), and the cast gives `null` ([LCST.4.2.3]). Each rule logs, in source order: [\"float to int\", \"string parses\", \"string does not parse\", \"absent\"]. A runtime that read a leaf by one fixed kind fails at least one. PATH PINNED: `dsc.rete.lcst_4_5_11_dispatch`'s `is_float`, `is_string` and `is_null` arms, through `FN_FLOAT_TO_INT` and `FN_STRING_TO_FLOAT`, in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule float_to_int:\n    Doc d where d.k == \"a\" and d.body.c::Int? == 31\n->\n    log info \"float to int\"\n\nrule string_parses:\n    Doc d where d.k == \"b\" and d.body.c::Float? == 31.5\n->\n    log info \"string parses\"\n\nrule string_does_not_parse:\n    Doc d where d.k == \"c\" and d.body.c::Float? is null\n->\n    log info \"string does not parse\"\n\nrule absent:\n    Doc d where d.k == \"d\" and d.body.c::Float? is null\n->\n    log info \"absent\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "a", "body": { "c": 31.7 } } },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "b", "body": { "c": "31.5" } } },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "c", "body": { "c": "abc" } } },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "d", "body": {} } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["float to int", "string parses", "string does not parse", "absent"]
+    }
+}

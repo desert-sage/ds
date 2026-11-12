@@ -17,6 +17,7 @@
 %
 %   load_session        load the artefact; a refused load is a value
 %   inspect_schemas     schema names, lookups, .proto text, services
+%   slot_units          a number through a slot's unit, both ways
 %   setup_clock        the mock clock, and the wall clock now() reads
 %   cache_and_limits    a cache seed, the cache bounds, the budgets
 %   begin_recording     the session's fact stream, from here
@@ -126,10 +127,11 @@ run(Bytes, !IO) :-
     some [!S] (
         !:S = Session,
         inspect_schemas(!.S, !IO),
+        slot_units(Span, !S, !IO),
         setup_clock(!S, !IO),
         cache_and_limits(!S, !IO),
         begin_recording(!S, !IO),
-        assert_facts(Go, !S, !IO),
+        assert_facts(Span, Go, !S, !IO),
         read_facts(!.S, Go, !IO),
         pump_and_answer(Published, !S, !IO),
         from_another_tier(Bytes, Published, !IO),
@@ -238,6 +240,49 @@ print_service(Info, !IO) :-
     line(string.format("service %s -> %s; kwargs: %s",
         [s(Info ^ service_info_name), s(Response), s(Names)]), !IO).
 
+    % Probe's `span` names `millisecond`. A host holding 2 ms has the slot
+    % convert it to the number the slot stores, a Duration's nanoseconds,
+    % which `assert_facts` asserts; and takes that number back to 2 ms. A
+    % slot that names no unit converts nothing. A conversion reports only an
+    % EngineError it raises, which this artefact's do not.
+    %
+:- pred slot_units(storable::out, session::in, session::out,
+    io::di, io::uo) is det.
+
+slot_units(Span, !S, !IO) :-
+    section("a slot's unit", !IO),
+    Probe = got(lookup_schema(!.S, "Probe")),
+    slot_to_stored(Probe, span_index, int(2i64), ToStored, !S),
+    ToResult = ToStored ^ unit_step_result,
+    (
+        ToResult = ok(Span),
+        line("slot_to_stored Probe.span, 2 ms: " ++ string.string(Span),
+            !IO)
+    ;
+        ToResult = error(ToError),
+        fatal("slot_to_stored Probe.span", ToError)
+    ),
+    slot_from_stored(Probe, span_index, Span, FromStored, !S),
+    ( if FromStored = unit_step(ok(int(2i64)), _) then
+        line("slot_from_stored Probe.span: 2 ms again", !IO)
+    else
+        require.error("harness: slot_from_stored does not invert "
+            ++ "slot_to_stored")
+    ),
+    slot_to_stored(Probe, 0, int(1i64), Unitless, !S),
+    ( if Unitless = unit_step(error(NoUnit), _) then
+        refusal("slot_to_stored of Probe.id, which names no unit", NoUnit,
+            !IO)
+    else
+        require.error("harness: a slot that names no unit converted")
+    ).
+
+    % The zero-based index of Probe's `span`, its last slot.
+    %
+:- func span_index = int.
+
+span_index = 11.
+
 :- pred setup_clock(session::in, session::out, io::di, io::uo) is det.
 
 setup_clock(!S, !IO) :-
@@ -249,7 +294,8 @@ setup_clock(!S, !IO) :-
     % clock leaves with no value until the host sets one.
     set_wall_clock(wall_epoch, Wall, !S),
     must("set_wall_clock", Wall, !IO),
-    line("now: " ++ instant_text(got(now(!.S))), !IO).
+    line("now: " ++ instant_text(got(now(!.S))), !IO),
+    line("next_deadline: " ++ deadline_text(got(next_deadline(!.S))), !IO).
 
 :- pred cache_and_limits(session::in, session::out, io::di, io::uo) is det.
 
@@ -301,13 +347,14 @@ begin_recording(!S, !IO) :-
     % Assert the offset `local()` reads for Europe/London, a built-in
     % `TimeZoneOffset` row ([LTIM.10.6]): zone, valid_from, valid_until and
     % offset_s, here 0 over every instant a row can state. Then a Go, which
-    % fires every rule, a Probe holding one value of each kind a slot holds,
-    % a Note with its schema's TTL, and a Reading for the series.
+    % fires every rule, a Probe holding one value of each kind a slot holds
+    % and the stored number `slot_units` gave its `span`, a Note with its
+    % schema's TTL, and a Reading for the series.
     %
-:- pred assert_facts(fact_id::out, session::in, session::out,
+:- pred assert_facts(storable::in, fact_id::out, session::in, session::out,
     io::di, io::uo) is det.
 
-assert_facts(Go, !S, !IO) :-
+assert_facts(Span, Go, !S, !IO) :-
     section("assert facts", !IO),
     assert_fact("TimeZoneOffset", [text("Europe/London"),
         int(int64.min_int64), int(int64.max_int64), int(0i64)], TzStep,
@@ -318,7 +365,7 @@ assert_facts(Go, !S, !IO) :-
     Probe = [int(1i64), float(2.5), text("probe"), bool(yes),
         json(j_object(object(["k" - j_string("v")]))),
         bytes(bitmap.init(16, no)), int(0i64), int(0i64),
-        int(1_000_000_000i64), fact_ref(Go), null],
+        int(1_000_000_000i64), fact_ref(Go), null, Span],
     assert_fact("Probe", Probe, ProbeStep, !S),
     must_assert("assert Probe (every kind)", ProbeStep, _, !IO),
     assert_fact("Note", [text("porch"), int(0i64)], NoteStep, !S),

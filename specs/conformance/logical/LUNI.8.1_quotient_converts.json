@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.1_quotient_converts",
+    "category": "logical",
+    "scenario": "[LUNI.8.1]: `/` and `//` between values of one dimension convert both operands to the base unit, and the result is a bare number. `5_km / 500_meter` is the `Float` 10.0, and `5_byte // 3_bit` is 40 bits over 3 bits, the `Int` 13. Pin: both rules log, in source order. A runtime or lowering that divided the written magnitudes gets 0.01 and 1. PATH PINNED: `dsc.types.luni_8_1_combine`'s same-dimension `op_division` row, and each runtime's `/` and `//` over the literals' base values.",
+    "rules_ds": "unit km: length = x * 1000\n\nunit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema Trig scope logical:\n    id: Int key\n\nrule ratio:\n    Trig t where t.id == 1 and 5_km / 500_meter == 10.0\n->\n    log info \"ratio\"\n\nrule whole:\n    Trig t where t.id == 1 and 5_byte // 3_bit == 13\n->\n    log info \"whole\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["ratio", "whole"]
+    }
+}

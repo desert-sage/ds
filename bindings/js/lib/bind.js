@@ -173,6 +173,7 @@ export const STREAM_EVENT_KINDS = Object.freeze(/** @type {StreamEventKind[]} */
  * @property {(e: EngineHandle, bytes: Uint8Array) => void} loadDsc
  * @property {(e: EngineHandle) => number} schemaCount
  * @property {(e: EngineHandle, i: number) => SchemaInfo} schemaAt
+ * @property {(e: EngineHandle, schema: string, slot: string, value: bigint | number, toStored: boolean) => bigint | number} slotConvert
  * @property {(e: EngineHandle, schema: string, slots: Record<string, SlotValueOf<FactHandle>>) => FactHandle} assert
  * @property {(e: EngineHandle, bytes: Uint8Array) => void} assertExternal
  * @property {(e: EngineHandle, body: Uint8Array) => ExternalAssertApplied} applyExternalAssert
@@ -189,6 +190,7 @@ export const STREAM_EVENT_KINDS = Object.freeze(/** @type {StreamEventKind[]} */
  * @property {(e: EngineHandle) => ClockMode} clockMode
  * @property {(e: EngineHandle, mode: ClockMode) => void} clockSetMode
  * @property {(e: EngineHandle) => bigint} clockNow
+ * @property {(e: EngineHandle) => bigint | null} clockNextDeadline
  * @property {(e: EngineHandle, ns: Int64) => void} clockSet
  * @property {(e: EngineHandle, ns: Int64) => void} clockAdvance
  * @property {(e: EngineHandle, utcNs: Int64) => void} wallClockSet
@@ -589,6 +591,14 @@ export class Clock {
      * @returns {bigint}
      */
     get now() { return this.#b.clockNow(this.#h); }
+
+    /**
+     * The earliest deadline after the clock's current value, ns, or null: a
+     * live timer's fire_at, a live fact's TTL expiry or a cache entry's expiry.
+     * Reading it is not a sample: it records nothing.
+     * @returns {bigint | null}
+     */
+    get nextDeadline() { return this.#b.clockNextDeadline(this.#h); }
 
     /**
      * Set the mock monotonic clock; DsError(DS_ERR_STATE) in live mode, and
@@ -1243,6 +1253,38 @@ export class Engine extends EventTarget {
             this.#schemas = new NameMap(all);
         }
         return this.#schemas;
+    }
+
+    /**
+     * A number in the unit a slot names, as the number the slot stores
+     * ([NFCT.1.4.6]): what `value::<unit>` gives a rule, which assert takes.
+     * An Int is a BigInt or a safe integer Number and comes back a BigInt; a
+     * Float is a Number. Changes nothing. Throws a DsError:
+     * DS_ERR_SCHEMA_UNKNOWN or DS_ERR_SLOT_UNKNOWN for a name the engine has
+     * no schema or slot by, DS_ERR_INVAL for a slot that names no unit,
+     * DS_ERR_SLOT_TYPE_MISMATCH, DS_ERR_NAN_REJECTED, and
+     * DS_ERR_NOT_REPRESENTABLE where the conversion has no result for the
+     * number.
+     * @param {string} schema
+     * @param {string} slot
+     * @param {bigint | number} value
+     * @returns {bigint | number}
+     */
+    slotToStored(schema, slot, value) {
+        return this.#b.slotConvert(this.#h, schema, slot, value, true);
+    }
+
+    /**
+     * A number a slot stores, in the unit the slot names: what a kwarg of
+     * that unit receives ([NFCT.1.4.6]). The inverse of slotToStored, taken
+     * and refused as it is.
+     * @param {string} schema
+     * @param {string} slot
+     * @param {bigint | number} value
+     * @returns {bigint | number}
+     */
+    slotFromStored(schema, slot, value) {
+        return this.#b.slotConvert(this.#h, schema, slot, value, false);
     }
 
     /**

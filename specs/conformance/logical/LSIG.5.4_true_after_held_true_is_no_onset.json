@@ -1,0 +1,25 @@
+{
+    "id": "LSIG.5.4_true_after_held_true_is_no_onset",
+    "clauses": ["LSIG.5.4"],
+    "category": "logical",
+    "scenario": "[LSIG.5.4]: a `true` absorbed after a held `true` is no rising edge, however long the silence between them. `onset_rate sliding 60_s` on `Pump.state` takes `true` at t=0, its first absorption, which follows nothing and is no edge ([LSIG.1.4.1]). At 200 s an unrelated `Other` fact is asserted and pumped, so a pump reads a clock more than a window past the last sample and an eviction sweep runs. `true` arrives again at 300 s, and at 310 s the pump is re-asserted with `state` still `true` and `n` 3, whose `where` reads `p.onset_rate` before that fact's own sample ([LSER.8.6]): no edge in (250 s, 310 s], since the value held before 300 s is `true`, so 0.0, and the rule fires once. The `n == 3` conjunct keeps the earlier facts, whose `where` is re-read at each pump ([LTIM.2.4.1]), from firing. A runtime that counts every `true` as an edge counts the one at 300 s and reads 1 / min(60, 310) = 1/60, and the rule never fires. Path: libds `ds_series_state_evict_stale` pass 2, which keeps a Bool ring buffer's row, and SeriesBackendRingBuffer's `last_bool`, read by `ds_series_ring_buffer_update_bool`; the Mercury runtime's `ds.series` `onset_rate` over the ring buffer's carry, the `true` at 0 s, as the predecessor in `rising_edges`.",
+    "rules_ds": "use default\n\nschema Pump scope logical:\n    id: String key\n    state: Bool mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Pump.state (by: id):\n    onset_rate sliding 60_s\n\nrule r:\n    Pump p where p.n == 3 and p.onset_rate == 0.0\n->\n    log info \"no onset\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 300000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 310000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["no onset"]
+    }
+}

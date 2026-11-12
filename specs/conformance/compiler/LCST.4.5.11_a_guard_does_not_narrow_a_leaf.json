@@ -1,0 +1,11 @@
+{
+    "id": "LCST.4.5.11_a_guard_does_not_narrow_a_leaf",
+    "clauses": ["LCST.4.5.11"],
+    "category": "compiler",
+    "scenario": "[LCST.4.5.11] with [LCST.4.3.2]: a `Json` leaf converts by the kind it holds, which is known only at run time, and may be `null`, so a cast of one takes [LCST.4.3.1]'s nullable-source column whatever guard stands to its left. `d.body.c is not null and d.body.c::String == \"x\"` writes the cast without `?`, and it is refused with DS_VALIDATE_CAST_NULLABILITY: the guard does not narrow the leaf, since narrowing acts on a known `T?` ([LNUL.5.4]) and the leaf's type is not known. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). A compiler that narrowed the leaf on the guard reads the cast as non-null and compiles it. PATH PINNED: `dsc.typecheck.lcst_4_1_5_cast_type`, through `lcst_4_5_11_source`'s `lcst_4_5_11_json_valued` arm, which gives the leaf `nullable` on every path, and `lcst_4_5_11_cast_type`.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule r:\n    Doc d where d.body.c is not null and d.body.c::String == \"x\"\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_NULLABILITY"
+    }
+}

@@ -51,19 +51,15 @@
 ||| module's gate is the one an engine runs, and that module executes
 ||| `rgate.k`'s schedules on it.
 |||
-||| WHY THIS MODULE, AND WHY IT IS NOT Rete/FireClock.idr AGAIN. FireClock
-||| models the same shape -- a cache whose empty state was once spelled as a
-||| sentinel of the clock's own type -- and the clause it serves has since
-||| forbidden that spelling outright; whether a clock can return `-1` was an
-||| implementation question FireClock declined to answer. This is the
-||| instance where the answer was yes. The general rule the pair establishes,
-||| stated here because neither module can state it alone: a sentinel
-||| encoding is faithful exactly when the sentinel lies outside the range of
-||| the values it shares a field with. FireClock's `-1` satisfies that against
-||| a live `now_ns` and fails against a harness clock; this module's `0` fails
-||| against both. The theorems prove the concrete instance rather than the
-||| parameterised claim -- equality on a variable does not reduce, as
-||| Rete/FireClock.idr records -- and `Nat` is used throughout so `Z` versus
+||| WHY THIS MODULE. The shape -- a cache whose empty state is spelled as a
+||| sentinel of the clock's own type -- is one the per-fire clock cache had
+||| too, with `-1`, and its clause has since forbidden that spelling
+||| outright. The general rule: a sentinel encoding is faithful exactly when
+||| the sentinel lies outside the range of the values it shares a field
+||| with. A `-1` satisfies that against a live `now_ns` and fails against a
+||| harness clock; this module's `0` fails against both. The theorems prove
+||| the concrete instance rather than the parameterised claim -- equality on
+||| a variable does not reduce -- and `Nat` is used throughout so `Z` versus
 ||| `S k` is a STRUCTURAL case split and the proofs go through by `Refl`.
 |||
 ||| ⚠ TWO CONSUMERS OF THE SAME ENCODING, and the second was worse. The gate

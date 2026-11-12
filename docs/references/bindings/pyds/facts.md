@@ -71,6 +71,37 @@ A `str` in a `Json` slot is a Json string, and is not parsed. `JsonText` is a `s
 
 *(Source: bindings/python/src/_pyds/engine.c)*
 
+## Unit conversion
+
+### `slot_to_stored`
+
+**`def slot_to_stored(self, schema: str, slot: str, value: int | float) -> int | float`**
+
+Converts a number in the unit a slot names to the number the slot stores, through [`ds_schema_slot_to_stored`](inv:integrator:std:doc#facts/schemas).
+
+`schema` is the schema's own name, as `assert_` takes it, and `slot` the slot's name. The result is an `int` for a slot stored as an integer, a `Duration`'s nanoseconds among them, and a `float` for one stored as a float. A `bool` reaches libds as a `Bool`, which it refuses by kind.
+
+| Raises | Condition |
+|---|---|
+| `ValueError` | the engine is closed |
+| [`InputError`](errors.md#inputerror), `SCHEMA_UNKNOWN` | the engine has no schema named `schema` |
+| `InputError`, `SLOT_UNKNOWN` | the schema has no slot named `slot` |
+| `TypeError` | `value` is neither an `int` nor a `float` |
+| `OverflowError` | an `int` is outside `int64` |
+| the [`Error`](errors.md#error) its status names | `ds_schema_slot_to_stored` returns a failure |
+
+*(Source: bindings/python/src/pyds/engine.py, bindings/python/src/_pyds/engine.c)*
+
+### `slot_from_stored`
+
+**`def slot_from_stored(self, schema: str, slot: str, value: int | float) -> int | float`**
+
+Converts a number a slot stores to a number in the unit the slot names, through [`ds_schema_slot_from_stored`](inv:integrator:std:doc#facts/schemas).
+
+It takes its arguments, and raises, as [`slot_to_stored`](#slot_to_stored) does.
+
+*(Source: bindings/python/src/pyds/engine.py, bindings/python/src/_pyds/engine.c)*
+
 ## Working memory
 
 ### `Facts`

@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.9.2_stripped_integral_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.9.2]: the strip `integral(f)::Float` is a bare number, so a `let` over it needs nothing more. Pin: the program compiles. PATH PINNED: `dsc.typecheck.luni_9_2_strip_source`, which types the cast of a `ty_unknown` read, `dsc.validate.first_unit_changing_read`, which passes over a strip, and the cast's lowering through `lcst_4_cast_pair`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f\n->\n    let x = integral(f)::Float\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -153,6 +153,18 @@ static ds_rete_expr_t *call_n(ds_rete_engine_t *e, ds_builtin_fn_t op,
     if (a1) c->call.args[1] = a1;
     return c;
 }
+static ds_rete_expr_t *call3(ds_builtin_fn_t op, ds_rete_expr_t *a0,
+                             ds_rete_expr_t *a1, ds_rete_expr_t *a2)
+{
+    ds_rete_expr_t *c = ds_rete_expr_alloc(DS_RETE_EXPR_CALL);
+    c->call.op        = op;
+    c->call.arg_count = 3;
+    c->call.args      = calloc(3, sizeof(ds_rete_expr_t *));
+    c->call.args[0]   = a0;
+    c->call.args[1]   = a1;
+    c->call.args[2]   = a2;
+    return c;
+}
 static ds_rete_expr_t *call0(ds_rete_engine_t *e, ds_builtin_fn_t op)
 {
     (void) e;
@@ -1711,6 +1723,80 @@ static int test_int_div_exact(void)
     return rc;
 }
 
+/* FN_INT_MUL_ADD_CHECKED ([RLOW.7.3.9]): an integer-stored unit's conversion,
+   `m*x + a`, through `builtin_int_mul_add_checked`. At the four edges of the
+   range, the product and then the sum, both signs, the last value in range
+   converts and the next is NOT_REPRESENTABLE, never wrapped. A product past
+   the range raises though the sum would bring it back, and a null `x` is
+   null. The same cases as ds.eval's in test_ds. The causes are read under
+   ds_rete_eval_holding. */
+static int mul_add_value(Ctx *c, int64_t x, int64_t m, int64_t a, int64_t want,
+                         const char *what)
+{
+    ds_rete_eval_ctx_t ctx = clock_ctx(c, 1);
+    ds_rete_val_t v = eval1(&ctx, call3(DS_FN_INT_MUL_ADD_CHECKED, lit_int(x),
+        lit_int(m), lit_int(a)));
+    return (ctx.faulted || v.kind != DS_RETE_VAL_INT || v.i != want)
+        ? fail(what) : 0;
+}
+
+static int mul_add_raises(Ctx *c, int64_t x, int64_t m, int64_t a,
+                          const char *what)
+{
+    ds_rete_eval_ctx_t ctx = clock_ctx(c, 1);
+    ds_rete_expr_t *e = call3(DS_FN_INT_MUL_ADD_CHECKED, lit_int(x), lit_int(m),
+        lit_int(a));
+    ds_rete_held_t held;
+    (void)ds_rete_eval_holding(&ctx, e, &held);
+    ds_rete_expr_free_tree(e);
+    return (!held.held || held.cause != DS_FAULT_NOT_REPRESENTABLE)
+        ? fail(what) : 0;
+}
+
+/* @spec [RLOW.7.3.9] */
+static int test_int_mul_add_checked(void)
+{
+    Ctx c = make_ctx();
+    ds_register_builtins(c.engine);
+    const int64_t p60 = 1152921504606846976LL;     /* 2^60 */
+    const int64_t p62 = 4611686018427387904LL;     /* 2^62 */
+    int rc = mul_add_value(&c, p60 - 1, 8, 0, INT64_MAX - 7,
+        "8 * (2^60 - 1) is 2^63 - 8, at the top");
+    if (!rc)
+        rc = mul_add_raises(&c, p60, 8, 0,
+            "8 * 2^60 is past the top: NOT_REPRESENTABLE");
+    if (!rc)
+        rc = mul_add_value(&c, -p60, 8, 0, INT64_MIN,
+            "8 * -2^60 is -2^63, at the bottom");
+    if (!rc)
+        rc = mul_add_raises(&c, -p60 - 1, 8, 0,
+            "8 * (-2^60 - 1) is past the bottom: NOT_REPRESENTABLE");
+    if (!rc)
+        rc = mul_add_value(&c, INT64_MAX - 1, 1, 1, INT64_MAX,
+            "(2^63 - 2) + 1 is 2^63 - 1, the sum at the top");
+    if (!rc)
+        rc = mul_add_raises(&c, INT64_MAX - 1, 1, 2,
+            "(2^63 - 2) + 2 is past the top: NOT_REPRESENTABLE");
+    if (!rc)
+        rc = mul_add_value(&c, INT64_MIN + 1, 1, -1, INT64_MIN,
+            "(-2^63 + 1) - 1 is -2^63, the sum at the bottom");
+    if (!rc)
+        rc = mul_add_raises(&c, INT64_MIN + 1, 1, -2,
+            "(-2^63 + 1) - 2 is past the bottom: NOT_REPRESENTABLE");
+    if (!rc)
+        rc = mul_add_raises(&c, p62, 3, INT64_MIN,
+            "3 * 2^62 - 2^63 would be 2^62, but the product passes the range");
+    if (!rc) {
+        ds_rete_eval_ctx_t ctx = clock_ctx(&c, 1);
+        ds_rete_val_t v = eval1(&ctx, call3(DS_FN_INT_MUL_ADD_CHECKED,
+            ds_rete_expr_alloc(DS_RETE_EXPR_LIT_NULL), lit_int(8), lit_int(0)));
+        if (ctx.faulted || v.kind != DS_RETE_VAL_NULL)
+            rc = fail("a null x is null");
+    }
+    destroy_ctx(&c);
+    return rc;
+}
+
 /* `t.floor(d)` ([LTIM.7.1], [LTIM.7.2]): the boundary of `d` at or
    before `t`, in the offset `t` carries, keeping that offset. The half the
    conformance harness cannot reach is a zoned receiver, which needs local()
@@ -1871,6 +1957,7 @@ int main(void)
     RUN(test_duration_compact_form);
     RUN(test_calendar_shift);
     RUN(test_int_div_exact);
+    RUN(test_int_mul_add_checked);
     RUN(test_ltim_7_1__floor_time);
     RUN(test_interp_wrapping_a_call);
 #undef RUN

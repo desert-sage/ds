@@ -166,7 +166,7 @@ ds_result_t ds_rete_beta_presz_ridx(ds_rete_beta_node_t *node, uint32_t cap);
 ds_result_t ds_rete_beta_presz_ralpha(ds_rete_beta_node_t *node, uint32_t cap);
 ds_result_t ds_rete_beta_presz_ltok(ds_rete_beta_node_t *node, uint32_t cap);
 
-#ifndef NDEBUG
+#ifdef DS_DEBUG
 /* Assert this node's index and counter invariants. */
 void ds_rete_beta_check(const ds_rete_beta_node_t *node);
 #endif

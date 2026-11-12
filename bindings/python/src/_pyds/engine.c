@@ -765,6 +765,89 @@ PydsEngine_schema_find(PydsEngineObject *self, PyObject *arg)
     return pyds_schema_record(schema);
 }
 
+/* [NFCT.1.4.6]: a number through a slot's unit conversion, behind
+   pyds.Engine.slot_to_stored and slot_from_stored. A name the engine has no
+   schema or slot by is SCHEMA_UNKNOWN or SLOT_UNKNOWN, as an assert's is;
+   libds's refusals are its statuses. A `bool` is handed over as one, for
+   libds to refuse by kind. */
+static PyObject *
+PydsEngine_slot_convert(PydsEngineObject *self, PyObject *args)
+{
+    const char *schema_name = NULL, *slot_name = NULL;
+    PyObject *value = NULL;
+    int to_stored = 0;
+    if (!PyArg_ParseTuple(args, "ssOp", &schema_name, &slot_name, &value,
+                          &to_stored)) {
+        return NULL;
+    }
+    if (self->engine == NULL) {
+        PyErr_SetString(PyExc_ValueError, "operation on a closed Engine");
+        return NULL;
+    }
+    const ds_schema_t *schema = NULL;
+    ds_result_t r = ds_engine_schema_find(self->engine, schema_name, &schema);
+    if (r.status != DS_OK) {
+        return pyds_raise_from_result(r);
+    }
+    if (schema == NULL) {
+        return pyds_raise_status(DS_ERR_SCHEMA_UNKNOWN,
+                                 "the engine has no schema of that name");
+    }
+    uint32_t n = 0;
+    r = ds_schema_get_slot_count(schema, &n);
+    if (r.status != DS_OK) {
+        return pyds_raise_from_result(r);
+    }
+    uint32_t index = n;
+    for (uint32_t i = 0; i < n && index == n; ++i) {
+        ds_slot_desc_t desc;
+        r = ds_schema_get_slot(schema, i, &desc);
+        if (r.status != DS_OK) {
+            return pyds_raise_from_result(r);
+        }
+        if (desc.name != NULL && strcmp(desc.name, slot_name) == 0) {
+            index = i;
+        }
+    }
+    if (index == n) {
+        return pyds_raise_status(DS_ERR_SLOT_UNKNOWN,
+                                 "the schema has no slot of that name");
+    }
+    ds_slot_value_t in;
+    memset(&in, 0, sizeof in);
+    if (PyBool_Check(value)) {
+        in.kind = DS_SLOT_BOOL;
+        in.v.b = value == Py_True;
+    }
+    else if (PyLong_Check(value)) {
+        long long v = PyLong_AsLongLong(value);
+        if (v == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        in.kind = DS_SLOT_INT;
+        in.v.i = (int64_t)v;
+    }
+    else if (PyFloat_Check(value)) {
+        in.kind = DS_SLOT_FLOAT;
+        in.v.f = PyFloat_AsDouble(value);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "a slot's conversion takes an int or a float");
+        return NULL;
+    }
+    ds_slot_value_t out;
+    r = to_stored ? ds_schema_slot_to_stored(schema, index, &in, &out)
+                  : ds_schema_slot_from_stored(schema, index, &in, &out);
+    if (r.status != DS_OK) {
+        return pyds_raise_from_result(r);
+    }
+    if (out.kind == DS_SLOT_FLOAT) {
+        return PyFloat_FromDouble(out.v.f);
+    }
+    return PyLong_FromLongLong((long long)out.v.i);
+}
+
 /* The program's own source files ([RDSC.14.2]), behind pyds.Engine.sources:
    a count, and a record by position, (module_id, file, text). The text is the
    module's DS source, UTF-8 with its length given. */
@@ -1302,13 +1385,6 @@ pyds_value_for_slot(PydsEngineObject *self,
     }
 }
 
-/* HYDRT1a — build the ds_slot_value_t array from kwargs, for assert_.
-   Every declared slot must be supplied by a
-   matching kwarg, EXCEPT the auto-injected `hydrated_corr` slot, which is
-   optional and defaults to "" (a live fact). Every supplied kwarg must
-   match some slot (so a typo still errors, as the old strict slot/kwarg
-   count check did). On success returns 0 and sets *out_values (PyMem-
-   allocated; caller frees); on failure returns -1 with an exception set. */
 /* Free a slot array and the Json trees in it. The trees are the
    caller's until the assert has serialised them, so every path out of an
    assert -- a refused slot included -- releases the ones built so far. The
@@ -1325,6 +1401,11 @@ pyds_free_slot_values(ds_slot_value_t *values, uint32_t n_slots)
     PyMem_Free(values);
 }
 
+/* The ds_slot_value_t array for assert_, from its kwargs. Every declared slot
+   takes the kwarg of its name, and a nullable one with none is null
+   ([LNUL.4.1]); no slot name is exempt. Every kwarg must name a slot, so a typo
+   is refused. On success returns 0 and sets *out_values (PyMem-allocated; the
+   caller frees it); on failure returns -1 with an exception set. */
 static int
 pyds_build_slot_values(PydsEngineObject  *self,
                         const ds_schema_t *schema,
@@ -1354,15 +1435,6 @@ pyds_build_slot_values(PydsEngineObject  *self,
         PyObject *py_v = (kwds != NULL)
             ? PyDict_GetItemString(kwds, desc.name)  /* borrowed */
             : NULL;
-        if (py_v == NULL && strcmp(desc.name, "hydrated_corr") == 0) {
-            /* Optional auto-injected slot -> "" (a live fact). The static
-               literal is valid for the duration of the assert, so there is
-               no PyObject lifetime to manage (cf. pyds_value_for_slot,
-               which borrows PyUnicode_AsUTF8). */
-            values[i].kind = DS_SLOT_STRING;
-            values[i].v.s  = "";
-            continue;
-        }
         if (py_v == NULL && desc.nullable) {
             /* OMISSION IS NULL, for a nullable slot only ([LNUL.4.1]). That
                clause states the semantics in terms of absence — "with
@@ -1676,6 +1748,25 @@ PydsEngine_clock_now(PydsEngineObject *self, PyObject *Py_UNUSED(args))
         return pyds_raise_from_result(r);
     }
     return PyLong_FromUnsignedLongLong((unsigned long long)now_ns);
+}
+
+static PyObject *
+PydsEngine_clock_next_deadline(PydsEngineObject *self, PyObject *Py_UNUSED(args))
+{
+    if (self->engine == NULL) {
+        PyErr_SetString(PyExc_ValueError, "operation on a closed Engine");
+        return NULL;
+    }
+    uint64_t at_ns = 0;
+    bool has = false;
+    ds_result_t r = ds_engine_next_deadline_ns(self->engine, &at_ns, &has);
+    if (r.status != DS_OK) {
+        return pyds_raise_from_result(r);
+    }
+    if (!has) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromUnsignedLongLong((unsigned long long)at_ns);
 }
 
 static PyObject *
@@ -3865,6 +3956,10 @@ static PyMethodDef PydsEngine_methods[] = {
     { "_schema_find", (PyCFunction)PydsEngine_schema_find, METH_O,
       "_schema_find($self, name, /)\n--\n\n"
       "The record of the schema called name, or None; pyds.Engine.schemas reads it." },
+    { "_slot_convert", (PyCFunction)PydsEngine_slot_convert, METH_VARARGS,
+      "_slot_convert($self, schema, slot, value, to_stored, /)\n--\n\n"
+      "A number through a slot's unit conversion; pyds.Engine.slot_to_stored "
+      "and slot_from_stored call it." },
     { "_decode_fact_body", (PyCFunction)PydsEngine_decode_fact_body, METH_VARARGS,
       "_decode_fact_body($self, schema, body, /)\n--\n\n"
       "A recorded fact body as {slot: value}, or None for an unknown schema; "
@@ -3922,6 +4017,8 @@ static PyMethodDef PydsEngine_methods[] = {
       "Switch to \"live\" or \"mock\"; pyds.Engine.clock calls it." },
     { "_clock_now", (PyCFunction)PydsEngine_clock_now, METH_NOARGS,
       "_clock_now($self, /)\n--\n\nThe monotonic clock's value; pyds.Engine.clock reads it." },
+    { "_clock_next_deadline", (PyCFunction)PydsEngine_clock_next_deadline, METH_NOARGS,
+      "_clock_next_deadline($self, /)\n--\n\nThe engine's next deadline, or None; pyds.Engine.clock reads it." },
     { "_clock_set", (PyCFunction)PydsEngine_clock_set, METH_O,
       "_clock_set($self, now_ns, /)\n--\n\n"
       "Set the mock monotonic clock; pyds.Engine.clock calls it." },

@@ -60,6 +60,20 @@ It is not a sample: it records nothing, and does not change what the engine's ne
 
 *(libds.h: ds_engine_clock_now, Source: runtime/src/libds/clock.c)*
 
+### `ds_engine_next_deadline_ns`
+
+**`ds_result_t ds_engine_next_deadline_ns(ds_engine_t *engine, uint64_t *out_ns, bool *out_has);`**
+
+Reports the earliest deadline later than the monotonic clock's current value.
+
+A deadline is the `fire_at` of a live timer fact, the expiry of a live fact with a TTL, or the expiry of a cache entry. `*out_has` is false when the engine holds none, and `*out_ns` is then `0`. An instant at which a time-dependent condition changes is not a deadline, and neither is the end of a cooldown.
+
+It is a read, in either mode: it is not a sample, records nothing, and changes nothing a later call or pump does. The engine does nothing at a deadline until a [pump](pump.md#ds_engine_pump). Its cost is linear in the live facts and cache entries.
+
+Errors: `DS_ERR_INVAL` for a NULL `engine`, `out_ns` or `out_has`; `DS_ERR_STATE` under [Re-entry](../conventions/handles.md#re-entry); `DS_ERR_ENGINE_HALTED`.
+
+*(libds.h: ds_engine_next_deadline_ns, Spec: [NLFC.2.5], Source: runtime/src/libds/engine.c)*
+
 ## Mock clock
 
 ### Mock clock calls
@@ -78,9 +92,9 @@ None is a sample: each emits no event and records nothing, and the next input or
 
 Sets the mock monotonic clock to an absolute value.
 
-Before the engine's first sample it takes any value. After it, a value below the current one returns `DS_ERR_STATE` and leaves both clocks as they were.
+Before the engine's first sample it takes any value up to 2^63 - 1. After it, a value below the current one returns `DS_ERR_STATE` and leaves both clocks as they were. A value above 2^63 - 1, the top of the monotonic clock's range, returns `DS_ERR_TIME_RANGE` and leaves both clocks as they were, before the first sample and after it. A value equal to the top is taken.
 
-*(libds.h: ds_engine_clock_set, Spec: [NTST.3.1])*
+*(libds.h: ds_engine_clock_set, Spec: [NTST.3.1], [LTIM.2.8.2], Source: runtime/src/libds/clock.c)*
 
 ### `ds_engine_clock_advance`
 
@@ -90,9 +104,9 @@ Advances the mock monotonic clock by `delta_ns`, and the mock wall clock by the 
 
 An unset wall clock stays unset, and limits nothing.
 
-It returns `DS_ERR_TIME_RANGE`, and leaves the engine as it was, for a `delta_ns` above 2^63 - 1, a wall clock that would pass 2^63 - 1, or a monotonic clock that would pass 2^64 - 1. An advance that lands on the top of a range is taken.
+It returns `DS_ERR_TIME_RANGE`, and leaves both clocks as they were, for a monotonic clock or a set wall clock that would pass 2^63 - 1. An advance that lands on the top of a range is taken.
 
-*(libds.h: ds_engine_clock_advance, Spec: [NTST.3.1], Source: runtime/src/libds/clock.c)*
+*(libds.h: ds_engine_clock_advance, Spec: [NTST.3.1], [LTIM.2.8.2], Source: runtime/src/libds/clock.c)*
 
 ### `ds_engine_wall_clock_set`
 

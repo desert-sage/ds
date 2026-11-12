@@ -7,19 +7,17 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[RDSC.9.4] **An unrecognised atom is disposed of by its band, and\nskipping is only one of the three answers.** The band of the `oneof`\nfield number fixes what a loader with no table entry for it must do\n([RFCS.16.2]): `256–2047` **skip** — log at info level (category\n`dsc-load`, message including the field number and the byte offset)\nand step over the frame; `128–255` **reject** with\n`DS_ERR_DSC_VERSION`; `1–127` **reject**, the inject band, which no\nDSC-legal atom occupies — so an atom there is a misplaced stream\ninput and the band catches it blind ([RFCS.16.3]). A reader that\n*knows* the atom rejects on container-legality instead ([RFCS.17.3]).\n\nSo \"the loader does not error\" holds for the skip band and for\nnothing else, and the skip band is where every additive atom is\nallocated — which is why a clause citing this one for \"a runtime\nwithout an entry for it skips it\" is right.\n\n",
-  "checks": {
-    "alloy": [
-      {
-        "path": "formal/alloy/atom_skip_safety.als",
-        "name": "rdsc_9_4__compat_mode",
-        "tag": "spec"
-      }
-    ]
-  },
+  "text": "[RDSC.9.4] **A loader skips, by name, the atoms a runtime does not consume.**\nEvery atom a loader meets is in its series' registry ([RDSC.7.1],\n[LDET.1.10]). A loader **must** step over the frame of each of these, log at\ninfo level (category `dsc-load`, naming the atom and its byte offset), and load\nthe rest of the artefact as it would without it: the test and oracle atoms\n([RDSC.7.6]), `DocString` ([RDSC.14.4.4]) and `CompiledCode` ([RDSC.4c.3]). An atom in a container its container-legality\ndoes not admit is refused ([RFCS.17.3]).\n\n",
   "refs": [
-    "RFCS.16.2",
-    "RFCS.16.3",
+    "LDET.1.10",
+    "RDSC.14.4.4",
+    "RDSC.4c.3",
+    "RDSC.7.1",
+    "RDSC.7.6",
     "RFCS.17.3"
+  ],
+  "atoms": [
+    "CompiledCode",
+    "DocString"
   ]
 }

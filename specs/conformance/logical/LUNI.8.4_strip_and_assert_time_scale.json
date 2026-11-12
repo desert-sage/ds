@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.4_strip_and_assert_time_scale",
+    "category": "logical",
+    "scenario": "[LUNI.8.4]: a value of the `time` dimension strips to nanoseconds ([LUNI.7.2]), so the scale of a stripped result is the author's to state. A `second` slot holding `2_s` and a `meter` slot holding 10: `s.dist::Float / s.sec::Int::Float * 1e9` is 5.0. Pin: the rule logs. A strip that gave seconds computes 5e9 and the rule does not fire. PATH PINNED: the `Duration -> Int` cast in `dsc.rete` (`ck_duration` to `ct_int`, an identity on nanoseconds) and each runtime's arithmetic.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    dist: meter mutable\n    sec: second mutable\n\nrule scaled:\n    R s where s.dist::Float / s.sec::Int::Float * 1e9 == 5.0\n->\n    log info \"scaled\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": 1, "dist": 10.0, "sec": 2000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["scaled"]
+    }
+}

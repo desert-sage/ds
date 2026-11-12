@@ -1,0 +1,17 @@
+{
+    "id": "LTIM.4.1.1_float_scale_not_representable",
+    "category": "logical",
+    "dead_rules_expected": ["infinite", "not_a_number"],
+    "scenario": "[LTIM.4.1.1]: a `Duration`-valued row with a `Float` operand whose result is non-finite raises a `ComputationError` of kind NOT_REPRESENTABLE. `t.d / 0.0` on a 5 s slot is an infinity, and on a zero slot, `0_s / 0.0`, a NaN. Each rule takes its own fact by key, so each fault is at its own site. Pin: `trapped` logs the kind twice, and neither rule fires. PATH PINNED: `FN_ROUND` in the `sat_rounded` lowering of `dsc.rete.rlow_6_1_6_saturating`, on each runtime.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule infinite:\n    Trig t where t.id == 1 and t.d / 0.0 > 1_s\n->\n    log info \"infinite\"\n\nrule not_a_number:\n    Trig t where t.id == 2 and t.d / 0.0 > 1_s\n->\n    log info \"not_a_number\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1, "d": 5000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "id": 2, "d": 0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE", "NOT_REPRESENTABLE"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.2.7.3_a_no_window_longer_than_the_ttl_is_refused",
+    "category": "compiler",
+    "scenario": "[LTIM.2.7.3]: a negated pattern's `within` longer than its schema's TTL is refused. `E` lives 10 s, so `no E within 60_s` would answer absent from 10 s to 60 s after an `E`, which has left working memory by then ([LTIM.2.7.1]). The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. A compiler that does not compare the window with the TTL compiles it. PATH PINNED: `dsc.validate.ltim_2_7_3_within_exceeds_ttl`, through `read_windows`' negated arm and `window_exceeds_ttl`.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n\nschema E scope ttl 10_s:\n    ts: Time\n\nrule quiet:\n    Trig\n    no E within 60_s\n->\n    log info \"quiet\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHIN_EXCEEDS_TTL"
+    }
+}

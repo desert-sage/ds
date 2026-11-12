@@ -43,7 +43,22 @@ FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea5
 #
 # `Check-Valid-Until false` because a snapshot's Release file ages out by
 # design.
+#
+# APT_PROXY, when given, is an http proxy apt fetches through, in this image and
+# every image built on it: a caching proxy such as apt-cacher-ng, so a fleet
+# fetches each package from the snapshot once and a snapshot outage reaches only
+# a package no build has fetched before. The sources stay the snapshot's, so the
+# versions below bind and apt verifies the Release signature as before. Empty,
+# apt fetches directly. It is a build argument, not a line of this file, so the
+# image's tag does not depend on it.
+#
+# `Acquire::Retries "0"`: apt's own retry of a failed download is off. apt 3.0.3
+# can leave a retried download queued and never started, and then spins in its
+# download loop, storing a warning on every pass until it exhausts memory
+# (Debian #1111554). A failed download fails the step instead, and every apt
+# step below runs under `timeout`, so a fetch that never completes fails it too.
 ARG DEBIAN_SNAPSHOT=20260713T000000Z
+ARG APT_PROXY=
 RUN set -eu; \
     sed -i \
       -e "s|^URIs: http://deb.debian.org/debian$|URIs: http://snapshot.debian.org/archive/debian/${DEBIAN_SNAPSHOT}|" \
@@ -54,11 +69,16 @@ RUN set -eu; \
       echo "         debian.sources no longer matches the expected URI form, and a" >&2; \
       echo "         silent no-op here would leave the build floating on deb.debian.org." >&2; \
       exit 1; }; \
-    printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99snapshot
+    printf 'Acquire::Check-Valid-Until "false";\nAcquire::Retries "0";\n' \
+      > /etc/apt/apt.conf.d/99snapshot; \
+    apt-config dump | grep -qx 'Acquire::Retries "0";'; \
+    if [ -n "$APT_PROXY" ]; then \
+      printf 'Acquire::http::Proxy "%s";\n' "$APT_PROXY" > /etc/apt/apt.conf.d/98proxy; \
+      apt-config dump | grep -qxF "Acquire::http::Proxy \"$APT_PROXY\";"; \
+    fi
 
 # node, git and ca-certificates: the runner's actions/checkout runs `node` and
-# `git` before any workflow step. apt-get update is retried against mirror
-# hiccups.
+# `git` before any workflow step.
 #
 # cmake and autotools build the vendored set here: Abseil and RE2 are cmake,
 # protobuf-c is autotools.
@@ -92,8 +112,8 @@ RUN set -eu; \
 #
 # `test_toolchain_pins.py` reads these from this file and from ds-musl's and
 # asserts the two lineages agree on gcc and binutils, so only the libc varies.
-RUN for i in 1 2 3 4 5; do apt-get update && break || { echo "apt-get update retry $i"; sleep 5; }; done \
-    && apt-get install -y --no-install-recommends \
+RUN timeout 600 apt-get update \
+    && timeout 600 apt-get install -y --no-install-recommends \
         build-essential \
         gcc=4:14.2.0-1 \
         g++=4:14.2.0-1 \
@@ -147,7 +167,7 @@ ARG LLVM_VERSION=22.1.8
 ARG LLVM_SHA256_X64=df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384
 ARG LLVM_SHA256_ARM64=805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34
 # curl and xz-utils, for the downloads below.
-RUN apt-get update && apt-get install -y --no-install-recommends curl xz-utils \
+RUN timeout 600 apt-get update && timeout 600 apt-get install -y --no-install-recommends curl xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # ── glibc: DS builds the C library every image links against ────────────────

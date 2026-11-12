@@ -7,9 +7,10 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[IARC.7.10] **CORE-MATH is vendored.** libds compiles the correctly-rounded\nfunctions [LEXP.3.9.2] requires from CORE-MATH's binary64 sources at one pinned\nupstream commit, through the same pinned-fetch path as RE2, with the files\nunmodified. They are compiled with libds's flags (`-O2 -ffp-contract=off`, and\n`-std=gnu11` for the 128-bit integer types) on a toolchain whose\n`FLT_EVAL_METHOD` is 0. The pin and the flags are recorded together: a change to\neither changes the functions, and a release row built with it is admitted again\nbefore it ships ([NDET.1.4]).\n\n",
+  "text": "[IARC.7.10] **CORE-MATH is vendored.** libds compiles the correctly-rounded\nfunctions [LEXP.3.9.2] requires from CORE-MATH's binary64 sources at one pinned\nupstream commit, through the same pinned-fetch path as RE2, with the files\nunmodified. They are compiled with libds's flags (`-O2 -ffp-contract=off`, and\n`-std=gnu11` for the 128-bit integer types) on a toolchain whose\n`FLT_EVAL_METHOD` is 0.\n\nA release row whose compiler has no 128-bit integer type must compile the\nfunctions that compute in one from a portable layer instead: copies of those\nfiles at the same upstream commit, in which the 128-bit integer is a class of\ntwo 64-bit words, compiled as C++ with no C++ runtime. The layer is vendored at\na pin of its own, and every change it makes to an upstream file is marked in\nthat file. The layer must compute what the upstream file computes, bit for bit,\non every input. A release row whose compiler has the type must not use the\nlayer.\n\nThe pin, the layer's pin and the flags are recorded together: a change to any\nof them changes the functions, and a release row built with it is admitted again\nbefore it ships ([NDET.1.4], [NDET.1.4.1]).\n\n",
   "refs": [
     "LEXP.3.9.2",
-    "NDET.1.4"
+    "NDET.1.4",
+    "NDET.1.4.1"
   ]
 }

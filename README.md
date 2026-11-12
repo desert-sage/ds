@@ -30,7 +30,7 @@ The documentation is five books:
 
 | Directory | Book |
 |---|---|
-| `docs/specs/` | The DS Specification, its pages generated from `specs/` |
+| `docs/specs/` | The DS Specifications, its pages generated from `specs/` |
 | `docs/references/author/` | The DS Author's Reference: writing `.ds` rules |
 | `docs/references/integrator/` | The DS Integrator's Reference: the libds C API |
 | `docs/references/bindings/` | The DS Bindings Reference: the Mercury, Python and JavaScript bindings |

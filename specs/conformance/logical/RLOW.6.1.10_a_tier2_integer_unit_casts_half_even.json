@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.10_a_tier2_integer_unit_casts_half_even",
+    "clauses": ["RLOW.6.1.10", "LUNI.7.2"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: on integer storage `x::<unit>` of a tier-2 unit is its `to_base` over `x` as `Float`, then [LUNI.7.2]'s cast, round half to even. `halved` is a tier-2 unit on `data` whose `to_base` is `x / 2`. Fact 1 holds 3: `to_base` gives 1.5 bits, which the cast takes to 2. Fact 2 holds 5: 2.5 bits, which the cast takes to 2. Rule `conv` compares each with 2 bits and logs both. A truncating cast takes 1.5 to 1 and leaves fact 1 silent; rounding half up takes 2.5 to 3 and leaves fact 2 silent. PATH PINNED: `dsc.rete.rlow_6_1_10_int_tier2`, `FN_INT_TO_FLOAT` into the body and `FN_ROUND` out, evaluated by each runtime.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit halved: data:\n    to_base:   x / 2\n    from_base: x * 2\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::halved == 2_bit\n->\n    log info \"conv {s.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": 5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv 1", "conv 2"]
+    }
+}

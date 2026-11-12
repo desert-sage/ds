@@ -8,7 +8,7 @@
   "kind": "normative",
   "compiler_only": true,
   "heading": "8.4 Dimensioned × dimensioned — strip and assert",
-  "text": "### 8.4 Dimensioned × dimensioned — strip and assert [LUNI.8.4]\n\nNo unit algebra. `*` of two dimensioned values, `/` and `//` of two values of\ndifferent dimensions, `/` and `//` of a bare number by a dimensioned value, and `**` with a dimensioned operand on either side\nproduce a result with no dimension DS can state. The compiler **must** refuse each\nwith `DS_VALIDATE_DIM_AMBIGUOUS`, under a `let` annotation too: an annotation\nchecks a type the value already has ([LUNI.8.6]). An author who wants the raw\nnumeric result strips the units on the operands first, and may assert a unit on\nthe result: `(r.w::Float * r.h::Float)::meter_squared`.\n\nThe strip yields base-unit numbers and the assertion applies no factor\n([LUNI.8.5]), so the scale of the result is the author's to state. A value of the\n`time` dimension strips to nanoseconds ([LUNI.7.2]).\n\nThis rule applies to both scalar and complex dimensioned values. The built-in\nlibrary pre-declares common multiplication results (e.g. `watt` = `volt × ampere`,\n`joule` = `newton × meter`), so those results have a unit to assert.\n\n",
+  "text": "### 8.4 Dimensioned × dimensioned — strip and assert [LUNI.8.4]\n\nNo unit algebra. `*` of two dimensioned values, `/` and `//` of two values of\ndifferent dimensions, `/` and `//` of a bare number by a dimensioned value, and `**` or `math.pow` with a dimensioned operand on either side\nproduce a result with no dimension DS can state. The compiler **must** refuse each\nwith `DS_VALIDATE_DIM_AMBIGUOUS`, under a `let` annotation too: an annotation\nchecks a type the value already has ([LUNI.8.6]). An author who wants the raw\nnumeric result strips the units on the operands first, and may assert a unit on\nthe result: `(r.w::Float * r.h::Float)::meter_squared`.\n\nThe strip yields base-unit numbers, and an assertion takes its number as being in\nthe unit it names ([LUNI.8.5]), so the scale of the result is the author's to state. A value of the\n`time` dimension strips to nanoseconds ([LUNI.7.2]).\n\nThis rule applies to both scalar and complex dimensioned values. The built-in\nlibrary pre-declares common multiplication results (e.g. `watt` = `volt × ampere`,\n`joule` = `newton × meter`), so those results have a unit to assert.\n\n",
   "refs": [
     "LUNI.7.2",
     "LUNI.8.5",
@@ -21,17 +21,24 @@
     "alloy": [
       {
         "path": "formal/alloy/unit_dimension.als",
-        "name": "luni_8_4__product_needs_annotation",
+        "name": "luni_8_4__annotation_admits_nothing",
         "tag": "spec",
-        "verdict": "partial",
-        "note": "The model's one `Mult` class accepts any two dimensioned operands under an annotation and refuses them without one. The clause admits a same-dimension `/` and `//` with no annotation, and refuses the rest with or without one."
+        "verdict": "proven",
+        "note": "Two binops alike in their operands' dimensions and their operator are accepted or refused alike, whatever either is annotated with: 'under a `let` annotation too'. Derived: acceptance is a function of the dimensions and the operator alone, within the scope, and a rule that read the annotation fails it. What the annotation checks is [LUNI.8.6]'s, outside the model."
       },
       {
         "path": "formal/alloy/unit_dimension.als",
-        "name": "luni_8_4__unannotated_product",
+        "name": "luni_8_4__no_unit_algebra",
         "tag": "spec",
-        "verdict": "partial",
-        "note": "The model's one `Mult` class accepts any two dimensioned operands under an annotation and refuses them without one. The clause admits a same-dimension `/` and `//` with no annotation, and refuses the rest with or without one."
+        "verdict": "proven",
+        "note": "No accepted binop is a form with no statable dimension. A restatement of the accept rule's third exclusion, within the scope: it fails if the rule drops it or admits an annotated one."
+      },
+      {
+        "path": "formal/alloy/unit_dimension.als",
+        "name": "luni_8_4__unstatable",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "The clause's list: `*` of two dimensioned values, `/` and `//` of two values of different dimensions and of a bare number by a dimensioned value, `**` with a dimensioned operand on either side; `math.pow` is `**` here. A transcription. The strip and the assertion on the result are [LUNI.8.5]'s and [LUNI.8.7.2]'s, outside the model; the code a refusal carries is not modelled."
       }
     ]
   }

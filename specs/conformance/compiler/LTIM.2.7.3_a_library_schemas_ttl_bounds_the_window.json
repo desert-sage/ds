@@ -1,0 +1,13 @@
+{
+    "id": "LTIM.2.7.3_a_library_schemas_ttl_bounds_the_window",
+    "category": "compiler",
+    "scenario": "[LTIM.2.7.3]: the TTL that bounds a window is the schema's resolved declaration, a library's included. Library `feed` declares `Message` living 10 s, and the program writes `no feed.Message within 60_s`, which is refused. The compile is from files ([RCTS.1.2.35]). The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). A compiler that reads only the program's own schemas compiles it. PATH PINNED: `dsc.validate.window_exceeds_ttl`, through `dsc.resolve.lgra_22_4_schema_of`'s qualified-import arm.",
+    "rules_ds": "use default\n\nimport feed\n\nschema Trig scope logical:\n    id: Int key\n\nrule quiet:\n    Trig\n    no feed.Message within 60_s\n->\n    log info \"quiet\"\n",
+    "libraries": {
+        "feed": "schema Message scope ttl 10_s:\n    ts: Time\n"
+    },
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHIN_EXCEEDS_TTL"
+    }
+}

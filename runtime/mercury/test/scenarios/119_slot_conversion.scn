@@ -1,0 +1,29 @@
+# [NFCT.1.4.6]: a host's number through the conversion of a slot that names a
+# unit ([RDSC.5.5.9]), by each binding's call: pyds's `slot_to_stored` and
+# `slot_from_stored`, @ds-lang/ds's `slotToStored` and `slotFromStored`, and
+# mercury_ds's `slot_to_stored` and `slot_from_stored` (binding-diff), and by
+# libds against the Mercury runtime's `nfct_1_4_6_convert` (the lockstep
+# differential). Each `convert` line ends in `int N`, `float B` with B the
+# result's IEEE-754 bits as a signed 64-bit integer, or `refused S` with
+# libds's status.
+#
+# Both directions on a tier-1 `Float` unit: 21.5 celsius stores 294.65 K, and
+# 300.0 K is 26.850000000000023 celsius. Both on an `int64` unit: 1500 ms is
+# 1500000000 ns, and back. Four refusals, in the clause's table: 1500 ns and
+# 12 bits are no whole millisecond or byte (-223, NOT_REPRESENTABLE); an `Int`
+# on the `Float` slot (-104, SLOT_TYPE_MISMATCH); a slot that names no unit
+# (-1, INVAL). The conversions change nothing: the assert and the pump after
+# them trace as they would without them, and a conversion after the pump
+# answers as before it.
+# @spec [NFCT.1.4.6]
+convert Reading t to_stored 21.5
+convert Reading t from_stored 300.0
+convert Reading d to_stored 1500
+convert Reading d from_stored 1500000000
+convert Reading d from_stored 1500
+convert Reading b from_stored 12
+convert Reading t to_stored 21
+convert Reading id to_stored 1.0
+assert Reading id="a" t=294.65 d=1500000000 b=96
+pump
+convert Reading b to_stored 12

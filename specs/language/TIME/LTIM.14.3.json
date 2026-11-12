@@ -7,10 +7,11 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[LTIM.14.3] **A call over constants is a constant.** A `calendar` call whose\narguments all fold is foldable ([LEXP.8.8]), so `const LAUNCH =\ncalendar.time(2026, 1, 1)` declares a `Time` constant. The compiler must\nrefuse a `const` whose fold would raise [LTIM.14.2]'s fault, with\n`DS_VALIDATE_CONST_NOT_FOLDABLE`: the call has no value to fold to. Outside a\n`const`, the engine evaluates the call when the rule runs, and a call that\nraises raises there.\n\n",
+  "text": "[LTIM.14.3] **A call over constants is a constant.** A `calendar` call whose\narguments all fold is foldable ([LEXP.8.8]) in every position, and it is the\nvalue it names: `const LAUNCH = calendar.time(2026, 1, 1)` declares a `Time`\nconstant, and the same call in a `where` is that constant. It lowers as\n[RLOW.6.1.8] states. The compiler must refuse such a call whose fold would raise\n[LTIM.14.2]'s fault, with `DS_VALIDATE_CONST_NOT_FOLDABLE`, wherever it stands\nand whether or not the rest of the expression would absorb its result: the call\nhas no value to fold to. The engine evaluates a call with an argument that does\nnot fold when the rule runs, and a call that raises raises there.\n\n",
   "refs": [
     "LEXP.8.8",
-    "LTIM.14.2"
+    "LTIM.14.2",
+    "RLOW.6.1.8"
   ],
   "errors": [
     "DS_VALIDATE_CONST_NOT_FOLDABLE"

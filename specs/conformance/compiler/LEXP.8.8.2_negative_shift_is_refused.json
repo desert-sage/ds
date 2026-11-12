@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.8.8.2_negative_shift_is_refused",
+    "category": "compiler",
+    "scenario": "[LEXP.8.8.2] with [LEXP.7.14.1]: a negative shift count raises, so the operation has no value to fold to and the compiler refuses the `const`. The count is `(0 - 1)`, which folds to `-1` and is no negative literal, so no other clause refuses it ([LEXP.7.8] refuses a negative literal). The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. Pin: DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate.lexp_8_8_2_no_value`, on `dsc.dstest.fold_int_binary`'s shift-count failure.",
+    "rules_ds": "const X = 1 << (0 - 1)\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

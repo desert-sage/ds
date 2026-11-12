@@ -31,7 +31,9 @@ bool ds_series_refuses_at_capacity(const struct ds_series_decl_record *d)
         && d->window_ns > 0;
 }
 
-/* Walks every decl of (schema, slot), so parallel backings absorb the same sample. */
+/* Walks every decl of (schema, slot) that groups by `id_slot`, so parallel backings
+   absorb the same sample, each under the identity its own `by:` names
+   ([LSER.7.6.1]). */
 void ds_series_absorb_one(struct ds_engine        *engine,
                           const char              *schema_name,
                           const char              *slot_name,
@@ -45,12 +47,15 @@ void ds_series_absorb_one(struct ds_engine        *engine,
         || engine->n_backend_slots == 0) {
         return;
     }
+    if (id_slot == NULL) id_slot = "";
 
     for (size_t i = 0; i < engine->n_series_decls; i++) {
         const struct ds_series_decl_record *d =
             &engine->series_decls[i];
         if (strcmp(d->schema_name, schema_name) != 0
-            || strcmp(d->slot_name, slot_name) != 0) {
+            || strcmp(d->slot_name, slot_name) != 0
+            || strcmp(d->identity_slot_name ? d->identity_slot_name : "",
+                      id_slot) != 0) {
             continue;
         }
         size_t backend_slot;

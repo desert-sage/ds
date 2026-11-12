@@ -55,9 +55,9 @@ Fields in range whose value is outside [`Time`](types.md#time)'s or [`Date`](typ
 
 ### Constant calls
 
-A `calendar` call whose arguments all fold is foldable: `const LAUNCH = calendar.time(2026, 1, 1)` declares a `Time` constant.
+A `calendar` call whose arguments all fold is the value it names, in every position: `const LAUNCH = calendar.time(2026, 1, 1)` declares a `Time` constant, and the same call in a `where` is that constant.
 
-A `const` whose fold would raise a field refusal is refused with `DS_VALIDATE_CONST_NOT_FOLDABLE`. Outside a `const`, the call is evaluated when the rule runs.
+Such a call whose fold would raise a [field refusal](#field-refusals) is refused with `DS_VALIDATE_CONST_NOT_FOLDABLE` wherever it stands, whether or not the rest of the expression would absorb its result. A call with an argument that does not fold is evaluated when the rule runs, and raises there.
 
 ```ds declaration head error=DS_VALIDATE_CONST_NOT_FOLDABLE
 import calendar

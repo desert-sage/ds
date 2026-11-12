@@ -117,6 +117,7 @@ static bool known_value(const ds_rete_eval_ctx_t *ctx, const ds_rete_expr_t *e,
     case DS_RETE_EXPR_LIT_FLOAT: *out = ds_rete_val_float(e->lit_float); return true;
     case DS_RETE_EXPR_LIT_BOOL:  *out = ds_rete_val_bool(e->lit_bool);   return true;
     case DS_RETE_EXPR_LIT_NULL:  *out = ds_rete_val_null();              return true;
+    case DS_RETE_EXPR_LIT_TIME:  *out = ds_rete_val_time(e->lit_time, 0); return true;
     case DS_RETE_EXPR_LIT_STR:   out->kind = DS_RETE_VAL_STR;            return true;
     case DS_RETE_EXPR_VAR: {
         const ds_rete_fact_t *f = var_fact(ctx, e);
@@ -312,6 +313,17 @@ const char *ds_rete_fault_rule(const ds_rete_eval_ctx_t *ctx)
     return ds_rete_fault_rule_engine;
 }
 
+void ds_rete_raise_intern_fault(void *ctx)
+{
+    ds_rete_engine_t *re = (ds_rete_engine_t *)ctx;
+    if (re == NULL || re->halted) return;
+    struct ds_engine *de = (struct ds_engine *)re->ds_engine_back;
+    if (de != NULL)
+        (void)ds_recorder_emit_engine_error(de, DS_ENGINE_FAULT_INTERNAL, 0,
+                                            ds_rete_fault_rule_engine);
+    re->halted = true;
+}
+
 ds_rete_val_t ds_rete_fault(ds_rete_eval_ctx_t *ctx,
                             const ds_rete_expr_t *expr,
                             ds_rete_fault_cause_t cause)
@@ -502,6 +514,12 @@ ds_rete_val_t ds_rete_raise_held(ds_rete_eval_ctx_t *ctx,
 {
     return fault_at(ctx, held->expr, held->cause, held->tainted,
                     &held->origin);
+}
+
+bool ds_rete_held_is_engine_error(const ds_rete_held_t *held)
+{
+    return held != NULL && held->held
+        && cause_is_engine_error(held->cause, held->tainted);
 }
 
 ds_rete_held_t ds_rete_held_mismatch(ds_rete_eval_ctx_t   *ctx,
@@ -1187,6 +1205,8 @@ ds_rete_val_t ds_rete_eval(ds_rete_eval_ctx_t *ctx,
                                (uint32_t)strlen(expr->lit_str));
     case DS_RETE_EXPR_LIT_NULL:
         return ds_rete_val_null();
+    case DS_RETE_EXPR_LIT_TIME:
+        return ds_rete_val_time(expr->lit_time, 0);
 
     case DS_RETE_EXPR_IS_TEST: {
         /* [LNUL.4.9]: total; this arm has no error path of its own. A constant
@@ -1319,24 +1339,40 @@ ds_rete_val_t ds_rete_eval(ds_rete_eval_ctx_t *ctx,
 
         /* [LTIM.4.1]: Time +/- Duration -> Time, Time - Time -> Duration. A
            Duration arrives as INT, and the result keeps the operand's offset
-           ([LTIM.1.1.3]). */
+           ([LTIM.1.1.3]). [LTIM.4.1.1], [LTIM.1.1.5]: exact, and a result out of
+           range raises rather than wraps. */
         if ((lv.kind == DS_RETE_VAL_TIME || rv.kind == DS_RETE_VAL_TIME) &&
             (op == DS_RETE_BINOP_ADD || op == DS_RETE_BINOP_SUB)) {
+            int64_t r;
             if (op == DS_RETE_BINOP_ADD) {
-                if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_INT)
-                    return ds_rete_val_time(ds_i64_add(lv.time.utc_ns, rv.i),
-                                            lv.time.tz_offset_s);
-                if (lv.kind == DS_RETE_VAL_INT && rv.kind == DS_RETE_VAL_TIME)
-                    return ds_rete_val_time(ds_i64_add(lv.i, rv.time.utc_ns),
-                                            rv.time.tz_offset_s);
+                if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_INT) {
+                    if (__builtin_add_overflow(lv.time.utc_ns, rv.i, &r))
+                        return ds_rete_fault(ctx, expr, DS_FAULT_NOT_REPRESENTABLE);
+                    return ds_rete_val_time(r, lv.time.tz_offset_s);
+                }
+                if (lv.kind == DS_RETE_VAL_INT && rv.kind == DS_RETE_VAL_TIME) {
+                    if (__builtin_add_overflow(lv.i, rv.time.utc_ns, &r))
+                        return ds_rete_fault(ctx, expr, DS_FAULT_NOT_REPRESENTABLE);
+                    return ds_rete_val_time(r, rv.time.tz_offset_s);
+                }
                 return type_error_at(ctx, expr);
             }
-            if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_TIME)
-                return ds_rete_val_int(ds_i64_sub(lv.time.utc_ns,
-                                                  rv.time.utc_ns));
-            if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_INT)
-                return ds_rete_val_time(ds_i64_sub(lv.time.utc_ns, rv.i),
-                                        lv.time.tz_offset_s);
+            if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_TIME) {
+                /* [RLOW.6.1.6]: the lowering's FN_MAX(_, 0) saturates a negative
+                   difference, so one below the Int range reaches it as the most
+                   negative Int; one above the Duration range raises. */
+                if (__builtin_sub_overflow(lv.time.utc_ns, rv.time.utc_ns, &r)) {
+                    if (lv.time.utc_ns < rv.time.utc_ns)
+                        return ds_rete_val_int(INT64_MIN);
+                    return ds_rete_fault(ctx, expr, DS_FAULT_NOT_REPRESENTABLE);
+                }
+                return ds_rete_val_int(r);
+            }
+            if (lv.kind == DS_RETE_VAL_TIME && rv.kind == DS_RETE_VAL_INT) {
+                if (__builtin_sub_overflow(lv.time.utc_ns, rv.i, &r))
+                    return ds_rete_fault(ctx, expr, DS_FAULT_NOT_REPRESENTABLE);
+                return ds_rete_val_time(r, lv.time.tz_offset_s);
+            }
             return type_error_at(ctx, expr);
         }
 
@@ -1593,6 +1629,13 @@ static ds_rete_val_t eval_json_path_expr(ds_rete_eval_ctx_t   *ctx,
     ds_rete_held_select(&vh, &ph);
     if (vh.held) return ds_rete_raise_held(ctx, &vh);
     if (path.kind != DS_RETE_VAL_STR) return type_error_at(ctx, expr);
+
+    /* [LNUL.8.4]: a `null` root, a `Json?` slot holding none, has no document
+       to resolve against, and the read is `null`, a leaf. */
+    if (val.kind == DS_RETE_VAL_NULL) {
+        ctx->json_composite = false;
+        return ds_rete_val_null();
+    }
 
     ds_json_t       *owned = NULL;
     const ds_json_t *root  = NULL;

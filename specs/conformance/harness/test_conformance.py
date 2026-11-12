@@ -49,8 +49,6 @@ from runner import (
     _runtime_error_fields_misplaced,
     _steps_refusal,
     _runtime_error_refusal,
-    _splice_field,
-    _splice_field_misplaced,
     _tamper_misplaced,
     discover_tests,
     load_fixture,
@@ -412,51 +410,6 @@ def test_rcts_1_2_17__records_firings_is_the_clause_s_list() -> None:
     mercury = set(re.findall(r'^records_firings\("([a-z_]+)"\)\.$', behave,
                              re.MULTILINE))
     assert mercury == want
-
-
-def test_rcts_1_2_20__splice_field_defaults_to_2000() -> None:
-    assert _splice_field({"kind": "rfcs_roundtrip"}) == (2000, None)
-
-
-def test_rcts_1_2_20__a_retired_number_is_admitted() -> None:
-    """260 is `reserved`, and no atom the registry names, which is what the
-    field is for."""
-    assert _splice_field({"kind": "rfcs_roundtrip", "splice_field": 260}) == (260, None)
-
-
-def test_rcts_1_2_20__the_band_high_end_is_admitted() -> None:
-    """The low end, 256, is the SchemaDef's number: the registry case below."""
-    assert _splice_field({"kind": "rfcs_roundtrip", "splice_field": 2047}) == (2047, None)
-
-
-def test_rcts_1_2_20__a_number_outside_the_skip_band_is_refused() -> None:
-    for n in (255, 2048, 120):
-        field, why = _splice_field({"kind": "rfcs_roundtrip", "splice_field": n})
-        assert field is None and why is not None and "skip band" in why, n
-
-
-def test_rcts_1_2_20__a_number_the_registry_names_is_refused() -> None:
-    """256 is the SchemaDef and 258 the StreamHeader: a reader decodes each
-    rather than skipping it."""
-    for n in (256, 258):
-        field, why = _splice_field({"kind": "rfcs_roundtrip", "splice_field": n})
-        assert field is None and why is not None and "registry names" in why, n
-
-
-def test_rcts_1_2_20__a_non_integer_is_refused() -> None:
-    for v in ("260", 260.0, True):
-        field, why = _splice_field({"kind": "rfcs_roundtrip", "splice_field": v})
-        assert field is None and why is not None and "not an integer" in why, v
-
-
-def test_rcts_1_2_20__the_field_on_another_kind_fails() -> None:
-    t = ConformanceTest(id="X", category="runtime", scenario="", rules_ds=_TWO_RULES,
-                        expect={"kind": "replay_determinism", "splice_field": 2000},
-                        path=Path("runtime/X.json"))
-    why = _splice_field_misplaced(t)
-    assert why is not None and "replay_determinism" in why
-    t.expect["kind"] = "rfcs_roundtrip"
-    assert _splice_field_misplaced(t) is None
 
 
 def test_rcts_1_2_21__the_tamper_on_another_kind_fails() -> None:
@@ -998,6 +951,16 @@ _GOOD_INTROSPECTION = {"kind": "introspection_assert",
     [{"surface": "rete_network", "min_nodes": 1}],
     [{"surface": "slot_schema_ref", "schema": "S", "slot": "n"}],
     [{"surface": "slot_schema_ref", "schema": "S", "slot": "n", "equals": 1}],
+    [{"surface": "slot_conversion", "schema": "S", "slot": "t",
+      "direction": "to_stored", "in": 1.0}],
+    [{"surface": "slot_conversion", "schema": "S", "slot": "t",
+      "direction": "sideways", "in": 1.0, "equals": None}],
+    [{"surface": "slot_conversion", "schema": "S", "slot": "t",
+      "direction": "to_stored", "in": "1", "equals": None}],
+    [{"surface": "slot_conversion", "schema": "S", "slot": "t",
+      "direction": "to_stored", "in": True, "equals": None}],
+    [{"surface": "slot_conversion", "schema": "S", "slot": "t",
+      "direction": "from_stored", "in": 1, "equals": "1"}],
 ])
 def test_rcts_1_2_26__a_malformed_check_is_refused(checks) -> None:
     expect = {**_GOOD_INTROSPECTION, "checks": checks}
@@ -1027,7 +990,75 @@ def test_rcts_1_2_26__well_formed_checks_are_admitted() -> None:
             {"surface": "rete_network", "min_nodes": 0, "min_edges": 0},
             {"surface": "slot_schema_ref", "schema": "S", "slot": "n", "equals": None},
             {"surface": "slot_schema_ref", "schema": "S", "slot": "n", "equals": "S"},
+            {"surface": "slot_conversion", "schema": "S", "slot": "t",
+             "direction": "to_stored", "in": 21.5, "equals": 294.65},
+            {"surface": "slot_conversion", "schema": "S", "slot": "t",
+             "direction": "from_stored", "in": 12, "equals": None},
         ]}) is None
+
+
+def test_rcts_1_2_26__the_surface_set_is_the_clauses_in_both_harnesses() -> None:
+    """[RCTS.1.2.26]'s closed set: each surface the clause names as a list
+    item, `runner.py`'s `_SURFACES` and `test_behave.m`'s `surface_members`
+    name the same surfaces."""
+    import re
+
+    from runner import _SURFACES
+    text = _clause("RCTS.1.2.26")["text"]
+    named = set(re.findall(r"^  - `([a-z_]+)`, with ", text, re.MULTILINE))
+    behave = (_REPO / "compiler/mercury/test/test_behave.m").read_text(
+        encoding="utf-8")
+    in_behave = set(re.findall(r'^surface_members\("([a-z_]+)"', behave,
+                               re.MULTILINE))
+    assert "slot_conversion" in named and "fact_count" in named
+    assert named == set(_SURFACES) == in_behave, (named, set(_SURFACES), in_behave)
+
+
+def test_rcts_1_2_26__a_number_keeps_its_kind_and_bits() -> None:
+    from runner import _same_number
+    assert _same_number(5, 5) and _same_number(0.5, 0.5)
+    assert not _same_number(5, 5.0) and not _same_number(5.0, 5)
+    assert not _same_number(-0.0, 0.0) and not _same_number(0.5, 0.25)
+
+
+_CELSIUS = ("unit celsius: temperature = x + 273.15\n\n"
+            "schema S scope logical:\n    id: Int key\n    t: celsius mutable\n"
+            "    n: Float mutable\n")
+
+
+def _conversion(direction: str, value, equals) -> ConformanceTest:
+    return ConformanceTest(id="X", category="logical", scenario="",
+                           rules_ds=_CELSIUS,
+                           expect={"kind": "introspection_assert", "steps": [],
+                                   "checks": [{"surface": "slot_conversion",
+                                               "schema": "S", "slot": "t",
+                                               "direction": direction,
+                                               "in": value, "equals": equals}]},
+                           path=Path("logical/X.json"))
+
+
+@pytest.mark.parametrize("direction, value, equals", [
+    ("to_stored", 21.5, 21.5),       # the number unconverted
+    ("to_stored", 21.5, None),       # a result where none is wanted
+    ("to_stored", 21, 294.15),       # an Int where the slot pairs a Float
+    ("from_stored", 300.0, 26.85),   # not the result's bits
+])
+def test_rcts_1_2_26__a_slot_conversion_that_does_not_hold_fails(
+        direction, value, equals) -> None:
+    """The negative fixtures: each check is wrong about libds's conversion
+    of a `celsius` slot, so the fixture fails."""
+    assert run_test(_conversion(direction, value, equals)).status == "failed"
+
+
+def test_rcts_1_2_26__a_slot_conversion_that_holds_passes() -> None:
+    """The control for the fixtures above, on the same program."""
+    assert run_test(_conversion("to_stored", 21.5, 294.65)).status == "passed"
+
+
+def test_rcts_1_2_26__a_slot_conversion_of_a_slot_with_no_unit_fails() -> None:
+    t = _conversion("to_stored", 1.0, None)
+    t.expect["checks"][0]["slot"] = "n"
+    assert run_test(t).status == "failed"
 
 
 def test_rcts_1_2_26__add_schema_ref_on_another_kind_fails() -> None:

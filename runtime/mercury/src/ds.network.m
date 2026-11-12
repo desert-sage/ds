@@ -284,7 +284,8 @@ resolve_betas(Raws, AlphaMap, Result) :-
             beta_passes(Raws, AlphaMap, map.init, Passes),
             (
                 Passes = bp_cycle,
-                Result = rb_error(lek_semantic, "RDSC.4a.5")
+                % [RDSC.4a.5]: refused as [RDSC.11.1]'s row for a cycle says.
+                Result = rb_error(lek_retp_invalid, "RDSC.4a.5")
             ;
                 Passes = bp_ok(Final),
                 % Encounter order, restored: the passes resolve parents first.

@@ -67,6 +67,16 @@ libds renders all its text with its own formatting operations: integers, the can
 
 *(Spec: [IARC.1.16])*
 
+### No abort
+
+libds never calls `abort`, `exit` or `longjmp`, and every failure surfaces through `ds_result_t`.
+
+No object libds compiles calls any of them, and no member of the shipped `libprotobuf-c` archive does: that archive is built with its asserts compiled out. The RE2 and Abseil objects folded into a libds archive are not bound. One path in a libds object traps: the CORE-MATH branch of `pow` and `atan2` that upstream holds unreachable, where the routine has no correctly rounded value to return. An assert is allowed only in a build that defines `DS_DEBUG`.
+
+A broken invariant that libds detects before changing anything refuses the operation with `DS_ERR_INTERNAL`, and the engine goes on: a new pinned intern entry after the pinned set has frozen. One that leaves engine state untrustworthy raises an `EngineError` of fault `ENGINE_FAULT_INTERNAL` and halts the tier: an intern reference count released past zero. The C caller's view is [Results](inv:integrator:std:doc#conventions/results).
+
+*(Spec: [IERR.1.5], [IERR.1.7], [IRET.28.15], [LEXP.3.9.2])*
+
 ### Link dependencies
 
 libds links `libprotobuf-c` and the standard C library (`-lpthread`, `-lm`).
@@ -296,9 +306,9 @@ static ds_result_t step(ds_engine_t *engine) {
 
 Each libds struct has a `ds_<type>_new(engine, ...)` that allocates it and a `ds_<type>_free(obj)` that frees it.
 
-There is no bulk arena or copy-on-write, and each allocation has one owner. Reference counting is used in two places and no others: the intern table's counted entries ([String interning](data-model.md#string-interning)) and the immutable structures a clone shares with its source ([Engine clone](#engine-clone)). Working-memory facts, alpha- and beta-node state and tokens belong to the `rete` and `wm` modules under the same discipline. All allocation goes through the [allocation layer](allocator.md#routing-scope). An allocation failure returns `DS_ERR_OOM` through the result; libds never aborts on it, cleans up what it partially constructed and uses no `longjmp`.
+There is no bulk arena or copy-on-write, and each allocation has one owner. Reference counting is used in two places and no others: the intern table's counted entries ([String interning](data-model.md#string-interning)) and the immutable structures a clone shares with its source ([Engine clone](#engine-clone)). Working-memory facts, alpha- and beta-node state and tokens belong to the `rete` and `wm` modules under the same discipline. All allocation goes through the [allocation layer](allocator.md#routing-scope). An allocation failure returns `DS_ERR_OOM` through the result, and libds cleans up what it partially constructed, as [No abort](#no-abort) requires.
 
-*(Spec: [IARC.1.13], [IARC.8.2])*
+*(Spec: [IARC.1.13], [IARC.8.2], [IERR.1.5])*
 
 ## Engine operations
 

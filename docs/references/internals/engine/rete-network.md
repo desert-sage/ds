@@ -110,10 +110,11 @@ The artefact loader, `dsc/rete_loader.c`, decodes the network atoms, and `ds_ret
 5. Build the beta nodes: join-test expression trees, the negative flag, and the left-parent and right-alpha links.
 6. Build the terminal nodes and their RHS expression trees.
 7. Wire the downstream links: beta children, terminal children, and beta inputs on alpha nodes.
+8. Check that every `left_parent_id` chain ends at a root beta, in one pass linear in the betas; a cycle is `DS_ERR_RETP_INVALID`.
 
 A failing step returns its error and spends the engine, and the loader undoes nothing it applied ([Failed load](../artefacts/dsc-format.md#failed-load)). An engine loads one artefact for its life. For a program compiled with `logical: false`, the truth-maintenance table is not initialised: no table entries, withdraw scratch or overflow buffers are allocated.
 
-*(Spec: [IRET.15.2], [IRET.16.8], [IRET.18.2], [IRET.18.2.1], [IRET.21], [IRET.23.6], [RDSC.11.1], [RDSC.11.4])*
+*(Spec: [IRET.15.2], [IRET.16.8], [IRET.18.2], [IRET.18.2.1], [IRET.21], [IRET.23.6], [RDSC.4a.5], [RDSC.11.1], [RDSC.11.4], Source: runtime/src/libds/rete/loader.c)*
 
 ## Values
 
@@ -374,9 +375,9 @@ Arithmetic on wrong types, and a format spec its value cannot render, yield no v
 | no operand is `null`, and one derives from a `Json` slot | `TypeError`; the activation is abandoned |
 | otherwise | `EngineError`; the tier halts |
 
-The `null` test comes first. `Json` provenance starts at every read of a `Json` slot, is transitive and rule-local, flows through a `let`, and clears at a `::` cast and at `??`. The compiler computes it and lowers it onto the node as `Expr.json_tainted`; the evaluator reads it. An absent flag is clean. An interpolation segment carries the flag like any node. An absorbed fault of either kind abandons nothing and halts nothing. An unresolved `Json` path, and a path resolving to JSON `null`, read as `null` and raise nothing.
+The `null` test comes first. `Json` provenance starts at every read of a `Json` slot, is transitive and rule-local, flows through a `let` and through `??`, and clears at a `::` cast and nowhere else. A cast of a `Json` leaf converts by the kind the leaf holds when it runs, and a kind with no conversion to the target is a `TypeError`. The compiler computes the provenance and lowers it onto the node as `Expr.json_tainted`; the evaluator reads it. An absent flag is clean. An interpolation segment carries the flag like any node. An absorbed fault of either kind abandons nothing and halts nothing. An unresolved `Json` path, and a path resolving to JSON `null`, read as `null` and raise nothing.
 
-*(Spec: [IRET.9.6], proto: rete_expr.proto)*
+*(Spec: [IRET.9.6], [LCST.4.5.11], proto: rete_expr.proto)*
 
 ### Operator table
 

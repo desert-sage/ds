@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `sum` and `count` on the three backings that serve them, and an `Int` `sum`
+# that wraps. Every backing sums from S_0 = +0 in its own sample order
+# ([LSER.16.3.3]), so a lone -0.0 sums to +0.0, and 0.1 + 0.2 + 0.3 is the
+# left fold, 0.6000000000000001, where the other association gives 0.6. An
+# `Int` slot's `sum` is a 64-bit integer that wraps ([LSER.16.2.2]): the
+# largest `Int` plus 1 reads as the smallest.
+#
+# `sum` and `count` keep a concrete type while cold ([LSER.19.8]): the first
+# pump reads 0.0 and 0, with no rescue.
+use default
+
+schema FA scope logical:
+    k: String key
+    v: Float mutable
+
+schema FW scope logical:
+    k: String key
+    v: Float mutable
+
+schema FS scope logical:
+    k: String key
+    v: Float mutable
+
+schema IW scope logical:
+    k: String key
+    n: Int mutable
+
+schema Tot scope ttl 1_h:
+    label: String
+    total: Float
+    n: Int
+
+schema ITot scope ttl 1_h:
+    label: String
+    total: Int
+    n: Int
+
+series FA.v (by: k):
+    sum, count all_time
+
+series FW.v (by: k):
+    sum, count sliding 1_h
+
+series FS.v (by: k):
+    sum, count sample 8
+
+series IW.n (by: k):
+    sum, count sliding 1_h
+
+rule from_fa:
+    FA a
+->
+    emit Tot label: "fa" total: a.sum n: count(a.v)
+
+rule from_fw:
+    FW w
+->
+    emit Tot label: "fw" total: w.sum n: count(w.v)
+
+rule from_fs:
+    FS s
+->
+    emit Tot label: "fs" total: s.sum n: count(s.v)
+
+rule from_iw:
+    IW i
+->
+    emit ITot label: "iw" total: i.sum n: count(i.n)

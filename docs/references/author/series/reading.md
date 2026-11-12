@@ -98,9 +98,9 @@ An aggregation name is a [reserved word](../lang/lexical.md#reserved-words), and
 
 A read is cold when its backing holds no sample to aggregate for the identity: before the first absorption, or once every absorbed sample has left the window.
 
-Its value is at [Series reads](../values/null.md#series-reads). `active_fraction` and `integral` aggregate a step function, and are cold only before the first absorption.
+Its value is at [Series reads](../values/null.md#series-reads). `active_fraction`, `onset_rate` and `integral` read the slot as a step function, each absorbed value held until another is absorbed, so each of the three is cold only before the first absorption.
 
-*(Spec: [LSER.19.8], [LSIG.8.1])*
+*(Spec: [LSER.19.8], [LSER.9.3.1], [LSIG.1.3.1], [LSIG.3.2], [LSIG.8.1])*
 
 ### Restart
 
@@ -112,11 +112,11 @@ A replay of a rule reading an aggregation matches byte for byte when its recordi
 
 ### Eviction
 
-A `sliding` backing with no sample absorbed for a window's length is evicted at the next pump that reads an advanced clock, and the next sample for the identity starts again from empty.
+A `sliding` backing with no sample absorbed for its own declared window is evicted at the next pump that reads an advanced clock, and the next sample for the identity starts again from empty.
 
-An `all_time` backing lives until engine shutdown.
+The state a signal aggregation reads is not evicted: the last absorbed value, any open interval and the time of the instance's first sample persist for the instance's life, and a stuck `true` reads as `true`. What `nulls: hold` keeps across eviction is at [Series null absorption](../values/null.md#series-null-absorption). An `all_time` backing lives until engine shutdown.
 
-*(Spec: [LSER.9.3.1], [LSER.9.3.2])*
+*(Spec: [LSER.9.3.1], [LSER.9.3.2], [LSER.19.7], [LSIG.5.4])*
 
 ## Interactions
 

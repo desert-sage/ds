@@ -175,8 +175,8 @@ iret_8_1__insert_keeps wm a (x :: xs) b e with (ldet_5_5__before wm (atuple a) (
   iret_8_1__insert_keeps wm a (x :: xs) b (There e) | False = There (iret_8_1__insert_keeps wm a xs b e)
 
 --@derives [LCYC.1.1]
-||| Two tests that agree on every member filter alike. Shared by
-||| Rete/NetworkAnswer.idr, Rete/WhereV5.idr and Rete/NetworkTmsCascade.idr.
+||| Two tests that agree on every member filter alike. Used by
+||| Rete/NetworkTmsCascade.idr.
 export
 lcyc_1_1__filter_ext_on : (p, q : a -> Bool) -> (xs : List a) -> ((x : a) -> Elem x xs -> p x = q x) -> filter p xs = filter q xs
 lcyc_1_1__filter_ext_on p q [] pw = Refl

@@ -1,0 +1,14 @@
+{
+    "id": "LTIM.4.1.1_float_scale_rounds",
+    "category": "logical",
+    "scenario": "[LTIM.4.1.1]: a `Duration` scaled by a `Float` takes the `Float` operation over the nanoseconds and rounds, ties to even, to a whole number of nanoseconds. `5_s * 1.5` is `7500_ms`. `7_ns / 2.0` is 3.5, which rounds to `4_ns`, where the `Int` row `7_ns / 2` is `3_ns`, side by side. Pin: all three rules log, in source order. PATH PINNED: `dsc.rete.rlow_6_1_6_saturating`'s `sat_rounded` rows, lowered to `FN_MAX(FN_ROUND(...), 0)`, and its `Int` row, on each runtime.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n\nrule scaled:\n    Trig t where t.id == 1 and 5_s * 1.5 == 7500_ms\n->\n    log info \"scaled\"\n\nrule by_float:\n    Trig t where t.id == 1 and 7_ns / 2.0 == 4_ns\n->\n    log info \"by_float\"\n\nrule by_int:\n    Trig t where t.id == 1 and 7_ns / 2 == 3_ns\n->\n    log info \"by_int\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["scaled", "by_float", "by_int"]
+    }
+}

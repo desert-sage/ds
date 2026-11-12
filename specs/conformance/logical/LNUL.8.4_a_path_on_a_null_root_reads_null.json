@@ -1,0 +1,15 @@
+{
+    "id": "LNUL.8.4_a_path_on_a_null_root_reads_null",
+    "category": "logical",
+    "scenario": "[LNUL.8.4] with [LNUL.4.1]: a path read whose root is `null`, a `Json?` slot holding none, has no document to resolve against, so it yields `null` and raises no fault, and the `null` propagates through a comparison. One `Doc` is asserted with `body` null. `absent` reads `d.body.c is null` and fires. `hot` reads `d.body.c > 30.0`, whose `null` operand propagates, so it does not fire. `handler` matches any `TypeError` fault fact ([LERR.9.3]) and must not fire. A runtime that raises a type mismatch on the `null` root fires `handler` and not `absent`. PATH PINNED: the compiler lowers `d.body.c` to `FN_JSON_PATH` over the slot (`dsc.rete`), whose handler meets a `null` root: libds `builtin_json_path` (builtins.c), Mercury `ds.eval`'s `fn_json_path` arm through `json_walk`.",
+    "rules_ds": "schema Doc scope ttl 10_s:\n    body: Json?\n\nrule hot:\n    Doc d where d.body.c > 30.0\n->\n    log info \"hot\"\n\nrule absent:\n    Doc d where d.body.c is null\n->\n    log info \"absent\"\n\nrule handler:\n    TypeError\n->\n    log critical \"type error\"\n",
+    "dead_rules_expected": ["hot", "handler"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "body": null } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["absent"]
+    }
+}

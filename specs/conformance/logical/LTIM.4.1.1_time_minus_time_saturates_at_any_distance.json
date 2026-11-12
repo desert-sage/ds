@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.4.1.1_time_minus_time_saturates_at_any_distance",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LTIM.4.1.1]: `Time - Time` with the left operand the earlier is `0_s`, at any distance; [RLOW.6.1.6]: the engine's subtraction does not wrap before `FN_MAX` saturates it. `P` holds the first instant (-2^63 ns) as `a` and the last (2^63 - 1 ns) as `b`, so the exact difference is almost -2^64 ns, below the Int range. Rule `far` renders `p.a - p.b`: `0s`. Under a wrap the difference is +1 ns, which renders as a positive `Duration`, and a runtime that raised on it would fire `handler`, which must not fire. PATH PINNED: libds's `Time - Time` arm in `rete/eval.c`, which answers the most negative Int for a difference below the range; the Mercury runtime's `ds.eval.ltim_4_1_time_minus`, the same; `dsc.rete`'s `rlow_6_1_6_saturating` lowering to `FN_MAX(a - b, 0)`.",
+    "rules_ds": "schema P scope logical:\n    id: Int key\n    a: Time mutable\n    b: Time mutable\n\nrule far:\n    P p\n->\n    let d = (p.a - p.b)::String\n    log info \"far {d}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": 1, "a": -9223372036854775808, "b": 9223372036854775807 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["far 0s"]
+    }
+}

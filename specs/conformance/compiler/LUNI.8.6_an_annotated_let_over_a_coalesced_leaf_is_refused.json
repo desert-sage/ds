@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.8.6_an_annotated_let_over_a_coalesced_leaf_is_refused",
+    "clauses": ["LUNI.8.6"],
+    "category": "compiler",
+    "scenario": "[LUNI.8.6] with [LCST.4.5.11]: a `let` annotation is a claim the compiler checks, and a right-hand side whose type it cannot determine is refused with DS_VALIDATE_LET_TYPE_MISMATCH. `d.body.c ?? 0`, with `d.body.c` a `Json` leaf, has its default's type `Int` ([LNUL.5.3]) but holds the kind `d.body.c` holds, which is known only at run time ([LCST.4.5.11]), so `let v: Int = d.body.c ?? 0` has no type the annotation can be checked against. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). A compiler that holds the annotation against `??`'s `Int` compiles it, and a JSON `31.5` there reaches an `Int` read. PATH PINNED: `dsc.validate.luni_8_6_annotation`, through `dsc.typecheck.lcst_4_5_11_value` and `lcst_4_5_11_source`'s `??` arm, on a right-hand side `type_of_expr` gives a known type.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule r:\n    Doc d\n->\n    let v: Int = d.body.c ?? 0\n    log info \"v = {v}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_LET_TYPE_MISMATCH"
+    }
+}

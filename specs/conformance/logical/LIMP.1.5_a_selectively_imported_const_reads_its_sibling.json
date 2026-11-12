@@ -1,0 +1,19 @@
+{
+    "id": "LIMP.1.5_a_selectively_imported_const_reads_its_sibling",
+    "clauses": ["LIMP.1.5", "LEXP.8.8"],
+    "category": "logical",
+    "scenario": "[LIMP.1.5] through a selective import, whose constant enters the file's own table: `from ha import LIMIT`, where `ha` declares `const _BASE = 10` and `const LIMIT = _BASE * 2`, and the importer declares its own `const _BASE = 99`. A fact of 20 logs and a fact of 198 does not. Exactly [\"hit 1\"]. A compiler that gives a selectively imported constant the importer's table folds `LIMIT` to 198 and logs `hit 2`. PATH PINNED: `dsc.dstest.const_read`'s `ex_name` arm and `dsc.rete`'s name arm, through `dsc.resolve.const_scope`.",
+    "rules_ds": "from ha import LIMIT\n\nconst _BASE = 99\n\nschema S scope logical:\n    k: Int key\n    v: Int mutable\n\nrule r:\n    S x where x.v == LIMIT\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "ha": "const _BASE = 10\nconst LIMIT = _BASE * 2\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "v": 20 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "v": 198 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

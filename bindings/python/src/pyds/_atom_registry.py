@@ -10,20 +10,10 @@ stream-class columns).
 
 An atom is named by its body message: `AtomKind.FACT_ASSERT`,
 value 1, `.message` "FactAssert". The field number is the whole of an
-atom's wire identity ([RFCS.16.1]); an atom this build does not know is
-a plain `int`, since [RFCS.16.3] leaves the set open to a reader.
+atom's wire identity ([RFCS.16.1]).
 """
 
 import enum
-
-# [RFCS.16.2] — band boundaries. Powers of two, so a reader classifies an
-# unknown number by magnitude and needs no table entry for it.
-BAND_INJECT_LO = 1
-BAND_INJECT_HI = 127
-BAND_REJECT_LO = 128
-BAND_REJECT_HI = 255
-BAND_SKIP_LO = 256
-BAND_SKIP_HI = 2047
 
 # [RFCS.17.1] container-legality. A bitmask: an atom may be legal in both.
 LEGAL_DSC = 0x1
@@ -33,67 +23,67 @@ LEGAL_BOTH = LEGAL_DSC | LEGAL_STREAM
 # field number -> (body message, legality bitmask, [RFCS.3.4] replay
 # class). The class is "none" exactly when the atom is not stream-legal.
 REGISTRY: dict[int, tuple[str, int, str]] = {
-       1: ("FactAssert", LEGAL_STREAM, "inject"),  # inject
-       2: ("FactRetract", LEGAL_STREAM, "inject"),  # inject
-       3: ("ClockAdvance", LEGAL_STREAM, "inject"),  # inject
-       4: ("PumpBoundary", LEGAL_STREAM, "inject"),  # inject
-       5: ("ExternalAssert", LEGAL_STREAM, "inject"),  # inject
-       6: ("CacheSeed", LEGAL_STREAM, "inject"),  # inject
-     128: ("RealtimeContract", LEGAL_DSC   , "none"),  # reject
-     129: ("SeriesBackendIntervalPulse", LEGAL_DSC   , "none"),  # reject
-     130: ("SeriesBackendNumericIntegral", LEGAL_DSC   , "none"),  # reject
-     131: ("InitialFact", LEGAL_DSC   , "none"),  # reject
-     132: ("InitialCacheSeed", LEGAL_DSC   , "none"),  # reject
-     256: ("SchemaDef", LEGAL_BOTH  , "structural"),  # skip
-     257: ("Slot", LEGAL_BOTH  , "structural"),  # skip
-     258: ("StreamHeader", LEGAL_STREAM, "structural"),  # skip
-     261: ("RuleFireAnnotation", LEGAL_STREAM, "compare"),  # skip
-     262: ("CallIssued", LEGAL_STREAM, "compare"),  # skip
-     263: ("DscHeader", LEGAL_DSC   , "none"),  # skip
-     264: ("DialectInfo", LEGAL_DSC   , "none"),  # skip
-     265: ("CapabilityInfo", LEGAL_DSC   , "none"),  # skip
-     267: ("DsSource", LEGAL_DSC   , "none"),  # skip
-     268: ("AlphaNode", LEGAL_DSC   , "none"),  # skip
-     269: ("BetaNode", LEGAL_DSC   , "none"),  # skip
-     270: ("TerminalNode", LEGAL_DSC   , "none"),  # skip
-     287: ("OracleActivated", LEGAL_DSC   , "none"),  # skip
-     288: ("OracleEmit", LEGAL_DSC   , "none"),  # skip
-     289: ("OraclePublish", LEGAL_DSC   , "none"),  # skip
-     290: ("OracleCall", LEGAL_DSC   , "none"),  # skip
-     291: ("OracleCacheSet", LEGAL_DSC   , "none"),  # skip
-     292: ("OracleCacheDelete", LEGAL_DSC   , "none"),  # skip
-     294: ("OracleLog", LEGAL_DSC   , "none"),  # skip
-     296: ("OracleRetract", LEGAL_DSC   , "none"),  # skip
-     297: ("OracleWorkingMemory", LEGAL_DSC   , "none"),  # skip
-     298: ("CompiledCode", LEGAL_DSC   , "none"),  # skip
-     299: ("SchemaLogical", LEGAL_DSC   , "none"),  # skip
-     300: ("SchemaTtl", LEGAL_DSC   , "none"),  # skip
-     301: ("Hydration", LEGAL_DSC   , "none"),  # skip
-     302: ("SchemaSource", LEGAL_DSC   , "none"),  # skip
-     303: ("LineSpan", LEGAL_DSC   , "none"),  # skip
-     304: ("DocString", LEGAL_DSC   , "none"),  # skip
-     307: ("RuleCooldown", LEGAL_DSC   , "none"),  # skip
-     309: ("RuleSource", LEGAL_DSC   , "none"),  # skip
-     310: ("RuleDebugName", LEGAL_DSC   , "none"),  # skip
-     311: ("ServiceDef", LEGAL_DSC   , "none"),  # skip
-     312: ("SeriesBackendWelfordEwma", LEGAL_DSC   , "none"),  # skip
-     313: ("SeriesBackendRingBuffer", LEGAL_DSC   , "none"),  # skip
-     314: ("SeriesBackendMonotonicDeque", LEGAL_DSC   , "none"),  # skip
-     315: ("SeriesBackendFifoDeque", LEGAL_DSC   , "none"),  # skip
-     316: ("SeriesBackendReservoir", LEGAL_DSC   , "none"),  # skip
-     317: ("TestCase", LEGAL_DSC   , "none"),  # skip
-     318: ("TestFact", LEGAL_DSC   , "none"),  # skip
-     319: ("TestCacheSeed", LEGAL_DSC   , "none"),  # skip
-     320: ("TestResponse", LEGAL_DSC   , "none"),  # skip
-     321: ("TestReply", LEGAL_DSC   , "none"),  # skip
-     324: ("OracleExclusive", LEGAL_DSC   , "none"),  # skip
-     325: ("ComputationError", LEGAL_STREAM, "compare"),  # skip
-     326: ("FactEmit", LEGAL_STREAM, "compare"),  # skip
-     327: ("FactWithdraw", LEGAL_STREAM, "compare"),  # skip
-     328: ("TypeError", LEGAL_STREAM, "compare"),  # skip
-     329: ("BoundsError", LEGAL_STREAM, "compare"),  # skip
-     330: ("EngineError", LEGAL_STREAM, "compare"),  # skip
-     331: ("FactPublish", LEGAL_STREAM, "compare"),  # skip
+       1: ("FactAssert", LEGAL_STREAM, "inject"),
+       2: ("FactRetract", LEGAL_STREAM, "inject"),
+       3: ("ClockAdvance", LEGAL_STREAM, "inject"),
+       4: ("PumpBoundary", LEGAL_STREAM, "inject"),
+       5: ("ExternalAssert", LEGAL_STREAM, "inject"),
+       6: ("CacheSeed", LEGAL_STREAM, "inject"),
+     128: ("RealtimeContract", LEGAL_DSC   , "none"),
+     129: ("SeriesBackendIntervalPulse", LEGAL_DSC   , "none"),
+     130: ("SeriesBackendNumericIntegral", LEGAL_DSC   , "none"),
+     131: ("InitialFact", LEGAL_DSC   , "none"),
+     132: ("InitialCacheSeed", LEGAL_DSC   , "none"),
+     256: ("SchemaDef", LEGAL_BOTH  , "structural"),
+     257: ("Slot", LEGAL_BOTH  , "structural"),
+     258: ("StreamHeader", LEGAL_STREAM, "structural"),
+     261: ("RuleFireAnnotation", LEGAL_STREAM, "compare"),
+     262: ("CallIssued", LEGAL_STREAM, "compare"),
+     263: ("DscHeader", LEGAL_DSC   , "none"),
+     264: ("DialectInfo", LEGAL_DSC   , "none"),
+     265: ("CapabilityInfo", LEGAL_DSC   , "none"),
+     267: ("DsSource", LEGAL_DSC   , "none"),
+     268: ("AlphaNode", LEGAL_DSC   , "none"),
+     269: ("BetaNode", LEGAL_DSC   , "none"),
+     270: ("TerminalNode", LEGAL_DSC   , "none"),
+     287: ("OracleActivated", LEGAL_DSC   , "none"),
+     288: ("OracleEmit", LEGAL_DSC   , "none"),
+     289: ("OraclePublish", LEGAL_DSC   , "none"),
+     290: ("OracleCall", LEGAL_DSC   , "none"),
+     291: ("OracleCacheSet", LEGAL_DSC   , "none"),
+     292: ("OracleCacheDelete", LEGAL_DSC   , "none"),
+     294: ("OracleLog", LEGAL_DSC   , "none"),
+     296: ("OracleRetract", LEGAL_DSC   , "none"),
+     297: ("OracleWorkingMemory", LEGAL_DSC   , "none"),
+     298: ("CompiledCode", LEGAL_DSC   , "none"),
+     299: ("SchemaLogical", LEGAL_DSC   , "none"),
+     300: ("SchemaTtl", LEGAL_DSC   , "none"),
+     301: ("Hydration", LEGAL_DSC   , "none"),
+     302: ("SchemaSource", LEGAL_DSC   , "none"),
+     303: ("LineSpan", LEGAL_DSC   , "none"),
+     304: ("DocString", LEGAL_DSC   , "none"),
+     307: ("RuleCooldown", LEGAL_DSC   , "none"),
+     309: ("RuleSource", LEGAL_DSC   , "none"),
+     310: ("RuleDebugName", LEGAL_DSC   , "none"),
+     311: ("ServiceDef", LEGAL_DSC   , "none"),
+     312: ("SeriesBackendWelfordEwma", LEGAL_DSC   , "none"),
+     313: ("SeriesBackendRingBuffer", LEGAL_DSC   , "none"),
+     314: ("SeriesBackendMonotonicDeque", LEGAL_DSC   , "none"),
+     315: ("SeriesBackendFifoDeque", LEGAL_DSC   , "none"),
+     316: ("SeriesBackendReservoir", LEGAL_DSC   , "none"),
+     317: ("TestCase", LEGAL_DSC   , "none"),
+     318: ("TestFact", LEGAL_DSC   , "none"),
+     319: ("TestCacheSeed", LEGAL_DSC   , "none"),
+     320: ("TestResponse", LEGAL_DSC   , "none"),
+     321: ("TestReply", LEGAL_DSC   , "none"),
+     324: ("OracleExclusive", LEGAL_DSC   , "none"),
+     325: ("ComputationError", LEGAL_STREAM, "compare"),
+     326: ("FactEmit", LEGAL_STREAM, "compare"),
+     327: ("FactWithdraw", LEGAL_STREAM, "compare"),
+     328: ("TypeError", LEGAL_STREAM, "compare"),
+     329: ("BoundsError", LEGAL_STREAM, "compare"),
+     330: ("EngineError", LEGAL_STREAM, "compare"),
+     331: ("FactPublish", LEGAL_STREAM, "compare"),
 }
 
 # field number -> the proto message its body parses as ([RFCS.16.1]).

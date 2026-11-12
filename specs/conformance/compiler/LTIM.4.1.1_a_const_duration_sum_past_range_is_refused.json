@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.4.1.1_a_const_duration_sum_past_range_is_refused",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6", "LEXP.8.8.2"],
+    "category": "compiler",
+    "scenario": "[RLOW.6.1.6]: the constant folder folds each `Duration` row to what its lowering computes ([LDET.3.3a.8]), and `FN_DURATION_ADD` raises past 2^63 - 1, so [LEXP.8.8.2] has no value to fold to. `9223372036854775807_ns + 1_ns` is refused with DS_VALIDATE_CONST_NOT_FOLDABLE. A folder that wraps compiles the program with a negative `Duration`. PATH PINNED: `dsc.dstest.rlow_6_1_6_checked_fold`, reported by `dsc.validate.lexp_8_8_2_no_value`.",
+    "rules_ds": "const X = 9223372036854775807_ns + 1_ns\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.8.8.2_an_absorbed_operand_is_still_refused",
+    "category": "compiler",
+    "scenario": "[LEXP.8.8.2]: a right-hand side containing an operation with no value is refused whether or not the rest of the expression would absorb its result. `false and (1 // (1 - 1) == 1)` would be `false` under Kleene `and` ([LNUL.4.2]) if the operand were absorbed; the compiler refuses it all the same. The divisor folds to zero and is no literal, so [LEXP.10.2.2] does not refuse it, and the fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. Pin: DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate.lexp_8_8_2_no_value`'s walk, which finds the `//` node whose operands fold and whose own result does not.",
+    "rules_ds": "const X = false and (1 // (1 - 1) == 1)\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

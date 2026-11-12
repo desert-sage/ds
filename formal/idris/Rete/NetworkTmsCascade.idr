@@ -337,7 +337,7 @@ rarc_5_6_5__propagate_settled_id p wm tss tw = rarc_5_6_5__zip_prop_settled_id w
 -- ---------------------------------------------------------------------
 
 -- `lcyc_1_1__filter_ext_on` and `lcyc_1_1__filter_filter`, used below, are
--- Rete/NetworkView.idr's, shared with Rete/NetworkAnswer.idr.
+-- Rete/NetworkView.idr's.
 
 --@derives [IRET.12.2]
 ||| No ids: nothing retracted.

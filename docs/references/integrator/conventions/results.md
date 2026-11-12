@@ -29,13 +29,17 @@ A function with several successful outcomes reports which one through its return
 
 The outcome of a libds call: a status, and a [detail string](#detail-string).
 
-Every libds function that can fail returns it. `ds_free` and the four Rete visitor callback types ([`ds_rete_node_cb_t`](../introspection/network.md#ds_rete_node_cb_t), [`ds_rete_edge_cb_t`](../introspection/network.md#ds_rete_edge_cb_t), [`ds_rete_trace_cb_t`](../introspection/network.md#ds_rete_trace_cb_t), [`ds_rete_refract_cb_t`](../introspection/network.md#ds_rete_refract_cb_t)) cannot fail, and return `void`. A visitor has the shape its call declares: [`ds_fact_visitor_fn`](../facts/reading.md#ds_fact_visitor_fn) returns `ds_result_t`. libds reports every failure this way, allocation failures and internal invariant violations included, and does not call `abort`, `exit` or `longjmp`.
+Every libds function that can fail returns it. `ds_free` and the four Rete visitor callback types ([`ds_rete_node_cb_t`](../introspection/network.md#ds_rete_node_cb_t), [`ds_rete_edge_cb_t`](../introspection/network.md#ds_rete_edge_cb_t), [`ds_rete_trace_cb_t`](../introspection/network.md#ds_rete_trace_cb_t), [`ds_rete_refract_cb_t`](../introspection/network.md#ds_rete_refract_cb_t)) cannot fail, and return `void`. A visitor has the shape its call declares: [`ds_fact_visitor_fn`](../facts/reading.md#ds_fact_visitor_fn) returns `ds_result_t`.
+
+libds reports every failure this way, allocation failures and broken internal invariants included, and does not call `abort`, `exit` or `longjmp`. This binds every object libds compiles and the `libprotobuf-c` archive shipped beside it. It does not bind the RE2 and Abseil objects folded into the libds archive, or the CORE-MATH branch of `pow` and `atan2` that upstream holds unreachable, which traps.
+
+A broken invariant that libds detects before changing anything returns `DS_ERR_INTERNAL`, and the engine goes on. One that leaves engine state untrustworthy raises an `EngineError` of fault [`DS_ENGINE_FAULT_INTERNAL`](../callbacks/stream.md#ds_engine_fault_t) and [halts](../engine/lifecycle.md#halt-latch) the engine.
 
 The struct is two words: 16 bytes on a 64-bit platform. A success is `{ DS_OK, NULL }`, and an error is `{ <negative code>, <detail> }`.
 
-Handle or propagate every result that is not `DS_OK`. Propagation inside libds is in [libds modules](inv:internals:std:doc#overview/libds-modules).
+Handle or propagate every result that is not `DS_OK`. Propagation inside libds, and how it keeps to these rules, is in [libds modules](inv:internals:std:doc#overview/libds-modules).
 
-*(libds.h: Result type, ds_free, ds_fact_visitor_fn, Rete network introspection, Spec: [IARC.1.12], [NCBK.1.1], [IDAT.1.3], [IDAT.2.3.1], [IERR.1.3], [IERR.1.5], [IERR.3.2], [IERR.3.3], [IERR.3.4], [IERR.8.8])*
+*(libds.h: Result type, ds_free, ds_fact_visitor_fn, Rete network introspection, DS_ERR_INTERNAL, ds_engine_fault_t, Spec: [IARC.1.12], [NCBK.1.1], [IDAT.1.3], [IDAT.2.3.1], [IERR.1.3], [IERR.1.5], [IERR.1.7], [IERR.3.2], [IERR.3.3], [IERR.3.4], [IERR.8.8])*
 
 ## `DS_OK_R`
 
@@ -67,23 +71,10 @@ It is English and advisory, and its text is not stable across versions or across
 
 *(libds.h: Result type, Spec: [NERR.1.2], [NERR.2.1], [NERR.2.3], [IERR.1.6], [IERR.3.3], [IERR.4.1.1], [IERR.4.2.1])*
 
-## Code ranges
+## Code groups
 
-Each range of status codes is one category, by originating concern.
+Status codes are grouped by number, by the concern that raises them, as [NERR.3.1] states.
 
-| Range | Category |
-|---|---|
-| `0` | OK |
-| `-1..-99` | Generic |
-| `-100..-199` | Input |
-| `-200..-299` | Runtime |
-| `-400..-499` | Storage / callbacks |
-| `-500..-599` | Artefact load |
-| `-600..-610` | Native Rete |
-| `-620..-623` | Series-backend ABI |
-| `-700..-704` | Dialect / artefact binding |
-| `-710..-714` | Contract |
-| `-720..-730` | Event-trace |
-| `-10000` and below | An integrator's own return values. libds returns none of them. |
+A code is its number and its name; the group it falls in describes it. `-10000` and below are an integrator's own return values, and libds returns none of them.
 
-*(libds.h: Status codes, Spec: [NERR.3.1], [IERR.2.1], [IERR.2.8.1], [IERR.2.8.2])*
+*(libds.h: Status codes, Spec: [NERR.3.1], [IERR.2.1], [IERR.2.8.2])*

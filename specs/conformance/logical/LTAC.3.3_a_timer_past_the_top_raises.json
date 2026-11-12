@@ -1,0 +1,18 @@
+{
+    "id": "LTAC.3.3_a_timer_past_the_top_raises",
+    "clauses": ["LTAC.3.3", "RLOW.6.1.6", "LTIM.4.1.1"],
+    "category": "logical",
+    "scenario": "[LTAC.3.3] with [RLOW.6.1.6]: an `after` timer's `fire_at` is a `Duration` sum, and one past the top of the clock's range raises NOT_REPRESENTABLE and is never wrapped. The clock is set to 2^63 - 1 - 1 s and rule `delayed` arms an `after 1_h`, so `fire_at` would pass the top. `trapped` logs the fault's kind. The clock then advances 1 s to the top and is pumped, and the follow-up does not fire. Exactly [\"NOT_REPRESENTABLE\"]. A plain add wraps negative, so the timer comes due at the next pump and logs `late`. PATH PINNED: `dsc.rete.ltac_3_3_fire_at`, lowering `fire_at` to `FN_DURATION_ADD`, in `after`'s arm, against libds's `adapter_ds_duration_add` and the Mercury runtime's `ltim_4_1_1_duration_add`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule delayed:\n    Trig\n->\n    after 1_h:\n        log info \"late\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372035854775807 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE"]
+    }
+}

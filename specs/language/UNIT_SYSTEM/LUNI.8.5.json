@@ -7,12 +7,14 @@
   "depth": 2,
   "kind": "normative",
   "heading": "8.5 Unit assertion function",
-  "text": "### 8.5 Unit assertion function [LUNI.8.5]\n\nAsserting a number into a unit type and stripping a unit back to a number are\n`::` conversion casts ([LCST.4.5.2]). The number is of the kind the unit's\ndimension stores ([LUNI.8.7.3]): `Float` for a `float64` dimension, `Int` for an\n`int64` or `int32` one. Both casts are total and zero-cost (identity at runtime,\ncompile-time type annotation only): `<number> → <unit>` asserts the dimension\ntag without applying the affine factor, and `<unit> → <number>` strips it. The\nstrip applies to a unit-typed value and a dimension-typed value ([LUNI.7.1])\nalike, and yields the stored base-unit number. A source of any other kind, such\nas a `String` asserted into a unit, has no conversion and is refused as an\nundefined pair ([LCST.4.5.3]).\n\nAssigning a number to a unit-typed field without the `::<unit>` assertion is a\ncompiler error; the message suggests the cast form.\n\n",
+  "text": "### 8.5 Unit assertion function [LUNI.8.5]\n\nAsserting a number into a unit type and stripping a unit back to a number are\n`::` conversion casts ([LCST.4.5.2]). The number is of the kind the unit's\ndimension stores ([LUNI.8.7.3]): `Float` for a `float64` dimension, `Int` for an\n`int64` or `int32` one. Both casts are total.\n\n`<number> → <unit>` takes the number as being in that unit: the result is the\nvalue that number names, held in the base unit ([LUNI.7.2]), so `35.0::celsius`\nis 35 `celsius` and `5::second` is 5 seconds. [RLOW.6.1.10] states how it lowers.\n\n`<unit> → <number>` strips the dimension and is an identity at runtime. It applies\nto a unit-typed value and a dimension-typed value ([LUNI.7.1]) alike, and yields\nthe stored base-unit number. A strip and an assertion into the dimension's base\nunit are inverses. A strip followed by an assertion into any other unit reads the\nbase-unit number as a number in that unit.\n\nA source of any other kind, such as a `String` asserted into a unit, has no\nconversion and is refused as an undefined pair ([LCST.4.5.3]).\n\nAssigning a number to a unit-typed field without the `::<unit>` assertion is a\ncompiler error; the message suggests the cast form.\n\n",
   "refs": [
     "LCST.4.5.2",
     "LCST.4.5.3",
     "LUNI.7.1",
-    "LUNI.8.7.3"
+    "LUNI.7.2",
+    "LUNI.8.7.3",
+    "RLOW.6.1.10"
   ],
   "errors": [
     "DS_VALIDATE_CAST_UNDEFINED"

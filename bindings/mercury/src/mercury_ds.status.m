@@ -49,6 +49,7 @@
     ;       fact_ref_conflict
     ;       json_limit
     ;       encoding
+    ;       not_representable
     ;       storage_unavailable
     ;       storage_query_failed
     ;       storage_not_found
@@ -84,7 +85,6 @@
     ;       contract_wcet_halt
     ;       fs_version
     ;       fs_divergence
-    ;       fs_unknown_inject
     ;       fs_recording_incomplete
     ;       fs_unknown_fact_id.
 
@@ -128,6 +128,7 @@ status_number(schema_hash_mismatch) = -219.
 status_number(fact_ref_conflict) = -220.
 status_number(json_limit) = -221.
 status_number(encoding) = -222.
+status_number(not_representable) = -223.
 status_number(storage_unavailable) = -400.
 status_number(storage_query_failed) = -401.
 status_number(storage_not_found) = -402.
@@ -163,7 +164,6 @@ status_number(rtct_profile_refuses_dsrt) = -713.
 status_number(contract_wcet_halt) = -714.
 status_number(fs_version) = -720.
 status_number(fs_divergence) = -725.
-status_number(fs_unknown_inject) = -726.
 status_number(fs_recording_incomplete) = -729.
 status_number(fs_unknown_fact_id) = -730.
 
@@ -191,6 +191,7 @@ number_status(-219, schema_hash_mismatch).
 number_status(-220, fact_ref_conflict).
 number_status(-221, json_limit).
 number_status(-222, encoding).
+number_status(-223, not_representable).
 number_status(-400, storage_unavailable).
 number_status(-401, storage_query_failed).
 number_status(-402, storage_not_found).
@@ -226,7 +227,6 @@ number_status(-713, rtct_profile_refuses_dsrt).
 number_status(-714, contract_wcet_halt).
 number_status(-720, fs_version).
 number_status(-725, fs_divergence).
-number_status(-726, fs_unknown_inject).
 number_status(-729, fs_recording_incomplete).
 number_status(-730, fs_unknown_fact_id).
 
@@ -254,6 +254,7 @@ status_name(schema_hash_mismatch) = "DS_ERR_SCHEMA_HASH_MISMATCH".
 status_name(fact_ref_conflict) = "DS_ERR_FACT_REF_CONFLICT".
 status_name(json_limit) = "DS_ERR_JSON_LIMIT".
 status_name(encoding) = "DS_ERR_ENCODING".
+status_name(not_representable) = "DS_ERR_NOT_REPRESENTABLE".
 status_name(storage_unavailable) = "DS_ERR_STORAGE_UNAVAILABLE".
 status_name(storage_query_failed) = "DS_ERR_STORAGE_QUERY_FAILED".
 status_name(storage_not_found) = "DS_ERR_STORAGE_NOT_FOUND".
@@ -289,7 +290,6 @@ status_name(rtct_profile_refuses_dsrt) = "DS_ERR_RTCT_PROFILE_REFUSES_DSRT".
 status_name(contract_wcet_halt) = "DS_ERR_CONTRACT_WCET_HALT".
 status_name(fs_version) = "DS_ERR_FS_VERSION".
 status_name(fs_divergence) = "DS_ERR_FS_DIVERGENCE".
-status_name(fs_unknown_inject) = "DS_ERR_FS_UNKNOWN_INJECT".
 status_name(fs_recording_incomplete) = "DS_ERR_FS_RECORDING_INCOMPLETE".
 status_name(fs_unknown_fact_id) = "DS_ERR_FS_UNKNOWN_FACT_ID".
 

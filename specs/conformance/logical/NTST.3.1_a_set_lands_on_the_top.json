@@ -1,0 +1,16 @@
+{
+    "id": "NTST.3.1_a_set_lands_on_the_top",
+    "clauses": ["NTST.3.1", "LTIM.2.8.2"],
+    "category": "logical",
+    "scenario": "[NTST.3.1], [LTIM.2.8.2]: a move that lands exactly on the top of the monotonic clock's range is taken. The control for runtime/NTST.3.1_a_set_past_the_top_is_refused and runtime/NTST.3.1_an_advance_past_the_top_is_refused. The clock is set to 2^63 - 1 and a `logical` fact, which has no deadline, is asserted and pumped. The rule fires where `monotonic_ns()` is the top, so a clock held short of it, or one that refused the set, logs nothing. PATH PINNED: libds's `ds_clock_set` and the Mercury runtime's `ds.chrono.clock_set`, each with the range check not taken.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule at_top:\n    Trig t where t.k == 1 and monotonic_ns()::Int == 9223372036854775807\n->\n    log info \"top\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372036854775807 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["top"]
+    }
+}

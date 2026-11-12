@@ -35,6 +35,16 @@ The monotonic clock's value, read by [`ds_engine_clock_now`](inv:integrator:std:
 
 *(Source: bindings/python/src/pyds/engine.py)*
 
+### `next_deadline_ns`
+
+**`next_deadline_ns: int | None`**
+
+The earliest deadline later than the monotonic clock's value, read by [`ds_engine_next_deadline_ns`](inv:integrator:std:doc#engine/clock).
+
+It is `None` when the engine holds no deadline.
+
+*(Source: bindings/python/src/pyds/engine.py)*
+
 ### `set`
 
 **`def set(self, now_ns: int, /) -> None`**

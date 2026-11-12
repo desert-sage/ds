@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.4.1.1_time_minus_time_largest_duration",
+    "clauses": ["LTIM.4.1.1"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LTIM.4.1.1]: `Time - Time` is the exact `Duration` between them, and the largest, 2^63 - 1 ns, raises nothing. `P` holds the last instant (2^63 - 1 ns) as `a`, the epoch as `b`, and that largest `Duration` as `big`. Rule `largest` compares `p.a - p.b` with `p.big` and logs `true`. Rule `handler`, which logs any ComputationError, must not fire, so a range check that refuses the boundary fails here. PATH PINNED: the upper bound of libds's `Time - Time` arm in `rete/eval.c` and of the Mercury runtime's `ds.eval.ltim_1_1_5_sub`.",
+    "rules_ds": "schema P scope logical:\n    id: Int key\n    a: Time mutable\n    b: Time mutable\n    big: Duration mutable\n\nrule largest:\n    P p\n->\n    let same = (p.a - p.b) == p.big\n    log info \"{same}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": 1, "a": 9223372036854775807, "b": 0, "big": 9223372036854775807 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["true"]
+    }
+}

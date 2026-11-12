@@ -958,8 +958,7 @@ static ds_result_t engine_assert_canonical(ds_engine_t           *engine,
                 ds_result_t cr = ds_clock_now_ns(&engine->clock, &now_ns);
                 if (cr.status != DS_OK) return cr;
             }
-            if (now_ns > (uint64_t)INT64_MAX
-                || window > (uint64_t)INT64_MAX - now_ns) {
+            if (window > (uint64_t)INT64_MAX - now_ns) {
                 if (out_fact != NULL) *out_fact = NULL;
                 return DS_ERR_R(DS_ERR_TIME_RANGE,
                     "assert: the fact's TTL deadline is outside the Time "

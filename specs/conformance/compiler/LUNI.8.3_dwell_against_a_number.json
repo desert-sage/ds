@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.8.3_dwell_against_a_number",
+    "clauses": ["LUNI.8.3", "LEXP.9.5.1"],
+    "category": "compiler",
+    "scenario": "[LEXP.9.5.1] makes `t.dwell` a `Duration`, and [LUNI.8.3] with [LTIM.1.3.5] and [LTIM.5.5] makes a `Duration` beside a bare number DS_VALIDATE_DIM_MISMATCH, so `s.dwell > 60` is refused. The author writes `s.dwell > 60_s`, which `LSER.10.4` pins as compiling. The fixture names no `also_raises`, so DS_VALIDATE_TYPE_MISMATCH beside it fails. PATH PINNED: `dsc.typecheck` lser_10_4_dwell_read, which types the read, and `adjacent_mismatches`, whose settled-family arm does not take this pair and whose bare-number arm does.",
+    "rules_ds": "schema Sensor scope logical:\n    state: Float key\n\nrule stale:\n    Sensor s where s.dwell > 60\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

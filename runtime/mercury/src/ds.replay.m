@@ -59,7 +59,8 @@
     ;       input_refused(uint64, int, string).
             % [RFCS.6.7]: the input with this `seq` was refused for a reason that
             % is not an outcome of the recorded run. A bound's refusal, a halt
-            % the input itself raised and a pump's status are outcomes.
+            % the input itself raised and a pump's status are outcomes, all but
+            % a pump refused before its step (`rfcs_6_7_pump_refused`).
 
     % Events that are not inputs produce no step.
     %
@@ -500,24 +501,40 @@ replay_event(_P, DS, {Seq, Event}, Stop, !Known, !V, !Steps, !E) :-
             pump(default_budget, PumpEffects, !E),
             capture(First, PumpEffects, !.E, !V),
             !:Steps = [pumped(PumpEffects) | !.Steps],
-            % A pump's status does not end the replay ([RFCS.6.7]).
-            Stop = no
+            ( if
+                first_pump_status(PumpEffects) = yes(Status),
+                rfcs_6_7_pump_refused(Status, Code, Detail)
+            then
+                !:Steps = [input_refused(seq_value(Seq), Code, Detail)
+                    | !.Steps],
+                Stop = yes
+            else
+                Stop = no
+            )
         )
     ;
         Event = se_clock_tick(To, Wall),
         % [RFCS.10.5]: both clocks, the wall clock unset when there is no `has_wall`
         % ([RFCS.10.1]). Setting is not a sample ([NTST.3.3]): the next input or
-        % `PumpBoundary` takes it ([LTIM.2.8.5]).
-        engine_use_mock_clock(!E),
-        set_clock(To, _, !E),
-        (
-            Wall = yes(W),
-            set_wall_clock(W, !E)
-        ;
-            Wall = no,
-            unset_wall_clock(!E)
-        ),
-        Stop = no
+        % `PumpBoundary` takes it ([LTIM.2.8.5]). A `clock_ns` outside the clock's
+        % range ends the replay, as a host's move past it is refused.
+        ( if ntst_3_1_set_past_range(To) then
+            !:Steps = [input_refused(seq_value(Seq), -205,
+                "a ClockAdvance outside the monotonic clock's range")
+                | !.Steps],
+            Stop = yes
+        else
+            engine_use_mock_clock(!E),
+            set_clock(To, _, !E),
+            (
+                Wall = yes(W),
+                set_wall_clock(W, !E)
+            ;
+                Wall = no,
+                unset_wall_clock(!E)
+            ),
+            Stop = no
+        )
     ;
         ( Event = se_call_response(_, _) ; Event = se_call_error(_, _)
         ; Event = se_rule_lhs_facts(_, _) ; Event = se_fire_begin(_)
@@ -598,6 +615,29 @@ rfcs_6_7_refused(Result, Code, Detail) :-
         Result = refused_ttl_range,
         Code = -205,
         Detail = "a deadline outside the Time range"
+    ).
+
+    % [RFCS.6.7]: a replayed pump's status, where it ends the replay. A refused
+    % rule write and a refused call are outcomes of the recorded run. A pump
+    % refused before its step ([NLFC.9.5]) left no `PumpBoundary` in the run, so
+    % a replay meets one only on an engine that is not the run's: one the host
+    % seeded, which [RFCS.26.2] forbids.
+    %
+    %@spec [RFCS.6.7]
+:- pred rfcs_6_7_pump_refused(pump_status::in, int::out, string::out)
+    is semidet.
+
+rfcs_6_7_pump_refused(Status, Code, Detail) :-
+    (
+        ( Status = ps_nan_rejected
+        ; Status = ps_contract_breach(_)
+        ),
+        fail
+    ;
+        Status = ps_time_range,
+        Code = -205,
+        Detail = "the pump's first sample would give a held seed a deadline "
+            ++ "outside the Time range"
     ).
 
     % Whether a replayed host assert leaves a fact in working memory under the

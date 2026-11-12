@@ -1,0 +1,16 @@
+{
+    "id": "LCST.4.5.2_a_time_assert_past_the_range_raises",
+    "clauses": ["LCST.4.5.2", "RLOW.6.1.10", "LTIM.4.1.1", "LERR.1.4.10"],
+    "category": "logical",
+    "dead_rules_expected": ["r"],
+    "scenario": "[RLOW.6.1.10], [LTIM.4.1.1]: an `Int` asserted into a `time` unit whose product passes 2^63 - 1 nanoseconds raises NOT_REPRESENTABLE and never wraps. `n` is 106752, one day past the last whole day in the `Duration` range, so `s.n::day` is 9223372800000000000 ns. `trapped` logs the fault's kind. Exactly [\"NOT_REPRESENTABLE\"]. A compiler that only tags the value compares 106752 ns and fires `r`; a lowering to `Int` multiplication wraps negative. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s `asn_duration` arm, against libds's `adapter_ds_duration_mul` and the Mercury runtime's `ltim_4_1_1_duration_mul`.",
+    "rules_ds": "schema S scope logical:\n    id: String key\n    n: Int mutable\n\nrule r:\n    S s where s.n::day > 0_s\n->\n    log info \"fired\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "n": 106752 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE"]
+    }
+}

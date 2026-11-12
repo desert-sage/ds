@@ -43,7 +43,7 @@ sig lser_18__time_model {}
 
 //@spec [LSER.17.2]
 // The per-type applicability matrix: the (aggregation, value-type) pairs the type axis
-// admits — `min`/`mean` on numeric, `bool_and` on Bool, `count` on any, etc.
+// admits — `min`/`mean` on numeric, `bool_and` on Bool, `count` on any sampled type, etc.
 one sig lser_17_2__type_matrix { admits: lser_17__aggregation -> lser_17_1__value_type }
 
 //@spec [LSER.18.1]

@@ -147,6 +147,29 @@
 :- func rdsc_11_3_too_deep_nodes(intern_table, rete_network)
     = list(rdsc_11_3_too_deep).
 
+    % [RDSC.5.5.9]: the two conversions of a slot declared as `Unit`, a unit of
+    % `Dimension`, each over one input read as `bind_ref` 0. `to_stored` is
+    % [RLOW.6.1.10]'s lowering of `x::<Unit>` and `from_stored` [RLOW.7.3.9]'s
+    % conversion from the base unit, with that input as `x` and as the
+    % base-unit value. Fails only where `Unit` names no unit, or a tier-2 body
+    % that does not lower, which `dsc.validate` has refused.
+    %
+    %@spec [RDSC.5.5.9]
+:- pred rdsc_5_5_9_conversion(resolved_file::in, decl_ref::in, string::in,
+                              unit_conversion::out,
+                              intern_table::in, intern_table::out) is semidet.
+
+    % [RDSC.11.3]'s depth of a slot conversion, the outermost `Expr` at 0, as
+    % `dsc.encode` writes it.
+    %
+    %@spec [RDSC.11.3]
+:- func rdsc_11_3_conversion_depth(unit_conversion) = int.
+
+    % [RDSC.11.3]'s limit, the outermost `Expr` at depth 0.
+    %
+    %@spec [RDSC.11.3]
+:- func rdsc_11_3_max_depth = int.
+
     % A rule or a schema of the lowered network past its byte index space
     % ([RDSC.4a.9.1]), with the site of the rule it belongs to where one is
     % known, its name, and its count.
@@ -499,7 +522,7 @@ ast_children(ex_match(E, _, _, _, _)) = [E].
     %@helper
 :- func rule_type_env(resolved_file, rule_scope) = type_env.
 
-rule_type_env(RF, Scope) = type_env(RF, Scope, da_reported, set.init).
+rule_type_env(RF, Scope) = type_env(RF, Scope, set.init).
 
     %@helper
 :- pred try_rule(resolved_file::in, list(schema)::in, ast_rule::in,
@@ -1143,11 +1166,8 @@ after_clause(RF, Env, Schemas, Rule, Site, Capture, KeyText, A, Result, !B,
                     Result = skipped(FollowWhy)
                 ;
                     FollowRes = done(unit),
-                    % [LTAC.3.3]: `fire_at: monotonic_ns() + <dur>`.
                     TimerEmit = ia_assert(plain, TimerRef, [
-                        slot_assign(det_slot(0),
-                            e_binop(op_add, ltim_2_2_1_monotonic_ns,
-                                e_lit(int(Ns)))),
+                        slot_assign(det_slot(0), ltac_3_3_fire_at(Ns)),
                         slot_assign(det_slot(1), CorrE)], no),
                     ( if
                         Site = site_top(_, _),
@@ -1165,6 +1185,15 @@ after_clause(RF, Env, Schemas, Rule, Site, Capture, KeyText, A, Result, !B,
         Result = skipped("an `after` whose duration is not a single time "
             ++ "literal")
     ).
+
+    % A timer's `fire_at`: `monotonic_ns() + <dur>`, a `Duration` sum that raises
+    % past the top of the clock's range ([LTAC.3.3], [LCCO.7.2], [RLOW.6.1.6]).
+    %
+    %@spec [LTAC.3.3]
+:- func ltac_3_3_fire_at(int64) = expr.
+
+ltac_3_3_fire_at(Ns) =
+    e_call(fn_duration_add, [ltim_2_2_1_monotonic_ns, e_lit(int(Ns))]).
 
     % A clause's `corr`, and the sweep that goes ahead of its emit. Under a
     % capture the top level carries the gensym and a nested clause forwards
@@ -1490,7 +1519,7 @@ capture_values(RF, Pats, [C | Cs], N, RevAssigns, RevViews, Result, !IT) :-
         intern(C ^ cap_slot, ViewRef, !IT),
         Assign = slot_assign(det_slot(N), Value),
         View = plain_slot(slot_common(ViewRef, Kind, det_slot(N), Nullable,
-            no, no, no, unbounded)),
+            no, no, no, unbounded, no)),
         capture_values(RF, Pats, Cs, N + 1, [Assign | RevAssigns],
             [C ^ cap_binding - View | RevViews], Result, !IT)
     else
@@ -1875,9 +1904,9 @@ step_binding_head(RF, Step) = body_binding_head(RF, Step ^ ats_body).
 body_binding_head(RF, Body) =
     ( if
         Body ^ apb_binding = yes(Id),
-        Body ^ apb_type = atr_bare(Head)
+        head_schema_name(RF, Body ^ apb_type, Head)
     then
-        [Id ^ id_name - limp_13_1_own_of(RF, Head ^ id_name)]
+        [Id ^ id_name - Head]
     else
         []
     ).
@@ -1898,7 +1927,7 @@ capture_schema(Schemas, Heads, CaptureName, CorrKind, Caps, Schema, !IT) :-
     capture_slots(Schemas, Heads, Caps, 1, Slots, !IT),
     Schema = synthetic_schema(NameRef,
         [plain_slot(slot_common(CorrRef, CorrKind, det_slot(0), non_null,
-            no, no, no, unbounded)) | Slots]).
+            no, no, no, unbounded, no)) | Slots]).
 
     %@helper
 :- pred capture_slots(list(schema)::in, assoc_list(string, string)::in,
@@ -1931,7 +1960,7 @@ capture_slots(Schemas, Heads, [C | Cs], N, [Slot | Slots], !IT) :-
     ),
     intern(capture_slot_name(C), SlotRef, !IT),
     Slot = plain_slot(slot_common(SlotRef, Kind, det_slot(N), Nullable,
-        no, no, no, unbounded)),
+        no, no, no, unbounded, no)),
     capture_slots(Schemas, Heads, Cs, N + 1, Slots, !IT).
 
     %@helper
@@ -2143,9 +2172,9 @@ timer_schema(Name, CapSlots, Schema, !IT) :-
     intern("corr", CorrRef, !IT),
     Schema = synthetic_schema(NameRef,
         [plain_slot(slot_common(FireRef, k_int, det_slot(0), non_null,
-            no, no, no, unbounded)),
+            no, no, no, unbounded, no)),
          plain_slot(slot_common(CorrRef, k_string, det_slot(1), non_null,
-            no, no, no, unbounded))
+            no, no, no, unbounded, no))
          | CapSlots]).
 
     %@helper
@@ -2219,9 +2248,9 @@ timers_under(Env, Parents, Rule, Parent, Forwarded, [A | As], Index, !Acc,
     intern("corr", CorrRef, !IT),
     !:Acc = [synthetic_schema(NameRef,
         [plain_slot(slot_common(FireRef, k_int, det_slot(0), non_null,
-            no, no, no, unbounded)),
+            no, no, no, unbounded, no)),
          plain_slot(slot_common(CorrRef, CorrKind, det_slot(1), non_null,
-            no, no, no, unbounded))]) | !.Acc],
+            no, no, no, unbounded, no))]) | !.Acc],
     timers_under(Env, Parents, Rule, Key, ChildForwarded, A ^ aaf_nested, 0,
         !Acc, !IT),
     timers_under(Env, Parents, Rule, Parent, Forwarded, As, Index + 1, !Acc,
@@ -2802,7 +2831,7 @@ capture_fact_schema(RF, Pats, CaptureName, Caps, Result, !IT) :-
                 assoc_list.values(Views)), Slots, !IT),
         Result = done([synthetic_schema(NameRef,
             [plain_slot(slot_common(CorrRef, k_string, det_slot(0), non_null,
-                no, no, no, unbounded)) | Slots])])
+                no, no, no, unbounded, no)) | Slots])])
     ;
         ValuesRes = skipped(Why),
         Result = skipped(Why)
@@ -3091,8 +3120,7 @@ clause_timer(Ctx, Rule, CorrE, Supersede, Timeout, N, N + 1, Acc, Result,
                     % On the monotonic clock ([LTIM.2.8.2]), like `after`'s
                     % timer.
                     Assert = ia_assert(plain, TimerRef, [
-                        slot_assign(det_slot(0), e_binop(op_add,
-                            ltim_2_2_1_monotonic_ns, e_lit(int(Ns)))),
+                        slot_assign(det_slot(0), ltac_3_3_fire_at(Ns)),
                         slot_assign(det_slot(1), CorrE) | CapAssigns], no),
                     (
                         Supersede = yes,
@@ -3896,7 +3924,7 @@ luni_4_5_1_let_value(RF, MaybeEnv, Annotation, E) = Value :-
         MaybeEnv = yes(Env),
         map.search(RF ^ rf_types, Ann ^ aan_type ^ id_name,
             te_unit(uk_symbol(TargetDim), _)),
-        type_of_expr(Env ^ te_ambiguity := da_annotated, E) = ty_known(VType),
+        type_of_expr(Env, E) = ty_known(VType),
         VType ^ dt_dim = dim(SourceDim, _),
         SourceDim \= TargetDim,
         luni_4_5_implicit_line(RF, SourceDim, TargetDim, Line)
@@ -5073,13 +5101,14 @@ provflag1_stamp(Ast, E) = Stamped :-
         Stamped = E
     ).
 
-    % The two constructs that end provenance: each establishes the type.
+    % The one construct that ends provenance: a cast establishes the type. `??`
+    % does not: it passes a present value through whatever its kind
+    % ([IRET.9.6]).
     %
     %@helper
 :- pred provflag1_clears(lgra_9_3_1_expr::in) is semidet.
 
 provflag1_clears(ex_cast(_, _, _, _)).
-provflag1_clears(ex_binary(bo_coalesce, _, _, _)).
 
     % A `Json` projection, the one source. The whole `Json` value is not one:
     % `j.body` lowers to a plain `e_slot`. `len(j.a)` and `has(j.a)` absorb the
@@ -5130,8 +5159,13 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
         ( if
             luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier)
         then
-            Result = done(e_lit(int(
-                luni_3_1_5_magnitude_ns(Magnitude, Multiplier))))
+            ( if luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Ns) then
+                Result = done(e_lit(int(Ns)))
+            else
+                % `dsc.typecheck.luni_3_1_7_literal_type` has refused it.
+                unexpected($pred, "`" ++ Magnitude ++ Suffix
+                    ++ "` is outside int64 nanoseconds ([LUNI.2.4.1])")
+            )
         else if
             luni_4_3_unit_literal(Ctx ^ cx_rf, Magnitude,
                 llex_12_5_symbol_of(Suffix), Value)
@@ -5179,10 +5213,9 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
             Result = done(e_lit(float(Value)))
         else if
             map.search(Ctx ^ cx_rf ^ rf_consts, Id ^ id_name, Const),
-            Const ^ acn_form = acf_value(_, ConstExpr)
+            Const ^ acn_form = acf_value(_, _)
         then
-            lgra_13_3_const(limp_1_5_const_ctx(Ctx, Const), ConstExpr, Result,
-                !IT)
+            lgra_13_3_const(limp_1_5_const_ctx(Ctx, Const), Const, Result, !IT)
         else
             Result = skipped("the name `" ++ Id ^ id_name
                 ++ "` (a constant or a `let`) is not lowered yet")
@@ -5191,19 +5224,17 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
         Expr = ex_slot(_, _, _),
         ( if lgra_22_9_library_member(Ctx ^ cx_rf, Expr, LibPath, LibMember)
         then
-            % A library member ([LGRA.22.9]): a constant inlines with none of the
-            % importer's constants in scope.
+            % A library member ([LGRA.22.9]): a constant folds in its own file
+            % ([LIMP.1.5]).
             LibKey = string.join_list(".",
                 list.map((func(I) = I ^ id_name), LibPath))
                 ++ ";" ++ LibMember ^ id_name,
             ( if
                 map.search(Ctx ^ cx_rf ^ rf_qualified_consts, LibKey, LibConst),
-                LibConst ^ acn_form = acf_value(_, LibConstExpr)
+                LibConst ^ acn_form = acf_value(_, _)
             then
-                lgra_13_3_const(
-                    limp_1_5_const_ctx(Ctx, LibConst)
-                        ^ cx_rf ^ rf_consts := map.init,
-                    LibConstExpr, Result, !IT)
+                lgra_13_3_const(limp_1_5_const_ctx(Ctx, LibConst), LibConst,
+                    Result, !IT)
             else
                 Result = skipped("`" ++ string.replace_all(LibKey, ";", ".")
                     ++ "` is a library member that is not a constant, and is "
@@ -5342,9 +5373,18 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
             ( if LRes = done(LE), RRes = done(RE) then
                 ( if rlow_6_1_5_date_arith(Ctx, Op, L, R, DateFn) then
                     Result = done(e_call(DateFn, [LE, RE]))
-                else if rlow_6_1_6_saturating(Ctx, Op, L, R, IntOp) then
-                    Result = done(rlow_6_1_6_saturate(Ctx, Expr,
-                        e_binop(IntOp, LE, RE)))
+                else if rlow_6_1_6_checked(Ctx, Op, L, R, LE, RE, Checked) then
+                    Result = done(Checked)
+                else if rlow_6_1_6_saturating(Ctx, Op, L, R, IntOp, Shape) then
+                    Combined = e_binop(IntOp, LE, RE),
+                    (
+                        Shape = sat_integer,
+                        Saturating = Combined
+                    ;
+                        Shape = sat_rounded,
+                        Saturating = e_call(fn_round, [Combined])
+                    ),
+                    Result = done(rlow_6_1_6_saturate(Ctx, Expr, Saturating))
                 else
                     Result = binary(Op, LE, RE)
                 )
@@ -5442,6 +5482,21 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
             P ^ pt_negated = no
         then
             rlow_8_3_1_companion(Ctx, K, P, Components ++ [Fn], Result, !IT)
+        else if rlow_6_1_8_calendar_literal(Ctx, Expr, CalendarValue) then
+            Result = done(e_lit(CalendarValue))
+        else if
+            % [RLOW.6.1.9]: the five over a dimensioned value, in its own unit.
+            Callee = ex_name(Fn),
+            ( luni_8_9_keeps_unit(Fn ^ id_name)
+            ; Fn ^ id_name = "math.sign"
+            ),
+            Args = [UnitArg],
+            Ctx ^ cx_env = yes(UnitEnv),
+            type_of_expr(UnitEnv, UnitArg) = ty_known(UnitArgType),
+            UnitArgType ^ dt_dim = dim(UnitDim, UnitOwn)
+        then
+            rlow_6_1_9_in_unit(Ctx, UnitEnv, Expr, Fn ^ id_name, UnitArg,
+                UnitDim, UnitOwn, Result, !IT)
         else if Callee = ex_name(Fn), scalar_call(Fn ^ id_name, Args) then
             ( if Fn ^ id_name = "distance.great_circle" then
                 list.map2(lexp_5_11_1_degree_arg(Ctx), Args, InDegrees,
@@ -5492,6 +5547,21 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
             % [LCST.4.2.3]: `null::T?` is `null`.
             Result = done(e_lit(null))
         else if
+            % [LCST.4.5.11] before the static row: `x ?? d` with `x` a `Json`
+            % leaf has its default's type and converts by the kind it holds.
+            Ctx ^ cx_env = yes(Env),
+            lcst_4_5_11_leaf_cast(Env, Operand, Target, To)
+        then
+            rlow_6_1_1_expr(Ctx, Operand, OperandRes, !IT),
+            (
+                OperandRes = done(OperandE),
+                lcst_4_5_11_dispatch(Ctx, Target ^ id_name, To, OperandE,
+                    Result, !IT)
+            ;
+                OperandRes = skipped(Why),
+                Result = skipped(Why)
+            )
+        else if
             Ctx ^ cx_env = yes(Env),
             lcst_4_cast_pair(Env, Operand, Target, Kind, To)
         then
@@ -5503,12 +5573,12 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
                     % own offset ([LTIM.8.2.4]).
                     Result = done(e_call(fn_to_string, [OperandE]))
                 else if
-                    Kind = ck_int,
+                    ( Kind = ck_float ; Kind = ck_int ),
                     To = ct_unit(_, _),
-                    type_of_expr(Env, Expr) = ty_known(CastType),
-                    CastType ^ dt_leaf = lk_duration
+                    lcst_4_5_2_classify(Kind, To) = cc_total
                 then
-                    Result = done(lcst_4_5_2_time_unit(Ctx, Expr, OperandE))
+                    rlow_6_1_10_asserted(Ctx, Env, Operand, Target ^ id_name,
+                        OperandE, Result, !IT)
                 else
                     Result = lcst_4_5_2_lower(Kind, To, OperandE)
                 )
@@ -5551,8 +5621,9 @@ rlow_6_1_1_expr_inner(Ctx, Expr, Result, !IT) :-
     ).
 
     % A `::` cast, by its `(source, target)` pair: an identity cast is its operand
-    % ([LCST.4.5.1]), and so is a unit-tag strip or assert ([LUNI.8.5]); every
-    % other defined pair is one conversion builtin over the operand.
+    % ([LCST.4.5.1]), and so is a unit strip ([LUNI.8.5]); every other defined
+    % pair but a number asserted into a unit, `rlow_6_1_10_asserted`'s, is one
+    % conversion builtin over the operand.
     %
     %@spec [LCST.4.5.2]
     %@spec [LCST.4.2.2]
@@ -5571,13 +5642,6 @@ lcst_4_5_2_lower(Kind, To, E) = Result :-
         )
     then
         Result = done(E)
-    else if
-        ( Kind = ck_float
-        ; Kind = ck_int
-        ),
-        To = ct_unit(_, _)
-    then
-        Result = done(E)
     else if Kind = ck_duration, To = ct_int then
         % A `Duration` is held as its nanoseconds ([RDSC.5.5.8]).
         Result = done(E)
@@ -5591,20 +5655,192 @@ lcst_4_5_2_lower(Kind, To, E) = Result :-
             ++ "is not lowered")
     ).
 
-    % `n::s`, an `Int` asserted into a `time` unit: a negative `Int` gives `0_s`
-    % ([LTIM.1.3.1]). A literal is folded; anything else saturates.
+    % [LCST.4.5.11]: a `Json` leaf converts by the kind it holds when the cast
+    % runs. `X` is tested with `is`: `null` yields `null`; each kind with a row
+    % to the target yields that row's lowering, as an operand statically of that
+    % kind lowers; any other kind, an array or an object among them, raises a
+    % mismatch on a node carrying the provenance flag, which the engine raises
+    % as a `TypeError` ([IRET.9.6]). `X` is read in each arm: a join test has no
+    % bind frame to hold it, and a path read changes nothing.
     %
-    %@spec [LCST.4.5.2]
-:- func lcst_4_5_2_time_unit(ctx, lgra_9_3_1_expr, expr) = expr.
+    %@spec [LCST.4.5.11]
+:- pred lcst_4_5_11_dispatch(ctx::in, string::in, lcst_4_1_6_target::in,
+                             expr::in, lowered(expr)::out,
+                             intern_table::in, intern_table::out) is det.
 
-lcst_4_5_2_time_unit(Ctx, Expr, E) = Saturated :-
-    ( if E = e_lit(int(N)) then
-        Saturated = e_lit(int(int64.max(N, 0i64)))
-    else if E = e_unop(op_neg, e_lit(int(_))) then
-        Saturated = e_lit(int(0i64))
-    else
-        Saturated = rlow_6_1_6_saturate(Ctx, Expr, E)
+lcst_4_5_11_dispatch(Ctx, Unit, To, X, Result, !IT) :-
+    Arms = [ck_int - is_int, ck_float - is_float, ck_string - is_string,
+        ck_bool - is_bool],
+    list.foldr2(lcst_4_5_11_arm(Ctx, Unit, To, X), Arms,
+        done(lcst_4_5_11_no_row(X)), Kinds, !IT),
+    Result = map_done(
+        (func(Else) = e_if(e_is_test(X, is_null, no), e_lit(null), Else)),
+        Kinds).
+
+    %@helper
+:- pred lcst_4_5_11_arm(ctx::in, string::in, lcst_4_1_6_target::in, expr::in,
+                        pair(lcst_4_5_2_kind, ds.expr.is_subject)::in,
+                        lowered(expr)::in, lowered(expr)::out,
+                        intern_table::in, intern_table::out) is det.
+
+lcst_4_5_11_arm(Ctx, Unit, To, X, Kind - Subject, ElseRes, Result, !IT) :-
+    (
+        ElseRes = skipped(_),
+        Result = ElseRes
+    ;
+        ElseRes = done(Else),
+        lcst_4_5_11_row(Ctx, Unit, Kind, To, X, RowRes, !IT),
+        Result = map_done(
+            (func(Row) = e_if(e_is_test(X, Subject, no), Row, Else)), RowRes)
     ).
+
+    % One kind's row to the target, over `X` known not to be `null`.
+    %
+    %@helper
+:- pred lcst_4_5_11_row(ctx::in, string::in, lcst_4_5_2_kind::in,
+                        lcst_4_1_6_target::in, expr::in, lowered(expr)::out,
+                        intern_table::in, intern_table::out) is det.
+
+lcst_4_5_11_row(Ctx, Unit, Kind, To, X, Result, !IT) :-
+    Class = lcst_4_5_2_classify(Kind, To),
+    ( if Class = cc_rejected(_) then
+        Result = done(lcst_4_5_11_no_row(X))
+    else if
+        ( Kind = ck_float ; Kind = ck_int ),
+        To = ct_unit(_, _),
+        Class = cc_total
+    then
+        rlow_6_1_10_lowering(Ctx, Unit, X, no, Result, !IT)
+    else
+        Result = lcst_4_5_2_lower(Kind, To, X)
+    ).
+
+    % A kind with no row: `X + true` mismatches for every kind, and the flag on
+    % the node makes the mismatch a `TypeError`.
+    %
+    %@helper
+:- func lcst_4_5_11_no_row(expr) = expr.
+
+lcst_4_5_11_no_row(X) = e_tainted(e_binop(op_add, X, e_lit(bool(yes)))).
+
+    % `x::<unit>` with `x` a number: the number is in that unit, and the result
+    % is the value it names in the base unit. Only an assertion into the base
+    % unit stays a read of its operand, so only that one can be an alpha test or
+    % a join anchor ([RLOW.5.5], [IRET.7.5.1]). A `null` operand yields `null`
+    % ([LNUL.4.1]); a tier-2 body's builtins are not all defined on one, so its
+    % body is guarded where the operand may be `null`.
+    %
+    %@spec [RLOW.6.1.10]
+    %@spec [LUNI.8.5]
+:- pred rlow_6_1_10_asserted(ctx::in, type_env::in, lgra_9_3_1_expr::in,
+                             string::in, expr::in, lowered(expr)::out,
+                             intern_table::in, intern_table::out) is det.
+
+rlow_6_1_10_asserted(Ctx, Env, Operand, Unit, X, Result, !IT) :-
+    ( if
+        type_of_expr(Env, Operand) = ty_known(Type),
+        Type ^ dt_null = non_null
+    then
+        MayBeNull = no
+    else
+        MayBeNull = yes
+    ),
+    rlow_6_1_10_lowering(Ctx, Unit, X, MayBeNull, Result, !IT).
+
+    % `x::<Unit>` with `X` the lowered number. `MayBeNull` says `X` may be
+    % `null`, and then a tier-2 body is guarded.
+    %
+    %@spec [RLOW.6.1.10]
+:- pred rlow_6_1_10_lowering(ctx::in, string::in, expr::in, bool::in,
+                             lowered(expr)::out,
+                             intern_table::in, intern_table::out) is det.
+
+rlow_6_1_10_lowering(Ctx, Unit, X, MayBeNull, Result, !IT) :-
+    ( if rlow_6_1_10_assertion_of(Ctx ^ cx_rf, Unit, Assertion) then
+        (
+            Assertion = asn_base,
+            Result = done(X)
+        ;
+            Assertion = asn_affine(Slope, Offset),
+            Scaled = ( if Slope = 1.0 then X
+                       else e_binop(op_mul, e_lit(float(Slope)), X) ),
+            Result = done(( if Offset = 0.0 then Scaled
+                            else e_binop(op_add, Scaled, e_lit(float(Offset))) ))
+        ;
+            Assertion = asn_tier2(ToBase),
+            BodyCtx = ((Ctx ^ cx_pats := []) ^ cx_env := no)
+                ^ cx_lets := [let_lowered("x", X)],
+            rlow_6_1_1_expr(BodyCtx, ToBase, BodyRes, !IT),
+            (
+                MayBeNull = no,
+                Result = BodyRes
+            ;
+                MayBeNull = yes,
+                Result = map_done(
+                    (func(Body) = e_if(e_is_test(X, is_null, no), X, Body)),
+                    BodyRes)
+            )
+        ;
+            Assertion = asn_int(P, R, Q, Time),
+            Result = done(rlow_6_1_10_int(P, R, Q, Time, X))
+        ;
+            Assertion = asn_int_tier2(ToBase, Time),
+            rlow_6_1_10_int_tier2(Ctx, ToBase, Time, X, MayBeNull, Result,
+                !IT)
+        ;
+            Assertion = asn_duration(Factor),
+            Result = done(e_call(fn_duration_mul, [X, e_lit(int(Factor))]))
+        )
+    else
+        Result = skipped("`::" ++ Unit ++ "` names a unit with no conversion "
+            ++ "a number can be asserted through ([RLOW.6.1.10])")
+    ).
+
+    % A tier-1 unit on integer storage: `FN_INT_MUL_ADD_CHECKED(x, P, R)` unless
+    % `(P, R) = (1, 0)`, then `FN_INT_DIV_EXACT(…, Q)` unless `Q = 1`. The
+    % product and the sum raise past the `Int` range and never wrap. On the
+    % `time` dimension a negative result is `0`, as `FN_DURATION_MUL`'s is.
+    %
+    %@spec [RLOW.6.1.10]
+:- func rlow_6_1_10_int(int64, int64, int64, bool, expr) = expr.
+
+rlow_6_1_10_int(P, R, Q, Time, X) = E :-
+    Shifted = rlow_7_3_9_mul_add_checked(X, P, R),
+    Whole = ( if Q = 1i64 then Shifted
+              else e_call(fn_int_div_exact, [Shifted, e_lit(int(Q))]) ),
+    E = ( if Time = yes then e_call(fn_max, [Whole, e_lit(int(0i64))])
+          else Whole ).
+
+    % A tier-2 unit on integer storage: its `to_base` over `x` as `Float`, then
+    % [LUNI.7.2]'s cast, `FN_ROUND`, ties to even; on the `time` dimension a
+    % negative result is `0`. A `null` operand yields `null`, as a tier-2 body
+    % on `float64` storage does.
+    %
+    %@spec [RLOW.6.1.10]
+    %@spec [LUNI.7.2]
+:- pred rlow_6_1_10_int_tier2(ctx::in, lgra_9_3_1_expr::in, bool::in, expr::in,
+                              bool::in, lowered(expr)::out,
+                              intern_table::in, intern_table::out) is det.
+
+rlow_6_1_10_int_tier2(Ctx, ToBase, Time, X, MayBeNull, Result, !IT) :-
+    AsFloat = e_call(fn_int_to_float, [X]),
+    BodyCtx = ((Ctx ^ cx_pats := []) ^ cx_env := no)
+        ^ cx_lets := [let_lowered("x", AsFloat)],
+    rlow_6_1_1_expr(BodyCtx, ToBase, BodyRes, !IT),
+    Result = map_done(
+        ( func(Body) = Guarded :-
+            Rounded = e_call(fn_round, [Body]),
+            Stored = ( if Time = yes
+                       then e_call(fn_max, [Rounded, e_lit(int(0i64))])
+                       else Rounded ),
+            (
+                MayBeNull = no,
+                Guarded = Stored
+            ;
+                MayBeNull = yes,
+                Guarded = e_if(e_is_test(X, is_null, no), X, Stored)
+            )
+        ), BodyRes).
 
     %@helper
 :- pred cast_fn(lcst_4_5_2_kind::in, lcst_4_1_6_target::in, builtin_fn::out)
@@ -5830,38 +6066,92 @@ rlow_6_1_5_date_arith(Ctx, Op, L, R, Fn) :-
         )
     ).
 
-    % The integer operation of each saturating row, by `dsc.typecheck`'s operand
-    % types. `dur / n` is `op_floordiv`: `/` is always a `Float` ([LEXP.7.4]). With
-    % no typing environment the row lowers to the bare integer operation.
+    % The `Duration` rows that neither go negative nor wrap: `a + b` over two
+    % `Duration`s, and a product of an `Int` and a `Duration`, whichever side
+    % each is on. With no typing environment the row lowers as on two `Int`s.
     %
     %@spec [RLOW.6.1.6]
-:- pred rlow_6_1_6_saturating(ctx::in, lgra_9_3_1_binary_op::in,
-                              lgra_9_3_1_expr::in, lgra_9_3_1_expr::in,
-                              binop::out) is semidet.
+:- pred rlow_6_1_6_checked(ctx::in, lgra_9_3_1_binary_op::in,
+                           lgra_9_3_1_expr::in, lgra_9_3_1_expr::in,
+                           expr::in, expr::in, expr::out) is semidet.
 
-rlow_6_1_6_saturating(Ctx, Op, L, R, IntOp) :-
+rlow_6_1_6_checked(Ctx, Op, L, R, LE, RE, Checked) :-
     Ctx ^ cx_env = yes(Env),
     type_of_expr(Env, L) = ty_known(LType),
     type_of_expr(Env, R) = ty_known(RType),
     LLeaf = LType ^ dt_leaf,
     RLeaf = RType ^ dt_leaf,
     (
+        Op = bo_add,
+        LLeaf = lk_duration,
+        RLeaf = lk_duration,
+        Checked = e_call(fn_duration_add, [LE, RE])
+    ;
+        Op = bo_mul,
+        LLeaf = lk_int,
+        RLeaf = lk_duration,
+        Checked = e_call(fn_duration_mul, [LE, RE])
+    ;
+        Op = bo_mul,
+        LLeaf = lk_duration,
+        RLeaf = lk_int,
+        Checked = e_call(fn_duration_mul, [RE, LE])
+    ).
+
+    %@helper
+:- type rlow_6_1_6_shape
+    --->    sat_integer
+    ;       sat_rounded.
+
+    % The operation of each saturating row, by `dsc.typecheck`'s operand types,
+    % and whether a `Float` operand makes its result round. `dur / n` is
+    % `op_floordiv`: `/` is always a `Float` ([LEXP.7.4]), and `Duration / Int`
+    % divides nanoseconds. With no typing environment the row lowers to the bare
+    % integer operation.
+    %
+    %@spec [RLOW.6.1.6]
+:- pred rlow_6_1_6_saturating(ctx::in, lgra_9_3_1_binary_op::in,
+                              lgra_9_3_1_expr::in, lgra_9_3_1_expr::in,
+                              binop::out, rlow_6_1_6_shape::out) is semidet.
+
+rlow_6_1_6_saturating(Ctx, Op, L, R, IntOp, Shape) :-
+    Ctx ^ cx_env = yes(Env),
+    type_of_expr(Env, L) = ty_known(LType),
+    type_of_expr(Env, R) = ty_known(RType),
+    LLeaf = LType ^ dt_leaf,
+    RLeaf = RType ^ dt_leaf,
+    ( if
         Op = bo_sub,
         ( LLeaf = lk_time, RLeaf = lk_time
         ; LLeaf = lk_duration, RLeaf = lk_duration
-        ),
-        IntOp = op_sub
-    ;
+        )
+    then
+        IntOp = op_sub,
+        Shape = sat_integer
+    else if
         Op = bo_mul,
-        ( LLeaf = lk_int, RLeaf = lk_duration
-        ; LLeaf = lk_duration, RLeaf = lk_int
-        ),
-        IntOp = op_mul
-    ;
-        Op = bo_div,
+        ( LLeaf = lk_float, RLeaf = lk_duration
+        ; LLeaf = lk_duration, RLeaf = lk_float
+        )
+    then
+        IntOp = op_mul,
+        Shape = sat_rounded
+    else if
+        ( Op = bo_div ; Op = bo_floordiv ),
         LLeaf = lk_duration,
-        RLeaf = lk_int,
-        IntOp = op_floordiv
+        RLeaf = lk_int
+    then
+        IntOp = op_floordiv,
+        Shape = sat_integer
+    else if Op = bo_div, LLeaf = lk_duration, RLeaf = lk_float then
+        IntOp = op_div,
+        Shape = sat_rounded
+    else
+        Op = bo_floordiv,
+        LLeaf = lk_duration,
+        RLeaf = lk_float,
+        IntOp = op_floordiv,
+        Shape = sat_rounded
     ).
 
     % `FN_MAX(X, 0)` over a saturating row's integer operation `X`. `FN_MAX` faults
@@ -5920,6 +6210,211 @@ scalar_call(Name, Args) :-
     % `math` or `distance` member goes by its [LEXP.17.2] row, the name
     % `dsc.libcall` gives every call that reaches it ([LIMP.3.3.4]).
     %
+    % `round`, `math.floor`, `math.ceil`, `math.trunc` and `math.sign` over a
+    % dimensioned value, in the unit its static type names ([LUNI.8.9]). A
+    % `float64` dimension converts out of the base unit, applies the builtin,
+    % and, but for `math.sign`, widens the `Int` and converts back. Integer
+    % storage rounds the exact `(Q·x - R) / P` and goes back as `n::<unit>`
+    % does, and its sign is that of `Q·x - R`, negated for a negative `P`
+    % (`rlow_6_1_9_whole`). A value whose type names no unit is in the base
+    % unit.
+    %
+    % The unit is read in the file that declares it ([LIMP.1.5]), by its
+    % reference: a library's slot carries the library's unit, which the reading
+    % file may spell otherwise or not at all. The argument is read in the
+    % reading file.
+    %
+    %@spec [RLOW.6.1.9]
+    %@spec [LIMP.1.5]
+:- pred rlow_6_1_9_in_unit(ctx::in, type_env::in, lgra_9_3_1_expr::in,
+                           string::in, lgra_9_3_1_expr::in, decl_ref::in,
+                           maybe(decl_ref)::in, lowered(expr)::out,
+                           intern_table::in, intern_table::out) is det.
+
+rlow_6_1_9_in_unit(Ctx0, Env, Call, Fn, Arg, Dimension, Unit, Result, !IT) :-
+    rlow_6_1_1_expr(Ctx0, Arg, ArgRes, !IT),
+    (
+        Unit = yes(UnitDecl),
+        RF = decl_scope(Ctx0 ^ cx_rf, UnitDecl)
+    ;
+        Unit = no,
+        RF = Ctx0 ^ cx_rf
+    ),
+    Ctx = Ctx0 ^ cx_rf := RF,
+    (
+        ArgRes = skipped(Why),
+        Result = skipped(Why)
+    ;
+        ArgRes = done(X),
+        ( if scalar_fn(Fn, 1, Op) then
+            ( if whole_number_dimension(RF, Dimension) then
+                rlow_6_1_9_whole(Ctx, Fn, Op, Unit, X, Result, !IT)
+            else
+                (
+                    Unit = yes(UnitRef),
+                    ( if
+                        rlow_7_3_9_conversion(RF, Dimension, UnitRef ^ dr_name,
+                            Conv)
+                    then
+                        InUnit = rlow_7_3_9_converted(Conv, X)
+                    else
+                        InUnit = skipped(rlow_6_1_9_no_conversion(UnitRef))
+                    )
+                ;
+                    Unit = no,
+                    InUnit = done(X)
+                ),
+                (
+                    InUnit = skipped(Why),
+                    Result = skipped(Why)
+                ;
+                    InUnit = done(Y),
+                    Rounded = e_call(Op, [Y]),
+                    ( if Op = fn_sign then
+                        Result = done(Rounded)
+                    else
+                        Widened = e_call(fn_int_to_float, [Rounded]),
+                        (
+                            Unit = yes(BackRef),
+                            rlow_6_1_10_asserted(Ctx, Env, Call,
+                                BackRef ^ dr_name, Widened, Result, !IT)
+                        ;
+                            Unit = no,
+                            Result = done(Widened)
+                        )
+                    )
+                )
+            )
+        else
+            unexpected($pred, "a rounding builtin with no BuiltinFn")
+        )
+    ).
+
+    % A rounding, or `math.sign`, of a value on integer storage. A tier-1 unit's
+    % value is the exact `(Q·x - R) / P`: the numerator is negated where `P`
+    % is negative, so the division is by `|P|`, and the rounded integer goes
+    % back as `n::<unit>` does. Its sign is the builtin over `Q·x - R`, negated
+    % where `P` is negative, with no division. A tier-2 unit goes out through
+    % its `from_base` as a `Float` and, rounded, back as `n::<unit>` does.
+    %
+    %@spec [RLOW.6.1.9]
+:- pred rlow_6_1_9_whole(ctx::in, string::in, builtin_fn::in,
+                         maybe(decl_ref)::in, expr::in, lowered(expr)::out,
+                         intern_table::in, intern_table::out) is det.
+
+rlow_6_1_9_whole(Ctx, Fn, Op, Unit, X, Result, !IT) :-
+    ( if Unit = yes(UnitRef) then
+        ( if rlow_6_1_10_assertion_of(Ctx ^ cx_rf, UnitRef ^ dr_name, Asn) then
+            (
+                Asn = asn_base,
+                Result = done(( if Op = fn_sign then e_call(fn_sign, [X])
+                                else X ))
+            ;
+                Asn = asn_int(P, R, Q, Time),
+                Result = done(rlow_6_1_9_tier1(Fn, Op, P, Q, R, X,
+                    ( func(N) = rlow_6_1_10_int(P, R, Q, Time, N) )))
+            ;
+                Asn = asn_duration(P),
+                Result = done(rlow_6_1_9_tier1(Fn, Op, P, 1i64, 0i64, X,
+                    ( func(N) = e_call(fn_duration_mul, [N, e_lit(int(P))]) )))
+            ;
+                Asn = asn_int_tier2(ToBase, Time),
+                ( if
+                    luni_4_3_tier2_from_base(Ctx ^ cx_rf, UnitRef ^ dr_name,
+                        FromBase)
+                then
+                    InUnit = luni_4_3_from_base(FromBase,
+                        e_call(fn_int_to_float, [X])),
+                    (
+                        InUnit = skipped(Why),
+                        Result = skipped(Why)
+                    ;
+                        InUnit = done(Y),
+                        ( if Op = fn_sign then
+                            Result = done(e_call(fn_sign, [Y]))
+                        else
+                            rlow_6_1_10_int_tier2(Ctx, ToBase, Time,
+                                e_call(Op, [Y]), no, Result, !IT)
+                        )
+                    )
+                else
+                    Result = skipped(rlow_6_1_9_no_conversion(UnitRef))
+                )
+            ;
+                ( Asn = asn_affine(_, _)
+                ; Asn = asn_tier2(_)
+                ),
+                % `rlow_6_1_10_assertion_of` gives these on `float64` storage
+                % alone.
+                unexpected($pred, "a float64 assertion on integer storage")
+            )
+        else
+            Result = skipped(rlow_6_1_9_no_conversion(UnitRef))
+        )
+    else
+        % In the base unit: the rounding of an `Int` is the `Int`.
+        Result = done(( if Op = fn_sign then e_call(fn_sign, [X]) else X ))
+    ).
+
+    % A tier-1 unit's rounding or sign over integer storage, `Back` taking the
+    % rounded integer to the base unit.
+    %
+    %@spec [RLOW.6.1.9]
+:- func rlow_6_1_9_tier1(string, builtin_fn, int64, int64, int64, expr,
+                         (func(expr) = expr)) = expr.
+
+rlow_6_1_9_tier1(Fn, Op, P, Q, R, X, Back) = E :-
+    Numerator = rlow_7_3_9_numerator(Q, R, X),
+    ( if Op = fn_sign then
+        Sign = e_call(fn_sign, [Numerator]),
+        E = ( if P < 0i64 then e_binop(op_sub, e_lit(int(0i64)), Sign)
+              else Sign )
+    else
+        ( if P < 0i64 then
+            % `R - Q·x`, checked as the numerator is; `Q > 0`, so `-Q` fits.
+            Signed = rlow_7_3_9_mul_add_checked(X, -Q, R),
+            Divisor = -P
+        else
+            Signed = Numerator,
+            Divisor = P
+        ),
+        E = Back(rlow_6_1_9_multiple(Fn, Signed, Divisor))
+    ).
+
+    % The integer that rounding the exact `X / F` picks, `F` positive, in `Int`
+    % arithmetic: `q = x // f` and `r = x % f`, with `0 =< r < f`
+    % ([LEXP.7.5], [LEXP.7.6]). `round` takes ties to the even one.
+    %
+    %@helper
+:- func rlow_6_1_9_multiple(string, expr, int64) = expr.
+
+rlow_6_1_9_multiple(Fn, X, F) = M :-
+    Factor = e_lit(int(F)),
+    Zero = e_lit(int(0i64)),
+    Q = e_binop(op_floordiv, X, Factor),
+    R = e_binop(op_rem, X, Factor),
+    Up = e_binop(op_add, Q, e_lit(int(1i64))),
+    ( if Fn = "math.floor" then
+        M = Q
+    else if Fn = "math.ceil" then
+        M = e_if(e_binop(op_gt, R, Zero), Up, Q)
+    else if Fn = "math.trunc" then
+        M = e_if(e_binop(op_and, e_binop(op_lt, X, Zero),
+            e_binop(op_gt, R, Zero)), Up, Q)
+    else
+        Rest = e_binop(op_sub, Factor, R),
+        M = e_if(e_binop(op_gt, R, Rest), Up,
+            e_if(e_binop(op_lt, R, Rest), Q,
+                e_binop(op_add, Q, e_binop(op_rem, Q, e_lit(int(2i64))))))
+    ).
+
+    %@helper
+:- func rlow_6_1_9_no_conversion(decl_ref) = string.
+
+rlow_6_1_9_no_conversion(UnitRef) =
+    "a rounding in `" ++ UnitRef ^ dr_name ++ "`, a unit with no conversion "
+        ++ "the compiler can bake ([RLOW.6.1.9])".
+
     %@helper
 :- pred scalar_fn(string::in, int::in, builtin_fn::out) is semidet.
 
@@ -6265,7 +6760,20 @@ lgra_9_8_11_formula_call(Ctx, Line, Arg, Result, !IT) :-
             ArgRes = done(ArgE),
             BodyCtx = ((Ctx ^ cx_pats := []) ^ cx_env := no)
                 ^ cx_lets := [let_lowered(Line ^ afl_param ^ id_name, ArgE)],
-            rlow_6_1_1_expr(BodyCtx, Line ^ afl_body, Result, !IT)
+            rlow_6_1_1_expr(BodyCtx, Line ^ afl_body, BodyRes, !IT),
+            ( if
+                BodyRes = done(BodyE),
+                map.search(RF ^ rf_types, Return, te_unit(uk_symbol(Dim), _)),
+                Dim = time_dimension
+            then
+                % A formula body is plain numbers. A `Duration` is whole,
+                % non-negative nanoseconds ([LUNI.7.2], [LTIM.1.3.1]).
+                Result = done(rlow_6_1_6_saturate(Ctx,
+                    formula_call_of(Line, Arg),
+                    e_call(fn_round, [BodyE])))
+            else
+                Result = BodyRes
+            )
         ;
             ArgRes = skipped(Why),
             Result = skipped(Why)
@@ -6276,16 +6784,28 @@ lgra_9_8_11_formula_call(Ctx, Line, Arg, Result, !IT) :-
             ++ "units are not their dimensions' bases is not lowered yet")
     ).
 
-    % A `const` read, as its RHS, lowered with no binding, `let` or right side in
-    % scope: a name inside it is another const. Inlined, not folded.
+    % A `const` read is the literal holding its folded value, in the scope of the
+    % file declaring it.
     %
-    %@helper
-:- pred lgra_13_3_const(ctx::in, lgra_9_3_1_expr::in, lowered(expr)::out,
+    %@spec [LGRA.13.3]
+    %@spec [RLOW.6.1.8]
+:- pred lgra_13_3_const(ctx::in, ast_const::in, lowered(expr)::out,
                         intern_table::in, intern_table::out) is det.
 
-lgra_13_3_const(Ctx, ConstExpr, Result, !IT) :-
-    ConstCtx = ((Ctx ^ cx_lets := []) ^ cx_pats := []) ^ cx_right := no,
-    rlow_6_1_1_expr(ConstCtx, ConstExpr, Result, !IT).
+lgra_13_3_const(Ctx, Const, Result, !IT) :-
+    ( if rlow_6_1_8_const_literal(Ctx ^ cx_rf, Const, Literal) then
+        (
+            Literal = rl_value(Value),
+            Result = done(e_lit(Value))
+        ;
+            Literal = rl_string(Text),
+            intern(Text, Ref, !IT),
+            Result = done(e_lit(str(Ref)))
+        )
+    else
+        Result = skipped("`const " ++ Const ^ acn_name ^ id_name
+            ++ "` has no value to lower")
+    ).
 
     % Lowering a constant's value reads its unit literals in the file declaring
     % it.
@@ -6300,6 +6820,39 @@ limp_1_5_const_ctx(Ctx0, Const) = Ctx :-
             yes(Env ^ te_file := const_scope(Env ^ te_file, Const))
     else
         Ctx = Ctx1
+    ).
+
+    % A `calendar` call whose arguments all fold is the literal of its value, in
+    % any position. A name a formula binds is no constant, so a call reading one
+    % is evaluated when the rule runs. A call whose fold raises has been refused.
+    %
+    %@spec [LTIM.14.3]
+    %@spec [RLOW.6.1.8]
+:- pred rlow_6_1_8_calendar_literal(ctx::in, lgra_9_3_1_expr::in, ds_value::out)
+    is semidet.
+
+rlow_6_1_8_calendar_literal(Ctx, Expr, Value) :-
+    Expr = ex_call(_, Args, _),
+    not list.any_true(names_a_let(Ctx), Args),
+    ltim_14_3_calendar_fold(Ctx ^ cx_rf, Expr, Kind, Answer),
+    Answer = calendar_value(V),
+    (
+        Kind = lc_time,
+        Value = time(ds_time(V, 0i64))
+    ;
+        Kind = lc_date,
+        Value = int(V)
+    ).
+
+    %@helper
+:- pred names_a_let(ctx::in, lgra_9_3_1_expr::in) is semidet.
+
+names_a_let(Ctx, E) :-
+    (
+        E = ex_name(Id),
+        let_named(Ctx ^ cx_lets, Id ^ id_name, [], _, _)
+    ;
+        list.any_true(names_a_let(Ctx), ast_children(E))
     ).
 
     % `<magnitude>_<unit>` for a tier-2 unit: the unit's `to_base` expression at
@@ -7488,7 +8041,8 @@ ladp_8_5_2_default(RF, Type, Declared) = Default :-
 
 base_literal(RF, Dimension, Base, Pos) = Literal :-
     ( if whole_number_dimension(RF, Dimension) then
-        Literal = ex_int(dsc.exact.truncate_wrapping_int64(Base), Pos)
+        dsc.exact.luni_2_4_1_int64(dsc.exact.truncate_integer(Base), I),
+        Literal = ex_int(I, Pos)
     else
         dsc.exact.to_float(Base, F),
         Literal = ex_float(F, Pos)
@@ -7496,7 +8050,9 @@ base_literal(RF, Dimension, Base, Pos) = Literal :-
 
     % A base-unit value as the literal a service receives on a kwarg of unit `Type`,
     % folded exactly and rounded once ([LDET.3.3a.7]). A whole-number value is
-    % truncated: `dsc.validate` has refused one that is not whole.
+    % truncated: `dsc.validate` has refused one that is not whole, and on a
+    % kwarg one outside int64 ([LUNI.2.4.1]). Fails for one outside int64, never
+    % wrapped.
     %
     %@helper
 :- pred in_unit_literal(resolved_file::in, string::in, decl_ref::in,
@@ -7506,7 +8062,8 @@ base_literal(RF, Dimension, Base, Pos) = Literal :-
 in_unit_literal(RF, Type, Dimension, Base, Pos, Literal) :-
     ladp_8_5_2_in_unit(RF, Type, Base, Value),
     ( if whole_number_dimension(RF, Dimension) then
-        Literal = ex_int(dsc.exact.truncate_wrapping_int64(Value), Pos)
+        dsc.exact.luni_2_4_1_int64(dsc.exact.truncate_integer(Value), I),
+        Literal = ex_int(I, Pos)
     else
         dsc.exact.to_float(Value, F),
         Literal = ex_float(F, Pos)
@@ -7611,8 +8168,7 @@ let_rhs_of(Ctx, Name, Rhs) :-
     Ctx ^ cx_env = yes(Env),
     map.search(Env ^ te_scope ^ rsc_let_exprs, Name, Rhs).
 
-    % Whether a written argument is a quantity of `Dimension`, by its type; for
-    % `time` a `Duration` too ([LTIM.1.3.2]).
+    % Whether a written argument is a quantity of `Dimension`, by its type.
     %
     %@helper
 :- pred argument_quantity_of(ctx::in, lgra_9_3_1_expr::in, decl_ref::in)
@@ -7628,10 +8184,7 @@ argument_quantity_of(Ctx, Expr, Dimension) :-
     else
         Ctx ^ cx_env = yes(Env),
         type_of_expr(Env, Expr) = ty_known(Type),
-        ( Type ^ dt_dim = dim(Dimension, _)
-        ; Dimension = time_dimension,
-          Type ^ dt_leaf = lk_duration
-        )
+        Type ^ dt_dim = dim(Dimension, _)
     ).
 
     % A call: the correlation (the `as` clause or an `as:` kwarg) and the body kwargs,
@@ -7912,8 +8465,11 @@ luni_4_5_implicit_formula(RF, From, To, Line, Inverting) :-
     Candidates = [{_, Line, Inverting} | _].
 
     % A base-unit value in the kwarg's unit: the tier-1 body's inverse, `(base -
-    % Offset) / Slope`, or a tier-2 unit's `from_base`, for a `float64` dimension,
-    % and `FN_INT_DIV_EXACT` for a whole-number one.
+    % Offset) / Slope`, or a tier-2 unit's `from_base`, for a `float64` dimension;
+    % `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(base, Q, -R), P)` for a tier-1 unit
+    % on integer storage, and
+    % a tier-2 unit's `from_base` over the base value as `Float`, then
+    % [LUNI.7.2]'s cast.
     %
     %@spec [RLOW.7.3.9]
 :- func rlow_7_3_9_converted(rlow_7_3_9_conversion, expr) = lowered(expr).
@@ -7924,9 +8480,52 @@ rlow_7_3_9_converted(cv_affine(Offset, Slope), E) = done(Converted) :-
                 else e_binop(op_sub, E, e_lit(float(Offset))) ),
     Converted = ( if Slope = 1.0 then Shifted
                   else e_binop(op_div, Shifted, e_lit(float(Slope))) ).
-rlow_7_3_9_converted(cv_div_exact(Factor), E) =
-    done(e_call(fn_int_div_exact, [E, e_lit(int(Factor))])).
+rlow_7_3_9_converted(cv_int(P, Q, R), E) =
+    done(e_call(fn_int_div_exact, [rlow_7_3_9_numerator(Q, R, E),
+        e_lit(int(P))])).
 rlow_7_3_9_converted(cv_from_base(Body), E) = luni_4_3_from_base(Body, E).
+rlow_7_3_9_converted(cv_int_from_base(Body), E) =
+    map_done(( func(F) = e_call(fn_round, [F]) ),
+        luni_4_3_from_base(Body, e_call(fn_int_to_float, [E]))).
+
+    % `Q·v - R` as `FN_INT_MUL_ADD_CHECKED(v, Q, -R)`, `-R` one `Int` literal,
+    % left out where `(Q, R) = (1, 0)`. No `R` here is -2^63: `dsc.validate`
+    % refuses a unit whose `-R` has no `Int` at its declaration
+    % ([LUNI.2.4.1]), so a unit that reaches the lowering has one.
+    %
+    %@spec [RLOW.7.3.9]
+    %@spec [LUNI.2.4.1]
+:- func rlow_7_3_9_numerator(int64, int64, expr) = expr.
+
+rlow_7_3_9_numerator(Q, R, E) = N :-
+    ( if R = int64.min_int64 then
+        unexpected($pred, "a unit whose -R has no Int reached the lowering")
+    else
+        N = rlow_7_3_9_mul_add_checked(E, Q, -R)
+    ).
+
+    % `FN_INT_MUL_ADD_CHECKED(x, M, A)`, `M·x + A` with the product and the sum
+    % checked, or `x` itself where `(M, A) = (1, 0)`.
+    %
+    %@spec [RLOW.7.3.9]
+:- func rlow_7_3_9_mul_add_checked(expr, int64, int64) = expr.
+
+rlow_7_3_9_mul_add_checked(X, M, A) =
+    ( if M = 1i64, A = 0i64 then X
+      else e_call(fn_int_mul_add_checked, [X, e_lit(int(M)), e_lit(int(A))]) ).
+
+rdsc_5_5_9_conversion(RF, Dimension, Unit, Conversion, !IT) :-
+    ( if bind_index(1, 0, Ix) then
+        X = e_bind_ref(Ix)
+    else
+        unexpected($pred, "bind_ref 0 is outside a frame of one")
+    ),
+    % The host's number is never `null` ([NFCT.1.4.6]), so no body is guarded.
+    rlow_6_1_10_lowering(ctx(RF, [], no, [], no), Unit, X, no, ToStored, !IT),
+    ToStored = done(To),
+    rlow_7_3_9_conversion(RF, Dimension, Unit, FromBase),
+    rlow_7_3_9_converted(FromBase, X) = done(From),
+    Conversion = unit_conversion(To, From).
 
     % A tier-2 unit's `from_base` body with its `x` the lowered base-unit value,
     % nothing folded or reassociated ([LUNI.4.3]). `x` may occur more than once:
@@ -8187,9 +8786,17 @@ rlow_8_3_1_companion(Ctx, K, P, Components, Result, !IT) :-
                 intern(SchemaName, SchemaRef, !IT),
                 intern(Slot, SlotRef, !IT),
                 intern(IdSlot, IdSlotRef, !IT),
-                Result = done(e_call(Fn, [e_lit(str(SchemaRef)),
+                Read = e_call(Fn, [e_lit(str(SchemaRef)),
                     e_lit(str(SlotRef)), e_lit(str(IdSlotRef)), IdE,
-                    e_lit(int(Window))] ++ Extra))
+                    e_lit(int(Window))] ++ Extra),
+                ( if
+                    slot_by_name(P ^ pt_schema, SlotRef, ReadSlot),
+                    ReadSlot ^ sc_kind = k_duration
+                then
+                    Result = done(rlow_6_1_6_duration_read(Agg, Read))
+                else
+                    Result = done(Read)
+                )
             else
                 Result = skipped("the series window is neither a duration "
                     ++ "literal nor a `time` const")
@@ -8200,6 +8807,36 @@ rlow_8_3_1_companion(Ctx, K, P, Components, Result, !IT) :-
         )
     else
         Result = skipped("a companion read this compiler cannot lower")
+    ).
+
+    % A read over a slot of the `time` dimension: a `Duration?` read rounds, and a
+    % `sum` is checked at the read ([LSER.17.2]).
+    %
+    %@spec [RLOW.6.1.6]
+:- func rlow_6_1_6_duration_read(string, expr) = expr.
+
+rlow_6_1_6_duration_read(Agg, Read) = Lowered :-
+    ( if lser_17_2_rounds_over_duration(Agg) then
+        Lowered = e_if(e_is_test(Read, is_null, no), Read,
+            e_call(fn_round, [Read]))
+    else if Agg = "sum" then
+        Lowered = e_call(fn_duration_add, [Read, e_lit(int(0i64))])
+    else
+        Lowered = Read
+    ).
+
+    % The reads [LSER.17.2] types `Duration?` over a `time` slot, whose engine
+    % value is a `Float`.
+    %
+    %@spec [LSER.17.2]
+:- pred lser_17_2_rounds_over_duration(string::in) is semidet.
+
+lser_17_2_rounds_over_duration(Agg) :-
+    ( Agg = "mean"
+    ; Agg = "median"
+    ; Agg = "stdev"
+    ; Agg = "pstdev"
+    ; quantile_fn(Agg)
     ).
 
     % `count_of(cursor, value)` and `contains(cursor, value)`: the companion read's
@@ -8391,6 +9028,9 @@ line_window_ns(RF, atm_sliding(E, _), Ns) :-
 line_window_ns(RF, atm_tumbling(E, _), Ns) :-
     lgra_2_8_1_time_value_ns(RF, E, Ns).
 
+    % A duration literal's nanoseconds, 0 for anything else. One outside int64
+    % has been refused at the literal ([LUNI.2.4.1]).
+    %
     %@helper
 :- func duration_ns_of(lgra_9_3_1_expr) = int64.
 
@@ -8399,7 +9039,12 @@ duration_ns_of(E) = Ns :-
         E = ex_unit(Magnitude, Suffix, _),
         luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier)
     then
-        Ns = luni_3_1_5_magnitude_ns(Magnitude, Multiplier)
+        ( if luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Ns0) then
+            Ns = Ns0
+        else
+            unexpected($pred, "`" ++ Magnitude ++ Suffix
+                ++ "` is outside int64 nanoseconds ([LUNI.2.4.1])")
+        )
     else
         Ns = 0i64
     ).
@@ -8513,10 +9158,10 @@ rdsc_11_3_too_deep_nodes(IT, Net) =
     list.filter_map(rdsc_11_3_beta(Net), Net ^ rn_betas)
         ++ list.filter_map(rdsc_11_3_terminal(IT, Net), Net ^ rn_terms).
 
-    %@spec [RDSC.11.3]
-:- func rdsc_11_3_max_depth = int.
-
 rdsc_11_3_max_depth = 48.
+
+rdsc_11_3_conversion_depth(unit_conversion(To, From)) =
+    int.max(expr_depth(To), expr_depth(From)).
 
 %-----------------------------------------------------------------------------%
 % [LGRA.8.7], [LGRA.5.11] -- a rule or a schema past the byte index space

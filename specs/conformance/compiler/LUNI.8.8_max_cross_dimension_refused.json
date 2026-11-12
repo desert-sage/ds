@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.8_max_cross_dimension_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.8]: two operands of `max` of different dimensions are refused as [LUNI.8.2] refuses them. `max(s.d, s.m)`, a `meter` beside a `kilogram`, is DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck.luni_8_8_beside`'s cross-dimension arm, through `luni_8_8_min_max_type`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n    m: kilogram mutable\n\nrule r:\n    R s where max(s.d, s.m) > 1_meter\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_time_minus_time_past_duration_range",
+    "clauses": ["LTIM.4.1.1", "LTIM.1.1.5"],
+    "category": "logical",
+    "scenario": "[LTIM.4.1.1]: `Time - Time` is the exact `Duration` between them, and one above 2^63 - 1 ns raises a ComputationError of kind NOT_REPRESENTABLE ([LERR.1.4.10]). `P` holds the last instant (2^63 - 1 ns) as `a` and the first (-2^63 ns) as `b`, and rule `wide` renders `p.a - p.b`, almost 2^64 ns. Under a wrap the difference is -1 ns, which [RLOW.6.1.6]'s saturation turns into `0s`, logged silently. Rule `handler` logs each ComputationError's kind and rule ([LERR.9.1]). Message: `NOT_REPRESENTABLE wide`. PATH PINNED: libds's `Time - Time` arm in `rete/eval.c` (its `__builtin_sub_overflow` check, inside the lowering's `FN_MAX`); the Mercury runtime's `ds.eval.ltim_4_1_time_minus`.",
+    "rules_ds": "schema P scope logical:\n    id: Int key\n    a: Time mutable\n    b: Time mutable\n\nrule wide:\n    P p\n->\n    let d = (p.a - p.b)::String\n    log info \"wide {d}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "P", "slots": { "id": 1, "a": 9223372036854775807, "b": -9223372036854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE wide"]
+    }
+}

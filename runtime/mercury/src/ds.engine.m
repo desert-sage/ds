@@ -166,7 +166,9 @@
 
     % Set the mock monotonic clock to an absolute instant. Not a sample;
     % `Effects` is always `[]`. Refused below the current value once an input has
-    % been consumed [NTST.3.1]; a refusal leaves the engine unchanged.
+    % been consumed, and above the top of the clock's range [NTST.3.1]; a refusal
+    % leaves the engine unchanged. `set_clock` has no status, so a host's answer
+    % for the second is `ntst_3_1_set_past_range`'s.
     %
 :- pred set_clock(instant::in, list(effect)::out, engine::in, engine::out)
     is det.
@@ -393,6 +395,12 @@
     %
 :- func engine_clock_now(engine) = instant.
 
+    % [NLFC.2.5]: the earliest deadline later than the clock's source, or `no`. It
+    % scans every live fact and cache entry: nothing holds a timer's `fire_at`,
+    % and `ds.wm`'s queue keeps entries for facts that have left.
+    %
+:- func nlfc_2_5_next_deadline(engine) = maybe(instant).
+
     % The wall clock's source: UTC nanoseconds since the Unix epoch, or `no` while
     % it has no value. Not a sample. A host stamps a `ts` it supplies from this
     % [LFAC.9.2], after its last `observe_wall_clock` and before the input it
@@ -440,6 +448,32 @@
     %
 :- func engine_halted(engine) = maybe(engine_error).
 
+    % [NFCT.1.4.6]: a host's number through the conversion of a slot that
+    % names a unit ([RDSC.5.5.9]). `ud_to_stored` takes a number in the unit
+    % the slot names to its stored number; `ud_from_stored` takes the stored
+    % number back. The outcome is the first that holds, in the clause's order.
+    % A halt before the call is the caller's to refuse, as it is every other
+    % read's. Nothing in the engine changes, save for an EngineError the
+    % conversion raises: the engine halts, and the effects are its event.
+    %
+:- type unit_direction
+    --->    ud_to_stored
+    ;       ud_from_stored.
+
+:- type unit_outcome
+    --->    uo_ok(ds_value)
+    ;       uo_no_slot              % DS_ERR_NOT_FOUND
+    ;       uo_no_unit              % DS_ERR_INVAL
+    ;       uo_kind_mismatch        % DS_ERR_SLOT_TYPE_MISMATCH
+    ;       uo_nan                  % DS_ERR_NAN_REJECTED
+    ;       uo_halted               % DS_ERR_ENGINE_HALTED: the conversion
+                                    % raised an EngineError
+    ;       uo_not_representable.   % DS_ERR_NOT_REPRESENTABLE
+
+:- pred nfct_1_4_6_convert(schema::in, int::in, unit_direction::in,
+    ds_value::in, unit_outcome::out, list(effect)::out,
+    engine::in, engine::out) is det.
+
 %-----------------------------------------------------------------------------%
 :- implementation.
 :- import_module ds.binding.
@@ -452,6 +486,7 @@
 :- import_module ds.atom.
 :- import_module ds.effect.
 :- import_module ds.event_kind.
+:- import_module ds.eval.
 :- import_module ds.exec.
 :- import_module ds.expr.
 :- import_module ds.float_text.
@@ -483,6 +518,9 @@
                 en_schemas :: map(uint32, schema),
                 en_metas   :: map(uint32, rule_meta),
                 en_actions :: map(uint32, list(action)),
+                en_frames  :: map(uint32, int),
+                            % Each terminal's `bind_count`, by raw node id: the size
+                            % of its firing's bind frame [RDSC.4a.9.6].
                 en_interns :: intern_table,
 
                 en_wm      :: wm,
@@ -603,6 +641,7 @@ init_engine(P) = engine(
         list.foldl(by_schema_id, schemas(P), map.init),
         list.foldl(by_terminal, rule_metas(P), map.init),
         list.foldl(by_term_id, action_lists(P), map.init),
+        list.foldl(by_term_frame, terminal_nodes(network(P)), map.init),
         interns(P),
         init_wm_for(synthetic_schema_ids(P), ltim_10_6_tz_schema(P)),
         init_tms, init_cache, init_rate_table, init_rete, init_agenda,
@@ -629,11 +668,16 @@ load_logs(P) = list.map(rdsc_9_4_skip_log, skips(P)).
     %@spec [RDSC.4c.3]
 :- func rdsc_9_4_skip_log(skip) = effect.
 
-rdsc_9_4_skip_log(skip_unrecognised(Field, Offset)) =
+rdsc_9_4_skip_log(skip_named(A, Offset)) =
     eff_host_log(log_info, "dsc-load",
-        "skipping unrecognised atom " ++ string.uint32_to_string(Field)
-        ++ " at byte offset " ++ string.int_to_string(Offset)
-        ++ " (RDSC.9.4)").
+        "skipping atom " ++ string.uint32_to_string(atom_field(A))
+        ++ " (" ++ atom_message(A) ++ ") at byte offset "
+        ++ string.int_to_string(Offset)
+        ++ ( if A = at_doc_string then
+                ": tooling metadata (RDSC.14.4.4)"
+            else
+                ": this loader does not read it (RDSC.9.4)"
+            )).
 rdsc_9_4_skip_log(skip_code(Offset)) =
     eff_host_log(log_info, "dsc-load",
         "skipping atom "
@@ -1147,6 +1191,19 @@ by_terminal(Meta, M) = map.set(M, node_id_value(Meta ^ rm_terminal), Meta).
 
 by_term_id(Term - Actions, M) = map.set(M, node_id_value(Term), Actions).
 
+:- func by_term_frame(terminal_node, map(uint32, int)) = map(uint32, int).
+
+by_term_frame(T, M) = map.set(M, node_id_value(T ^ tn_id), T ^ tn_binds).
+
+    % The size of an activation's bind frame: its terminal's `bind_count`.
+    %
+:- func frame_of(engine, activation) = int.
+
+frame_of(E, Activation) =
+    ( if map.search(E ^ en_frames, node_id_value(Activation ^ ac_terminal), N)
+    then N
+    else 0 ).
+
 default_budget = no_fire_limit.
 
 %-----------------------------------------------------------------------------%
@@ -1368,11 +1425,7 @@ rfcs_6_7_deadline_out_of_range(Schema, Override, Now) :-
         W = duration_ns(Ttl)
     ),
     W > 0u64,
-    Max = uint64.cast_from_int64(int64.max_int64),
-    N = instant_ns(Now),
-    ( N > Max
-    ; W > Max - N
-    ).
+    W > uint64.cast_from_int64(int64.max_int64) - instant_ns(Now).
 
     % [RFCS.24.1]: a host assert whose fact holds a non-null reference is recorded
     % as one ExternalAssert, with each referenced live fact inlined, so its first
@@ -2151,7 +2204,8 @@ set_clock_unstamped(At, Effects, !E) :-
     else if clock_set(At, !.E ^ en_clock, Clock) then
         !E ^ en_clock := Clock
     else
-        % A live clock, or a backward set after the first sample [NTST.3.1].
+        % A live clock, a backward set after the first sample, or a set past the
+        % clock's range [NTST.3.1].
         true
     ).
 
@@ -3137,7 +3191,7 @@ fire_one(Activation, Effects, !E) :-
             clock_wall(!.E ^ en_clock), Meta, !.E ^ en_contract,
             !.E ^ en_cache_caps, !.E ^ en_hydration_budget,
             !.E ^ en_sdecls, !.E ^ en_fault_schemas,
-            !.E ^ en_service_responses),
+            !.E ^ en_service_responses, frame_of(!.E, Activation)),
         State0 = exec_state(!.E ^ en_wm, !.E ^ en_tms, !.E ^ en_cache,
             !.E ^ en_series, !.E ^ en_rate, bool.no,
             !.E ^ en_interns, !.E ^ en_gensym,
@@ -3269,6 +3323,91 @@ observable(E, Effects) = Out :-
     list.filter_map(observable_effect(E), Effects, Out).
 
 engine_halted(E) = E ^ en_halted.
+
+    % The kind [NFCT.2.3] pairs with the slot's type: an `Int` for one stored as
+    % an integer, a `Duration`'s nanoseconds among them, a `Float` for one
+    % stored as a float. A slot that names a unit has no other type. The input
+    % is `bind_ref` 0 as a rule's `x::<unit>`, or its kwarg conversion, reads
+    % it, and the result is the stored number or the number in the unit, of
+    % that same kind ([RDSC.5.5.9]). The frame has that one slot
+    % ([RDSC.4a.9.6]).
+    %
+    % An EngineError the conversion raises is raised as any public call
+    % raises one ([NCBK.2.9]): the event, which names no node and the
+    % `$engine` rule, since no rule's evaluation holds it ([LERR.9.11]), then
+    % the halt. Any other fault, a result of another kind and a NaN are each
+    % NOT_REPRESENTABLE: the conversion raised where a rule's evaluation
+    % would ([LERR.1.4]), and no event, fault fact or halt follows from it.
+    %
+nfct_1_4_6_convert(Schema, Index, Direction, In, Outcome, Effects, !E) :-
+    ( if
+        Index >= 0,
+        list.index0(slot_commons(Schema), Index, Common)
+    then
+        Units = Common ^ sc_units,
+        (
+            Units = no,
+            Outcome = uo_no_unit,
+            Effects = []
+        ;
+            Units = yes(unit_conversion(ToStored, FromStored)),
+            ( if not nfct_2_3_unit_kind(Common ^ sc_kind, In) then
+                Outcome = uo_kind_mismatch,
+                Effects = []
+            else if In = float(F), float.is_nan(F) then
+                Outcome = uo_nan,
+                Effects = []
+            else
+                (
+                    Direction = ud_to_stored,
+                    Conversion = ToStored
+                ;
+                    Direction = ud_from_stored,
+                    Conversion = FromStored
+                ),
+                E0 = !.E,
+                Ctx = eval_ctx([], no, engine_wm(E0), map.init,
+                    engine_interns(E0), engine_clock_now(E0), no,
+                    map.singleton(0, In), 1, engine_cache(E0),
+                    engine_series(E0)),
+                ds.eval.eval(Conversion, Ctx, Result),
+                ( if
+                    Result = ev_ok(Out),
+                    nfct_2_3_unit_kind(Common ^ sc_kind, Out),
+                    not ( Out = float(G), float.is_nan(G) )
+                then
+                    Outcome = uo_ok(Out),
+                    Effects = []
+                else if
+                    Result = ev_fault(Fault),
+                    expr_fault_class(Fault) = fc_engine
+                then
+                    stamp_step(
+                        [eff_event(se_engine_error(ee_expr_fault(Fault),
+                            no_site))],
+                        Effects, !E),
+                    latch_from(Effects, !E),
+                    Outcome = uo_halted
+                else
+                    Outcome = uo_not_representable,
+                    Effects = []
+                )
+            )
+        )
+    else
+        Outcome = uo_no_slot,
+        Effects = []
+    ).
+
+:- pred nfct_2_3_unit_kind(slot_kind::in, ds_value::in) is semidet.
+
+nfct_2_3_unit_kind(Kind, V) :-
+    ( if Kind = k_float then
+        V = float(_)
+    else
+        int_represented(Kind),
+        V = int(_)
+    ).
 
 %-----------------------------------------------------------------------------%
 % The engine's schemas
@@ -3589,6 +3728,82 @@ engine_cache(E) = E ^ en_cache.
 pending_activations(E) = agenda_count(E ^ en_agenda).
 engine_now(E) = clock_now(E ^ en_clock).
 engine_clock_now(E) = clock_source_now(E ^ en_clock).
+
+nlfc_2_5_next_deadline(E) = Next :-
+    Now = engine_clock_now(E),
+    FromFacts = list.foldl(schema_next_deadline(E ^ en_wm, E ^ en_interns, Now),
+        map.values(E ^ en_schemas), no),
+    FromCache = cache_next_deadline(E ^ en_cache, Now),
+    (
+        FromCache = yes(At),
+        Next = keep_sooner(At, FromFacts)
+    ;
+        FromCache = no,
+        Next = FromFacts
+    ).
+
+:- func schema_next_deadline(wm, intern_table, instant, schema, maybe(instant))
+    = maybe(instant).
+
+schema_next_deadline(WM, Interns, Now, Schema, Best0) =
+        list.foldl(fact_next_deadline(IsTimer, Now),
+            facts_of_schema(WM, Schema ^ s_id), Best0) :-
+    ( if
+        expand(Interns, schema_name_ref(Schema ^ s_name), Name),
+        string.prefix(Name, "$Timer_")
+    then
+        IsTimer = yes
+    else
+        IsTimer = no
+    ).
+
+:- func fact_next_deadline(bool, instant, fact, maybe(instant))
+    = maybe(instant).
+
+fact_next_deadline(IsTimer, Now, Fact, Best0) = Best :-
+    Expiry = Fact ^ f_deadline,
+    ( if
+        Expiry = yes(Expires),
+        before(Now, Expires)
+    then
+        Best1 = keep_sooner(Expires, Best0)
+    else
+        Best1 = Best0
+    ),
+    ( if
+        IsTimer = yes,
+        ltac_3_2_fire_at(Fact, FireAt),
+        before(Now, FireAt)
+    then
+        Best = keep_sooner(FireAt, Best1)
+    else
+        Best = Best1
+    ).
+
+    % [LTAC.3.2]: `fire_at` is a timer schema's first slot.
+    %
+:- pred ltac_3_2_fire_at(fact::in, instant::out) is semidet.
+
+ltac_3_2_fire_at(Fact, FireAt) :-
+    array.semidet_lookup(Fact ^ f_slots, 0, Slot),
+    (
+        Slot = duration(D),
+        FireAt = from_ns(duration_ns(D))
+    ;
+        Slot = int(I),
+        I > 0i64,
+        FireAt = from_ns(uint64.cast_from_int64(I))
+    ).
+
+:- func keep_sooner(instant, maybe(instant)) = maybe(instant).
+
+keep_sooner(At, no) = yes(At).
+keep_sooner(At, yes(Held)) = yes(Sooner) :-
+    ( if before(At, Held) then
+        Sooner = At
+    else
+        Sooner = Held
+    ).
 engine_wall_clock_now(E) = clock_source_wall(E ^ en_clock).
 
 engine_interns(E) = E ^ en_interns.

@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.9_a_dimension_typed_slot_rounds_in_the_base_unit",
+    "category": "logical",
+    "scenario": "[LUNI.8.9]: a value whose type names no unit, such as a dimension-typed slot ([LUNI.7.1]), is in its dimension's base unit. `temp: temperature` holding 293.4 K rounds to 293 K, so `round(r.temp) == 293_kelvin` and the rule logs. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit`'s `float64` arm with no unit, the builtin and FN_INT_TO_FLOAT alone.",
+    "rules_ds": "schema R scope logical:\n    id: String key\n    temp: temperature mutable\n\nrule r:\n    R r where round(r.temp) == 293_kelvin\n->\n    log info \"base\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": "a", "temp": 293.4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["base"]
+    }
+}

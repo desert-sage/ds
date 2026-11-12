@@ -89,12 +89,11 @@ A replay that reaches the end of its recording with every compare clean returns 
 | [`TraceError`](errors.md#traceerror), `Status.FS_DIVERGENCE` | a re-derived atom differs from the record, breaks a timetag's pairing with an earlier atom, or has no recorded twin; a recorded compare atom is not re-derived; a `CacheSeed` follows an event atom or is refused; an `ExternalAssert` delivery is refused, or asserts a number of facts other than the record lists |
 | `TraceError`, `Status.FS_VERSION` | the stream was written by another DS minor series |
 | `TraceError`, `Status.FS_RECORDING_INCOMPLETE` | the recording's first event has a `seq` other than `0` |
-| `TraceError`, `Status.FS_UNKNOWN_INJECT` | an unknown atom in the inject band |
 | `TraceError`, `Status.FS_UNKNOWN_FACT_ID` | a `FactRetract` names an unknown `fact_id` |
 | [`ArtefactMismatchError`](errors.md#artefactmismatcherror), `Status.BND_DSC_MISMATCH` or `Status.BND_DIALECT_MISMATCH` | the `StreamHeader` and the loaded artefact disagree on the dialect binding |
 | `ArtefactMismatchError`, `Status.BND_INCOMPLETE` | a `StreamHeader` holds one of a 32-byte `dsc_hash` and a 32-byte `dialect_def_sha256` without the other |
 | [`InputError`](errors.md#inputerror), `Status.SCHEMA_UNKNOWN` | a `FactAssert` names a schema no `SchemaDef` in the stream announced, or one the engine does not have |
-| `InputError`, `Status.PARSE` | a malformed atom; a `FactAssert`'s `String` or `Json` field whose text is not well-formed UTF-8; a fact-reference handle that names no earlier record; an unknown atom in the reject band or in no band; an atom declares more than 2^20 bytes; a bytes-like `stream` ends mid-atom |
+| `InputError`, `Status.PARSE` | a malformed atom; a `FactAssert`'s `String` or `Json` field whose text is not well-formed UTF-8; a fact-reference handle that names no earlier record; an atom whose field number has no registry entry; an atom declares more than 2^20 bytes; a bytes-like `stream` ends mid-atom |
 | [`Error`](errors.md#error), `Status.INVAL` | a `FactAssert`'s schema has more than 256 slots |
 | `Error`, `Status.OOM` | an allocation fails |
 | `Error` for the call's status | [`ds_engine_set_stream_callback`](inv:integrator:std:doc#callbacks/stream), [`ds_engine_schema_find`](inv:integrator:std:doc#facts/schemas), [`ds_engine_assert` or `ds_engine_retract`](inv:integrator:std:doc#facts/asserting), [`ds_engine_pump`](inv:integrator:std:doc#engine/pump), or a [clock call](inv:integrator:std:doc#engine/clock) returns a failure |
@@ -105,7 +104,7 @@ A replay that reaches the end of its recording with every compare clean returns 
 
 `Status.CONTRACT_BREACH` for a `FactAssert` or a `PumpBoundary` does not end the replay, nor does `Status.ENGINE_HALTED` for a halt that the atom's own assert, retract, delivery or pump raises, nor do `Status.NAN_REJECTED` and `Status.SERIES_NO_BACKING` for a `PumpBoundary`. Atoms applied before a failure stay applied.
 
-*(Source: bindings/python/src/pyds/engine.py, bindings/python/src/_pyds/engine.c, runtime/src/libds/rfcs/rfcs.h, runtime/src/libds/rfcs/codec.c, runtime/src/libds/recorder.c, Spec: [NDET.8.2], [NCBK.2.9], [RBND.5.2], [RBND.2.1], [RFCS.7.3], [LDET.1.10], [LTIM.2.8.5], [RFCS.18.8], [RFCS.16.3], [RFCS.19.2], [RFCS.24.2], [RFCS.26.2], [RFCS.5.3], [RFCS.5.4], [RFCS.6.3], [RFCS.6.7], [NCBK.2.11])*
+*(Source: bindings/python/src/pyds/engine.py, bindings/python/src/_pyds/engine.c, runtime/src/libds/rfcs/rfcs.h, runtime/src/libds/rfcs/codec.c, runtime/src/libds/recorder.c, Spec: [NDET.8.2], [NCBK.2.9], [RBND.5.2], [RBND.2.1], [RFCS.7.3], [LDET.1.10], [LTIM.2.8.5], [RFCS.19.2], [RFCS.24.2], [RFCS.26.2], [RFCS.5.3], [RFCS.5.4], [RFCS.6.3], [RFCS.6.7], [NCBK.2.11])*
 
 ### `ReplayResult`
 
@@ -121,7 +120,7 @@ A frozen dataclass of what `replay` delivered and checked, counted by atom.
 | `rule_fires` | `RuleFireAnnotation` atoms compared and matching the record |
 | `calls` | `CallIssued` atoms compared and matching the record |
 | `withdrawals` | `FactWithdraw` atoms compared and matching the record |
-| `skipped` | `SchemaDef` and `Slot` atoms; other allocated atoms with no arm; unknown skip-band atoms; a `BoundsError` left uncompared |
+| `skipped` | `SchemaDef` and `Slot` atoms; other allocated atoms with no arm; a `BoundsError` left uncompared |
 | `header_verified` | whether the stream's header names the artefact this engine loaded |
 | `tail_bytes` | the bytes of a partial last atom from a file or iterable; `0` for a bytes-like `stream` |
 
@@ -193,7 +192,7 @@ A frozen dataclass of one atom of a container, as libds framed it.
 
 Yields a container's atoms in order, one per step.
 
-A partial trailing atom raises, unless `partial`: then the iteration ends before it. A frame no append could repair raises either way.
+It judges no field number: one this build has no registry entry for is yielded as its `int`. A partial trailing atom raises, unless `partial`: then the iteration ends before it. A frame no append could repair raises either way.
 
 *(Source: bindings/python/src/pyds/atoms.py)*
 
@@ -204,44 +203,6 @@ A partial trailing atom raises, unless `partial`: then the iteration ends before
 Returns one framed atom.
 
 A number with no registry entry raises `ValueError`.
-
-*(Source: bindings/python/src/pyds/atoms.py)*
-
-### `band`
-
-**`def band(field: int, /) -> Band`**
-
-Returns a field number's band, [RFCS.16.2](inv:specs:std:label#rfcs-16-2).
-
-*(Source: bindings/python/src/pyds/atoms.py)*
-
-### `Band`
-
-**`class Band(enum.StrEnum)`**
-
-What `band` returns.
-
-Its members and their values are `NONE` `"none"`, `INJECT` `"inject"`, `REJECT` `"reject"` and `SKIP` `"skip"`.
-
-*(Source: bindings/python/src/pyds/atoms.py)*
-
-### `disposition`
-
-**`def disposition(field: int, /) -> Disposition`**
-
-Returns what a reader does with an atom it does not know, [RFCS.16.3](inv:specs:std:label#rfcs-16-3).
-
-It is the whole answer only when `field in AtomKind` is false.
-
-*(Source: bindings/python/src/pyds/atoms.py)*
-
-### `Disposition`
-
-**`class Disposition(enum.StrEnum)`**
-
-What `disposition` returns.
-
-Its members and their values are `SKIP` `"skip"`, `REJECT_INJECT` `"reject_inject"`, `REJECT_VERSION` `"reject_version"` and `MALFORMED` `"malformed"`.
 
 *(Source: bindings/python/src/pyds/atoms.py)*
 

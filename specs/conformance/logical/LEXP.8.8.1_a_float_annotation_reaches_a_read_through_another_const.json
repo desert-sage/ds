@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8.1_a_float_annotation_reaches_a_read_through_another_const",
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1]: an `Int` under `: Float` holds the `Float`, for every read. `const F: Float = 9007199254740993` holds 9007199254740992.0, the nearest double, so `const G = F + 1` folds over that `Float` and is 9007199254740992.0 after rounding. The rule compares `G`, carried on the `initial:` fact, with `F + 1` written inline, which the engine evaluates. Exactly [\"g\"]. A compiler that widens only at the read of `F` itself folds `G` over the `Int` to 9007199254740994, and the comparison misses. PATH PINNED: `dsc.dstest.const_folded`'s widening, against each runtime's evaluation of the inline expression.",
+    "rules_ds": "const F: Float = 9007199254740993\nconst G = F + 1\n\nschema VF scope explicit:\n    k: String\n    f: Float\n\ninitial:\n    VF k: \"g\" f: G\n\nrule rg:\n    VF v where v.k == \"g\" and v.f == F + 1\n->\n    log info \"g\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["g"]
+    }
+}

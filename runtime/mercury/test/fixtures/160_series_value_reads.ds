@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `count_distinct`, `count_of` and `contains`, the reads that compare samples
+# with each other or with a value, on a Float slot and a String slot. Two
+# samples are one value exactly when `==` between them is true
+# ([LSER.16.5.1]), and `count_of` and `contains` use the same equality
+# ([LSER.16.6.1], [LSER.16.7.1]): -0.0 and 0.0 are one value, so the Float
+# series counts and finds 0.0 when it holds only -0.0.
+#
+# All three keep a concrete type while cold ([LSER.19.8]): 0, 0 and false.
+use default
+
+schema CF scope logical:
+    k: String key
+    v: Float mutable
+
+schema CS scope logical:
+    k: String key
+    tag: String mutable
+
+schema Card scope ttl 1_h:
+    label: String
+    distinct: Int
+    hits: Int
+    seen: Bool
+
+series CF.v (by: k):
+    count_distinct, count_of, contains sliding 1_h
+
+series CS.tag (by: k):
+    count_distinct, count_of, contains sliding 1_h
+
+rule from_cf:
+    CF f
+->
+    emit Card label: "f" distinct: f.count_distinct hits: count_of(f.v, 0.0) seen: contains(f.v, 0.0)
+
+rule from_cs:
+    CS s
+->
+    emit Card label: "s" distinct: s.count_distinct hits: count_of(s.tag, "error") seen: contains(s.tag, "error")

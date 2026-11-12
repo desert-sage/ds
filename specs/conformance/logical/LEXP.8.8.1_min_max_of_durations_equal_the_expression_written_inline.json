@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8.1_min_max_of_durations_equal_the_expression_written_inline",
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1]: a `const` holds the value the engine computes for its right-hand side. `const M = min(1_s, 2_s)` and `const X = max(1_s, 2_s)` fold over two `Duration`s, and each rule compares its read with the same call written inline, which the engine evaluates. Exactly [\"m\", \"x\"]. A folder that takes only `Float` operands has no value for either, and refuses a valid program. PATH PINNED: `dsc.dstest.fold_math_builtin`'s `f_duration` arm, against each runtime's `FN_MIN` and `FN_MAX`.",
+    "rules_ds": "const M = min(1_s, 2_s)\nconst X = max(1_s, 2_s)\n\nschema T scope explicit:\n    k: Int\n\ninitial:\n    T k: 1\n\nrule rmin:\n    T t where t.k == 1 and M == min(1_s, 2_s)\n->\n    log info \"m\"\n\nrule rmax:\n    T t where t.k == 1 and X == max(1_s, 2_s)\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["m", "x"]
+    }
+}

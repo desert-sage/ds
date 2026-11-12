@@ -22,9 +22,14 @@
  *   RULE_LHS_FACTS   (iff the firing matched >= 1 live fact)   -- immediately before BEGIN
  *   RULE_FIRE_BEGIN                                            -- opens the bracket
  *     FACT_ASSERT / ACTION_<verb> / FACT_RETRACT               -- body, strictly inside
- *   RULE_FIRE_END                                             -- closes the bracket, last
+ *   RULE_FIRE_END                                             -- closes the bracket
+ * TIMER_ARMED      (iff the rate gate admitted a `cooldown` rule's firing) -- immediately after END
  * RULE_LHS_FACTS is conditional (a factless firing omits it, the BEGIN bracket still opens)
  * and, when present, is produced ATOMICALLY with BEGIN — no event lies between them.
+ * TIMER_ARMED is outside the bracket and conditional the other way round: present exactly
+ * when the firing's rate gate admitted it, which is to say the rule carries `cooldown`
+ * ([RLOW.4.6.1]: the compiler emits the gate exactly then) and the gate answered `true` or
+ * `null`; then it is the event right after RULE_FIRE_END. A suppressed firing arms nothing.
  *
  * THE GUARD, AND WHICH ACTIVATIONS BECOME FIRINGS. A terminal's fire guard
  * has up to two parts ([RDSC.4a.8.2.1]): a CONDITION and a RATE GATE. The condition is
@@ -39,27 +44,46 @@
  * the stream's positions rather than its events, so that a withheld activation may leave
  * the stream with no event at all.
  *
- * This model encodes those rules and proves the frame's shape: FIRE_END is the firing's last
- * event, RULE_LHS_FACTS (when present) is its first, the lhs->begin pair is contiguous, the
- * lhs event exists exactly when the firing matched a fact; and, whatever the guard did, a
- * BEGIN has an END and an END a BEGIN, a withheld activation emits nothing, and a
- * gate-suppressed firing keeps its bracket around an empty body.
+ * This model encodes those rules and proves the frame's shape: FIRE_END closes the bracket,
+ * every event but TIMER_ARMED preceding it; RULE_LHS_FACTS (when present) is the first event,
+ * the lhs->begin pair is contiguous, the lhs event exists exactly when the firing matched a
+ * fact; TIMER_ARMED (when present) is the last event, and exists exactly when the firing is
+ * a `cooldown` rule's and its gate admitted it; and, whatever the guard did, a BEGIN has an
+ * END and an END a BEGIN, a withheld activation emits nothing, and a gate-suppressed firing
+ * keeps its bracket around an empty body and arms no timer.
  *
  * NOT MODELLED. Where the gate's evaluation falls among the events is not itself an event,
- * so it is drawn through its consequence alone, the empty body. TIMER_ARMED, which a
- * `cooldown` firing emits when its gate admits ([NCBK.2.3]; with the firing's timetag,
- * [NCBK.2.12]), is in no clause's frame listing and is not a kind here. That a suppressed
- * firing's match is not fired again while it persists ([RDSC.4a.8.2.3]'s second paragraph)
- * is a statement over ticks, formal/idris/Rete/NetworkTick.idr's and Rete/RateGate.idr's,
- * not this snapshot's.
+ * so it is drawn through its consequence alone, the empty body. TIMER_ARMED's payload (the
+ * window and `fire_at_ns`, [NCBK.2.3]) and its timetag join to the firing ([NCBK.2.12]) are
+ * not drawn: the model has one firing, so the join is trivially to it. A `cooldown:` on a
+ * `call` ([LCRS.8.2]) has a gate of its own that [NCBK.2.6] says arms no TIMER_ARMED; calls
+ * are `ActionVerb` events here with no gate of their own, so the model draws that clause
+ * only as its instance: TIMER_ARMED answers to the rule's gate and nothing else. That a
+ * suppressed firing's match is not fired again while it persists ([RDSC.4a.8.2.3]'s second
+ * paragraph) is a statement over ticks, formal/idris/Rete/NetworkTick.idr's and
+ * Rete/RateGate.idr's, not this snapshot's.
+ *
+ * ONE FIRING, SO "NO INTERVENING EVENT" IS DRAWN AGAINST THIS FIRING'S EVENTS ALONE. The
+ * model's stream holds one firing's frame and nothing else, so every event that could lie
+ * between RULE_LHS_FACTS and RULE_FIRE_BEGIN, or between RULE_FIRE_END and TIMER_ARMED, is
+ * already placed elsewhere by the frame: both no-intervening conjuncts are consequences
+ * here, not carried weight (measured, below). An event from outside the firing -- another
+ * firing's, a TTL sweep's FACT_RETRACT, a TICK -- is not in the model, and that is where
+ * the clause's "with no intervening event" binds.
  *
  * TEETH: drop the body-within-bracket rule and a body event escapes the bracket (before
- * BEGIN or after END); drop the lhs-atomic rule and an event slips between lhs and BEGIN;
- * drop the lhs-iff-matched rule and a factless firing emits a spurious RULE_LHS_FACTS; drop
- * `rdsc_4a_8_2_2__selection`'s no-firing-no-event conjunct and a withheld activation emits
- * a frame;
- * drop `rdsc_4a_8_2_3__gate_inside_the_firing`'s suppression conjunct and a suppressed
- * firing carries a body event.
+ * BEGIN or after END); drop the lhs-iff-matched rule and a factless firing emits a spurious
+ * RULE_LHS_FACTS; drop `rdsc_4a_8_2_2__selection`'s no-firing-no-event conjunct and a
+ * withheld activation emits a frame; drop `rdsc_4a_8_2_3__gate_inside_the_firing`'s
+ * suppression conjunct and a suppressed firing carries a body event. Measured on mutants of
+ * this model's core, each against a control with no mutation that passes every check:
+ * weaken `rdsc_4a_8_2_3__gate_inside_the_firing`'s iff to "no firing, no verdict" and a
+ * rule with no rate gate gets a verdict and a TIMER_ARMED (`ncbk_2_6__timer_armed_iff_admitted`
+ * fails); drop `ncbk_2_6__timer_armed`'s iff and a suppressed firing arms a timer
+ * (`ncbk_2_6__suppressed_arms_no_timer` and `_iff_admitted` fail); drop its placement and
+ * TIMER_ARMED stands anywhere (`_timer_armed_follows_end` and `_is_last` fail,
+ * `_end_closes_the_bracket` holds); drop only its no-intervening half, or only the
+ * lhs-atomic rule's, and no check fails -- the paragraph above.
  */
 module ds/firing_event_frame
 open util/ordering[ncbk_2_6__position] as evord
@@ -73,6 +97,7 @@ one sig FactAssert  extends ncbk_2_6__kind {}
 one sig ActionVerb  extends ncbk_2_6__kind {}
 one sig FactRetract extends ncbk_2_6__kind {}
 one sig FireEnd     extends ncbk_2_6__kind {}
+one sig TimerArmed  extends ncbk_2_6__kind {}
 
 //@spec [NCBK.2.6]
 // A position in the global `seq` order. THE ORDERED CARRIER IS THE POSITIONS, not the
@@ -106,13 +131,21 @@ abstract sig rdsc_4a_8_2_3__verdict {}
 one sig GateAdmits     extends rdsc_4a_8_2_3__verdict {}
 one sig GateSuppresses extends rdsc_4a_8_2_3__verdict {}
 
+//@spec [RLOW.4.6.1]
+// The rate gate in a terminal's fire guard. The compiler emits it for a rule exactly when
+// the rule's header carries `cooldown`, so an activation whose guard has one is a
+// `cooldown` rule's.
+one sig rlow_4_6_1__rate_gate {}
+
 //@spec [RDSC.4a.8.2.2]
 // The one activation the engine selected: the live facts it resolves, its condition's
-// answer, and the gate's verdict if the gate was evaluated -- none where the guard has no
-// gate, and none where the condition withheld the activation.
+// answer, its rule's rate gate if the rule carries `cooldown`, and the gate's verdict if the
+// gate was evaluated -- none where the guard has no gate, and none where the condition
+// withheld the activation.
 one sig rdsc_4a_8_2_2__activation {
   resolved:  set  ncbk_2_6__fact,
   condition: one  rdsc_4a_8_2_2__answer,
+  rate:      lone rlow_4_6_1__rate_gate,
   gate:      lone rdsc_4a_8_2_3__verdict
 }
 
@@ -140,12 +173,14 @@ fact rdsc_4a_8_2_2__selection {
 }
 
 //@spec [RDSC.4a.8.2.3]
-// The gate is evaluated inside the firing and nowhere else: a withheld activation has no
-// verdict. `false` suppresses the actions while the firing stands, so a suppressed firing's
-// frame has no body event; RULE_LHS_FACTS and RULE_FIRE_BEGIN, emitted before the gate is
-// read, stand.
+// The gate is evaluated inside the firing and nowhere else, once: there is a verdict exactly
+// when there is a firing and its guard has a rate gate, so a withheld activation has none
+// and a `cooldown` rule's firing has one. `false` suppresses the actions while the firing
+// stands, so a suppressed firing's frame has no body event; RULE_LHS_FACTS and
+// RULE_FIRE_BEGIN, emitted before the gate is read, stand.
 fact rdsc_4a_8_2_3__gate_inside_the_firing {
-  no ncbk_2_6__firing implies no rdsc_4a_8_2_2__activation.gate
+  (some rdsc_4a_8_2_2__activation.gate) iff
+    (some ncbk_2_6__firing and some rdsc_4a_8_2_2__activation.rate)
   (rdsc_4a_8_2_2__activation.gate = GateSuppresses) implies
     no kind.(FactAssert + ActionVerb + FactRetract)
 }
@@ -168,6 +203,19 @@ fact ncbk_2_6__frame {
       (evord/lt[l.at, kind.FireBegin.at]
        and no y: ncbk_2_6__event | (evord/lt[l.at, y.at] and evord/lt[y.at, kind.FireBegin.at]))
   }
+}
+
+//@spec [NCBK.2.6]
+// TIMER_ARMED follows the bracket: at most one, present exactly when the rate gate admitted
+// the firing (so the rule carries `cooldown`, and the firing stands), and then emitted
+// immediately after RULE_FIRE_END with no intervening event. A suppressed firing, a firing
+// with no gate and a withheld activation arm nothing.
+fact ncbk_2_6__timer_armed {
+  lone kind.TimerArmed
+  (some kind.TimerArmed) iff (rdsc_4a_8_2_2__activation.gate = GateAdmits)
+  all t: kind.TimerArmed |
+    (evord/lt[kind.FireEnd.at, t.at]
+     and no y: ncbk_2_6__event | (evord/lt[kind.FireEnd.at, y.at] and evord/lt[y.at, t.at]))
 }
 
 //@probe
@@ -206,13 +254,61 @@ run probe__matched_firing_has_lhs {
   and some kind.(FactAssert + ActionVerb + FactRetract)
 } for 7
 
-// FIRE_END IS LAST: every other event of the firing precedes RULE_FIRE_END in seq. NO
-// counterexample.
-assert ncbk_2_6__end_is_last {
-  all e: ncbk_2_6__event - kind.FireEnd | evord/lt[e.at, kind.FireEnd.at]
+//@probe
+// An admitted `cooldown` firing that matched a fact and ran an action: the whole frame,
+// RULE_LHS_FACTS through TIMER_ARMED. Satisfiable -- the armed shape is reachable, so the
+// TIMER_ARMED checks below are not vacuous, and RULE_FIRE_END is not the last event of it.
+run probe__admitted_cooldown_firing_arms_timer {
+  rdsc_4a_8_2_2__activation.gate = GateAdmits
+  and some ncbk_2_6__firing.matched
+  and some kind.(FactAssert + ActionVerb + FactRetract)
+} for 7
+
+// FIRE_END CLOSES THE BRACKET: every event of the firing but TIMER_ARMED precedes
+// RULE_FIRE_END in seq. NO counterexample.
+assert ncbk_2_6__end_closes_the_bracket {
+  all e: ncbk_2_6__event - kind.(FireEnd + TimerArmed) | evord/lt[e.at, kind.FireEnd.at]
 }
 //@derives [NCBK.2.6]
-check ncbk_2_6__end_is_last for 7
+check ncbk_2_6__end_closes_the_bracket for 7
+
+// TIMER_ARMED IS LAST: when present, every other event of the firing precedes it. From the
+// bracket's order and TIMER_ARMED's place right after RULE_FIRE_END. NO counterexample.
+assert ncbk_2_6__timer_armed_is_last {
+  all t: kind.TimerArmed | all e: ncbk_2_6__event - t | evord/lt[e.at, t.at]
+}
+//@derives [NCBK.2.6]
+check ncbk_2_6__timer_armed_is_last for 7
+
+// TIMER_ARMED FOLLOWS END IMMEDIATELY: when present, it comes after RULE_FIRE_END with no
+// event between. The fact's own conjunct, restated. NO counterexample.
+assert ncbk_2_6__timer_armed_follows_end {
+  all t: kind.TimerArmed |
+    (evord/lt[kind.FireEnd.at, t.at]
+     and no y: ncbk_2_6__event | (evord/lt[kind.FireEnd.at, y.at] and evord/lt[y.at, t.at]))
+}
+//@spec [NCBK.2.6]
+check ncbk_2_6__timer_armed_follows_end for 7
+
+// TIMER_ARMED IFF AN ADMITTED COOLDOWN FIRING: the event exists exactly when there is a
+// firing, its rule carries `cooldown`, and the gate admitted it -- from TIMER_ARMED's rule
+// and the gate's (a verdict exactly for a gated firing). NO counterexample.
+assert ncbk_2_6__timer_armed_iff_admitted {
+  (some kind.TimerArmed) iff
+    (some ncbk_2_6__firing
+     and some rdsc_4a_8_2_2__activation.rate
+     and rdsc_4a_8_2_2__activation.gate = GateAdmits)
+}
+//@derives [NCBK.2.6]
+check ncbk_2_6__timer_armed_iff_admitted for 7
+
+// A SUPPRESSED FIRING ARMS NOTHING: the gate's `false` leaves no TIMER_ARMED. The clause's
+// "must not emit one", the fact's iff read backwards. NO counterexample.
+assert ncbk_2_6__suppressed_arms_no_timer {
+  rdsc_4a_8_2_2__activation.gate = GateSuppresses implies no kind.TimerArmed
+}
+//@spec [NCBK.2.6]
+check ncbk_2_6__suppressed_arms_no_timer for 7
 
 // LHS_FACTS OPENS THE FRAME: when present, no event precedes RULE_LHS_FACTS in seq. NO
 // counterexample.

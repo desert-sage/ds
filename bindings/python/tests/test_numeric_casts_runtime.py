@@ -158,7 +158,7 @@ schema R scope logical:
     x: Float mutable
 
 rule r:
-    R p where p.x::kelvin > 5.0
+    R p where p.x::kelvin > 5_kelvin
 ->
     log critical "big"
 """

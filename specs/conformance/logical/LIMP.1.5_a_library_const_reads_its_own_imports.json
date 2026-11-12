@@ -1,0 +1,20 @@
+{
+    "id": "LIMP.1.5_a_library_const_reads_its_own_imports",
+    "clauses": ["LIMP.1.5", "LGRA.13.3"],
+    "category": "logical",
+    "scenario": "[LGRA.13.3]: a `const` reads imported constants, and [LIMP.1.5]: in the declaring file's scope, so through that file's imports and not the importer's. Library `base` declares `const K = 10`, and library `ha` holds both import forms, `from base import K` and `import base as bb`, with `const LIMIT = K + bb.K`. The program imports only `ha`. A fact of 20 logs and a fact of 21 does not. Exactly [\"hit 1\"]. A compiler that reads the library's value against the importer's imports finds neither `K` nor `bb`. PATH PINNED: `dsc.imports.limp_1_5_const_scope`, whose `lcs_consts`, `lcs_qualified` and `lcs_ast` hold the library's own imports.",
+    "rules_ds": "import ha\n\nschema S scope logical:\n    k: Int key\n    v: Int mutable\n\nrule r:\n    S x where x.v == ha.LIMIT\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "base": "const K = 10\n",
+        "ha": "from base import K\nimport base as bb\n\nconst LIMIT = K + bb.K\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "v": 20 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "v": 21 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

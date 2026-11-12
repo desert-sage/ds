@@ -16,8 +16,8 @@
 // --offline` installs `ds` at node_modules/.bin/ds under the prefix, and needs
 // nothing else:
 //
-//   package/                          dsdb: its `files`, LICENSE, the notices
-//     node_modules/@ds-lang/ds/       @ds-lang/ds: its `files`, and in build/:
+//   package/                          dsdb: its `files`, README.md, LICENSE, the notices
+//     node_modules/@ds-lang/ds/       @ds-lang/ds: its `files`, README.md, and in build/:
 //       build/ds_wasm.mjs      the wasm glue, and its .wasm (--glue)
 //       build/ds_dsc/          the compiler (--compiler)
 //       build/share/ds/stdlib/        the standard library (--stdlib)
@@ -26,8 +26,12 @@
 // THE BINDING'S PACKAGE, @ds-lang/ds (--binding): the same @ds-lang/ds, with
 // the same build/, at the top of its own tarball, and the bundles beside it:
 //
-//   package/                          @ds-lang/ds: its `files`, LICENSE, build/
+//   package/                          @ds-lang/ds: its `files`, README.md, LICENSE, build/
 //     node_modules/<each --bundle>/   @emnapi/runtime, and what it depends on
+//
+// README.md is the package's npm/README.md, written for someone who finds the
+// package on npm, which builds the package's page from it. Each package's
+// directory keeps its contributors' README beside it, which is not this one.
 //
 // Each is where lib/index.js looks for it with no variable set. The standard
 // library is `<the compiler's directory>/../share/ds/stdlib`, where the
@@ -115,6 +119,20 @@ export function stripSections(text, drop) {
         if (m) keep = !drop.includes(m[1]);
         return keep;
     }).join("");
+}
+
+/**
+ * A package's npm README, `<dir>/npm/README.md`, as an entry.
+ * @param {string} dir
+ * @returns {Entry}
+ */
+function readmeEntry(dir) {
+    const path = join(dir, "npm", "README.md");
+    try {
+        return fileEntry(path);
+    } catch {
+        throw new PackError(`no ${path}: npm shows a package's README.md as its page, and this one has none`);
+    }
 }
 
 /** The notices as a package carries them: the repository's, less NOT_PACKED. @returns {Entry} */
@@ -385,6 +403,7 @@ export function pack({ version, glue, compiler, bundles = [], stdlib = STDLIB, o
     for (const [rel, e] of packageFiles(DSDB, dsdb)) put(`package/${rel}`, e);
     put("package/package.json",
         packed(dsdb, version, { dependencies: { ...dsdb.dependencies, [JS_NAME]: version } }));
+    put("package/README.md", readmeEntry(DSDB));
     put(`package/${LICENSE}`, fileEntry(join(ROOT, LICENSE)));
     put(`package/${NOTICES}`, noticesEntry());
 
@@ -429,6 +448,7 @@ function binding(put, js, { version, glue, compiler, stdlib }, bundles, modules)
     if (jsPkg.name !== JS_NAME)
         throw new PackError(`bindings/js/package.json is named ${jsPkg.name}, not ${JS_NAME}`);
     for (const [rel, e] of packageFiles(JS_BINDING, jsPkg)) put(`${js}/${rel}`, e);
+    put(`${js}/README.md`, readmeEntry(JS_BINDING));
     put(`${js}/${LICENSE}`, fileEntry(join(ROOT, LICENSE)));
     // It carries libds, RE2 and Abseil in its .wasm and the compiler in
     // build/ds_dsc, so it gives their notices wherever it is installed alone.

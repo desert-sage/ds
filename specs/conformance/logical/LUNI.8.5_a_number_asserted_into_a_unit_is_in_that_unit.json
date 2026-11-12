@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_a_number_asserted_into_a_unit_is_in_that_unit",
+    "category": "logical",
+    "scenario": "[LUNI.8.5]: `<number>::<unit>` takes the number as being in that unit. A `Float` slot holding 35, asserted into `celsius`, is 35 celsius: above 30 celsius and below 40 celsius, each its own rule. A compiler that only tags the value compares 35 K, which is below 30 celsius, and misses `above`. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s tier-1 arm, `1.0 * x + 273.15` with the slope elided, evaluated by each runtime's `BINOP_ADD`.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema S scope logical:\n    id: String key\n    raw: Float mutable\n\nrule above:\n    S s where s.raw::celsius > 30_celsius\n->\n    log info \"above\"\n\nrule below:\n    S s where s.raw::celsius < 40_celsius\n->\n    log info \"below\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "raw": 35.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["above", "below"]
+    }
+}

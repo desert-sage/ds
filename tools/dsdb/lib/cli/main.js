@@ -95,8 +95,9 @@ FACTS are <Schema>.csv, <Schema>.tsv, <Schema>.jsonl (one per schema) or a .json
 the output is what the rules publish, every schema keyed.
 --calls sends each call to a Unix socket a responder listens on; --listen makes the socket and
 waits for the responder. Replies are delivered between pump cycles: --pumps N allows N (1).
---until D, a duration such as 10_s from the start, then moves the clock there and pumps once: the
-run otherwise ends at the last row, before any timer or timeout due after it.`;
+A deadline earlier than the next row is a step of its own: the clock moves there and the engine
+pumps. --until D, a duration such as 10_s from the start, then moves the clock there the same way
+and pumps once: the run otherwise ends at the last row, before any timer or timeout due after it.`;
 
 /**
  * Each subcommand's own usage: what `-h` after it prints, and what a usage
@@ -449,9 +450,10 @@ function columns() {
  * -L; the trace must have been recorded with it (open.js).
  *
  * With fact files the session is live and starts from them (DSDB.md §8): each
- * row asserted at its `@at`, merged by time, a pump after each, as batch mode
- * feeds them. Each row is a step of its own, so every one is a settled point
- * to go back to, and the shell opens at the end.
+ * row asserted at its `@at`, merged by time, a pump after each, and each
+ * engine deadline between two rows a pump at its own instant, as batch mode
+ * feeds them. Each row and each deadline is a step of its own, so every one
+ * is a settled point to go back to, and the shell opens at the end.
  * @param {Options} o
  * @param {Kinds} kinds
  * @param {Io} io
@@ -474,13 +476,11 @@ async function shell(o, kinds, io) {
             const rows = loadFactFiles(files, run.eng);
             const start = run.clock();
             for (const row of rows) {
-                // The clock moves with no pump of its own, as batch mode's
-                // `feed` moves it: what falls due meanwhile fires in the
-                // row's pump, so the two runs are one run.
-                const want = start + row.at, now = run.clock();
+                // As batch mode's `feed` takes a row: a deadline before it
+                // is a pump at its own instant, so the two runs are one run.
+                const want = start + row.at;
                 try {
-                    if (want > now) run.eng.clock.advance(want - now);
-                    run.assertFact(row.schema, rowSlots(row, want));
+                    run.assertFactAt(want, row.schema, rowSlots(row, want));
                 } catch (err) {
                     if (!(err instanceof Error) || err.name !== "DsError") throw err;
                     throw new FactFileError(row.file, row.line, err.message);
@@ -744,7 +744,7 @@ async function dstest(argv, io) {
             continue;
         }
         if (what.kind !== "source") {
-            refuse(`${path}: not a .ds, .dstest or .dsc (${what.kind === "trace" ? "a trace" : what.why})`);
+            refuse(`${path}: cannot be read as a .ds, .dstest or .dsc (${what.kind === "trace" ? "a trace" : what.why})`);
             continue;
         }
         const companion = extname(path) === ".dstest";

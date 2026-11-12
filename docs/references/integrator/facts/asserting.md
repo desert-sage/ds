@@ -52,9 +52,11 @@ Each value's `kind` matches its slot's declared [`ds_slot_type_t`](schemas.md#ds
 
 A slot declared `T?` also takes `DS_SLOT_NULL`. A `DS_SLOT_JSON` value whose root is `null` is the null, and is stored as `DS_SLOT_NULL`: a slot declared `Json?` takes it, and a slot declared `Json` refuses it. `v.bytes.data` is non-NULL when `len` is above 0. A negative value in a `DS_SLOT_TYPE_DURATION` slot is stored as `0`.
 
+A slot typed by a unit or a dimension takes the slot's stored number, in the dimension's base unit and storage type, and a read of the slot gives that number. A host holding a number in the unit the slot names converts it with [`ds_schema_slot_to_stored`](schemas.md#ds_schema_slot_to_stored) before asserting it.
+
 The integrator supplies a slot named `ts` like any other, as a `DS_SLOT_INT` of UTC nanoseconds. The engine does not fill it.
 
-*(libds.h: ds_slot_desc_t, Spec: [NFCT.2.3], [NFCT.2.10], [LNUL.3.4], Source: runtime/src/libds/wm.c)*
+*(libds.h: ds_slot_desc_t, ds_schema_slot_to_stored, Spec: [NFCT.2.3], [NFCT.2.10], [NFCT.1.4.6], [LUNI.7.6], [LNUL.3.4], Source: runtime/src/libds/wm.c)*
 
 ### Value copies
 

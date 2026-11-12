@@ -93,11 +93,13 @@ A literal in a dimension stored as `int64` or `int32` converts exactly to its ba
 
 A literal that is not a whole number of the base unit is refused with `DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE`, and is neither truncated nor rounded. `1.5_us` is `1500` nanoseconds. `0.5_ns` and `1.5_bit` are refused. A negated literal is checked after negation.
 
+A literal whose value in its base unit lies outside the 64-bit signed range, in an `int64` or `int32` dimension, or past the largest finite `Float`, in a `float64` one, is refused at the literal with `DS_VALIDATE_CONSTANT_OUT_OF_RANGE`, and is never wrapped, truncated or saturated: `10000000000_s` is refused. A numeric prefix past its own range is a lexer error, as [`INT_LIT`](../lang/lexical.md#int_lit) and [`FLOAT_LIT`](../lang/lexical.md#float_lit) state.
+
 ```ds expression error=DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE
 r.ts + 0.5_ns
 ```
 
-*(Spec: [LUNI.3.1.9])*
+*(Spec: [LUNI.3.1.9], [LUNI.2.4.1])*
 
 ### Negative literals
 
@@ -107,7 +109,7 @@ r.ts + 0.5_ns
 
 `-10_celsius` converts −10 through the unit's formula, giving 263.15 K. A unary minus on any other operand, a slot, a binding or a larger expression, negates the stored base-unit value. The two readings differ for a formula that adds a constant.
 
-A unary minus on a `time`-dimensioned literal, such as `-15_min`, is refused with `DS_VALIDATE_BAD_OPERAND_TYPE`. A position whose own clause refuses a negative duration refuses it as that clause says.
+A unary minus on any value of the `time` dimension, a literal such as `-15_min` among them, is refused with `DS_VALIDATE_BAD_OPERAND_TYPE`. A position whose own clause refuses a negative duration refuses it as that clause says.
 
 ```ds expression error=DS_VALIDATE_BAD_OPERAND_TYPE
 r.ts + -15_min
@@ -151,9 +153,9 @@ A duration is a `time`-dimensioned `UNIT_LIT`.
 | 2 hours | `2h` | `2_h` |
 | 1 day | `1d` | `1_d` |
 
-A bare `m` is meters, never minutes.
+A bare `m` is meters, never minutes. A literal past the largest `Duration` is refused as [Whole base units](#whole-base-units) states.
 
-*(Spec: [LLEX.12.8])*
+*(Spec: [LLEX.12.8], [LUNI.2.4.1])*
 
 ### Duration positions
 

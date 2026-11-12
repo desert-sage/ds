@@ -284,8 +284,8 @@ hex_or_dash(Bytes) =
 
     % The atom registry, as `ds.atom` holds it: `<field>\t<message>`, from
     % what the compiled `wire/2` answers. Enumerated by probing every field
-    % number in `1 .. 2047`, the range [RFCS.16.2] partitions into bands,
-    % since `wire/2`'s `multi` mode is private to `ds.atom`.
+    % number in `1 .. 2047`, the range a two-byte inner tag holds, since
+    % `wire/2`'s `multi` mode is private to `ds.atom`.
     %
 :- pred print_atom_table(io::di, io::uo) is det.
 
@@ -567,10 +567,8 @@ walk_atoms(R0, !Counts, !Total, !IO) :-
         ;
             Frame ^ fr_atom = unknown(N),
             Field = N,
-            % An unknown atom carries its band's disposition, which decides
-            % whether skipping it is legal [RFCS.16.3].
-            Name = string.format("UNKNOWN(%s)",
-                [s(string(disposition_of_unknown(N)))])
+            % No registry entry: a loader refuses it [RFCS.19.3].
+            Name = "UNKNOWN"
         ),
         ( if map.search(!.Counts, Field, Seen) then
             Prev = Seen ^ tally_count,
@@ -648,14 +646,12 @@ run_suite(!IO) :-
     test_builtins(T2a, T3, !IO),
     test_expr(T3, T4, !IO),
     test_chrono(T4, T5, !IO),
-    test_deadlines(T5, T5a, !IO),
-    test_cache_expiry(T5a, T6, !IO),
+    test_cache_expiry(T5, T6, !IO),
     test_order_key(T6, T7, !IO),
     test_schema(T7, T8, !IO),
     test_fact(T8, T9, !IO),
     test_fault(T9, T10, !IO),
-    test_action(T10, T11, !IO),
-    test_band(T11, T12, !IO),
+    test_action(T10, T12, !IO),
     test_registry(T12, T13, !IO),
     test_varint(T13, T14, !IO),
     test_frames(T14, T15, !IO),
@@ -663,7 +659,7 @@ run_suite(!IO) :-
     test_encoder_roundtrip(T15b, T15bb, !IO),
     test_rdsc_16_2_8(T15bb, T15c, !IO),
     test_rfcs_writer(T15c, T15c2, !IO),
-    test_rfcs_retired_atoms_skip(T15c2, T15c3, !IO),
+    test_rfcs_retired_atoms_refused(T15c2, T15c3, !IO),
     test_rfcs_nullable(T15c3, T15d, !IO),
     test_rfcs_reader(T15d, T15d1, !IO),
     test_rfcs_reader_nul(T15d1, T15d2, !IO),
@@ -684,7 +680,8 @@ run_suite(!IO) :-
     test_series(T20b, T20d, !IO),
     test_reservoir(T20d, T20e, !IO),
     test_signal_aggs(T20e, T20f, !IO),
-    test_regex_match(T20f, T20g, !IO),
+    test_regex_match(T20f, T20f2, !IO),
+    test_rdsc_4a_9_6_conversion(T20f2, T20g, !IO),
     test_implemented_matches_eval(T20g, T21, !IO),
     test_load_real(T21, T22, !IO),
     test_no_aot(T22, T23, !IO),
@@ -1158,6 +1155,7 @@ test_chrono(!T, !IO) :-
         check("[NLFC.5.4] a fresh live clock switches to mock", no, !T, !IO)
     ),
     test_live_clock(I0, !T, !IO),
+    test_ltim_2_8_2_a_live_reading_past_the_top_is_held(!T, !IO),
     test_ltim_local(!T, !IO).
 
     % @spec [NTST.3.1]
@@ -1200,12 +1198,41 @@ test_ntst_3_1_advance_range(Mock, !T, !IO) :-
           then yes else no ), !T, !IO),
     check("[NTST.3.1] no wall, duration 2^63: refused",
         ( if clock_advance(PastTop, Mock, _) then no else yes ), !T, !IO),
-    check("[NTST.3.1] monotonic at 2^64 - 1: advance 1 refused, advance 0 taken",
+    check("[NTST.3.1] monotonic at 2^63 - 1: advance 1 refused, advance 0 taken",
         ( if
-            clock_set(from_ns(uint64.max_uint64), Mock, M6),
+            clock_set(from_ns(TopNs), Mock, M6),
             not clock_advance(One, M6, _),
             clock_advance(duration_from_ns(0u64), M6, A6),
-            clock_source_now(A6) = from_ns(uint64.max_uint64)
+            clock_source_now(A6) = from_ns(TopNs)
+          then yes else no ), !T, !IO),
+    check("[NTST.3.1] a set to 2^63: refused, and a set to 2^63 - 1 taken",
+        ( if
+            not clock_set(from_ns(TopNs + 1u64), Mock, _),
+            not clock_set(from_ns(uint64.max_uint64), Mock, _),
+            ntst_3_1_set_past_range(from_ns(TopNs + 1u64)),
+            not ntst_3_1_set_past_range(from_ns(TopNs))
+          then yes else no ), !T, !IO).
+
+    % @spec [LTIM.2.8.2]
+    % A live reading past the top of the monotonic clock's range is held at the
+    % top. libds reaches it by switching a mock clock at the top to live; a
+    % Mercury clock has no such switch, so this live clock starts at the top.
+    % Path: `clock_observe` -> `ltim_2_8_2_held`.
+    %
+:- pred test_ltim_2_8_2_a_live_reading_past_the_top_is_held(tally::in,
+    tally::out, io::di, io::uo) is det.
+
+test_ltim_2_8_2_a_live_reading_past_the_top_is_held(!T, !IO) :-
+    Top = from_ns(uint64.cast_from_int64(int64.max_int64)),
+    read_wall_clock(R0, !IO),
+    next_reading(R0, 100000000, R1, !IO),
+    check("[LTIM.2.8.2] a live reading past the top reads the top, and does "
+        ++ "not decrease",
+        ( if
+            clock_observe(R0, init_clock(Top), Anchored),
+            clock_source_now(Anchored) = Top,
+            clock_observe(R1, Anchored, Later),
+            clock_source_now(Later) = Top
           then yes else no ), !T, !IO).
 
     % Two clocks, a source and a held sample, one sample per step.
@@ -1927,41 +1954,6 @@ next_reading(R0, Tries, R, !IO) :-
     ).
 
 %-----------------------------------------------------------------------------%
-% ds.chrono deadlines -- an ordering nothing in the spec states
-%-----------------------------------------------------------------------------%
-
-:- pred test_deadlines(tally::in, tally::out, io::di, io::uo) is det.
-
-test_deadlines(!T, !IO) :-
-    D0 = init_deadlines : deadlines(int),
-    arm(from_ns(200u64), 1, D0, D1),
-    arm(from_ns(100u64), 2, D1, D2),
-    arm(from_ns(200u64), 3, D2, D3),      % same instant as client 1, armed later
-    arm(from_ns(900u64), 4, D3, D4),
-
-    check("next_deadline is the earliest",
-        ( if next_deadline(D4, At), instant_ns(At) = 100u64
-          then yes else no ), !T, !IO),
-
-    due(from_ns(500u64), Due, D4, D5),
-    % Deadline ascending, then arm order within one instant. No clause
-    % requires the tie-break, and it is observable through the stream, so it
-    % is pinned here.
-    check("due returns (deadline asc, arm order)",
-        ( if Due = [2, 1, 3] then yes else no ), !T, !IO),
-    check("due removes what it returned",
-        ( if next_deadline(D5, At2), instant_ns(At2) = 900u64
-          then yes else no ), !T, !IO),
-
-    due(from_ns(50u64), None, D5, _),
-    check("nothing due yet returns empty",
-        ( if None = [] then yes else no ), !T, !IO),
-
-    check("next_deadline FAILS on empty",
-        ( if next_deadline(init_deadlines : deadlines(int), _)
-          then no else yes ), !T, !IO).
-
-%-----------------------------------------------------------------------------%
 % ds.rules -- the central claim: compare/3 IS the firing order
 %-----------------------------------------------------------------------------%
 
@@ -2247,7 +2239,7 @@ test_schema(!T, !IO) :-
 
 lslot(Role) =
     logical_slot(
-        slot_common(make_intern_ref(1u32), k_int, S, non_null, no, no, no, unbounded),
+        slot_common(make_intern_ref(1u32), k_int, S, non_null, no, no, no, unbounded, no),
         Role, exact) :-
     ( if slot_index(0u32, S0) then S = S0 else unexpected($pred, "slot 0") ).
 
@@ -2526,75 +2518,6 @@ put_range(Off, New, Bs) = Before ++ New ++ After :-
     list.det_split_list(list.length(New), Rest, _, After).
 
 %-----------------------------------------------------------------------------%
-% ds.atom -- band geometry
-%-----------------------------------------------------------------------------%
-%
-% Two complementary properties, following `formal/cbmc/rfcs_16_2__band.c`:
-% the partition, which a shifted boundary still satisfies, and the literals,
-% which pin the values.
-
-:- pred test_band(tally::in, tally::out, io::di, io::uo) is det.
-
-test_band(!T, !IO) :-
-    % -- the values, by literal --
-    check("0 is not a field number",
-        ( if band_of(0u32) = band_none then yes else no ), !T, !IO),
-    check("inject starts at 1",
-        ( if band_of(1u32) = band_inject then yes else no ), !T, !IO),
-    check("inject ends at 127",
-        ( if band_of(127u32) = band_inject then yes else no ), !T, !IO),
-    check("reject starts at 128",
-        ( if band_of(128u32) = band_reject then yes else no ), !T, !IO),
-    check("reject ends at 255",
-        ( if band_of(255u32) = band_reject then yes else no ), !T, !IO),
-    check("skip starts at 256",
-        ( if band_of(256u32) = band_skip then yes else no ), !T, !IO),
-    check("skip ends at 2047",
-        ( if band_of(2047u32) = band_skip then yes else no ), !T, !IO),
-    check("2048 tips out of every band",
-        ( if band_of(2048u32) = band_none then yes else no ), !T, !IO),
-
-    % [RFCS.16.4]: the 1-byte fast lane is inside inject, not a fourth band.
-    check("15 is inject, not a fourth band",
-        ( if band_of(15u32) = band_inject then yes else no ), !T, !IO),
-    check("16 is still inject, only 2-byte",
-        ( if band_of(16u32) = band_inject then yes else no ), !T, !IO),
-
-    % -- the partition, stated without literals --
-    check("band is total across a sweep of the space",
-        ( if band_total_over([0, 1, 63, 127, 128, 200, 255, 256, 1000, 2047,
-                              2048, 65535, 16777216])
-          then yes else no ), !T, !IO),
-
-    % [RFCS.16.3]: the disposition of an unknown number, from the number alone.
-    check("unknown inject rejects",
-        ( if disposition_of_unknown(100u32) = disp_reject_inject
-          then yes else no ), !T, !IO),
-    check("unknown reject-band rejects",
-        ( if disposition_of_unknown(200u32) = disp_reject_version
-          then yes else no ), !T, !IO),
-    check("unknown skip-band skips",
-        ( if disposition_of_unknown(999u32) = disp_skip then yes else no ),
-        !T, !IO),
-    check("no band means malformed, NOT a future skip atom",
-        ( if disposition_of_unknown(5000u32) = disp_malformed
-          then yes else no ), !T, !IO).
-
-    % Every number lands in the right one of the four bands.
-    %
-:- pred band_total_over(list(int)::in) is semidet.
-
-band_total_over([]).
-band_total_over([N | Ns]) :-
-    B = band_of(uint32.det_from_int(N)),
-    ( B = band_inject, N >= 1, N =< 127
-    ; B = band_reject, N >= 128, N =< 255
-    ; B = band_skip,   N >= 256, N =< 2047
-    ; B = band_none,   ( N = 0 ; N > 2047 )
-    ),
-    band_total_over(Ns).
-
-%-----------------------------------------------------------------------------%
 % ds.atom -- the registry
 %-----------------------------------------------------------------------------%
 
@@ -2638,16 +2561,12 @@ test_registry(!T, !IO) :-
           then yes else no ), !T, !IO),
 
     % `atom.proto` reserves 260 and holds 323 out of `Atom.oneof body`
-    % (TextNote is deferred, [RFCS.25]), so a stream carrying either is read
-    % past as an unknown skip-band atom [RFCS.16.3].
-    % @spec [RFCS.16.3]
-    check("260 and 323 are unallocated and skip -- the Seal and TextNote",
+    % (TextNote is deferred, [RFCS.25]), so neither has a registry entry.
+    check("260 and 323 are unallocated -- the Seal and TextNote",
         ( if list.all_true(retired_magic, [260u32, 323u32])
           then yes else no ), !T, !IO),
 
-    % `atom.proto` reserves 271-286 and 322. `retired_magic` checks the
-    % disposition too: no registry entry alone would pass in a band that
-    % refuses the artefact.
+    % `atom.proto` reserves 271-286 and 322.
     check("271-286 and 322 are unallocated, never reissued",
         ( if list.all_true(retired_magic, [271u32, 279u32, 286u32, 322u32])
           then yes else no ), !T, !IO),
@@ -2762,7 +2681,7 @@ test_frames(!T, !IO) :-
         ( if next_frame(fr_error(ae_empty_atom, _), reader_over([0x0A, 0x00]), _)
           then yes else no ), !T, !IO),
 
-    % The outer frame is container field 1 for every atom regardless of band.
+    % The outer frame is container field 1 for every atom.
     check("an outer tag that is not field 1 is refused",
         ( if next_frame(fr_error(ae_bad_outer_tag(2u32), _),
                 reader_over([0x12, 0x04, 0xBA, 0x10, 0x01, 0x00]), _)
@@ -2791,22 +2710,18 @@ test_frames(!T, !IO) :-
                 reader_over([0x82, 0x80, 0x80, 0x80, 0x80, 0x01]), _)
           then yes else no ), !T, !IO),
 
-    % An unknown number is not an error at the walk: the band decides and the
-    % caller applies it. Field 999 -> tag 7994 -> BA 3E.
-    check("an unknown skip-band atom walks, and the band says skip",
+    % The walk frames and judges no number: an unknown one is `unknown`, for
+    % the caller to refuse [RFCS.19.3]. Field 999 -> tag 7994 -> BA 3E, and
+    % field 100 -> tag 802 -> A2 06.
+    check("an unknown number frames as unknown (999)",
         ( if next_frame(fr_ok(F2), reader_over([0x0A, 0x04, 0xBA, 0x3E,
                                                 0x01, 0x00]), _),
-             F2 ^ fr_atom = unknown(999u32),
-             disposition_of_unknown(999u32) = disp_skip
+             F2 ^ fr_atom = unknown(999u32)
           then yes else no ), !T, !IO),
-
-    % Field 100 -> tag 802 -> A2 06: rejected though no version was bumped
-    % [RFCS.18.8].
-    check("an unknown INJECT-band atom walks, and the band says reject",
+    check("an unknown number frames as unknown (100)",
         ( if next_frame(fr_ok(F3), reader_over([0x0A, 0x04, 0xA2, 0x06,
                                                 0x01, 0x00]), _),
-             F3 ^ fr_atom = unknown(100u32),
-             disposition_of_unknown(100u32) = disp_reject_inject
+             F3 ^ fr_atom = unknown(100u32)
           then yes else no ), !T, !IO).
 
 %-----------------------------------------------------------------------------%
@@ -2841,12 +2756,9 @@ test_real_artefact(!T, !IO) :-
         check("the first atom is DscHeader, so this is a Dsc",
             ( if Atoms = [known(First) | _], container_of(First, container_dsc)
               then yes else no ), !T, !IO),
-        % The registry knows every atom in a real artefact, and whatever is
-        % unknown must be skippable [RFCS.16.3].
-        check("the artefact carries no atom this registry must skip",
+        % The registry knows every atom in a real artefact.
+        check("the artefact carries no atom this registry does not know",
             ( if list.member(unknown(_), Atoms) then no else yes ), !T, !IO),
-        check("and any unknown atom would still be in the skip band",
-            ( if list.all_true(skippable, Atoms) then yes else no ), !T, !IO),
         check("a Rete network (a TerminalNode) is known and decoded",
             ( if list.member(known(at_terminal_node), Atoms) then yes else no ),
             !T, !IO),
@@ -3229,17 +3141,16 @@ test_rfcs_writer(!T, !IO) :-
         check("the FactAssert with ids encodes", no, !T, !IO)
     ).
 
-    % A recording carrying a reserved 260 or a deferred TextNote (323) decodes
-    % as the recording without it: neither number is in `ds.atom`, so the
-    % decoder reads past each in the skip band [RFCS.16.3]. Each is appended
-    % with an empty body and with one that holds a field, so a skip that
-    % misjudged the body's extent shows.
+    % A recording carrying a reserved 260 or a deferred TextNote (323) is
+    % refused: neither number is in `ds.atom`, so neither names a member of
+    % `Atom`'s oneof [RFCS.19.3]. Each is appended with an empty body and with
+    % one that holds a field.
     %
-    % @spec [RFCS.16.3]
-:- pred test_rfcs_retired_atoms_skip(tally::in, tally::out, io::di, io::uo)
+    % @spec [RFCS.19.3]
+:- pred test_rfcs_retired_atoms_refused(tally::in, tally::out, io::di, io::uo)
     is det.
 
-test_rfcs_retired_atoms_skip(!T, !IO) :-
+test_rfcs_retired_atoms_refused(!T, !IO) :-
     Bytes = (func(Ints) = list.map(uint8.cast_from_int, Ints)),
     Meta = stream_meta(ds.version.ds_version, [], [], [], "", ""),
     Header = encode_header(Meta),
@@ -3263,9 +3174,10 @@ test_rfcs_retired_atoms_skip(!T, !IO) :-
     list.foldl2(
         ( pred(Case::in, T0::in, T1::out, IO0::di, IO1::uo) is det :-
             Case = {What, Atom},
-            check("RFCS.16.3: a recording with " ++ What
-                    ++ " appended decodes as without it",
-                ( if Decode(Header ++ Atom) = Plain then yes else no ),
+            check("RFCS.19.3: a recording with " ++ What
+                    ++ " appended is refused",
+                ( if Decode(Header ++ Atom) = decode_failed("RFCS.19.3", _)
+                  then yes else no ),
                 T0, T1, IO0, IO1)
         ), Appended, !T, !IO).
 
@@ -3946,10 +3858,9 @@ test_rfcs_reader(!T, !IO) :-
     check("the stream encodes with nothing left over",
         ( if Unencodable = [] then yes else no ), !T, !IO),
 
-    % The struck header field 15, `fire_cadence`, is skipped, not refused:
-    % the band rules ([RFCS.16.3]) are about an atom's number, not a field
-    % inside the header body ([RFCS.22]), so a header that sets it decodes
-    % like any other.
+    % The struck header field 15, `fire_cadence`, is skipped, not refused: an
+    % unknown field inside a known atom's body is skipped ([RFCS.16.3],
+    % [RFCS.22]), so a header that sets it decodes like any other.
     put_string(10u32, ds.version.ds_version, init_builder, H1),
     put_uint32(15u32, 1u32, H1, H2),
     put_delimited(258u32, builder_bytes(H2), init_builder, HA),
@@ -3965,49 +3876,43 @@ test_rfcs_reader(!T, !IO) :-
         check("the stream begins with its header", no, !T, !IO)
     ),
 
-    % An unknown atom's band decides [RFCS.16.3]. Each case is the good stream
-    % with one empty unknown atom appended: the skip band reads on, and the
-    % inject band [RFCS.18.8], the reject band [RFCS.16.2] and a number in no
-    % band at all (field 0, what zero-fill decodes as) refuse the stream.
+    % [RFCS.19.3]: a field number with no registry entry names no member of
+    % `Atom`'s oneof, wherever it lies. Each case is the good stream with one
+    % empty unknown atom appended, and each refuses the stream: 15 and field
+    % 0, what zero-fill decodes as, with a one-byte tag, and 200 and 2047 with
+    % a two-byte one.
     list.foldl2(
         (pred(Case::in, T0::in, T1::out,
                 IO0::di, IO1::uo) is det :-
-            Case = {Field, WantOk, Label},
+            Case = {Field, Label},
             WithUnknown = from_bytes(list.map(uint8.cast_to_int, Bytes)
                 ++ [0x0a, 2, Field * 8 + 2, 0]),
             decode_stream(WithUnknown, init_interns, UR),
             check(Label,
-                ( if UR = decoded(_), WantOk = yes then yes
-                  else if UR = decode_failed(_, _), WantOk = no then yes
-                  else no ), T0, T1, IO0, IO1)),
-        [{15, no, "[RFCS.18.8] an unknown inject-band atom refuses the stream"},
-         {0, no, "[RFCS.16.3] field 0 is no atom and refuses the stream"}],
+                ( if UR = decode_failed("RFCS.19.3", _) then yes else no ),
+                T0, T1, IO0, IO1)),
+        [{15, "[RFCS.19.3] an unknown atom (15) refuses the stream"},
+         {0, "[RFCS.19.3] field 0 is no atom and refuses the stream"}],
         !T, !IO),
-    % Two-byte tags for the reject and skip bands.
     list.foldl2(
         (pred(Case2::in, T0::in, T1::out,
                 IO0::di, IO1::uo) is det :-
-            Case2 = {B0, B1, WantOk, Label},
+            Case2 = {B0, B1, Label},
             WithUnknown = from_bytes(list.map(uint8.cast_to_int, Bytes)
                 ++ [0x0a, 3, B0, B1, 0]),
             decode_stream(WithUnknown, init_interns, UR),
             check(Label,
-                ( if UR = decoded(_), WantOk = yes then yes
-                  else if UR = decode_failed(_, _), WantOk = no then yes
-                  else no ), T0, T1, IO0, IO1)),
-        [{0xc2, 0x0c, no,
-            "[RFCS.16.2] an unknown reject-band atom (200) refuses the stream"},
-         {0xfa, 0x7f, yes,
-            "[RFCS.16.2] an unknown skip-band atom (2047) is skipped"}],
+                ( if UR = decode_failed("RFCS.19.3", _) then yes else no ),
+                T0, T1, IO0, IO1)),
+        [{0xc2, 0x0c, "[RFCS.19.3] an unknown atom (200) refuses the stream"},
+         {0xfa, 0x7f, "[RFCS.19.3] an unknown atom (2047) refuses the stream"}],
         !T, !IO),
 
-    % [RFCS.16.3] between two known atoms, as libds's test_rfcs_replay and
+    % [RFCS.19.3] between two known atoms, as libds's test_rfcs_replay and
     % test_rfcs_codec pin it: after the StreamHeader, ahead of the events.
     % The atom is hand-framed at an unallocated number with the body field
-    % 1 = 1: 322 in the skip band (reserved in atom.proto) decodes as the
-    % plain stream does, event for event, and 100 in the inject band refuses
-    % it [RFCS.18.8]. Path: `read_frames`'s unknown-atom arm,
-    % `disposition_of_unknown`.
+    % 1 = 1, at 322 and at 100: each refuses the stream where it stands.
+    % Path: `read_frames`'s unknown-atom arm.
     ( if
         list.split_list(list.length(encode_header(Meta)), Bytes,
             PlantHdr, PlantRest),
@@ -4016,20 +3921,22 @@ test_rfcs_reader(!T, !IO) :-
         Planted = (func(Mid) = from_bytes(list.map(uint8.cast_to_int, PlantHdr)
             ++ Mid ++ list.map(uint8.cast_to_int, PlantRest))),
         decode_stream(Planted([]), init_interns, Plain),
+        check("the stream with nothing planted decodes",
+            ( if Plain = decoded(_) then yes else no ), !T, !IO),
         decode_stream(Planted([0x0a, 5, 0x92, 0x14, 2, 8, 1]), init_interns,
-            Skipped),
-        check("[RFCS.16.3] a skip-band atom (322) between two known atoms is "
-                ++ "read past: the stream decodes as without it",
-            ( if Plain = decoded(_), Skipped = Plain then yes else no ),
+            At322),
+        check("[RFCS.19.3] an unknown atom (322) between two known atoms "
+                ++ "refuses the stream",
+            ( if At322 = decode_failed("RFCS.19.3", _) then yes else no ),
             !T, !IO),
         decode_stream(Planted([0x0a, 5, 0xa2, 0x06, 2, 8, 1]), init_interns,
-            Injected),
-        check("[RFCS.18.8] an inject-band atom (100) between two known atoms "
+            At100),
+        check("[RFCS.19.3] an unknown atom (100) between two known atoms "
                 ++ "refuses the stream",
-            ( if Injected = decode_failed("RFCS.18.8", _) then yes else no ),
+            ( if At100 = decode_failed("RFCS.19.3", _) then yes else no ),
             !T, !IO)
     else
-        check("[RFCS.16.3] the stream has atoms after its header", no, !T, !IO)
+        check("[RFCS.19.3] the stream has atoms after its header", no, !T, !IO)
     ),
 
     % [RFCS.19.2] / [RFCS.19.8]: the incremental reader, cut at every byte. A
@@ -4240,7 +4147,7 @@ test_rfcs_nullable(!T, !IO) :-
 nslot(Ix, Kind) =
     logical_slot(
         slot_common(make_intern_ref(1u32), Kind, S, nullable, no, no, no,
-            unbounded),
+            unbounded, no),
         role_mutable, exact) :-
     ( if slot_index(uint32.det_from_int(Ix), S0) then
         S = S0
@@ -4252,7 +4159,7 @@ nslot(Ix, Kind) =
 
 rslot(Ix, Kind) =
     logical_slot(
-        slot_common(make_intern_ref(1u32), Kind, S, non_null, no, no, no, unbounded),
+        slot_common(make_intern_ref(1u32), Kind, S, non_null, no, no, no, unbounded, no),
         role_key, exact) :-
     ( if slot_index(uint32.det_from_int(Ix), S0) then
         S = S0
@@ -4405,22 +4312,12 @@ flip_a_byte(BM0, BM) :-
 all_known([]).
 all_known([known(_) | As]) :- all_known(As).
 
-    % A retired atom number: no registry entry, and in the band that skips.
+    % A retired atom number: no registry entry.
     %
 :- pred retired_magic(uint32::in) is semidet.
 
 retired_magic(N) :-
-    not atom_of_field(N, _),
-    disposition_of_unknown(N) = disp_skip.
-
-    % An atom this reader can carry on past: recognised, or unrecognised in the
-    % band that says to skip it ([RFCS.16.3]), so a retired atom needs no
-    % compatibility path ([RARC.4.2]).
-    %
-:- pred skippable(atom_ref::in) is semidet.
-
-skippable(known(_)).
-skippable(unknown(N)) :- disposition_of_unknown(N) = disp_skip.
+    not atom_of_field(N, _).
 
 %-----------------------------------------------------------------------------%
 
@@ -5159,11 +5056,10 @@ test_loader(!T, !IO) :-
           then yes else no ), !T, !IO),
 
     % [RDSC.11.1]: the first atom is not a DscHeader whatever its field
-    % number, so an unknown one is refused before its band is consulted, as
-    % libds refuses it (DS_ERR_DSC_BAD_MAGIC). One per band: skip (999, with a
-    % header after it, which it does not reach), inject (100), version (200)
-    % and past every band (5000).
-    check("[RDSC.11.1] an unknown first atom is refused in every band",
+    % number, so an unknown one is refused as libds refuses it
+    % (DS_ERR_DSC_BAD_MAGIC): 999, with a header after it, which it does not
+    % reach, 100, 200 and 5000.
+    check("[RDSC.11.1] an unknown first atom is refused, whatever its number",
         ( if load_dsc(from_bytes([0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00]
                     ++ dsco_frame), load_failed(ESkip)),
              ESkip ^ le_kind = lek_bad_first_atom,
@@ -5189,43 +5085,46 @@ test_loader(!T, !IO) :-
     % [RDSC.1.5]'s "exactly one header" is the compiler's to keep: a second is
     % not checked for, so no test pins a refusal.
 
-    % [RFCS.18.8]: an unknown inject-band atom rejects even though nothing
-    % bumped a version. Field 100 -> tag 802 -> A2 06.
-    check("an unknown inject atom rejects with NO version bump",
-        ( if load_dsc(sealed(dsco_frame ++
-                [0x0A, 0x04, 0xA2, 0x06, 0x01, 0x00]), load_failed(E8)),
-             E8 ^ le_kind = lek_unknown_inject
-          then yes else no ), !T, !IO),
+    % [RDSC.11.1], [RFCS.19.3]: a later frame whose field number has no
+    % registry entry is malformed, DS_ERR_DSC_DECODE as libds answers it,
+    % wherever the number lies, and nothing is logged as skipped. Field 100
+    % -> tag 802 -> A2 06; field 999 -> tag 7994 -> BA 3E; field 5000, wire
+    % type 2 -> tag 40002 -> varint C2 B8 02 (40002 = 312*128 + 66;
+    % 312 = 2*128 + 56).
+    list.foldl2(
+        ( pred(Case::in, T0::in, T1::out, IO0::di, IO1::uo) is det :-
+            Case = {What, Frame},
+            check("[RDSC.11.1] an unknown later atom is malformed: " ++ What,
+                ( if load_dsc(sealed(dsco_frame ++ Frame), load_failed(EU)),
+                     EU ^ le_kind = lek_malformed_field_number
+                  then yes else no ), T0, T1, IO0, IO1)
+        ),
+        [{"100", [0x0A, 0x04, 0xA2, 0x06, 0x01, 0x00]},
+         {"999", [0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00]},
+         {"5000", [0x0A, 0x05, 0xC2, 0xB8, 0x02, 0x01, 0x00]}],
+        !T, !IO),
 
-    % ... and an unknown skip-band atom is skipped and reported. Field 999.
-    check("an unknown skip atom is skipped, and reported",
-        ( if load_dsc(sealed(dsco_frame ++
-                [0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00]), loaded(P2)),
-             skipped(P2) = [999u32]
-          then yes else no ), !T, !IO),
-    % [RDSC.9.4]: and logged at info under `dsc-load`, naming the
-    % field and the byte offset its frame starts at: right after the minimal
-    % frame, which is where it was appended.
+    % [RDSC.9.4]: a DocString is stepped over by name, recorded, and logged
+    % at info under `dsc-load`, naming the field, the message and the byte
+    % offset its frame starts at: right after the minimal frame, which is
+    % where it was appended. Field 304 -> tag 2434 -> 82 13.
     SkipAt = list.length(dsco_frame),
-    check("[RDSC.9.4] an unknown skip atom is logged with its field and offset",
+    check("[RDSC.9.4] a DocString loads, and is skipped by name",
         ( if load_dsc(sealed(dsco_frame ++
-                [0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00]), loaded(P2b)),
+                [0x0A, 0x04, 0x82, 0x13, 0x01, 0x00]), loaded(P2)),
+             skipped_at(P2) = [{at_doc_string, SkipAt}]
+          then yes else no ), !T, !IO),
+    check("[RDSC.9.4] a DocString is logged with its field, message and offset",
+        ( if load_dsc(sealed(dsco_frame ++
+                [0x0A, 0x04, 0x82, 0x13, 0x01, 0x00]), loaded(P2b)),
              load_logs(P2b) = [eff_host_log(log_info, "dsc-load", Msg)],
-             string.sub_string_search(Msg, "999", _),
+             string.sub_string_search(Msg, "304", _),
+             string.sub_string_search(Msg, "DocString", _),
              string.sub_string_search(Msg,
                  "byte offset " ++ string.int_to_string(SkipAt), _)
           then yes else no ), !T, !IO),
     check("[RDSC.9.4] an artefact with nothing skipped logs nothing at load",
         ( if load_dsc(sealed(dsco_frame), loaded(P2c)), load_logs(P2c) = []
-          then yes else no ), !T, !IO),
-
-    % [RFCS.16.3]: band overflow is malformed, not a future skip atom. Field
-    % 5000, wire type 2 -> tag 40002 -> varint C2 B8 02 (40002 = 312*128 +
-    % 66; 312 = 2*128 + 56).
-    check("a field number past every band is malformed",
-        ( if load_dsc(sealed(dsco_frame ++
-                [0x0A, 0x05, 0xC2, 0xB8, 0x02, 0x01, 0x00]), load_failed(E9)),
-             E9 ^ le_kind = lek_malformed_field_number
           then yes else no ), !T, !IO),
 
     % [RFCS.19.2]: for a `Dsc`, truncation is an error, not EOF. A `Stream`
@@ -5813,10 +5712,8 @@ test_load_real(!T, !IO) :-
             check("dsc_sha256 is 32 raw bytes",
                 ( if list.length(header(P) ^ dh_sha256) = 32 then yes else no ),
                 !T, !IO),
-            % Skipping nothing is the normal case: a skip of anything means
-            % this reader has lost an atom it is meant to decode.
-            check("it skips nothing -- the retired atoms are not in the bytes",
-                ( if skipped(P) = [] then yes else no ), !T, !IO),
+            % An atom with no registry entry would have refused the load
+            % ([RDSC.11.1]), so loading is what shows none is in the bytes.
             check("the first atom recorded is the header",
                 ( if atoms(P) = [at_dsc_header | _] then yes else no ), !T, !IO),
             io.format("  note: loaded %d atoms from the real artefact\n",
@@ -5839,8 +5736,8 @@ test_load_real(!T, !IO) :-
 %-----------------------------------------------------------------------------%
 %
 % In this edition a runtime skips every `CompiledCode` atom, whatever its
-% `arch`, as [RDSC.9.4] disposes of an unrecognised skip-band atom: logged at
-% info under `dsc-load` and stepped over. libds's test_dsc_basic
+% `arch`, as [RDSC.9.4] disposes of every atom it lists: logged at info under
+% `dsc-load` and stepped over. libds's test_dsc_basic
 % (`test_rdsc_4c_3__compiled_code_atom_is_skipped`) holds libds to the same
 % line, word for word.
 
@@ -5850,8 +5747,8 @@ test_no_aot(!T, !IO) :-
     % A CompiledCode atom: field 298 -> tag 2386 -> varint D2 12.
     % (2386 = 18*128 + 82; 82 = 0x52 -> 0xD2, 18 -> 0x12.)
     Code = [0x0A, 0x04, 0xD2, 0x12, 0x01, 0x00],
-    % An unrecognised skip-band atom, field 999.
-    Unknown = [0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00],
+    % A DocString, field 304 -> tag 2434 -> 82 13.
+    Docs = [0x0A, 0x04, 0x82, 0x13, 0x01, 0x00],
     CodeAt = list.length(dsco_frame),
     CodeLog = eff_host_log(log_info, "dsc-load",
         "skipping atom 298 (CompiledCode) at byte offset "
@@ -5869,10 +5766,10 @@ test_no_aot(!T, !IO) :-
         ( if load_dsc(sealed(dsco_frame ++ Code), loaded(P2)),
              not list.member(at_compiled_code, atoms(P2))
           then yes else no ), !T, !IO),
-    % A recognised atom declined, not one adjudicated by band.
-    check("[RDSC.4c.3] a skipped CompiledCode atom is not an unrecognised skip",
+    % Its own kind of skip, not one `skipped_at` lists.
+    check("[RDSC.4c.3] a skipped CompiledCode atom is not a named skip",
         ( if load_dsc(sealed(dsco_frame ++ Code), loaded(P3)),
-             skipped(P3) = []
+             skipped_at(P3) = []
           then yes else no ), !T, !IO),
     check("[RDSC.4c.3] the skip is logged as [RDSC.9.4] logs one, in libds's "
             ++ "words",
@@ -5882,9 +5779,9 @@ test_no_aot(!T, !IO) :-
     % Both kinds in one artefact log in the order they were met, as libds
     % logs them while it walks.
     check("[RDSC.4c.3] its line keeps its place among the skip lines",
-        ( if load_dsc(sealed(dsco_frame ++ Code ++ Unknown), loaded(P5)),
+        ( if load_dsc(sealed(dsco_frame ++ Code ++ Docs), loaded(P5)),
              load_logs(P5) = [CodeLog, eff_host_log(log_info, "dsc-load", _)],
-             skipped(P5) = [999u32]
+             skipped_at(P5) = [{at_doc_string, CodeAt + list.length(Code)}]
           then yes else no ), !T, !IO),
     % [RDSC.9.2] comes first: an artefact opening with a CompiledCode atom is
     % not a `.dsc`, as libds refuses it.
@@ -6378,8 +6275,8 @@ term_with_action(Action) =
         ++ varint(list.length(Action)) ++ Action.
 
     % Wrap a body in the two-level framing: outer 0A len, then the atom's own
-    % tag and length. Only for field numbers whose tag fits two bytes, which is
-    % every atom in the skip band.
+    % tag and length. Only for field numbers whose tag fits two bytes, 16
+    % through 2047.
     %
 :- func frame(int, list(int)) = list(int).
 
@@ -6712,10 +6609,10 @@ rdsc_11_1_framing_rows = [
     framing_row("a field number past 2^32",
         [0x0A, 0x06, 0x82, 0x80, 0x80, 0x80, 0x80, 0x01],
         lek_bad_first_atom, lek_decode),
-    % An inner field number in no band ([RFCS.16.3]): 2048, key 16386
-    % = 82 80 01, with an empty body; and 0, key 0x02. Later, the kind is the
-    % runtime's own, `lek_malformed_field_number`, which is DS_ERR_DSC_DECODE.
-    framing_row("an inner field number past every band (2048)",
+    % An inner field number no atom has: 2048, key 16386 = 82 80 01, with an
+    % empty body; and 0, key 0x02. Later, the kind is the runtime's own,
+    % `lek_malformed_field_number`, which is DS_ERR_DSC_DECODE.
+    framing_row("an inner field number no atom has (2048)",
         [0x0A, 0x04, 0x82, 0x80, 0x01, 0x00],
         lek_bad_first_atom, lek_malformed_field_number),
     framing_row("an inner field number of 0",
@@ -7979,25 +7876,29 @@ test_rete_expr(!T, !IO) :-
     TermGuard = [0x0A, 0x10, 0xF2, 0x10, 0x0D, 0x08, 0x03, 0x10,
          0x02, 0x1A, 0x01, 0x52, 0x20, 0x02, 0x3A, 0x02,
          0x70, 0x01],
-    % TerminalNode bind_count 2, fire_guard = bind_ref 9 -- dangling
-    TermGuardBad = [0x0A, 0x10, 0xF2, 0x10, 0x0D, 0x08, 0x03, 0x10,
+    % TerminalNode bind_count 2, fire_guard = bind_ref 9 -- outside the frame
+    TermGuardPast = [0x0A, 0x10, 0xF2, 0x10, 0x0D, 0x08, 0x03, 0x10,
          0x02, 0x1A, 0x01, 0x52, 0x20, 0x02, 0x3A, 0x02,
          0x70, 0x09],
     Beta = [0x0A, 0x07, 0xEA, 0x10, 0x04, 0x08, 0x02, 0x10,
          0x01],
 
-    check("a fire_guard's bind_ref is range-checked against bind_count",
+    check("a fire_guard's bind_ref loads, with its terminal's bind_count",
         ( if load_dsc(sealed(dsco_frame ++ Alfa ++ Beta ++ TermGuard),
                 loaded(P7)),
              terminal_nodes(network(P7)) = [Tm7],
-             Tm7 ^ tn_guard = yes(e_bind_ref(_)),
+             Tm7 ^ tn_guard = yes(e_bind_ref(Ix7)),
+             bind_index_int(Ix7) = 1,
              Tm7 ^ tn_binds = 2
           then yes else no ), !T, !IO),
 
-    check("and one outside that range is a DANGLING reference",
-        ( if load_dsc(sealed(dsco_frame ++ Alfa ++ Beta ++ TermGuardBad),
-                load_failed(E3)),
-             E3 ^ le_kind = lek_dangling
+    % @spec [RDSC.4a.9.6]
+    check("[RDSC.4a.9.6] one outside the frame loads, its index kept",
+        ( if load_dsc(sealed(dsco_frame ++ Alfa ++ Beta ++ TermGuardPast),
+                loaded(P7Past)),
+             terminal_nodes(network(P7Past)) = [Tm7Past],
+             Tm7Past ^ tn_guard = yes(e_bind_ref(IxPast)),
+             bind_index_int(IxPast) = 9
           then yes else no ), !T, !IO),
 
     % TerminalNode bind_count 2, fire_guard = bind { bind_index 0,
@@ -8280,6 +8181,9 @@ test_more_fixtures(!T, !IO) :-
         !IO),
     with_fixture("121_cache_ttl.dsc", check_seed_deadline_past_range, !T,
         !IO),
+    with_fixture("121_cache_ttl.dsc", check_replay_pump_time_range, !T, !IO),
+    with_fixture("121_cache_ttl.dsc",
+        test_rfcs_10_5_a_clock_outside_the_range_ends_the_replay, !T, !IO),
     with_fixture("144_cache_read_expiry.dsc", check_cache_read_expiry_notified,
         !T, !IO),
     with_fixture("130_nan_call_arg.dsc", check_nan_call_status, !T, !IO),
@@ -8475,6 +8379,110 @@ check_seed_deadline_past_range(P, !T, !IO) :-
 
 k_live(E) :-
     cache_get_live(engine_cache(E), engine_now(E), "k", _).
+
+    % [RFCS.10.5]: a `ClockAdvance` whose `clock_ns` is negative ends the replay
+    % with -205, as libds's
+    % `test_rfcs_10_5__a_clock_outside_the_range_ends_the_replay` in
+    % test_rfcs_replay.c. Written
+    % by hand, since no run records one and no fixture can edit one. Path:
+    % `replay_event`'s `se_clock_tick` arm -> `ntst_3_1_set_past_range`.
+    %
+% @spec [RFCS.10.5]
+:- pred test_rfcs_10_5_a_clock_outside_the_range_ends_the_replay(program::in,
+    tally::in, tally::out, io::di, io::uo) is det.
+
+test_rfcs_10_5_a_clock_outside_the_range_ends_the_replay(P, !T, !IO) :-
+    engine_use_mock_clock(init_engine(P), E0),
+    Negative = from_ns(uint64.cast_from_int64(-1i64)),
+    Meta = session_header(init_engine(P)),
+    encode_recording(Meta, rfcs_ctx(engine_schemas(E0), engine_interns(E0)),
+        engine_now(E0), prelude_seeds(E0),
+        record_items(0u64, [eff_event(se_clock_tick(Negative, no))]), Bytes, _),
+    decode_stream(from_bytes(list.map(uint8.cast_to_int, Bytes)),
+        init_interns, Decoded),
+    ( if Decoded = decoded(DS) then
+        replay_stream(P, DS, Steps, E0, _),
+        check("RFCS.10.5: a ClockAdvance outside the clock's range ends the "
+                ++ "replay with -205",
+            ( if Steps = [input_refused(_, -205, _)] then yes else no ),
+            !T, !IO)
+    else
+        check("RFCS.10.5: the recording decodes", no, !T, !IO)
+    ).
+
+    % [RFCS.6.7]: a replayed pump refused before its step ends the replay, as
+    % libds's `test_rfcs_6_7_time_range_pump_ends_the_replay` in
+    % test_rfcs_replay.c. The run, with no seed: a pump at a mock clock of
+    % INT64_MAX - 1 s, then Trig "x1" and a second pump. Replayed into an engine
+    % the host seeded with "k" for 1 h, which [RFCS.26.2] forbids, the first
+    % pump would give "k" a deadline past the `Time` range ([NLFC.9.5]): the
+    % replay stops there with -205 and delivers nothing after it. The control
+    % replays the same recording into an unseeded engine, which reproduces the
+    % run: the seed is the only difference, so the refusal is the pump's.
+    %
+% @spec [RFCS.6.7]
+:- pred check_replay_pump_time_range(program::in, tally::in, tally::out,
+                                     io::di, io::uo) is det.
+
+check_replay_pump_time_range(P, !T, !IO) :-
+    Max = uint64.cast_from_int64(int64.max_int64),
+    HourNs = 3600u64 * 1000000000u64,
+    ( if find_schema(schemas(P), interns(P), "Trig", Trig) then
+        engine_use_mock_clock(init_engine(P), E0),
+        set_clock(from_ns(Max - 1000000000u64), _, E0, E1),
+        pump(default_budget, Fx1, E1, E2),
+        engine_intern("x1", X1, E2, E3),
+        host_assert(Trig, [str(X1)], no, RA, FxA, E3, E4),
+        pump(default_budget, Fx2, E4, E),
+        check("RFCS.6.7: the run's pumps and its Trig are admitted",
+            ( if
+                RA = inserted(_),
+                first_pump_status(Fx1) = no,
+                first_pump_status(Fx2) = no
+              then yes else no ), !T, !IO),
+        Meta = session_header(init_engine(P)),
+        encode_recording(Meta, rfcs_ctx(engine_schemas(E), engine_interns(E)),
+            engine_now(E0), prelude_seeds(E),
+            record_items(0u64, Fx1 ++ FxA ++ Fx2), Bytes, _),
+        decode_stream(from_bytes(list.map(uint8.cast_to_int, Bytes)),
+            init_interns, Decoded),
+        ( if Decoded = decoded(DS) then
+            engine_use_mock_clock(init_engine(P), S0),
+            seed_cache("k", j_int(1i64), yes(duration_from_ns(HourNs)), RS,
+                S0, S1),
+            replay_stream(P, DS, SSteps, S1, S),
+            check("RFCS.6.7: on a seeded engine the first replayed pump is "
+                    ++ "refused before its step, and the replay ends there "
+                    ++ "with -205",
+                ( if
+                    RS = seeded,
+                    SSteps = [pumped([eff_pump_status(ps_time_range)]),
+                        input_refused(_, -205, _)],
+                    engine_fact_count(S) = 0
+                  then yes else no ), !T, !IO),
+            engine_use_mock_clock(init_engine(P), C0),
+            replay_stream(P, DS, CSteps, C0, C),
+            check("RFCS.6.7 control: on an unseeded engine the replay "
+                    ++ "delivers both pumps and the Trig, and refuses nothing",
+                ( if
+                    list.filter(is_replayed_pump, CSteps) = [_, _],
+                    not (
+                        list.member(CS, CSteps),
+                        replay_refusal_code(CS) = _
+                    ),
+                    engine_fact_count(C) = engine_fact_count(E),
+                    engine_fact_count(E) = 1
+                  then yes else no ), !T, !IO)
+        else
+            check("RFCS.6.7: the run's recording decodes", no, !T, !IO)
+        )
+    else
+        check("RFCS.6.7: the fixture declares `Trig`", no, !T, !IO)
+    ).
+
+:- pred is_replayed_pump(replay_step::in) is semidet.
+
+is_replayed_pump(pumped(_)).
 
     % [NSTG.2.4.2]: `112_cache_read_expiry.scn`, with one more pump. The
     % clock reaches "k"'s deadline with no pump, so no sweep has run; the
@@ -12218,14 +12226,14 @@ binding_case(P, Ctx, Events, {Name, Meta, Want}, !T, !IO) :-
         check("[RBND.2] " ++ Name ++ ": the recording decodes", no, !T, !IO)
     ).
 
-    % [RFCS.16.3]: atoms 260 and 323, in the skip band and in no `ds.atom`
-    % entry, are read past and change nothing a replay does. The same
-    % recording is replayed as written and with both appended: a 260 holding
-    % a `sig_alg`, a `key_id`, a time, a signature and a public key, and a 323
-    % with a tag and a text. libds's `test_rfcs_replay` pins the same on its
-    % reader.
+    % [RFCS.19.3]: atoms 260 and 323, in no `ds.atom` entry, name no member
+    % of `Atom`'s oneof, so a recording carrying them is refused. The same
+    % recording decodes as written, and is refused with both appended: a 260
+    % holding a `sig_alg`, a `key_id`, a time, a signature and a public key,
+    % and a 323 with a tag and a text. libds's `test_rfcs_replay` pins the
+    % same on its reader.
     %
-% @spec [RFCS.16.3]
+% @spec [RFCS.19.3]
 :- pred check_retired_atoms_replay(program::in, tally::in, tally::out,
                                    io::di, io::uo) is det.
 
@@ -12256,26 +12264,16 @@ check_retired_atoms_replay(P, !T, !IO) :-
     put_delimited(323u32, builder_bytes(N2), init_builder, NoteAtom),
     put_delimited(1u32, builder_bytes(NoteAtom), init_builder, NoteFrame),
     WithBoth = Bytes ++ builder_bytes(SealFrame) ++ builder_bytes(NoteFrame),
-    ( if
-        decode_stream(from_bytes(list.map(uint8.cast_to_int, Bytes)),
-            interns(P), decoded(PlainDS)),
-        decode_stream(from_bytes(list.map(uint8.cast_to_int, WithBoth)),
-            interns(P), decoded(BothDS))
-    then
-        engine_use_mock_clock(init_engine(P), E0),
-        replay_stream(P, PlainDS, PlainSteps, E0, _),
-        replay_stream(P, BothDS, BothSteps, E0, _),
-        check("RFCS.16.3: a recording with a 260 and a 323 appended replays "
-            ++ "exactly as the recording without them",
-            ( if
-                PlainSteps = [_ | _],
-                not list.member(binding_refused(_, _), PlainSteps),
-                BothSteps = PlainSteps
-              then yes else no ), !T, !IO)
-    else
-        check("RFCS.16.3: a recording with a 260 and a 323 appended decodes",
-            no, !T, !IO)
-    ).
+    decode_stream(from_bytes(list.map(uint8.cast_to_int, Bytes)),
+        interns(P), PlainResult),
+    check("RFCS.19.3: the recording decodes as written",
+        ( if PlainResult = decoded(_) then yes else no ), !T, !IO),
+    decode_stream(from_bytes(list.map(uint8.cast_to_int, WithBoth)),
+        interns(P), BothResult),
+    check("RFCS.19.3: a recording with a 260 and a 323 appended is refused "
+            ++ "at the 260",
+        ( if BothResult = decode_failed("RFCS.19.3", list.length(Bytes))
+          then yes else no ), !T, !IO).
 
     % A null reading is no sample. A Meter asserted with no reading, then
     % superseded with 5.0, puts one sample in its row: libds skips the null
@@ -14500,7 +14498,7 @@ wslot(Ix, Role, Tol) = wslot_kind(Ix, k_int, Role, Tol).
 
 wslot_kind(Ix, Kind, Role, Tol) =
     logical_slot(
-        slot_common(make_intern_ref(1u32), Kind, S, non_null, no, no, no, unbounded),
+        slot_common(make_intern_ref(1u32), Kind, S, non_null, no, no, no, unbounded, no),
         Role, Tol) :-
     ( if slot_index(uint32.det_from_int(Ix), S0) then
         S = S0
@@ -14513,7 +14511,7 @@ wslot_kind(Ix, Kind, Role, Tol) =
 ttl_schema(N) =
     schema(make_schema_id(2u32), make_schema_name(make_intern_ref(2u32)),
         lc_ttl([plain_slot(slot_common(make_intern_ref(1u32), k_int, S,
-            non_null, no, no, no, unbounded))], duration_from_ns(uint64.det_from_int(N))),
+            non_null, no, no, no, unbounded, no))], duration_from_ns(uint64.det_from_int(N))),
         no, no) :-
     ( if slot_index(0u32, S0) then S = S0 else unexpected($pred, "slot 0") ).
 
@@ -14533,9 +14531,9 @@ at(N) = from_ns(uint64.det_from_int(N)).
 test_lnul_3_4_root_null(!T, !IO) :-
     Key = wslot(0, role_key, exact),
     Doc = logical_slot(slot_common(make_intern_ref(1u32), k_json, sidx(1),
-        non_null, no, no, no, unbounded), role_mutable, exact),
+        non_null, no, no, no, unbounded, no), role_mutable, exact),
     DocQ = logical_slot(slot_common(make_intern_ref(1u32), k_json, sidx(1),
-        nullable, no, no, no, unbounded), role_mutable, exact),
+        nullable, no, no, no, unbounded, no), role_mutable, exact),
     J = wschema([Key, Doc]),
     JQ = wschema([Key, DocQ]),
     assert_fact(JQ, [int(1i64), json(j_null)], at(100), no, tms_none, live,
@@ -14961,11 +14959,12 @@ removal_key(F) = K :-
 % program it comes from and the value that model reduces it to. The rest cover
 % what the model does not have: `err`.
 
+    % A frame of one slot, not yet bound.
+    %
 :- func ectx = eval_ctx.
 
 ectx = eval_ctx([], no, init_wm, map.init, init_interns, at(0), no, map.init,
-    init_cache,
-    init_series_state).
+    1, init_cache, init_series_state).
 
     % [LTIM.10.6]-[LTIM.10.7]: `ectx` whose working memory holds these
     % `TimeZoneOffset` rows -- (zone, valid_from, valid_until, offset_s) --
@@ -16044,6 +16043,52 @@ test_kleene_tables(!T, !IO) :-
     evals("[RLOW.7.3.9] a null divisor is null",
         e_call(fn_int_div_exact, [lit_int(60000000000i64), e_lit(null)]),
         null, !T, !IO),
+    % [RLOW.7.3.9]: `FN_INT_MUL_ADD_CHECKED(x, m, a)` at the four edges of the
+    % range, the product and then the sum, both signs, as libds's
+    % `test_int_mul_add_checked`, case for case.
+    evals("[RLOW.7.3.9] 8 · (2^60 - 1) is 2^63 - 8, at the top",
+        e_call(fn_int_mul_add_checked, [lit_int(1152921504606846975i64),
+            lit_int(8i64), lit_int(0i64)]), int(9223372036854775800i64),
+        !T, !IO),
+    check("[RLOW.7.3.9] 8 · 2^60 is past the top: NOT_REPRESENTABLE, never wrapped",
+        ( if eval(e_call(fn_int_mul_add_checked, [
+                lit_int(1152921504606846976i64), lit_int(8i64), lit_int(0i64)]),
+                ectx, ev_fault(rf_not_representable))
+          then yes else no ), !T, !IO),
+    evals("[RLOW.7.3.9] 8 · -2^60 is -2^63, at the bottom",
+        e_call(fn_int_mul_add_checked, [lit_int(-1152921504606846976i64),
+            lit_int(8i64), lit_int(0i64)]), int(int64.min_int64), !T, !IO),
+    check("[RLOW.7.3.9] 8 · (-2^60 - 1) is past the bottom: NOT_REPRESENTABLE",
+        ( if eval(e_call(fn_int_mul_add_checked, [
+                lit_int(-1152921504606846977i64), lit_int(8i64), lit_int(0i64)]),
+                ectx, ev_fault(rf_not_representable))
+          then yes else no ), !T, !IO),
+    evals("[RLOW.7.3.9] (2^63 - 2) + 1 is 2^63 - 1, the sum at the top",
+        e_call(fn_int_mul_add_checked, [lit_int(int64.max_int64 - 1i64),
+            lit_int(1i64), lit_int(1i64)]), int(int64.max_int64), !T, !IO),
+    check("[RLOW.7.3.9] (2^63 - 2) + 2 is past the top: NOT_REPRESENTABLE",
+        ( if eval(e_call(fn_int_mul_add_checked, [
+                lit_int(int64.max_int64 - 1i64), lit_int(1i64), lit_int(2i64)]),
+                ectx, ev_fault(rf_not_representable))
+          then yes else no ), !T, !IO),
+    evals("[RLOW.7.3.9] (-2^63 + 1) - 1 is -2^63, the sum at the bottom",
+        e_call(fn_int_mul_add_checked, [lit_int(int64.min_int64 + 1i64),
+            lit_int(1i64), lit_int(-1i64)]), int(int64.min_int64), !T, !IO),
+    check("[RLOW.7.3.9] (-2^63 + 1) - 2 is past the bottom: NOT_REPRESENTABLE",
+        ( if eval(e_call(fn_int_mul_add_checked, [
+                lit_int(int64.min_int64 + 1i64), lit_int(1i64), lit_int(-2i64)]),
+                ectx, ev_fault(rf_not_representable))
+          then yes else no ), !T, !IO),
+    check("[RLOW.7.3.9] 3 · 2^62 - 2^63 would be 2^62, but the product passes " ++
+            "the range first: NOT_REPRESENTABLE",
+        ( if eval(e_call(fn_int_mul_add_checked, [
+                lit_int(4611686018427387904i64), lit_int(3i64),
+                lit_int(int64.min_int64)]),
+                ectx, ev_fault(rf_not_representable))
+          then yes else no ), !T, !IO),
+    evals("[RLOW.7.3.9] a null x is null",
+        e_call(fn_int_mul_add_checked, [e_lit(null), lit_int(8i64),
+            lit_int(0i64)]), null, !T, !IO),
     % [LTIM.7.1]: `t.floor(d)` at the offset the receiver carries, as libds's
     % `test_ltim_7_1__floor_time`, case for case. The zoned
     % receivers are the half the conformance harness cannot reach, which has
@@ -16202,6 +16247,22 @@ test_one_absent(!T, !IO) :-
           then yes else no ), !T, !IO),
     check("a path that is not a String is a type mismatch, not an absence",
         ( if eval(e_call(fn_json_path, [e_lit(Doc), lit_int(1i64)]), ectx,
+                ev_fault(_))
+          then yes else no ), !T, !IO),
+    % A `null` root, a `Json?` slot holding none, has no document: the read is
+    % `null`, through the call and the path node alike, and a path that is not
+    % a String is still the mismatch. libds's test_json_path_null_root checks
+    % the same answers.
+    check("a Json path over a null root reads as null, not a fault",
+        ( if eval(e_call(fn_json_path, [lit_null, e_lit(text("c"))]), ectx,
+                ev_ok(null))
+          then yes else no ), !T, !IO),
+    check("a Json path node over a null root reads as null, not a fault",
+        ( if eval(e_json_path_expr(lit_null, e_lit(text("c"))), ectx,
+                ev_ok(null))
+          then yes else no ), !T, !IO),
+    check("a path that is not a String over a null root is still a mismatch",
+        ( if eval(e_call(fn_json_path, [lit_null, lit_int(1i64)]), ectx,
                 ev_fault(_))
           then yes else no ), !T, !IO),
 
@@ -16647,6 +16708,18 @@ test_hard_faults(!T, !IO) :-
     else
         check("[RARC.5.6.11] bind index 0 of 1 exists", no, !T, !IO)
     ),
+    % @spec [RDSC.4a.9.6]
+    check("[RDSC.4a.9.6] a read outside the frame is ARTEFACT_LIED, " ++
+        "not BINDING_ORDER",
+        ( if eval(e_bind_ref(bind_index_of(1u32)), ectx,
+                ev_fault(rf_artefact_lied))
+          then yes else no ), !T, !IO),
+    check("[RDSC.4a.9.6] a write outside the frame is ARTEFACT_LIED, " ++
+        "and its expression is not evaluated",
+        ( if eval(e_bind(bind_index_of(1u32),
+                    e_binop(op_floordiv, e_lit(int(1i64)), e_lit(int(0i64)))),
+                ectx, ev_fault(rf_artefact_lied))
+          then yes else no ), !T, !IO),
     % Both are EngineErrors, so both halt the tier, and each carries the
     % EngineFault libds records for it: PATTERN_INDEX 2, BINDING_ORDER 3.
     check("[LERR.1.4.7] both are EngineErrors, latched, as libds numbers them",
@@ -17659,7 +17732,7 @@ check_end_to_end(P, !T, !IO) :-
             % ...and firing it runs all seven actions.
             ExecCtx = exec_ctx(SchemaMap, at(1000), no, Meta, no,
                 no_cache_caps, default_hydration_budget, [], [],
-                map.init),
+                map.init, Term ^ tn_binds),
             State0 = exec_state(W1, init_tms, init_cache, init_series_state,
                 init_rate_table, bool.no, IT, 0, [], [], map.init),
             % No settling here: the terminal fires in isolation, with no
@@ -18420,10 +18493,54 @@ test_series(!T, !IO) :-
           then yes else no ), !T, !IO),
 
     % `first` is the oldest in the window and `last` the newest; samples are
-    % stored newest-first.
+    % stored newest-first. A sliding `first` / `last` is SeriesBackendFifoDeque's
+    % (`dsc.rete.lser_18_1_backing`); the ring buffer does not answer them, in
+    % libds or here (`ds.series.serves`).
+    DFifo = D ^ sd_backing := bk_fifo_deque,
+    absorb(DFifo, K, float(20.0), at(0), S3, SF1),
+    absorb(DFifo, K, float(30.0), at(1000000000), SF1, SF2),
+    absorb(DFifo, K, float(40.0), at(2000000000), SF2, SF3),
     check("first is the oldest sample, last the newest",
-        ( if query(agg_first, K, at(2000000000), S3, cold_value(agg_first, no), float(F)), F = 20.0,
-             query(agg_last, K, at(2000000000), S3, cold_value(agg_last, no), float(L)), L = 40.0
+        ( if query(agg_first, K, at(2000000000), SF3, cold_value(agg_first, no), float(F)), F = 20.0,
+             query(agg_last, K, at(2000000000), SF3, cold_value(agg_last, no), float(L)), L = 40.0
+          then yes else no ), !T, !IO),
+    check("a backing that does not serve the aggregation answers it cold",
+        ( if query(agg_first, K, at(2000000000), S3, cold_value(agg_first, no), null)
+          then yes else no ), !T, !IO),
+
+    % [RDSC.5a.8.1], [RDSC.5a.8.2]: two backings at one window are parallel,
+    % each keyed by the whole tuple, so each absorbs a sample once. The engine
+    % absorbs a fact once per declaration (`ds.engine.absorb_decl`), so a `count`
+    % beside a `min` reads each sample once, as libds's does.
+    DMono = D ^ sd_backing := bk_monotonic_deque,
+    KTwo = series_key("T", "v", "", "", 10u64 * 1000000000u64),
+    absorb(D, KTwo, float(5.0), at(0), init_series_state, TB1),
+    absorb(DMono, KTwo, float(5.0), at(0), TB1, TB2),
+    absorb(D, KTwo, float(3.0), at(1000000000), TB2, TB3),
+    absorb(DMono, KTwo, float(3.0), at(1000000000), TB3, TB4),
+    check("two backings at one window each absorb a sample once",
+        ( if query(agg_count, KTwo, at(1000000000), TB4, cold_value(agg_count, no), int(2i64)),
+             query(agg_sum, KTwo, at(1000000000), TB4, cold_value(agg_sum, no), float(8.0)),
+             query(agg_min, KTwo, at(1000000000), TB4, cold_value(agg_min, no), float(3.0))
+          then yes else no ), !T, !IO),
+
+    % SeriesBackendWelfordEwma (`all_time`) and SeriesBackendReservoir
+    % (`sample <n>`) both declare window 0, so without the backing in the key
+    % they were one row, and the reservoir's shape and the running stats'
+    % overwrote each other. An unbounded read takes the running stats where
+    % they serve, as libds's `series_pick_backend_slot` does.
+    DWel = (D ^ sd_backing := bk_welford) ^ sd_window := 0u64,
+    DRes = ((D ^ sd_backing := bk_reservoir) ^ sd_window := 0u64) ^ sd_max := 2u32,
+    KZero = series_key("Z", "v", "", "", 0u64),
+    absorb(DWel, KZero, float(1.0), at(0), init_series_state, ZR1),
+    absorb(DRes, KZero, float(1.0), at(0), ZR1, ZR2),
+    absorb(DWel, KZero, float(2.0), at(1000000000), ZR2, ZR3),
+    absorb(DRes, KZero, float(2.0), at(1000000000), ZR3, ZR4),
+    absorb(DWel, KZero, float(3.0), at(2000000000), ZR4, ZR5),
+    absorb(DRes, KZero, float(3.0), at(2000000000), ZR5, ZR6),
+    check("a running total and a reservoir at window 0 are two rows",
+        ( if query(agg_count, KZero, at(2000000000), ZR6, cold_value(agg_count, no), int(3i64)),
+             query(agg_percentile(50), KZero, at(2000000000), ZR6, null, float(_))
           then yes else no ), !T, !IO),
 
     % Sample vs population variance: over 20/30/40 the sample variance is 100.0
@@ -18510,9 +18627,13 @@ test_series(!T, !IO) :-
              query(agg_min, KInt, at(1000000000), I2, cold_value(agg_min, no), int(3i64)),
              query(agg_max, KInt, at(1000000000), I2, cold_value(agg_max, no), int(4i64))
           then yes else no ), !T, !IO),
+    % An unbounded `first` / `last` is SeriesBackendWelfordEwma's.
+    DIntWel = DInt ^ sd_backing := bk_welford,
+    absorb(DIntWel, KInt, int(3i64), at(0), I2, IW1),
+    absorb(DIntWel, KInt, int(4i64), at(1000000000), IW1, IW2),
     check("first / last over an Int series return Ints",
-        ( if query(agg_first, KInt, at(1000000000), I2, cold_value(agg_first, no), int(3i64)),
-             query(agg_last, KInt, at(1000000000), I2, cold_value(agg_last, no), int(4i64))
+        ( if query(agg_first, KInt, at(1000000000), IW2, cold_value(agg_first, no), int(3i64)),
+             query(agg_last, KInt, at(1000000000), IW2, cold_value(agg_last, no), int(4i64))
           then yes else no ), !T, !IO),
     check("mean over an Int series still returns a Float",
         ( if query(agg_mean, KInt, at(1000000000), I2, cold_value(agg_mean, no), float(3.5))
@@ -18596,7 +18717,7 @@ test_regex_match(!T, !IO) :-
     intern("\\d+", Digits, IT4, IT5),
     intern("code 42", Coded, IT5, IT6),
     intern("full$", Tail, IT6, IT),
-    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init,
+    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init, 0,
         init_cache, init_series_state),
     check("[LREG.1.2] a pattern that matches answers true",
         regex_yes(Ctx, Lower, Anchored, NoFlags), !T, !IO),
@@ -18636,7 +18757,7 @@ test_regex_match(!T, !IO) :-
 
 test_rlow_6_1_7_interval_check(!T, !IO) :-
     intern("a", A, init_interns, IT),
-    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init,
+    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init, 0,
         init_cache, init_series_state),
     I = ( func(N) = e_lit(int(N)) ),
     Check = ( func(Args) = e_call(fn_interval_check, Args) ),
@@ -18709,7 +18830,7 @@ test_rlow_6_1_7_interval_check(!T, !IO) :-
 
 test_rdsc_4a_9_3_operands(!T, !IO) :-
     Ctx = eval_ctx([], no, init_wm, map.init, init_interns, at(0), no,
-        map.init, init_cache, init_series_state),
+        map.init, 0, init_cache, init_series_state),
     test_rdsc_4a_9_5_every_row(Ctx, !T, !IO),
     % An absorbing `and` still absorbs it ([IRET.9.6], [LERR.1.4.11]).
     eval(e_binop(op_and, e_lit(bool(no)), e_call(fn_abs, [])), Ctx, AndOut),
@@ -18877,6 +18998,107 @@ test_string_conversion_kinds(Ctx, !T, !IO) :-
 test_rdsc_4a_9_3_verbs(!T, !IO) :-
     with_fixture("07_action_verbs.dsc", check_rdsc_4a_9_3_verbs, !T, !IO).
 
+    % [RDSC.4a.9.6], [NFCT.1.4.6]: a slot's conversion has a frame of one
+    % slot. One that reads `bind_ref` 1 raises an EngineError, which the
+    % host's conversion raises as any public call does: one `EngineError`
+    % ARTEFACT_LIED, naming no node and the `$engine` rule, then the halt.
+    % A ComputationError stays NOT_REPRESENTABLE and changes nothing. libds's
+    % `test_rdsc_4a_9_6__a_conversion_bind_index_past_0` asks the same.
+    %
+    % @spec [RDSC.4a.9.6]
+    % @spec [NFCT.1.4.6]
+:- pred test_rdsc_4a_9_6_conversion(tally::in, tally::out, io::di, io::uo)
+    is det.
+
+test_rdsc_4a_9_6_conversion(!T, !IO) :-
+    with_fixture("07_action_verbs.dsc", check_rdsc_4a_9_6_conversion, !T,
+        !IO).
+
+:- pred check_rdsc_4a_9_6_conversion(program::in, tally::in, tally::out,
+                                     io::di, io::uo) is det.
+
+check_rdsc_4a_9_6_conversion(P, !T, !IO) :-
+    ( if find_schema(schemas(P), interns(P), "Trig", Trig) then
+        E0 = init_engine(P),
+        In = bind_index_of(0u32),
+        Past = bind_index_of(1u32),
+        Through = ( pred(To::in, Out::out, Effects::out, E::out) is det :-
+            nfct_1_4_6_convert(with_unit(To, Trig), 0, ud_to_stored,
+                int(5i64), Out, Effects, E0, E)
+        ),
+        Through(e_bind_ref(In), InOut, InEffects, InE),
+        check("[RDSC.4a.9.6] a conversion reads its one slot",
+            ( if InOut = uo_ok(int(5i64)), InEffects = [],
+                 engine_halted(InE) = no
+              then yes else no ), !T, !IO),
+        Through(e_bind_ref(Past), PastOut, PastEffects, PastE),
+        list.filter(
+            ( pred(Ef::in) is semidet :-
+                Ef = eff_event(se_engine_error(_, _)) ),
+            PastEffects, PastErrors),
+        check("[NFCT.1.4.6] a conversion reading bind_ref 1 halts the " ++
+            "engine with one EngineError ARTEFACT_LIED at $engine",
+            ( if
+                PastOut = uo_halted,
+                PastErrors = [eff_event(se_engine_error(
+                    ee_expr_fault(rf_artefact_lied), Site))],
+                Site ^ fs_node = no,
+                Site ^ fs_rule = fr_engine,
+                engine_halted(PastE) = yes(ee_expr_fault(rf_artefact_lied))
+              then yes else no ), !T, !IO),
+        Through(e_binop(op_floordiv, e_bind_ref(In), e_lit(int(0i64))),
+            ZeroOut, ZeroEffects, ZeroE),
+        check("[NFCT.1.4.6] a ComputationError is NOT_REPRESENTABLE, " ++
+            "and nothing is reported or halted",
+            ( if ZeroOut = uo_not_representable, ZeroEffects = [],
+                 engine_halted(ZeroE) = no
+              then yes else no ), !T, !IO)
+    else
+        check("07_action_verbs has a Trig schema", no, !T, !IO)
+    ).
+
+    % The schema with its first slot's conversion to stored `To`, and the
+    % identity back.
+    %
+:- func with_unit(expr, schema) = schema.
+
+with_unit(To, S) = S ^ s_lifecycle := Lifecycle :-
+    Units = yes(unit_conversion(To, e_bind_ref(bind_index_of(0u32)))),
+    Common = ( func(C) = C ^ sc_units := Units ),
+    L0 = S ^ s_lifecycle,
+    (
+        L0 = lc_logical(Slots, Ambient),
+        Lifecycle = lc_logical(first_slot(
+            ( func(Sl) = Sl ^ ls_common := Common(Sl ^ ls_common) ), Slots),
+            Ambient)
+    ;
+        L0 = lc_ttl(Slots, TTL),
+        Lifecycle = lc_ttl(first_slot(
+            ( func(Sl) = Sl ^ ps_common := Common(Sl ^ ps_common) ), Slots),
+            TTL)
+    ;
+        L0 = lc_explicit(Slots),
+        Lifecycle = lc_explicit(first_slot(
+            ( func(Sl) = Sl ^ ps_common := Common(Sl ^ ps_common) ), Slots))
+    ;
+        L0 = lc_activation(Slots),
+        Lifecycle = lc_activation(first_slot(
+            ( func(Sl) = Sl ^ ps_common := Common(Sl ^ ps_common) ), Slots))
+    ).
+
+:- func first_slot(func(T) = T, list(T)) = list(T).
+
+first_slot(_, []) = [].
+first_slot(F, [X | Xs]) = [F(X) | Xs].
+
+    % The bind frame of a program's one terminal: its `bind_count`
+    % ([RDSC.4a.9.6]).
+    %
+:- func only_frame(program) = int.
+
+only_frame(P) =
+    ( if terminal_nodes(network(P)) = [T] then T ^ tn_binds else 0 ).
+
 :- pred check_rdsc_4a_9_3_verbs(program::in, tally::in, tally::out,
                                 io::di, io::uo) is det.
 
@@ -18901,7 +19123,7 @@ check_rdsc_4a_9_3_verbs(P, !T, !IO) :-
         ( if Delta ^ md_added = [Activation] then
             ExecCtx = exec_ctx(SchemaMap, at(1000), no, Meta, no,
                 no_cache_caps, default_hydration_budget, [], [],
-                map.init),
+                map.init, only_frame(P)),
             State0 = exec_state(W1, init_tms, init_cache, init_series_state,
                 init_rate_table, bool.no, IT, 0, [], [], map.init),
             Cases = [
@@ -19009,7 +19231,7 @@ test_regex_capture(!T, !IO) :-
     intern("(a)|(b)", Either, IT2, IT3),
     intern("b", JustB, IT3, IT4),
     intern("nothing here", NoMatch, IT4, IT),
-    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init,
+    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init, 0,
         init_cache, init_series_state),
     check("[LREG.4.1] group 1 is the first capture's text",
         ( if capture_out(Ctx, e_lit(str(Subject)), TwoGroups, NoFlags, 1i64)
@@ -19167,6 +19389,11 @@ probe_args(Fn) = Args :-
             [2024i64, 2i64, 29i64, 12i64, 0i64, 0i64, 0i64])
     else if Fn = fn_calendar_date then
         Args = [e_lit(int(2024i64)), e_lit(int(2i64)), e_lit(int(29i64))]
+    else if ( Fn = fn_duration_add ; Fn = fn_duration_mul ) then
+        Args = [e_lit(int(2i64)), e_lit(int(3i64))]
+    else if Fn = fn_int_mul_add_checked then
+        % `x`, `m` and `a`, in range, so the answer is `m·x + a`.
+        Args = [e_lit(int(2i64)), e_lit(int(3i64)), e_lit(int(4i64))]
     else if Fn = fn_duration_to_string then
         Args = [e_lit(int(5400000000000i64))]
     else if ( Fn = fn_local ; Fn = fn_time_date ) then
@@ -19277,8 +19504,8 @@ probe_interns(IT) :-
 
 probe_ctx = Ctx :-
     probe_interns(IT),
-    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init, init_cache,
-        init_series_state).
+    Ctx = eval_ctx([], no, init_wm, map.init, IT, at(0), no, map.init, 0,
+        init_cache, init_series_state).
 
     % The reservoir's retention, pinned as a golden sequence: a fixed-seed
     % `xorshift64` seeded `0x9e3779b97f4a7c15`, advanced only in the
@@ -19546,10 +19773,11 @@ test_signal_aggs(!T, !IO) :-
                 cold_value(agg_active_fraction, no), float(1.0))
           then yes else no ), !T, !IO),
 
-    % [LSIG.1.4.1] `LSIG.OR-2`: rising edges at 5, 10, 15, 20 and 25 s with a
-    % `false` between each, read at 26 s over a 20 s window. `(6, 26]` holds
-    % four edges -- the one at 5 s is out -- and `elapsed` is 21 s, so the
-    % denominator is the window: 4 / 20 = 0.2.
+    % [LSIG.1.4.1] `LSIG.OR-2`: `true` at 5, 10, 15, 20 and 25 s with a
+    % `false` between each, read at 26 s over a 20 s window. The `true` at 5 s
+    % is the first absorption, no edge, and out of `(6, 26]` besides, which
+    % holds four edges. `elapsed` is 21 s, so the denominator is the window:
+    % 4 / 20 = 0.2.
     DO = series_decl(bk_ring_buffer, "D", "s", "", el_bool,
         20000000000u64, 0u64, 0u32, tm_sliding, gp_unspecified,
         np_unspecified),
@@ -19565,12 +19793,19 @@ test_signal_aggs(!T, !IO) :-
         ( if query(agg_onset_rate, KO, at(26 * S1), O9,
                 cold_value(agg_onset_rate, no), float(0.2))
           then yes else no ), !T, !IO),
-    % `LSIG.OR-1`: a single `true` at 2 s read at 4 s. A first `true` is an
-    % edge, and the denominator is the 2 s elapsed, not the 20 s window.
-    absorb(DO, KO, bool(yes), at(2 * S1), init_series_state, O1),
-    check("[LSIG.1.4.2] a first true over 2 s elapsed is 0.5",
-        ( if query(agg_onset_rate, KO, at(4 * S1), O1,
+    % `LSIG.OR-1`: `false` at 2 s, `true` at 3 s, read at 4 s. One edge, and
+    % the denominator is the 2 s elapsed, not the 20 s window.
+    absorb(DO, KO, bool(no), at(2 * S1), init_series_state, O1),
+    absorb(DO, KO, bool(yes), at(3 * S1), O1, O2),
+    check("[LSIG.1.4.2] one edge over 2 s elapsed is 0.5",
+        ( if query(agg_onset_rate, KO, at(4 * S1), O2,
                 cold_value(agg_onset_rate, no), float(0.5))
+          then yes else no ), !T, !IO),
+    % [LSIG.1.4.1] A first `true` follows nothing, so it is no edge.
+    absorb(DO, KO, bool(yes), at(2 * S1), init_series_state, OF1),
+    check("[LSIG.1.4.1] a first true is no rising edge",
+        ( if query(agg_onset_rate, KO, at(4 * S1), OF1,
+                cold_value(agg_onset_rate, no), float(0.0))
           then yes else no ), !T, !IO).
 
 %-----------------------------------------------------------------------------%
@@ -19651,6 +19886,10 @@ read_bitmap(Path, Result, !IO) :-
 
 drive_replay(P, DS, Stop, !IO) :-
     engine_use_mock_clock(init_engine(P), E0),
+    % The replayer loads the artefact as the recorded run did, so the load's own
+    % log lines come first here too ([RDSC.9.4]), where `run_scenario_mode`
+    % prints them for the trace this output is compared with.
+    show_effects(rm_trace, schemas(P), interns(P), load_logs(P), !IO),
     (
         Stop = no,
         replay_stream(P, DS, Steps, E0, E)
@@ -20224,6 +20463,10 @@ emit_trace(ArtefactPath, ScenarioPath, !IO) :-
             % K-th fact, from 0, this run has sent as a call argument, in
             % issue order and then argument order. Each runtime feeds back the
             % bytes it wrote, so nothing is hand-encoded.
+    ;       st_convert(string, string, unit_direction, raw_value)
+            % `convert <Schema> <slot> <to_stored|from_stored> <number>`:
+            % [NFCT.1.4.6]'s conversion of a slot that names a unit
+            % ([RDSC.5.5.9]). A read, save for an EngineError it raises.
     ;       st_pump.
 
 %-----------------------------------------------------------------------------%
@@ -20383,10 +20626,62 @@ parse_step(Line) = Step :-
         Rest = [],
         Step = st_mem
     ;
+        Head = "convert",
+        Rest = [CSchema, CSlot, DirText, ValueText],
+        convert_direction(DirText, Dir),
+        Value = parse_value(ValueText),
+        ( Value = rv_int(_) ; Value = rv_float(_) ),
+        Step = st_convert(CSchema, CSlot, Dir, Value)
+    ;
         Head = "assert",
         Rest = [Schema | Assigns],
         Step = st_assert(Schema, list.filter_map(parse_assign, Assigns))
     ).
+
+:- pred convert_direction(string::in, unit_direction::out) is semidet.
+
+convert_direction("to_stored", ud_to_stored).
+convert_direction("from_stored", ud_from_stored).
+
+:- func convert_direction_name(unit_direction) = string.
+
+convert_direction_name(ud_to_stored) = "to_stored".
+convert_direction_name(ud_from_stored) = "from_stored".
+
+    % A scenario's number as the value a host hands the conversion: an `Int`
+    % or a `Float`, as its text spells it. `parse_step` lets no other value
+    % reach a `convert` step.
+    %
+:- func raw_number(raw_value) = ds_value.
+
+raw_number(V) = Number :-
+    ( if V = rv_int(I) then
+        Number = int(I)
+    else if V = rv_float(F) then
+        Number = float(F)
+    else
+        Number = null
+    ).
+
+    % The end of a `convert` line: the result, or libds's status for the
+    % refusal ([NFCT.1.4.6]'s table), as `trace_libds.py` prints pyds's.
+    %
+:- func convert_ending(unit_outcome) = string.
+
+convert_ending(uo_ok(V)) = Ending :-
+    ( if V = int(I) then
+        Ending = "int " ++ string.int64_to_string(I)
+    else if V = float(F) then
+        Ending = "float " ++ float.float64_bits_string(F)
+    else
+        Ending = "? " ++ string.string(V)
+    ).
+convert_ending(uo_no_slot) = "refused -3".
+convert_ending(uo_no_unit) = "refused -1".
+convert_ending(uo_kind_mismatch) = "refused -104".
+convert_ending(uo_nan) = "refused -216".
+convert_ending(uo_halted) = "refused -10".
+convert_ending(uo_not_representable) = "refused -223".
 
 :- type raw_value
     --->    rv_int(int64)
@@ -20635,6 +20930,47 @@ run_step(Mode, _P, st_mem, !E, !Handles, !Acc, !IO) :-
                  i(M ^ em_alpha_match_count), i(M ^ em_beta_node_count),
                  i(M ^ em_beta_token_count)], !IO)
         )
+    ;
+        Mode = rm_tms_audit
+    ;
+        Mode = rm_order_audit
+    ;
+        Mode = rm_silent
+    ).
+run_step(Mode, _P, st_convert(SchemaName, SlotName, Dir, Raw), !E, !Handles,
+        !Acc, !IO) :-
+    % `trace_libds.py`'s `convert` line: `convert <Schema> <slot>
+    % <direction>`, then `int N`, `float B` with B the IEEE-754 bits as a
+    % signed 64-bit integer, or `refused S` with libds's status for the
+    % outcome. A name the engine has no schema or slot by is SCHEMA_UNKNOWN
+    % or SLOT_UNKNOWN, as pyds refuses it, and a halted engine's schema read
+    % is refused ([NCBK.2.9]).
+    IT0 = engine_interns(!.E),
+    ( if engine_halted(!.E) = yes(_) then
+        Ending = "refused -10"
+    else if find_schema(engine_schemas(!.E), IT0, SchemaName, Schema) then
+        ( if
+            list.find_index_of_match(
+                (pred(C::in) is semidet :- expand(IT0, C ^ sc_name, SlotName)),
+                slot_commons(Schema), 0, Index)
+        then
+            nfct_1_4_6_convert(Schema, Index, Dir, raw_number(Raw), Outcome,
+                Effects, !E),
+            show_effects(Mode, engine_schemas(!.E), engine_interns(!.E),
+                Effects, !IO),
+            !:Acc = !.Acc ++ Effects,
+            Ending = convert_ending(Outcome)
+        else
+            Ending = "refused -103"
+        )
+    else
+        Ending = "refused -101"
+    ),
+    (
+        Mode = rm_trace,
+        io.format("convert %s %s %s %s\n",
+            [s(SchemaName), s(SlotName), s(convert_direction_name(Dir)),
+             s(Ending)], !IO)
     ;
         Mode = rm_tms_audit
     ;

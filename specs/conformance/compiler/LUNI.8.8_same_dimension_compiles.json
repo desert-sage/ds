@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.8.8_same_dimension_compiles",
+    "category": "compiler",
+    "scenario": "[LUNI.8.8]: values of one dimension are valid, and the result has that dimension. `max(min(s.d, 10_meter), 1_meter) > 1_meter`, `(s.n ?? 0_meter) > 1_meter` and `s.d in (1_meter .. 5_meter)` all compile, and each result meets a `meter` on the other side. A check that refuses every dimensioned operand fails this. PATH PINNED: the non-refusing arms of `dsc.typecheck.luni_8_8_min_max_type`, `lnul_5_3_binary_type`'s `bo_coalesce`, `lint_2_2_interval` and `lint_3_1_3_in`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n    n: meter? mutable\n\nrule a:\n    R s where max(min(s.d, 10_meter), 1_meter) > 1_meter\n->\n    log info \"a\"\n\nrule b:\n    R s where (s.n ?? 0_meter) > 1_meter\n->\n    log info \"b\"\n\nrule c:\n    R s where s.d in (1_meter .. 5_meter)\n->\n    log info \"c\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "id": "LIMP.13.2_a_continuation_reads_a_qualified_head",
+    "clauses": ["LIMP.13.2", "LCCO.5.1", "LCCO.5.2"],
+    "category": "logical",
+    "scenario": "[LIMP.13.2]: a `lib.Schema` head behaves as a bare one. [LCCO.5.1]: LHS bindings are in scope in a continuation body, and [LCCO.5.2]: a capture fact carries what the body reads. Rule `r` matches `jobs.Job j` and calls `svc.get` as `c1`, and `on response.ok == true` logs the bound `j.id`. A Job with id 1 is asserted and pumped, the answer of that `corr` is asserted and pumped. Exactly [\"got 1\"]. The break is the capture schema `$CaptureBindings_r_c0` left out because the binding's head was read only when bare. PATH PINNED: `dsc.rete.body_binding_head`, through `head_schema_name`, feeding `rule_cont_captures`.",
+    "rules_ds": "import jobs\n\nschema Reply scope ttl 1_h:\n    corr: String\n    ok: Bool\n\nservice svc.get:\n    kwarg k: Int\n    response Reply\n\nrule r:\n    jobs.Job j\n->\n    call svc.get k: j.id nocooldown as \"c1\"\n        on response.ok == true:\n            log info \"got {j.id}\"\n",
+    "libraries": {
+        "jobs": "schema Job scope explicit:\n    id: Int\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "jobs.Job", "slots": { "id": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reply", "slots": { "corr": "c1", "ok": true } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["got 1"]
+    }
+}

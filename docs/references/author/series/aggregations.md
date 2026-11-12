@@ -20,18 +20,19 @@ An aggregation whose type does not match the slot's is refused with `DS_VALIDATE
 
 | Aggregation | Slot value types | Returns |
 |---|---|---|
-| `min`, `max` | `Float`, `Int` | the slot's type, nullable |
-| `sum` | `Float`, `Int` | the slot's type |
-| `mean`, `median`, `variance`, `stdev`, `pvariance`, `pstdev`, `pXX` | `Float`, `Int` | `Float?` |
-| `count` | any type | `Int` |
-| `count_distinct`, `count_of` | any type with defined equality | `Int` |
-| `contains` | any type with defined equality | `Bool` |
+| `min`, `max` | `Float`, `Int`, `Duration` | the slot's type, nullable |
+| `sum` | `Float`, `Int`, `Duration` | the slot's type |
+| `mean`, `median`, `stdev`, `pstdev`, `pXX` | `Float`, `Int`, `Duration` | `Float?`; `Duration?` over a `Duration` slot |
+| `variance`, `pvariance` | `Float`, `Int`, `Duration` | `Float?` |
+| `count` | any sampled type | `Int` |
+| `count_distinct`, `count_of` | any sampled type | `Int` |
+| `contains` | any sampled type | `Bool` |
 | `bool_and`, `bool_or` | `Bool` | `Bool?` |
-| `first`, `last` | any type | the slot's type, nullable |
-| `rate` | `Float`, `Int` | `Float?` |
-| `direction` | `Float`, `Int` | `Int?` |
+| `first`, `last` | any sampled type | the slot's type, nullable |
+| `rate` | `Float`, `Int`, `Duration` | `Float?` |
+| `direction` | `Float`, `Int`, `Duration` | `Int?` |
 
-`Returns` is the static type of both call forms. `String` and `Bytes` slots admit `count`, `count_distinct`, `count_of`, `contains`, `first` and `last`. A `Json` slot admits `count`, `first` and `last`. Type and time model are two axes, both to be met, and the compiler reports the first that fails. [Signal aggregations](signal.md#signal-applicability) have their own table.
+A `Duration` slot is a slot of the `time` dimension ([`Duration`](../time/types.md#duration)). A `Duration?` read computes the `Float` and rounds it as a `Duration` scaled by a `Float` does ([Time and Duration](../time/arithmetic.md#time-and-duration)). The sampled types are `Float`, `Int`, `Bool`, `String`, `Time`, `Date` and `Duration`, a unit-typed slot, and an opaque type over any of them. `Returns` is the static type of both call forms. Type and time model are two axes, both to be met, and the compiler reports the first that fails. [Signal aggregations](signal.md#signal-applicability) have their own table.
 
 ```ds declaration error=DS_VALIDATE_SERIES_AGG_TYPE_MISMATCH
 series Reading.label:
@@ -66,9 +67,11 @@ series Reading.level:
 | `sum` | the sum |
 | `count` | the sample count |
 
-`sum` over an `Int` slot accumulates in a 64-bit signed integer, and [wraps](../values/numbers.md#int) as `Int` does.
+`sum` over an `Int` slot accumulates in a 64-bit signed integer, and [wraps](../values/numbers.md#int) as `Int` does. Over a `Duration` slot it accumulates the same way: a read that finds the total negative raises a `ComputationError` of kind `NOT_REPRESENTABLE` ([Trap kinds](../errors/dispositions.md#trap-kinds)), and a true total of 2⁶⁴ nanoseconds or more wraps and reads as the wrapped value.
 
-*(Spec: [LSER.16.2], [LSER.16.2.2], [LSER.16.4.2])*
+`min` and `max` order `-0` before `+0`: of the two, `min` is `-0` and `max` is `+0`, in either arrival order.
+
+*(Spec: [LSER.16.2], [LSER.16.2.2], [LSER.16.4.2], [LSER.17.2])*
 
 ### Dispersion
 
@@ -161,14 +164,16 @@ Samples `x_1 .. x_n` are `Float`, an `Int` converting round-to-nearest-even; an 
 
 `min`, `max`, `mean`, `median`, `pXX`, `stdev`, `pstdev`, `sum`, `first` and `last` return the series slot's unit, with no annotation.
 
-`count` returns a dimensionless `Int`. [Unit-typed slots](../units/checking.md#unit-typed-slots) states what such a slot holds.
+`count` returns `Int` and `direction` `Int?`, both dimensionless over every slot. [Unit-typed slots](../units/checking.md#unit-typed-slots) states what such a slot holds.
 
 *(Spec: [LUNI.9.1], [LUNI.9.3])*
 
-### `integral` result unit
+### Unit-changing aggregations
 
-A `let` reading `integral` over a slot with a unit carries a type annotation naming a unit; one without is refused with `DS_VALIDATE_DIM_AGG_UNANNOTATED`.
+`integral`, `variance`, `pvariance` and `rate` change dimension: over a slot of dimension `U`, `integral` is `U·s`, `variance` and `pvariance` `U²`, and `rate` `U/s`.
 
-Any unit symbol answers it. A read in a `where`, an `emit` slot or an interpolation needs none, and neither does a `let` over a slot with no unit or over `onset_rate`. `integral`'s `Float` return is its representation, and the annotation states its dimension.
+A `let` whose value reads one of them over a slot that carries a unit, a `Duration` slot included, is refused with `DS_VALIDATE_DIM_AGG_UNANNOTATED`, annotated or not, unless the value strips the read: `integral(f)::Float`, or `variance(f)::Float?` for the nullable three. The strip is a bare number in the slot's base unit, times seconds for `integral`, squared for `variance` and `pvariance`, per second for `rate`, and [`::<unit>`](../units/checking.md#assertion-and-strip) asserts a unit on it.
 
-*(Spec: [LUNI.9.2], [LSIG.1.1])*
+A read in a `where`, an `emit` slot or an interpolation needs no strip, and neither does a `let` over a slot with no unit or over `onset_rate`. The `Float` and `Float?` returns are the representation; the dimension is this entry's.
+
+*(Spec: [LUNI.9.2], [LSIG.1.1], [LSER.17.2])*

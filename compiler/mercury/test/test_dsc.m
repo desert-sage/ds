@@ -64,6 +64,8 @@
 :- import_module char.
 :- import_module float.
 :- import_module int.
+:- import_module int64.
+:- import_module integer.
 :- import_module list.
 :- import_module map.
 :- import_module maybe.
@@ -2787,14 +2789,29 @@ test_exact(!T, !IO) :-
             dsc.exact.int_pow(dsc.exact.from_int64(2i64), Half, _)
           then no else yes ), !T, !IO),
     check("[LUNI.3.1.5] `0.3_s` is 300000000 ns, not 299999999",
-        ( if luni_3_1_5_magnitude_ns("0.3", 1000000000i64) = 300000000i64
+        ( if luni_3_1_5_magnitude_ns("0.3", 1000000000i64, 300000000i64)
           then yes else no ), !T, !IO),
     check("[LUNI.3.1.5] `1.5_h` scales before it truncates",
-        ( if luni_3_1_5_magnitude_ns("1.5", 3600000000000i64)
-                = 5400000000000i64
+        ( if luni_3_1_5_magnitude_ns("1.5", 3600000000000i64,
+                5400000000000i64)
           then yes else no ), !T, !IO),
     check("[LUNI.3.1.5] an underscored integral magnitude",
-        ( if luni_3_1_5_magnitude_ns("1_000", 1000000i64) = 1000000000i64
+        ( if luni_3_1_5_magnitude_ns("1_000", 1000000i64, 1000000000i64)
+          then yes else no ), !T, !IO),
+    check("[LUNI.2.4.1] `10000000000_s` has no int64 nanoseconds, never "
+            ++ "wrapped",
+        ( if luni_3_1_5_magnitude_ns("10000000000", 1000000000i64, _)
+          then no else yes ), !T, !IO),
+    check("[LUNI.2.4.1] the last whole second in int64 nanoseconds",
+        ( if luni_3_1_5_magnitude_ns("9223372036", 1000000000i64,
+                9223372036000000000i64)
+          then yes else no ), !T, !IO),
+    check("[LUNI.2.4.1] a checked Int holds -2^63 and refuses 2^63",
+        ( if
+            TwoTo63 = integer.pow(integer.two, integer.integer(63)),
+            dsc.exact.luni_2_4_1_int64(-TwoTo63, I64Min),
+            I64Min = int64.min_int64,
+            not dsc.exact.luni_2_4_1_int64(TwoTo63, _)
           then yes else no ), !T, !IO),
     check("[LUNI.3.1.5] truncation is toward zero, below it too",
         ( if
@@ -4889,9 +4906,9 @@ test_companion(!T, !IO) :-
             ++ "\n->\n    log info \"m\"\n" ),
 
     % Observed through arithmetic, where [LUNI.8.2] states the cross-dimension
-    % error; it states none for a comparison.
+    % error.
     check_validated("[LUNI.9.1] `mean` keeps the slot's dimension",
-        Dimensioned("(mean(r.temp) + 1_therm) > 0.0"), !T, !IO),
+        Dimensioned("(mean(r.temp) + 1_therm) > 0_therm"), !T, !IO),
 
     check_validate_error("[LUNI.8.2] so adding a heft to it is a mismatch",
         Dimensioned("(mean(r.temp) + 1_lump) > 0.0"),
@@ -4972,11 +4989,11 @@ test_companion(!T, !IO) :-
         Schema ++ "rule r:\n    Sensor s where s.dwell > 60_s\n->\n"
             ++ "    log info \"m\"\n", !T, !IO),
 
-    % [LEXP.9.5.1], [LTIM.5.5]: a dwell is a `Duration`, so comparing it with
-    % a bare number is a cross-type comparison.
-    check_validate_error("[LTIM.5.5] a dwell against a bare number",
+    % [LEXP.9.5.1], [LUNI.8.3]: a dwell is a `Duration`, and a bare number
+    % beside one is refused.
+    check_validate_error("[LUNI.8.3] a dwell against a bare number",
         Schema ++ "rule r:\n    Sensor s where s.dwell > 60\n->\n"
-            ++ "    log info \"m\"\n", dv_type_mismatch, !T, !IO),
+            ++ "    log info \"m\"\n", dv_dim_mismatch, !T, !IO),
 
     % [LEXP.9.5.1]: `dwell` reads the entry stamp and no slot, so a schema
     % with no `ts` carries one.
@@ -5224,11 +5241,9 @@ test_validate(!T, !IO) :-
             ++ "rule r:\n    In i\n->\n    emit Out n: i.a retain: 30_min\n",
         !T, !IO),
 
-    % ── [LUNI.8.4]: the annotation is the position, not the expression ─────
+    % ── [LUNI.8.4]: refused wherever it stands, an annotation included ─────
     %
-    % The same expression, twice, with opposite verdicts: "a `let` type
-    % annotation is **required**".
-    Dims = "unit dimension span storage float64 base stride\n"
+    Dims ="unit dimension span storage float64 base stride\n"
         ++ "unit stride: span\n"
         ++ "unit dimension area storage float64 base stride_squared\n"
         ++ "unit stride_squared: area\n"
@@ -5239,17 +5254,20 @@ test_validate(!T, !IO) :-
         Dims ++ "rule bad:\n    Range r where (r.dist * r.w) > 100.0\n->\n"
             ++ "    log info \"x\"\n", dv_dim_ambiguous, !T, !IO),
 
-    check_validated("[LUNI.8.4] the same product under a typed `let`",
-        Dims ++ "rule ok:\n    Range r\n->\n"
+    check_validate_error("[LUNI.8.4] the same product under a typed `let`",
+        Dims ++ "rule bad3:\n    Range r\n->\n"
             ++ "    let area: stride_squared = r.dist * r.w\n"
-            ++ "    log info \"x\"\n", !T, !IO),
+            ++ "    log info \"x\"\n", dv_dim_ambiguous, !T, !IO),
 
-    % Per binding, not per `let`.
-    check_validate_error("[LUNI.8.4] an unannotated `let` still reports",
+    check_validate_error("[LUNI.8.4] and under an unannotated one",
         Dims ++ "rule bad2:\n    Range r\n->\n"
-            ++ "    let area: stride_squared = r.dist * r.w\n"
             ++ "    let other = r.dist * r.w\n"
             ++ "    log info \"x\"\n", dv_dim_ambiguous, !T, !IO),
+
+    check_validated("[LUNI.8.4] the strip and the assert compile",
+        Dims ++ "rule ok:\n    Range r\n->\n"
+            ++ "    let area = (r.dist::Float * r.w::Float)::stride_squared\n"
+            ++ "    log info \"x\"\n", !T, !IO),
 
     % ── the `call` contract -- [LCRS.8.1], [LADP.8.2.3] ────────────────────
 
@@ -5910,9 +5928,7 @@ typed(Guard, Type) :-
     resolve_file(Ast, resolve_ok(RF)),
     RF ^ rf_scopes = [Scope],
     W = first_where(RF ^ rf_ast),
-    % `da_reported` because this types a `where`, and [LUNI.8.4]'s suppression
-    % belongs to an annotated `let`'s RHS alone.
-    Type = type_of_expr(type_env(RF, Scope, da_reported, set.init), W).
+    Type = type_of_expr(type_env(RF, Scope, set.init), W).
 
 :- pred check_type(string::in, string::in, lexp_7_type::in,
                    tally::in, tally::out, io::di, io::uo) is det.
@@ -5965,7 +5981,7 @@ test_typecheck(!T, !IO) :-
     Float = ty_known(ds_type(lk_float, dimensionless, non_null)),
     Bool = ty_known(ds_type(lk_bool, dimensionless, non_null)),
     NullBool = ty_known(ds_type(lk_bool, dimensionless, nullable)),
-    Duration = ty_known(ds_type(lk_duration, dimensionless, non_null)),
+    Duration = ty_known(ds_type(lk_duration, dim(time_dimension, no), non_null)),
 
     % ── slot access, which is where a type enters an expression ─────────────
 
@@ -6047,10 +6063,10 @@ test_typecheck(!T, !IO) :-
 
     % ── calls -- [LEXP.5.8.1]'s arities, and the return types a clause gives ─
 
-    % No clause gives `abs` a return type, so the call is well-formed and
-    % untyped.
+    % The winner of a two-operand `min` over bare numbers has no static kind
+    % ([LUNI.8.8]), so the call is well-formed and untyped.
     check_type("a builtin with no stated return type is unknown, not an error",
-        "abs(s.a)", ty_unknown, !T, !IO),
+        "min(s.a, s.a)", ty_unknown, !T, !IO),
 
     % The five the clauses do give, plus the distance family.
     check_type("[LTIM.2.1.1] `now()` returns a Time",
@@ -6059,7 +6075,7 @@ test_typecheck(!T, !IO) :-
 
     check_type("[LTIM.2.2.1] `monotonic_ns()` returns a Duration",
         "monotonic_ns()",
-        ty_known(ds_type(lk_duration, dimensionless, non_null)), !T, !IO),
+        ty_known(ds_type(lk_duration, dim(time_dimension, no), non_null)), !T, !IO),
 
     check_type_error("[LTIM.2.2.1] `monotonic()` is an unknown function",
         "monotonic()", dv_unknown_function, !T, !IO),
@@ -6116,10 +6132,15 @@ test_typecheck(!T, !IO) :-
     % `typed/2`'s file declares no time unit: these resolve with no import
     % ([LUNI.4.1.2]).
     check_type("[LUNI.10.2] a time suffix resolves with no unit declared",
-        "30_s", Duration, !T, !IO),
+        "30_s",
+        ty_known(ds_type(lk_duration,
+            dim(time_dimension, yes(core_decl("s"))), non_null)), !T, !IO),
 
     check_type("[LUNI.10.2] and so do the sub-second spellings",
-        "500_ms", Duration, !T, !IO),
+        "500_ms",
+        ty_known(ds_type(lk_duration,
+            dim(time_dimension, yes(core_decl("ms"))), non_null)),
+        !T, !IO),
 
     % [LTIM.1.3.2]: a `time`-dimensioned literal is a `Duration`, so it
     % compares with `Time - Time` ([LTIM.1.3.3], [LTIM.5.4]).
@@ -6218,7 +6239,7 @@ test_typecheck(!T, !IO) :-
 
     check_type("[LTIM.4.1.1] `Time - Time` is a Duration",
         "s.t1 - s.t2",
-        ty_known(ds_type(lk_duration, dimensionless, non_null)), !T, !IO),
+        ty_known(ds_type(lk_duration, dim(time_dimension, no), non_null)), !T, !IO),
 
     check_type("[LTIM.4.1.1] `Time + Duration` stays a Time",
         "s.t1 + s.d",
@@ -6236,16 +6257,18 @@ test_typecheck(!T, !IO) :-
 
     check_type("[LTIM.4.2.1] `Date - Date` is a Duration",
         "s.dt - s.dt",
-        ty_known(ds_type(lk_duration, dimensionless, non_null)), !T, !IO),
+        ty_known(ds_type(lk_duration, dim(time_dimension, no), non_null)), !T,
+        !IO),
 
     % [LTIM.4.1.1] gives `Int * Duration`, `Duration * Int` and `Duration /
-    % Int`, and no `Int / Duration` or `Duration * Duration`.
+    % Int`; `Duration * Duration` is two dimensions ([LUNI.8.4]).
     check_type("[LTIM.4.1.1] `Int * Duration` is a Duration",
         "2 * s.d",
-        ty_known(ds_type(lk_duration, dimensionless, non_null)), !T, !IO),
+        ty_known(ds_type(lk_duration, dim(time_dimension, no), non_null)), !T,
+        !IO),
 
-    check_type_error("[LTIM.4.1.1] `Duration * Duration` has no row",
-        "s.d * s.d", dv_bad_operand_type, !T, !IO),
+    check_type_error("[LUNI.8.4] `Duration * Duration` is two dimensions",
+        "s.d * s.d", dv_dim_ambiguous, !T, !IO),
 
     check_type_error("[LTIM.4.1.1] `Time + Time` has no row",
         "s.t1 + s.t2", dv_bad_operand_type, !T, !IO).
@@ -6358,17 +6381,34 @@ test_dim(!T, !IO) :-
         op_additive, Celsius, Meter,
         dr_cross_dimension(Temperature, Length), !T, !IO),
 
-    % [LUNI.8.3]: the bare-scalar case holds for both operator classes.
-    check_dim("[LUNI.8.3] a bare scalar preserves the dimension",
-        op_additive, Meter, dimensionless, dr_ok(Meter), !T, !IO),
+    % [LUNI.8.3]: a bare number takes no unit from the operand beside it.
+    check_dim("[LUNI.8.3] a bare number beside a dimensioned value is refused",
+        op_additive, Meter, dimensionless, dr_bare_number(Length), !T, !IO),
 
-    check_dim("[LUNI.8.3] and on the other side too",
+    check_dim("[LUNI.8.3] in either order",
+        op_additive, dimensionless, Meter, dr_bare_number(Length), !T, !IO),
+
+    check_dim("[LUNI.8.3] a bare number scales: n * x",
         op_multiplicative, dimensionless, Meter, dr_ok(Meter), !T, !IO),
 
-    % [LUNI.8.4]: same dimension under `*` still needs the annotation.
-    check_dim("[LUNI.8.4] length * length still needs an annotation",
+    check_dim("[LUNI.8.3] a bare number scales: x / n",
+        op_division, Meter, dimensionless, dr_ok(Meter), !T, !IO),
+
+    check_dim("[LUNI.8.4] n / x has no dimension DS can state",
+        op_division, dimensionless, Meter,
+        dr_needs_annotation(Length, Length), !T, !IO),
+
+    % [LUNI.8.4]: same dimension under `*` has no unit DS can state.
+    check_dim("[LUNI.8.4] length * length is refused",
         op_multiplicative, Meter, Meter,
         dr_needs_annotation(Length, Length), !T, !IO),
+
+    check_dim("[LUNI.8.1] a same-dimension quotient is a bare number",
+        op_division, Meter, Meter, dr_ok(dimensionless), !T, !IO),
+
+    check_dim("[LUNI.8.4] a cross-dimension quotient is refused",
+        op_division, Celsius, Meter,
+        dr_needs_annotation(Temperature, Length), !T, !IO),
 
     check_dim("[LUNI.8.1] same dimension under `+` is fine",
         op_additive, Meter, Meter, dr_ok(Meter), !T, !IO),
@@ -6474,7 +6514,7 @@ test_dim(!T, !IO) :-
         ( pred(RF::in) is semidet :-
             map.search(RF ^ rf_types, "Duration", E),
             luni_7_1_slot_type(RF ^ rf_unit_storage, E, non_null)
-                = ds_type(lk_duration, dimensionless, non_null)
+                = ds_type(lk_duration, dim(time_dimension, no), non_null)
         ), !T, !IO),
 
     % [LGRA.22.8]: every generated row is in the type namespace under its own

@@ -9,13 +9,13 @@ does rather than through a second codec. The one exception is
 
     iter_atoms(data, partial=False)  the container's atoms, one Atom per step
     frame(kind, body)                one framed atom
-    band(field), disposition(field)  how a reader adjudicates a number
     container_of(data)               DSC or stream, from the first atom
 
-An atom is named by its field number ([RFCS.16.1]). A number this build has no
-registry entry for is read like any other and kept as its ``int``, for the
-caller to skip or refuse by its band ([RFCS.16.3]). Whether a number is
-allocated is ``field in AtomKind``. Malformed input raises
+An atom is named by its field number ([RFCS.16.1]). ``iter_atoms`` frames, as
+``ds_pbf_next_atom`` does, and judges no number: one this build has no registry
+entry for is kept as its ``int``, and names no member of ``Atom``'s oneof
+([RFCS.19.3]). Whether a number is allocated is ``field in AtomKind``.
+Malformed input raises
 ``pyds.InputError`` with ``Status.PARSE``, naming the byte libds stopped at.
 
 ``wire_fields()``, ``visit_atom()`` and ``message_name()`` are the
@@ -40,12 +40,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Atom",
-    "Band",
     "Container",
-    "Disposition",
-    "band",
     "container_of",
-    "disposition",
     "frame",
     "iter_atoms",
     "message_name",
@@ -123,29 +119,6 @@ def frame(kind: AtomKind | int, body: Buffer, /) -> bytes:
     return _pyds.frame(kind, body)
 
 
-class Band(enum.StrEnum):
-    """A field number's band ([RFCS.16.2]), from its magnitude alone."""
-
-    NONE = "none"
-    INJECT = "inject"
-    REJECT = "reject"
-    SKIP = "skip"
-
-
-class Disposition(enum.StrEnum):
-    """What a reader does with an atom it does not know ([RFCS.16.3]).
-
-    ``SKIP`` for a known atom is not a dispatch decision: there is nothing to
-    refuse about it. Ask ``field in AtomKind`` first; the disposition is the
-    whole answer only when that is false.
-    """
-
-    SKIP = "skip"
-    REJECT_INJECT = "reject_inject"
-    REJECT_VERSION = "reject_version"
-    MALFORMED = "malformed"
-
-
 class Container(enum.StrEnum):
     """A container's type, from its first atom's number ([RFCS.19.4])."""
 
@@ -154,29 +127,8 @@ class Container(enum.StrEnum):
     DSC = "dsc"
 
 
-# libds's enums, in their declared order: ds_atom_band_t, ds_pbf_disposition_t
-# and ds_pbf_container_t (dsc/atom_registry.h, dsc/pbf_reader.h).
-_BANDS = (Band.INJECT, Band.REJECT, Band.SKIP, Band.NONE)
-_DISPOSITIONS = (
-    Disposition.SKIP,
-    Disposition.REJECT_INJECT,
-    Disposition.REJECT_VERSION,
-    Disposition.MALFORMED,
-)
+# libds's ds_pbf_container_t, in its declared order (dsc/pbf_reader.h).
 _CONTAINERS = (Container.UNKNOWN, Container.STREAM, Container.DSC)
-
-
-def band(field: int, /) -> Band:
-    """``field``'s band (``ds_pbf_band``)."""
-    return _BANDS[_pyds.atom_band(field)]
-
-
-def disposition(field: int, /) -> Disposition:
-    """Return what a reader does with ``field`` if it does not know it.
-
-    libds answers it (``ds_pbf_disposition``).
-    """
-    return _DISPOSITIONS[_pyds.atom_disposition(field)]
 
 
 def container_of(data: Buffer, /) -> Container:

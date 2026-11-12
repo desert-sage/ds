@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.9_rounds_in_the_slots_own_unit",
+    "category": "logical",
+    "scenario": "[LUNI.8.9], [RLOW.6.1.9]: rounding works in the unit a value's static type names. A `celsius` slot holding 21.5 celsius (294.65 K) and a `km` slot holding 1500 m. `round(r.t)` is 22 celsius, `math.floor` 21, `math.ceil` 22, `math.trunc` 21, and `round(r.d)` is 2 km (1.5 km, ties to even). Each is its own rule, and all five log, in source order. Rounding the base number gives 295 K, 294 K, 295 K, 294 K and 1500 m, and misses every one. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit`'s `float64` arm, the conversion out of the base unit (`rlow_7_3_9_converted`), the builtin, FN_INT_TO_FLOAT, and `rlow_6_1_10_asserted` back, evaluated by each runtime.",
+    "rules_ds": "import math\n\nunit celsius: temperature = x + 273.15\n\nunit km: length = x * 1000\n\nschema R scope logical:\n    id: String key\n    t: celsius mutable\n    d: km mutable\n\nrule r_round:\n    R r where round(r.t) == 22_celsius\n->\n    log info \"round\"\n\nrule r_floor:\n    R r where math.floor(r.t) == 21_celsius\n->\n    log info \"floor\"\n\nrule r_ceil:\n    R r where math.ceil(r.t) == 22_celsius\n->\n    log info \"ceil\"\n\nrule r_trunc:\n    R r where math.trunc(r.t) == 21_celsius\n->\n    log info \"trunc\"\n\nrule r_km:\n    R r where round(r.d) == 2_km\n->\n    log info \"km\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": "a", "t": 294.65, "d": 1500.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["round", "floor", "ceil", "trunc", "km"]
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "id": "LIMP.13.2_a_timeout_body_reads_a_qualified_head",
+    "clauses": ["LIMP.13.2", "LCCO.7.2"],
+    "category": "logical",
+    "scenario": "[LIMP.13.2]: a `lib.Schema` head behaves as a bare one. [LCCO.7.2]: a `timeout` clause's timer carries the parent bindings its body reads. Rule `r` matches `jobs.Job j` and calls `svc.get` with `timeout 5_s:` logging `late {j.id}`. A Job with id 7 is asserted and pumped, nothing answers, the clock moves 5 s and the pump fires the timeout. Exactly [\"late 7\"]. The break is a timer schema with no `j_id` slot, because the binding's head was read only when bare. PATH PINNED: `dsc.rete.body_binding_head`, through `head_schema_name`, feeding `rule_timeout_timers` and `head_timer_slots`.",
+    "rules_ds": "import jobs\n\nschema Reply scope ttl 1_h:\n    corr: String\n    code: Int\n\nservice svc.get:\n    kwarg n: Int\n    response Reply\n\nrule r:\n    jobs.Job j\n->\n    call svc.get n: j.id nocooldown\n        timeout 5_s:\n            log info \"late {j.id}\"\n",
+    "libraries": {
+        "jobs": "schema Job scope explicit:\n    id: Int\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "jobs.Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 5000000000 },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["late 7"]
+    }
+}

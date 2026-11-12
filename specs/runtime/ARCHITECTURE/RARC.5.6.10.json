@@ -8,42 +8,6 @@
   "kind": "normative",
   "heading": null,
   "text": "[RARC.5.6.10] Consumption-loop determinism is the **choke point**\nthat makes the whole engine deterministic ([LFST.7.1.1]). If the consumption\nloop is deterministic ([RARC.5.6.9]) **and the ambient inputs agree**, replay\nis byte-for-byte identical.\n\n**Ambient inputs are every input to the record that the loop does\nnot compute**, the clock origin and the identity assigned to an event among\nthem. They are defined by that property, not by a list.\n\n⚠ **Loop determinism alone does not give byte-identical replay.** Two runs\ncan agree on every value the loop computed and still record different events\nif their clock origins differ. So the engine must take no ambient input from\noutside the run where the run can supply it: a mock clock starts at a fixed\norigin rather than a wall-clock reading ([NLFC.5.4]), and an event's identity is\nderived from the run ([RARC.5.8.8]) rather than drawn at random.\n",
-  "checks": {
-    "idris": [
-      {
-        "path": "formal/idris/Replay.idr",
-        "name": "Rarc_5_6_10__ambient",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "The two ambient inputs the clause names, standing for every input the loop does not compute: the clock origin, which a mock clock fixes at 0 ([NLFC.5.4]), and the event identity, which the run derives ([RARC.5.8.8])."
-      },
-      {
-        "path": "formal/idris/Replay.idr",
-        "name": "Rarc_5_6_10__event",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "One recorded event, split by WHO DECIDED each field: what the loop computed, and what entered from outside it. The split is the whole model: a recorded event has fields with two provenances, which is a fact about the format rather than about any implementation."
-      },
-      {
-        "path": "formal/idris/Replay.idr",
-        "name": "rarc_5_6_10__loop_determinism_is_not_enough",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "THE CLAUSE'S WARNING PARAGRAPH, as stated: two runs that agree on every value the loop computed and differ in their clock origins record different events -- for every value the loop could compute, with the ambient differing in the origin alone. The necessity of the clause's second conjunct, which is why the clause carries one. The sufficiency half -- the loop's determinism and the ambient inputs' agreement give one record -- is carried by `rarc_5_6_10__record`, which takes the two and nothing else."
-      },
-      {
-        "path": "formal/idris/Replay.idr",
-        "name": "rarc_5_6_10__record",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "Recording one event: the loop's output, plus the ambient values, and no third input -- the clause's conjunction made structural."
-      }
-    ]
-  },
   "refs": [
     "LFST.7.1.1",
     "NLFC.5.4",

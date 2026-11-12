@@ -1,0 +1,19 @@
+{
+    "id": "LEXP.8.8_a_library_const_reads_its_sibling",
+    "clauses": ["LEXP.8.8", "LGRA.13.3", "RLOW.6.1.8", "LIMP.1.5"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8], [LGRA.13.3]: a `const` reads the constants above it, and [LIMP.1.5] resolves those names in the declaring file. Library `ha` declares `const _BASE = 10` and `const LIMIT = _BASE * 2`, and the rule reads `ha.LIMIT`. [RLOW.6.1.8] lowers the read to the literal 20. A fact whose `v` is 20 logs and one whose `v` is 21 does not. Exactly [\"hit 1\"]. A compiler that folds the member with none of the library's constants in scope has no value for `_BASE` and leaves the rule unlowered. PATH PINNED: `dsc.rete.lgra_13_3_const` and `dsc.dstest.const_read`, through `dsc.resolve.const_scope`.",
+    "rules_ds": "import ha\n\nschema S scope logical:\n    k: Int key\n    v: Int mutable\n\nrule r:\n    S x where x.v == ha.LIMIT\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "ha": "const _BASE = 10\nconst LIMIT = _BASE * 2\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "v": 20 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "v": 21 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

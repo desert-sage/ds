@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_a_float_factor_past_the_largest_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1]: in `float64` storage a unit's constants are `a` and `b` as [LUNI.2.7.1] rounds them, and one that rounds past the largest finite `Float` is refused at the unit's declaration with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `unit huge: length = x * 1e300 * 1e300` folds exactly to a = 10^600, past (2^53 - 1) * 2^971. A compiler that saturates or rounds to an infinity emits `+Inf` and compiles. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants`, through `dsc.quantity.luni_2_4_1_unit_out_of_range`'s `float64` arm and `dsc.exact.to_float`, which fails past the largest finite double.",
+    "rules_ds": "unit huge: length = x * 1e300 * 1e300\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

@@ -56,6 +56,12 @@ typedef struct {
                                         0 = none (Slot field 12). Checked at
                                         ds_rete_wm_assert_ex beside the kind,
                                         for the same reason as `nullable`. */
+    /* [RDSC.5.5.9] — a slot that names a unit: its two conversions, each over
+       `bind_ref` 0, both or neither (Slot fields 13 and 14). Owned by the
+       registered schema; ds_schema_slot_to_stored and _from_stored evaluate
+       them ([NFCT.1.4.6]). */
+    struct ds_rete_expr *to_stored;
+    struct ds_rete_expr *from_stored;
 } ds_rete_slot_desc_t;
 
 /* Schema descriptor per IRET.4.2 */

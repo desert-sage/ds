@@ -20,7 +20,11 @@
  * @ds-lang/ds's engine.test.mjs make the same edit in their languages. Used by
  * test_ncbk_2_9__latching_call_returns_engine_halted,
  * test_ncbk_2_9__a_read_after_the_halt_is_refused and
- * test_lerr_1_4_7__engine_error_stops_the_pump.
+ * test_lerr_1_4_7__engine_error_stops_the_pump. `reseal` alone, after an edit
+ * of its own, by test_rdsc_4a_9_6__a_conversion_bind_index_past_0.
+ *
+ * Every function is `static inline`, so a test that uses one is not warned of
+ * the others.
  */
 #ifndef DS_SPEC_TAMPER_H
 #define DS_SPEC_TAMPER_H
@@ -49,9 +53,12 @@ static const uint32_t K256[64] = {
     0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u,
 };
 
-static uint32_t ror32(uint32_t x, unsigned n) { return (x >> n) | (x << (32 - n)); }
+static inline uint32_t ror32(uint32_t x, unsigned n)
+{
+    return (x >> n) | (x << (32 - n));
+}
 
-static void sha256_block(uint32_t h[8], const uint8_t *p)
+static inline void sha256_block(uint32_t h[8], const uint8_t *p)
 {
     uint32_t w[64];
     for (int i = 0; i < 16; i++)
@@ -77,7 +84,7 @@ static void sha256_block(uint32_t h[8], const uint8_t *p)
 }
 
 /* FIPS 180-4 SHA-256 of buf[0..n), into out[32]. */
-static void sha256(const uint8_t *buf, size_t n, uint8_t out[32])
+static inline void sha256(const uint8_t *buf, size_t n, uint8_t out[32])
 {
     uint32_t h[8] = { 0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
                       0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u };
@@ -102,7 +109,8 @@ static void sha256(const uint8_t *buf, size_t n, uint8_t out[32])
     }
 }
 
-static bool varint(const uint8_t *b, size_t n, size_t *pos, uint64_t *out)
+static inline bool varint(const uint8_t *b, size_t n, size_t *pos,
+                          uint64_t *out)
 {
     uint64_t v = 0;
     for (unsigned shift = 0; *pos < n && shift < 64; shift += 7) {
@@ -116,7 +124,7 @@ static bool varint(const uint8_t *b, size_t n, size_t *pos, uint64_t *out)
 /* The offset of the header's 32-byte `dsc_sha256` (field 7 of the DscHeader,
    which is the first atom, field 263 of Atom), or -1. The walk @ds-lang/ds's
    engine.test.mjs `sha256Offset` makes. */
-static long sha256_offset(const uint8_t *b, size_t n)
+static inline long sha256_offset(const uint8_t *b, size_t n)
 {
     size_t pos = 1;
     uint64_t v = 0;
@@ -147,13 +155,29 @@ static long sha256_offset(const uint8_t *b, size_t n)
     return -1;
 }
 
+/* `dsc`'s `dsc_sha256` recomputed over its edited bytes, as the compiler
+   computes it ([RDSC.3.6]). 0; 1 when the header has none. */
+static inline int reseal(uint8_t *dsc, size_t n)
+{
+    long h = sha256_offset(dsc, n);
+    if (h < 0) {
+        fprintf(stderr, "FAIL: the artefact has no dsc_sha256 to reseal\n");
+        return 1;
+    }
+    memset(dsc + h, 0, 32);
+    uint8_t digest[32];
+    sha256(dsc, n, digest);
+    memcpy(dsc + h, digest, 32);
+    return 0;
+}
+
 /* ---- the lie --------------------------------------------------------------- */
 
 static const uint8_t SLOT_INT[] = { 0x12, 0x04, 'l', 'i', 'e', 'd', 0x18, 0x01 };
 
 /* `dsc` with slot `lied` declared String, resealed. 0; 1 when the Slot atom is
    not found exactly once or the header has no dsc_sha256. */
-static int lie(uint8_t *dsc, size_t n)
+static inline int lie(uint8_t *dsc, size_t n)
 {
     long at = -1;
     int  found = 0;
@@ -165,16 +189,7 @@ static int lie(uint8_t *dsc, size_t n)
         return 1;
     }
     dsc[at + (long) sizeof SLOT_INT - 1] = 0x03;          /* SLOT_KIND_STRING */
-    long h = sha256_offset(dsc, n);
-    if (h < 0) {
-        fprintf(stderr, "FAIL: the artefact has no dsc_sha256 to reseal\n");
-        return 1;
-    }
-    memset(dsc + h, 0, 32);
-    uint8_t digest[32];
-    sha256(dsc, n, digest);
-    memcpy(dsc + h, digest, 32);
-    return 0;
+    return reseal(dsc, n);
 }
 
 #endif /* DS_SPEC_TAMPER_H */

@@ -6,8 +6,9 @@
  * deliberately bad hash) and grow-boundary crossings; named regressions; and
  * seeded fuzz of the oa_list multimap and the count adapter.
  *
- * ds_oa_check (RI-1..RI-7) is compiled in debug builds (NDEBUG unset) and
- * called after every mutating op; a violation aborts the process.
+ * ds_oa_check (RI-1..RI-7) is compiled under DS_DEBUG ([IRET.28.15]), which
+ * the gate's libds.build calls set (`-D debug_checks=1`), and called after
+ * every mutating op; a violation aborts the process.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,7 @@ static int g_fails;
         g_fails++;                                                           \
     } } while (0)
 
-#ifndef NDEBUG
+#ifdef DS_DEBUG
 #  define OA_CK(t) ds_oa_check(t)
 #else
 #  define OA_CK(t) ((void)0)

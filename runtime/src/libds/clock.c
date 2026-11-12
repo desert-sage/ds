@@ -69,11 +69,16 @@ ds_result_t ds_clock_init(ds_clock_t *clock)
     return DS_OK_R;
 }
 
+/* The top of the monotonic clock's range ([LTIM.2.8.2]). */
+#define DS_CLOCK_TOP_NS ((uint64_t) INT64_MAX)
+
+/* A live clock continuing from a mock one can read past the top, and no host
+   call is there to refuse it: the reading is held at the top ([LTIM.2.8.2]). */
 static uint64_t source_mono_ns(const ds_clock_t *clock)
 {
-    return clock->mode == DS_CLOCK_MOCK
-        ? clock->mock_now_ns
-        : read_monotonic_ns() - clock->live_base_ns;
+    if (clock->mode == DS_CLOCK_MOCK) return clock->mock_now_ns;
+    const uint64_t now_ns = read_monotonic_ns() - clock->live_base_ns;
+    return now_ns > DS_CLOCK_TOP_NS ? DS_CLOCK_TOP_NS : now_ns;
 }
 
 void ds_clock_read(const ds_clock_t *clock, ds_clock_reading_t *out)
@@ -197,6 +202,10 @@ ds_result_t ds_clock_set(ds_clock_t *clock, uint64_t now_ns)
         return DS_ERR_R(DS_ERR_STATE,
             "clock_set below the current monotonic value after the first sample");
     }
+    if (now_ns > DS_CLOCK_TOP_NS) {
+        return DS_ERR_R(DS_ERR_TIME_RANGE,
+                        "clock_set past the monotonic clock's range");
+    }
     clock->mock_now_ns = now_ns;
     return DS_OK_R;
 }
@@ -210,16 +219,14 @@ ds_result_t ds_clock_advance(ds_clock_t *clock, uint64_t delta_ns)
         return DS_ERR_R(DS_ERR_STATE, "clock_advance requires mock mode");
     }
     /* [NTST.3.1]: an advance past a clock's range moves nothing. Only a wall
-       value at or above zero can pass the top. */
-    if (delta_ns > (uint64_t) INT64_MAX) {
-        return DS_ERR_R(DS_ERR_TIME_RANGE, "clock_advance past any Duration");
-    }
+       value at or above zero can pass the top. Where both would, the wall
+       clock's is the refusal named. */
     if (clock->mock_wall_set && clock->mock_wall_ns >= 0
         && delta_ns > (uint64_t) INT64_MAX - (uint64_t) clock->mock_wall_ns) {
         return DS_ERR_R(DS_ERR_TIME_RANGE,
                         "clock_advance past the wall clock's Time range");
     }
-    if (delta_ns > UINT64_MAX - clock->mock_now_ns) {
+    if (delta_ns > DS_CLOCK_TOP_NS - clock->mock_now_ns) {
         return DS_ERR_R(DS_ERR_TIME_RANGE,
                         "clock_advance past the monotonic clock's range");
     }

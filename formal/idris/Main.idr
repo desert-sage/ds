@@ -7,13 +7,10 @@
 ||| `main`, no clause owns it, and inventing one would be the kind of tie that
 ||| looks like traceability and is not.
 |||
-||| WHY THESE ARE HERE AND NOT IN `Wire.idr`. The first version of that module
-||| asserted the protobuf guide's own examples as compile-time equalities and
-||| none of them typechecked: `div` and `mod` on `Nat` go through `Integral` and
-||| do not reduce during elaboration, so the goal came back stuck rather than
-||| false. Rewriting the arithmetic into something that reduces -- repeated
-||| subtraction, or bit-by-bit tag decoding -- would make them provable and make
-||| the DECODER worse, because a field number runs to 536,870,911.
+||| WHY THESE ARE HERE AND NOT IN THE MODULES. Integer and Double arithmetic
+||| go through primitives that do not reduce during elaboration, so an equation
+||| over a literal comes back stuck rather than true or false, and rewriting
+||| the arithmetic into something that reduces would make the model worse.
 |||
 ||| So the division is by what is being claimed. A theorem holds for ALL inputs
 ||| and belongs in the model; a worked example holds for one input and belongs
@@ -22,15 +19,9 @@
 ||| Every case below is quoted from a specification, with its source named.
 module Main
 
-import Protobuf.Wire
-import Protobuf.Framing
-import Protobuf.Message
-import Rete.Expr
-import Rete.FireClock
 import TwoClocks
 import Rete.RateGate
 import Rete.ActivationKey
-import Lcdb.RuleGlobal
 import Rete.FireLoop
 import Rete.FireLoopTms
 import Rete.RecomputeFire
@@ -49,37 +40,6 @@ record Case where
   constructor MkCase
   label : String
   held  : Bool
-
-||| A varint decode that yielded a particular value, whatever it left behind.
-yielded : Rfcs_19_1__decoded Integer -> Integer -> Bool
-yielded (Yield got _) want = got == want
-yielded _             _    = False
-
-||| A varint decode that yielded a value AND consumed exactly the input.
-yieldedAll : Rfcs_19_1__decoded Integer -> Integer -> Bool
-yieldedAll (Yield got []) want = got == want
-yieldedAll _              _    = False
-
-||| Wire-type equality, written out rather than derived: six constructors, and
-||| an `Eq` implementation would be more code than this.
-sameWire : Rfcs_19_1__wire_type -> Rfcs_19_1__wire_type -> Bool
-sameWire VARINT VARINT = True
-sameWire I64    I64    = True
-sameWire LEN    LEN    = True
-sameWire SGROUP SGROUP = True
-sameWire EGROUP EGROUP = True
-sameWire I32    I32    = True
-sameWire _      _      = False
-
-||| A tag decode that yielded a particular field number and wire type.
-taggedAs : Rfcs_19_1__decoded Rfcs_19_1__tag -> Integer -> Rfcs_19_1__wire_type -> Bool
-taggedAs (Yield t _) fld wt = fieldNumber t == fld && sameWire (wireType t) wt
-taggedAs _           _   _  = False
-
-||| A decode that refused, for any reason.
-refused : Rfcs_19_1__decoded a -> Bool
-refused (Refuse _) = True
-refused _          = False
 
 ||| Answer equality, written out: four constructors.
 sameAnswer : Lnul_4_2__answer -> Lnul_4_2__answer -> Bool
@@ -124,8 +84,8 @@ trapExpr = ECmp OpLt (ELit (VBool True)) (ELit (VBool False))
 ||| libds's word: eight little-endian bytes of a 64-bit count (`rk_feed_u64`,
 ||| rete/adapters.c). Division on `Nat` does not reduce during elaboration,
 ||| so Rete/ActivationKey.idr takes the codec at its contract and this file
-||| runs the real one. The arithmetic is Integer's, as Protobuf/Wire.idr's and
-||| Rete/Eval.idr's is: `Nat` has no `Integral` in Idris 2's prelude.
+||| runs the real one. The arithmetic is Integer's, as Rete/Eval.idr's is:
+||| `Nat` has no `Integral` in Idris 2's prelude.
 wordLE : Nat -> List Nat
 wordLE n = go 8 (the Integer (cast n))
   where
@@ -358,265 +318,15 @@ rdRun p = gap__run_rd p 50 (rarc_5_6_5__init_tms p iret_12_1__reach_input)
 
 cases : List Case
 cases =
-  [ -- https://protobuf.dev/programming-guides/encoding/ — the guide's own
-    -- worked example: "the number 150 would be encoded as 96 01", and 300 as
-    -- `AC 02`, least-significant 7-bit group first.
-    MkCase "varint: 0xAC 0x02 is 300"
-           (yieldedAll (rfcs_19_1__varint [172, 2]) 300)
-  , MkCase "varint: 0x96 0x01 is 150"
-           (yieldedAll (rfcs_19_1__varint [150, 1]) 150)
-  , MkCase "varint: a single byte below 0x80 is itself"
-           (yieldedAll (rfcs_19_1__varint [5]) 5)
-  , MkCase "varint: 0x00 is zero, not absent"
-           (yieldedAll (rfcs_19_1__varint [0]) 0)
-  , MkCase "varint: trailing bytes are left for the caller"
-           (yielded (rfcs_19_1__varint [5, 99, 99]) 5)
-
-    -- The four silences. Google's encoding page states no rule for any of
-    -- these; Wire.idr decides them explicitly and these pin the decisions.
-  , MkCase "varint: empty input is truncated"
-           (refused (rfcs_19_1__varint []))
-  , MkCase "varint: a continuation bit with nothing after it is truncated"
-           (refused (rfcs_19_1__varint [128]))
-  , MkCase "varint: eleven continuation bytes is overlong"
-           (refused (rfcs_19_1__varint
-                      [255,255,255,255,255,255,255,255,255,255,1]))
-  , MkCase "varint: a tenth byte above bit 63 overflows"
-           (refused (rfcs_19_1__varint
-                      [255,255,255,255,255,255,255,255,255,4]))
-
-    -- Tags. "(field_number << 3) | wire_type", and proto3's range "between 1
-    -- and 536,870,911".
-  , MkCase "tag: 0x0A is field 1, LEN — the DS outer frame [RFCS.19.1]"
-           (taggedAs (rfcs_19_1__tag [10]) 1 LEN)
-  , MkCase "tag: 0x08 is field 1, VARINT"
-           (taggedAs (rfcs_19_1__tag [8]) 1 VARINT)
-  , MkCase "tag: 0x0D is field 1, I32"
-           (taggedAs (rfcs_19_1__tag [13]) 1 I32)
-  , MkCase "tag: 0x09 is field 1, I64"
-           (taggedAs (rfcs_19_1__tag [9]) 1 I64)
-  , MkCase "tag: field 0 is refused"
-           (refused (rfcs_19_1__tag [0]))
-  , MkCase "tag: wire type 6 is unassigned and refused"
-           (refused (rfcs_19_1__tag [14]))
-  , MkCase "tag: wire type 7 is unassigned and refused"
-           (refused (rfcs_19_1__tag [15]))
-    -- 19,000 is the first RESERVED field number. Accepted on the wire on
-    -- purpose: proto3 reserves 19,000-19,999 for the implementation and says
-    -- "the protocol buffer compiler will complain if you use one" — a rule
-    -- about what a `.proto` may DECLARE, not about what may travel.
-    --
-    -- (19000 << 3) | 0 = 152000, which is [0xC0, 0xA3, 0x09]. THE FIRST
-    -- VERSION OF THIS CASE HAD [128, 189, 9] AND FAILED — bytes I computed by
-    -- hand rather than took from a source, and they decode to field 19408.
-    -- The decoder was right and the test was wrong, which is the failure mode
-    -- worth noticing: every vector above that is quoted from the guide (300 as
-    -- `AC 02`, 150 as `96 01`) is independently checked, and every one I
-    -- derived myself is a second claim needing its own scrutiny.
-  , MkCase "tag: a reserved field number (19000) is ACCEPTED on the wire"
-           (taggedAs (rfcs_19_1__tag [192, 163, 9]) 19000 VARINT)
-
-    -- ZigZag. "Positive integers p are encoded as 2 * p (the even numbers),
-    -- while negative integers n are encoded as 2 * |n| - 1 (the odd numbers)."
-  , MkCase "zigzag: 0 is 0"       (rfcs_19_1__unzigzag 0 == 0)
-  , MkCase "zigzag: 1 is -1"      (rfcs_19_1__unzigzag 1 == -1)
-  , MkCase "zigzag: 2 is 1"       (rfcs_19_1__unzigzag 2 == 1)
-  , MkCase "zigzag: 3 is -2"      (rfcs_19_1__unzigzag 3 == -2)
-  , MkCase "zigzag: 4294967294 is 2147483647"
-           (rfcs_19_1__unzigzag 4294967294 == 2147483647)
-  , MkCase "zigzag: 4294967295 is -2147483648"
-           (rfcs_19_1__unzigzag 4294967295 == -2147483648)
-
-    -- LEN payloads: "a varint immediately after the tag, which is followed by
-    -- the payload as usual."
-  , MkCase "len: a two-byte payload is taken exactly"
-           (case rfcs_19_1__len_payload [2, 65, 66, 67] of
-              Yield got rest => got == [65, 66] && rest == [67]
-              Refuse _       => False)
-  , MkCase "len: a zero-length payload is empty, not absent"
-           (case rfcs_19_1__len_payload [0, 65] of
-              Yield got rest => got == [] && rest == [65]
-              Refuse _       => False)
-  , MkCase "len: a payload longer than the input is truncated"
-           (refused (rfcs_19_1__len_payload [9, 65]))
-
-    -- `take` from an empty input. This WAS a theorem in Wire.idr, quantified
-    -- over `(n : Nat)` and discharged by `Refl`; it stopped being provable when
-    -- the count became an `Integer`, because stating it needs a positivity
-    -- hypothesis and discharging that needs reasoning about primitive Integer
-    -- comparison. It moved here rather than acquiring a `believe_me` — a
-    -- declared hole, in a module whose whole claim is that it has none.
-  , MkCase "take: a positive count from nothing is truncated"
-           (refused (rfcs_19_1__take 1 []))
-  , MkCase "take: zero from nothing yields nothing"
-           (case rfcs_19_1__take 0 [] of
-              Yield got rest => got == [] && rest == []
-              Refuse _       => False)
-
-    -- THE FRAMING [RFCS.19.1]. `frame = outer_tag , varint_len , atom` and
-    -- `atom = oneof_tag , varint_len , body`. One frame carrying atom field 32
-    -- (oneof_tag = 32 << 3 | 2 = 258 = [0x82, 0x02]) with a two-byte body:
-    --
-    --   0A            outer tag, field 1 wire type 2
-    --   05            frame length: five bytes of atom follow
-    --   82 02         oneof_tag: field 32, wire type LEN
-    --   02            body length
-    --   41 42         body
-  , MkCase "frame: one atom, identity and body recovered"
-           (case rfcs_19_1__frame [10, 5, 130, 2, 2, 65, 66] of
-              Yield f rest => identity f == 32 && body f == [65, 66] && rest == []
-              Refuse _     => False)
-  , MkCase "frame: a wrong outer tag is refused"
-           (case rfcs_19_1__frame [11, 5, 130, 2, 2, 65, 66] of
-              Refuse _ => True
-              Yield _ _ => False)
-  , MkCase "frame: an inner tag that is not LEN is refused"
-           -- oneof_tag 0x80 0x02 is field 32 wire type VARINT, not LEN.
-           (case rfcs_19_1__frame [10, 5, 128, 2, 2, 65, 66] of
-              Refuse _ => True
-              Yield _ _ => False)
-
-    -- The walk, and the truncation policies [RFCS.19.2].
-  , MkCase "walk: an empty container is complete, not truncated"
-           (case rfcs_19_1__walk TruncationIsError [] of
-              Complete [] => True
-              _           => False)
-  , MkCase "walk: two frames are read in order"
-           (case rfcs_19_1__walk TruncationIsError
-                   [10, 5, 130, 2, 2, 65, 66, 10, 5, 138, 2, 2, 67, 68] of
-              Complete fs => map identity fs == [32, 33]
-              _           => False)
-  , MkCase "walk: a partial trailing frame is EOF for a Stream"
-           (case rfcs_19_1__walk EndOfStream [10, 5, 130, 2, 2, 65, 66, 10, 5] of
-              EndedEarly fs n => map identity fs == [32] && n == 2
-              _               => False)
-  , MkCase "walk: a tail that is only the outer tag is EOF for a Stream"
-           (case rfcs_19_1__walk EndOfStream [10, 5, 130, 2, 2, 65, 66, 10] of
-              EndedEarly fs n => map identity fs == [32] && n == 1
-              _               => False)
-    -- [RFCS.19.2]'s EOF is a SHORT tail and nothing else. These two are
-    -- corrupt, not short, and a Stream refuses them exactly as a Dsc does.
-  , MkCase "walk: a wrong byte after a good frame is MALFORMED for a Stream"
-           (case rfcs_19_1__walk EndOfStream [10, 5, 130, 2, 2, 65, 66, 11, 0] of
-              Malformed fs _ => map identity fs == [32]
-              _              => False)
-    -- The outer frame is complete (length 3, three bytes follow); the atom
-    -- inside it claims a five-byte body. Its truncation is inside a frame
-    -- that has fully arrived, so it is a lie, not an unfinished append.
-  , MkCase "walk: an atom overrunning its COMPLETE frame is MALFORMED for a Stream"
-           (case rfcs_19_1__walk EndOfStream [10, 3, 130, 2, 5] of
-              Malformed [] _ => True
-              _              => False)
-  , MkCase "walk: the same tail is an ERROR for a Dsc"
-           (case rfcs_19_1__walk TruncationIsError
-                   [10, 5, 130, 2, 2, 65, 66, 10, 5] of
-              Malformed fs _ => map identity fs == [32]
-              _              => False)
-  , MkCase "walk: the container type is the FIRST atom's field number"
-           (case rfcs_19_1__walk TruncationIsError [10, 5, 130, 2, 2, 65, 66] of
-              Complete fs => rfcs_19_4__container_type fs == Just 32
-              _           => False)
-  , MkCase "walk: an empty container has NO type"
-           (rfcs_19_4__container_type [] == Nothing)
-
-    -- MESSAGE FIELDS. A body carrying field 1 = 7 (varint) and field 4 = "AB"
-    -- (LEN): 08 07 22 02 41 42.
-  , MkCase "fields: a varint and a LEN field are read in order"
-           (case rfcs_19_1__fields [8, 7, 34, 2, 65, 66] of
-              Yield fs _ => map number fs == [1, 4]
-              Refuse _   => False)
-  , MkCase "fields: an unknown field is skippable by wire type"
-           -- field 47, I32: 47<<3|5 = 381 = [0xFD, 0x02], then four bytes.
-           (case rfcs_19_1__fields [253, 2, 1, 2, 3, 4, 8, 7] of
-              Yield fs _ => map number fs == [47, 1]
-              Refuse _   => False)
-  , MkCase "fields: a group wire type is refused, not skipped"
-           -- 1<<3|3 = 11 = SGROUP.
-           (case rfcs_19_1__fields [11] of
-              Refuse _ => True
-              Yield _ _ => False)
-  , MkCase "fields: last one wins for a repeated field number"
-           (case rfcs_19_1__fields [8, 7, 8, 9] of
-              Yield fs _ => case rfcs_19_1__last_field 1 fs of
-                              Just f  => value f == VarintV 9
-                              Nothing => False
-              Refuse _   => False)
-
-    -- Expr.kind [LNUL.2.1]. The oneof exception is what makes the `false` case
-    -- reachable at all: proto3 serializes a oneof member even at its default,
-    -- so `lit_bool = false` is on the wire as field 4 payload 0.
-    --
-    -- Field 16 needs a TWO-BYTE tag -- 16 << 3 | 0 = 128, which is past the
-    -- one-byte varint ceiling -- so `lit_null` reads [128, 1] then its payload.
-    -- Written out because the previous hand-computed vector in this file was
-    -- wrong and the decoder was right.
-  , MkCase "expr: a boolean literal FALSE is present, not absent"
-           (case rfcs_19_1__fields [32, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just (SBool False)
-              Refuse _   => False)
-  , MkCase "expr: null is the CASE, payload 1"
-           (case rfcs_19_1__fields [128, 1, 1] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just SNull
-              Refuse _   => False)
-    -- THE ONE THAT SEPARATES THE TWO READINGS. Same field, payload 0. A
-    -- decoder keyed on the payload answers `SBool False` here and nothing
-    -- downstream could tell, because `false` is an ordinary value.
-  , MkCase "expr: null is the CASE, payload 0 -- NOT false"
-           (case rfcs_19_1__fields [128, 1, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just SNull
-              Refuse _   => False)
-  , MkCase "expr: now is the CASE too, payload 0"
-           (case rfcs_19_1__fields [88, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just SNow
-              Refuse _   => False)
-    -- Last-wins ACROSS field numbers, which is the rule `rfcs_19_1__last_field`
-    -- cannot state: lit_bool=true, then lit_null.
-  , MkCase "expr: the LAST oneof member wins across field numbers"
-           (case rfcs_19_1__fields [32, 1, 128, 1, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just SNull
-              Refuse _   => False)
-  , MkCase "expr: an unmodelled member keeps its field number"
-           -- binop = 6, wire type 2 (LEN): 6 << 3 | 2 = 50, empty body.
-           (case rfcs_19_1__fields [50, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just (SUninterpreted 6)
-              Refuse _   => False)
-  , MkCase "expr: a field outside the oneof is not a member of it"
-           -- json_tainted = 19 sits in Expr beside the oneof: 19 << 3 | 0 = 152,
-           -- a two-byte tag, then payload 1.
-           (case rfcs_19_1__fields [152, 1, 1] of
-              Yield fs _ => lnul_2_1__kind_of fs == Nothing
-              Refuse _   => False)
-  , MkCase "expr: a reserved number is not a member"
-           -- 9 was str_cat: 9 << 3 | 0 = 72, payload 0.
-           (case rfcs_19_1__fields [72, 0] of
-              Yield fs _ => lnul_2_1__kind_of fs == Nothing
-              Refuse _   => False)
-  , MkCase "expr: the last member declared, interp = 20, keeps its number"
-           -- 20 << 3 | 0 = 160: a varint where the schema says LEN, so it is
-           -- uninterpreted, and it is still the member it names.
-           (case rfcs_19_1__fields [160, 1, 1] of
-              Yield fs _ => lnul_2_1__kind_of fs == Just (SUninterpreted 20)
-              Refuse _   => False)
-
-    -- EVERY ENCOUNTER IN A PUMP RETURNS ONE VALUE [IRET.25.4.1]. The general
-    -- property is proven in Rete/FireClock.idr, quantified over the sample,
-    -- the firings and the call count. What lives here is the refused reading
-    -- beside it on one moving source, which is a test: a per-fire cache that
-    -- reads the source at each firing's first encounter.
-  , MkCase "fire: three encounters in two firings see the held sample, no call"
-           (iret_25_4_1__pump_reads (0, 7) [2, 1] 0 == ([[7, 7], [7]], 0))
-  , MkCase "fire: the refused per-fire cache reads the source once per firing"
-           (iret_25_4_1__per_fire_pump ltim_2_8_1__ticking [1, 1] 0 == ([[0], [1]], 2))
-
-    -- THE RATE GATE'S REFUSED SENTINEL, WHICH IS FireClock's SHAPE WITH A
-    -- REACHABLE COLLISION [RLOW.4.6.2.2]. The general facts are proved in
+  [ -- THE RATE GATE'S REFUSED SENTINEL: a held value whose zero collides with
+    -- a valid instant [RLOW.4.6.2.2]. The general facts are proved in
     -- Rete/RateGate.idr, quantified over the window, the instant and every
     -- non-zero stamp. What lives here is a SCHEDULE — a claim about particular
     -- instants, which is a test rather than a theorem. The clause's spelling
     -- is the honest stamp, and `logical/LCDB.3.2.1_rgate_cool_suppress` pins
     -- the flag libds has where a sentinel would lose the first stamp.
     -- The window is 30 and the activations are at 0, 10, 30, 40.
-  , MkCase "rate: from a non-zero start the two spellings agree"
+    MkCase "rate: from a non-zero start the two spellings agree"
            (rlow_4_6_2_2__run 30 Nothing [1, 11, 31, 41]
               == rlow_4_6_2_2__run_sentinel 30 0 [1, 11, 31, 41])
 
@@ -632,24 +342,6 @@ cases =
   , MkCase "rate: so a run that begins at zero diverges"
            (rlow_4_6_2_2__run 30 Nothing [0, 10, 30, 40]
               /= rlow_4_6_2_2__run_sentinel 30 0 [0, 10, 30, 40])
-
-    -- RULE-WIDE SUPPRESSION, WHICH [LCDB.7.2] SAYS DOES NOT EXIST. The general
-    -- facts are proved in Lcdb/RuleGlobal.idr, quantified over every value
-    -- every activation could bind. These are the clause's own worked example
-    -- with numbers in it, which is what a reader checks the theorem against.
-    --
-    -- `AmbientTemp{ts mutable, celsius mutable}` is [LCDB.3.3.3]'s schema, not
-    -- one chosen to make the point.
-  , MkCase "rule-global: the all-mutable schema's key is empty"
-           (lcdb_3_3_3__key (lcdb_3_3_3__ambient_temp 1000 21) == [])
-  , MkCase "rule-global: two unrelated readings share it"
-           (lcdb_3_3_3__key (lcdb_3_3_3__ambient_temp 1000 21)
-              == lcdb_3_3_3__key (lcdb_3_3_3__ambient_temp 9999 4))
-  , MkCase "rule-global: a `key` slot separates what `mutable` cannot"
-           (lcdb_3_3_3__key [[(SlotKey, 1)]] /= lcdb_3_3_3__key [[(SlotKey, 2)]])
-  , MkCase "rule-global: and a churning `mutable` beside it does not reset"
-           (lcdb_3_3_3__key [[(SlotKey, 1), (SlotMutable, 21)]]
-              == lcdb_3_3_3__key [[(SlotKey, 1), (SlotMutable, 22)]])
 
     -- THE ACTIVATION KEY'S IDENTITY [RLOW.4.6.2.1], AND libds's FRAME OVER IT
     -- [IRET.25.5.3]. The general facts are proved in Rete/ActivationKey.idr

@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.7.6_a_hosts_number_is_the_stored_number",
+    "clauses": ["LUNI.7.6"],
+    "category": "logical",
+    "scenario": "[LUNI.7.6]: what crosses from a host into a slot typed by a unit is the slot's stored number, in its dimension's base unit and storage type, so the engine converts nothing on an assert. `Reading.temp` is a `celsius` slot, whose dimension `temperature` stores `Float` kelvin, and `Reading.d` a `millisecond` slot, whose dimension `time` stores `Int` nanoseconds. The host asserts `temp` 300.0 and `d` 1500, which are 300 K and 1500 ns. `below` matches `r.temp < 27_celsius`, 300.15 K; `stored` matches `r.temp::Float == 300.0`, the strip giving the stored number back ([LUNI.8.5]); `nanos` matches `r.d == 1500_ns`. Exactly [\"below\", \"stored\", \"nanos\"], in source order. A runtime that took 300.0 as Celsius holds 573.15 K and misses `below` and `stored`; one that took 1500 as milliseconds holds 1.5e9 ns and misses `nanos`. PATH PINNED: each runtime's assert of a host fact, which places each value as given (libds's `ds_engine_assert` through pyds; the Mercury runtime's assert in test_behave), against the compiler's lowering of `27_celsius` and `1500_ns` to base-unit literals and of the strip to an identity.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    id: String key\n    temp: celsius mutable\n    d: millisecond mutable\n\nrule below:\n    Reading r where r.temp < 27_celsius\n->\n    log info \"below\"\n\nrule stored:\n    Reading r where r.temp::Float == 300.0\n->\n    log info \"stored\"\n\nrule nanos:\n    Reading r where r.d == 1500_ns\n->\n    log info \"nanos\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "temp": 300.0, "d": 1500 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["below", "stored", "nanos"]
+    }
+}

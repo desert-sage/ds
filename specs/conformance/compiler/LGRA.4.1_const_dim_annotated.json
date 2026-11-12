@@ -1,9 +1,10 @@
 {
     "id": "LGRA.4.1_const_dim_annotated",
     "category": "compiler",
-    "scenario": "LGRA.4.1 / LUNI.8.4 / LUNI.8.6 — a canonical unit-symbol annotation asserts the dimension onto the folded value; the dim×dim ambiguity of `10_meter * 5_meter` is resolved by the `: meter_squared` annotation (as for a typed let), and the numeric value (50) folds. Pin: compiles.",
+    "scenario": "[LGRA.4.1] with [LUNI.8.4]: a unit annotation on a `const` answers no [LUNI.8.4] refusal. `10_meter * 5_meter` has no dimension DS can state, under `: meter_squared` as anywhere. Pin: DS_VALIDATE_DIM_AMBIGUOUS. PATH PINNED: `dsc.validate.luni_8_4_const`, over `dsc.typecheck.luni_8_4_ambiguous`.",
     "rules_ds": "unit dimension area storage float64 base meter_squared\nunit meter_squared: area\n\nconst AREA: meter_squared = 10_meter * 5_meter\n\nschema Sensor scope logical:\n    state: Int key\n\nrule r:\n    Sensor s where s.state > 0\n->\n    log info \"x\"\n",
     "expect": {
-        "kind": "compile_ok"
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
     }
 }

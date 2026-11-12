@@ -1,0 +1,11 @@
+{
+    "id": "LNLS.3.3_a_non_base_assert_is_no_anchor",
+    "clauses": ["LNLS.3.3", "RLOW.6.1.10"],
+    "category": "compiler",
+    "scenario": "[RLOW.6.1.10]: a non-base assertion is an operation and not a read of its operand, so it does not stand as a slot in a join anchor. Under `linear_scan: false`, two `logical` schemas keyed on a `Float` slot, joined only by `a.k::km == b.k::km`: the equality is over two conversions, so no `key` slot is pinned, and the rule is refused as unanchored. Both sides are asserted so the comparison is same-dimension and the anchor refusal is the only one. PATH PINNED: `dsc.validate.slot_equality`, which accepts only a slot read on each side, reached from `anchor_body`'s last arm.",
+    "rules_ds": "use default:\n    linear_scan: false\n\nunit km: length = x * 1000\n\nschema A scope logical:\n    k: Float key\n    v: Int mutable\n\nschema B scope logical:\n    k: Float key\n    w: Int mutable\n\nrule joined:\n    A a\n    B b where a.k::km == b.k::km\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NOLINSCAN_JOIN_ANCHOR_C"
+    }
+}

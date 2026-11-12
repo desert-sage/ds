@@ -1,0 +1,22 @@
+{
+    "id": "RDSC.5.5.9_an_int64_offset_negative_or_tier_2_unit_converts",
+    "clauses": ["RDSC.5.5.9", "RLOW.6.1.10", "RLOW.7.3.9"],
+    "category": "logical",
+    "scenario": "[RDSC.5.5.9]: every slot naming a unit carries both conversions, on integer storage too, whatever the unit's body. On a declared `data` dimension stored as `Int` bits: `off` is `x * 8 + 1`, so P = 8, Q = 1, R = 1 ([RLOW.6.1.10]): `to_stored` is `8·x + 1`, so 2 is 17 bits; `from_stored` is `FN_INT_DIV_EXACT(v - 1, 8)` ([RLOW.7.3.9]), so 17 bits are 2 and 16 bits have none. `neg` is `x * -100`, P = -100: 2 is -200 bits, and -200 bits are `FN_INT_DIV_EXACT(-200, -100)`, 2, while 150 bits have none. `halved` is tier-2, `to_base: x / 2`, `from_base: x * 2`: each runs over the number as `Float`, then [LUNI.7.2]'s cast rounds half to even, so 3 is 1.5 bits, stored 2, 5 is 2.5 bits, stored 2, and 2 bits are 4.0, read back as 4. A check whose `equals` is null holds only when the conversion has no result ([RCTS.1.2.26]). A compiler that lowered only a positive whole factor gives these slots no conversions, and every check fails with the slot naming no unit; a runtime that rounded half up stores 3 for 5. PATH PINNED: `dsc.rete.rlow_6_1_10_int` and `rlow_6_1_10_int_tier2` for `to_stored`, `rlow_7_3_9_converted`'s `cv_int` and `cv_int_from_base` arms for `from_stored`, set on the Slot by `dsc.lower.rdsc_5_5_9_units`; evaluated by libds's `ds_schema_slot_to_stored` / `ds_schema_slot_from_stored` through pyds and the Mercury runtime's `ds.engine.nfct_1_4_6_convert`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit off: data = x * 8 + 1\nunit neg: data = x * -100\nunit halved: data:\n    to_base:   x / 2\n    from_base: x * 2\n\nschema Reading scope logical:\n    id: String key\n    o: off mutable\n    n: neg mutable\n    h: halved mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [],
+        "checks": [
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "o", "direction": "to_stored", "in": 2, "equals": 17 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "o", "direction": "from_stored", "in": 17, "equals": 2 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "o", "direction": "from_stored", "in": 16, "equals": null },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "n", "direction": "to_stored", "in": 2, "equals": -200 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "n", "direction": "from_stored", "in": -200, "equals": 2 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "n", "direction": "from_stored", "in": 150, "equals": null },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "to_stored", "in": 3, "equals": 2 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "to_stored", "in": 5, "equals": 2 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "from_stored", "in": 2, "equals": 4 }
+        ]
+    }
+}

@@ -7,7 +7,6 @@
  * A freed counted slot becomes TOMBSTONE, which lookups probe through and inserts
  * may reuse. A rehash drops tombstones. The table never shrinks.
  */
-#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -80,8 +79,12 @@ struct ds_rete_intern {
     struct free_node *freelist[N_FREE_CLASS];
     size_t       counted_mallocs;
     bool         rt_locked;  /* growth returns DS_ERR_OOM */
-    bool         frozen;     /* a new PINNED insert asserts */
+    bool         frozen;     /* a new PINNED insert is DS_ERR_INTERNAL */
+    bool         tearing_down; /* a release past zero calls no hook */
     size_t       resize_count;
+
+    ds_rete_intern_fault_fn fault_fn;
+    void        *fault_ctx;
 
     uint32_t     contract_cap_n;
     uint32_t     contract_cap_bytes;
@@ -232,10 +235,12 @@ static ds_result_t insert_new(ds_rete_intern_t *t,
         return DS_ERR_R(DS_ERR_CONTRACT_BREACH,
                         "intern: contract intern_bytes_cap exceeded");
 
-    /* The first-pump strings are pre-pinned before the freeze arms (ds_engine, at
-     * has_pumped), so this fires only on a stray. */
-    assert(!(pinned && t->frozen) &&
-           "intern: pinned insert after freeze (IRET.1.4 Q5)");
+    /* [IERR.1.7]: the first-pump strings are pre-pinned before the freeze arms
+     * (ds_engine, at has_pumped), so this refuses only a stray, with the table
+     * as it was. */
+    if (pinned && t->frozen)
+        return DS_ERR_R(DS_ERR_INTERNAL,
+                        "intern: pinned insert after freeze (IRET.1.4)");
 
     /* Grow first if the load (including tombstones) is high. */
     if ((t->n + t->tombstones) * 100u / t->cap >= MAX_LOAD_PCT) {
@@ -439,8 +444,12 @@ void ds_rete_intern_release(ds_rete_intern_t *intern,
     size_t idx = lookup_ptr_idx(intern, ptr, len);
     if (idx == SIZE_MAX) return;                /* non-interned (raw) value: no-op */
     if (intern->refs[idx] == PIN_REF) return;   /* pinned: no-op */
-    assert(intern->refs[idx] > 0 &&
-           "intern_release: refcount underflow (double free / imbalance)");
+    /* [IERR.1.7]: past zero, with the entry left as it is. */
+    if (intern->refs[idx] == 0) {
+        if (!intern->tearing_down && intern->fault_fn != NULL)
+            intern->fault_fn(intern->fault_ctx);
+        return;
+    }
     if (--intern->refs[idx] == 0) {
         if (intern->flags[idx] & FLAG_HEAP)
             counted_free(intern, (char *)intern->buckets[idx], intern->lens[idx]);
@@ -457,6 +466,19 @@ void ds_rete_intern_release(ds_rete_intern_t *intern,
 void ds_rete_intern_freeze(ds_rete_intern_t *intern)
 {
     if (intern) intern->frozen = true;
+}
+
+void ds_rete_intern_set_fault_hook(ds_rete_intern_t *intern,
+                                   ds_rete_intern_fault_fn fn, void *ctx)
+{
+    if (intern == NULL) return;
+    intern->fault_fn  = fn;
+    intern->fault_ctx = ctx;
+}
+
+void ds_rete_intern_begin_teardown(ds_rete_intern_t *intern)
+{
+    if (intern != NULL) intern->tearing_down = true;
 }
 
 ds_result_t ds_rete_intern_presz(ds_rete_intern_t *intern, size_t cap)

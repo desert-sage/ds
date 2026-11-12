@@ -5,8 +5,8 @@
  * libds's two untrusted buffers ([IARC.1.14]); the other, a recorded fact
  * stream, is fuzz_rfcs_reader.c's and fuzz_rfcs_replay.c's. The gate runs it
  * under ASan and UBSan, for memory safety on adversarial bytes: truncated
- * varints, overflowing lengths, frames nested to exhaustion, tags in the
- * inject and reject bands.
+ * varints, overflowing lengths, frames nested to exhaustion, field numbers
+ * no atom has.
  *
  * WHAT IT ASSERTS, beyond "did not crash":
  *

@@ -82,10 +82,10 @@ The source of the input does not enter into it. A `Float` operation has an answe
 | Kind | Raised when |
 |---|---|
 | `DIVIDE_BY_ZERO` | an `Int` division, floor-division or modulo has a zero divisor |
-| `DOMAIN` | the operation is undefined at that input and is not an IEEE `Float` operation: a negative shift count, `now()` read while the wall clock has no value, `local()` or `date()` with no `TimeZoneOffset` fact in force, an interval whose endpoints are not `start <= end` |
-| `NOT_REPRESENTABLE` | an operation has no representable result and wrapping would destroy its meaning: `Float :: Int` on a value non-finite or outside `Int`, a `Json` value a rule builds past a limit |
+| `DOMAIN` | the operation is undefined at that input and is not an IEEE `Float` operation |
+| `NOT_REPRESENTABLE` | an operation has no representable result and wrapping would destroy its meaning |
 
-Integer overflow wraps, as [`Int`](../values/numbers.md#int) states, and is no trap. Float overflow yields `±Inf`.
+The operations that raise each kind are those [LERR.1.4.10] lists. Integer overflow wraps, as [`Int`](../values/numbers.md#int) states, and is no trap. Float overflow yields `±Inf`.
 
 *(Spec: [LERR.1.4.4], [LERR.1.4.9], [LERR.1.4.10])*
 
@@ -111,6 +111,6 @@ A fault an operand raised, and a deciding operand absorbed or [the order](../val
 
 A status is an integer from one registry, `proto/status.proto`, and the number is its identity.
 
-A name is an implementation's label for the number. Zero is success and negatives are errors. A status's band says its category. The bands are at [Results](inv:integrator:std:doc#conventions/results), and the codes at [Error codes](inv:integrator:std:doc#conventions/errors).
+A name is an implementation's label for the number. Zero is success and negatives are errors. The codes are at [Error codes](inv:integrator:std:doc#conventions/errors).
 
-*(Spec: [LERR.8], [LERR.8.1], [LERR.8.2])*
+*(Spec: [LERR.8], [LERR.8.1], [NERR.3.1])*

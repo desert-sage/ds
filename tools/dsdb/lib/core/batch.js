@@ -18,7 +18,7 @@
 // the pieces, and a calls socket is a port the caller provides.
 
 import { CallBook, ReplyError, callWire, liveArgs, parseReply, responseSlots } from "./calls.js";
-import { FactFileError, feed, loadFactFiles } from "./facts.js";
+import { FactFileError, feed, loadFactFiles, stepDeadlines } from "./facts.js";
 import { read as readProgram, reservedName } from "./program.js";
 
 /** @import { Engine, SchemaInfo, StreamEngineEvent } from "@ds-lang/ds" */
@@ -67,8 +67,8 @@ import { read as readProgram, reservedName } from "./program.js";
  *   further cycle delivers the replies to waiting calls and pumps once.
  * @param {number} [args.callTimeoutMs]  how long a cycle waits for replies
  * @param {bigint | null} [args.until]  nanoseconds from the start: after every
- *   cycle, the clock moves there and the engine pumps once. Null ends the run
- *   at the last row's time.
+ *   cycle, the clock moves there, through each engine deadline before it, and
+ *   the engine pumps once there. Null ends the run at the last row's time.
  * @param {(entry: LogEntry) => void} [args.onLog]
  * @param {(entry: CallEntry) => void} [args.onCall]  `args` as core/calls.js keeps them
  * @param {(entry: ReplyEntry) => void} [args.onReply]
@@ -142,7 +142,7 @@ export async function runBatch({ ds, dsc, files, calls, pumps = 1, callTimeoutMs
         // stream events above are what report calls, and send them.
         e.setCallCallback(() => {});
 
-        feed(e, rows);
+        feed(e, rows, undefined, (target) => stepDeadlines(e, target));
         let cycles = 1;
         while (calls && cycles < pumps && book.waiting.length) {
             const replies = await collect(calls, book, callTimeoutMs, e, onReply);
@@ -153,6 +153,7 @@ export async function runBatch({ ds, dsc, files, calls, pumps = 1, callTimeoutMs
             e.pump();
         }
         if (until !== null) {
+            stepDeadlines(e, until);
             const now = e.clock.now;
             if (until > now) e.clock.advance(until - now);
             e.pump();

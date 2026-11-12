@@ -228,11 +228,11 @@ def main(argv: list[str]) -> int:
         #
         # RUN FROM THE IDRIS ROOT, not the repo root, and the path is relative to
         # it. Idris derives a module's name from its path — invoked from the repo
-        # root, `formal/idris/ConsumptionLoop.idr` has to declare `module
-        # formal.idris.ConsumptionLoop`, and Idris rejects the lowercase path
-        # components. With cwd at `formal/idris`, `ConsumptionLoop.idr` is
-        # `module ConsumptionLoop` and a nested `Runtime/Pump.idr` is `module
-        # Runtime.Pump`, which is the ordinary convention and lets imports
+        # root, `formal/idris/TwoClocks.idr` has to declare `module
+        # formal.idris.TwoClocks`, and Idris rejects the lowercase path
+        # components. With cwd at `formal/idris`, `TwoClocks.idr` is
+        # `module TwoClocks` and a nested `Rete/FireLoop.idr` is `module
+        # Rete.FireLoop`, which is the ordinary convention and lets imports
         # resolve between modules without a package file.
         proc = subprocess.run(
             ["idris2", "--check", str(mod.relative_to(root))],
@@ -275,11 +275,11 @@ def _build_and_run(root: Path) -> int:
     """Build the package and run its worked examples.
 
     WHY THIS PHASE EXISTS. `--check` typechecks and stops; it never generates
-    code, so a decoder that typechecks has still never DECODED anything.
+    code, so an evaluator that typechecks has still never EVALUATED anything.
     Building catches what elaboration defers, and it gives the worked examples
-    somewhere to live -- `Protobuf/Wire.idr` records why they cannot be
-    compile-time `Refl` proofs and why rewriting the arithmetic so they could be
-    would make the decoder worse.
+    somewhere to live -- `Main.idr` records why they cannot be compile-time
+    `Refl` proofs: Integer and Double arithmetic do not reduce during
+    elaboration.
 
     NO PACKAGE IS A FAILURE, since the package landed. The worked examples and
     the Idris tests run only through it, so a tree without one skips both and

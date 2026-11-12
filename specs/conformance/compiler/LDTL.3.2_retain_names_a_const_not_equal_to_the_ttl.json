@@ -1,0 +1,10 @@
+{
+    "id": "LDTL.3.2_retain_names_a_const_not_equal_to_the_ttl",
+    "category": "compiler",
+    "scenario": "[LDTL.3.2]: with `dynamic_ttl` off, a `retain:` whose constant differs from the schema's declared TTL is a compile error. `TWO_MINUTES` is a `const` folding to 120 seconds, and `Reading`'s TTL is 30 seconds. Pin: DS_VALIDATE_CAPABILITY_DISABLED. PATH PINNED: `dsc.validate.ldtl_3_2_retain`'s `same_duration`, which folds the `const` and finds the two unequal.",
+    "rules_ds": "const TWO_MINUTES = 2_min\n\nschema Trig scope logical:\n    k: Int key\n\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: TWO_MINUTES\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAPABILITY_DISABLED"
+    }
+}

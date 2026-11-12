@@ -1,0 +1,16 @@
+{
+    "id": "LTIM.1.1.5_time_arithmetic_lands_on_the_ends",
+    "clauses": ["LTIM.1.1.5", "LTIM.4.1.1"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[LTIM.1.1.5]: the representable `Time` range includes its ends, so arithmetic that lands exactly on one raises nothing. `E` holds `near_top`, one second before the last instant (2^63 - 1 ns), and `top`, the last instant; and `near_bottom`, one second after the first (-2^63 ns), and `bottom`, the first. Rule `ends` compares `e.near_top + 1_s` with `top` and `e.near_bottom - 1_s` with `bottom`, and logs both: `true true`. Rule `handler`, which logs any ComputationError, must not fire, so a range check off by one at either end fails here. PATH PINNED: the bounds of libds's checked `Time` arithmetic in `rete/eval.c` and of the Mercury runtime's `ds.eval.ltim_1_1_5_add` and `ltim_1_1_5_sub`.",
+    "rules_ds": "schema E scope logical:\n    id: Int key\n    near_top: Time mutable\n    top: Time mutable\n    near_bottom: Time mutable\n    bottom: Time mutable\n\nrule ends:\n    E e\n->\n    let up = (e.near_top + 1_s) == e.top\n    let down = (e.near_bottom - 1_s) == e.bottom\n    log info \"{up} {down}\"\n\nrule handler:\n    ComputationError c\n->\n    log critical \"{c.kind} {c.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "E", "slots": { "id": 1, "near_top": 9223372035854775807, "top": 9223372036854775807, "near_bottom": -9223372035854775808, "bottom": -9223372036854775808 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["true true"]
+    }
+}

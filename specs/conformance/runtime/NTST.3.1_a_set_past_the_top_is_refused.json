@@ -1,0 +1,16 @@
+{
+    "id": "NTST.3.1_a_set_past_the_top_is_refused",
+    "clauses": ["NTST.3.1", "LTIM.2.8.2"],
+    "category": "runtime",
+    "scenario": "[NTST.3.1] with [LTIM.2.8.2]: a set that would take the monotonic clock above 2^63 - 1, the top of its range, returns DS_ERR_TIME_RANGE (-205). The one step sets the clock to 2^63. PATH PINNED: libds's `ds_clock_set`, through pyds's `clock.set`; the Mercury runtime's `ds.chrono.clock_set`, which refuses by leaving the clock where it was, read through `ntst_3_1_set_past_range` by `test_behave.m`'s `set` step. Its control is logical/NTST.3.1_a_set_lands_on_the_top.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule seen:\n    Trig\n->\n    log info \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-205",
+        "no_fault_events": true,
+        "fault_at": 0,
+        "steps": [
+            { "op": "set", "now_ns": 9223372036854775808 }
+        ]
+    }
+}

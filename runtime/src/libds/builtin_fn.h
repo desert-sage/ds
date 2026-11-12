@@ -142,7 +142,10 @@ typedef enum ds_builtin_fn {
     DS_FN_INTERVAL_CHECK         = 152,
     DS_FN_CALENDAR_TIME          = 153,
     DS_FN_CALENDAR_DATE          = 154,
-    DS_FN__MAX                   = 155   /* dispatch-array size (max op + 1) */
+    DS_FN_DURATION_ADD           = 155,
+    DS_FN_DURATION_MUL           = 156,
+    DS_FN_INT_MUL_ADD_CHECKED    = 157,
+    DS_FN__MAX                   = 158   /* dispatch-array size (max op + 1) */
 } ds_builtin_fn_t;
 
 /* The regex builtins, the members named FN_REGEX_*. Each takes (subject,

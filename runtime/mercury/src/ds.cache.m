@@ -72,6 +72,11 @@
     %
 :- func cache_held_ttl_max(cache) = maybe(duration).
 
+    % [NLFC.2.5]: the earliest entry expiry later than the instant. A TTL still
+    % held as a duration has no instant yet.
+    %
+:- func cache_next_deadline(cache, instant) = maybe(instant).
+
 :- pred cache_delete(string::in, cache::in, cache::out) is det.
 
 :- func cache_size(cache) = int.
@@ -223,6 +228,27 @@ longer_held(Entry, Max0) = Max :-
         else
             Max = yes(Ttl)
         )
+    ).
+
+cache_next_deadline(cache(M, _), Now) =
+    list.foldl(sooner_expiry(Now), map.values(M), no).
+
+:- func sooner_expiry(instant, cache_entry, maybe(instant)) = maybe(instant).
+
+sooner_expiry(Now, Entry, Best) = Next :-
+    ( if
+        Entry ^ ce_expires = expires_at(At),
+        before(Now, At),
+        (
+            Best = no
+        ;
+            Best = yes(Held),
+            before(At, Held)
+        )
+    then
+        Next = yes(At)
+    else
+        Next = Best
     ).
 
 cache_delete(Key, C0, C) :-

@@ -684,8 +684,9 @@ Uninhabited (Quiescent = FuelOut) where
 --@spec [IRET.11.5]
 ||| Bounded run: fire until quiescent or the fuel is spent, reporting
 ||| which. Total because `fuel` decreases on the one recursive call. This
-||| is [RARC.5.6.6]'s fire phase; ConsumptionLoop.idr names it so and proves
-||| the count stays within the fuel and that `Quiescent` is honest.
+||| is [RARC.5.6.6]'s fire phase; Rete/PumpBoundary.idr proves, of the run
+||| with truth maintenance, that `Quiescent` is honest
+||| (`rarc_5_6_6__quiescent_means_empty`).
 public export
 iret_11_4__run : Lcyc_3_2_1__program -> Nat -> Rarc_5_6_5__state -> (Rarc_5_6_5__state, Iret_11_4__halt, Nat)
 iret_11_4__run p Z st = (st, FuelOut, 0)

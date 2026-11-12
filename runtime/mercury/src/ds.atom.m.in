@@ -1,14 +1,15 @@
 %-----------------------------------------------------------------------------%
 % SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
 % SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
-% ds.atom -- the unified atom registry, band geometry, and the frame walk.
+% ds.atom -- the unified atom registry and the frame walk.
 %
 % Generated in part: edit ds.atom.m.in, not ds.atom.m. Constructors, wire numbers
 % and message names come from `proto/atom.proto`, written in by the atom
 % extractor.
 %
-% A band decides only the unknown case [RFCS.16.2]. A known atom dispatches
-% without it: DscHeader and the network nodes sit in the skip band.
+% A field number is an atom's identity and nothing else [RFCS.16.1]. One with no
+% registry entry names no member of `Atom`'s oneof, and the reader that meets it
+% refuses the frame [RFCS.19.3].
 %-----------------------------------------------------------------------------%
 
 :- module ds.atom.
@@ -32,28 +33,6 @@
 :- func atom_message(atom_id) = string.
 
 %-----------------------------------------------------------------------------%
-% Bands
-%-----------------------------------------------------------------------------%
-
-:- type band
-    --->    band_inject             % 1..127
-    ;       band_reject             % 128..255
-    ;       band_skip               % 256..2047
-    ;       band_none.              % 0, or >= 2048: malformed [RFCS.16.3]
-
-:- func band_of(uint32) = band.
-
-    % What a reader does with an atom it has no entry for [RFCS.16.3].
-    %
-:- type disposition
-    --->    disp_skip
-    ;       disp_reject_inject      % DS_ERR_FS_UNKNOWN_INJECT
-    ;       disp_reject_version     % DS_ERR_DSC_VERSION
-    ;       disp_malformed.
-
-:- func disposition_of_unknown(uint32) = disposition.
-
-%-----------------------------------------------------------------------------%
 % Framing
 %-----------------------------------------------------------------------------%
 
@@ -74,6 +53,9 @@
                 fr_offset :: int        % where the outer frame began
             ).
 
+    % The walk frames and judges no number. `unknown` is a field number with
+    % no registry entry, which the reader refuses [RFCS.19.3].
+    %
 :- type atom_ref
     --->    known(atom_id)
     ;       unknown(uint32).
@@ -124,35 +106,6 @@ atom_field(A) = N :- wire(A, N).
 % END GENERATED message
 
 %-----------------------------------------------------------------------------%
-
-band_of(N) =
-    ( if N = 0u32 then
-        band_none
-    else if N =< 127u32 then
-        band_inject
-    else if N =< 255u32 then
-        band_reject
-    else if N =< 2047u32 then
-        band_skip
-    else
-        band_none
-    ).
-
-disposition_of_unknown(N) = D :-
-    B = band_of(N),
-    (
-        B = band_inject,
-        D = disp_reject_inject
-    ;
-        B = band_reject,
-        D = disp_reject_version
-    ;
-        B = band_skip,
-        D = disp_skip
-    ;
-        B = band_none,
-        D = disp_malformed
-    ).
 
 container_of(at_dsc_header, container_dsc).
 container_of(at_stream_header, container_stream).
@@ -223,7 +176,7 @@ decode_atom(Atom0, Offset) = Result :-
                     ( if atom_of_field(Field, A) then
                         Result = fr_ok(frame(known(A), Body, Offset))
                     else
-                        % The caller applies `disposition_of_unknown`.
+                        % The caller refuses it [RFCS.19.3].
                         Result = fr_ok(frame(unknown(Field), Body, Offset))
                     )
                 )

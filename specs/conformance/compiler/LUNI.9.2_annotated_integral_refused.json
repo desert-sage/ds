@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.2_annotated_integral_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.9.2]: a `let` whose value reads a unit-changing aggregation over a slot that carries a unit is refused, annotated or not, unless the value strips the read. `let x: meter_second = integral(f)` does not strip it. Pin: DS_VALIDATE_DIM_AGG_UNANNOTATED, and no other code. PATH PINNED: `dsc.validate.luni_9_2_unannotated`, which now runs on an annotated binding, and `luni_8_6_unit_annotation`'s `ty_unknown` arm, which leaves the read to it.",
+    "rules_ds": "use default\n\nunit dimension absement storage float64 base meter_second\nunit meter_second: absement\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    integral sliding 5_min gap zero\n\nrule r:\n    Flow f\n->\n    let x: meter_second = integral(f)\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+    }
+}

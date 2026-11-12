@@ -7,9 +7,10 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[LSER.16.2.2] *Integer accumulator bound.* \"Exact\" above is exact arithmetic,\nnot unbounded precision. Over an `Int`-typed slot, `sum` accumulates in a 64-bit\nsigned integer and `count` is itself an `Int`; both therefore **wrap silently**\nonce the running total leaves the signed-64-bit range, per the language-wide\ninteger rule [LEXP.7.13]. In practice `count` cannot overflow (it would take\n2⁶³ retained samples), and `sum` only does so when the slot's magnitudes and\nwindow are large enough for the partial sum to exceed ≈9.2·10¹⁸ — at which point\nthe result is `sum mod 2⁶⁴` (two's-complement), with no error or saturation.\nAuthors summing large `Int` magnitudes over long windows should sum a `Float`\nslot instead (`mean` already returns `Float`, and `integral` accumulates in\n`Float64` per [LSIG.1.5.5]), trading exactness for graceful magnitude\ndegradation. This bound is not compiler-checkable: it depends on runtime slot\nvalues, not on the window/rate declaration.\n\n",
+  "text": "[LSER.16.2.2] *Integer accumulator bound.* \"Exact\" above is exact arithmetic,\nnot unbounded precision. Over an `Int`-typed slot, `sum` accumulates in a 64-bit\nsigned integer and `count` is itself an `Int`; both therefore **wrap silently**\nonce the running total leaves the signed-64-bit range, per the language-wide\ninteger rule [LEXP.7.13]. In practice `count` cannot overflow (it would take\n2⁶³ retained samples), and `sum` only does so when the slot's magnitudes and\nwindow are large enough for the partial sum to exceed ≈9.2·10¹⁸ — at which point\nthe result is `sum mod 2⁶⁴` (two's-complement), with no error or saturation.\nAuthors summing large `Int` magnitudes over long windows should sum a `Float`\nslot instead (`mean` already returns `Float`, and `integral` accumulates in\n`Float64` per [LSIG.1.5.5]), trading exactness for graceful magnitude\ndegradation. This bound is not compiler-checkable: it depends on runtime slot\nvalues, not on the window/rate declaration. What a read over a slot of the `time`\ndimension does with the total is [LSER.17.2]'s.\n\n",
   "refs": [
     "LEXP.7.13",
+    "LSER.17.2",
     "LSIG.1.5.5"
   ]
 }

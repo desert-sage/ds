@@ -100,11 +100,19 @@ unit point: width
 
 **`= <affine_expr>`**
 
-A tier-1 conversion is an expression in `x`, the value in the declared unit, that reduces to `a*x + b`.
+A tier-1 conversion is an expression in `x`, the value in the declared unit, that reduces to `a*x + b` with `a` not zero.
 
-It uses `x`, constants, `+`, `-`, `*`, `/` as Rational division, `**`, parentheses and `math`'s `pi`. A body that is not affine is refused with `DS_VALIDATE_UNIT_BODY_NOT_AFFINE`. The inverse is derived. `a` and `b` are extracted as exact Rationals and stored as `float64`.
+It uses `x`, constants, `+`, `-`, `*`, `/` as Rational division, `**`, parentheses and `math`'s `pi`. A body that is not affine, or whose `x` term vanishes, such as `= 5` or `= x * 0`, is refused with `DS_VALIDATE_UNIT_BODY_NOT_AFFINE`. A negative `a` is admitted. The inverse is derived. `a` and `b` are extracted as exact Rationals, and stored as `float64` in a `float64` dimension. In an `int64` or `int32` dimension they stay exact, and each conversion is `Int` arithmetic over them that gives a whole number of base units or raises a [`ComputationError`](../errors/fault-facts.md#computationerror-fact) of kind `NOT_REPRESENTABLE`.
 
-*(Spec: [LUNI.4.3], Source: compiler/mercury/src/dsc.validate.m)*
+A constant the compiler cannot emit is refused at the unit's declaration with `DS_VALIDATE_CONSTANT_OUT_OF_RANGE`. In an `int64` or `int32` dimension, that is an integer `P`, `Q` or `R` outside the 64-bit signed range, where `a = P/Q` and `b = R/Q` over their least common denominator. In a `float64` dimension, it is an `a` or `b` that rounds past the largest finite `Float`, or an `a` that is not zero and rounds to zero.
+
+```ds declaration error=DS_VALIDATE_UNIT_BODY_NOT_AFFINE
+unit dimension width storage float64 base pica
+unit pica: width
+unit point: width = x * 0
+```
+
+*(Spec: [LUNI.4.3], [LUNI.2.4.1], [RLOW.6.1.10], [RLOW.7.3.9], Source: compiler/mercury/src/dsc.validate.m)*
 
 ### Tier 2
 

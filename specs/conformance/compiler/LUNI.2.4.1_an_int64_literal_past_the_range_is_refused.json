@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_an_int64_literal_past_the_range_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1]: a unit literal's value in its base unit is a constant the compiler emits, and in integer storage one outside the 64-bit signed range is refused at the literal with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `10000000000_s` is 10^19 ns on the `time` dimension, past 2^63 - 1, though the literal's own magnitude fits ([LLEX.11.1.5] admits it). A compiler that wraps emits -8446744073709551616 ns and compiles. PATH PINNED: `dsc.typecheck.luni_3_1_7_literal_type`, through `dsc.quantity.luni_2_4_1_literal_out_of_range` and `dsc.exact.luni_2_4_1_int64` over the literal's exact base value; `dsc.quantity.is_whole` judges the value whole, of any size, so DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE does not take it.",
+    "rules_ds": "schema Job scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule long:\n    Job j where j.d > 10000000000_s\n->\n    log info \"long\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

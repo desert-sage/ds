@@ -152,10 +152,41 @@ static void trim_stale_prefix(ds_series_ring_buffer_t *rb,
     rb->n_samples -= keep_from;
 }
 
+/* [LSIG.1.1]: the oldest `drop` samples go, their edges with them, and no other
+   edge. An edge older than the oldest kept sample, t0, is a dropped sample's or
+   one past the window. Samples can share a timestamp, so at t0 the kept samples'
+   edges are counted, and the rest go: inside the ring a sample is an edge when it
+   is `true` and the sample before it `false`, which is the test
+   ds_series_ring_buffer_update_bool made of it against `last_bool` ([LSIG.1.4.1]).
+   Called before the dropped samples are freed, so the oldest kept one's
+   predecessor is still there. */
+static void drop_edges_of(ds_series_ring_buffer_t *rb, size_t drop)
+{
+    if (rb->n_edges == 0 || drop == 0) return;
+    if (drop >= rb->n_samples) { rb->n_edges = 0; return; }
+    const uint64_t t0 = rb->samples[drop].ts_ns;
+    size_t gone = 0;
+    while (gone < rb->n_edges && rb->edge_ts[gone] < t0) gone++;
+    size_t at_t0 = 0;
+    while (gone + at_t0 < rb->n_edges && rb->edge_ts[gone + at_t0] == t0) at_t0++;
+    size_t kept_at_t0 = 0;
+    for (size_t i = drop; i < rb->n_samples && rb->samples[i].ts_ns == t0; i++) {
+        if (rb->samples[i].value.b && !rb->samples[i - 1].value.b) kept_at_t0++;
+    }
+    if (at_t0 > kept_at_t0) gone += at_t0 - kept_at_t0;
+    if (gone == 0) return;
+    if (gone < rb->n_edges) {
+        memmove(&rb->edge_ts[0], &rb->edge_ts[gone],
+                (rb->n_edges - gone) * sizeof(*rb->edge_ts));
+    }
+    rb->n_edges -= gone;
+}
+
 static void trim_to_cap(ds_series_ring_buffer_t *rb, size_t cap)
 {
     if (rb->n_samples <= cap) return;
     size_t drop = rb->n_samples - cap;
+    drop_edges_of(rb, drop);
     for (size_t i = 0; i < drop; i++) {
         free_sample_string(rb, &rb->samples[i]);
     }
@@ -267,8 +298,9 @@ void ds_series_ring_buffer_update_bool(
     ds_series_ring_sample_t *s = append_sample(rb, ts_ns);
     if (s == NULL) return;
     s->value.b = value;
-    /* LSIG.2.4: the first assertion of `true` counts as a rising edge. */
-    if (value && (!rb->has_last_bool || !rb->last_bool))
+    /* [LSIG.1.4.1]: an edge is a `true` absorbed while the slot holds `false`.
+       Before the first absorption it holds nothing, which is not `false`. */
+    if (value && rb->has_last_bool && !rb->last_bool)
         push_edge(rb, ts_ns);
     else
         evict_stale_edges(rb, ts_ns);
@@ -368,7 +400,7 @@ double ds_series_ring_buffer_min(
         double v = rb->element_type == DS_SERIES_RING_ELEM_FLOAT
                  ? rb->samples[i].value.f64
                  : (double) rb->samples[i].value.i64;
-        if (v < m) m = v;
+        if (ds_series_signed_before(v, m)) m = v;
     }
     return m;
 }
@@ -388,7 +420,7 @@ double ds_series_ring_buffer_max(
         double v = rb->element_type == DS_SERIES_RING_ELEM_FLOAT
                  ? rb->samples[i].value.f64
                  : (double) rb->samples[i].value.i64;
-        if (v > m) m = v;
+        if (ds_series_signed_before(m, v)) m = v;
     }
     return m;
 }
@@ -486,6 +518,13 @@ static int ring_cmp_double_signed(const void *a, const void *b)
     if (da < db) return -1;
     if (da > db) return 1;
     return (signbit(db) != 0) - (signbit(da) != 0);
+}
+
+bool ds_series_signed_before(double a, double b)
+{
+    if (a < b) return true;
+    if (a > b) return false;
+    return signbit(a) != 0 && signbit(b) == 0;
 }
 
 void ds_series_sort_for_quantile(double *vals, size_t n)

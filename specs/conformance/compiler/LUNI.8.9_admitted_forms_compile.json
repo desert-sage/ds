@@ -1,0 +1,7 @@
+{
+    "id": "LUNI.8.9_admitted_forms_compile",
+    "category": "compiler",
+    "scenario": "[LUNI.8.9]'s admitted forms, each in one `where`: a stripped argument, `math.sqrt(s.d::Float)`; an `angle` to a [LEXP.3.9.1] function, `math.sin(s.a)`; `math.sign` over a quantity, a bare `Int`, `math.sign(s.d) > 0`; and a rounding compared with its own dimension, `round(s.d) > 1_meter`. The control for the refusals beside it. PATH PINNED: `dsc.typecheck.luni_8_9_dimensioned_arguments` returning nothing for each, and `lexp_5_3_plain_call`'s `luni_8_9_keeps_unit` arm typing the rounding as a `length`.",
+    "rules_ds": "import math\nfrom units.si import degree\n\nschema S scope logical:\n    id: String key\n    d: meter mutable\n    a: degree mutable\n\nrule r:\n    S s where math.sqrt(s.d::Float) > 1.0 and math.sin(s.a) > 0.5 and math.sign(s.d) > 0 and round(s.d) > 1_meter\n->\n    log info \"x\"\n",
+    "expect": { "kind": "compile_ok" }
+}

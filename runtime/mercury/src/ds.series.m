@@ -110,8 +110,11 @@
 %-----------------------------------------------------------------------------%
 
     % One series row [RLOW.8.1]. The identity is stringified, so `int(1)` and
-    % `str("1")` are one row. The window is in the key [RDSC.5a.8.1]; the atom
-    % is not.
+    % `str("1")` are one row. The window is in the key [RDSC.5a.8.1]. The
+    % backing is the rest of that clause's tuple: the state keeps one row per
+    % key and backing, so two backings at one window are parallel
+    % [RDSC.5a.8.2] and each absorbs a sample once. A read names no backing,
+    % and answers from the one libds would pick (`read_backing`).
     %
 :- type series_key
     --->    series_key(
@@ -202,10 +205,10 @@
 :- pred lser_13_14_absorbs(series_decl::in, ds_value::in, bool::in, bool::out)
     is semidet.
 
-    % The samples a row retains inside the window as of `Now`. The carry is not
-    % one of them [LSER.13.14].
+    % The samples a backing's row retains inside the window as of `Now`. The
+    % carry is not one of them [LSER.13.14].
     %
-:- func lser_13_14_retained(series_key, instant, series_state) = int.
+:- func lser_13_14_retained(backing, series_key, instant, series_state) = int.
 
 %-----------------------------------------------------------------------------%
 :- implementation.
@@ -217,6 +220,7 @@
 :- import_module int64.
 :- import_module map.
 :- import_module math.
+:- import_module maybe.
 :- import_module uint32.
 :- import_module uint64.
 
@@ -385,7 +389,18 @@ sampleable(bytes(_)).
                 rw_window  :: uint64,       % ns; 0 = unbounded
                 rw_open    :: bool,
                             % Does the newest sample hold to the read instant?
-                rw_samples :: list(sample)  % newest first
+                rw_samples :: list(sample), % newest first
+                rw_first   :: instant,
+                            % `t_first`, the row's first absorbed sample
+                            % [LSER.19.7]. A row is never dropped, so it holds
+                            % for the instance's life.
+                rw_before  :: maybe(ds_value)
+                            % The value of the sample just older than the
+                            % oldest in `rw_samples`, once one has gone: the
+                            % predecessor a rising edge is judged against
+                            % [LSIG.1.4.1]. `no` while every sample is held,
+                            % when the oldest held sample is the first
+                            % absorbed and followed nothing.
             )
     ;       reservoir(
                 rv_k      :: int,           % `max_samples`
@@ -400,9 +415,20 @@ sampleable(bytes(_)).
                 sm_value :: ds_value
             ).
 
+    % [RDSC.5a.8.1]'s whole tuple: the series key and the backing.
+    %
+:- type row_key
+    --->    row_key(
+                rk_key     :: series_key,
+                rk_backing :: backing
+            ).
+
+    % The rows, one per key and backing. What `nulls: hold` repeats is the
+    % key's, whichever backing absorbed it [LNUL.8.6].
+    %
 :- type series_state
     --->    series_state(
-                ss_rows :: map(series_key, row),
+                ss_rows :: map(row_key, row),
                 ss_held :: map(series_key, ds_value)
             ).
 
@@ -413,15 +439,28 @@ row_count(series_state(M, _)) = map.count(M).
 held_value(Key, series_state(_, H), Value) :-
     map.search(H, Key, Value).
 
+    % The newest sample of any backing's row for the key.
+    %
 last_sample_at(Key, series_state(M, _), At) :-
-    map.search(M, Key, Row),
-    (
-        Row = row(_, _, [sample(At, _) | _])
-    ;
-        Row = reservoir(_, _, _, Slots),
-        Slots = [sample(First, _) | Rest],
-        At = list.foldl(later_of, Rest, First)
-    ).
+    Ats = list.filter_map(
+        ( func(B) = A is semidet :-
+            map.search(M, row_key(Key, B), Row),
+            row_newest(Row, A)
+        ), libds_slot_order),
+    Ats = [First | Rest],
+    At = list.foldl(later_instant, Rest, First).
+
+:- pred row_newest(row::in, instant::out) is semidet.
+
+row_newest(row(_, _, [sample(At, _) | _], _, _), At).
+row_newest(reservoir(_, _, _, Slots), At) :-
+    Slots = [sample(First, _) | Rest],
+    At = list.foldl(later_of, Rest, First).
+
+:- func later_instant(instant, instant) = instant.
+
+later_instant(A, Best) =
+    ( if instant_ns(A) > instant_ns(Best) then A else Best ).
 
 :- func later_of(sample, instant) = instant.
 
@@ -430,26 +469,54 @@ later_of(sample(At, _), Best) =
 
 absorb(Decl, Key, Value, Now, series_state(M0, H0), series_state(M, H)) :-
     map.set(Key, Value, H0, H),
+    RowKey = row_key(Key, Decl ^ sd_backing),
     ( if Decl ^ sd_backing = bk_reservoir then
-        ( if map.search(M0, Key, reservoir(K, N, Rng, Slots)) then
+        ( if map.search(M0, RowKey, reservoir(K, N, Rng, Slots)) then
             Row0 = reservoir(K, N, Rng, Slots)
         else
             Row0 = reservoir(uint32.cast_to_int(Decl ^ sd_max), 0,
                 golden_ratio_seed, [])
         ),
-        map.set(Key, absorb_reservoir(sample(Now, Value), Row0), M0, M)
+        map.set(RowKey, absorb_reservoir(sample(Now, Value), Row0), M0, M)
     else
-        ( if map.search(M0, Key, row(_, _, Old)) then
+        ( if map.search(M0, RowKey, row(_, _, Old, First0, Before0)) then
             ( if carry_backing(Decl ^ sd_backing) then
                 Kept = evict_keeping_carry(Decl ^ sd_window, Now, Old)
             else
                 Kept = evict(Decl ^ sd_window, Now, Old)
-            )
+            ),
+            First = First0,
+            Prior = Before0,
+            All = [sample(Now, Value) | Old]
         else
-            Kept = []
+            Kept = [],
+            First = Now,
+            Prior = no,
+            All = [sample(Now, Value)]
         ),
         Capped = cap(Decl, [sample(Now, Value) | Kept]),
-        map.set(Key, row(Decl ^ sd_window, open_tail(Decl), Capped), M0, M)
+        Before = lsig_1_4_1_before(Capped, All, Prior),
+        map.set(RowKey,
+            row(Decl ^ sd_window, open_tail(Decl), Capped, First, Before),
+            M0, M)
+    ).
+
+    % [LSIG.1.4.1], [LSIG.1.1]: what the oldest held sample follows. The slot
+    % holds its last absorbed value whatever the window or the cap discards.
+    % Eviction and the cap each take an oldest run of `All`, so the samples
+    % gone are the suffix after `Held`, and the newest of them is the
+    % predecessor. A sample the cap drops takes its own edge with it, and no
+    % other: the next sample is still judged against the one it followed.
+    %
+    %@spec [LSIG.1.4.1]
+:- func lsig_1_4_1_before(list(sample), list(sample), maybe(ds_value))
+    = maybe(ds_value).
+
+lsig_1_4_1_before(Held, All, Before0) = Before :-
+    ( if list.drop(list.length(Held), All, [sample(_, Gone) | _]) then
+        Before = yes(Gone)
+    else
+        Before = Before0
     ).
 
     % The samples describe a step function: each value holds until the next
@@ -461,56 +528,63 @@ step_backing(bk_interval_pulse).
 step_backing(bk_numeric_integral).
 
     % The backings that store the carry: the step backings, and the ring buffer
-    % for `onset_rate`'s predecessor [LSIG.2.4.1]. Its other reads filter by age.
+    % for `onset_rate`'s predecessor [LSIG.1.4.1]. Its other reads filter by
+    % age.
     %
 :- pred carry_backing(backing::in) is semidet.
 
 carry_backing(B) :- step_backing(B).
 carry_backing(bk_ring_buffer).
 
-    % [LSIG.1.4.1]. A rising edge is a `true` sample whose predecessor is `false`
-    % or absent. `Samples` is the window plus the carry, newest first.
+    % [LSIG.1.4.1]. A rising edge is a `true` sample whose predecessor is
+    % `false`. The first absorbed sample has none, and is no edge. `Samples` is
+    % the window plus the carry, newest first,
+    % and `Before` is what the oldest of them followed. `elapsed` counts from
+    % `First`, the row's `t_first` [LSER.19.7], which neither the window nor
+    % the cap moves.
     %
-    % `t_first` is not stored: with a carry, `min(W, elapsed)` is `W`; without
-    % one, the oldest sample is taken as the first. A row is never dropped, so
-    % [LSER.19.7]'s reset after a window of silence has no counterpart here.
-    %
-:- func onset_rate(uint64, instant, list(sample)) = ds_value.
+:- func onset_rate(uint64, instant, instant, maybe(ds_value), list(sample))
+    = ds_value.
 
-onset_rate(WindowNs, Now, Samples) = float(Rate) :-
+onset_rate(WindowNs, Now, First, Before, Samples) = float(Rate) :-
     NowNs = instant_ns(Now),
-    ( if list.last(Samples, Oldest), Oldest = sample(OldestAt, _) then
-        OldestNs = instant_ns(OldestAt),
-        Elapsed = ( if NowNs > OldestNs then NowNs - OldestNs else 0u64 ),
-        Edges = rising_edges(WindowNs, NowNs, Samples, 0),
-        Denom = ( if WindowNs \= 0u64, WindowNs < Elapsed then WindowNs
-                  else Elapsed ),
-        ( if Elapsed = 0u64 ; Edges = 0 ; Denom = 0u64 then
-            Rate = 0.0
-        else
-            Rate = float.float(Edges * 1000000000) / uint64_to_float(Denom)
-        )
-    else
+    FirstNs = instant_ns(First),
+    Elapsed = ( if NowNs > FirstNs then NowNs - FirstNs else 0u64 ),
+    Edges = rising_edges(WindowNs, NowNs, Before, Samples, 0),
+    Denom = ( if WindowNs \= 0u64, WindowNs < Elapsed then WindowNs
+              else Elapsed ),
+    ( if Elapsed = 0u64 ; Edges = 0 ; Denom = 0u64 then
         Rate = 0.0
+    else
+        Rate = float.float(Edges * 1000000000) / uint64_to_float(Denom)
     ).
 
-:- func rising_edges(uint64, uint64, list(sample), int) = int.
+    % `Before` stands for the predecessor of the last sample in the list.
+    %
+:- func rising_edges(uint64, uint64, maybe(ds_value), list(sample), int) = int.
 
-rising_edges(_, _, [], N) = N.
-rising_edges(WindowNs, NowNs, [sample(At, V) | Older], N0) = N :-
+rising_edges(_, _, _, [], N) = N.
+rising_edges(WindowNs, NowNs, Before, [sample(At, V) | Older], N0) = N :-
     AtNs = instant_ns(At),
     InWindow = ( if WindowNs = 0u64 ; NowNs < WindowNs ; AtNs > NowNs - WindowNs
                  then yes else no ),
+    (
+        Older = [sample(_, Prev) | _],
+        Predecessor = yes(Prev)
+    ;
+        Older = [],
+        Predecessor = Before
+    ),
     ( if
         InWindow = yes,
         V = bool(yes),
-        not ( Older = [sample(_, bool(yes)) | _] )
+        Predecessor = yes(bool(no))
     then
         N1 = N0 + 1
     else
         N1 = N0
     ),
-    N = rising_edges(WindowNs, NowNs, Older, N1).
+    N = rising_edges(WindowNs, NowNs, Before, Older, N1).
 
     % `evict`, keeping the carry as well: the newest sample older than the
     % window, whose value holds into it [LSIG.2.5.1].
@@ -658,8 +732,8 @@ lser_13_14_absorbs(Decl, Value, Held0, Held) :-
         )
     ).
 
-lser_13_14_retained(Key, Now, series_state(M, _)) = N :-
-    ( if map.search(M, Key, row(W, _, Samples)) then
+lser_13_14_retained(Backing, Key, Now, series_state(M, _)) = N :-
+    ( if map.search(M, row_key(Key, Backing), row(W, _, Samples, _, _)) then
         N = list.length(list.filter(in_window(W, Now), Samples))
     else
         N = 0
@@ -672,12 +746,15 @@ lser_13_14_retained(Key, Now, series_state(M, _)) = N :-
 query(Agg, Key, Now, series_state(M, _), Zero, Value) :-
     ( if
         Agg = agg_onset_rate,
-        map.search(M, Key, row(W, _, All))
+        read_backing(Agg, Key, M, B),
+        map.search(M, row_key(Key, B), row(W, _, All, First, Before))
     then
-        Value = onset_rate(W, Now, evict_keeping_carry(W, Now, All))
+        Value = onset_rate(W, Now, First, Before,
+            evict_keeping_carry(W, Now, All))
     else if
-        map.search(M, Key, Row),
-        ( if time_weighted(Agg), Row = row(W, _, All) then
+        read_backing(Agg, Key, M, B),
+        map.search(M, row_key(Key, B), Row),
+        ( if time_weighted(Agg), Row = row(W, _, All, _, _) then
             evict_keeping_carry(W, Now, All) = [S | Ss]
         else
             in_window_samples(Row, Now) = [S | Ss]
@@ -691,6 +768,71 @@ query(Agg, Key, Now, series_state(M, _), Zero, Value) :-
         )
     else
         Value = Zero
+    ).
+
+    % The backing a read answers from, for parity with libds, whose read names
+    % no backing either (`series_pick_backend_slot`): of the backings with a row
+    % for the key that serve the aggregation, in libds's backend-slot order, an
+    % unbounded read takes SeriesBackendWelfordEwma first and a windowed one
+    % takes it last.
+    %
+:- pred read_backing(agg::in, series_key::in, map(row_key, row)::in,
+                     backing::out) is semidet.
+
+read_backing(Agg, Key, M, Backing) :-
+    Served = list.filter(
+        ( pred(B::in) is semidet :-
+            serves(B, Agg),
+            map.contains(M, row_key(Key, B))
+        ), libds_slot_order),
+    ( if Key ^ sk_window = 0u64, list.member(bk_welford, Served) then
+        Backing = bk_welford
+    else if
+        list.find_first_match(
+            ( pred(B::in) is semidet :- B \= bk_welford ), Served, Other)
+    then
+        Backing = Other
+    else
+        Served = [Backing | _]
+    ).
+
+    % libds's backend slots, in the order the engine registers them
+    % (`ds_series_register_builtin_backends`, the ring buffer last).
+    %
+:- func libds_slot_order = list(backing).
+
+libds_slot_order = [bk_welford, bk_monotonic_deque, bk_fifo_deque, bk_reservoir,
+    bk_interval_pulse, bk_numeric_integral, bk_ring_buffer].
+
+    % The aggregations each backing answers: libds's `supported_aggs` for its
+    % vtable, a median being a 50th percentile here [LSER.17.2].
+    %
+:- pred serves(backing::in, agg::in) is semidet.
+
+serves(bk_welford, Agg) :-
+    ( Agg = agg_mean ; Agg = agg_stdev ; Agg = agg_pstdev
+    ; Agg = agg_variance ; Agg = agg_pvariance ; Agg = agg_min ; Agg = agg_max
+    ; Agg = agg_count ; Agg = agg_rate ; Agg = agg_direction ; Agg = agg_last
+    ; Agg = agg_first ; Agg = agg_sum ; Agg = agg_bool_and ; Agg = agg_bool_or
+    ).
+serves(bk_reservoir, Agg) :-
+    ( Agg = agg_mean ; Agg = agg_stdev ; Agg = agg_pstdev
+    ; Agg = agg_variance ; Agg = agg_pvariance ; Agg = agg_min ; Agg = agg_max
+    ; Agg = agg_sum ; Agg = agg_count ; Agg = agg_percentile(_)
+    ; Agg = agg_bool_and ; Agg = agg_bool_or
+    ).
+serves(bk_fifo_deque, Agg) :-
+    ( Agg = agg_first ; Agg = agg_last ; Agg = agg_bool_or ; Agg = agg_bool_and ).
+serves(bk_monotonic_deque, Agg) :-
+    ( Agg = agg_min ; Agg = agg_max ).
+serves(bk_interval_pulse, agg_active_fraction).
+serves(bk_numeric_integral, agg_integral).
+serves(bk_ring_buffer, Agg) :-
+    ( Agg = agg_mean ; Agg = agg_min ; Agg = agg_max ; Agg = agg_count
+    ; Agg = agg_sum ; Agg = agg_stdev ; Agg = agg_pstdev ; Agg = agg_variance
+    ; Agg = agg_pvariance ; Agg = agg_percentile(_) ; Agg = agg_count_distinct
+    ; Agg = agg_count_of(_) ; Agg = agg_contains(_) ; Agg = agg_onset_rate
+    ; Agg = agg_rate ; Agg = agg_direction
     ).
 
 cold_value(agg_count, _) = int(0i64).
@@ -726,7 +868,8 @@ preserving_zero(no) = float(0.0).
     %
 :- func in_window_samples(row, instant) = list(sample).
 
-in_window_samples(row(Window, _, Samples), Now) = evict(Window, Now, Samples).
+in_window_samples(row(Window, _, Samples, _, _), Now) =
+    evict(Window, Now, Samples).
 in_window_samples(reservoir(_, _, _, Slots), _) = Slots.
 
 :- pred time_weighted(agg::in) is semidet.
@@ -736,12 +879,12 @@ time_weighted(agg_integral).
 
 :- func row_window(row) = uint64.
 
-row_window(row(W, _, _)) = W.
+row_window(row(W, _, _, _, _)) = W.
 row_window(reservoir(_, _, _, _)) = 0u64.
 
 :- func row_open(row) = bool.
 
-row_open(row(_, Open, _)) = Open.
+row_open(row(_, Open, _, _, _)) = Open.
 row_open(reservoir(_, _, _, _)) = no.
 
     % The signal aggregations, over the step function the samples describe. An
@@ -887,9 +1030,9 @@ aggregate(_, agg_rate, Zero, Ss) = Out :-
     else
         Out = Zero
     ).
-aggregate(_, agg_min, Zero, Ss) = extreme(Zero, Ss, float.min,
+aggregate(_, agg_min, Zero, Ss) = extreme(Zero, Ss, signed_min,
     (func(A, B) = ( if A =< B then A else B ))).
-aggregate(_, agg_max, Zero, Ss) = extreme(Zero, Ss, float.max,
+aggregate(_, agg_max, Zero, Ss) = extreme(Zero, Ss, signed_max,
     (func(A, B) = ( if A >= B then A else B ))).
 aggregate(Form, agg_variance, Zero, Ss) = moment(Form, m_var, Zero, Ss).
 aggregate(Form, agg_pvariance, Zero, Ss) = moment(Form, m_pvar, Zero, Ss).
@@ -979,6 +1122,23 @@ signed_float_order(A, B, R) :-
         R = (=)
     ).
 
+    % [LSER.17.2]: `min` and `max` select under `signed_float_order`, so of
+    % the two zeros `min` is -0 and `max` is +0 whatever order they arrived in.
+    % `float.min` and `float.max` return one of two equal arguments, which
+    % left the answer to the order a backing keeps its samples in.
+    %
+:- func signed_min(float, float) = float.
+
+signed_min(A, B) = Min :-
+    signed_float_order(A, B, R),
+    ( if R = (>) then Min = B else Min = A ).
+
+:- func signed_max(float, float) = float.
+
+signed_max(A, B) = Max :-
+    signed_float_order(A, B, R),
+    ( if R = (<) then Max = B else Max = A ).
+
     % `unchecked_quotient` because `/` refuses a zero divisor.
     %
 :- pred negative_zero(float::in) is semidet.
@@ -987,6 +1147,12 @@ negative_zero(F) :-
     F = 0.0,
     float.unchecked_quotient(1.0, F) < 0.0.
 
+    % [LSER.16.5.1]'s equality, for `count_of` and `contains`. A Time slot's
+    % samples are its stored Int, the instant (`stored_value`), and the caller
+    % takes a Time lookup to the same, so no Time reaches here: one instant at
+    % any offset is one value ([LTIM.5.2]). The standard order `count_distinct`
+    % sorts by holds -0.0 and 0.0 equal, as `==` does.
+    %
 :- pred sample_matches(ds_value::in, sample::in) is semidet.
 
 sample_matches(Lookup, sample(_, V)) :-
@@ -1087,7 +1253,7 @@ extreme(Zero, Ss, PickF, PickI) = Out :-
 
 :- func moments_form(row) = moments_form.
 
-moments_form(row(Window, _, _)) =
+moments_form(row(Window, _, _, _, _)) =
     ( if Window = 0u64 then mf_accumulator else mf_two_pass ).
 moments_form(reservoir(_, _, _, _)) = mf_reservoir.
 

@@ -126,14 +126,14 @@ static int buf_append_atom(buf_t *b, uint32_t field,
 }
 
 /*
- * Frame an atom for a field number the registry does NOT know — an atom a
- * LATER runtime would write, with an empty body.
+ * Frame an atom for a field number the registry does NOT know, with an empty
+ * body.
  *
  * The production writer refuses this and should: emitting an atom you cannot
- * name is not something a runtime ought to be able to do. But skip-unknown
- * ([RDSC.9.4] / [RFCS.16.3]) is precisely about reading one, so the bytes are
- * laid out here from [RFCS.19.1]'s grammar — the only place in this file that
- * frames without the registry.
+ * name is not something a runtime ought to be able to do. But the loader's
+ * refusal of one ([RDSC.11.1], [RFCS.19.3]) is precisely about reading one, so
+ * the bytes are laid out here from [RFCS.19.1]'s grammar — the only place in
+ * this file that frames without the registry.
  *
  * Empty body keeps the varints single-byte and the arithmetic visible:
  * outer 0x0A, outer len 3, inner key (field << 3 | 2) in two bytes for any
@@ -389,8 +389,8 @@ static int test_rdsc_11_1__framing_table(void)
     static const uint8_t empty_atom[] = { 0x0A, 0x00 };
     static const uint8_t wide_field[] = { 0x0A, 0x06, 0x82, 0x80, 0x80, 0x80,
                                           0x80, 0x01 };
-    /* An inner field number in no band ([RFCS.16.3]): 2048, key 16386
-       = 82 80 01, with an empty body; and 0, key 0x02. */
+    /* An inner field number no atom has: 2048, key 16386 = 82 80 01, with an
+       empty body; and 0, key 0x02. */
     static const uint8_t field_2048[] = { 0x0A, 0x04, 0x82, 0x80, 0x01, 0x00 };
     static const uint8_t field_0[]    = { 0x0A, 0x02, 0x02, 0x00 };
     static const uint8_t mid_length[] = { 0x0A, 0x80 };
@@ -426,7 +426,7 @@ static int test_rdsc_11_1__framing_table(void)
           DS_ERR_DSC_BAD_MAGIC, DS_ERR_DSC_DECODE },
         { "a field number past 2^32", wide_field, sizeof wide_field,
           DS_ERR_DSC_BAD_MAGIC, DS_ERR_DSC_DECODE },
-        { "an inner field number past every band (2048)", field_2048,
+        { "an inner field number no atom has (2048)", field_2048,
           sizeof field_2048, DS_ERR_DSC_BAD_MAGIC, DS_ERR_DSC_DECODE },
         { "an inner field number of 0", field_0, sizeof field_0,
           DS_ERR_DSC_BAD_MAGIC, DS_ERR_DSC_DECODE },
@@ -1055,24 +1055,6 @@ static int test_rdsc_9_7__truncated_body_errors(void)
     uint8_t f[] = { 0x0A, 0x67, 0xBA, 0x10, 0x64, 'X','X','X','X' };
     ds_result_t r = ds_engine_load_dsc(e, f, sizeof f);
     EXPECT_LOAD_STATUS("body trunc", r, DS_ERR_DSC_TRUNCATED);
-    ds_engine_free(e);
-    return 0;
-}
-
-/* RDSC.9.4 — an unknown atom after a valid DscHeader is skipped: the load
-   succeeds rather than erroring as DSC_BAD_MAGIC / DSC_DECODE. */
-static int test_unknown_magic_is_skipped(void)
-{
-    ds_engine_t *e = NULL; if (new_engine(&e)) return 1;
-    buf_t hb; if (build_dsco_body(&hb) != 0) return 1;
-    buf_t f; buf_init(&f);
-    if (buf_append_atom(&f, DS_ATOM_DSC_HEADER,hb.data, hb.len) != 0) return 1;
-    /* An atom from a LATER runtime, in the SKIP band ([RFCS.16.2],
-       256..2047), so skipping is the right answer. */
-    if (buf_append_unknown_atom(&f, 2000u) != 0) return 1;
-    ds_result_t r = load_sealed(e, &f);
-    EXPECT_LOAD_STATUS("skip unknown", r, DS_OK);
-    buf_free(&hb); buf_free(&f);
     ds_engine_free(e);
     return 0;
 }
@@ -3064,10 +3046,45 @@ static int test_rdsc_15_6__two_dialect_infos_load(void)
     return 0;
 }
 
-/* [RDSC.9.4] — an UNRECOGNISED skip-band atom is skipped AND logged at
-   info, category `dsc-load`, naming the field number and the byte offset its
-   frame starts at. The Mercury runtime's `test_ds.m` checks the same line. */
-static int test_rdsc_9_4__unrecognised_skip_is_logged(void)
+/* [RDSC.11.1], [RFCS.19.3] — a frame after a valid DscHeader whose field
+   number has no registry entry names no member of Atom's oneof, so it is
+   malformed: DS_ERR_DSC_DECODE, and nothing is logged as skipped. Each number
+   is unallocated: low, middle and high in the field-number range. */
+static int test_rdsc_11_1__an_unknown_field_number_after_the_header_is_decode(void)
+{
+    static const uint32_t unknown[] = { 100u, 200u, 2000u };
+    for (size_t i = 0; i < sizeof unknown / sizeof unknown[0]; i++) {
+        if (ds_pbf_lookup(unknown[i]) != NULL) {
+            fprintf(stderr, "FAIL: fixture: %u is allocated; pick another\n",
+                    (unsigned) unknown[i]);
+            return 1;
+        }
+        ds_engine_t *e = NULL; if (new_engine(&e)) return 1;
+        dsc_load_log_t p = {0};
+        if (ds_engine_set_log_callback(e, dsc_load_log_cb, &p).status != DS_OK) {
+            fprintf(stderr, "FAIL: set_log_callback\n"); return 1;
+        }
+        buf_t hb; if (build_dsco_body(&hb) != 0) return 1;
+        buf_t f; buf_init(&f);
+        if (buf_append_atom(&f, DS_ATOM_DSC_HEADER, hb.data, hb.len) != 0) return 1;
+        if (buf_append_unknown_atom(&f, unknown[i]) != 0) return 1;
+        ds_result_t r = load_sealed(e, &f);
+        EXPECT_LOAD_STATUS("[RDSC.11.1] unknown field number", r, DS_ERR_DSC_DECODE);
+        if (p.n != 0) {
+            fprintf(stderr, "FAIL: %u wrote %d dsc-load log(s), the last: %s\n",
+                    (unsigned) unknown[i], p.n, p.last);
+            return 1;
+        }
+        buf_free(&hb); buf_free(&f);
+        ds_engine_free(e);
+    }
+    return 0;
+}
+
+/* [RDSC.9.4] — DocString is one of the atoms a loader skips by name: stepped
+   over, and logged at info, category `dsc-load`, naming the atom and the byte
+   offset its frame starts at. */
+static int test_rdsc_9_4__doc_string_is_skipped_and_logged(void)
 {
     ds_engine_t *e = NULL; if (new_engine(&e)) return 1;
     dsc_load_log_t p = {0};
@@ -3078,14 +3095,16 @@ static int test_rdsc_9_4__unrecognised_skip_is_logged(void)
     buf_t f; buf_init(&f);
     if (buf_append_atom(&f, DS_ATOM_DSC_HEADER, hb.data, hb.len) != 0) return 1;
     size_t at = f.len;
-    if (buf_append_unknown_atom(&f, 2000u) != 0) return 1;
+    uint8_t docs_body[] = { 0x08, 0x02, 0x10, 0x01 };
+    if (buf_append_frame(&f, DS_ATOM_DOC_STRING, docs_body, sizeof docs_body) != 0)
+        return 1;
     ds_result_t r = load_sealed(e, &f);
-    EXPECT_LOAD_STATUS("[RDSC.9.4] unrecognised skip", r, DS_OK);
+    EXPECT_LOAD_STATUS("[RDSC.9.4] DocString", r, DS_OK);
     char want[64];
     snprintf(want, sizeof want, "byte offset %zu", at);
-    if (p.n != 1 || strstr(p.last, "2000") == NULL
+    if (p.n != 1 || strstr(p.last, "DocString") == NULL
             || strstr(p.last, want) == NULL) {
-        fprintf(stderr, "FAIL: %d dsc-load log(s), want 1 naming 2000 and %s; "
+        fprintf(stderr, "FAIL: %d dsc-load log(s), want 1 naming DocString and %s; "
                 "the last: %s\n", p.n, want, p.last);
         return 1;
     }
@@ -3296,7 +3315,7 @@ static int rdsc_4c_3_run(bool with_code, size_t *out_facts,
 }
 
 /* [RDSC.4c.3] — in this edition a runtime skips every CompiledCode atom: it
-   logs it as [RDSC.9.4] logs an unrecognised skip-band atom, maps and wires
+   logs it as [RDSC.9.4] logs every atom it skips by name, maps and wires
    nothing, and interprets every node, so the artefact behaves as it does
    without the atom. The atom is a well-formed RHS for this build's arch on
    the network's one terminal. The control is the same artefact without it.
@@ -5480,16 +5499,17 @@ static int test_rdsc_4a_9_3__only_an_op_with_no_handler_is_refused(void)
  * this file loads through load_sealed; these load unsealed or tampered bytes on
  * purpose.
  *
- * A DscHeader plus a skip-band atom, so the tampered byte can sit in a later atom
- * whose content the loader otherwise ignores: a refusal there is the hash's
- * alone. */
+ * A DscHeader plus a DocString, which the loader skips by name undecoded
+ * ([RDSC.9.4]), so the tampered byte can sit in a later atom whose content the
+ * loader otherwise ignores: a refusal there is the hash's alone. */
 static int build_hash_fixture(buf_t *f)
 {
+    static const uint8_t docs_body[] = { 0x08, 0x02, 0x10, 0x01 };
     buf_t hb; if (build_dsco_body(&hb) != 0) return -1;
     buf_init(f);
     if (buf_append_atom(f, DS_ATOM_DSC_HEADER,hb.data, hb.len) != 0) return -1;
     buf_free(&hb);
-    return buf_append_unknown_atom(f, 2000u);
+    return buf_append_frame(f, DS_ATOM_DOC_STRING, docs_body, sizeof docs_body);
 }
 
 static int test_rdsc_3_6__self_hash_verified_at_load(void)
@@ -5550,7 +5570,7 @@ static int test_rdsc_3_6__self_hash_verified_at_load(void)
         buf_free(&f); ds_engine_free(e);
     }
 
-    /* Sealed, then the LAST byte flipped: the skip atom's body, which the
+    /* Sealed, then the LAST byte flipped: the DocString's body, which the
        loader ignores once the hash matches. The hash covers the body. */
     {
         ds_engine_t *e = NULL; if (new_engine(&e)) return 1;
@@ -6054,7 +6074,6 @@ int main(void)
     RUN(test_nlfc_10_2__admission);
     RUN(test_rdsc_16_2_8__requires_is_trusted);
     RUN(test_rdsc_9_7__truncated_body_errors);
-    RUN(test_unknown_magic_is_skipped);
     RUN(test_schema_load_ttl);
     RUN(test_schema_load_logical);
     RUN(test_rdsc_5_4_5__slog_without_lifecycle_refused);
@@ -6088,7 +6107,8 @@ int main(void)
     RUN(test_docs_atom_skipped);
     RUN(test_dialect_info_loads_without_a_log);
     RUN(test_rdsc_15_6__two_dialect_infos_load);
-    RUN(test_rdsc_9_4__unrecognised_skip_is_logged);
+    RUN(test_rdsc_11_1__an_unknown_field_number_after_the_header_is_decode);
+    RUN(test_rdsc_9_4__doc_string_is_skipped_and_logged);
     RUN(test_unread_known_atom_log_names_it);
     RUN(test_rdsc_4c_3__compiled_code_atom_is_skipped);
     RUN(test_introspection_round_trip);

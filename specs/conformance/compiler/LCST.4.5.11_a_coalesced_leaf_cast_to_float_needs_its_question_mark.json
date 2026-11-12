@@ -1,0 +1,10 @@
+{
+    "id": "LCST.4.5.11_a_coalesced_leaf_cast_to_float_needs_its_question_mark",
+    "category": "compiler",
+    "scenario": "[LCST.4.5.11] with [LCST.4.3.2]: `x ?? 0` with `x` a `Json` leaf is not `null`, but it converts by the kind `x` holds, and a `String` reaches `Float` by a parse, so the conversion is fallible ([LCST.4.3.1]) and `(d.body.c ?? 0)::Float` without `?` is refused with DS_VALIDATE_CAST_NULLABILITY. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. A compiler that typed the cast by the default's `Int` reads it as the total Int row and compiles it. PATH PINNED: `dsc.typecheck.lcst_4_1_5_cast_type`, through `lcst_4_5_11_source`'s `??` arm and `lcst_4_5_11_cast_type`'s fallible column.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule r:\n    Doc d where (d.body.c ?? 0)::Float > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_NULLABILITY"
+    }
+}

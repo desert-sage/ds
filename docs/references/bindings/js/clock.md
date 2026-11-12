@@ -37,6 +37,16 @@ The monotonic clock's value, read by [`ds_engine_clock_now`](inv:integrator:std:
 
 *(Source: bindings/js/types/bind.d.ts, bindings/js/src/ds.c)*
 
+### `nextDeadline`
+
+**`get nextDeadline(): bigint | null;`**
+
+The earliest deadline later than the monotonic clock's value, read by [`ds_engine_next_deadline_ns`](inv:integrator:std:doc#engine/clock).
+
+It is `null` when the engine holds no deadline.
+
+*(Source: bindings/js/types/bind.d.ts, bindings/js/lib/bind.js)*
+
 ### `set`
 
 **`set(ns: Int64): void;`**

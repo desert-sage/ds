@@ -2,7 +2,7 @@
     "id": "LCST.4.5.2_int_then_int64_unit_ok",
     "clauses": ["LUNI.8.5", "LUNI.8.7.3"],
     "category": "compiler",
-    "scenario": "[LCST.4.5.2], [LUNI.8.5]: a unit asserts from its dimension's storage kind. `byte` is a `data` unit and `data` stores `int64`, so `p.v::Int::byte` -- the `Float` slot truncated to `Int`, then the tag asserted -- compiles, and lands in a `byte` slot. PATH PINNED: `dsc.cast`'s `ck_float -> ct_int` (total) and then `ck_int -> ct_unit(_, st_int)` (total), with `st_int` from `dsc.types.luni_8_7_3_storage` in `lcst_4_1_6_target_of`.",
+    "scenario": "[LCST.4.5.2], [LUNI.8.5]: a unit asserts from its dimension's storage kind. `byte` is a `data` unit and `data` stores `int64`, so `p.v::Int::byte` -- the `Float` slot truncated to `Int`, then that many bytes -- compiles, and lands in a `byte` slot. PATH PINNED: `dsc.cast`'s `ck_float -> ct_int` (total) and then `ck_int -> ct_unit(_, st_int)` (total), with `st_int` from `dsc.types.luni_8_7_3_storage` in `lcst_4_1_6_target_of`.",
     "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema R scope logical:\n    id: Int key\n    v: Float mutable\n\nschema Out scope logical:\n    id: Int key\n    size: byte mutable\n\nrule r:\n    R p\n->\n    emit Out logical id: p.id size: p.v::Int::byte\n",
     "expect": { "kind": "compile_ok" }
 }

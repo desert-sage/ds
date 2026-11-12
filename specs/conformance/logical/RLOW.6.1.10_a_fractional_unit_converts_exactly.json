@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.10_a_fractional_unit_converts_exactly",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: on integer storage `x::<unit>` of a tier-1 unit is `FN_INT_DIV_EXACT(P·x + R, Q)`, with the unit's exact constants over their least common denominator. `half` is `x * 0.5` bits, so P = 1, Q = 2, R = 0. Fact 1 holds 6, and `s.n::half` is 3 bits, so rule `conv` logs. Fact 2 holds 3: 3 half is 1.5 bits, not a whole number, so the conversion raises a ComputationError of kind NOT_REPRESENTABLE and `conv` does not fire. The trap is raised during matching, so its `rule` is the node's `$alpha_<id>` ([LERR.9.2]), and rule `handler` logs the kind alone. Exactly [\"conv 1\", \"NOT_REPRESENTABLE\"]. A truncating division gives 1 bit for fact 2 and raises nothing. PATH PINNED: `dsc.rete.rlow_6_1_10_int`, whose `FN_INT_DIV_EXACT` each runtime evaluates.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit half: data = x * 0.5\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::half == 3_bit\n->\n    log info \"conv {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 6 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv 1", "NOT_REPRESENTABLE"]
+    }
+}

@@ -1248,20 +1248,29 @@ describe("live", { skip: NO_DSC }, () => {
         await c.request("disconnect");
     });
 
-    test("a fact-file row is fed as batch mode feeds one: the clock moves with no pump of its own, so what falls due by then is the row's pump's", async () => {
+    test("a fact-file row is fed as batch mode feeds one: a deadline before its `@at` is a pump at its own instant", async () => {
         const dir = join(DIR, "expiry");
         mkdirSync(dir, { recursive: true });
         const facts = join(dir, "Reading.jsonl");
         // a's 60 s TTL falls due before b's row.
         writeFileSync(facts, '{"@at": "0_s", "sensor": "a", "level": 90.0}\n{"@at": "61_s", "sensor": "b", "level": 10.0}\n');
-        const c = await session(LIVE({ facts: [facts], events: ["factAsserted", "factRetracted"] }));
-        assert.ok((await c.request("next")).ok);
-        const second = await c.request("next");
-        const readings = second.events.filter((e) => e.event.startsWith("ds/") && e.body.schema === "Reading")
+        const readings = (/** @type {any} */ r) => r.events.filter((e) => e.event.startsWith("ds/") && e.body.schema === "Reading")
             .map((e) => `${e.event} ${e.event === "ds/factAsserted" ? e.body.slots.sensor : e.body.retractor.kind}`);
-        assert.deepEqual(readings, ["ds/factAsserted b", "ds/factRetracted ttl_expiry"],
-                         "b is asserted, then its pump expires a, as core/facts.js `feed` does");
-        await c.request("disconnect");
+        const launch = LIVE({ facts: [facts], events: ["factAsserted", "factRetracted"] });
+
+        const pump = await session(launch);
+        assert.deepEqual(readings(await pump.request("next")), ["ds/factAsserted a"]);
+        assert.deepEqual(readings(await pump.request("next")), ["ds/factRetracted ttl_expiry"],
+                         "`pump`, live's default: a's expiry is a step of its own, and b waits for the next");
+        assert.deepEqual(readings(await pump.request("next")), ["ds/factAsserted b"]);
+        await pump.request("disconnect");
+
+        const input = await session(launch);
+        assert.ok((await input.request("ds/stepGranularity", { granularity: "input" })).ok);
+        assert.deepEqual(readings(await input.request("next")), ["ds/factAsserted a"]);
+        assert.deepEqual(readings(await input.request("next")), ["ds/factRetracted ttl_expiry", "ds/factAsserted b"],
+                         "`input`: the step takes a's expiry, at 60 s, and then b's row; not b first, as a 61 s pump would");
+        await input.request("disconnect");
     });
 
     test("live injects land in the run; a call is answered; a fact retracted; the call events are sent", async () => {

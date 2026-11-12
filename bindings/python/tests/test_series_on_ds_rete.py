@@ -6,8 +6,7 @@ The read path is the ds_series_<agg> adapters in engine_rete_adapters.c.
 This test exercises the absorb side: the end-of-pump WM walker
 (engine_rete_adapters.c::ds_rete_engine_absorb_pending, hooked from
 ds_engine_pump after ds_rete_run drains). Each fact contributes at most
-one sample (per-fact `series_absorbed` flag, a refraction analogue), and
-hydrated facts (hydrated_corr != "") are skipped.
+one sample (per-fact `series_absorbed` flag, a refraction analogue).
 
 Fire-then-sample order across pumps is preserved: the rule's
 where-clause for the Nth assert sees count from samples 1..N-1; the

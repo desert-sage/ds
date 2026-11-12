@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.10_a_time_product_past_the_range_raises",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: on the `time` dimension the tier-1 integer lowering checks its product and sum before a negative result becomes `0`, so a product past the `Int` range raises even where the result would be negative. `onehalf` is `x * 1.5` ns, so P = 3, Q = 2, R = 0. Fact 1 holds -2: 3 · -2 = -6, and -6 / 2 = -3, which is negative and reads as 0 ns, so rule `at_zero` logs \"zero 1\". Fact 2 holds -2^62: 3 · -2^62 passes -2^63, so the conversion raises a ComputationError of kind NOT_REPRESENTABLE and `at_zero` does not fire for it. The trap is raised during matching, so its `rule` is the node's `$alpha_<id>` ([LERR.9.2]), and rule `handler` logs the kind alone. Exactly [\"zero 1\", \"NOT_REPRESENTABLE\"]. A runtime that clamps before the check, as `FN_DURATION_MUL` does ([LTIM.4.1.1]), logs \"zero 2\". PATH PINNED: `dsc.rete.rlow_6_1_10_int`, FN_INT_MUL_ADD_CHECKED(x, 3, 0) under FN_INT_DIV_EXACT(…, 2) under FN_MAX(…, 0), each evaluated by each runtime.",
+    "rules_ds": "unit onehalf: time = x * 1.5\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule at_zero:\n    S s where s.n::onehalf == 0_ns\n->\n    log info \"zero {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": -2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": -4611686018427387904 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["zero 1", "NOT_REPRESENTABLE"]
+    }
+}

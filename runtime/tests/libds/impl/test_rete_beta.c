@@ -352,7 +352,7 @@ static int test_not_node_blocking(void)
                 sink->left_count);
         return 1;
     }
-#ifndef NDEBUG
+#ifdef DS_DEBUG
     /* The invariants hold with both tokens blocked. */
     ds_rete_beta_check(pos); ds_rete_beta_check(neg); ds_rete_beta_check(sink);
 #endif
@@ -367,7 +367,7 @@ static int test_not_node_blocking(void)
                 sink->left_count);
         return 1;
     }
-#ifndef NDEBUG
+#ifdef DS_DEBUG
     /* The invariants hold after the blocker retracts: no ridx or ltok entry
        is left for the freed fact. */
     ds_rete_beta_check(pos); ds_rete_beta_check(neg); ds_rete_beta_check(sink);

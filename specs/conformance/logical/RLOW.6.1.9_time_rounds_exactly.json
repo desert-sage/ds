@@ -1,0 +1,15 @@
+{
+    "id": "RLOW.6.1.9_time_rounds_exactly",
+    "clauses": ["RLOW.6.1.9", "LUNI.8.9"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.9]: a rounding in an `int64` dimension is `Int` arithmetic over the unit's factor, with no `Float` operand. Three `minute` slots: `a` holds 90 s, which `round` takes to 2 min (1.5, ties to even); `b` holds 150 s, which `round` takes to 2 min (2.5, ties to even) and `math.ceil` to 3 min; `c` holds 5999999999999999999 ns, one below 10^8 minutes and above 2^53, whose `math.floor` is 99999999 min. As a `Float`, `c` reads as 6 * 10^18 and floors to 10^8 minutes. Each is its own rule, and all four log. PATH PINNED: `dsc.rete.rlow_6_1_9_whole`'s `asn_duration` arm, `rlow_6_1_9_multiple` scaled back by FN_DURATION_MUL, evaluated by each runtime.",
+    "rules_ds": "import math\n\nschema R scope logical:\n    id: String key\n    a: minute mutable\n    b: minute mutable\n    c: minute mutable\n\nrule r_tie_even:\n    R r where round(r.a) == 2_min\n->\n    log info \"a\"\n\nrule r_tie_down:\n    R r where round(r.b) == 2_min\n->\n    log info \"b\"\n\nrule r_ceil:\n    R r where math.ceil(r.b) == 3_min\n->\n    log info \"ceil\"\n\nrule r_exact:\n    R r where math.floor(r.c) == 99999999_min\n->\n    log info \"c\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": "x", "a": 90000000000, "b": 150000000000, "c": 5999999999999999999 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a", "b", "ceil", "c"]
+    }
+}

@@ -8,8 +8,7 @@
 // dswherev5.k -- a `where` WITH FAULTS: V5, and only
 // V5. An executable semantics of one `where` as a flat list of conjuncts, and a
 // search over every `where` of up to three conjuncts. Written
-// independently of formal/alloy/where_v5.als (relational, solver-quantified)
-// and formal/idris/Rete/WhereV5.idr (unbounded, by structural recursion).
+// independently of formal/alloy/where_v5.als (relational, solver-quantified).
 //
 // A CONJUNCT is c(Out, Raises, Nullable, Body):
 //   Out       what it yields for the pair at hand: yes / no / unk (null), or a

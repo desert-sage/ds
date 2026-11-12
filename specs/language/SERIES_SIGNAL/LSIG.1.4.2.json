@@ -7,5 +7,31 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[LSIG.1.4.2] The denominator is `min(W, elapsed)`, never the full window `W`.\nDuring the first `W` of an instance's life less than `W` of history exists, so\ndividing by `W` would under-report; `min(W, elapsed)` removes that warm-up\nbias. At the first edge `elapsed = 0`, and `onset_rate` is `0` until\n`elapsed > 0`.\n\n"
+  "text": "[LSIG.1.4.2] The denominator is `min(W, elapsed)`, never the full window `W`.\nDuring the first `W` of an instance's life less than `W` of history exists, so\ndividing by `W` would under-report; `min(W, elapsed)` removes that warm-up\nbias. While `elapsed` is `0`, `onset_rate` is `0`.\n\n",
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_2__DENOM",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_2__denominator",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_2__denominator_is_elapsed_before_W",
+        "tag": "derives",
+        "verdict": "partial",
+        "note": "THE DENOMINATOR IS ELAPSED BEFORE W, within the scope: at a read after the first absorption it is 0 while no time has elapsed since `t_first`, the elapsed time until W of it has passed, and W from then on; the full window from the first sample is refused (`.teeth.full_window`) and the warm-up correction is seen (`.probe.warmup`). Less than the clause: the denominator's shape alone. The edge count N+ and the quotient are not computed here; the value is the clause-literal references'."
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_2__min",
+        "tag": "spec"
+      }
+    ]
+  }
 }

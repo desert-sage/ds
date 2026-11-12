@@ -115,7 +115,7 @@ static const ds_pbf_vec_encode_t ds_pbf_vec_encode[DS_PBF_VEC_ENCODE_COUNT] = {
       NULL, 16384u, 1, 0xA5 },
 };
 
-/* ---- decode ([RFCS.19.1/19.2/19.4/19.8], [RFCS.16.3]) ------------- */
+/* ---- decode ([RFCS.19.1/19.2/19.3/19.4/19.8]) --------------------- */
 /*
  * One container per row, with every verdict a reader owes about it.
  * `terminal` is the step result AFTER the last listed atom — the
@@ -157,16 +157,8 @@ static const uint8_t vec_data_group_wire_type_is_malformed[] = { 0x0A, 0x02, 0xB
 static const uint8_t vec_data_field_zero_is_malformed[] = { 0x0A, 0x02, 0x02, 0x00 };
 static const uint8_t vec_data_legacy_magic_container[] = { 0x44, 0x53, 0x43, 0x4F, 0x00, 0x00, 0x00, 0x00 };
 static const uint8_t vec_data_foreign_bytes[] = { 0xFF, 0x00 };
-static const uint8_t vec_data_unknown_inject_band_atom[] = { 0x0A, 0x02, 0x7A, 0x00 };
-static const ds_pbf_vec_atom_t vec_atoms_unknown_inject_band_atom[] = { { 15u, 0u, 4u } };
-static const uint8_t vec_data_unknown_reject_band_atom[] = { 0x0A, 0x03, 0xC2, 0x0C, 0x00 };
-static const ds_pbf_vec_atom_t vec_atoms_unknown_reject_band_atom[] = { { 200u, 0u, 5u } };
-static const uint8_t vec_data_unknown_skip_band_atom[] = { 0x0A, 0x03, 0xFA, 0x7F, 0x00 };
-static const ds_pbf_vec_atom_t vec_atoms_unknown_skip_band_atom[] = { { 2047u, 0u, 5u } };
-static const uint8_t vec_data_known_atom_after_unknown_skip[] = { 0x0A, 0x03, 0xFA, 0x7F, 0x00, 0x0A, 0x03, 0xBA, 0x10, 0x00 };
-static const ds_pbf_vec_atom_t vec_atoms_known_atom_after_unknown_skip[] = { { 2047u, 0u, 5u }, { 263u, 0u, 10u } };
 
-#define DS_PBF_VEC_DECODE_COUNT 17
+#define DS_PBF_VEC_DECODE_COUNT 13
 static const ds_pbf_vec_decode_t ds_pbf_vec_decode[DS_PBF_VEC_DECODE_COUNT] = {
     { "empty", NULL, 0u,
       DS_PBF_CONTAINER_UNKNOWN, DS_PBF_EOF,
@@ -207,65 +199,6 @@ static const ds_pbf_vec_decode_t ds_pbf_vec_decode[DS_PBF_VEC_DECODE_COUNT] = {
     { "foreign_bytes", vec_data_foreign_bytes, sizeof vec_data_foreign_bytes,
       DS_PBF_CONTAINER_UNKNOWN, DS_PBF_MALFORMED,
       NULL, 0u },
-    { "unknown_inject_band_atom", vec_data_unknown_inject_band_atom, sizeof vec_data_unknown_inject_band_atom,
-      DS_PBF_CONTAINER_UNKNOWN, DS_PBF_EOF,
-      vec_atoms_unknown_inject_band_atom, 1u },
-    { "unknown_reject_band_atom", vec_data_unknown_reject_band_atom, sizeof vec_data_unknown_reject_band_atom,
-      DS_PBF_CONTAINER_UNKNOWN, DS_PBF_EOF,
-      vec_atoms_unknown_reject_band_atom, 1u },
-    { "unknown_skip_band_atom", vec_data_unknown_skip_band_atom, sizeof vec_data_unknown_skip_band_atom,
-      DS_PBF_CONTAINER_UNKNOWN, DS_PBF_EOF,
-      vec_atoms_unknown_skip_band_atom, 1u },
-    { "known_atom_after_unknown_skip", vec_data_known_atom_after_unknown_skip, sizeof vec_data_known_atom_after_unknown_skip,
-      DS_PBF_CONTAINER_UNKNOWN, DS_PBF_EOF,
-      vec_atoms_known_atom_after_unknown_skip, 2u },
-};
-
-/* ---- band ([RFCS.16.2], [RFCS.16.3], [RFCS.16.5]) --------------------- */
-/*
- * `known` is not decoration. A KNOWN atom's blind disposition is SKIP,
- * because there is nothing to refuse about it — not because it should be
- * skipped. An implementation asks the registry first; the disposition is
- * the whole answer only when the lookup misses. Read the other way round
- * it skips every atom in the registry, and every row here still passes.
- */
-typedef struct {
-    uint32_t             field;
-    ds_atom_band_t       band;
-    int                  known;
-    ds_pbf_disposition_t disposition;
-} ds_pbf_vec_band_t;
-
-#define DS_PBF_VEC_BAND_COUNT 28
-static const ds_pbf_vec_band_t ds_pbf_vec_band[DS_PBF_VEC_BAND_COUNT] = {
-    {      0u, DS_ATOM_BAND_NONE  , 0, DS_PBF_DISP_MALFORMED },
-    {      1u, DS_ATOM_BAND_INJECT, 1, DS_PBF_DISP_SKIP },
-    {      3u, DS_ATOM_BAND_INJECT, 1, DS_PBF_DISP_SKIP },
-    {      4u, DS_ATOM_BAND_INJECT, 1, DS_PBF_DISP_SKIP },
-    {     15u, DS_ATOM_BAND_INJECT, 0, DS_PBF_DISP_REJECT_INJECT },
-    {    127u, DS_ATOM_BAND_INJECT, 0, DS_PBF_DISP_REJECT_INJECT },
-    {    128u, DS_ATOM_BAND_REJECT, 1, DS_PBF_DISP_SKIP },
-    {    130u, DS_ATOM_BAND_REJECT, 1, DS_PBF_DISP_SKIP },
-    {    131u, DS_ATOM_BAND_REJECT, 1, DS_PBF_DISP_SKIP },
-    {    132u, DS_ATOM_BAND_REJECT, 1, DS_PBF_DISP_SKIP },
-    {    133u, DS_ATOM_BAND_REJECT, 0, DS_PBF_DISP_REJECT_VERSION },
-    {    255u, DS_ATOM_BAND_REJECT, 0, DS_PBF_DISP_REJECT_VERSION },
-    {    256u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    260u, DS_ATOM_BAND_SKIP  , 0, DS_PBF_DISP_SKIP },
-    {    322u, DS_ATOM_BAND_SKIP  , 0, DS_PBF_DISP_SKIP },
-    {    323u, DS_ATOM_BAND_SKIP  , 0, DS_PBF_DISP_SKIP },
-    {    324u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    325u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    326u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    327u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    328u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    329u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    330u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    331u, DS_ATOM_BAND_SKIP  , 1, DS_PBF_DISP_SKIP },
-    {    332u, DS_ATOM_BAND_SKIP  , 0, DS_PBF_DISP_SKIP },
-    {   2047u, DS_ATOM_BAND_SKIP  , 0, DS_PBF_DISP_SKIP },
-    {   2048u, DS_ATOM_BAND_NONE  , 0, DS_PBF_DISP_MALFORMED },
-    {  65535u, DS_ATOM_BAND_NONE  , 0, DS_PBF_DISP_MALFORMED },
 };
 
 /* No `version` group ([LDET.1.10]): it drove the struck inject-set

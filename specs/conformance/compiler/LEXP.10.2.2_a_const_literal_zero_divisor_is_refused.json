@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.10.2.2_a_const_literal_zero_divisor_is_refused",
+    "category": "compiler",
+    "scenario": "[LEXP.10.2.2] with [LEXP.8.8.2]: an `Int` division by a literal `0` is refused with DS_VALIDATE_DIV_BY_ZERO in a `const`, as in a rule. [LEXP.8.8.2] keeps the code another clause gives an operation over constant operands, so `const X = 1 // 0` is not DS_VALIDATE_CONST_NOT_FOLDABLE. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. A compiler that walks only a rule's expressions for the literal divisor gives CONST_NOT_FOLDABLE; one that reports both gives two codes. PATH PINNED: `dsc.validate.lexp_10_2_2_zero_divisor`, run by `const_checks` over the right-hand side, with `const_reported_elsewhere` keeping `lexp_8_8_2_no_value` silent at the same `//`.",
+    "rules_ds": "const X = 1 // 0\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIV_BY_ZERO"
+    }
+}

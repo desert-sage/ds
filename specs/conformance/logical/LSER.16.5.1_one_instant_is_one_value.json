@@ -1,0 +1,21 @@
+{
+    "id": "LSER.16.5.1_one_instant_is_one_value",
+    "clauses": ["LSER.16.5.1", "LSER.16.6.1"],
+    "category": "logical",
+    "scenario": "[LSER.16.5.1]: two samples are one value exactly when `==` between them is `true`, and two `Time`s are equal at the same UTC instant whatever their offsets ([LTIM.5.2]); `count_of` uses the same equality ([LSER.16.6.1]). Rule `stamp` emits a `Stamp` whose `t` is `r.t.local(r.zone)` ([LTIM.3.2.1]): a `TimeZoneOffset` row gives zone `Plus2` +02:00 through 2024 ([LTIM.10.7]), and `UTC` needs none ([LTIM.10.8]). Requests a (`UTC`) and b (`Plus2`) carry the same instant, 2024-01-15T12:00:00Z, so the series on `Stamp.t`, grouped `by: grp`, which every `Stamp` shares (a `ttl` schema has no identity of its own, [LSER.7.6.1]), absorbs one instant at +00:00 and at +02:00. A second pump absorbs nothing new. Request c (`UTC`, the same instant) emits a third `Stamp`, and rule `seen` reads the two before it ([LSER.8.6]): `count_distinct` is 1 and `count_of(s.t, s.t)` is 2. A comparison that keeps the offset gives 2 and 1. PATH PINNED: both runtimes absorb a `Time` slot's stored Int, its instant, and take a `Time` lookup to the same: libds `engine_rete_adapters.c`'s `rete_val_to_slot_value`, Mercury `ds.eval`'s `series_identity` on the `count_of` / `contains` lookup, whose omission makes `same` 0.",
+    "rules_ds": "use default\n\nschema Req scope logical:\n    entity_id: String key\n    zone: String mutable\n    t: Time mutable\n\nschema Stamp scope ttl 1_h:\n    grp: String\n    id: String\n    t: Time\n\nseries Stamp.t (by: grp):\n    count_distinct, count_of sliding 1_h\n\nrule stamp:\n    Req r\n->\n    emit Stamp grp: \"g\" id: r.entity_id t: r.t.local(r.zone)\n\nrule seen:\n    Stamp s where s.id == \"c\"\n->\n    let n = count_distinct(s.t)\n    let same = count_of(s.t, s.t)\n    log info \"distinct {n} same {same}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "TimeZoneOffset", "slots": { "zone": "Plus2", "valid_from": 1704067200000000000, "valid_until": 1735689600000000000, "offset_s": 7200 } },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "a", "zone": "UTC", "t": 1705320000000000000 } },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "b", "zone": "Plus2", "t": 1705320000000000000 } },
+            { "op": "pump" },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Req", "slots": { "entity_id": "c", "zone": "UTC", "t": 1705320000000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["distinct 1 same 2"]
+    }
+}

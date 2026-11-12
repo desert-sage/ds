@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.1.3.5_data_times_duration_ambiguous",
+    "category": "compiler",
+    "scenario": "[LTIM.1.3.5] with [LUNI.8.4]: a dimensioned `Int` is no bare number beside a `Duration`, so `s.size * 5_s` on a `byte` slot is two dimensions, not [LTIM.4.1.1]'s `Int * Duration`. Pin: DS_VALIDATE_DIM_AMBIGUOUS. PATH PINNED: `dsc.typecheck.temporal_operand`, which takes an `Int` only when it is dimensionless, then `dsc.types.luni_8_1_combine`'s `op_multiplicative` row.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema R scope logical:\n    id: Int key\n    size: byte mutable\n\nrule r:\n    R s where s.size * 5_s > 1_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

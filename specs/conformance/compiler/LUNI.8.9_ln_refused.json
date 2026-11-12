@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.9_ln_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.9]: `math.ln` takes a `Float` ([LEXP.17.2]), and admits an `angle` alone among dimensioned values ([LEXP.3.9.1]), so `math.ln(s.d)` on a `meter` slot is DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck.luni_8_9_dimensioned_arguments`, the `lexp_3_9_1_takes_an_angle` exemption not applying to a `length`.",
+    "rules_ds": "import math\n\nschema S scope logical:\n    id: String key\n    d: meter mutable\n\nrule r:\n    S s where math.ln(s.d) > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

@@ -610,8 +610,7 @@ ds_result_t ds_engine_register_schema(ds_engine_t           *engine,
     if (out_schema != NULL) *out_schema = NULL;
 
     /* The structural intern set freezes at the first pump, and registering pins names
-       in it: past that, the intern's assertion would abort the process, or under
-       -DNDEBUG corrupt the frozen set. */
+       in it: past that, the intern refuses a new one ([IERR.1.7]). */
     if (engine->has_pumped) {
         return DS_ERR_R(DS_ERR_STATE,
                         "register_schema: not permitted after the first pump "

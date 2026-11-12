@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
  *
  * V5: A `where` WITH FAULTS. No variant, tie-break or recording mode is a
- * parameter here, so a green run is a claim about V5. Written independently of formal/idris/Rete/WhereV5.idr (an
- * unbounded proof by structural recursion) and formal/k/dswherev5.k (an
- * executable search): this model states an evaluation relationally and lets
- * the solver quantify over every `where` of up to three conjuncts, every order
- * and every set of hoisted filters.
+ * parameter here, so a green run is a claim about V5. Written independently of
+ * formal/k/dswherev5.k (an executable search): this model states an evaluation
+ * relationally and lets the solver quantify over every `where` of up to three
+ * conjuncts, every order and every set of hoisted filters.
  *
  * THE READING. A conjunct yields true, false, null, or a fault -- a trap, a
  * TypeError or an EngineError ([LERR.1]) -- and a fault records an atom: its
@@ -64,8 +63,7 @@
  *                                                  is UNSAT.
  * What this model cannot catch: a tie-break keyed on SOURCE position. The
  * reference evaluation never reads source order, so no key here can depend on
- * it; formal/idris/Rete/WhereV5.idr's trichotomy and the counterexample models
- * are where a positional key is refuted.
+ * it.
  */
 module where_v5
 open util/boolean

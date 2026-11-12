@@ -1,0 +1,23 @@
+{
+    "id": "RDSC.5.5.9_an_int64_unit_converts_exactly_or_not_at_all",
+    "clauses": ["RDSC.5.5.9"],
+    "category": "logical",
+    "scenario": "[RDSC.5.5.9]: a slot naming a unit of an `int64` dimension converts in `Int` arithmetic, as `x::<unit>` ([RLOW.6.1.10]) and a kwarg of the unit ([RLOW.7.3.9]) do, and has no result for a number that is not a whole number of the target unit. `Reading.d` is a `millisecond` slot (`time`, stored as `Int` nanoseconds): `to_stored` is `FN_DURATION_MUL(x, 1000000)`, so 1500 ms is 1500000000 ns and -5 ms is 0, since a `Duration` is never negative ([LTIM.1.3.1]); `from_stored` is `FN_INT_DIV_EXACT(v, 1000000)`, so 1500000000 ns is 1500 ms and 1500 ns has none. `Reading.b` is a `byte` slot of a declared `data` dimension stored as `Int` bits, `x * 8`: 12 bytes are 96 bits, 96 bits are 12 bytes, and 12 bits have none. `Reading.h` is a `halfbit` slot, `x / 2`, a factor that is no whole number of bits: its constants over their least common denominator are P = 1, Q = 2, R = 0 ([RLOW.6.1.10]), so `to_stored` is `FN_INT_DIV_EXACT(x, 2)`, and 6 halfbits are 3 bits while 5 have none; `from_stored` is `FN_INT_DIV_EXACT(2·v, 1)` ([RLOW.7.3.9]), so 3 bits are 6 halfbits. A check whose `equals` is null holds only when the conversion has no result ([RCTS.1.2.26]). A runtime that converted through `Float`, truncated, wrapped a negative `Duration` or rounded a remainder away fails a check. PATH PINNED: libds's `ds_schema_slot_to_stored` and `ds_schema_slot_from_stored` through pyds's `Engine.slot_to_stored` / `slot_from_stored`, and the Mercury runtime's `ds.engine.nfct_1_4_6_convert`, each evaluating the artefact's Slot `to_stored` / `from_stored` Expr (`FN_DURATION_MUL`, `FN_INT_DIV_EXACT`, or for `byte`'s `to_stored` `x * 8` in `Int` arithmetic) with `bind_ref` 0 holding the number; and `dsc.rete.rlow_6_1_10_int` and `rlow_7_3_9_converted`'s `cv_int` arm, which write `halfbit`'s.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\nunit halfbit: data = x / 2\n\nschema Reading scope logical:\n    id: String key\n    d: millisecond mutable\n    b: byte mutable\n    h: halfbit mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [],
+        "checks": [
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "d", "direction": "to_stored", "in": 1500, "equals": 1500000000 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "d", "direction": "to_stored", "in": -5, "equals": 0 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "d", "direction": "from_stored", "in": 1500000000, "equals": 1500 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "d", "direction": "from_stored", "in": 1500, "equals": null },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "b", "direction": "to_stored", "in": 12, "equals": 96 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "b", "direction": "from_stored", "in": 96, "equals": 12 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "b", "direction": "from_stored", "in": 12, "equals": null },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "to_stored", "in": 6, "equals": 3 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "to_stored", "in": 5, "equals": null },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "h", "direction": "from_stored", "in": 3, "equals": 6 }
+        ]
+    }
+}

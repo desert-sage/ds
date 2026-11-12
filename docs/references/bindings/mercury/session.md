@@ -94,10 +94,9 @@ Makes a session from an artefact's bytes, or gives a [`ds_error`](errors.md#ds_e
 | `inval` | the firing limit is negative |
 | `dsc_truncated` | the bytes are empty, or end inside a frame |
 | `dsc_bad_magic` | the first atom is not a `DscHeader`, or its frame is malformed |
-| `dsc_version` | the artefact is of another DS series, or holds an unknown atom numbered 128 to 255 |
+| `dsc_version` | the artefact is of another DS series |
 | `bnd_incomplete` | the header's `dialect_def_sha256` is not 32 bytes |
-| `fs_unknown_inject` | an unknown atom is numbered 1 to 127 |
-| `dsc_decode` | a later frame or an atom's body does not decode, a field number is 0 or at least 2048, or an atom is empty |
+| `dsc_decode` | a later frame or an atom's body does not decode, a later atom's field number is 0 or has no registry entry, or an atom is empty |
 | `dsc_semantic` | the artefact decodes and breaks a rule of its format, such as `dsc_sha256` not matching its bytes |
 | `dsc_dangling` | an atom names what the artefact does not hold |
 | `dsc_decompress` | an atom's compression is not `COMPRESSION_NONE` |
@@ -107,7 +106,7 @@ Makes a session from an artefact's bytes, or gives a [`ds_error`](errors.md#ds_e
 | `retp_index_oob` | a `node_id` names no node |
 | `fn_not_found` | a `CallExpr` names a builtin this runtime has no handler for |
 
-On success the [`report`](reports.md#report)s hold one `dsc-load` info line for each atom the load stepped over, with its field number and byte offset, in the order the load met them.
+On success the [`report`](reports.md#report)s hold one `dsc-load` info line for each atom the load steps over by name, `DocString`, the test and oracle atoms and `CompiledCode`, with its field number, message and byte offset, in the order the load met them.
 
 *(Source: bindings/mercury/src/mercury_ds.session.m, bindings/mercury/src/mercury_ds.from_runtime.m, runtime/mercury/src/ds.dsc.m, runtime/mercury/src/ds.engine.m, Spec: [NLFC.1.2], [RDSC.9.4], [RDSC.11.1])*
 

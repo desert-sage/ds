@@ -35,7 +35,10 @@
             % The importing file's `module_id`; each schema's declaration
             % position, by name; every schema and slot docstring.
             % `dsc.driver` adds the rules' docstrings.
-    ;       lower_errors(list(diagnostic)).
+    ;       lower_errors(assoc_list(string, diagnostic)).
+            % Each with the library whose declaration raised it, by its
+            % `rf_library_modules` name, or "" for the importing file, so the
+            % caller names it as [RCLI.1.9] says.
 
     % In source order, with `hydrated_corr` supplied to each schema the list
     % names.
@@ -56,6 +59,7 @@
 :- import_module dsc.builtin_types.
 :- import_module dsc.dstest.
 :- import_module dsc.expr.
+:- import_module dsc.rete.
 :- import_module dsc.types.
 
 :- use_module dsc.exact.
@@ -80,12 +84,12 @@ lower_schemas(RF, HydrationTargets, Result) :-
     Local = ast_schemas(Decls),
     % Imported libraries' schemas first, leaves first. One reached through two
     % libraries is emitted once.
-    list.foldl3(rdsc_4_7_module, RF ^ rf_library_modules,
+    list.foldl4(rdsc_4_7_module, RF ^ rf_library_modules,
         list.map((func(S) = S ^ as_own), Local), _,
-        1u32, FileClip, [], RevLibrary),
+        1u32, FileClip, [], RevLibrary, [], LibraryClips),
     Schemas = list.reverse(RevLibrary)
         ++ list.map((func(S) = FileClip - S), Local),
-    lower_each(RF, Storage,
+    lower_each(RF, Storage, LibraryClips,
         list.map(
             ( func(Clip - S) = Clip - rhim_2_1_hydrated_corr(HydrationTargets, S)
             ), Schemas),
@@ -139,6 +143,8 @@ rdsc_5_7_1_position(Module) = Name - Position :-
     % `rf_library_modules` is in `module_id` order, so the id is the position. A
     % library with no schema still takes its id: the id identifies a module. A
     % name already taken is dropped: it is one library reached along two paths.
+    % Each id is recorded with its library's name, which names the library's
+    % diagnostics ([RCLI.1.9]).
     %
     %@spec [RDSC.4.7]
     %@spec [RDSC.8.1.1]
@@ -146,9 +152,12 @@ rdsc_5_7_1_position(Module) = Name - Position :-
                         list(string)::in, list(string)::out,
                         uint32::in, uint32::out,
                         assoc_list(uint32, ast_schema)::in,
-                        assoc_list(uint32, ast_schema)::out) is det.
+                        assoc_list(uint32, ast_schema)::out,
+                        assoc_list(uint32, string)::in,
+                        assoc_list(uint32, string)::out) is det.
 
-rdsc_4_7_module(_Library - Schemas, !Seen, !Clip, !Acc) :-
+rdsc_4_7_module(Library - Schemas, !Seen, !Clip, !Acc, !Clips) :-
+    !:Clips = [!.Clip - Library | !.Clips],
     list.foldl2(
         ( pred(S::in, Seen0::in, Seen::out, Acc0::in, Acc::out) is det :-
             Name = S ^ as_own,
@@ -203,29 +212,43 @@ ast_schemas([D | Ds]) =
     %
     %@helper
 :- pred lower_each(resolved_file::in, map(decl_ref, string)::in,
+                   assoc_list(uint32, string)::in,
                    assoc_list(uint32, ast_schema)::in, uint32::in,
                    intern_table::in, intern_table::out,
                    list(schema)::in, list(schema)::out,
-                   list(diagnostic)::in, list(diagnostic)::out) is det.
+                   assoc_list(string, diagnostic)::in,
+                   assoc_list(string, diagnostic)::out) is det.
 
-lower_each(_, _, [], _, !IT, !Out, !Errors).
-lower_each(RF, Storage, [Clip - S | Ss], Id, !IT, !Out, !Errors) :-
-    lower_one(RF, Storage, Id, Clip, S, !IT, !Out, !Errors),
-    lower_each(RF, Storage, Ss, Id + 1u32, !IT, !Out, !Errors).
+lower_each(_, _, _, [], _, !IT, !Out, !Errors).
+lower_each(RF, Storage, LibraryClips, [Clip - S | Ss], Id, !IT, !Out,
+        !Errors) :-
+    lower_one(RF, Storage, LibraryClips, Id, Clip, S, !IT, !Out, !Errors),
+    lower_each(RF, Storage, LibraryClips, Ss, Id + 1u32, !IT, !Out, !Errors).
 
+    % A schema's errors go out with the library that declares it, found by its
+    % `module_id`; one with no library is the importing file's, "".
+    %
     %@helper
-:- pred lower_one(resolved_file::in, map(decl_ref, string)::in, uint32::in,
-                  uint32::in,
+:- pred lower_one(resolved_file::in, map(decl_ref, string)::in,
+                  assoc_list(uint32, string)::in, uint32::in, uint32::in,
                   ast_schema::in,
                   intern_table::in, intern_table::out,
                   list(schema)::in, list(schema)::out,
-                  list(diagnostic)::in, list(diagnostic)::out) is det.
+                  assoc_list(string, diagnostic)::in,
+                  assoc_list(string, diagnostic)::out) is det.
 
-lower_one(RF, Storage, Id, Clip, S, !IT, !Out, !Errors) :-
+lower_one(RF, Storage, LibraryClips, Id, Clip, S, !IT, !Out, !Errors) :-
+    ( if assoc_list.search(LibraryClips, Clip, Library) then
+        Where = Library
+    else
+        Where = ""
+    ),
     intern(S ^ as_own, NameRef, !IT),
-    lower_fields(RF, Storage, S ^ as_fields, 0, !IT, [], RevSlots, !Errors),
+    lower_fields(RF, Storage, S ^ as_fields, 0, !IT, [], RevSlots,
+        [], FieldErrors),
     Slots = list.reverse(RevSlots),
-    lifecycle_of(RF, S, Slots, Lifecycle, !Errors),
+    lifecycle_of(RF, S, Slots, Lifecycle, FieldErrors, Errors),
+    !:Errors = list.map(( func(D) = Where - D ), Errors) ++ !.Errors,
     ( if module_id(Clip, Module) then
         MaybeModule = yes(Module)
     else
@@ -310,15 +333,24 @@ ttl_ns(RF, S, Span, Ns, !Errors) :-
         Pos = Tok ^ tk_pos,
         Symbol = llex_12_5_symbol_of(Suffix),
         ( if dur_unit_ns(Symbol, Multiplier) then
-            Value = luni_3_1_5_magnitude_ns(Magnitude, Multiplier),
-            ( if Value =< 0i64 then
-                Ns = 0u64,
-                !:Errors = [error_at(dv_ttl_zero, Pos,
-                    "schema `" ++ S ^ as_name ^ id_name ++ "`: a `ttl` "
-                        ++ "duration must be greater than zero "
-                        ++ "([RDSC.5.3.3])") | !.Errors]
+            ( if luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Value) then
+                ( if Value =< 0i64 then
+                    Ns = 0u64,
+                    !:Errors = [error_at(dv_ttl_zero, Pos,
+                        "schema `" ++ S ^ as_name ^ id_name ++ "`: a `ttl` "
+                            ++ "duration must be greater than zero "
+                            ++ "([RDSC.5.3.3])") | !.Errors]
+                else
+                    Ns = uint64.cast_from_int64(Value)
+                )
             else
-                Ns = uint64.cast_from_int64(Value)
+                Ns = 0u64,
+                !:Errors = [with_hint(error_at(dv_constant_out_of_range, Pos,
+                    "schema `" ++ S ^ as_name ^ id_name ++ "`: the `ttl` `"
+                        ++ Magnitude ++ Suffix ++ "` is outside the "
+                        ++ "nanoseconds an `Int` holds; it is never wrapped "
+                        ++ "([LUNI.2.4.1])"),
+                    "a `Duration` is at most about 292 years") | !.Errors]
             )
         else
             % One code, two messages: `30sec` is not told it is another dimension.
@@ -412,11 +444,12 @@ lower_fields(RF, Storage, [F | Fs], Index, !IT, !Slots, !Errors) :-
     (
         MaybeKind = yes(Kind),
         intern(F ^ af_name ^ id_name, NameRef, !IT),
+        rdsc_5_5_9_units(RF, F, Units, !IT, !Errors),
         Common = slot_common(NameRef, Kind, det_slot_index(Index),
             wire_nullable(F ^ af_nullable),
             marker_flag(mk_sampled, F ^ af_markers),
             marker_flag(mk_retained, F ^ af_markers),
-            no, lstr_11_1_capacity(F)),
+            no, lstr_11_1_capacity(F), Units),
         !:Slots = [field_slot(F, Common) | !.Slots],
         Next = Index + 1
     ;
@@ -424,6 +457,51 @@ lower_fields(RF, Storage, [F | Fs], Index, !IT, !Slots, !Errors) :-
         Next = Index
     ),
     lower_fields(RF, Storage, Fs, Next, !IT, !Slots, !Errors).
+
+    % A slot whose declared type is a unit symbol carries its conversions, and
+    % no other slot does: a dimension-typed slot names no unit ([LUNI.7.1]).
+    % Every unit a validated program declares lowers in both directions
+    % ([RLOW.6.1.10], [RLOW.7.3.9]), so every such slot sets both. The unit is
+    % read in the file declaring the slot ([LIMP.1.5]): a program reading a
+    % library's slot may spell its unit otherwise, or not at all. A conversion
+    % nested past [RDSC.11.3]'s limit is refused at the slot's type.
+    %
+    %@spec [RDSC.5.5.9]
+    %@spec [RDSC.11.3]
+    %@spec [LIMP.1.5]
+:- pred rdsc_5_5_9_units(resolved_file::in, ast_field::in,
+                         maybe(unit_conversion)::out,
+                         intern_table::in, intern_table::out,
+                         list(diagnostic)::in, list(diagnostic)::out) is det.
+
+rdsc_5_5_9_units(RF, F, Units, !IT, !Errors) :-
+    TypeId = F ^ af_type,
+    ( if slot_entry(RF, F, te_unit(uk_symbol(Dimension), _)) then
+        ( if
+            rdsc_5_5_9_conversion(field_scope(RF, F), Dimension,
+                TypeId ^ id_name, Conversion, !.IT, IT)
+        then
+            !:IT = IT,
+            Depth = rdsc_11_3_conversion_depth(Conversion),
+            ( if Depth > rdsc_11_3_max_depth then
+                Units = no,
+                !:Errors = [error_at(dv_expression_too_deep, TypeId ^ id_pos,
+                    "the conversion of the unit `" ++ TypeId ^ id_name
+                        ++ "` lowers to an `Expr` nested "
+                        ++ string.int_to_string(Depth)
+                        ++ " deep, past the 48 a `.dsc` admits (the outermost "
+                        ++ "at 0)")
+                    | !.Errors]
+            else
+                Units = yes(Conversion)
+            )
+        else
+            unexpected($pred, "the unit `" ++ TypeId ^ id_name
+                ++ "` has no conversion to lower")
+        )
+    else
+        Units = no
+    ).
 
     %@helper
 :- func wire_nullable(nullability) = ds.schema.nullable.
@@ -632,7 +710,10 @@ rdsc_5_5_4_slot_kind(RF, Storage, Name, Pos, Entry, Result, !IT, !Errors) :-
     ;
         Entry = te_unit(UnitKind, Unit),
         Group = unit_group(UnitKind, Unit),
-        ( if
+        ( if Group = time_dimension then
+            % [RDSC.5.5.8].
+            Result = yes(k_duration)
+        else if
             map.search(Storage, Group, Declared),
             storage_slot_kind(Declared, Kind)
         then

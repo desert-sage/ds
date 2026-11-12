@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.8.8.1_rounding_a_quantity_equals_the_expression_written_inline",
+    "clauses": ["LEXP.8.8.1", "RLOW.6.1.9", "LDET.3.3a.8"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1], [RLOW.6.1.9]: a `const` holds the value the engine computes, so `const R = round(21.5_celsius)` folds to what the same call written inline evaluates to, to the bit: 22 celsius. The `initial` fact carries R's folded value, and rule `inline` compares that slot with the inline call; rule `read` reads R in a rule and compares it with the inline call. Exactly [\"inline\", \"read\"]. A folder that rounded the base number gives 295 K, and both miss. PATH PINNED: `dsc.dstest.rlow_6_1_9_folded`'s `float64` arm over `fold_unit_of`, against each runtime's evaluation of the lowering `rlow_6_1_9_in_unit` writes.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nconst R = round(21.5_celsius)\n\nschema V scope explicit:\n    k: String\n    t: celsius\n\ninitial:\n    V k: \"c\" t: R\n\nrule inline:\n    V v where v.k == \"c\" and v.t == round(21.5_celsius)\n->\n    log info \"inline\"\n\nrule read:\n    V v where v.k == \"c\" and R == round(21.5_celsius)\n->\n    log info \"read\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["inline", "read"]
+    }
+}

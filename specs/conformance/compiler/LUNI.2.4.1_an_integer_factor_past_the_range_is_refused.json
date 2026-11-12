@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_an_integer_factor_past_the_range_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1]: in integer storage a unit's constants are the integers P, Q and R that [RLOW.6.1.10] writes, and one outside the 64-bit signed range is refused at the unit's declaration with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `unit big: data = x * 1e20` on an `int64` dimension has P = 10^20, Q = 1, R = 0, and P is past 2^63 - 1. The unit is declared and never used: the refusal is the declaration's. A compiler that wraps P emits 7766279631452241920 and compiles. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants`, through `dsc.quantity.luni_2_4_1_unit_out_of_range`'s integer arm, `rlow_6_1_10_line_pqr` and `dsc.exact.luni_2_4_1_int64`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit big: data = x * 1e20\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

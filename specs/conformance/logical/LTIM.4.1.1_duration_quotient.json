@@ -1,0 +1,14 @@
+{
+    "id": "LTIM.4.1.1_duration_quotient",
+    "category": "logical",
+    "scenario": "[LTIM.4.1.1]: two `Duration` operands divide as two `Int`s of nanoseconds ([RLOW.6.1.6]). `10_s / 4_s` is the `Float` 2.5, `10_s // 4_s` the `Int` 2, and `10_s % 4_s` the `Duration` `2_s`. Pin: all three rules log, in source order. PATH PINNED: `dsc.typecheck.ltim_4_1_1_row`'s three `Duration` rows, and each runtime's `/`, `//` and `%` over two `Int`s.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n\nrule quotient:\n    Trig t where t.id == 1 and 10_s / 4_s == 2.5\n->\n    log info \"quotient\"\n\nrule floored:\n    Trig t where t.id == 1 and 10_s // 4_s == 2\n->\n    log info \"floored\"\n\nrule remainder:\n    Trig t where t.id == 1 and 10_s % 4_s == 2_s\n->\n    log info \"remainder\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["quotient", "floored", "remainder"]
+    }
+}

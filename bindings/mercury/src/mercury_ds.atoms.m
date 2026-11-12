@@ -35,9 +35,9 @@
     --->    atom(
                 atom_ref         :: atom_ref,
                             % `known(Id)`, or `unknown(Field)` for a field
-                            % number this runtime has no atom for. Its band
-                            % says what a reader does with it ([RFCS.16.3]);
-                            % a listing lists it.
+                            % number this runtime has no atom for, which names
+                            % no member of `Atom`'s oneof ([RFCS.19.3]); a
+                            % listing lists it.
                 atom_offset      :: int,
                             % Where its frame begins, in bytes.
                 atom_body_offset :: int,

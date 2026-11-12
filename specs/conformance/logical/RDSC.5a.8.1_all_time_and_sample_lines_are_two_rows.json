@@ -1,0 +1,27 @@
+{
+    "id": "RDSC.5a.8.1_all_time_and_sample_lines_are_two_rows",
+    "clauses": ["RDSC.5a.8.1", "RDSC.5a.8.2", "LSMP.2.1"],
+    "category": "logical",
+    "scenario": "[RDSC.5a.8.1]: the runtime keys the state it allocates on the whole tuple, the atom included. `mean all_time` (SeriesBackendWelfordEwma) and `p50 sample 4` (SeriesBackendReservoir) on one slot both declare window 0, so only the atom tells their rows apart. Six samples, 10.0 five times then 70.0 (each a new `n`, so each a sample), then a `Probe` reads both. `mean` is the running mean of all six, 20.0. `p50` is the reservoir's: any four of the six hold at most one 70.0, so the interpolated median is 10.0 whichever four Algorithm R keeps ([LSMP.2.1]). A runtime keying the state on the window alone gives the two backings one row, and the mean reads the reservoir's four samples, 10.0 or 25.0. Path: libds one `backend_state` per backend slot, and `series_pick_backend_slot`, which takes SeriesBackendWelfordEwma for an unbounded `mean`; Mercury `ds.series` `row_key` and `read_backing`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n    n: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level:\n    mean all_time\n    p50 sample 4\n\nrule read:\n    Probe\n    Reading r\n->\n    log info \"{r.mean} {r.p50}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 10.0, "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 10.0, "n": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 10.0, "n": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 10.0, "n": 4 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 10.0, "n": 5 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 70.0, "n": 6 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["20.0 10.0"]
+    }
+}

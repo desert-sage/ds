@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Slots that name a unit, each carrying its two conversions ([RDSC.5.5.9]):
+# `t` a tier-1 `celsius` slot, stored as `Float` kelvin; `d` a `millisecond`
+# slot, stored as `Int` nanoseconds; `b` a `byte` slot of an `int64`
+# dimension, stored as `Int` bits. `id` names no unit. `119_slot_conversion`
+# drives the conversions through every binding and both runtimes.
+
+use default
+
+unit celsius: temperature = x + 273.15
+
+unit dimension data storage int64 base bit
+unit bit: data
+unit byte: data = x * 8
+
+schema Reading scope logical:
+    id: String key
+    t: celsius mutable
+    d: millisecond mutable
+    b: byte mutable
+
+rule seen:
+    Reading r
+->
+    log info "seen {r.id}"
