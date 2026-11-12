@@ -94,7 +94,7 @@ Every name below is the one Python's `ast` uses, with the same meaning.
 | `NodeVisitor`, `NodeTransformer` | as Python's, `generic_visit` included |
 | `copy_location`, `fix_missing_locations`, `increment_lineno` | as Python's |
 | `AST` base class, `_fields`, `_attributes`, `lineno`, `col_offset`, `end_lineno`, `end_col_offset` | as Python's. Columns are code points, as `dsc`'s are, not UTF-8 bytes as CPython's are, and the docstring says so |
-| `compile(node, filename="<unknown>", *, dsc=None, search_path=(), dialect_files=())` -> `bytes` | `unparse`, then `dsc compile --diagnostics json`; returns the `.dsc`. Each diagnostic is reported at the deepest node on its line that has a `lineno`, under `filename`, so a generator's nodes are refused at the lines it took them from. Named after the builtin, so it is not in `__all__`: a star import must not shadow it |
+| `compile(node, filename="<unknown>", *, dsc=None, search_path=(), dialect_files=())` -> `bytes` | `unparse`, then `dsc compile --diagnostics json`; returns the `.dsc`. Each diagnostic in the program's own text is reported at the deepest node on its line that has a `lineno`, under `filename`, so a generator's nodes are refused at the lines it took them from. A diagnostic in another file the compile reads, a library it imports, keeps the file, line and column `dsc` named ([RCLI.1.9]), with no node. Named after the builtin, so it is not in `__all__`: a star import must not shadow it |
 
 A parse error raises `SyntaxError`-shaped `DSSyntaxError` with `filename`,
 `lineno`, `offset` and the `dsc` diagnostic code. `compile` raises it for the

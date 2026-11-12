@@ -22,22 +22,6 @@
 
 #include "../rfcs/atoms.h"
 
-/* [RFCS.16.2] — band boundaries. Powers of two, so a reader classifies an
- * unknown number by magnitude and needs no table entry for it. */
-#define DS_ATOM_BAND_INJECT_LO   1u
-#define DS_ATOM_BAND_INJECT_HI   127u
-#define DS_ATOM_BAND_REJECT_LO   128u
-#define DS_ATOM_BAND_REJECT_HI   255u
-#define DS_ATOM_BAND_SKIP_LO     256u
-#define DS_ATOM_BAND_SKIP_HI     2047u
-
-typedef enum {
-    DS_ATOM_BAND_INJECT = 0,   /* unknown -> reject, DS_ERR_FS_UNKNOWN_INJECT */
-    DS_ATOM_BAND_REJECT = 1,   /* unknown -> reject, DS_ERR_DSC_VERSION */
-    DS_ATOM_BAND_SKIP   = 2,   /* unknown -> skip, log info */
-    DS_ATOM_BAND_NONE   = 3    /* outside 1..2047: not a legal field number */
-} ds_atom_band_t;
-
 /* [RFCS.17.1] container-legality. A bitmask: an atom may be legal in both. */
 #define DS_ATOM_LEGAL_DSC     0x1u
 #define DS_ATOM_LEGAL_STREAM  0x2u

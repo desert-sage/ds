@@ -27,8 +27,16 @@
         "name": "Lnul_11_1__absent",
         "tag": "spec",
         "role": "definition",
-        "verdict": "partial",
-        "note": "The clause's single absent value, as the TARGET of the collapse. One constructor, exactly as the clause says -- it is the domain above that the clause does not describe."
+        "verdict": "proven",
+        "note": "The clause's one absent value: a verb's argument is a value or `null`, and there is no second sentinel."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "Lnul_11_1__effect",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "What a verb does with its argument: it proceeds on a value, and on `null` the outcome its row of the table states -- the empty string, the `null` in the slot, a `TypeError`, the call not made, the `null` stored."
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
@@ -36,7 +44,23 @@
         "tag": "spec",
         "role": "definition",
         "verdict": "partial",
-        "note": "THREE absences where the clause states one -- Declared (the author wrote `null`), Declined (the runtime declined to produce a value), Missing (`cached(key)` never written, [LSTO.4.3.1], a statement about the store). Deliberately richer than the clause: AbsentValue.idr carries the clause's own single-value reading, and this type exists to test it."
+        "note": "TWO absences where the clause states one -- Declared (a `null` that is data: the author wrote it, or stored it) and Missing (`cached(key)` never written, [LSTO.4.3.1], a statement about the store). Deliberately richer than the clause, whose one `null` they collapse to: the type exists to measure what the collapse loses."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "Lnul_11_1__slot",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The declared type of the slot an `emit` or a `publish` writes: `T?`, or any other. It is all the table's slot row reads."
+      },
+      {
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "Lnul_11_1__verb",
+        "tag": "spec",
+        "role": "definition",
+        "verdict": "proven",
+        "note": "The table's four rows: `log`; `emit` and `publish` as one row over the slot's declared type; `call`; `cache`."
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
@@ -44,23 +68,7 @@
         "tag": "spec",
         "role": "definition",
         "verdict": "partial",
-        "note": "The collapse the clause performs, as a function. Total and information-losing by construction; the theorems below measure what it loses."
-      },
-      {
-        "path": "formal/idris/AbsentTrichotomy.idr",
-        "name": "lnul_11_1__collapse_keeps_the_slot_policy",
-        "tag": "derives",
-        "role": "witness",
-        "verdict": "partial",
-        "note": "Proves the collapse harmless under a slot policy the clause does not state: the model zeroes the slot, and the clause stores `null` in a `T?` slot and raises a `TypeError` in any other."
-      },
-      {
-        "path": "formal/idris/AbsentTrichotomy.idr",
-        "name": "lnul_11_1__collapse_loses_the_decline",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "The same for Declined, which is the one that matters to a runtime rather than to a store."
+        "note": "The collapse the clause performs, as a function from the richer domain: Declared and Missing share the one `null`. Total and information-losing by construction; the theorem below measures what it loses."
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
@@ -72,14 +80,6 @@
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
-        "name": "lnul_11_1__declined_is_not_declared",
-        "tag": "derives",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "The control: the two absences the theorems above say are conflated ARE distinguishable BEFORE the collapse. Without it, `collapse_loses_*` would be consistent with a domain that never separated them."
-      },
-      {
-        "path": "formal/idris/AbsentTrichotomy.idr",
         "name": "lnul_11_1__is_a_miss",
         "tag": "spec",
         "role": "definition",
@@ -88,51 +88,27 @@
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
-        "name": "lnul_11_1__zeroes_the_slot",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "partial",
-        "note": "A slot policy on the richer domain that the clause does not state: the slot takes the zero of its declared type whichever absence arrived. The clause stores `null` in a `T?` slot and raises a `TypeError` in any other."
+        "name": "lnul_11_1__null_raises_only_into_a_non_nullable_slot",
+        "tag": "derives",
+        "role": "theorem",
+        "verdict": "proven",
+        "note": "A `null` argument is an error in one row only: an `emit` or a `publish` into a slot not declared `T?` raises a `TypeError`. Every other row's outcome is not a fault. Over the table's rows, by cases."
       },
       {
         "path": "formal/idris/AbsentTrichotomy.idr",
-        "name": "lnul_11_1__zeroes_the_slot_after",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "partial",
-        "note": "The same slot policy stated on the collapsed type, so the two can be compared across the collapse. The clause does not state this policy."
-      },
-      {
-        "path": "formal/idris/AbsentValue.idr",
-        "name": "Lnul_11_1__policy",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "partial",
-        "note": "What a verb does when its argument is absent. `Prevent` and `StoreNull` are the clause's `call` and `cache` rows. `DegradeToPartial` and `ZeroAndProceed` are not its `log` and `emit` rows. The `call` row's counter, `ds.calls.arg_error_total`, is a row of [NMET.4.1], a metric and not a policy of a language clause."
-      },
-      {
-        "path": "formal/idris/AbsentValue.idr",
-        "name": "Lnul_11_1__value",
+        "name": "lnul_11_1__on_null",
         "tag": "spec",
         "role": "definition",
         "verdict": "proven",
-        "note": "One `Absent`, not a family of sentinels. The clause is explicit that there is a single absent value, and modelling two would have assumed the finding."
+        "note": "The clause's table as a total function of the verb and its argument: `log` renders a `null` as the empty string, a slot declared `T?` takes it and any other slot raises a `TypeError`, `call` is not made, `cache` stores it. A transcription of the table; that every row answers is what the checker adds."
       },
       {
-        "path": "formal/idris/AbsentValue.idr",
-        "name": "Lnul_11_1__verb",
-        "tag": "spec",
-        "role": "definition",
+        "path": "formal/idris/AbsentTrichotomy.idr",
+        "name": "lnul_11_1__stored_null_reads_as_a_miss",
+        "tag": "derives",
+        "role": "witness",
         "verdict": "proven",
-        "note": "The verb classes the table distinguishes; `cache` takes a policy of its own, as the clause says in as many words."
-      },
-      {
-        "path": "formal/idris/AbsentValue.idr",
-        "name": "lnul_11_1__on_absent",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "partial",
-        "note": "A per-verb table as a total function: every verb class has an answer and the answers are distinct. Its `MessageVerb` and `SlotVerb` answers are not the clause's `log` and `emit` rows."
+        "note": "The clause's sentence that a `cached(key)` miss and a stored `null` are indistinguishable at the read ([LSTO.4.3.1a]): the two collapse to one value. One `Refl`, the definition read back."
       }
     ]
   }

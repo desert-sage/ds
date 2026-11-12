@@ -22,6 +22,7 @@ typedef enum {
     DS_RETE_EXPR_LIT_STR,
     DS_RETE_EXPR_LIT_BOOL,
     DS_RETE_EXPR_LIT_NULL,
+    DS_RETE_EXPR_LIT_TIME,   /* RLOW.6.1.8 */
     DS_RETE_EXPR_VAR,
     DS_RETE_EXPR_BINOP,
     DS_RETE_EXPR_UNOP,
@@ -181,6 +182,7 @@ typedef struct ds_rete_expr {
     union {
         int64_t    lit_int;
         double     lit_float;
+        int64_t    lit_time;   /* RLOW.6.1.8: UTC nanoseconds, offset 0 */
         const char *lit_str;   /* interned */
         bool       lit_bool;
 

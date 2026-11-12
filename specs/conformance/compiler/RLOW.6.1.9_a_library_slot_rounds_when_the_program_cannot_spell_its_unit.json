@@ -1,0 +1,13 @@
+{
+    "id": "RLOW.6.1.9_a_library_slot_rounds_when_the_program_cannot_spell_its_unit",
+    "clauses": ["RLOW.6.1.9", "LIMP.1.5"],
+    "category": "compiler",
+    "scenario": "[RLOW.6.1.9], [LIMP.1.5]: `u.Temp.t` is `u`'s unit `dbl`, and the program does only `import u`, so it cannot spell `dbl`. A rounding of the slot is in `u`'s `dbl` all the same, and the program compiles. A compiler that reads the unit by its spelling in the program finds nothing, does not lower the rule, and refuses it with DS_VALIDATE_RULE_NOT_LOWERED. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit` reading the unit through `dsc.resolve.decl_scope`.",
+    "rules_ds": "import math\nimport u\n\nrule r:\n    u.Temp x where math.floor(x.t) == x.t\n->\n    log info \"whole\"\n",
+    "libraries": {
+        "u": "unit dimension warmth storage float64 base therm\nunit therm: warmth\nunit dbl: warmth = 2 * x\n\nschema Temp scope logical:\n    k: Int key\n    t: dbl mutable\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

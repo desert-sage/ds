@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `bool_and`, `bool_or`, `first`, `last` and Float `rate` on `all_time`
+# (`SeriesBackendWelfordEwma`), which forgets nothing: `first` is the first
+# sample the instance absorbed however long ago ([LSER.14.1], [LSER.16.9]).
+# `rate` is (x_l - x_f) * 1e9 / (t_l - t_f), in that order of correctly
+# rounded operations ([LSER.16.9]), and null while no time separates the
+# first and last samples.
+#
+# Each rule fills the other's slots with `false` / `0.0`. `-1.0` stands for
+# the null reads ([LSER.19.8]), outside every value the scenario produces;
+# the Bools rescue to `false`, not to the vacuous answer [LSER.19.8] refuses.
+use default
+
+schema HB scope logical:
+    k: String key
+    ok: Bool mutable
+
+schema HF scope logical:
+    k: String key
+    v: Float mutable
+
+schema Tail scope ttl 1_h:
+    label: String
+    all_ok: Bool
+    any_ok: Bool
+    oldest: Float
+    newest: Float
+    r: Float
+
+series HB.ok (by: k):
+    bool_and, bool_or all_time
+
+series HF.v (by: k):
+    first, last, rate all_time
+
+rule from_hb:
+    HB h
+->
+    emit Tail label: "hb" all_ok: h.bool_and ?? false any_ok: h.bool_or ?? false
+        oldest: 0.0 newest: 0.0 r: 0.0
+
+rule from_hf:
+    HF f
+->
+    emit Tail label: "hf" all_ok: false any_ok: false
+        oldest: f.first ?? -1.0 newest: f.last ?? -1.0 r: f.rate ?? -1.0

@@ -1,0 +1,15 @@
+{
+    "id": "RLOW.6.1.8_time_constants_at_the_ends_of_the_range",
+    "clauses": ["RLOW.6.1.8"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.8]: `lit_time` holds any instant in `Time`'s range ([LTIM.1.1.5]), at either end of it. The first `Time` is -2^63 nanoseconds and the last 2^63 - 1, so the first is a negative `int64` on the wire. Each `const` renders exactly and raises no fault. A compiler that wrote the varint as unsigned, or a runtime that read it so, renders another instant. PATH PINNED: `dsc.encode.lit_body`'s `int_present(22u32, ...)`, libds's `rete_loader.c` and Mercury's `ds.dsc_expr`, which reads a sign-extended varint.",
+    "rules_ds": "import calendar\n\nconst FIRST = calendar.time(1677, 9, 21, 0, 12, 43, 145224192)\nconst LAST = calendar.time(2262, 4, 11, 23, 47, 16, 854775807)\n\nschema Ev scope logical:\n    id: Int key\n\nrule range_start:\n    Ev\n->\n    let s = FIRST::String\n    log info \"first {s}\"\n\nrule range_end:\n    Ev\n->\n    let s = LAST::String\n    log info \"last {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["first 1677-09-21T00:12:43.145224192Z", "last 2262-04-11T23:47:16.854775807Z"]
+    }
+}

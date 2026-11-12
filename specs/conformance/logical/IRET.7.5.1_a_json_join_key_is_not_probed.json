@@ -1,0 +1,18 @@
+{
+    "id": "IRET.7.5.1_a_json_join_key_is_not_probed",
+    "clauses": ["IRET.7.5.1", "LERR.1.4.12"],
+    "category": "logical",
+    "dead_rules_expected": ["ab"],
+    "scenario": "[IRET.7.5.1]: a join may probe its index only on an equality that is decided, both slots non-nullable and not `Json` by their declared schemas: a `Json` operand can raise a TypeError on a mismatched leaf ([LEXP.7.12]), and probing would skip the pair that raises it. [LERR.1.4.12]: the faults an operation records must not depend on whether the engine indexes a join. Rule `ab` joins `A a` to `B b` on `b.j == a.j`, where `b.j` is `Json` and `a.j` is `Int`. A `B` whose `j` is the JSON string \"x\" is asserted first; then an `A` with `j` 1, whose token left-activates the join. The pair is live, and its equality compares a string leaf with an Int, a TypeError, so `ab` does not fire. Rule `handler` logs each TypeError. A join that probes for 1 finds no candidate whose `j` is 1, evaluates nothing, and records nothing. PATH PINNED: the Mercury runtime's `ds.match.right_candidates_in`, through `iret_7_5_1_join_key`, which keeps no key over a `Json` slot; libds `ds_rete_beta_left_activate`, through `eq_key_decided` (rete/beta.c).",
+    "rules_ds": "use default\n\nschema A scope logical:\n    k: Int key\n    j: Int mutable\n\nschema B scope logical:\n    id: Int key\n    j: Json mutable\n\nrule ab:\n    A a\n    B b where b.j == a.j\n->\n    log info \"ab\"\n\nrule handler:\n    TypeError\n->\n    log critical \"type error\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "B", "slots": { "id": 1, "j": "x" } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "A", "slots": { "k": 1, "j": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error"]
+    }
+}

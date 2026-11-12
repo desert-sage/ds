@@ -1,0 +1,29 @@
+{
+  "id": "NLFC.2.5",
+  "prefix": "NLFC",
+  "doc": "LIFECYCLE.md",
+  "parent": "NLFC.2",
+  "seq": 95,
+  "depth": 2,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NLFC.2.5] **The engine reports its next deadline.**\n`ds_engine_next_deadline_ns` must report the earliest deadline later than the\nmonotonic clock's current value ([LTIM.2.8.2]), or that the engine holds none. A\ndeadline is one of these instants, whether or not a rule acts on it:\n\n- the `fire_at` of a live timer fact ([LTAC.3.2], [LCCO.7.2]);\n- the expiry of a live fact that has a TTL ([LDTL.1.1]);\n- the expiry of a cache entry ([NSTG.2.4.2]).\n\nThe call is a read, on a live or a mock clock. It must not take a clock sample\n([NTST.3.3]), must record nothing, and must not change what any later call or\npump does. Two conforming engines given the same program, inputs and clock\nvalues must report the same answer. A NULL argument is `DS_ERR_INVAL`, and a call\nfrom inside a callback is refused as [RARC.13.16] states.\n\nAn instant at which a time-dependent condition changes ([LTIM.2.4.1]) is not a\ndeadline, and neither is the end of a cooldown ([LCDB.3.2.1]). A host that\ndepends on such a condition pumps on a cadence of its own.\n\nThe integrator may call this or not, and may pump on any cadence\n([NADP.1.1]). The engine does nothing at a deadline until a pump\n([LCCO.7.2], [NSTG.2.4.2]).\n\n",
+  "refs": [
+    "LCCO.7.2",
+    "LCDB.3.2.1",
+    "LDTL.1.1",
+    "LTAC.3.2",
+    "LTIM.2.4.1",
+    "LTIM.2.8.2",
+    "NADP.1.1",
+    "NSTG.2.4.2",
+    "NTST.3.3",
+    "RARC.13.16"
+  ],
+  "errors": [
+    "DS_ERR_INVAL"
+  ],
+  "symbols": [
+    "ds_engine_next_deadline_ns"
+  ]
+}

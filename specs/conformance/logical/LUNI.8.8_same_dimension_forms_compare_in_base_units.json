@@ -1,0 +1,13 @@
+{
+    "id": "LUNI.8.8_same_dimension_forms_compare_in_base_units",
+    "category": "logical",
+    "scenario": "[LUNI.8.8]: forms over one dimension compare base-unit values on both sides. A `celsius` slot holds 21.5_celsius and a `celsius?` slot is absent, both from an `initial:` fact, so no host assertion's conversion is involved. `min(r.t, 30_celsius) == r.t`, `r.t in (18_celsius .. 24_celsius)` and `(r.n ?? 20_celsius) == 20_celsius` each hold, each in its own rule. Exactly [\"min\", \"in\", \"coalesce\"], in source order. An endpoint or default read in the wrong unit misses its rule. PATH PINNED: the `FN_MIN`, interval and coalesce evaluation of a unit literal on each runtime, after `dsc.typecheck.luni_8_8_beside` admits them.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nconst WARM = 21.5_celsius\n\nschema R scope explicit:\n    t: celsius\n    n: celsius?\n\ninitial:\n    R t: WARM\n\nrule low:\n    R r where min(r.t, 30_celsius) == r.t\n->\n    log info \"min\"\n\nrule inside:\n    R r where r.t in (18_celsius .. 24_celsius)\n->\n    log info \"in\"\n\nrule fallback:\n    R r where (r.n ?? 20_celsius) == 20_celsius\n->\n    log info \"coalesce\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["min", "in", "coalesce"]
+    }
+}

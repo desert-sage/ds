@@ -122,7 +122,7 @@ It is `None` until the [halt latch](inv:integrator:std:doc#engine/lifecycle) is 
 
 What halted the engine: [`ds_engine_fault_t`](inv:integrator:std:doc#callbacks/stream), with each member's `DS_ENGINE_FAULT_` prefix removed.
 
-Its members are `UNSPECIFIED`, `ARTEFACT_LIED`, `PATTERN_INDEX`, `BINDING_ORDER`, `ORDER_KEY`, `ALLOCATION` and `PUMP_WCET`.
+Its members are `UNSPECIFIED`, `ARTEFACT_LIED`, `PATTERN_INDEX`, `BINDING_ORDER`, `ORDER_KEY`, `ALLOCATION`, `PUMP_WCET` and `INTERNAL`.
 
 *(Source: bindings/python/src/pyds/_faults.py)*
 

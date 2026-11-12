@@ -1,0 +1,34 @@
+{
+    "id": "LSER.17.2_duration_sum_past_range_raises",
+    "clauses": ["LSER.17.2", "RLOW.6.1.6", "LERR.1.4.10"],
+    "category": "logical",
+    "scenario": "[LSER.17.2]: `sum` over a slot of the `time` dimension accumulates as an `Int` does, its samples are never negative, and a read that finds the total negative raises NOT_REPRESENTABLE. Each of the three backings a `sum` can ride takes 2^63 - 1 and 2, a true total between 2^63 and 2^64 that wraps negative: `all_time` (SeriesBackendWelfordEwma), `sliding` (SeriesBackendRingBuffer) and `sample` (SeriesBackendReservoir). At 3 s a `Probe` arrives and `ra`, `rw` and `rs` each read their binding's `sum`, once per fact of its `ttl` schema (two), and each read raises. [LERR.9.5] latches a fault by `(node, rule)`, so each rule's two faults are one `ComputationError`, and `handler` logs the kind three times, once per backing. A compiler that left the read unchecked logs a negative `Duration`. PATH PINNED: `dsc.rete.rlow_6_1_6_duration_read`, lowering the read to `FN_DURATION_ADD(r, 0)`, whose negative arm raises on each runtime.",
+    "rules_ds": "use default\n\nschema TA scope ttl 1_h:\n    k: String\n    v: Duration\n\nschema TW scope ttl 1_h:\n    k: String\n    v: Duration\n\nschema TS scope ttl 1_h:\n    k: String\n    v: Duration\n\nschema Probe scope explicit:\n    k: Int\n\nseries TA.v (by: k):\n    sum all_time\n\nseries TW.v (by: k):\n    sum sliding 1_h\n\nseries TS.v (by: k):\n    sum sample 8\n\nrule ra:\n    Probe\n    TA a\n->\n    log info \"a {a.sum}\"\n\nrule rw:\n    Probe\n    TW w\n->\n    log info \"w {w.sum}\"\n\nrule rs:\n    Probe\n    TS s\n->\n    log info \"s {s.sum}\"\n\nrule handler:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "TA", "slots": { "k": "g", "v": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "TW", "slots": { "k": "g", "v": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "TS", "slots": { "k": "g", "v": 9223372036854775807 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 2000000000 },
+            { "op": "assert", "schema": "TA", "slots": { "k": "g", "v": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "TW", "slots": { "k": "g", "v": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "TS", "slots": { "k": "g", "v": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 3000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": [
+            "NOT_REPRESENTABLE",
+            "NOT_REPRESENTABLE",
+            "NOT_REPRESENTABLE"
+        ]
+    }
+}

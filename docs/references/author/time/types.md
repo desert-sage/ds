@@ -41,13 +41,13 @@ A `Duration` is a magnitude in nanoseconds, stored as `int64`, and is never nega
 
 Wherever a `Duration` would be formed with a negative number of nanoseconds, the compiler and the runtime form `0_s`: by [arithmetic](arithmetic.md#time-and-duration), by a negative `Int` [cast to a `time` unit](../values/conversions.md#defined-conversions), and for a negative value a host asserts into a `Duration` slot. A signed difference of two instants is an `Int`: `(a - b)::Int - (b - a)::Int`.
 
-A `Duration` is a [`time`-dimensioned literal](../units/literals.md#duration-literals) or arises from `Time - Time`, `Date - Date` and duration arithmetic. A unary minus on such a literal is refused with `DS_VALIDATE_BAD_OPERAND_TYPE`. A `Duration` carries no timezone: `Time - Time` gives the same `Duration` whatever the operands' offsets.
+A `Duration` is a value of the `time` dimension, and every value of that dimension is a `Duration`: a [`time`-dimensioned literal](../units/literals.md#duration-literals), a slot or service kwarg typed by a `time` unit or by `time`, a `::<time unit>` cast, and each `Duration`-valued row of [arithmetic](arithmetic.md#time-and-duration), `Date - Date` among them. The `time` unit a slot or kwarg declares sets how the value displays and is delivered, and names no other type. A unary minus on a `Duration` is refused with `DS_VALIDATE_BAD_OPERAND_TYPE`, and a bitwise operator with `DS_VALIDATE_BITWISE_TYPE`. A `Duration` carries no timezone: `Time - Time` gives the same `Duration` whatever the operands' offsets.
 
 ```ds expression
 (now() - r.ts)::Int - (r.ts - now())::Int
 ```
 
-*(Spec: [LTIM.1.3.1], [LTIM.1.3.2], [LTIM.1.3.3], [LTIM.1.3.4], [LUNI.3.3])*
+*(Spec: [LTIM.1.3.1], [LTIM.1.3.2], [LTIM.1.3.3], [LTIM.1.3.4], [LTIM.1.3.5], [LUNI.3.3])*
 
 ## Construction
 
@@ -205,7 +205,7 @@ A positive pattern's `within` counts, and a `then … within` step does not. `t.
 
 A positive pattern's `within <dur>` is time-dependent: the fact matches only while the monotonic clock's sample is less than `<dur>` past its [entry stamp](#entry-stamp).
 
-A duration that is not positive, on a positive or a negated pattern, written as a literal or a `time` const, is refused with `DS_VALIDATE_ZERO_WITHIN`. When a windowed pattern justifies a `logical` fact, the engine retracts that fact on the pump its match falls outside the window.
+A window reads working memory, so a fact counts while it is live. A duration that is not positive, on a positive or a negated pattern, written as a literal or a `time` const, is refused with `DS_VALIDATE_ZERO_WITHIN`. A duration longer than the TTL of the pattern's schema, on a positive or a negated pattern, is refused with `DS_VALIDATE_WITHIN_EXCEEDS_TTL`. A window equal to the TTL is not refused, a schema of another lifecycle bounds no window, and with `dynamic_ttl` on no window is refused this way. When a windowed pattern justifies a `logical` fact, the engine retracts that fact on the pump its match falls outside the window.
 
 ```ds rule
 rule recent:
@@ -214,7 +214,7 @@ rule recent:
     log info "{r.id}"
 ```
 
-*(Spec: [LTIM.2.7.1], [LTIM.2.7.2])*
+*(Spec: [LTIM.2.7.1], [LTIM.2.7.2], [LTIM.2.7.3], [LFAC.3.3])*
 
 ## Formatting
 

@@ -98,11 +98,10 @@
     % is loaded ([NLFC.1.2]).
     %
     % The reports are what the load logged, as every call that changes a
-    % session returns its own: one `dsc-load` info line for each skip-band
-    % atom the artefact carries that no registry entry names, and for each
-    % `CompiledCode` atom, with its field number and byte offset, in the order
-    % the load met them ([RDSC.9.4]). A refused load
-    % reports nothing.
+    % session returns its own: one `dsc-load` info line for each atom the
+    % loader steps over by name -- `DocString`, the test and oracle atoms, and
+    % `CompiledCode` -- with its field number, message and byte offset, in the
+    % order the load met them ([RDSC.9.4]). A refused load reports nothing.
     %
 :- pred load(bitmap::in, session_config::in,
     maybe_error(session, ds_error)::out, list(report)::out) is det.
@@ -317,10 +316,11 @@
     %
     % Refused, with the session unchanged: `engine_halted` on a halted engine,
     % `fs_version` for a recording of another DS series ([LDET.1.10]),
-    % `fs_unknown_inject` for an input atom this runtime does not know, `parse`
-    % for anything else malformed, `bnd_dsc_mismatch`, `bnd_dialect_mismatch`
-    % or `bnd_incomplete` for one whose dialect-binding tuple is not the
-    % program's, made with another artefact or under other settings
+    % `parse` for anything malformed, an atom whose field number has no
+    % registry entry among it ([RFCS.19.3]), `bnd_dsc_mismatch`,
+    % `bnd_dialect_mismatch` or `bnd_incomplete` for one whose
+    % dialect-binding tuple is not the program's, made with another artefact
+    % or under other settings
     % ([RBND.5.1]), or that carries one of `dsc_sha256` and
     % `dialect_def_sha256` and not the other ([RBND.2.1]), as libds refuses it,
     % and `fs_recording_incomplete` for one begun after its engine's first
@@ -400,6 +400,11 @@
     %
 :- func now(session) = read(instant).
 
+    % The earliest deadline later than the clock's current value, or `no`
+    % ([NLFC.2.5]). Not a sample, and it changes nothing a later call does.
+    %
+:- func next_deadline(session) = read(maybe(instant)).
+
     % The error that halted the engine ([NCBK.2.9]), or `no`.
     %
 :- func halted(session) = maybe(engine_error).
@@ -439,6 +444,36 @@
     % held in its engine's table of strings.
     %
 :- func slot_names(session, schema) = read(list(string)).
+
+    % A number through the conversion of the slot at a zero-based index of
+    % a schema, a slot that names a unit ([NFCT.1.4.6]). `slot_to_stored`
+    % takes a number in the unit the slot names to the number the slot
+    % stores, which `assert_fact` takes; `slot_from_stored` takes a stored
+    % number back. Each computes what a rule's `x::<unit>`, or its kwarg of
+    % that unit, computes, and changes nothing, save for an `EngineError`
+    % the conversion raises: the artefact has lied, and the call halts the
+    % engine and reports the `EngineError`, as any call that raises one
+    % does ([NCBK.2.9]). Refused with the first of these that holds:
+    % `engine_halted` on a halted engine; `not_found` for an index that
+    % names no slot; `inval` for a slot that names no unit;
+    % `slot_type_mismatch` for a value that is not an `int` on a slot
+    % stored as an integer, a `Duration` among them, or a `float` on one
+    % stored as a float; `nan_rejected` for a NaN; `engine_halted` where
+    % the conversion raised an `EngineError`; and `not_representable` where
+    % it has no result for the number.
+    %
+:- type unit_step
+    --->    unit_step(
+                unit_step_result  :: maybe_error(storable, ds_error),
+                unit_step_reports :: list(report)
+                            % The `EngineError` and what dispatch reports
+                            % beside it, or nothing.
+            ).
+
+:- pred slot_to_stored(schema::in, int::in, storable::in, unit_step::out,
+    session::in, session::out) is det.
+:- pred slot_from_stored(schema::in, int::in, storable::in, unit_step::out,
+    session::in, session::out) is det.
 
     % The runtime's own values, for a tool that needs more than this surface.
     % These are the runtime's, not the binding's, and refuse nothing: a read
@@ -1112,17 +1147,27 @@ advance(D, Step, !S) :-
     % The engine refuses a backward set after the first sample by leaving the
     % clock where it was, and has no status to say so. So the clock not reading
     % `At` is the refusal, and the host is told as libds tells it ([NTST.3.1]).
+    % A set past the top of the range is asked first, as `advance` asks.
     %
 set_clock(At, Step, !S) :-
-    clock_call(ds.engine.set_clock(At), Step0, !S),
     ( if
-        Step0 ^ step_outcome = ok,
-        engine_clock_now(!.S ^ ses_engine) \= At
+        not refused_call(!.S, _),
+        !.S ^ ses_config ^ session_config_clock \= live_clock,
+        ntst_3_1_set_past_range(At)
     then
-        Step = Step0 ^ step_outcome := error(status_error(state,
-            "the clock has been sampled, and a set may not move it back"))
+        Step = step(error(status_error(time_range,
+            "a set past the monotonic clock's range")), [], [])
     else
-        Step = Step0
+        clock_call(ds.engine.set_clock(At), Step0, !S),
+        ( if
+            Step0 ^ step_outcome = ok,
+            engine_clock_now(!.S ^ ses_engine) \= At
+        then
+            Step = Step0 ^ step_outcome := error(status_error(state,
+                "the clock has been sampled, and a set may not move it back"))
+        else
+            Step = Step0
+        )
     ).
 
     % The order libds's `ds_engine_wall_clock_set` answers in.
@@ -1330,15 +1375,14 @@ replayed(Steps, E, Step, !S) :-
     % invokes no persistence callback while it runs.
     Step = step(Outcome, Reports, []).
 
-    % libds's status for a recording its reader refuses (`codec.c`): an
-    % unknown input atom has its own, and the rest of what the reader
-    % refuses is a parse error.
+    % libds's status for a recording its reader refuses (`codec.c`): another
+    % series has its own, and the rest of what the reader refuses is a parse
+    % error.
     %
 :- func decode_status(string) = status.
 
 decode_status(Clause) =
     ( if Clause = "LDET.1.10" then fs_version
-      else if Clause = "RFCS.18.8" then fs_unknown_inject
       else parse ).
 
     % The effects of each replayed step, in order, and the first failure
@@ -1524,6 +1568,8 @@ lookup_fact(S, Id) = Read :-
 
 now(S) = reading(S, (func) = engine_clock_now(S ^ ses_engine)).
 
+next_deadline(S) = reading(S, (func) = nlfc_2_5_next_deadline(S ^ ses_engine)).
+
 halted(S) = engine_halted(S ^ ses_engine).
 
 clock_mode(S) = reading(S, (func) = S ^ ses_config ^ session_config_clock).
@@ -1564,6 +1610,63 @@ schema_slot_names(S, Schema) =
 
 slot_name(Interns, Common) =
     ( if expand(Interns, Common ^ sc_name, Name) then Name else "" ).
+
+slot_to_stored(Schema, Index, In, Step, !S) :-
+    through_unit(Schema, Index, ud_to_stored, In, Step, !S).
+
+slot_from_stored(Schema, Index, In, Step, !S) :-
+    through_unit(Schema, Index, ud_from_stored, In, Step, !S).
+
+:- pred through_unit(schema::in, int::in, unit_direction::in, storable::in,
+    unit_step::out, session::in, session::out) is det.
+
+through_unit(Schema, Index, Direction, In, Step, !S) :-
+    ( if refused_call(!.S, Refusal) then
+        Step = unit_step(error(Refusal), [])
+    else
+        nfct_1_4_6_convert(Schema, Index, Direction, to_value(In), Outcome,
+            Effects, !.S ^ ses_engine, E),
+        !S ^ ses_engine := E,
+        reports(Effects, Reports, !S),
+        Step = unit_step(unit_result(Outcome), Reports)
+    ).
+
+    % libds's answer for each of the runtime's conversion outcomes.
+    %
+:- func unit_result(unit_outcome) = maybe_error(storable, ds_error).
+
+unit_result(Outcome) = Result :-
+    (
+        Outcome = uo_ok(V),
+        ( if V = int(I) then
+            Result = ok(int(I))
+        else if V = float(F) then
+            Result = ok(float(F))
+        else
+            require.unexpected($pred, "a conversion's value is neither")
+        )
+    ;
+        Outcome = uo_no_slot,
+        Result = error(status_error(not_found,
+            "the index names no slot of the schema"))
+    ;
+        Outcome = uo_no_unit,
+        Result = error(status_error(inval, "the slot names no unit"))
+    ;
+        Outcome = uo_kind_mismatch,
+        Result = error(status_error(slot_type_mismatch,
+            "the value is not of the kind the slot stores"))
+    ;
+        Outcome = uo_nan,
+        Result = error(status_error(nan_rejected, "the value is a NaN"))
+    ;
+        Outcome = uo_halted,
+        Result = error(halted_error)
+    ;
+        Outcome = uo_not_representable,
+        Result = error(status_error(not_representable,
+            "the conversion has no result for this number"))
+    ).
 
 session_engine(S) = S ^ ses_engine.
 

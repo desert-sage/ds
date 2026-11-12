@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_first_frame_with_field_number_0_is_bad_magic",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1] Framing: a frame whose inner tag's field number is 0 is malformed, and a malformed FIRST frame is refused with DS_ERR_DSC_BAD_MAGIC (-501), since the bytes are not an atom container. `runtime_error`'s `tamper: {insert_bytes: {at: 0, hex: \"0a020200\"}}` ([RCTS.1.2.21]) puts a complete frame before the compiled artefact's first atom: outer tag 0x0A, outer length 2, inner key 0x02 (field 0, wire type 2) and an empty body. The DscHeader that follows is re-sealed where it now stands ([RDSC.3.6]), so the refusal is the frame's, not the hash's. Twin of RDSC.11.1_a_later_frame_with_field_number_0_is_decode, the same octets after the header. What it discriminates: a loader that steps over the frame by its length finds the header second and loads; one that refuses the frame by its position after the header answers -503. PATHS: libds's `ds_dsc_load` first-atom check (`ds_pbf_next_atom` through `ds_pbf_next_field`, which refuses field number 0, MALFORMED as the first frame), through pyds `load_dsc` (runner.py's `_tampered`, `dsc_seal.insert_bytes`); the Mercury runtime's `ds.dsc` `dispatch`, which refuses any first atom but a header (`lek_bad_first_atom`), through test_behave.m's `bytes_inserted` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema NoKey scope logical:\n    entity_id: String mutable\n    v: Int mutable\n\nschema Out scope ttl 1_h:\n    tag: String\n\nrule touch:\n    NoKey\n->\n    emit Out tag: \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"insert_bytes": {"at": 0, "hex": "0a020200"}},
+        "code": "-501"
+    }
+}

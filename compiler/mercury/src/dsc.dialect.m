@@ -653,7 +653,7 @@ decl_sites(RF, Decl) = Sites :-
         Sites = rule_sites(RF, R)
     ;
         Decl = ad_const(C),
-        C = ast_const(_, Form, Pos, _),
+        C = ast_const(_, Form, Pos, _, _),
         (
             Form = acf_value(MaybeAnn, E),
             Sites = annotation_sites(MaybeAnn, Pos) ++ expr_sites(RF, E)

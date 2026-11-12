@@ -1,0 +1,24 @@
+{
+    "id": "LNUL.8.6_nulls_hold_string_survives_eviction",
+    "category": "logical",
+    "scenario": "[LNUL.8.6] / [LSER.9.3.2]: a held `String` outlives eviction as a number does. `last sliding 1_min` over a `String?` slot, a FIFO deque, so a window of silence frees the row ([LSER.9.3.1]). \"hello\" at t=0. At 120 s an unrelated `Other` fact is asserted and pumped, and the sweep frees the row. `null` arrives at 180 s and absorbs the held \"hello\". At 190 s a value arrives whose `where` reads `s.last` before its own sample ([LSER.8.6.1]), so `last hello`, once. The `s.n == 3` conjunct keeps the earlier facts from firing. An engine that forgot the value reads cold and the rule never fires; one that freed the copy and kept the pointer reads freed memory. PATH PINNED: libds `ds_series_state_evict_stale` pass 2, which keeps the row-owned `held_str` that `last_value` points to, then `ds_series_absorb_one`'s HOLD arm; the Mercury runtime's `ds.series` `held_value`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    label: String? mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Reading.label (by: dev, nulls: hold):\n    last sliding 1_min\n\nrule r:\n    Reading s where s.n == 3 and s.last is not null\n->\n    log info \"last {s.last}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "label": "hello", "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 120000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 180000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "label": null, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 190000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "label": "next", "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["last hello"]
+    }
+}

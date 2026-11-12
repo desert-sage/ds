@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.8.9_a_negative_float_factor_rounds_in_its_own_unit",
+    "clauses": ["LUNI.8.9", "RLOW.6.1.9"],
+    "category": "logical",
+    "scenario": "[LUNI.8.9], [RLOW.6.1.9]: on `float64` storage a rounding converts out of the base unit through the unit's inverse, applies the builtin, and converts back, whatever the factor's sign; the control on `float64` for `RLOW.6.1.9_a_negative_factor_rounds_in_its_own_unit`. `depth` is `-x` meters, and slot `d` holds -2.5 m, which is 2.5 depth. `round(r.d)` is 2 depth (ties to even), -2 m, and `math.floor(r.d)` is 2 depth, -2 m, so both rules log. A floor taken in the base unit is -3 m, 3 depth, and leaves `floor` silent; `round` commutes with negation, so it is the same either way and the rule is the control. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit`'s `float64` arm, through `rlow_7_3_9_converted`'s `cv_affine` and `rlow_6_1_10_asserted` back.",
+    "rules_ds": "import math\n\nunit depth: length = -x\n\nschema D scope logical:\n    id: String key\n    d: depth mutable\n\nrule rounded:\n    D r where round(r.d) == 2_depth\n->\n    log info \"round\"\n\nrule floored:\n    D r where math.floor(r.d) == 2_depth\n->\n    log info \"floor\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "D", "slots": { "id": "a", "d": -2.5 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["round", "floor"]
+    }
+}

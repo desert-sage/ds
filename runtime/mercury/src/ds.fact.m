@@ -214,6 +214,7 @@
 :- import_module int.
 :- import_module ds.i64.
 :- import_module ds.json.
+:- import_module integer.
 :- import_module string.
 
 ltim_10_9_message(tzf_empty_period) =
@@ -270,7 +271,7 @@ identity_of(Schema, Fact) = project_identity(Schema, Fact ^ f_slots).
 slot_unchanged(exact, A, B) :-
     A = B.
 slot_unchanged(within(T), int(A), int(B)) :-
-    abs(i64.to_float(A) - i64.to_float(B)) =< T.
+    lfac_2_5_1_int_within(A, B, T).
     % Exact first: two equal infinities have a NaN delta.
 slot_unchanged(within(T), float(A), float(B)) :-
     ( A = B
@@ -280,6 +281,37 @@ slot_unchanged(within(T), float(A), float(B)) :-
 slot_unchanged(within(_), str(A), str(B)) :- A = B.
 slot_unchanged(within(_), bool(A), bool(B)) :- A = B.
 slot_unchanged(within(_), null, null).
+
+    % [LFAC.2.5.1]: `|A - B| =< T`, exactly. The difference is an `integer`, so it
+    % cannot wrap, and a whole number is within `T` iff it is within `T`'s floor.
+    % A `T` of 2^64 or more, an infinity included, holds every difference. The
+    % arithmetic libds's `int_within` (rete/wm_rete.c) does.
+    %
+    %@spec [LFAC.2.5.1]
+:- pred lfac_2_5_1_int_within(int64::in, int64::in, float::in) is semidet.
+
+lfac_2_5_1_int_within(A, B, T) :-
+    ( if not T < 18446744073709551616.0 then
+        true
+    else
+        lfac_2_5_1_floor(T, Floor),
+        integer.abs(integer.from_int64(A) - integer.from_int64(B)) =< Floor
+    ).
+
+    % The floor of a tolerance in [0, 2^64), exactly. `T - 2^63` is exact for a
+    % `T` in [2^63, 2^64), which shares its exponent.
+    %
+    %@spec [LFAC.2.5.1]
+:- pred lfac_2_5_1_floor(float::in, integer::out) is semidet.
+
+lfac_2_5_1_floor(T, Floor) :-
+    ( if T >= 9223372036854775808.0 then
+        i64.truncate_float(T - 9223372036854775808.0, Lo),
+        Floor = integer.from_int64(Lo) + integer.pow(integer(2), integer(63))
+    else
+        i64.truncate_float(T, F),
+        Floor = integer.from_int64(F)
+    ).
 
 %-----------------------------------------------------------------------------%
 

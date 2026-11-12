@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.9.2_stripped_variance_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.9.2] with [LCST.4.3.1]: `variance` is nullable when cold, so its strip is `f.variance::Float?`, a bare number. Pin: the program compiles. PATH PINNED: `dsc.typecheck.luni_9_2_strip_source`, whose source carries the read's nullability, and `dsc.validate.first_unit_changing_read`, which passes over the strip.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    variance sliding 5_min\n\nrule r:\n    Flow f\n->\n    let x = f.variance::Float?\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

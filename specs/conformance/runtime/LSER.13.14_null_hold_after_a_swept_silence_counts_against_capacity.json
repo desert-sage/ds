@@ -1,0 +1,22 @@
+{
+    "id": "LSER.13.14_null_hold_after_a_swept_silence_counts_against_capacity",
+    "category": "runtime",
+    "scenario": "[LSER.13.14] x [LNUL.8.6]: \"A `null` reading counts when the series' `nulls:` policy absorbs a value for it\", and a value held from before a window of silence is such a value. `integral sliding 1_h` over a `Float?` slot with `capacity: 1` and `nulls: hold`. 1.0 at t=0 is absorbed. At 2 h an unrelated `Other` fact is asserted and pumped, so the eviction sweep runs with the sample out of the window: it is now the carry and not one of the `N` ([LSIG.2.5.1]). One second later two `null` asserts arrive before any pump. The first would absorb the held 1.0 and is admitted, with nothing retained or pending. The second finds that one pending and would absorb the held 1.0 too, so it is a bounds refusal naming CAP_SERIES_CAPACITY (DS_ERR_CONTRACT_BREACH, -710). Only the step backings refuse at capacity, and a step backing is signal state, which is never evicted ([LSER.9.3.1]), so the sweep frees nothing here and no refusing row reaches the check after a free. PATH PINNED: the pre-assert capacity check in both runtimes reading the held value after a swept silence (libds `ds_engine_series_capacity_check` through `capacity_reading_absorbs`; Mercury `ds.exec.lser_13_14_over_capacity` through `ds.series.lser_13_14_absorbs`). `fault_at: 7` makes the refusal the second `null`'s.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    power: Float? mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Reading.power (by: dev, capacity: 1, nulls: hold):\n    integral sliding 1_h\n\nrule r:\n    Reading s where s.integral > 0.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-710",
+        "message_contains": "capacity",
+        "fault_at": 7,
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": 1.0, "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 7200000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 2 } },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "k", "power": null, "n": 3 } }
+        ]
+    }
+}

@@ -173,22 +173,6 @@ static void test_vectors_decode(void)
     }
 }
 
-static void test_vectors_band(void)
-{
-    size_t i;
-
-    for (i = 0; i < DS_PBF_VEC_BAND_COUNT; i++) {
-        const ds_pbf_vec_band_t *v = &ds_pbf_vec_band[i];
-        char what[96];
-
-        snprintf(what, sizeof what, "vec band/%lu", (unsigned long)v->field);
-        eq_u((unsigned long)ds_pbf_band(v->field), (unsigned long)v->band, what);
-        ok((ds_pbf_lookup(v->field) != NULL) == (v->known != 0), what);
-        eq_u((unsigned long)ds_pbf_disposition(v->field),
-             (unsigned long)v->disposition, what);
-    }
-}
-
 static void test_rfcs_19_1__two_level_framing(void)
 {
     uint8_t buf[64];
@@ -372,150 +356,6 @@ static void test_rfcs_19_4__container_type_from_first_field(void)
     eq_u(ds_pbf_container_of(buf, 0), DS_PBF_CONTAINER_UNKNOWN, "empty");
 }
 
-static void test_rfcs_16_2__band_fixes_blind_disposition(void)
-{
-    struct { uint32_t n; ds_atom_band_t band; } rows[] = {
-        { 0,     DS_ATOM_BAND_NONE   },
-        { 1,     DS_ATOM_BAND_INJECT },
-        { 15,    DS_ATOM_BAND_INJECT },   /* the 1-byte-tag ceiling */
-        { 127,   DS_ATOM_BAND_INJECT },
-        { 128,   DS_ATOM_BAND_REJECT },
-        { 255,   DS_ATOM_BAND_REJECT },
-        { 256,   DS_ATOM_BAND_SKIP   },
-        { 2047,  DS_ATOM_BAND_SKIP   },   /* max 2-byte field number */
-        { 2048,  DS_ATOM_BAND_NONE   },
-        { 100000, DS_ATOM_BAND_NONE  },
-    };
-    size_t i;
-    for (i = 0; i < sizeof rows / sizeof rows[0]; i++) {
-        char what[48];
-        snprintf(what, sizeof what, "band of %lu", (unsigned long)rows[i].n);
-        eq_u(ds_pbf_band(rows[i].n), rows[i].band, what);
-    }
-}
-
-static void test_rfcs_16_3__band_from_the_number_alone(void)
-{
-    /*
-     * [RFCS.16.3] — the disposition for a number this reader has NO entry for.
-     * The numbers below are chosen to be unallocated today; the assertion that
-     * they still are comes first, so this test cannot rot into a tautology when
-     * one of them is later allocated.
-     */
-    struct { uint32_t n; ds_pbf_disposition_t want; const char *why; } rows[] = {
-        { 50,   DS_PBF_DISP_REJECT_INJECT,  "unknown inject -> reject (-726)" },
-        { 127,  DS_PBF_DISP_REJECT_INJECT,  "top of the inject band" },
-        { 200,  DS_PBF_DISP_REJECT_VERSION, "unknown reject-band -> DSC_VERSION" },
-        { 255,  DS_PBF_DISP_REJECT_VERSION, "top of the reject band" },
-        { 1000, DS_PBF_DISP_SKIP,           "unknown skip-band -> skip" },
-        { 2047, DS_PBF_DISP_SKIP,           "top of the skip band" },
-        { 2048, DS_PBF_DISP_MALFORMED,      "past every band ([RFCS.16.5])" },
-        { 0,    DS_PBF_DISP_MALFORMED,      "field 0 is not a field" },
-    };
-    size_t i;
-    for (i = 0; i < sizeof rows / sizeof rows[0]; i++) {
-        ok(ds_pbf_lookup(rows[i].n) == NULL,
-           "fixture: the probe number must be UNallocated");
-        eq_u(ds_pbf_disposition(rows[i].n), rows[i].want, rows[i].why);
-    }
-
-    /* Every allocated atom is dispatchable, whatever band it sits in — the
-       reject bands are for numbers with no entry, not for known atoms. */
-    for (i = 0; i < DS_ATOM_REGISTRY_COUNT; i++) {
-        eq_u(ds_pbf_disposition(ds_atom_registry[i].number), DS_PBF_DISP_SKIP,
-             "a KNOWN atom is never blind-rejected");
-    }
-}
-
-static void test_rfcs_18_8__unknown_inject_backstop(void)
-{
-    /*
-     * [RFCS.18.8] — the case the version gate cannot see. A writer added an
-     * inject atom, emitted it, and forgot to bump StreamHeader.version. The
-     * stream passes the version gate; the reader has no handler; and without
-     * this walk it would dispatch the first field and silently drop the second.
-     * That dropped field is a recorded external input, so the replay is wrong
-     * and nothing said so.
-     */
-    uint8_t atom[32];
-    size_t  n;
-
-    /* A well-formed single-member Atom: nothing to refuse. */
-    n = put_varint(atom, 0, ((uint64_t)DS_ATOM_FACT_ASSERT << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_SKIP, "single known member");
-
-    /* The same Atom with an UNKNOWN INJECT field appended. Dispatch would see
-       only the first; the backstop must see both. */
-    n = put_varint(atom, n, ((uint64_t)77 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_REJECT_INJECT,
-         "a trailing unknown INJECT field is refused");
-
-    /* An unknown SKIP-band extra is fine — that is what the band is for. */
-    n = put_varint(atom, 0, ((uint64_t)DS_ATOM_DSC_HEADER << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    n = put_varint(atom, n, ((uint64_t)1500 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_SKIP,
-         "a trailing unknown SKIP field is skipped");
-
-    /* Reject-band extra: the ordinary forward-compat floor. */
-    n = put_varint(atom, 0, ((uint64_t)DS_ATOM_DSC_HEADER << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    n = put_varint(atom, n, ((uint64_t)200 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_REJECT_VERSION,
-         "a trailing unknown REJECT field is a version reject");
-
-    /*
-     * Worse-of, not first-of or last-of: an inject-band unknown wins over a
-     * reject-band one wherever it sits. The disposition enum's numeric order
-     * is not the severity order.
-     */
-    n = put_varint(atom, 0, ((uint64_t)77 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    n = put_varint(atom, n, ((uint64_t)200 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_REJECT_INJECT,
-         "inject-band unknown outranks reject-band unknown (inject first)");
-
-    n = put_varint(atom, 0, ((uint64_t)200 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    n = put_varint(atom, n, ((uint64_t)77 << 3) | 2u);
-    n = put_varint(atom, n, 0);
-    eq_u(ds_pbf_atom_backstop(atom, n), DS_PBF_DISP_REJECT_INJECT,
-         "inject-band unknown outranks reject-band unknown (reject first)");
-
-    /* The rest of the ranking, each pair in both orders, through the public
-       surface — `severity` is static and this is the observable claim anyway.
-       skip < reject-version < reject-inject < malformed. */
-    {
-        struct { uint32_t a, b; ds_pbf_disposition_t want; const char *why; } pairs[] = {
-            { DS_ATOM_DSC_HEADER, 200,  DS_PBF_DISP_REJECT_VERSION, "known < reject-version" },
-            { 200, DS_ATOM_DSC_HEADER,  DS_PBF_DISP_REJECT_VERSION, "known < reject-version" },
-            { DS_ATOM_DSC_HEADER, 77,   DS_PBF_DISP_REJECT_INJECT,  "known < reject-inject" },
-            { 1500, 77,           DS_PBF_DISP_REJECT_INJECT,  "unknown-skip < reject-inject" },
-            { 77, 1500,           DS_PBF_DISP_REJECT_INJECT,  "unknown-skip < reject-inject" },
-        };
-        size_t i;
-        for (i = 0; i < sizeof pairs / sizeof pairs[0]; i++) {
-            size_t k = put_varint(atom, 0, ((uint64_t)pairs[i].a << 3) | 2u);
-            k = put_varint(atom, k, 0);
-            k = put_varint(atom, k, ((uint64_t)pairs[i].b << 3) | 2u);
-            k = put_varint(atom, k, 0);
-            eq_u(ds_pbf_atom_backstop(atom, k), pairs[i].want, pairs[i].why);
-        }
-    }
-
-    /* Garbage inside the Atom. */
-    {
-        static const uint8_t bad[] = { 0x0B };  /* group wire type */
-        eq_u(ds_pbf_atom_backstop(bad, sizeof bad), DS_PBF_DISP_MALFORMED,
-             "unparseable Atom");
-    }
-}
-
 static void test_rfcs_16_1__one_registry_one_number_space(void)
 {
     size_t i;
@@ -540,18 +380,17 @@ static void test_rfcs_16_1__one_registry_one_number_space(void)
     ok(ds_pbf_lookup(999) == NULL, "unallocated number is not found");
     ok(ds_pbf_lookup(0) == NULL, "field number 0 is not found");
 
-    /* The three the whole geometry is arranged around ([RFCS.16.4]). */
     eq_u(DS_ATOM_FACT_ASSERT, 1, "FactAssert = 1");
     eq_u(DS_ATOM_FACT_RETRACT, 2, "FactRetract = 2");
     eq_u(DS_ATOM_CLOCK_ADVANCE, 3, "ClockAdvance = 3");
-    /* Field numbers below 16 carry a 1-byte tag — the reason the hot atoms sit
-       there. Asserted on the WIRE, since that is the property, not the number. */
+    /* Field numbers below 16 carry a 1-byte tag. Asserted on the WIRE, since
+       that is the property, not the number. */
     {
         uint8_t buf[16];
         size_t  n = frame(buf, 0, DS_ATOM_FACT_ASSERT, NULL, 0);
-        eq_u(n, 4, "an inject atom frames in 4 bytes (1-byte inner tag)");
+        eq_u(n, 4, "field 1 frames in 4 bytes (1-byte inner tag)");
         n = frame(buf, 0, DS_ATOM_REALTIME_CONTRACT, NULL, 0);
-        eq_u(n, 5, "a reject-band atom costs one more (2-byte inner tag)");
+        eq_u(n, 5, "field 128 costs one more (2-byte inner tag)");
     }
 }
 
@@ -582,25 +421,12 @@ static void test_legality_and_class(void)
     eq_u(ds_pbf_stream_class(DS_ATOM_RULE_FIRE_ANNOTATION), DS_ATOM_CLASS_COMPARE, "RuleFireAnnotation compare");
     eq_u(ds_pbf_stream_class(DS_ATOM_STREAM_HEADER), DS_ATOM_CLASS_STRUCTURAL, "StreamHeader structural");
     /* [RFCS.3.1]: 259 is held for the deferred Checkpoint, not allocated, so
-       it reads as any unknown skip-band number: no entry, no class, skipped. */
+       it has no entry and no class. */
     ok(ds_pbf_lookup(259) == NULL, "259 (deferred Checkpoint) has no entry");
     eq_u(ds_pbf_stream_class(259), DS_ATOM_CLASS_NONE, "259 has no class");
-    eq_u(ds_pbf_disposition(259), DS_PBF_DISP_SKIP, "259 is skipped");
     /* A DSC-only atom has no replay role to have. */
     eq_u(ds_pbf_stream_class(DS_ATOM_DSC_HEADER), DS_ATOM_CLASS_NONE, "DscHeader has no class");
     eq_u(ds_pbf_stream_class(999), DS_ATOM_CLASS_NONE, "unknown has no class");
-
-    /* The invariant behind [RFCS.16.2]: inject-class and inject-band are the same
-       set. If they ever came apart, a number would lie about its atom. */
-    {
-        size_t i;
-        for (i = 0; i < DS_ATOM_REGISTRY_COUNT; i++) {
-            const ds_atom_reg_entry_t *e = &ds_atom_registry[i];
-            int in_band  = (ds_pbf_band(e->number) == DS_ATOM_BAND_INJECT);
-            int in_class = (e->klass == DS_ATOM_CLASS_INJECT);
-            ok(in_band == in_class, "inject band == inject class");
-        }
-    }
 }
 
 static void test_rfcs_16_5__number_is_wire_identity(void)
@@ -703,17 +529,12 @@ int main(void)
     /* The shared corpus first, so a conformance break leads the log. */
     test_vectors_encode();
     test_vectors_decode();
-    test_vectors_band();
 
     /* This reader's own coverage. */
     test_rfcs_19_1__two_level_framing();
     test_rfcs_19_2__truncation_is_eof();
     test_rfcs_19_3__malformed_is_not_truncation();
     test_rfcs_19_4__container_type_from_first_field();
-
-    test_rfcs_16_2__band_fixes_blind_disposition();
-    test_rfcs_16_3__band_from_the_number_alone();
-    test_rfcs_18_8__unknown_inject_backstop();
 
     test_rfcs_16_1__one_registry_one_number_space();
     test_legality_and_class();

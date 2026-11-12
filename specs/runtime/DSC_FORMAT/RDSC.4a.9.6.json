@@ -1,0 +1,24 @@
+{
+  "id": "RDSC.4a.9.6",
+  "prefix": "RDSC",
+  "doc": "DSC_FORMAT.md",
+  "parent": "RDSC.4a.9",
+  "seq": 512,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RDSC.4a.9.6] **A bind index names a slot of its site's frame, and one outside\nit faults where it is used.** `Expr.bind_ref` and `BindExpr.bind_index`\n(`proto/rete_expr.proto#Expr`, `proto/rete_expr.proto#BindExpr`) name a slot of the\nbind frame of the site that holds them ([IRET.9.4]): a terminal's frame has\n`bind_count` slots ([RLOW.4.5.3.1]), a slot's conversion has one ([RDSC.5.5.9]),\nand a node's test has none ([IRET.9.2]). Each field is `uint32` on the wire and\nreserves no value, so every index is one its field can hold, and a loader\n**must not** refuse an artefact for an index outside its frame.\n\nWherever the engine reads or writes an index outside its site's frame, it\n**must** raise an `EngineError` (`proto/engine_fault.proto#EngineFault`) whose\nfault is `ENGINE_FAULT_ARTEFACT_LIED`, naming the node or rule that used it\n([LERR.9.11]), and halt the tier ([LERR.1.4.7]). It **must not** read a value, skip\nthe write or answer `null`. In a host's conversion the fault is one the conversion\nmeets, and the call answers as [NFCT.1.4.6] states.\n\nAn index inside its frame that is read before the `bind` writing it has run is\n[RARC.5.6.11]'s, and is no `ARTEFACT_LIED`.\n\n",
+  "refs": [
+    "IRET.9.2",
+    "IRET.9.4",
+    "LERR.1.4.7",
+    "LERR.9.11",
+    "NFCT.1.4.6",
+    "RARC.5.6.11",
+    "RDSC.5.5.9",
+    "RLOW.4.5.3.1"
+  ],
+  "symbols": [
+    "ENGINE_FAULT_ARTEFACT_LIED"
+  ]
+}

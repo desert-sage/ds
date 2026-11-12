@@ -1,0 +1,17 @@
+{
+    "id": "RDSC.5.5.9_a_tier_1_float_unit_converts_both_ways",
+    "clauses": ["RDSC.5.5.9"],
+    "category": "logical",
+    "scenario": "[RDSC.5.5.9]: a slot that names a unit carries `to_stored` and `from_stored`, and the engine evaluates one on a host's number when the host asks ([NFCT.1.4.6]). Here the dimensions store `Float`, and the units are tier-1 ([LUNI.4.3]). `Reading.t` is a `celsius` slot, `x + 273.15`, with an offset; `Reading.l` is a `km` slot, `x * 1000`, a factor alone. `to_stored` is `x::<unit>` ([RLOW.6.1.10]) and `from_stored` the inverse affine map ([RLOW.7.3.9]), each one rounded operation at a time. 21.5 celsius stores 294.65 K (21.5 + 273.15, exact in binary64 and the double nearest 294.65); 300.0 K reads back as 26.850000000000023 celsius, the exact difference of 300 and the double 273.15, not 26.85; 1.5 km stores 1500.0 m, and 1500.0 m reads back as 1.5 km. Each check holds to the bit ([RCTS.1.2.26]'s `slot_conversion`). A runtime that skipped the offset, rounded the subtraction otherwise or converted the wrong way fails a check. PATH PINNED: libds's `ds_schema_slot_to_stored` and `ds_schema_slot_from_stored` through pyds's `Engine.slot_to_stored` / `slot_from_stored`, and the Mercury runtime's `ds.engine.nfct_1_4_6_convert`, each evaluating the artefact's Slot `to_stored` / `from_stored` Expr with `bind_ref` 0 holding the number.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nunit km: length = x * 1000\n\nschema Reading scope logical:\n    id: String key\n    t: celsius mutable\n    l: km mutable\n",
+    "expect": {
+        "kind": "introspection_assert",
+        "steps": [],
+        "checks": [
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "t", "direction": "to_stored", "in": 21.5, "equals": 294.65 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "t", "direction": "from_stored", "in": 300.0, "equals": 26.850000000000023 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "l", "direction": "to_stored", "in": 1.5, "equals": 1500.0 },
+            { "surface": "slot_conversion", "schema": "Reading", "slot": "l", "direction": "from_stored", "in": 1500.0, "equals": 1.5 }
+        ]
+    }
+}

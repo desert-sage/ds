@@ -30,6 +30,11 @@
     %@spec [LEXP.17.2]
 :- mode lexp_17_2_row(out, out, out) is multi.
 
+    % One of the function's overloads has a parameter typed `Int` or `Float`.
+    %
+    %@spec [LEXP.17.2]
+:- pred lexp_17_2_number_parameter(string::in) is semidet.
+
 %-----------------------------------------------------------------------------%
 :- implementation.
 
@@ -184,6 +189,42 @@ lexp_17_2_row("math.tanh", [1], tier_pure).
 lexp_17_2_row("calendar.time", [3, 6, 7], tier_pure).
 lexp_17_2_row("math.trunc", [1], tier_pure).
 lexp_17_2_row("variance", [1], tier_pure).
+
+lexp_17_2_number_parameter("abs").
+lexp_17_2_number_parameter("math.acos").
+lexp_17_2_number_parameter("math.asin").
+lexp_17_2_number_parameter("math.atan").
+lexp_17_2_number_parameter("math.atan2").
+lexp_17_2_number_parameter("math.ceil").
+lexp_17_2_number_parameter("distance.chebyshev").
+lexp_17_2_number_parameter("math.cos").
+lexp_17_2_number_parameter("math.cosh").
+lexp_17_2_number_parameter("distance.cosine").
+lexp_17_2_number_parameter("calendar.date").
+lexp_17_2_number_parameter("math.degrees").
+lexp_17_2_number_parameter("distance.euclidean").
+lexp_17_2_number_parameter("math.exp").
+lexp_17_2_number_parameter("math.floor").
+lexp_17_2_number_parameter("math.fma").
+lexp_17_2_number_parameter("distance.great_circle").
+lexp_17_2_number_parameter("distance.hypotenuse").
+lexp_17_2_number_parameter("math.ln").
+lexp_17_2_number_parameter("math.log10").
+lexp_17_2_number_parameter("math.log2").
+lexp_17_2_number_parameter("distance.manhattan").
+lexp_17_2_number_parameter("max").
+lexp_17_2_number_parameter("min").
+lexp_17_2_number_parameter("math.pow").
+lexp_17_2_number_parameter("math.radians").
+lexp_17_2_number_parameter("round").
+lexp_17_2_number_parameter("math.sign").
+lexp_17_2_number_parameter("math.sin").
+lexp_17_2_number_parameter("math.sinh").
+lexp_17_2_number_parameter("math.sqrt").
+lexp_17_2_number_parameter("math.tan").
+lexp_17_2_number_parameter("math.tanh").
+lexp_17_2_number_parameter("calendar.time").
+lexp_17_2_number_parameter("math.trunc").
 
 %-----------------------------------------------------------------------------%
 :- end_module dsc.builtin_fns.

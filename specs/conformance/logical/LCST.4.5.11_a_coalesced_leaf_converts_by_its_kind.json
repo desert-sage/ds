@@ -1,0 +1,16 @@
+{
+    "id": "LCST.4.5.11_a_coalesced_leaf_converts_by_its_kind",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11] with [IRET.9.6]: `x ?? d` with `x` a `Json` leaf yields a present `x` as it is, whatever its kind, so its conversion takes the row for the kind it holds when the conversion runs, though [LNUL.5.3] gives `??` its default's type. One fact per case, each matched by its own rule on `k`: `f`'s Float leaf `31.5` under `(d.body.c ?? 0)::Float?` is 31.5, the Float row; `s`'s String leaf `\"2.5\"` parses as a `String` does, 2.5; `n`'s absent path reads `null` ([LNUL.8.4]), so `??` gives its default `0`, an `Int`, and the Int row gives 0.0. Each rule logs, in source order: [\"float\", \"string parses\", \"absent takes the default\"]. A compiler that typed the cast by the default's `Int` lowers it to `FN_INT_TO_FLOAT`, which mismatches on `f`'s Float with no provenance flag: an `EngineError` that halts the tier, and the step returns DS_ERR_ENGINE_HALTED ([RCTS.1.2.28]). PATH PINNED: `dsc.typecheck.lcst_4_5_11_source`'s `??` arm, and `dsc.rete`'s `ex_cast` arm choosing `lcst_4_5_11_dispatch` before the static row, its `is_float`, `is_string` and `is_int` arms in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule float:\n    Doc d where d.k == \"f\" and (d.body.c ?? 0)::Float? == 31.5\n->\n    log info \"float\"\n\nrule string_parses:\n    Doc d where d.k == \"s\" and (d.body.c ?? 0)::Float? == 2.5\n->\n    log info \"string parses\"\n\nrule absent:\n    Doc d where d.k == \"n\" and (d.body.c ?? 0)::Float? == 0.0\n->\n    log info \"absent takes the default\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "f", "body": { "c": 31.5 } } },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "s", "body": { "c": "2.5" } } },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "n", "body": {} } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["float", "string parses", "absent takes the default"]
+    }
+}

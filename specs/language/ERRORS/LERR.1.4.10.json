@@ -22,28 +22,40 @@
       ],
       [
         "`DOMAIN`",
-        "the operation is undefined at that input and is not an IEEE `Float` operation — a negative shift count, `now()` read while the wall clock has no value ([LTIM.2.8.3]), `local()` or `date()` with no `TimeZoneOffset` fact in force ([LTIM.10.5.3]), an interval whose endpoints are not `start <= end` ([LINT.7.2])",
+        "the operation is undefined at that input and is not an IEEE `Float` operation — a negative shift count; a `bits`, `sign_extend` or `swap_bytes` argument outside its domain ([LEXP.3.7.4]); `now()` read, or a `ts` filled, while the wall clock has no value ([LTIM.2.8.3]); `local()` or `date()` with no `TimeZoneOffset` fact in force ([LTIM.10.5.3]); a `calendar` field outside its range ([LTIM.14.2]); a `Date` plus or minus a `Duration` that is not a whole number of days ([LTIM.4.2.3]); an interval whose endpoints are not `start <= end` ([LINT.7.2])",
         "[LEXP.7.14.1]"
       ],
       [
         "`NOT_REPRESENTABLE`",
-        "an operation has no representable result **and wrapping would destroy its meaning** — a **total** conversion (`Float :: Int` on a value non-finite, or finite and outside `Int`); a `Json` value a rule builds past a limit (LGRA.5.8.6); an operation on `Time` or `Date` operands whose result leaves its type's range ([LTIM.1.1.5], [LTIM.1.2.2], [LTIM.4.1.1], [LTIM.4.2.3]); a `Duration` scaled by a `Float` whose result is non-finite or outside `Int` ([LTIM.4.1.1])",
+        "an operation has no representable result **and wrapping would destroy its meaning** — a **total** conversion (`Float :: Int` on a value non-finite, or finite and outside `Int`); a rounding builtin whose result lies outside `Int` or whose argument is not finite ([LEXP.3.2.1]); a conversion through an integer-stored unit with no representable result ([RLOW.6.1.10], [RLOW.7.3.9], [LADP.8.5.3]); a `Json` value a rule builds past a limit ([LGRA.5.8.6]), and a non-finite `Float` forced into a JSON body ([LDET.3.2.7]); an operation whose `Time` or `Date` result leaves its type's range ([LTIM.1.1.5], [LTIM.1.2.2], [LTIM.4.1.1], [LTIM.4.2.3], [LTIM.4.3.3], [LTIM.7.1], [LTIM.14.2]); a `Duration` scaled by a `Float` whose result is non-finite or outside `Int`, and a `Duration` sum or product above $2^{63} - 1$ nanoseconds ([LTIM.4.1.1]); a `sum` over a slot of the `time` dimension that reads negative ([LSER.17.2]); a computed time-format identifier that names no format ([LTIM.8.3.2])",
         "[LCST.4.5.4]"
       ]
     ]
   },
   "refs": [
+    "LADP.8.5.3",
     "LCST.4.5.4",
-    "LERR.1.4.3",
-    "LEXP.7.14.1",
+    "LDET.3.2.7",
     "LDET.3.6.2",
+    "LERR.1.4.3",
+    "LEXP.3.2.1",
+    "LEXP.3.7.4",
+    "LEXP.7.14.1",
+    "LGRA.5.8.6",
     "LINT.7.2",
+    "LSER.17.2",
     "LTIM.1.1.5",
     "LTIM.1.2.2",
     "LTIM.10.5.3",
+    "LTIM.14.2",
     "LTIM.2.8.3",
     "LTIM.4.1.1",
-    "LTIM.4.2.3"
+    "LTIM.4.2.3",
+    "LTIM.4.3.3",
+    "LTIM.7.1",
+    "LTIM.8.3.2",
+    "RLOW.6.1.10",
+    "RLOW.7.3.9"
   ],
   "checks": {
     "idris": [
@@ -53,7 +65,7 @@
         "tag": "spec",
         "role": "definition",
         "verdict": "partial",
-        "note": "The NOT_REPRESENTABLE row's conversion case: Float :: Int on a value non-finite, or finite and outside Int, is the trap. The money and Json cases are outside the fragment, and the evaluator has one trap kind."
+        "note": "The NOT_REPRESENTABLE row's conversion case: Float :: Int on a value non-finite, or finite and outside Int, is the trap. The row's other cases -- a `Json` value built past a limit, a `Time`, `Date` or `Duration` result outside its range, a time-dimension `sum` reading negative -- are outside the fragment, and the evaluator has one trap kind."
       },
       {
         "path": "formal/idris/Rete/Eval.idr",

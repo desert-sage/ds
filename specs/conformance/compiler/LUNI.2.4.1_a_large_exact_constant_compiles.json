@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.2.4.1_a_large_exact_constant_compiles",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [LUNI.2.4]: a Rational of any size is exact at compile time, and only a constant the compiler emits is held to a runtime value's range. The standard library's `kiloparsec` is `x * 3.085677581491367e19` m, whose exact numerator is past 2^63 - 1; `electronvolt` (`x * 1.602176634e-19` J) and `dalton` (`x * 1.66053906660e-27` kg) have exact denominators past it. All three are `float64` dimensions, so each emits `a` as a `Float`, which is finite and not zero. Each is used in a `where`: a `length` slot against `1_kiloparsec`, an `electronvolt` slot against `1_electronvolt`, a `mass` slot against `1_dalton`. It compiles. A compiler that bounds the Rational's parts at int64 refuses the standard library. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants` (through `dsc.quantity.luni_2_4_1_unit_out_of_range`) and `dsc.typecheck.luni_3_1_7_literal_type` (through `dsc.quantity.luni_2_4_1_literal_out_of_range`) passing each, through `dsc.exact.to_float`.",
+    "rules_ds": "from units.astro import kiloparsec\nfrom units.metric import electronvolt, dalton\n\nschema Body scope logical:\n    id: String key\n    d: length mutable\n    e: electronvolt mutable\n    m: mass mutable\n\nrule far:\n    Body b where b.d > 1_kiloparsec\n->\n    log info \"far\"\n\nrule charged:\n    Body b where b.e > 1_electronvolt\n->\n    log info \"charged\"\n\nrule heavy:\n    Body b where b.m > 1_dalton\n->\n    log info \"heavy\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

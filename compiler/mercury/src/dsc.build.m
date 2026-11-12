@@ -289,7 +289,7 @@ build_filter_field(F) =
 :- func build_const(lgra_4_1_const_decl) = ast_const.
 
 build_const(C) = ast_const(C ^ cd_name, build_const_form(C ^ cd_form),
-                           C ^ cd_pos, []).
+                           C ^ cd_pos, [], "").
 
     %@helper
 :- func build_const_form(lgra_4_1_const_form) = ast_const_form.

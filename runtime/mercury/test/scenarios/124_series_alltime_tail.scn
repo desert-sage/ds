@@ -1,0 +1,31 @@
+# `bool_and`, `bool_or`, `first`, `last` and `rate` on all_time, across an
+# hour -- see fixtures/159_series_alltime_tail.ds. Samples are absorbed at
+# 0, 2 s, 5 s, 1 h 5 s and 1 h 5 s:
+#
+#   pump 1  cold
+#   pump 2  HB [t]: true, true;  HF [10 @0]: 10.0, 10.0, rate -1.0 (no elapsed time)
+#   pump 3  HB [t, f]: false, true;  HF [10 @0, 30 @2s]: 10.0, 30.0, rate 10.0
+#   pump 4  HB [t, f, t]: false, true;  HF [.., 25 @5s]: 10.0, 25.0, rate 3.0
+#   pump 5  HB [t, f, t, f]: false, true;  HF [.., 26 @1h5s]: 10.0, 26.0,
+#           rate (16 * 1e9) / 3605e9 -- `first` is still the sample at 0
+#
+# Every assert changes its value, so each is a sample ([LFAC.2.5.1]).
+# @spec [LSER.16.8] [LSER.16.9] [LSER.19.8]
+assert HB k=h ok=true
+assert HF k=f v=10.0
+pump
+advance 2000000000
+assert HB k=h ok=false
+assert HF k=f v=30.0
+pump
+advance 3000000000
+assert HB k=h ok=true
+assert HF k=f v=25.0
+pump
+advance 3600000000000
+assert HB k=h ok=false
+assert HF k=f v=26.0
+pump
+assert HB k=h ok=true
+assert HF k=f v=27.0
+pump

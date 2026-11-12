@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.2.7.3_a_then_window_reads_the_predecessors_ttl",
+    "category": "compiler",
+    "scenario": "[LTIM.2.7.3] with [LTHE.2.3.1]: a `then` step's `within` is bounded by the TTL of the step before it, whose fact must still be live when the step's arrives. `A` lives 10 s and `B` 1 h, so `A a then B b within 60_s` is refused for `A`'s TTL; `B`'s own TTL would admit it, so a compiler that reads the step's own schema compiles the program. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. PATH PINNED: `dsc.validate.ltim_2_7_3_within_exceeds_ttl`, through `read_windows`' sequence arm, `step_window` pairing the step's window with the head's body, and `window_exceeds_ttl`.",
+    "rules_ds": "schema A scope ttl 10_s:\n    ts: Time\n\nschema B scope ttl 1_h:\n    ts: Time\n\nrule pair:\n    A a then B b within 60_s\n->\n    log info \"{a.ts} {b.ts}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_WITHIN_EXCEEDS_TTL"
+    }
+}

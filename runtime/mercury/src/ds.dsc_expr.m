@@ -23,7 +23,9 @@
     ;       xr_error(load_error_kind, string).      % kind, clause id
 
     % The `bind_scope` is the terminal's `bind_count`, or `no_bind_frame` for a
-    % `BetaNode`'s join tests.
+    % `BetaNode`'s join tests. A bind index is kept whatever the frame
+    % [RDSC.4a.9.6]: the evaluator, which knows the frame's size, faults on one
+    % outside it.
     %
 :- pred decode_expr(reader::in, bind_scope::in, intern_table::in,
                     expr_result::out) is det.
@@ -36,6 +38,7 @@
 :- implementation.
 
 :- import_module ds.builtins.
+:- import_module ds.chrono.
 :- import_module ds.id.
 :- import_module ds.value.
 :- import_module bool.
@@ -197,12 +200,18 @@ expr_field(Num, Value, Depth, Scope, IT, Out) :-
             Out = bad_field
         )
     else if Num = 14u32 then
+        % [RDSC.4a.9.6]: kept whatever the frame; one outside it faults where it
+        % is read.
         ( if Value = fv_varint(V) then
-            ( if bind_index_in(Scope, uint64.cast_to_int(V), Ix) then
-                Out = xf_ok(e_bind_ref(Ix), IT)
-            else
-                Out = xf_error(lek_dangling, "RDSC.8.7")
-            )
+            Out = xf_ok(e_bind_ref(bind_index_of(wire_uint32(V))), IT)
+        else
+            Out = bad_field
+        )
+    else if Num = 22u32 then
+        % `lit_time` [RLOW.6.1.8]: UTC nanoseconds, a sign-extended varint, at
+        % offset 0.
+        ( if Value = fv_varint(V) then
+            Out = xf_ok(e_lit(time(ds_time(int64.cast_from_uint64(V), 0i64))), IT)
         else
             Out = bad_field
         )
@@ -811,13 +820,10 @@ decode_bind(R, Depth, Scope, IT, Out) :-
     ;
         Result = pp_ok(P),
         ( if map.search(P ^ pt_exprs, 2u32, Bound) then
-            ( if
-                bind_index_in(Scope, uint64.cast_to_int(int_part(P, 1u32)), Ix)
-            then
-                Out = xf_ok(e_bind(Ix, Bound), P ^ pt_it)
-            else
-                Out = xf_error(lek_dangling, "RDSC.8.7")
-            )
+            % [RDSC.4a.9.6]: kept whatever the frame; one outside it faults
+            % where it is written.
+            Ix = bind_index_of(wire_uint32(int_part(P, 1u32))),
+            Out = xf_ok(e_bind(Ix, Bound), P ^ pt_it)
         else
             Out = xf_error(lek_semantic, "RDSC.11.1")
         )

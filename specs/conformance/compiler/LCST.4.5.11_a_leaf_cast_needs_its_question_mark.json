@@ -1,0 +1,10 @@
+{
+    "id": "LCST.4.5.11_a_leaf_cast_needs_its_question_mark",
+    "category": "compiler",
+    "scenario": "[LCST.4.5.11] with [LCST.4.3.2]: a `Json` leaf may be `null`, from an absent path or a JSON `null`, so its source is nullable, and a cast of it without `?` is refused with DS_VALIDATE_CAST_NULLABILITY. `d.body.c::Float` names no `?`. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. A compiler that left a leaf's cast untyped compiles it. PATH PINNED: `dsc.typecheck.lcst_4_1_5_cast_type`, through `lcst_4_5_11_source`'s path arm (`lcst_4_5_11_json_valued`) and `lcst_4_5_11_cast_type`'s nullable-source column.",
+    "rules_ds": "schema Doc scope logical:\n    body: Json key\n\nschema Hit scope logical:\n    id: String key\n    c: Float mutable\n\nrule convert:\n    Doc d\n->\n    emit Hit logical id: \"h\" c: d.body.c::Float\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_NULLABILITY"
+    }
+}

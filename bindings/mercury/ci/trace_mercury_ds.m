@@ -442,6 +442,81 @@ run_step(sc_mem, Run0, ok(Run)) :-
         Run = mem_line(M, Run0)
     ).
 
+run_step(sc_convert(Name, Slot, Dir, Value), Run0, Result) :-
+    % [NFCT.1.4.6]'s conversion through mercury_ds's `slot_to_stored` or
+    % `slot_from_stored`, traced as trace_libds.py traces pyds's: `int N`,
+    % `float B` (the IEEE-754 bits as a signed 64-bit integer) or `refused
+    % S`, after what the conversion's EngineError reports. A name the
+    % session has no schema or slot by is SCHEMA_UNKNOWN or SLOT_UNKNOWN, as
+    % pyds refuses it, and a halted session's schema read is refused.
+    S0 = Run0 ^ run_session,
+    Words = ["convert", Name, Slot, direction_name(Dir)],
+    ( if search_schema(S0, Name, Read) then
+        (
+            Read = halted(_),
+            Result = ok(add_line(Words ++ refused_words(engine_halted), Run0))
+        ;
+            Read = ok(Schema),
+            ( if
+                slot_names(S0, Schema) = ok(SlotNames),
+                list.find_index_of_match(
+                    (pred(N::in) is semidet :- N = Slot), SlotNames, 0, Index)
+            then
+                In = storable_of(S0, Value),
+                (
+                    In = ok(Number),
+                    (
+                        Dir = ud_to_stored,
+                        slot_to_stored(Schema, Index, Number, Step, S0, S)
+                    ;
+                        Dir = ud_from_stored,
+                        slot_from_stored(Schema, Index, Number, Step, S0, S)
+                    ),
+                    trace_reports(Step ^ unit_step_reports, _,
+                        (Run0 ^ run_session := S), Run1),
+                    Converted = Step ^ unit_step_result,
+                    (
+                        Converted = ok(Out),
+                        Result = ok(add_line(Words ++ number_words(Out), Run1))
+                    ;
+                        Converted = error(Error),
+                        Result = ok(add_line(
+                            Words ++ ["refused", status_text(Error)],
+                            note("convert " ++ Name ++ " " ++ Slot, Error,
+                                Run1)))
+                    )
+                ;
+                    In = error(Why),
+                    Result = error(Why)
+                )
+            else
+                Result = ok(add_line(Words ++ refused_words(slot_unknown),
+                    Run0))
+            )
+        )
+    else
+        Result = ok(add_line(Words ++ refused_words(schema_unknown), Run0))
+    ).
+
+    % A conversion's result as a `convert` line ends, as trace_libds.py's
+    % `number_text` spells it.
+    %
+:- func number_words(storable) = list(string).
+
+number_words(V) = Words :-
+    ( if V = int(I) then
+        Words = ["int", string.int64_to_string(I)]
+    else if V = float(F) then
+        Words = ["float", float.float64_bits_string(F)]
+    else
+        Words = ["?", string.string(V)]
+    ).
+
+:- func refused_words(status) = list(string).
+
+refused_words(Status) =
+    ["refused", string.int_to_string(status_number(Status))].
+
 :- func mem_line(engine_mem, run) = run.
 
 mem_line(M, Run0) = add_line(["mem",
@@ -1087,6 +1162,9 @@ fill_bytes([B | Bs], I, BM0) =
     ;       sc_resend(int)
             % `resend K`: the K-th fact sent as a call argument, from 0,
             % asserted back as another tier's.
+    ;       sc_convert(string, string, unit_direction, scenario_value)
+            % `convert <Schema> <slot> <to_stored|from_stored> <number>`: a
+            % number through the slot's unit conversion ([NFCT.1.4.6]). A read.
     ;       sc_pump
     ;       sc_refracted
             % The refracted matches. A read.
@@ -1169,6 +1247,17 @@ parse_line([Head | Rest]) = Parsed :-
         Parsed = with_int(Head, Rest, (func(N) = sc_trace(N)))
     else if Head = "mem", Rest = [] then
         Parsed = parsed_step(sc_mem)
+    else if
+        Head = "convert",
+        Rest = [CSchema, CSlot, DirText, ValueText],
+        convert_direction(DirText, Dir),
+        Value = scenario_value(ValueText),
+        ( Value = sv_int(_) ; Value = sv_float(_) )
+    then
+        Parsed = parsed_step(sc_convert(CSchema, CSlot, Dir, Value))
+    else if Head = "convert" then
+        Parsed = unreadable("convert: want <schema> <slot> "
+            ++ "<to_stored|from_stored> <number>")
     else if Head = "assert", Rest = [Schema | Assigns] then
         Parsed = parsed_step(sc_assert(Schema,
             list.map(assignment, Assigns)))
@@ -1177,6 +1266,16 @@ parse_line([Head | Rest]) = Parsed :-
     else
         Parsed = unreadable("unknown scenario step '" ++ Head ++ "'")
     ).
+
+:- pred convert_direction(string::in, unit_direction::out) is semidet.
+
+convert_direction("to_stored", ud_to_stored).
+convert_direction("from_stored", ud_from_stored).
+
+:- func direction_name(unit_direction) = string.
+
+direction_name(ud_to_stored) = "to_stored".
+direction_name(ud_from_stored) = "from_stored".
 
 :- func with_int(string, list(string), (func(int) = scenario_step))
     = line_parse.

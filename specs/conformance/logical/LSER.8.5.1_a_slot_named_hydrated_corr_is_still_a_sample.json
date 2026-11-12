@@ -1,0 +1,17 @@
+{
+    "id": "LSER.8.5.1_a_slot_named_hydrated_corr_is_still_a_sample",
+    "clauses": ["LSER.8.5.1"],
+    "category": "logical",
+    "scenario": "[LSER.8.5.1]: a series takes one sample of its tracked slot per fact that enters working memory. No clause in force exempts a fact by the name of one of its slots: hydration is not in this edition, [LHYD.1] and [RHIM.5.3] being deferred. So an author's own `hydrated_corr: String` slot is an ordinary slot. Steps: assert Reading `a` with `hydrated_corr` \"x\", a non-empty string, and `v` 1, and pump, so the end-of-pump absorb takes its sample; then assert a Probe and pump, and rule `read` logs `count(r.v)` for `a`. Expected: `count 1`. A runtime that skips a fact whose slot named `hydrated_corr` holds a non-empty string reads an empty window, and logs `count 0`. The message is logged either way, so a rule that never ran fails too. PATH PINNED: libds `series_walk_fact` and `ds_engine_series_capacity_check` (engine_rete_adapters.c), with no test of slot names; the Mercury runtime's `ds.engine.absorb_fact`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    hydrated_corr: String mutable\n    v: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.v (by: dev):\n    count sliding 1_h\n\nrule read:\n    Probe\n    Reading r where r.dev == \"a\"\n->\n    let c = count(r.v)\n    log info \"count {c}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "hydrated_corr": "x", "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["count 1"]
+    }
+}

@@ -17,7 +17,7 @@ It records every input the engine consumed, every observable it produced, and th
 
 A stream is a `Stream` container, `repeated Atom atoms = 1`; each atom is identified by its `oneof` field number.
 
-The outer tag is one byte for every atom; the band and tag-width rules concern the inner `oneof_tag`. A stream is read forward and in one pass. The `.dsc` container (`Dsc`) shares the framing.
+The outer tag is one byte for every atom. A stream is read forward and in one pass. The `.dsc` container (`Dsc`) shares the framing.
 
 ```ebnf
 container   = { frame } ;
@@ -55,15 +55,14 @@ A reader given the whole buffer may treat a partial trailing atom as an error. A
 
 ### Parsing departures from protobuf
 
-DS hand-parses the containers and differs from protobuf in three cases.
+DS hand-parses the containers and differs from protobuf in two cases.
 
 | Case | protobuf | DS |
 |---|---|---|
 | truncated trailing atom | refuses the message | reads on, keeping the complete atoms |
 | `Atom` with no `oneof` member set | accepts it | refuses the container |
-| unallocated field number | keeps it as an unknown field | applies the number's [band](#bands) |
 
-*(Spec: [RFCS.18.8], [RFCS.19.3])*
+*(Spec: [RFCS.19.2], [RFCS.19.3])*
 
 ### Writer rules
 
@@ -79,23 +78,11 @@ It writes a non-repeated field at most once, and a repeated field's elements in 
 
 The `.dsc` and the stream share one [atom registry](../atoms/index.md#census): one `oneof body` over one field-number space.
 
-An atom's field number is its wire identity in both containers, and each container carries a legal subset. Each atom has its own number; atoms are never told apart by a discriminator inside a body. `SchemaDef` and `Slot` share their bodies with the `.dsc`.
+An atom's field number is its wire identity in both containers, and each container carries a legal subset. Each atom has its own number; atoms are never told apart by a discriminator inside a body. No atom is renumbered. `SchemaDef` and `Slot` share their bodies with the `.dsc`.
 
-*(Spec: [RFCS.3.2], [RFCS.3.5], [RFCS.16.1], [RFCS.16.6])*
+A field inside an atom's body that the reader does not know is skipped. Within one `<major>.<minor>.` series, such a field is one the series has struck and reserved.
 
-### Bands
-
-A field number's band fixes what a reader with no entry for it does.
-
-| Band | Range | Unknown number |
-|---|---|---|
-| inject | 1–127 | reject, `DS_ERR_FS_UNKNOWN_INJECT` |
-| reject-don't-skip | 128–255 | reject, `DS_ERR_DSC_VERSION` |
-| skip-don't-reject | 256–2047 | skip by the length prefix |
-
-The boundaries are powers of two, so the band is a high-bit test. Field numbers 1–15 take a one-byte tag. `FactAssert` is 1, `FactRetract` 2 and `ClockAdvance` 3. A field number in no band, 0 or above 2047, is not an atom, and the container carrying it is refused as malformed. A field the reader does not know inside a known atom's body is skipped. A reader walks each atom's tags and rejects the stream when an unknown number falls in the inject band. A field number is never renumbered except by band overflow, realised by recompiling.
-
-*(Spec: [RFCS.2.3], [RFCS.16.2], [RFCS.16.3], [RFCS.16.4], [RFCS.16.5], [RFCS.18], [RFCS.18.8])*
+*(Spec: [RFCS.3.2], [RFCS.3.5], [RFCS.16.1], [RFCS.16.3], [RFCS.16.5], [RFCS.16.6])*
 
 ### Container legality and stream class
 
@@ -107,7 +94,7 @@ Each atom has a container legality, `DSC`, `stream` or `both`, and a stream clas
 | compare | an engine output, re-derived and byte-compared with the record; never delivered |
 | structural | framing, schema and seek, with no input role |
 
-A known reader rejects a container carrying an atom its legality does not admit. A replayer's inject path refuses every atom outside the inject class: a `call` is never a replay input. An unknown atom is safely skippable only when it is compare or structural and carries no positional precondition; an atom that claims where the stream starts or where it sits is allocated in the reject-don't-skip band.
+A known reader rejects a container carrying an atom its legality does not admit. A replayer's inject path refuses every atom outside the inject class: a `call` is never a replay input.
 
 *(Spec: [RFCS.3.4], [RFCS.17.1], [RFCS.17.3], [RFCS.17.5], [RFCS.17.6])*
 
@@ -180,7 +167,7 @@ A `CacheSeed` atom records one host cache seed, in the prelude after the schema 
 
 There is one atom per seeded key the cache holds when the header is written, in ascending order of the key's UTF-8 bytes; a key seeded twice carries the second seed's entry. A refused seed, an `initial` block's cache items and the cache of a recorder attached after the first event have no atom. A `CacheSeed` carries no `seq`. A replayer applies each before the first event, as a host seed, with no cache event and no write-through; an engine that refuses one, or a `CacheSeed` after an event atom, is `DS_ERR_FS_DIVERGENCE`. Stream class inject, field 6.
 
-*(Spec: [RFCS.26.1], [RFCS.26.2], [RFCS.26.3], proto: cache_seed.proto)*
+*(Spec: [RFCS.26.1], [RFCS.26.2], proto: cache_seed.proto)*
 
 ## Fact atoms
 
@@ -331,7 +318,7 @@ A `CallIssued` atom records an outbound call the engine issued, one per `action_
 | `correlation` | the `as` value or the compiler-generated one; never empty |
 | `rule_name`, `timetag` | the firing activation's identity |
 
-`(timetag, rule_name)` joins it to its `RuleFireAnnotation`; `correlation` joins it to its answers, which arrive as `FactAssert`s. It is compare class, in the [skip band](#bands). Its body is canonical by construction. The event is emitted once the call's arguments evaluate, before the call callback, whatever the callback does or whether one is registered; a call with an argument that fails to evaluate or is refused emits none. `call` is the only verb recorded this way. The emitting mechanism is [Action events](../engine/agenda-and-actions.md#action-events).
+`(timetag, rule_name)` joins it to its `RuleFireAnnotation`; `correlation` joins it to its answers, which arrive as `FactAssert`s. It is compare class. Its body is canonical by construction. The event is emitted once the call's arguments evaluate, before the call callback, whatever the callback does or whether one is registered; a call with an argument that fails to evaluate or is refused emits none. `call` is the only verb recorded this way. The emitting mechanism is [Action events](../engine/agenda-and-actions.md#action-events).
 
 *(Spec: [RFCS.15.1], [RFCS.15.2], [RFCS.15.3], [RFCS.15.4], [RFCS.15.5], [RFCS.15.6], [RFCS.15.7], [IDSP.1.4], [IDSP.6.5], proto: call_issued.proto)*
 

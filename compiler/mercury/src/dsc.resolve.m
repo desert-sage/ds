@@ -97,7 +97,10 @@
                     % this file and its import closure declare, by declaration
                     % ([LUNI.4.1.5]): what a library's slot or constant names,
                     % whether or not this file can spell it ([LIMP.1.5]).
-                rf_decl_types :: map(decl_ref, type_entry)
+                rf_decl_types :: map(decl_ref, type_entry),
+
+                    % Every library's scope for its constants ([LIMP.1.5]).
+                rf_const_scopes :: map(string, library_const_scope)
             ).
 
     % One rule's names, in source order: consumers walk this in step with the
@@ -197,8 +200,9 @@
     %@spec [LIMP.1.5]
 :- pred slot_entry(resolved_file::in, ast_field::in, type_entry::out) is semidet.
 
-    % [LIMP.1.5]: the file a library's constant is read in: its unit literals mean
-    % what they mean in that library, whatever this file binds those names to.
+    % [LIMP.1.5]: the file a library's constant is read in: its unit literals and
+    % the names in its value mean what they mean in that library, whatever this
+    % file binds those names to.
     %
     %@spec [LIMP.1.5]
 :- func const_scope(resolved_file, ast_const) = resolved_file.
@@ -209,6 +213,21 @@
     %
     %@spec [LIMP.1.5]
 :- func kwarg_scope(resolved_file, ast_service_kwarg) = resolved_file.
+
+    % [LIMP.1.5]: the file a slot's unit is read in: its type spells what it
+    % spells in the file declaring the slot, whatever this file binds that
+    % spelling to, or whether it can spell it at all.
+    %
+    %@spec [LIMP.1.5]
+:- func field_scope(resolved_file, ast_field) = resolved_file.
+
+    % [LIMP.1.5]: the file a declaration is read in, when only its reference
+    % is known: its name spells that declaration, whatever this file binds the
+    % name to, or whether it can spell it at all. A reference that names no
+    % declaration leaves the file as it is.
+    %
+    %@spec [LIMP.1.5]
+:- func decl_scope(resolved_file, decl_ref) = resolved_file.
 
     % The schema a schema reference names, at any [LGRA.22.4] site: a bare
     % name through the type namespace, `lib.Schema` through the qualified
@@ -331,7 +350,8 @@ resolve_imported(File0, Scope, Result) :-
             Units,
             Imports ^ im_qualified_surface, Imports ^ im_qualified_schemas,
             Imports ^ im_qualified_consts,
-            Imports ^ im_library_schemas, unresolved_program, [], DeclTypes))
+            Imports ^ im_library_schemas, unresolved_program, [], DeclTypes,
+            Imports ^ im_const_scopes))
     ;
         Errors = [_ | _],
         Result = resolve_errors(Errors)
@@ -459,9 +479,27 @@ slot_entry(RF, Field, Entry) :-
         map.search(RF ^ rf_types, Field ^ af_type ^ id_name, Entry)
     ).
 
-const_scope(RF, Const) = limp_1_5_scope(RF, Const ^ acn_units).
+const_scope(RF, Const) = Scope :-
+    Units = limp_1_5_scope(RF, Const ^ acn_units),
+    ( if map.search(RF ^ rf_const_scopes, Const ^ acn_library, Library) then
+        Scope = (((Units ^ rf_consts := Library ^ lcs_consts)
+            ^ rf_qualified_consts := Library ^ lcs_qualified)
+            ^ rf_qualified_surface := Library ^ lcs_surface)
+            ^ rf_ast := Library ^ lcs_ast
+    else
+        Scope = Units
+    ).
 
 kwarg_scope(RF, Kwarg) = limp_1_5_scope(RF, Kwarg ^ ask_units).
+
+field_scope(RF, Field) =
+    ( if Field ^ af_decl = yes(Ref) then
+        limp_1_5_scope(RF, [Field ^ af_type ^ id_name - Ref])
+    else
+        RF
+    ).
+
+decl_scope(RF, Ref) = limp_1_5_scope(RF, [Ref ^ dr_name - Ref]).
 
     %@helper
 :- func limp_1_5_scope(resolved_file, assoc_list(string, decl_ref))

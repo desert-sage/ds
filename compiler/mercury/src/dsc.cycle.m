@@ -33,11 +33,13 @@
     % The same check over a whole compilation unit: every library whose rules
     % join the artefact ([LIMP.7.5]), leaves first, then the file (named "").
     % A schema is keyed by its own name ([LIMP.13.1]), not as a module spells
-    % it; a name that resolves to no schema makes no edge.
+    % it; a name that resolves to no schema makes no edge. Each diagnostic
+    % comes with the module of the rule it is placed at, "" for the file, so
+    % the caller names it as [RCLI.1.9] says.
     %
     %@spec [LCYC.6.3]
 :- pred lcyc_6_3_unit_graph(list(pair(string, resolved_file))::in,
-                            list(diagnostic)::out) is det.
+                            list(pair(string, diagnostic))::out) is det.
 
     % The `where` of the pattern binding `Binding` requires a literal of some
     % slot not in `Keys`, and the emit's arguments give that slot a literal
@@ -57,6 +59,7 @@
 :- import_module ds.
 :- import_module ds.i64.
 
+:- import_module assoc_list.
 :- import_module bool.
 :- import_module float.
 :- import_module map.
@@ -132,13 +135,14 @@
 
 lcyc_3_1_rule_graph(RF, Diagnostics) :-
     Nodes = rule_nodes(RF, RF ^ rf_ast ^ af_decls),
-    Diagnostics = refused_cycle(Nodes).
+    Diagnostics = list.map(pair.snd, refused_cycle(Nodes)).
 
     % Searches only the refused SCCs' internal edges, so an admitted cycle is
-    % never reported.
+    % never reported. Each diagnostic comes with the name of the rule node it
+    % is placed at (`cycle_pos`).
     %
     %@helper
-:- func refused_cycle(list(rule_node)) = list(diagnostic).
+:- func refused_cycle(list(rule_node)) = list(pair(string, diagnostic)).
 
 refused_cycle(Nodes) = Diagnostics :-
     Edges = lcyc_3_2_2_edges(Nodes),
@@ -146,7 +150,9 @@ refused_cycle(Nodes) = Diagnostics :-
     Refused = refused_sccs(Nodes, adjacency(Edges), Names),
     Internal = list.filter(internal_to(Refused), Edges),
     ( if find_cycle(adjacency(Internal), Names, Cycle) then
-        Diagnostics = [lcyc_3_3_2_cycle_diagnostic(Nodes, Cycle)]
+        % `cycle_pos` places the diagnostic at the first edge's rule.
+        Rule = ( if Cycle = [First | _] then First ^ ed_from else "" ),
+        Diagnostics = [Rule - lcyc_3_3_2_cycle_diagnostic(Nodes, Cycle)]
     else
         Diagnostics = []
     ).
@@ -157,7 +163,26 @@ refused_cycle(Nodes) = Diagnostics :-
 
 lcyc_6_3_unit_graph(Modules, Diagnostics) :-
     Nodes = list.condense(list.map(unit_nodes, Modules)),
-    Diagnostics = refused_cycle(Nodes).
+    Owners = list.condense(list.map(unit_owners, Modules)),
+    Diagnostics = list.map(
+        ( func(Rule - D) = Owner - D :-
+            ( if assoc_list.search(Owners, Rule, Module) then
+                Owner = Module
+            else
+                Owner = ""
+            )
+        ), refused_cycle(Nodes)).
+
+    % Each rule node's key, as `unit_node` names it, with its module.
+    %
+    %@helper
+:- func unit_owners(pair(string, resolved_file)) = list(pair(string, string)).
+
+unit_owners(Module - RF) =
+    list.filter_map(
+        ( func(D) = unit_rule_name(Module, R) - Module is semidet :-
+            D = ad_rule(R) ),
+        RF ^ rf_ast ^ af_decls).
 
     % One module's rules as graph nodes, every name replaced by its key: the
     % rule by `module:rule` (the file's by its bare name), each schema by its

@@ -1,0 +1,19 @@
+{
+    "id": "LCST.4.5.11_a_kind_with_no_row_is_a_type_error",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11] with [IRET.9.6]: a `Json` leaf of a kind with no row to the target is a TypeError, not an EngineError. `t`'s leaf is `true`, and [LCST.4.5.2] has no row from `Bool` to `Float`; `a`'s is the array `[1]`, which has none either. Each fact is matched by its own rule, so each fault has its own identity: a `TypeError` fact's identity is `(node, rule)` ([LERR.9.3]), and a fault raised while matching names the beta node as its rule ([LERR.9.11]), so two faults at one rule's node would be one fact. Each `d.body.c::Float?` raises a TypeError, which `handler` logs, and neither rule fires. A third fact, `f` with `2`, then converts and fires `from_number`, so the tier was not halted: an EngineError stops the pump where it is raised ([LERR.1.4.7]), and the step would return DS_ERR_ENGINE_HALTED, which fails the fixture ([RCTS.1.2.28]). Exactly [\"type error\", \"type error\", \"converted f\"]. PATH PINNED: `dsc.rete.lcst_4_5_11_dispatch`'s `is_bool` arm and its last arm, each `lcst_4_5_11_no_row`, a mismatch on a flagged node, in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule from_bool:\n    Doc d where d.k == \"t\" and d.body.c::Float? > 0.0\n->\n    log info \"converted {d.k}\"\n\nrule from_array:\n    Doc d where d.k == \"a\" and d.body.c::Float? > 0.0\n->\n    log info \"converted {d.k}\"\n\nrule from_number:\n    Doc d where d.k == \"f\" and d.body.c::Float? > 0.0\n->\n    log info \"converted {d.k}\"\n\nrule handler:\n    TypeError\n->\n    log info \"type error\"\n",
+    "dead_rules_expected": ["from_bool", "from_array"],
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "t", "body": { "c": true } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "a", "body": { "c": [1] } } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Doc", "slots": { "k": "f", "body": { "c": 2 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["type error", "type error", "converted f"]
+    }
+}

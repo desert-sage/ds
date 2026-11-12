@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_duration_add_at_range_ok",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6"],
+    "category": "logical",
+    "scenario": "[LTIM.4.1.1]'s boundary: a `Duration + Duration` of exactly 2^63 - 1 nanoseconds is that value, and only one above it raises. `s.a` is 2^63 - 2, `s.b` is 1, and the rule compares the sum with `s.big`, 2^63 - 1. Exactly [\"hit\"]. A bound one too tight raises here. PATH PINNED: `FN_DURATION_ADD` on each runtime, at the largest sum it admits.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    a: Duration mutable\n    b: Duration mutable\n    big: Duration mutable\n\nrule at_range:\n    S s where s.a + s.b == s.big\n->\n    log info \"hit\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "a": 9223372036854775806, "b": 1, "big": 9223372036854775807 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit"]
+    }
+}

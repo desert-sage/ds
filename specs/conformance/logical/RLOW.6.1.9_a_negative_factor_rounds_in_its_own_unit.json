@@ -1,0 +1,15 @@
+{
+    "id": "RLOW.6.1.9_a_negative_factor_rounds_in_its_own_unit",
+    "clauses": ["RLOW.6.1.9", "LUNI.8.9"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.9]: on integer storage a rounding works on the exact value in the unit, `(Q·x - R) / P`, for either sign of `P`, with the builtin's integer taken back as `n::<unit>` is ([LEXP.3.2]: `round` ties to even). `owed` is `x * -100` cents, so P = -100, Q = 1, R = 0. Slot `o` holds -250 cents, 2.5 owed: `round` 2 (ties to even), `math.trunc` 2, `math.floor` 2, `math.ceil` 3. Slot `p` holds 350 cents, -3.5 owed: `round` -4 (ties to even), `math.floor` -4, `math.ceil` -3, `math.trunc` -3. Each is its own rule, compared with the unit literal, and all eight log in source order. The positive-factor arithmetic (`x // f` and `x % f` with f = -100) takes `math.ceil(r.o)` to 2, and `math.ceil(r.p)` and `math.trunc(r.p)` to -4, so `o ceil`, `p ceil` and `p trunc` go silent. PATH PINNED: `dsc.rete.rlow_6_1_9_tier1`, whose numerator is negated for P < 0 so the division is by |P|, then `rlow_6_1_9_multiple` and `rlow_6_1_10_int` back, evaluated by each runtime.",
+    "rules_ds": "import math\n\nunit dimension ledger storage int64 base cent\nunit cent: ledger\nunit owed: ledger = x * -100\n\nschema L scope logical:\n    id: String key\n    o: owed mutable\n    p: owed mutable\n\nrule o_round:\n    L r where round(r.o) == 2_owed\n->\n    log info \"o round\"\n\nrule o_trunc:\n    L r where math.trunc(r.o) == 2_owed\n->\n    log info \"o trunc\"\n\nrule o_floor:\n    L r where math.floor(r.o) == 2_owed\n->\n    log info \"o floor\"\n\nrule o_ceil:\n    L r where math.ceil(r.o) == 3_owed\n->\n    log info \"o ceil\"\n\nrule p_round:\n    L r where round(r.p) == -4_owed\n->\n    log info \"p round\"\n\nrule p_floor:\n    L r where math.floor(r.p) == -4_owed\n->\n    log info \"p floor\"\n\nrule p_ceil:\n    L r where math.ceil(r.p) == -3_owed\n->\n    log info \"p ceil\"\n\nrule p_trunc:\n    L r where math.trunc(r.p) == -3_owed\n->\n    log info \"p trunc\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "L", "slots": { "id": "x", "o": -250, "p": 350 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["o round", "o trunc", "o floor", "o ceil", "p round", "p floor", "p ceil", "p trunc"]
+    }
+}

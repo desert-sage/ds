@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.1.1.5_time_plus_duration_past_range",
+    "clauses": ["LTIM.1.1.5", "LTIM.4.1.1"],
+    "category": "logical",
+    "scenario": "[LTIM.1.1.5]: a `Time` outside the representable range is never a silent wrap; an operation in a rule whose result falls outside it raises a ComputationError of kind NOT_REPRESENTABLE ([LERR.1.4.10]), and the engine continues. [LTIM.4.1.1]: `Time + Duration` is exact. `W` holds the last representable instant, 2^63 - 1 ns, and rule `plus` computes `w.t + 1_s`, which would log its result, so a wrap logs an instant in 1677. Rule `handler` logs each ComputationError's kind and rule ([LERR.9.1]). Message: `NOT_REPRESENTABLE plus`. PATH PINNED: libds's `Time` arm of the binary operators in `rete/eval.c` (its `__builtin_add_overflow` check); the Mercury runtime's `ds.eval.ltim_4_1_time_plus`, through `ltim_1_1_5_add`.",
+    "rules_ds": "schema W scope logical:\n    id: Int key\n    t: Time mutable\n\nrule plus:\n    W w\n->\n    let a = w.t + 1_s\n    log info \"plus {a}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind} {e.rule}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "W", "slots": { "id": 1, "t": 9223372036854775807 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE plus"]
+    }
+}

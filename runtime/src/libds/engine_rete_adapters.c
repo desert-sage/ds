@@ -17,6 +17,7 @@
 #include "ds_alloc.h"
 #include "ds_text.h"
 #include "engine.h"
+#include "schema.h"
 #include "dispatcher.h"
 #include "recorder.h"
 #include "telemetry.h"
@@ -1065,22 +1066,11 @@ static void release_pending_sample(ds_engine_t                     *engine,
     }
 }
 
-/* The absorb walk and the capacity check must agree on which facts are samples. */
-static bool slots_hydrated(const ds_rete_schema_t *sc,
-                           const ds_rete_val_t    *slots)
-{
-    for (uint16_t k = 0; k < sc->slot_count; k++) {
-        const char *n = sc->slots[k].name;
-        if (n == NULL || strcmp(n, "hydrated_corr") != 0) continue;
-        const ds_rete_val_t *v = &slots[k];
-        return (v->kind == DS_RETE_VAL_STR || v->kind == DS_RETE_VAL_BYTES)
-               && v->s.ptr != NULL && v->s.len > 0;
-    }
-    return false;
-}
-
-/* Dedupes by slot: ds_series_absorb_one walks every decl of a (schema, slot). `queue`
- * parks the sample for the drain, for a fact being superseded. */
+/* One call per (schema, slot, identity slot): ds_series_absorb_one walks every decl
+ * of that group, under the identity this fact gives it ([LSER.8.5.1],
+ * [LSER.7.6.1]). `queue` parks the sample for the drain, for a fact being
+ * superseded. Every fact that entered working memory is a sample, whatever its
+ * slots are named: no clause in force exempts one. */
 static void series_walk_fact(ds_engine_t            *engine,
                              const ds_rete_schema_t *sc,
                              const ds_rete_val_t    *slots,
@@ -1090,27 +1080,11 @@ static void series_walk_fact(ds_engine_t            *engine,
     if (sc == NULL || sc->name == NULL) return;
     if (slots == NULL && sc->slot_count > 0) return;
 
-    if (slots_hydrated(sc, slots)) return;
-
-    const char *seen_slots[16];
-    size_t      n_seen = 0;
-
     for (size_t i = 0; i < engine->n_series_decls; i++) {
         const struct ds_series_decl_record *d =
             &engine->series_decls[i];
+        if (d->group_repeat) continue;
         if (strcmp(d->schema_name, sc->name) != 0) continue;
-
-        bool already = false;
-        for (size_t s = 0; s < n_seen; s++) {
-            if (strcmp(seen_slots[s], d->slot_name) == 0) {
-                already = true;
-                break;
-            }
-        }
-        if (already) continue;
-        if (n_seen < sizeof(seen_slots) / sizeof(seen_slots[0])) {
-            seen_slots[n_seen++] = d->slot_name;
-        }
 
         int slot_idx = -1, id_idx = -1;
         const bool has_id = d->identity_slot_name != NULL
@@ -1260,7 +1234,6 @@ ds_result_t ds_engine_series_capacity_check(struct ds_rete_engine  *re,
     ds_engine_t *engine = (ds_engine_t *)re->ds_engine_back;
     if (engine == NULL || engine->n_series_decls == 0) return DS_OK_R;
     if (slots == NULL && sc->slot_count > 0) return DS_OK_R;
-    if (slots_hydrated(sc, slots)) return DS_OK_R;
 
     uint64_t now = (uint64_t)re->clock_fn(re->clock_ctx);
 
@@ -1312,7 +1285,6 @@ ds_result_t ds_engine_series_capacity_check(struct ds_rete_engine  *re,
         for (uint32_t id = engine->series_absorb_mark; id < end; id++) {
             const ds_rete_fact_t *f = ds_rete_wm_find_by_id(re, id);
             if (f == NULL || f->series_absorbed || f->schema != sc) continue;
-            if (slots_hydrated(sc, f->slots)) continue;
             ds_slot_value_t s2;
             if (!rete_val_to_sample(&f->slots[slot_idx], &s2)) continue;
             if (id_idx >= 0) {
@@ -2252,4 +2224,111 @@ ds_result_t ds_engine_register_schema_in_rete(
                             (int64_t)ttl_ns, rslots, (uint16_t)n_slots, &rs);
     DS_FREE(rslots);
     return DS_OK_R;
+}
+
+/* ---- [NFCT.1.4.6] a number through a slot's unit conversion ---- */
+
+static ds_result_t not_representable(void)
+{
+    return DS_ERR_R(DS_ERR_NOT_REPRESENTABLE,
+                    "the slot's conversion has no result for this number "
+                    "(NFCT.1.4.6)");
+}
+
+/* The conversion is the rete schema's ([RDSC.5.5.9]); the public schema of
+   the same name has the same slots in the same order. It is evaluated with
+   `bind_frame[0]` holding the host's number, a frame of one ([IRET.9.4],
+   [RDSC.4a.9.6]), and every fault held. A held EngineError is then raised as
+   any public call raises one ([NCBK.2.9]): recorded with no node and the
+   `$engine` rule, since no rule's evaluation holds it ([LERR.9.11]), and the
+   engine halts, so the call answers DS_ERR_ENGINE_HALTED. Any other held
+   fault is DS_ERR_NOT_REPRESENTABLE, and nothing is recorded, queued as a
+   fault fact or halted. A slot that names a unit stores an Int, a Duration's
+   nanoseconds as one, or a Float ([LUNI.7.2]). */
+static ds_result_t nfct_1_4_6_convert(const ds_schema_t *schema, uint32_t index,
+                                      const ds_slot_value_t *in,
+                                      ds_slot_value_t *out, bool to_stored)
+{
+    if (schema == NULL || in == NULL || out == NULL)
+        return DS_ERR_R(DS_ERR_INVAL, "NULL arg");
+    DS_HANDLE_REFUSE_IF_HALTED(schema->engine);
+    if (index >= schema->n_slots)
+        return DS_ERR_R(DS_ERR_NOT_FOUND, "slot index out of range");
+
+    ds_engine_t *engine = schema->engine;
+    const ds_rete_schema_t *rs =
+        (engine != NULL && engine->rete_engine != NULL)
+            ? ds_rete_schema_by_name(engine->rete_engine, schema->type_name)
+            : NULL;
+    const ds_rete_expr_t *conv = NULL;
+    if (rs != NULL && index < rs->slot_count)
+        conv = to_stored ? rs->slots[index].to_stored
+                         : rs->slots[index].from_stored;
+    if (conv == NULL)
+        return DS_ERR_R(DS_ERR_INVAL, "the slot names no unit (NFCT.1.4.6)");
+
+    /* [NFCT.2.3] */
+    const bool is_float = schema->slots[index].type == DS_SLOT_TYPE_FLOAT;
+    if (in->kind != (is_float ? DS_SLOT_FLOAT : DS_SLOT_INT))
+        return DS_ERR_R(DS_ERR_SLOT_TYPE_MISMATCH,
+                        "the value is not of the kind the slot stores");
+    if (is_float && isnan(in->v.f))
+        return DS_ERR_R(DS_ERR_NAN_REJECTED, "the value is a NaN");
+
+    ds_rete_val_t frame = is_float ? ds_rete_val_float(in->v.f)
+                                   : ds_rete_val_int(in->v.i);
+    ds_rete_eval_ctx_t ctx;
+    memset(&ctx, 0, sizeof ctx);
+    ctx.bind_frame = &frame;
+    ctx.bind_count = 1;
+    ctx.engine     = engine->rete_engine;
+
+    /* [NCBK.1.5]: the call can emit the EngineError, so it runs as a public
+       call does; ds_api_leave reports a halt raised here. */
+    ds_api_enter(engine);
+    const bool was_halted = engine->halted;
+    ds_rete_held_t held;
+    const ds_rete_val_t v = ds_rete_eval_holding(&ctx, conv, &held);
+    if (ds_rete_held_is_engine_error(&held))
+        (void)ds_rete_raise_held(&ctx, &held);
+
+    ds_result_t r = DS_OK_R;
+    if (engine->halted && !was_halted)
+        r = DS_ERR_R(DS_ERR_ENGINE_HALTED,
+                     "the slot's conversion raised an EngineError "
+                     "(NFCT.1.4.6)");
+    else if (ctx.faulted || held.held)
+        r = not_representable();
+    else if (is_float) {
+        if (v.kind != DS_RETE_VAL_FLOAT || isnan(v.f)) {
+            r = not_representable();
+        } else {
+            out->kind = DS_SLOT_FLOAT;
+            out->v.f  = v.f;
+        }
+    } else {
+        if (v.kind != DS_RETE_VAL_INT) {
+            r = not_representable();
+        } else {
+            out->kind = DS_SLOT_INT;
+            out->v.i  = v.i;
+        }
+    }
+    return ds_api_leave(engine, r);
+}
+
+ds_result_t ds_schema_slot_to_stored(const ds_schema_t     *schema,
+                                     uint32_t               index,
+                                     const ds_slot_value_t *in,
+                                     ds_slot_value_t       *out)
+{
+    return nfct_1_4_6_convert(schema, index, in, out, true);
+}
+
+ds_result_t ds_schema_slot_from_stored(const ds_schema_t     *schema,
+                                       uint32_t               index,
+                                       const ds_slot_value_t *in,
+                                       ds_slot_value_t       *out)
+{
+    return nfct_1_4_6_convert(schema, index, in, out, false);
 }

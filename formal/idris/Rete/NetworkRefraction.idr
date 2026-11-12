@@ -236,7 +236,7 @@ iret_11_4__step_g_fst life (eng, rs) with (iret_11_1__select (nchains (enet eng)
 --@derives [IRET.11.5]
 ||| THE NETWORK'S RUN IS THE ONE FOLD at its step (Rete/RunFold.idr's
 ||| `iret_11_4__run_by`), by induction on the fuel. Rete/NetworkTransfer.idr's
-||| and Rete/NetworkOnce.idr's unfoldings of the run are RunFold's through it.
+||| unfoldings of the run are RunFold's through it.
 export
 iret_11_4__run_net_by : (life : Nat -> Lscp_1_3__lifecycle) -> (fuel : Nat) -> (eng : Iret_19__engine) ->
                         iret_11_4__run_net life fuel eng = iret_11_4__run_by (iret_11_4__step_net life) fuel eng

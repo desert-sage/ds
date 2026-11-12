@@ -695,7 +695,7 @@ lnul_8_6_nulls(RF, SchemaName, Slot, Series, !Errors) :-
         else if
             Declared = [{Word, Pos} | _],
             Word ^ id_name = "zero",
-            not ( Leaf = lk_int ; Leaf = lk_float )
+            not ( Leaf = lk_int ; Leaf = lk_float ; Leaf = lk_duration )
         then
             !:Errors = [with_hint(error_at(dv_series_nulls_zero_non_numeric,
                 Pos,
@@ -855,7 +855,7 @@ model_pos(atm_sample(_, P)) = P.
 
 lser_17_2_applies(Agg, Leaf) :-
     ( if numeric_agg(Agg) then
-        ( Leaf = lk_int ; Leaf = lk_float )
+        ( Leaf = lk_int ; Leaf = lk_float ; Leaf = lk_duration )
     else if boolean_agg(Agg) then
         Leaf = lk_bool
     else

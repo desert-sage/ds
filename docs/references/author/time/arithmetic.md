@@ -15,9 +15,21 @@
 | `Duration + Duration` | `Duration` |
 | `Duration - Duration` | `Duration` |
 | `Int * Duration`, `Duration * Int` | `Duration` |
-| `Duration / Int` | `Duration`, by integer division of nanoseconds |
+| `Float * Duration`, `Duration * Float` | `Duration` |
+| `Duration / Int`, `Duration // Int` | `Duration`, by integer division of nanoseconds |
+| `Duration / Float`, `Duration // Float` | `Duration` |
+| `Duration % Duration` | `Duration` |
+| `Duration / Duration` | `Float` |
+| `Duration // Duration` | `Int` |
 
-Arithmetic operates on `utc_ns` and the nanosecond magnitude. A `Duration`-valued row whose exact result is negative yields `0_s`: `Time - Time` with the left operand the earlier, `Duration - Duration` with the right operand the larger, and a product or quotient with a negative `Int`.
+Arithmetic operates on `utc_ns` and the nanosecond magnitude, exactly. A `Duration`-valued row whose exact result is negative yields `0_s`: `Time - Time` with the left operand the earlier, at any distance, `Duration - Duration` with the right operand the larger, and a product or quotient with a negative number.
+
+A row with a `Float` operand takes the `Float` operation over the nanoseconds and rounds its result, ties to even, to a whole number of nanoseconds: `7_ns / 2.0` is `4_ns`, where `7_ns / 2` is `3_ns`. Two `Duration` operands of `/`, `//` and `%` divide as two `Int`s of nanoseconds, so a `0_s` divisor raises a `ComputationError` of kind `DIVIDE_BY_ZERO`, as an `Int` divisor `0` does.
+
+A `ComputationError` of kind `NOT_REPRESENTABLE` is raised, never a wrap, by:
+- a `Time + Duration` or `Time - Duration` result outside the `Time` range;
+- a `Time - Time`, `Duration + Duration` or `Int`-by-`Duration` product above 2^63 - 1 nanoseconds;
+- a `Float` row whose result is non-finite, as a division by `0.0` gives, or outside `Int`.
 
 ```ds expression
 r.ts + 1_h
@@ -25,7 +37,7 @@ now() - r.ts
 2 * 30_min
 ```
 
-*(Spec: [LTIM.4.1.1], [LTIM.4.1.2])*
+*(Spec: [LTIM.4.1.1], [LTIM.4.1.2], [LTIM.1.1.5], [LTIM.1.3.1], [LEXP.7.15.1])*
 
 ### Date
 

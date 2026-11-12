@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_an_importers_const_reads_a_library_const_built_on_a_sibling",
+    "clauses": ["LEXP.8.8", "LGRA.13.3", "LIMP.1.5"],
+    "category": "compiler",
+    "scenario": "[LEXP.8.8], [LGRA.13.3]: a `const` may read an imported constant. Library `ha` declares `const _BASE = 10` and `const LIMIT = _BASE * 2`, and the importer declares `const X = ha.LIMIT`. The program compiles. A compiler that folds the member with none of the library's constants in scope has no value for `_BASE`, and `lexp_8_8_not_constant` refuses a valid program with DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate.const_checks`, through `lexp_8_8_1_folds` and `dsc.dstest.const_read`.",
+    "rules_ds": "import ha\n\nconst X = ha.LIMIT\n\nschema S scope ttl 1_h:\n    v: Int\n\nrule r:\n    S s where s.v == X\n->\n    log info \"hit\"\n",
+    "libraries": {
+        "ha": "const _BASE = 10\nconst LIMIT = _BASE * 2\n"
+    },
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

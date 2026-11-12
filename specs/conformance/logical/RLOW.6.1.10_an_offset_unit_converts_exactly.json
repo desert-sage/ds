@@ -1,0 +1,15 @@
+{
+    "id": "RLOW.6.1.10_an_offset_unit_converts_exactly",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: on integer storage `x::<unit>` of a tier-1 unit with an offset is `P·x + R` when Q = 1. `off` is `x * 8 + 1` bits, so P = 8, Q = 1, R = 1. A fact holding 2 is `2::off`, 17 bits, so the rule logs. A lowering that drops the offset gives 16 bits and stays silent. PATH PINNED: `dsc.rete.rlow_6_1_10_int`'s `R` term, evaluated by each runtime.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit off: data = x * 8 + 1\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::off == 17_bit\n->\n    log info \"conv\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv"]
+    }
+}

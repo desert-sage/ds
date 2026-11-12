@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.8.8.1_a_negative_factor_rounding_folds_as_it_runs",
+    "clauses": ["LEXP.8.8.1", "RLOW.6.1.9", "LDET.3.3a.8"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1], [RLOW.6.1.9]: a `const` holds the value the engine computes, so `const R = math.floor(-3.5_owed)` folds to what the same call written inline evaluates to. `owed` is `x * -100` cents, so -3.5 owed is 350 cents, and its floor in the unit is -4 owed, 400 cents. The `initial` fact carries R's folded value, rule `inline` compares that slot with the inline call, and rule `read` reads R in a rule and compares it with the inline call. Exactly [\"inline\", \"read\"]. A folder that rounds the base number leaves 350 cents and misses both. PATH PINNED: `dsc.dstest.rlow_6_1_9_tier1_folded` and `rlow_6_1_10_folded`'s `asn_int` arm, against each runtime's evaluation of the lowering `dsc.rete.rlow_6_1_9_tier1` writes.",
+    "rules_ds": "import math\n\nunit dimension ledger storage int64 base cent\nunit cent: ledger\nunit owed: ledger = x * -100\n\nconst R = math.floor(-3.5_owed)\n\nschema V scope explicit:\n    k: String\n    t: owed\n\ninitial:\n    V k: \"r\" t: R\n\nrule inline:\n    V v where v.k == \"r\" and v.t == math.floor(-3.5_owed)\n->\n    log info \"inline\"\n\nrule read:\n    V v where v.k == \"r\" and R == math.floor(-3.5_owed)\n->\n    log info \"read\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["inline", "read"]
+    }
+}

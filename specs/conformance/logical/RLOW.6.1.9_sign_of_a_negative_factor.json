@@ -1,0 +1,15 @@
+{
+    "id": "RLOW.6.1.9_sign_of_a_negative_factor",
+    "clauses": ["RLOW.6.1.9", "LUNI.8.9"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.9]: on integer storage `math.sign(x)` of a tier-1 unit is the builtin over `Q·x - R`, negated when `P` is negative. `owed` is `x * -100` cents. Slot `o` holds -250 cents, 2.5 owed, so `math.sign(r.o)` is 1; slot `p` holds 350 cents, -3.5 owed, so `math.sign(r.p)` is -1. Both rules log. The base number's signs are -1 and 1, so a sign taken in the base unit logs neither. PATH PINNED: `dsc.rete.rlow_6_1_9_tier1`'s sign arm, evaluated by each runtime.",
+    "rules_ds": "import math\n\nunit dimension ledger storage int64 base cent\nunit cent: ledger\nunit owed: ledger = x * -100\n\nschema L scope logical:\n    id: String key\n    o: owed mutable\n    p: owed mutable\n\nrule o_sign:\n    L r where math.sign(r.o) == 1\n->\n    log info \"o sign\"\n\nrule p_sign:\n    L r where math.sign(r.p) == -1\n->\n    log info \"p sign\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "L", "slots": { "id": "x", "o": -250, "p": 350 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["o sign", "p sign"]
+    }
+}

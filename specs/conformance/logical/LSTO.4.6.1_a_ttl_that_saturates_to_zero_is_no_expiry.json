@@ -1,0 +1,20 @@
+{
+    "id": "LSTO.4.6.1_a_ttl_that_saturates_to_zero_is_no_expiry",
+    "category": "logical",
+    "scenario": "[LSTO.4.6.1] / [LTIM.1.3.1]: a `Duration` expression that saturates to zero is no TTL. One Write, `a` 2 s and `b` 5 s. `writer` caches \"kept\" with `ttl: w.a - w.b`, which saturates to `0_s`, and \"lapses\" with `ttl: w.b - w.a`, which is 3 s, at clock 0. The clock advances 4 s. Then `reader` logs `kept` where `cached(\"kept\")` is not null, and `lapsed` logs where `cached(\"lapses\")` is null. An unsaturated -3 s reaches libds as a negative TTL and skips the write, losing `kept`. `lapsed` is the control that the same computed form gives a positive TTL that expires. PATH PINNED: `dsc.rete`'s `rlow_6_1_6_saturating` in a `cache` kwarg; libds's `adapter_ds_cache_set` (`rete/adapters.c`); the Mercury runtime's `ds.exec.cache_deadline`.",
+    "rules_ds": "schema Write scope logical:\n    k: Int key\n    a: Duration mutable\n    b: Duration mutable\n\nschema Probe scope logical:\n    n: Int key\n\nrule writer:\n    Write w\n->\n    cache key: \"kept\" value: 1 ttl: w.a - w.b\n    cache key: \"lapses\" value: 1 ttl: w.b - w.a\n\nrule reader:\n    Probe p where p.n == 1 and cached(\"kept\") is not null\n->\n    log info \"kept\"\n\nrule lapsed:\n    Probe p where p.n == 2 and cached(\"lapses\") is null\n->\n    log info \"lapsed\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Write", "slots": { "k": 1, "a": 2000000000, "b": 5000000000 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 4000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["kept", "lapsed"]
+    }
+}

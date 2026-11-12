@@ -1,0 +1,20 @@
+{
+    "id": "RLOW.6.1.9_a_library_slot_rounds_in_its_own_unit",
+    "clauses": ["RLOW.6.1.9", "LUNI.8.9", "LIMP.1.5"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.9], [LIMP.1.5]: a rounding works in the unit the value's type names, and a library's slot has the type the library gave it, whatever the reading file binds that unit's name to. `u.Temp.t` is `u`'s `dbl`, `2 * x` therm; the program imports `v`'s `dbl`, `10 * x` cold, under the same spelling. The host asserts base-unit values ([LUNI.7.2]): fact 1 holds 6.0 therm, 3 `u.dbl`, a whole number, so `math.floor(x.t)` is 3 dbl, 6.0 therm, and rule `r` logs `whole 1`; fact 2 holds 5.0 therm, 2.5 `u.dbl`, whose floor is 4.0 therm, and `r` stays silent. Exactly [\"whole 1\"]. A compiler that reads the unit by its spelling in the program rounds in `v`'s factor: 6.0 is 0.6 and 5.0 is 0.5, each floors to 0, and `r` logs nothing. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit` reading the unit through `dsc.resolve.decl_scope`, then `rlow_7_3_9_converted`'s `cv_affine` and `rlow_6_1_10_asserted`, evaluated by each runtime.",
+    "rules_ds": "import math\nfrom v import dbl\nimport u\n\nrule r:\n    u.Temp x where math.floor(x.t) == x.t\n->\n    log info \"whole {x.k}\"\n",
+    "libraries": {
+        "u": "unit dimension warmth storage float64 base therm\nunit therm: warmth\nunit dbl: warmth = 2 * x\n\nschema Temp scope logical:\n    k: Int key\n    t: dbl mutable\n",
+        "v": "unit dimension coolth storage float64 base cold\nunit cold: coolth\nunit dbl: coolth = 10 * x\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "u.Temp", "slots": { "k": 1, "t": 6.0 } },
+            { "op": "assert", "schema": "u.Temp", "slots": { "k": 2, "t": 5.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["whole 1"]
+    }
+}

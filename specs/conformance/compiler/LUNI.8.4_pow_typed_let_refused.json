@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_pow_typed_let_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.4]: `**` with a dimensioned operand has no dimension DS can state, and it is refused under a `let` annotation too: an annotation checks a type the value already has ([LUNI.8.6]). `let area: meter_squared = r.dist ** 2` is refused. Pin: DS_VALIDATE_DIM_AMBIGUOUS. PATH PINNED: `dsc.typecheck.luni_8_4_ambiguous`, which has no annotated case, reached through `dsc.validate.luni_8_4_let_binding`'s `typed_expr`.",
+    "rules_ds": "unit dimension area storage float64 base meter_squared\nunit meter_squared: area\n\nschema Range scope logical:\n    dist: meter key\n\nrule sq:\n    Range r\n->\n    let area: meter_squared = r.dist ** 2\n    log info \"area = {area}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

@@ -85,7 +85,8 @@ main(!IO) :-
         MaybeDir = yes(Dir),
         read_fixtures(Dir, ["verbs", "services", "series", "local_tz",
             "div_zero", "cache_order", "cache_read_expiry", "fact_ref",
-            "verbs_short_call"], Fixtures, !IO),
+            "verbs_short_call", "next_deadline", "next_deadline_dwell"],
+            Fixtures, !IO),
         (
             Fixtures = yes(F),
             run_all(F, !IO)
@@ -162,6 +163,8 @@ run_all(F, !IO) :-
         test_services(fixture(F, "services"), !T, !IO),
         test_service_failures(fixture(F, "services"), !T, !IO),
         test_clock(fixture(F, "verbs"), !T, !IO),
+        test_nlfc_2_5(fixture(F, "next_deadline"),
+            fixture(F, "next_deadline_dwell"), !T, !IO),
         test_cache_seed(fixture(F, "verbs"), !T, !IO),
         test_copy(fixture(F, "verbs"), !T, !IO),
         test_introspect(fixture(F, "verbs"), fixture(F, "series"), !T, !IO),
@@ -325,11 +328,14 @@ test_loading(Verbs, !T, !IO) :-
         string.join_list(", ", list.map(load_text, [Prose, Zeros])),
         !T, !IO).
 
-    % [RDSC.9.4]: `load` returns its reports, and
-    % an artefact carrying a skip-band atom no registry entry names reports
-    % one `dsc-load` info line naming the atom's field number and the byte
-    % offset its frame starts at. The artefact is verbs.dsc with an atom of
-    % field 999 appended, resealed, so the offset is verbs.dsc's length.
+    % [RDSC.9.4]: `load` returns its reports, and an artefact carrying an
+    % atom the loader steps over by name reports one `dsc-load` info line
+    % for each, naming the atom's field number, its message and the byte
+    % offset its frame starts at. verbs.dsc carries the docstrings its source
+    % declares, so its own load reports a line for each of them and nothing
+    % else. The second artefact is verbs.dsc with one more `DocString`
+    % appended, resealed, so it reports one line more, last, at verbs.dsc's
+    % length.
     %
 :- pred test_load_reports(bitmap::in, tally::in, tally::out,
     io::di, io::uo) is det.
@@ -341,39 +347,54 @@ test_load_reports(Verbs, !T, !IO) :-
         session_header(S) ^ sm_dsc_hash = Hash,
         with_skip_atom(Verbs, Hash, Skipping)
     then
-        check_saw("an artefact with nothing to skip reports nothing at load",
-            ( if PlainReports = [] then yes else no ),
+        check_saw("[RDSC.9.4] verbs.dsc's load reports its DocStrings' "
+            ++ "dsc-load lines and nothing else",
+            ( if list.all_true(docstring_skip_line, PlainReports)
+              then yes else no ),
             string.string(PlainReports), !T, !IO),
         load(Skipping, default_config, Loaded, Reports),
         At = bitmap.det_num_bytes(Verbs),
-        check_saw("[RDSC.9.4] a skip-band atom no entry names loads, and "
-            ++ "load reports one dsc-load info line with its field and offset",
+        check_saw("[RDSC.9.4] a DocString appended loads, and load reports "
+            ++ "one dsc-load info line more, with its field, message and "
+            ++ "offset",
             ( if
                 Loaded = ok(_),
-                Reports = [logged(log_line(log_info, "dsc-load", Message))],
-                string.sub_string_search(Message, "999", _),
+                % Bound first, then matched: a list built around the
+                % unbound `Message` is a mode error (MERCURY.md §14).
+                list.append(PlainReports, Added, Reports),
+                Added = [logged(log_line(log_info, "dsc-load", Message))],
+                string.sub_string_search(Message, "304", _),
+                string.sub_string_search(Message, "DocString", _),
                 string.sub_string_search(Message,
                     "byte offset " ++ string.int_to_string(At), _)
             then yes else no ),
             string.string(Reports), !T, !IO)
     else
-        check("verbs.dsc loads, and is resealed with a skip-band atom", no,
+        check("verbs.dsc loads, and is resealed with a DocString", no,
             !T, !IO)
     ).
 
-    % `Bytes` with an atom of field 999, in the skip band (256-2047) and
-    % allocated to nothing, appended, and resealed as the compiler seals
-    % ([RDSC.3.6]): the stored `dsc_sha256`, which the session header
-    % reports, zeroed in place, the whole artefact hashed, and the digest
-    % written back. The atom is `Atom` field 1, length 4, holding field 999
-    % (tag 7994, `BA 3E`) with one byte of body.
+    % A report that is the `dsc-load` info line for a skipped `DocString`.
+    %
+:- pred docstring_skip_line(report::in) is semidet.
+
+docstring_skip_line(Report) :-
+    Report = logged(log_line(log_info, "dsc-load", Message)),
+    string.sub_string_search(Message, "(DocString)", _).
+
+    % `Bytes` with a `DocString` (field 304) appended, and resealed as the
+    % compiler seals ([RDSC.3.6]): the stored `dsc_sha256`, which the session
+    % header reports, zeroed in place, the whole artefact hashed, and the
+    % digest written back. The atom is `Atom` field 1, length 4, holding
+    % field 304 (tag 2434, `82 13`) with one byte of body, which the loader
+    % does not decode.
     %
 :- pred with_skip_atom(bitmap::in, list(uint8)::in, bitmap::out) is semidet.
 
 with_skip_atom(Bytes, Hash, Sealed) :-
     N = bitmap.det_num_bytes(Bytes),
     Ints = list.map((func(I) = bitmap.byte(I, Bytes)), 0 .. N - 1)
-        ++ [0x0A, 0x04, 0xBA, 0x3E, 0x01, 0x00],
+        ++ [0x0A, 0x04, 0x82, 0x13, 0x01, 0x00],
     HashInts = list.map(uint8.cast_to_int, Hash),
     list.length(HashInts) = 32,
     offset_of(HashInts, Ints, 0, Off),
@@ -1590,6 +1611,116 @@ schema_is(Name, V) :-
 % The clock
 %---------------------------------------------------------------------------%
 
+    % @spec [NLFC.2.5]
+    % The engine reports its next deadline. In `next_deadline.ds` a cache entry
+    % falls due 10 s after its write, a `Lease` 20 s after its assert and an
+    % `after` timer 30 s after its firing. `refused_from_a_callback` has no
+    % case here: a session delivers its reports when a call returns, so no
+    % host code runs inside a call.
+    %
+:- pred test_nlfc_2_5(bitmap::in, bitmap::in, tally::in, tally::out,
+    io::di, io::uo) is det.
+
+test_nlfc_2_5(Program, Dwell, !T, !IO) :-
+    load(Program, default_config, Loaded, _),
+    load(Dwell, default_config, LoadedDwell, _),
+    ( if Loaded = ok(S0), LoadedDwell = ok(D0) then
+        check("[NLFC.2.5] none when nothing is due",
+            ( if next_deadline(S0) = ok(no) then yes else no ), !T, !IO),
+
+        set_clock(seconds(100u64), _, S0, T1),
+        assert_fact("Arm", [int(1i64)], _, T1, T2),
+        pump(_, T2, T3),
+        check("[NLFC.2.5] reports a timer's fire_at",
+            next_is(T3, 130u64), !T, !IO),
+
+        set_clock(seconds(5u64), _, S0, L1),
+        assert_fact("Lease", [int(1i64)], _, L1, L2),
+        check("[NLFC.2.5] reports a fact's TTL expiry",
+            next_is(L2, 25u64), !T, !IO),
+
+        set_clock(seconds(7u64), _, S0, C1),
+        assert_fact("Write", [int(1i64)], _, C1, C2),
+        pump(_, C2, C3),
+        check("[NLFC.2.5] reports a cache entry's expiry",
+            next_is(C3, 17u64), !T, !IO),
+
+        assert_fact("Write", [int(1i64)], _, S0, A1),
+        assert_fact("Arm", [int(1i64)], _, A1, A2),
+        assert_fact("Lease", [int(1i64)], LeaseStep, A2, A3),
+        pump(_, A3, All),
+        check("[NLFC.2.5] the earliest of the three kinds",
+            next_is(All, 10u64), !T, !IO),
+        assert_fact("Drop", [int(1i64)], _, All, D1),
+        pump(_, D1, NoCache),
+        check("and the next once the cache entry is gone",
+            next_is(NoCache, 20u64), !T, !IO),
+        ( if LeaseStep ^ assert_step_outcome = asserted(LeaseId) then
+            retract_fact(LeaseId, _, NoCache, R1),
+            pump(_, R1, NoLease),
+            check("and the next once the fact is gone",
+                next_is(NoLease, 30u64), !T, !IO)
+        else
+            check("the Lease asserts", no, !T, !IO)
+        ),
+
+        set_clock(seconds(10u64), _, All, At),
+        check("[NLFC.2.5] a deadline exactly at the clock is not reported",
+            next_is(At, 20u64), !T, !IO),
+        set_clock(seconds(25u64), _, At, Past),
+        check("and neither is one before it",
+            next_is(Past, 30u64), !T, !IO),
+
+        assert_fact("Ping", [text("a")], _, D0, P1),
+        pump(_, P1, P2),
+        check("[NLFC.2.5] a time-dependent condition is not a deadline",
+            ( if next_deadline(P2) = ok(no) then yes else no ), !T, !IO),
+
+        nlfc_2_5_stream(S0, Plain),
+        nlfc_2_5_stream_queried(S0, Queried),
+        check("[NLFC.2.5] the query takes no sample",
+            ( if Plain = Queried then yes else no ), !T, !IO)
+    else
+        check("next_deadline.dsc and next_deadline_dwell.dsc load", no,
+            !T, !IO)
+    ).
+
+:- func seconds(uint64) = instant.
+
+seconds(N) = from_ns(N * 1_000_000_000u64).
+
+:- func next_is(session, uint64) = bool.
+
+next_is(S, N) =
+    ( if next_deadline(S) = ok(yes(At)), At = seconds(N) then yes else no ).
+
+    % What a run reports with no query between its two clock moves.
+    %
+:- pred nlfc_2_5_stream(session::in, list(report)::out) is det.
+
+nlfc_2_5_stream(S0, Reports) :-
+    set_clock(seconds(5u64), _, S0, S1),
+    set_clock(seconds(7u64), _, S1, S2),
+    assert_fact("Write", [int(1i64)], A, S2, S3),
+    pump(P, S3, _),
+    Reports = A ^ assert_step_reports ++ P ^ pumped_reports.
+
+    % The same run with the query between them.
+    %
+:- pred nlfc_2_5_stream_queried(session::in, list(report)::out) is det.
+
+nlfc_2_5_stream_queried(S0, Reports) :-
+    set_clock(seconds(5u64), _, S0, S1),
+    Between = next_deadline(S1),
+    set_clock(seconds(7u64), _, S1, S2),
+    ( if Between = ok(_) then
+        assert_fact("Write", [int(1i64)], A, S2, S3),
+        pump(P, S3, _),
+        Reports = A ^ assert_step_reports ++ P ^ pumped_reports
+    else
+        Reports = []
+    ).
+
 :- pred test_clock(bitmap::in, tally::in, tally::out, io::di, io::uo)
     is det.
 
@@ -1631,6 +1762,16 @@ test_clock(Verbs, !T, !IO) :-
                 error_status(PastErr, time_range),
                 Past ^ step_reports = [],
                 now(M7) = ok(from_ns(900u64))
+            then yes else no ), !T, !IO),
+        % @spec [NTST.3.1]
+        % PATH PINNED: `set_clock` -> `ds.chrono.ntst_3_1_set_past_range`.
+        set_clock(from_ns(9223372036854775808u64), PastSet, M7, M8),
+        check("a set past the monotonic clock's range is refused as "
+            ++ "time_range, and the clock stays",
+            ( if
+                PastSet ^ step_outcome = error(PastSetErr),
+                error_status(PastSetErr, time_range),
+                now(M8) = ok(from_ns(900u64))
             then yes else no ), !T, !IO)
     else
         check("verbs.dsc loads with a mock clock", no, !T, !IO)

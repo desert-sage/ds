@@ -1,0 +1,14 @@
+{
+    "id": "RLOW.6.1.8_a_const_chain_past_the_expression_depth_limit",
+    "category": "logical",
+    "scenario": "[RLOW.6.1.8]: a read of a `const` is one literal, and its depth toward [RDSC.11.3]'s limit is that literal's. A chain of 60 consts, each the last plus one, is read in a rule and compared with the expected `Int`, 60. Pin: the program compiles and `sixty` logs on both runtimes. A compiler that lowered each read as its right-hand side nests one operation per const and refuses the program with DS_VALIDATE_EXPRESSION_TOO_DEEP, and a fold that bounded the chain leaves the last const without a value. PATH PINNED: `dsc.rete.lgra_13_3_const` through `dsc.dstest.rlow_6_1_8_const_literal`.",
+    "rules_ds": "const C0 = 0\nconst C1 = C0 + 1\nconst C2 = C1 + 1\nconst C3 = C2 + 1\nconst C4 = C3 + 1\nconst C5 = C4 + 1\nconst C6 = C5 + 1\nconst C7 = C6 + 1\nconst C8 = C7 + 1\nconst C9 = C8 + 1\nconst C10 = C9 + 1\nconst C11 = C10 + 1\nconst C12 = C11 + 1\nconst C13 = C12 + 1\nconst C14 = C13 + 1\nconst C15 = C14 + 1\nconst C16 = C15 + 1\nconst C17 = C16 + 1\nconst C18 = C17 + 1\nconst C19 = C18 + 1\nconst C20 = C19 + 1\nconst C21 = C20 + 1\nconst C22 = C21 + 1\nconst C23 = C22 + 1\nconst C24 = C23 + 1\nconst C25 = C24 + 1\nconst C26 = C25 + 1\nconst C27 = C26 + 1\nconst C28 = C27 + 1\nconst C29 = C28 + 1\nconst C30 = C29 + 1\nconst C31 = C30 + 1\nconst C32 = C31 + 1\nconst C33 = C32 + 1\nconst C34 = C33 + 1\nconst C35 = C34 + 1\nconst C36 = C35 + 1\nconst C37 = C36 + 1\nconst C38 = C37 + 1\nconst C39 = C38 + 1\nconst C40 = C39 + 1\nconst C41 = C40 + 1\nconst C42 = C41 + 1\nconst C43 = C42 + 1\nconst C44 = C43 + 1\nconst C45 = C44 + 1\nconst C46 = C45 + 1\nconst C47 = C46 + 1\nconst C48 = C47 + 1\nconst C49 = C48 + 1\nconst C50 = C49 + 1\nconst C51 = C50 + 1\nconst C52 = C51 + 1\nconst C53 = C52 + 1\nconst C54 = C53 + 1\nconst C55 = C54 + 1\nconst C56 = C55 + 1\nconst C57 = C56 + 1\nconst C58 = C57 + 1\nconst C59 = C58 + 1\nconst C60 = C59 + 1\n\nschema Trig scope logical:\n    id: Int key\n\nrule sixty:\n    Trig t where t.id == 1 and C60 == 60\n->\n    log info \"sixty\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["sixty"]
+    }
+}

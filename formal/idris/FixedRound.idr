@@ -68,11 +68,10 @@
 |||     (2^(s-1)) and divisor; the instances are 10, 2^(s-1), 2^32 and 10^9.
 |||
 ||| %default total; no believe_me, assert_total, assert_smaller or postulate.
-||| Standalone: it imports only the base library. So it restates four small
-||| lemmas the lane has elsewhere, unexported or deep in a chain:
-||| `ldet_3_2_8__lte_neq_lt` (Lcyc/Termination), and
-||| `ldet_3_2_8__mult_lte_left`, `_mult_lte_right`, `_remainder_unique`
-||| (CrU128Mul, whose names are private).
+||| Standalone: it imports only the base library. So it carries four small
+||| lemmas of its own: `ldet_3_2_8__lte_neq_lt`, which Lcyc/Termination
+||| has deep in a chain, and `ldet_3_2_8__mult_lte_left`,
+||| `_mult_lte_right`, `_remainder_unique`.
 module FixedRound
 
 import Data.Nat

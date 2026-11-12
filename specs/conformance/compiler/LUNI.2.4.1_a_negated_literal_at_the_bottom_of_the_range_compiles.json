@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.2.4.1_a_negated_literal_at_the_bottom_of_the_range_compiles",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [LUNI.3.3]: a unary minus on a unit literal negates the literal's number, so the constant the compiler emits is the negated value, and that value is what is held to the 64-bit signed range. `byte` is `x * 8` bits on an `int64` dimension; `1152921504606846976_byte` is 2^60 bytes, 2^63 bits, past 2^63 - 1, and `-1152921504606846976_byte` is -2^63 bits, the bottom of the range, which fits. It compiles. A compiler that judges the literal as written, before the negation, refuses it with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. PATH PINNED: `dsc.typecheck.lnul_5_2_unnarrowed_type`'s unary arm, which sends a minus over a non-time `ex_unit` to `luni_3_1_7_literal_type` as `negated`, through `dsc.quantity.quantity_base` and `luni_3_3_negated_affine_base`, then `dsc.quantity.luni_2_4_1_literal_out_of_range` and `dsc.exact.luni_2_4_1_int64` over -2^63.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule r:\n    Blob b where b.size > -1152921504606846976_byte\n->\n    log info \"big\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

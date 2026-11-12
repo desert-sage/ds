@@ -197,6 +197,7 @@ static void regex_walk_expr(const ds_rete_expr_t *e,
     case DS_RETE_EXPR_LIT_STR:
     case DS_RETE_EXPR_LIT_BOOL:
     case DS_RETE_EXPR_LIT_NULL:
+    case DS_RETE_EXPR_LIT_TIME:
     case DS_RETE_EXPR_VAR:
     case DS_RETE_EXPR_NOW:
     case DS_RETE_EXPR_BIND_REF:
@@ -1152,6 +1153,14 @@ static ds_result_t builtin_json_path(ds_rete_engine_t  *engine,
     const char  *path = args[1].s.ptr;
     const size_t plen = args[1].s.len;
 
+    /* [LNUL.8.4]: a `null` root, a `Json?` slot holding none, has no document
+       to resolve against, and the read is `null`, a leaf. */
+    if (args[0].kind == DS_RETE_VAL_NULL) {
+        if (ctx) ctx->json_composite = false;
+        *out = ds_rete_val_null();
+        return DS_OK_R;
+    }
+
     ds_json_t       *owned = NULL;
     const ds_json_t *root  = NULL;
 
@@ -1267,6 +1276,31 @@ static bool i64_mul_ok(int64_t a, int64_t b, int64_t *out)
     }
     *out = a * b;
     return true;
+}
+
+/* [RLOW.7.3.9]'s FN_INT_MUL_ADD_CHECKED(x, m, a): `m*x + a`, an integer-stored
+ * unit's conversion. The product, and then the sum, are each held to the Int
+ * range, and either outside it is NOT_REPRESENTABLE: a sum that would come back
+ * into range after the product left it raises too, and nothing wraps. A null
+ * operand is null; the compiler writes `m` and `a` as literals. */
+static ds_result_t builtin_int_mul_add_checked(ds_rete_engine_t *e,
+                                               ds_rete_eval_ctx_t *ctx,
+                                               ds_rete_val_t *args, uint32_t argc,
+                                               ds_rete_val_t *out)
+{
+    (void)e;
+    if (args[0].kind == DS_RETE_VAL_NULL || args[1].kind == DS_RETE_VAL_NULL ||
+        args[2].kind == DS_RETE_VAL_NULL)
+        { *out = ds_rete_val_null(); return DS_OK_R; }
+    if (args[0].kind != DS_RETE_VAL_INT || args[1].kind != DS_RETE_VAL_INT ||
+        args[2].kind != DS_RETE_VAL_INT)
+        { *out = FAULT(ds_rete_mismatch_cause(args, argc)); return DS_OK_R; }
+    int64_t product, sum;
+    if (!i64_mul_ok(args[1].i, args[0].i, &product) ||
+        __builtin_add_overflow(product, args[2].i, &sum))
+        { *out = FAULT(DS_FAULT_NOT_REPRESENTABLE); return DS_OK_R; }
+    *out = ds_rete_val_int(sum);
+    return DS_OK_R;
 }
 
 /* [LUNI.13.5], [LUNI.13.6]: round num/den (den > 0) in integers. The tie test is
@@ -1614,6 +1648,7 @@ ds_result_t ds_register_builtins(ds_rete_engine_t *engine)
     REG(DS_FN_MAX,        builtin_max);
     REG(DS_FN_MIN,        builtin_min);
     REG(DS_FN_INT_DIV_EXACT, builtin_int_div_exact);
+    REG(DS_FN_INT_MUL_ADD_CHECKED, builtin_int_mul_add_checked);
 
     REG(DS_FN_EXP,   builtin_exp);
     REG(DS_FN_LN,    builtin_ln);

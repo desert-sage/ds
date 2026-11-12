@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.14.3_a_literal_call_with_no_value_is_refused",
+    "clauses": ["LTIM.14.3"],
+    "category": "compiler",
+    "scenario": "[LTIM.14.3]: a `calendar` call whose arguments all fold is a constant in every position, so one whose fold would raise [LTIM.14.2]'s fault is refused with DS_VALIDATE_CONST_NOT_FOLDABLE outside a `const` too. `calendar.date(2026, 2, 30)` names no day and stands in a rule's `where`. PATH PINNED: `dsc.validate`'s `ltim_14_3_rule_expression`, which runs `ltim_14_3_raising_calls` over each of a rule's expressions.",
+    "rules_ds": "import calendar\n\nschema T scope logical:\n    id: Int key\n\nrule r:\n    T t where t.id == 1 and calendar.date(2026, 2, 30) != calendar.date(1970, 1, 1)\n->\n    log info \"built\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

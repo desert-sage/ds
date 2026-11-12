@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.10_a_conversion_past_the_range_raises",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: on integer storage `x::<unit>` of a tier-1 unit is `FN_INT_MUL_ADD_CHECKED(x, P, R)`, and a product `P·x` outside the `Int` range raises a ComputationError of kind NOT_REPRESENTABLE; the conversion does not wrap. `byte` is `x * 8` bits (P = 8, Q = 1, R = 0). Fact 1 holds 0, and `s.n::byte` is 0 bits, so rule `conv` logs. Fact 2 holds 2^60: 8 · 2^60 is 2^63 bits, past 2^63 - 1, so the conversion raises and `conv` does not fire. The trap is raised during matching, so its `rule` is the node's `$alpha_<id>` ([LERR.9.2]), and rule `handler` logs the kind alone. Exactly [\"conv 1\", \"NOT_REPRESENTABLE\"]. A wrapping lowering gives -2^63 bits for fact 2, which is not 0, and raises nothing. PATH PINNED: `dsc.rete.rlow_6_1_10_int` through `rlow_7_3_9_mul_add_checked`, whose FN_INT_MUL_ADD_CHECKED each runtime evaluates (libds's `builtin_int_mul_add_checked`, ds.eval's `rlow_7_3_9_int_mul_add_checked`).",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::byte == 0_bit\n->\n    log info \"conv {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": 1152921504606846976 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv 1", "NOT_REPRESENTABLE"]
+    }
+}

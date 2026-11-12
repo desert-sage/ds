@@ -594,6 +594,156 @@ static size_t drop_announcements(const uint8_t *in, size_t len,
     return dropped ? n : 0;
 }
 
+/* ---- [RFCS.10.5]: a ClockAdvance outside the clock's range -----------------
+   A run's recording with a ClockAdvance of clock_ns -1 added at its end: no run
+   records one and no fixture can edit one. The replay delivers the run's assert
+   and ends at the atom with DS_ERR_TIME_RANGE. The control replays the recording
+   without the atom. The Mercury runtime's ds.replay ends the same replay with
+   the same code (test_ds's
+   test_rfcs_10_5_a_clock_outside_the_range_ends_the_replay). */
+/* @spec [RFCS.10.5] */
+static void test_rfcs_10_5__a_clock_outside_the_range_ends_the_replay(void)
+{
+    ds_engine_config_t cfg = {0};
+    ds_engine_t *src = NULL;
+    CHECK_OK(ds_engine_new(&cfg, &src), "engine_new clock-range src");
+    if (!src) return;
+    const ds_schema_t *ssc = register_pkt(src);
+
+    ds_rfcs_recorder_t rec;
+    uint8_t recbuf[4096];
+    g_stream_len = 0;
+    CHECK_OK(ds_rfcs_record_to(src, &rec, test_sink, NULL, recbuf,
+                               sizeof(recbuf)), "record_to clock-range");
+    (void)assert_pkt(src, ssc, 42, "alpha");
+    CHECK(rec.last.status == DS_OK, "recorder had no error");
+    ds_engine_set_stream_callback(src, NULL, NULL);
+    const size_t run_len = g_stream_len;
+
+    size_t added = 0;
+    CHECK_OK(ds_rfcs_encode_clka(0, -1, false, 0, g_stream + g_stream_len,
+                                 sizeof(g_stream) - g_stream_len, &added),
+             "encode a ClockAdvance of -1");
+    g_stream_len += added;
+
+    static uint8_t strbuf[8192];
+    for (int whole = 0; whole < 2; whole++) {
+        ds_engine_t *dst = NULL;
+        CHECK_OK(ds_engine_new(&cfg, &dst), "engine_new clock-range dst");
+        if (!dst) break;
+        (void)register_pkt(dst);
+        ds_rfcs_replay_result_t rr;
+        memset(&rr, 0, sizeof rr);
+        ds_result_t r = ds_rfcs_replay(dst, g_stream,
+                                       whole ? run_len : g_stream_len, strbuf,
+                                       sizeof(strbuf), &rr);
+        CHECK(rr.asserts == 1, "the run's assert is delivered");
+        if (whole) {
+            CHECK_OK(r, "the recording without the atom replays");
+        } else {
+            char diag[200];
+            snprintf(diag, sizeof diag,
+                     "a ClockAdvance of -1 ends the replay with "
+                     "DS_ERR_TIME_RANGE (got %d: %s)",
+                     r.status, r.detail ? r.detail : "(null)");
+            CHECK(r.status == DS_ERR_TIME_RANGE, diag);
+        }
+        ds_engine_free(dst);
+    }
+    ds_engine_free(src);
+}
+
+/* ---- [RFCS.6.7]: a replayed pump refused before its step ------------------
+   The run, with no seed: a pump at a mock clock of INT64_MAX - 1 s, then
+   Pkt(42, "alpha") and a second pump. A pump refused before its step
+   ([NLFC.9.5]) leaves no PumpBoundary, so no run records one, and a replay
+   meets one only on an engine that is not the run's: one the host seeded,
+   which [RFCS.26.2] forbids. Seeded with "k" for 1 h, the first replayed pump
+   would give "k" a deadline past the Time range, and is refused with
+   DS_ERR_TIME_RANGE, a status no clause makes an outcome: the replay ends
+   there and delivers nothing after it. The control replays the same
+   recording into an unseeded engine, which reproduces the run, so the seed is
+   the only difference. The Mercury runtime's ds.replay ends the same replay
+   with the same code (test_ds check_replay_pump_time_range). */
+/* @spec [RFCS.6.7] */
+static void test_rfcs_6_7_time_range_pump_ends_the_replay(void)
+{
+    const uint64_t hour_ns = 3600ull * 1000000000ull;
+    ds_engine_config_t cfg = {0};
+    ds_engine_t *src = NULL;
+    CHECK_OK(ds_engine_new(&cfg, &src), "engine_new time-range src");
+    if (!src) return;
+    const ds_schema_t *ssc = register_pkt(src);
+    CHECK_OK(ds_engine_clock_set_mode(src, DS_CLOCK_MOCK), "src mock clock");
+    CHECK_OK(ds_engine_clock_set(src, (uint64_t)INT64_MAX - 1000000000ull),
+             "src clock at INT64_MAX - 1 s");
+
+    ds_rfcs_recorder_t rec;
+    uint8_t recbuf[4096];
+    g_stream_len = 0;
+    CHECK_OK(ds_rfcs_record_to(src, &rec, test_sink, NULL, recbuf,
+                               sizeof(recbuf)), "record_to");
+    CHECK_OK(ds_engine_pump(src), "the run's first pump, with no seed");
+    (void)assert_pkt(src, ssc, 42, "alpha");
+    CHECK_OK(ds_engine_pump(src), "the run's second pump");
+    CHECK(rec.last.status == DS_OK, "recorder had no error");
+    ds_engine_set_stream_callback(src, NULL, NULL);
+
+    /* SEEDED: the first replayed pump is refused, and the replay ends. */
+    {
+        ds_engine_t *dst = NULL;
+        CHECK_OK(ds_engine_new(&cfg, &dst), "engine_new time-range seeded");
+        if (dst) {
+            (void)register_pkt(dst);
+            ds_json_t *one = NULL;
+            CHECK_OK(ds_json_parse("1", 1, &one), "json_parse 1");
+            CHECK_OK(ds_engine_cache_seed(dst, "k", one, hour_ns),
+                     "seed k, ttl 1 h");
+            static uint8_t strbuf[8192];
+            ds_rfcs_replay_result_t rr;
+            memset(&rr, 0, sizeof rr);
+            ds_result_t r = ds_rfcs_replay(dst, g_stream, g_stream_len, strbuf,
+                                           sizeof(strbuf), &rr);
+            {
+                char diag[200];
+                snprintf(diag, sizeof diag,
+                         "a replayed pump refused before its step ends the "
+                         "replay with DS_ERR_TIME_RANGE (got %d: %s)",
+                         r.status, r.detail ? r.detail : "(null)");
+                CHECK(r.status == DS_ERR_TIME_RANGE, diag);
+            }
+            CHECK(rr.asserts == 0, "nothing after the refused pump is delivered");
+            size_t n = 1;
+            CHECK_OK(ds_engine_fact_count(dst, &n), "fact_count seeded");
+            CHECK(n == 0, "and nothing entered working memory");
+            ds_engine_free(dst);
+            ds_json_free(one);
+        }
+    }
+
+    /* THE CONTROL: unseeded, the same recording replays whole. */
+    {
+        ds_engine_t *dst = NULL;
+        CHECK_OK(ds_engine_new(&cfg, &dst), "engine_new time-range unseeded");
+        if (dst) {
+            (void)register_pkt(dst);
+            static uint8_t strbuf[8192];
+            ds_rfcs_replay_result_t rr;
+            memset(&rr, 0, sizeof rr);
+            CHECK_OK(ds_rfcs_replay(dst, g_stream, g_stream_len, strbuf,
+                                    sizeof(strbuf), &rr),
+                     "unseeded, the recording replays");
+            CHECK(rr.asserts == 1, "the Pkt between the pumps is delivered");
+            size_t n = 0;
+            CHECK_OK(ds_engine_fact_count(dst, &n), "fact_count unseeded");
+            CHECK(n == 1, "and it is in working memory");
+            ds_engine_free(dst);
+        }
+    }
+
+    ds_engine_free(src);
+}
+
 /* ds_rfcs_replay_finish frees the compare recorder, so it leaves no pointer to
    it in the stream slot, on a running engine and on one the replay halted.
    White-box: the halt is set on the latch, and the slot has no public
@@ -696,12 +846,13 @@ int main(void)
         ds_engine_free(dst2);
     }
 
-    /* --- [RFCS.16.3]: atoms at 260 and 323 are read past ---
+    /* --- [RFCS.19.3]: atoms at 260 and 323 are refused ---
        The same recording with both appended, hand-framed: 260 {sig_alg 1,
        key_id "K", seal_time "T", signature AA BB} and 323 {tag "license"
        NUL-padded to 16, text "hello"}. Neither number is in the registry, so
-       both are unknown in the skip band. The replay applies the same inputs,
-       leaves the same working memory, and raises no status. */
+       neither names a member of Atom's oneof. The replay applies every input
+       before them, leaving the working memory the plain one did, and is then
+       refused with DS_ERR_PARSE; neither atom is counted in `skipped`. */
     {
         static const uint8_t seal_260[] = {
             0x0A, 0x0F,                         /* outer: field 1, len 15 */
@@ -730,12 +881,14 @@ int main(void)
         ds_engine_t *dst3 = NULL;
         CHECK_OK(ds_engine_new(&cfg, &dst3), "engine_new dst3");
         (void)register_pkt(dst3);
-        CHECK_OK(ds_rfcs_replay(dst3, sealed, sealed_len, strbuf3, sizeof(strbuf3), &rr3),
-                 "a stream with a 260 and a 323 appended replays with no status (RFCS.16.3)");
+        memset(&rr3, 0, sizeof rr3);
+        CHECK(ds_rfcs_replay(dst3, sealed, sealed_len, strbuf3, sizeof(strbuf3), &rr3).status
+                  == DS_ERR_PARSE,
+              "a stream with a 260 and a 323 appended is refused (RFCS.19.3)");
         CHECK(rr3.asserts == rr.asserts && rr3.retracts == rr.retracts,
-              "the 260 and the 323 change no input the replay applies");
-        CHECK(rr3.skipped == rr.skipped + 2,
-              "the 260 and the 323 are counted in `skipped` (rfcs.h)");
+              "every input before the 260 was applied");
+        CHECK(rr3.skipped == rr.skipped,
+              "the 260 is refused, not counted in `skipped`");
 
         wm_snapshot snap3;
         memset(&snap3, 0, sizeof(snap3));
@@ -747,19 +900,19 @@ int main(void)
                   && (snap3.n != 1
                       || (snap3.count[0] == snap.count[0]
                           && strcmp(snap3.label[0], snap.label[0]) == 0)),
-              "the replay past 260 and 323 leaves the working memory the plain one did");
+              "the refusal leaves the working memory the inputs before it made");
         ds_engine_free(dst3);
     }
 
-    /* --- [RFCS.16.3]: an unknown skip-band atom is read past ---
-       The same recording with a hand-framed atom at 322, unallocated in the
-       skip band, planted after the StreamHeader, between two known atoms. The
-       replay applies the same inputs and leaves the same working memory. The
-       same plant at 100, in the inject band, is DS_ERR_FS_UNKNOWN_INJECT
-       ([RFCS.18.8]). Both go through replay_drain's rfcs_unknown_atom. */
+    /* --- [RFCS.19.3]: an unknown field number is refused where it stands ---
+       The same recording with a hand-framed atom at an unallocated number
+       planted after the StreamHeader, between two known atoms: 322, then 100.
+       Each replay is refused with DS_ERR_PARSE before any input after the
+       plant is applied. Both go through replay_drain's ds_pbf_lookup
+       refusal. */
     {
-        static const uint8_t x_skip[]   = { 0x0A, 0x05, 0x92, 0x14, 0x02, 0x08, 0x01 };
-        static const uint8_t x_inject[] = { 0x0A, 0x05, 0xA2, 0x06, 0x02, 0x08, 0x01 };
+        static const uint8_t x_322[] = { 0x0A, 0x05, 0x92, 0x14, 0x02, 0x08, 0x01 };
+        static const uint8_t x_100[] = { 0x0A, 0x05, 0xA2, 0x06, 0x02, 0x08, 0x01 };
 
         /* Where the first atom ends: the reader's position after one step. */
         ds_rfcs_reader_t rd;
@@ -775,53 +928,45 @@ int main(void)
 
         static uint8_t planted[8192 + 16];
         memcpy(planted, g_stream, cut);
-        memcpy(planted + cut, x_skip, sizeof x_skip);
-        memcpy(planted + cut + sizeof x_skip, g_stream + cut, g_stream_len - cut);
-        size_t planted_len = g_stream_len + sizeof x_skip;
+        memcpy(planted + cut, x_322, sizeof x_322);
+        memcpy(planted + cut + sizeof x_322, g_stream + cut, g_stream_len - cut);
+        size_t planted_len = g_stream_len + sizeof x_322;
 
         static uint8_t strbuf4[8192];
         ds_rfcs_replay_result_t rr4;
         ds_engine_t *dst4 = NULL;
         CHECK_OK(ds_engine_new(&cfg, &dst4), "engine_new dst4");
         (void)register_pkt(dst4);
-        CHECK_OK(ds_rfcs_replay(dst4, planted, planted_len, strbuf4, sizeof(strbuf4), &rr4),
-                 "a skip-band atom replays with no status (RFCS.16.3)");
-        CHECK(rr4.asserts == rr.asserts && rr4.retracts == rr.retracts,
-              "the skip-band atom changes no input the replay applies");
-        CHECK(rr4.skipped == rr.skipped + 1,
-              "the skip-band atom is counted in `skipped` (rfcs.h)");
-        wm_snapshot snap4;
-        memset(&snap4, 0, sizeof(snap4));
-        const ds_schema_t *dsc4 = NULL;
-        CHECK_OK(ds_engine_schema_find(dst4, "Pkt", &dsc4), "schema_find dst4");
-        CHECK_OK(ds_engine_for_each_fact(dst4, dsc4, collect_fact, &snap4),
-                 "for_each_fact dst4");
-        CHECK(snap4.n == snap.n
-                  && (snap4.n != 1
-                      || (snap4.count[0] == snap.count[0]
-                          && strcmp(snap4.label[0], snap.label[0]) == 0)),
-              "the planted replay leaves the working memory the plain one did");
+        memset(&rr4, 0, sizeof rr4);
+        CHECK(ds_rfcs_replay(dst4, planted, planted_len, strbuf4, sizeof(strbuf4), &rr4).status
+                  == DS_ERR_PARSE,
+              "a 322 after the StreamHeader is refused (RFCS.19.3)");
+        CHECK(rr4.asserts == 0 && rr4.retracts == 0,
+              "no input after the 322 was applied");
         ds_engine_free(dst4);
 
-        memcpy(planted + cut, x_inject, sizeof x_inject);
+        memcpy(planted + cut, x_100, sizeof x_100);
         static uint8_t strbuf5[8192];
         ds_rfcs_replay_result_t rr5;
         ds_engine_t *dst5 = NULL;
         CHECK_OK(ds_engine_new(&cfg, &dst5), "engine_new dst5");
         (void)register_pkt(dst5);
+        memset(&rr5, 0, sizeof rr5);
         CHECK(ds_rfcs_replay(dst5, planted, planted_len, strbuf5, sizeof(strbuf5), &rr5).status
-                  == DS_ERR_FS_UNKNOWN_INJECT,
-              "an inject-band atom refuses the replay (RFCS.18.8)");
+                  == DS_ERR_PARSE,
+              "a 100 after the StreamHeader is refused (RFCS.19.3)");
+        CHECK(rr5.asserts == 0 && rr5.retracts == 0,
+              "no input after the 100 was applied");
         ds_engine_free(dst5);
     }
 
-    /* --- [RFCS.3.1]: 259, held for the deferred Checkpoint, is read past
+    /* --- [RFCS.3.1]: 259, held for the deferred Checkpoint, is refused
        between two inputs ---
        The same recording with a hand-framed atom at 259 planted between A's
        FactAssert and B's, its body a Checkpoint's {seq 3, wm_count 1}. 259 is
-       not in the registry, so it is an unknown skip-band number: the replay
-       applies every input, leaves the same working memory, and counts the
-       atom in `skipped`. */
+       not in the registry, so it names no member of Atom's oneof
+       ([RFCS.19.3]): A's assert is applied, the replay is refused with
+       DS_ERR_PARSE at the 259, and B's assert is not applied. */
     {
         static const uint8_t cpkt_259[] = {
             0x0A, 0x07,                          /* outer: field 1, len 7 */
@@ -857,23 +1002,12 @@ int main(void)
         ds_engine_t *dst6 = NULL;
         CHECK_OK(ds_engine_new(&cfg, &dst6), "engine_new dst6");
         (void)register_pkt(dst6);
-        CHECK_OK(ds_rfcs_replay(dst6, planted, planted_len, strbuf6, sizeof(strbuf6), &rr6),
-                 "a stream with a 259 between two inputs replays with no status (RFCS.3.1)");
-        CHECK(rr6.asserts == rr.asserts && rr6.retracts == rr.retracts,
-              "the 259 changes no input the replay applies");
-        CHECK(rr6.skipped == rr.skipped + 1,
-              "the 259 is counted in `skipped`");
-        wm_snapshot snap6;
-        memset(&snap6, 0, sizeof(snap6));
-        const ds_schema_t *dsc6 = NULL;
-        CHECK_OK(ds_engine_schema_find(dst6, "Pkt", &dsc6), "schema_find dst6");
-        CHECK_OK(ds_engine_for_each_fact(dst6, dsc6, collect_fact, &snap6),
-                 "for_each_fact dst6");
-        CHECK(snap6.n == snap.n
-                  && (snap6.n != 1
-                      || (snap6.count[0] == snap.count[0]
-                          && strcmp(snap6.label[0], snap.label[0]) == 0)),
-              "the replay past 259 leaves the working memory the plain one did");
+        memset(&rr6, 0, sizeof rr6);
+        CHECK(ds_rfcs_replay(dst6, planted, planted_len, strbuf6, sizeof(strbuf6), &rr6).status
+                  == DS_ERR_PARSE,
+              "a 259 between two inputs is refused (RFCS.19.3)");
+        CHECK(rr6.asserts == 1 && rr6.retracts == 0,
+              "A's assert before the 259 was applied, and nothing after it");
         ds_engine_free(dst6);
     }
 
@@ -971,6 +1105,8 @@ int main(void)
     test_rfcs_6_7_refused_input_is_recorded();
     test_rfcs_6_7_unknown_schema_records_nothing();
     test_rfcs_6_7_refused_rule_write_replays_past_the_pump();
+    test_rfcs_6_7_time_range_pump_ends_the_replay();
+    test_rfcs_10_5__a_clock_outside_the_range_ends_the_replay();
     test_replay_finish_empties_the_slot();
 
     if (failures) {

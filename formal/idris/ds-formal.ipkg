@@ -3,16 +3,14 @@
 -- The DS formal-methods Idris package.
 --
 -- TWO JOBS, and the second is why this file exists at all. `idris2 --check`
--- typechecks a module and stops; it never generates code, so a decoder that
--- typechecks has still never DECODED anything. Building an executable does two
+-- typechecks a module and stops; it never generates code, so an evaluator that
+-- typechecks has still never EVALUATED anything. Building an executable does two
 -- things `--check` cannot:
 --
 --   1. It compiles through Chez, which catches what elaboration defers.
---   2. It gives the worked examples somewhere to live. `Protobuf/Wire.idr`
---      records why they cannot be compile-time `Refl` proofs -- `div` and `mod`
---      on `Nat` do not reduce during elaboration, and rewriting the arithmetic
---      so they would makes the decoder worse. A property that needs a specific
---      input to be true is a test, and this is where tests run.
+--   2. It gives the worked examples somewhere to live: Integer and Double
+--      arithmetic do not reduce during elaboration, so a property that needs a
+--      specific input to be true is a test, and this is where tests run.
 --
 -- `Main` is the runner and is DELIBERATELY NOT a model module: it carries no
 -- `--@spec` tags and is exempted from the clause-tie scanners by name, because
@@ -28,33 +26,12 @@ main = Main
 executable = "ds-formal-tests"
 
 modules = Main
-        , Protobuf.Framing
-        , Protobuf.Message
-        , Rete.Expr
-        , Rete.FireClock
         , Rete.RateGate
         , Rete.ActivationKey
-        , Lcdb.RuleGlobal
         , AbsentTrichotomy
-        , Protobuf.Wire
-        , AbsentValue
-        , CapBreach
-        , ClockStep
-        , ConsumptionLoop
-        , CrU128Mul
         , FixedRound
-        , InertSlots
-        , InertForms
-        , RecordOrder
-        , Replay
-        , SeqAssignment
-        , TsIdentity
         , TwoClocks
-        , MockClock
-        , CheckpointClocks
-        , EventTime
         , Rete.EntryStamp
-        , SeriesWindow
         , Rete.FireLoop
         , Rete.RunFold
         , Rete.Refcount
@@ -64,6 +41,7 @@ modules = Main
         , Rete.TmsRun
         , Lcyc.TmsTermination
         , Rete.PumpBoundary
+        , Rete.TmsRanked
         , Rete.RecomputeDiff
         , Rete.RecomputeFire
         , Rete.RecomputeStrata
@@ -75,7 +53,6 @@ modules = Main
         , Rete.NetworkOrder
         , Rete.NetworkOrderKeep
         , Rete.NetworkRefraction
-        , Rete.NetworkDenseWitness
         , Rete.NetworkCorollaries
         , Rete.NetworkAgree
         , Rete.NetworkTransferOrder
@@ -89,26 +66,15 @@ modules = Main
         , Rete.NetworkTtl
         , Rete.NetworkTraced
         , Rete.Eval
-        , Rete.NetworkAnswer
-        , Rete.NetworkTraps
         , Rete.NetworkTick
         , Rete.NetworkClocked
         , Rete.NetworkEdges
         , Rete.NetworkTwoClocks
-        , Rete.NetworkOnce
-        , Rete.NetworkFrame
-        , Rete.NetworkFrameClocked
-        , Rete.NetworkFrameRetime
-        , Rete.NetworkWindowLapse
-        , Rete.NetworkSampled
-        , Rete.NetworkThen
-        , Rete.NetworkAfter
         , Rete.NetworkCooldown
         , Rete.NetworkTimed
         , Rete.NetworkWall
         , Rete.NetworkTimer
         , Rete.NetworkCall
-        , Rete.WhereV5
         , Fixture
         , Lcyc.Lemmas
         , Lcyc.Propagation
@@ -116,3 +82,4 @@ modules = Main
         , Lcyc.Termination
         , Lcyc.Witnesses
         , Lcyc.WitnessProofs
+        , Lcyc.CertifiedWitness

@@ -200,9 +200,9 @@
 |||
 ||| RUN, NOT PROVED, and said so: the code is Integer arithmetic, and Idris
 ||| reasons about a primitive `div` or `mod` only on literals, so the round
-||| trip `valueDecode (valueCode vs) = Just vs` is not a theorem here --
-||| Protobuf/Wire.idr's tail comment is the precedent, and a structural
-||| decoder on a natural of 2^66 is a hang, not a reference. It is a worked
+||| trip `valueDecode (valueCode vs) = Just vs` is not a theorem here, and a
+||| structural decoder on a natural of 2^66 is a hang, not a reference. It
+||| is a worked
 ||| example in Main.idr on the values that matter (the Int extremes, a
 ||| negative, a tuple of every kind, the two non-codes 0 and a stray block),
 ||| and every run checks it in the only way that counts: the ids this runner

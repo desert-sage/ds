@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
 # SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
 [build-system]
-requires = ["hatchling"]
+# 1.27: the first hatchling that reads a PEP 639 licence expression.
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -13,11 +14,25 @@ name = "ds-lang-ast"
 # its release's `dsc dump-ast` writes, so the versions go together.
 version = "0.0.0"
 description = "Read, transform, write and build Desert Sage (DS) programs as syntax trees, shaped like Python's ast"
+readme = "README.md"
+license = "BSD-4-Clause OR AGPL-3.0-or-later"
+# A copy of the repository's LICENSE: PEP 639 takes no path outside the
+# project. scripts/private/tests/release/test_package_metadata.py holds it
+# byte-identical to the original.
+license-files = ["LICENSE"]
 # The standard library only (tests/test_packaging.py holds it to that). It
 # runs the `dsc` binary to parse: $DS_AST_DSC, then $DS_MERCURY_DSC, then
 # `dsc` on PATH. It needs no libds.
 requires-python = ">=3.11"
 dependencies = []
+
+# What PyPI links from the project's page. The release refuses a wheel
+# without them (scripts/private/release/package_metadata.py).
+[project.urls]
+Homepage = "https://ds-lang.org"
+Source = "https://github.com/desert-sage/ds"
+Issues = "https://github.com/desert-sage/ds/issues"
+Documentation = "https://ds-lang.org/docs/latest/bindings/ds_ast/ds_ast.html"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ds_ast"]

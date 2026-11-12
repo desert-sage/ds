@@ -7,21 +7,27 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[RLOW.7.3.9] **A quantity argument on a unit-typed kwarg is lowered in the\nkwarg's unit** ([LADP.8.5.3]). Unless the kwarg's unit is tier-2 ([LUNI.4.3]),\nthe compiler folds a value it knows at compile time into the kwarg's unit and\nemits the result as a literal. For any other value, and for every value on a\ntier-2 unit, it wraps the argument's expression in the unit's conversion from\nthe base unit:\n\n- where the dimension's storage is `float64` ([LUNI.7.2]), the conversion built\n  from the arithmetic expression nodes the engine already evaluates, with the\n  constants the artefact carries ([LUNI.2.7.1]): a tier-1 unit's inverse affine\n  map, and a tier-2 unit's `from_base` ([LUNI.4.3]);\n- where the dimension's storage is `int64`, `FN_INT_DIV_EXACT`\n  (`proto/builtin_fn.proto#BuiltinFn`) of the base-unit value and the unit's\n  factor, which is a whole number of base units ([LUNI.2.7.1]).\n\n`FN_INT_DIV_EXACT(n, d)` yields `n / d` when `d` divides `n` exactly. When `d`\nis zero, the engine must raise a `ComputationError` of kind `DIVIDE_BY_ZERO`;\nwhen `d` does not divide `n`, one of kind `NOT_REPRESENTABLE` ([LERR.1.4]). A\nnull operand yields null ([LNUL.4.1]).\n\n",
+  "text": "[RLOW.7.3.9] **A quantity argument on a unit-typed kwarg is lowered in the\nkwarg's unit** ([LADP.8.5.3]). Unless the kwarg's unit is tier-2 ([LUNI.4.3]),\nthe compiler folds a value it knows at compile time into the kwarg's unit and\nemits the result as a literal; on integer storage a folded value outside the\n`Int` range is refused at the `call` ([LUNI.2.4.1]). For any other value, and for every value on a\ntier-2 unit, it wraps the argument's expression in the unit's conversion from\nthe base unit:\n\n- where the dimension's storage is `float64` ([LUNI.7.2]), the conversion built\n  from the arithmetic expression nodes the engine already evaluates, with the\n  constants the artefact carries ([LUNI.2.7.1]): a tier-1 unit's inverse affine\n  map, and a tier-2 unit's `from_base` ([LUNI.4.3]);\n- where the dimension's storage is an integer, `int64` or `int32`\n  ([LUNI.4.1.1]), and the unit is tier-1,\n  `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(v, Q, -R), P)`\n  (`proto/builtin_fn.proto#BuiltinFn`) of the base-unit value `v`, with $P$, $Q$\n  and $R$ as [RLOW.6.1.10] states them. For a factor that is a whole number of\n  base units ($Q = 1$, $R = 0$) this is `FN_INT_DIV_EXACT(v, P)`;\n- where the storage is an integer and the unit is tier-2, its `from_base` over\n  `v` as `Float`, converting round-to-nearest-even, then the cast that\n  [LUNI.7.2] states for a `float64` value landing in integer storage.\n\n`FN_INT_DIV_EXACT(n, d)` yields `n / d` when `d` divides `n` exactly. When `d`\nis zero, the engine must raise a `ComputationError` of kind `DIVIDE_BY_ZERO`;\nwhen `d` does not divide `n`, one of kind `NOT_REPRESENTABLE` ([LERR.1.4]). A\nnull operand yields null ([LNUL.4.1]).\n\n`FN_INT_MUL_ADD_CHECKED(x, m, a)` yields `m·x + a`. The engine must raise a\n`ComputationError` of kind `NOT_REPRESENTABLE` when the product `m·x`, or then the\nsum `m·x + a`, lies outside the `Int` range, and must not wrap as `Int`\narithmetic does ([LEXP.7.13.1]). So a result that would fit\nafter an intermediate passes the range raises too. A null `x` yields null. The\ncompiler emits `m` and `a` as literals, each one `Int` ([LUNI.2.4.1]).\n\n",
   "refs": [
     "LADP.8.5.3",
     "LERR.1.4",
+    "LEXP.7.13.1",
     "LNUL.4.1",
+    "LUNI.2.4.1",
     "LUNI.2.7.1",
+    "LUNI.4.1.1",
     "LUNI.4.3",
-    "LUNI.7.2"
+    "LUNI.7.2",
+    "RLOW.6.1.10"
   ],
   "symbols": [
-    "FN_INT_DIV_EXACT"
+    "FN_INT_DIV_EXACT",
+    "FN_INT_MUL_ADD_CHECKED"
   ],
   "defines": {
     "symbols": [
-      "FN_INT_DIV_EXACT"
+      "FN_INT_DIV_EXACT",
+      "FN_INT_MUL_ADD_CHECKED"
     ]
   },
   "checks": {

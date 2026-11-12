@@ -64,6 +64,20 @@ const NO_DSC_YET = NO_ENGINE || NO_COMPILER;
 
 const READINGS = "@at,id,level\n0,a,50.0\n1_s,b,85.5\n2_s,c,95.0\n3_s,d,-1\n";
 
+/** Three incidents paged at once, two acknowledged: for dsdb_escalate's two
+    timeouts, due between the rows. */
+const ESCALATE = JSON.stringify({
+    Incident: [
+        { "@at": "0_s", id: "db-1", summary: "Database replica lagging" },
+        { "@at": "0_s", id: "web-2", summary: "Checkout returning errors" },
+        { "@at": "0_s", id: "disk-3", summary: "Disk 95% full" },
+    ],
+    Ack: [
+        { "@at": "2_min", corr: "page-db-1", responder: "sam" },
+        { "@at": "8_min", corr: "page-web-2", responder: "alex" },
+    ],
+});
+
 describe(`the wall clock of a run on fact files, on the ${TARGET} target`, () => {
     const WALL = () => join(FIXTURES, "dsdb_wall.dsc");
 
@@ -110,8 +124,24 @@ describe(`ds batch mode on the ${TARGET} target`, () => {
                      "a written ts is what is compared, whatever the @at");
     });
 
+    // A timeout due between two rows fires at its own time, so a row at a later
+    // instant that answers its call comes too late to cancel it.
+    test("each engine deadline between rows and before --until is a step of its own", { skip: NO_ENGINE }, async () => {
+        const r = await batch([join(FIXTURES, "dsdb_escalate.dsc"), "facts.json", "--until", "20_min"],
+                              { "facts.json": ESCALATE });
+        assert.equal(r.code, 0, r.err);
+        assert.deepEqual(r.err.split("\n").filter((l) => /^[\d.]+s {2}(INFO|WARNING|CRITICAL) /.test(l)), [
+            "120.0s  INFO  db-1: sam acknowledged",
+            "300.0s  WARNING  web-2: no answer in 5 minutes, paging the backup",
+            "300.0s  WARNING  disk-3: no answer in 5 minutes, paging the backup",
+            "480.0s  INFO  web-2: alex acknowledged",
+            "900.0s  CRITICAL  disk-3: no answer in 15 minutes, calling the manager",
+        ]);
+    });
+
     // A run ends at its last row, before what is due after it.
-    test("--until moves the clock past the last row and pumps once", { skip: NO_ENGINE }, async () => {
+    test("--until moves the clock past the last row, through each deadline, and pumps once there",
+         { skip: NO_ENGINE }, async () => {
         const UNTIL = join(FIXTURES, "dsdb_until.dsc");
         const files = { "Reading.jsonl": '{"@at":"2_s","id":"a","level":9.0}\n' };
         const done = (r) => JSON.parse(r.out).Done.map((x) => [x["@at"], x.why]).sort();
@@ -122,7 +152,8 @@ describe(`ds batch mode on the ${TARGET} target`, () => {
 
         const after = await batch([UNTIL, "Reading.jsonl", "--until", "10_s"], files);
         assert.equal(after.code, 0, after.err);
-        assert.deepEqual(done(after), [["10_s", "series"], ["10_s", "timer"]]);
+        assert.deepEqual(done(after), [["7_s", "series"], ["7_s", "timer"]],
+                         "the timer's deadline is a pump, which also reads the absorbed sample");
 
         const same = await batch([UNTIL, "Reading.jsonl", "--until", "2_s"], files);
         assert.equal(same.code, 0, same.err);
@@ -368,6 +399,25 @@ describe(`the shell over fact files, on the ${TARGET} target`, () => {
         const bad = await run([DSC, "Reading.csv"], { "Reading.csv": "id,level\nb,hot\n" }, ["quit"]);
         assert.equal(bad.code, 1);
         assert.match(bad.err, /Reading\.csv/);
+    });
+
+    // As batch mode feeds them: a timeout due between two rows fires at its
+    // own time, a step of its own, and not in the later row's pump.
+    test("each engine deadline between rows is a step of its own, as batch mode's", { skip: NO_ENGINE }, async () => {
+        const r = await run([join(FIXTURES, "dsdb_escalate.dsc"), "facts.json"], { "facts.json": ESCALATE },
+                            ["@<", "@>", "quit"]);
+        assert.equal(r.code, 0, r.err);
+        assert.match(r.out, /5 rows from 1 fact file; point is at the end/);
+        // The log lines crossed on the way from the start to the end: the
+        // firing, the clock, the level, the message.
+        const logs = r.out.split("\n").map((l) => /^ {2}!\d+ {2}(\S+) {2}\S* {2}(.*)$/.exec(l))
+            .filter((m) => m !== null).map((m) => `${m[1]}  ${m[2]}`);
+        assert.deepEqual(logs, [
+            "120.0s  db-1: sam acknowledged",
+            "300.0s  web-2: no answer in 5 minutes, paging the backup",
+            "300.0s  disk-3: no answer in 5 minutes, paging the backup",
+            "480.0s  web-2: alex acknowledged",
+        ], r.out);
     });
 
     test("the shell's words: rows say what happened, a fresh session has nothing to read, a save names no errno",

@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_a_folded_kwarg_value_past_the_range_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [RLOW.7.3.9]: in integer storage a value known at compile time that a `call` folds into a kwarg's unit is a constant the compiler emits, and one outside the 64-bit signed range is refused at the `call` with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `half` is `x * 0.5` bits, and `store.half` declares `size: half`. Rule `go` writes `size: 4611686018427387904_bit`, 2^62 bits, which is 2^63 half, past 2^63 - 1, though the literal's own base value fits. It is a whole number of `half`, so DS_VALIDATE_KWARG_QUANTITY_NOT_WHOLE does not take it. A compiler that leaves it unfolded raises at run time instead; one that wraps emits -2^63. PATH PINNED: `dsc.validate.luni_2_4_1_kwarg_out_of_range`, through `dsc.quantity.known_quantity`, `ladp_8_5_2_in_unit` and `luni_2_4_1_literal_out_of_range`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit half: data = x * 0.5\n\nservice store.half:\n    kwarg size: half required\n    no response\n\nschema Trig scope logical:\n    v: Int key\n\nrule go:\n    Trig\n->\n    call store.half size: 4611686018427387904_bit nocooldown\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

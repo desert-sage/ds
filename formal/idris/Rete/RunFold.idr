@@ -9,7 +9,8 @@
 ||| NORMATIVE COMPANION to the six engines that define the loop by hand --
 ||| Rete/FireLoop.idr, Rete/FireLoopTms.idr, Rete/TtlSweep.idr,
 ||| Rete/Network.idr, Rete/NetworkTmsTransfer.idr, Rete/NetworkTtl.idr -- to
-||| two traced runs (Rete/NetworkFrame.idr, Rete/NetworkFrameClocked.idr) and
+||| the three traced runs defined as the traced fold (Rete/NetworkCooldown.idr,
+||| Rete/NetworkTimed.idr, Rete/NetworkCall.idr) and
 ||| to the ghost run (Rete/NetworkRefraction.idr). Rete/NetworkTraced.idr's
 ||| traced pump is not bridged: its firing names two things (the ordinal and
 ||| the fact ids) where the traced fold's names one, and the regrouping lemma
@@ -54,8 +55,7 @@
 ||| loop is this fold is that engine's bridge, proved where its loop is
 ||| defined or unfolded (`iret_11_4__run_by_fl`, `iret_11_4__run_tms_by`,
 ||| `iret_11_4__run_ttl_by`, `iret_11_4__run_net_by`, `iret_11_4__run_tms_net_by`,
-||| `iret_11_4__run_ttl_net_by`; `iret_11_4__run_net_traced_by`,
-||| `iret_11_4__run_ttl_net_traced_by`; `iret_11_4__run_g_by`). The bridges
+||| `iret_11_4__run_ttl_net_by`; `iret_11_4__run_g_by`). The bridges
 ||| carry the content; this file carries the shape.
 module Rete.RunFold
 

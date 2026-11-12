@@ -1078,6 +1078,7 @@ trap_kind(ee_slot_invalid(_, _)) = 2u32.
 trap_kind(ee_contract_breach(_)) = 0u32.
 trap_kind(ee_fire_budget_exceeded(_)) = 0u32.
 trap_kind(ee_duplicate_order_key) = 0u32.
+trap_kind(ee_internal) = 0u32.
 
     % One fault, one atom, chosen by `ds.fault.fault_class/1`, the site written field
     % by field as each atom's proto names it. A field the site does not know is left
@@ -1176,6 +1177,7 @@ cap_number(ee_fire_budget_exceeded(_))     = 3u32.  % CAP_MAX_FIRES_PER_PUMP
 cap_number(ee_expr_fault(_))               = 0u32.
 cap_number(ee_slot_invalid(_, _))          = 0u32.
 cap_number(ee_duplicate_order_key)         = 0u32.
+cap_number(ee_internal)                    = 0u32.
 
 :- func cap_name_number(cap) = uint32.
 
@@ -1199,6 +1201,7 @@ cap_name_number(cap_value_capacity)     = 12u32.
 
 engine_fault_number(ee_expr_fault(Fault))       = expr_engine_fault(Fault).
 engine_fault_number(ee_duplicate_order_key)     = 4u32.  % ENGINE_FAULT_ORDER_KEY
+engine_fault_number(ee_internal)                = 8u32.  % ENGINE_FAULT_INTERNAL
 engine_fault_number(ee_contract_breach(_))      = 0u32.
 engine_fault_number(ee_fire_budget_exceeded(_)) = 0u32.
 engine_fault_number(ee_slot_invalid(_, _))      = 0u32.
@@ -1472,14 +1475,10 @@ read_frames(Incremental, R0, Acc0, Result) :-
         )
     ;
         FrameResult = fr_ok(F),
-        ( if
-            F ^ fr_atom = unknown(Field),
-            disposition_of_unknown(Field) = D,
-            D \= disp_skip
-        then
-            % An unknown number's band decides, and only the skip band skips
-            % [RFCS.16.3], [RFCS.16.2], [RFCS.18.8].
-            Result = ra_error(unknown_atom_clause(D), F ^ fr_offset)
+        ( if F ^ fr_atom = unknown(_) then
+            % A field number with no registry entry names no member of `Atom`'s
+            % oneof [RFCS.19.3]: refused where it stands, as libds's codec does.
+            Result = ra_error("RFCS.19.3", F ^ fr_offset)
         else if
             F ^ fr_atom = known(at_fact_assert),
             rfcs_5_4_unannounced(F ^ fr_body, Acc0, Seq)
@@ -1519,28 +1518,17 @@ outer_frame_partial(R0) :-
     read_delimited(BodyResult, R1, _),
     BodyResult = error(we_truncated).
 
-:- func unknown_atom_clause(disposition) = string.
-
-unknown_atom_clause(disp_reject_inject) = "RFCS.18.8".
-unknown_atom_clause(disp_reject_version) = "RFCS.16.2".
-unknown_atom_clause(disp_malformed) = "RFCS.16.3".
-unknown_atom_clause(disp_skip) = "RFCS.16.3".
-
+    % Fails on a body that does not decode, and on a number with no registry
+    % entry, which `read_frames` refuses before it calls this.
+    %
 :- pred read_atom(frame::in, read_acc::in, read_acc::out) is semidet.
 
 read_atom(F, !Acc) :-
-    Ref = F ^ fr_atom,
-    (
-        Ref = unknown(_),
-        % Only a skip-band number reaches here [RFCS.16.2].
-        true
-    ;
-        Ref = known(Atom),
-        note_first_seq(Atom, F ^ fr_body, !Acc),
-        Before = !.Acc,
-        read_known(Atom, F ^ fr_body, !Acc),
-        note_compare(Atom, F ^ fr_body, Before, !Acc)
-    ).
+    F ^ fr_atom = known(Atom),
+    note_first_seq(Atom, F ^ fr_body, !Acc),
+    Before = !.Acc,
+    read_known(Atom, F ^ fr_body, !Acc),
+    note_compare(Atom, F ^ fr_body, Before, !Acc).
 
     % [LFST.9.3.1]: a compare-class atom kept as written, with the counts of what was
     % read before it (`Before`), so a FactEmit or FactWithdraw is compared before its

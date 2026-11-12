@@ -1,0 +1,15 @@
+{
+    "id": "LUNI.8.9_an_annotated_let_selects_the_unit",
+    "clauses": ["LUNI.8.9", "LUNI.8.6", "RLOW.6.1.9"],
+    "category": "logical",
+    "scenario": "[LUNI.8.9]: a `let` annotation names the value's own unit ([LUNI.8.6]). `let km: kilometer = r.d` over a `meter` slot holding 1500 m, then `round(km)`, emitted: it rounds 1.5 km, ties to even, to 2 km. Rule `two` matches the emitted value at 2 km. Rounding in the slot's unit gives 1500 m, and `two` stays quiet. PATH PINNED: `dsc.rete.rlow_6_1_9_in_unit` over the let's annotated type, with `kilometer`'s conversion out of the base unit and back.",
+    "rules_ds": "from units.si import kilometer\n\nschema R scope logical:\n    id: String key\n    d: meter mutable\n\nschema Out scope explicit:\n    v: meter\n\nrule r:\n    R r\n->\n    let km: kilometer = r.d\n    emit Out v: round(km)\n\nrule two:\n    Out o where o.v == 2_kilometer\n->\n    log info \"two\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "R", "slots": { "id": "a", "d": 1500.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["two"]
+    }
+}

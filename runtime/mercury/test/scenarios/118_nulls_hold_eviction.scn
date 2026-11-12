@@ -1,0 +1,18 @@
+# A held value across eviction ([LNUL.8.6], [LSER.9.3.2]).
+#
+# Pump 1    a number and a string, absorbed at 0 s.
+# 120 s     `Other` makes a pump read a clock past both windows: libds frees
+#           the rows.
+# 180 s     nulls, each absorbing the held value.
+# 190 s     values, whose rules read the held samples before their own.
+assert Reading dev=k level=5.0 label=hello n=1
+pump
+advance 120000000000
+assert Other k=1
+pump
+advance 60000000000
+assert Reading dev=k level=null label=null n=2
+pump
+advance 10000000000
+assert Reading dev=k level=7.0 label=next n=3
+pump

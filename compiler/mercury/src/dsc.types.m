@@ -63,20 +63,29 @@
                 dm_unit      :: maybe(decl_ref)
             ).
 
-    % `%` is additive, and `**` is its own class: any dimensioned operand needs
-    % an annotation. [LUNI.8] states neither.
+    % `%` is additive ([LUNI.8.3]). `/` and `//` are apart from `*` because a bare
+    % number on their left has no dimension DS can state ([LUNI.8.4]), and the
+    % same dimension on both sides gives a bare number ([LUNI.8.1]). `**` refuses
+    % a dimensioned operand on either side.
     %
     %@spec [LUNI.8.3]
+    %@spec [LUNI.8.4]
 :- type luni_8_3_operator
     --->    op_additive
     ;       op_multiplicative
+    ;       op_division
     ;       op_exponent.
 
+    % `dr_bare_number` is a bare number beside a value of that dimension
+    % ([LUNI.8.3]).
+    %
     %@spec [LUNI.8.2]
+    %@spec [LUNI.8.3]
     %@spec [LUNI.8.4]
 :- type luni_8_2_result
     --->    dr_ok(luni_8_7_3_dim)
     ;       dr_cross_dimension(decl_ref, decl_ref)
+    ;       dr_bare_number(decl_ref)
     ;       dr_needs_annotation(decl_ref, decl_ref).
 
     %@spec [LUNI.8.1]
@@ -89,9 +98,9 @@
     %@spec [LUNI.8.7.3]
 :- func luni_8_7_3_cast_kind(ds_type) = lcst_4_5_2_kind.
 
-    % The map is `rf_unit_storage`. `time` is `lk_int` whether or not it holds
-    % it. A dimension it does not hold is `lk_float`, reached only by a program
-    % already refused.
+    % The map is `rf_unit_storage`. `time` is `lk_duration` whether or not it
+    % holds it ([LTIM.1.3.5]). A dimension it does not hold is `lk_float`, reached
+    % only by a program already refused.
     %
     %@spec [LUNI.8.7.3]
 :- func luni_8_7_3_leaf(map(decl_ref, string), decl_ref) = leaf_kind.
@@ -110,10 +119,16 @@
 :- func luni_7_1_slot_type(map(decl_ref, string), type_entry, nullability)
     = ds_type.
 
-    % A `Duration` has one too, with no `dt_dim`. Fails for a plain number.
+    % Fails for a plain number.
     %
     %@spec [LUNI.8.2]
 :- pred luni_8_2_quantity_dimension(ds_type::in, decl_ref::out) is semidet.
+
+    % The dimension a type of this leaf carries with no unit named: a `Duration`
+    % is a value of `time`, and no other leaf has one.
+    %
+    %@spec [LTIM.1.3.5]
+:- func ltim_1_3_5_leaf_dim(leaf_kind) = luni_8_7_3_dim.
 
     % The lexer keeps the separator: `30_s` lexes as `unit_lit("30", "_s")`.
     %
@@ -136,11 +151,13 @@
 :- func core_decl(string) = decl_ref.
 
     % The magnitude, decimal, times the multiplier, exactly ([LDET.3.3a.7]). A
-    % non-whole product is refused before here ([LUNI.3.1.9]). A product outside
-    % int64 wraps ([LEXP.7.13.1]).
+    % non-whole product is refused before here ([LUNI.3.1.9]). Fails for a
+    % product outside int64, which is never wrapped ([LUNI.2.4.1]): the caller
+    % refuses it at the literal, or has.
     %
     %@spec [LUNI.3.1.5]
-:- func luni_3_1_5_magnitude_ns(string, int64) = int64.
+    %@spec [LUNI.2.4.1]
+:- pred luni_3_1_5_magnitude_ns(string::in, int64::in, int64::out) is semidet.
 
     % The same product, exact. Fails on a magnitude that does not read as decimal.
     %
@@ -156,11 +173,11 @@
 :- import_module int.
 :- import_module require.
 
-luni_3_1_5_magnitude_ns(Magnitude, Multiplier) = Value :-
+luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Value) :-
     Cleaned = string.replace_all(Magnitude, "_", ""),
     ( if dsc.exact.from_decimal(Cleaned, Exact) then
-        Value = dsc.exact.truncate_wrapping_int64(
-            dsc.exact.mul(Exact, dsc.exact.from_int64(Multiplier)))
+        dsc.exact.luni_2_4_1_int64(dsc.exact.truncate_integer(
+            dsc.exact.mul(Exact, dsc.exact.from_int64(Multiplier))), Value)
     else
         unexpected($pred, unreadable(Magnitude))
     ).
@@ -183,8 +200,11 @@ unreadable(Magnitude) =
 luni_8_1_combine(_, dimensionless, dimensionless) = dr_ok(dimensionless).
 luni_8_1_combine(Op, dim(D, U), dimensionless) = Result :-
     (
-        ( Op = op_additive
-        ; Op = op_multiplicative
+        Op = op_additive,
+        Result = dr_bare_number(D)
+    ;
+        ( Op = op_multiplicative
+        ; Op = op_division
         ),
         Result = dr_ok(dim(D, U))
     ;
@@ -193,12 +213,15 @@ luni_8_1_combine(Op, dim(D, U), dimensionless) = Result :-
     ).
 luni_8_1_combine(Op, dimensionless, dim(D, U)) = Result :-
     (
-        ( Op = op_additive
-        ; Op = op_multiplicative
-        ),
+        Op = op_additive,
+        Result = dr_bare_number(D)
+    ;
+        Op = op_multiplicative,
         Result = dr_ok(dim(D, U))
     ;
-        Op = op_exponent,
+        ( Op = op_division
+        ; Op = op_exponent
+        ),
         Result = dr_needs_annotation(D, D)
     ).
 luni_8_1_combine(Op, dim(LeftDim, LeftUnit), dim(RightDim, _RightUnit))
@@ -212,6 +235,13 @@ luni_8_1_combine(Op, dim(LeftDim, LeftUnit), dim(RightDim, _RightUnit))
             Result = dr_cross_dimension(LeftDim, RightDim)
         )
     ;
+        Op = op_division,
+        ( if LeftDim = RightDim then
+            Result = dr_ok(dimensionless)
+        else
+            Result = dr_needs_annotation(LeftDim, RightDim)
+        )
+    ;
         ( Op = op_multiplicative
         ; Op = op_exponent
         ),
@@ -223,15 +253,20 @@ luni_8_1_combine(Op, dim(LeftDim, LeftUnit), dim(RightDim, _RightUnit))
 luni_8_7_3_cast_kind(ds_type(Leaf, Dim, _)) = Kind :-
     (
         % The dimension wins over the leaf kind: `x::Float` on a `celsius` is
-        % [LUNI.8.5]'s strip, not an identity.
+        % [LUNI.8.5]'s strip, not an identity. A `Duration` is its own row,
+        % whichever `time` unit it was declared in ([LTIM.1.3.5]).
         Dim = dim(DimName, MaybeUnit),
-        Storage = ( if Leaf = lk_int then st_int else st_float ),
-        (
-            MaybeUnit = yes(Unit),
-            Kind = ck_unit(Unit, Storage)
-        ;
-            MaybeUnit = no,
-            Kind = ck_dimension(DimName, Storage)
+        ( if Leaf = lk_duration then
+            Kind = ck_duration
+        else
+            Storage = ( if Leaf = lk_int then st_int else st_float ),
+            (
+                MaybeUnit = yes(Unit),
+                Kind = ck_unit(Unit, Storage)
+            ;
+                MaybeUnit = no,
+                Kind = ck_dimension(DimName, Storage)
+            )
         )
     ;
         Dim = dimensionless,
@@ -279,7 +314,8 @@ luni_8_7_3_cast_kind(ds_type(Leaf, Dim, _)) = Kind :-
 %-----------------------------------------------------------------------------%
 
 luni_7_1_slot_type(_, te_builtin(Builtin), Null) =
-    ds_type(builtin_leaf(Builtin), dimensionless, Null).
+    ds_type(builtin_leaf(Builtin), ltim_1_3_5_leaf_dim(builtin_leaf(Builtin)),
+        Null).
 luni_7_1_slot_type(_, te_schema(S), Null) =
     ds_type(lk_fact(S ^ as_own), dimensionless, Null).
 luni_7_1_slot_type(_, te_opaque(O), Null) =
@@ -299,19 +335,19 @@ luni_7_1_slot_type(Storage, te_unit(Kind, Name), Null) = Type :-
     ).
 
 luni_8_2_quantity_dimension(Type, Dimension) :-
-    ( if Type ^ dt_dim = dim(Declared, _) then
-        Dimension = Declared
-    else
-        Type ^ dt_leaf = lk_duration,
-        Dimension = time_dimension
-    ).
+    Type ^ dt_dim = dim(Dimension, _).
+
+ltim_1_3_5_leaf_dim(Leaf) =
+    ( if Leaf = lk_duration then dim(time_dimension, no) else dimensionless ).
 
 luni_8_7_3_leaf(Storage, Dimension) =
-    ( if luni_3_1_9_whole_dimension(Storage, Dimension) then lk_int
+    ( if Dimension = time_dimension then lk_duration
+      else if luni_3_1_9_whole_dimension(Storage, Dimension) then lk_int
       else lk_float ).
 
 luni_8_7_3_storage(Storage, Dimension) =
-    ( if luni_3_1_9_whole_dimension(Storage, Dimension) then st_int
+    ( if Dimension = time_dimension then st_time
+      else if luni_3_1_9_whole_dimension(Storage, Dimension) then st_int
       else st_float ).
 
 luni_3_1_9_whole_dimension(Storage, Dimension) :-

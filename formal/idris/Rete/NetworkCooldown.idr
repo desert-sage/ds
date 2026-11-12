@@ -39,9 +39,9 @@
 ||| same representation tag and an equal value under it: an Int and a Time
 ||| one key, `1` and `"1"` two, the two zeros one, a Json by its canonical
 ||| text, `null` only `null`. This file takes the key as a function of the
-||| token and states nothing of the composition, which Lcdb/RuleGlobal.idr
-||| holds for the logical branch; the fixtures below key on a fact's
-||| identity key, on a payload slot, or on nothing.
+||| token and states nothing of the composition ([LCDB.3.3.3]), which is
+||| the fixture lowering's; the fixtures below key on a fact's identity
+||| key, on a payload slot, or on nothing.
 |||
 ||| PROVED, each over every program, state and tracker table.
 |||
@@ -106,9 +106,8 @@
 ||| whole story is Rete/NetworkRefraction.idr's, not restated.
 module Rete.NetworkCooldown
 
--- The imports are Rete/NetworkTraced.idr's whole, for the reason
--- Rete/NetworkThen.idr's comment gives: a run evaluated in a witness
--- unfolds only through modules the file imports.
+-- The imports are Rete/NetworkTraced.idr's whole: a run evaluated in a
+-- witness unfolds only through modules the file imports.
 import Rete.FireLoop
 import Rete.FireLoopTms
 import Rete.PumpBoundary

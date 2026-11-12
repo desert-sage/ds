@@ -1,0 +1,29 @@
+{
+    "id": "RLOW.7.3.9_a_kwarg_conversion_past_the_range_raises",
+    "clauses": ["RLOW.7.3.9"],
+    "category": "adapter",
+    "scenario": "[RLOW.7.3.9]: on integer storage a base-unit value on a tier-1 kwarg is `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(v, Q, -R), P)`, and a product `Q·v` outside the `Int` range raises a ComputationError of kind NOT_REPRESENTABLE and issues no call. `half` is `x * 0.5` bits (P = 1, Q = 2, R = 0). Rule `put` passes each blob's `bit` slot to `store.half`'s `size: half`. Blob 1 holds 3 bits and the integrator receives 6. Blob 2 holds 2^62 bits: 2 · 2^62 is 2^63, past 2^63 - 1, so the activation is abandoned with a computation_error and no second call appears. A wrapping lowering sends -9223372036854775808 for blob 2. PATH PINNED: `dsc.quantity.rlow_7_3_9_conversion`'s `cv_int(1, 2, 0)`, and `dsc.rete.rlow_7_3_9_converted` with `rlow_7_3_9_numerator`; libds's `builtin_int_mul_add_checked` answers it here.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit half: data = x * 0.5\n\nservice store.half:\n    kwarg size: half required\n    no response\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule put:\n    Blob b\n->\n    call store.half size: b.size nocooldown\n",
+    "expect": {
+        "kind": "adapter_calls",
+        "steps": [
+            { "op": "assert", "schema": "Blob", "slots": { "id": 1, "size": 3 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Blob", "slots": { "id": 2, "size": 4611686018427387904 } },
+            { "op": "pump" }
+        ],
+        "expected_stream_kind_counts": {
+            "action_call": 1,
+            "computation_error": 1
+        },
+        "expected_calls": [
+            {
+                "service": "store.half",
+                "correlation": "$put_c0_g0",
+                "body": {
+                    "size": 6
+                }
+            }
+        ]
+    }
+}

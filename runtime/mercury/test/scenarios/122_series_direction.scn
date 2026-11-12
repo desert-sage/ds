@@ -1,0 +1,37 @@
+# `direction` on all_time and sliding, equal samples through `by: none`, and
+# the `Int` extremes -- see fixtures/157_series_direction.ds:
+#
+#   pump 1  all cold: 7
+#   pump 2  one sample each: 7
+#   pump 3  DA, DW [1.0, 2.5]: 1;  DN [-0.0, 0.0], two facts, equal: 0;
+#           DI [min, max]: 1 (a wrapped difference would read -1)
+#   pump 4  DA, DW [.., 2.5, 2.0]: -1;  DN [.., 0.0, 5.0]: 1;  DI [.., max, 0]: -1
+#   pump 5  DA, DW [.., 2.0, -0.0]: -1;  DN [.., 5.0, 5.0]: 0
+#
+# `DN` takes a new fact per pump, each a sample; every other assert changes
+# its value ([LFAC.2.5.1]).
+# @spec [LSER.10.9] [LSER.19.8]
+assert DA k=a v=1.0
+assert DW k=a v=1.0
+assert DN k=p v=-0.0
+assert DI k=a n=-9223372036854775808
+pump
+assert DA k=a v=2.5
+assert DW k=a v=2.5
+assert DN k=q v=0.0
+assert DI k=a n=9223372036854775807
+pump
+assert DA k=a v=2.0
+assert DW k=a v=2.0
+assert DN k=r v=5.0
+assert DI k=a n=0
+pump
+assert DA k=a v=-0.0
+assert DW k=a v=-0.0
+assert DN k=s v=5.0
+assert DI k=a n=1
+pump
+assert DA k=a v=3.0
+assert DW k=a v=3.0
+assert DN k=t v=5.0
+pump

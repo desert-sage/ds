@@ -37,11 +37,17 @@
 # ds_re2.cc comes from the top-level `*.cc` glob, its `seam` "re2"; the rows
 # here are the units every build needs whatever `re2` says, so their `seam` is
 # empty.
+#
+# -DNDEBUG is on the two Float-text units and on every generated protoc-c body
+# (the Proto rows below), and on no other compile: [IERR.1.5] allows an assert
+# only under DS_DEBUG, and those are the sources whose asserts libds does not
+# write. What libds writes keeps its asserts under `#ifdef DS_DEBUG`, and
+# runtime/tests/libds/source/test_ierr_1_5_no_abort.py names any that is not.
 table ObjCxx
   """One C++ compile unit: ds_re2.cc, the RE2 seam, from the top-level `*.cc` glob, and the two Float-text units, float_text/float_parse.cc over fast_float and float_text/float_shortest.cc over Dragonbox, rows because no build may lack them. `seam` is the LibdsRow `re2` value a row needs to compile the unit, or empty for every row. A separate schema from Obj because the C++ compile takes a different tool, -std and link deps."""
   obj                           src                            iflags                                                                                          seam
-  float_text/float_parse.o      float_text/float_parse.cc      "-I../../../vendor -fno-exceptions -fno-rtti"                                                    ""
-  float_text/float_shortest.o   float_text/float_shortest.cc   "-I../../../vendor/dragonbox/include -I../../../vendor -fno-exceptions -fno-rtti -Djkj=ds::jkj"  ""
+  float_text/float_parse.o      float_text/float_parse.cc      "-DNDEBUG -I../../../vendor -fno-exceptions -fno-rtti"                                                    ""
+  float_text/float_shortest.o   float_text/float_shortest.cc   "-DNDEBUG -I../../../vendor/dragonbox/include -I../../../vendor -fno-exceptions -fno-rtti -Djkj=ds::jkj"  ""
 
 # ── build params: -D overrides with defaults.
 #
@@ -99,6 +105,15 @@ param ldlibs        = "-lprotobuf-c -lre2 -lstdc++ -lpthread -lm"
 # `version`'s are, and the value is a path relative to ds_alloc.h's own
 # directory.
 param alloc_header  = "" prefix "-DDS_ALLOC_HEADER=\\\"" suffix "\\\""
+# The engine's invariant walks ([IRET.28.15]): `ds_oa_check`, and the
+# per-node `ds_rete_beta_check` libds runs at every pump's quiescence, compiled
+# under DS_DEBUG alone. Off by default, so a release row, the projected
+# Makefile and a build from a source bundle carry none of them: the pump walk
+# costs more than linear in what each node holds.
+# scripts/private/gate/gate.py's `_libds_defines` sets it on every
+# call, archive and impl suite alike, so the tests that call the checks see
+# the archive that defines them.
+param debug_checks  = "" prefix "-DDS_DEBUG="
 
 # ── the rows the archive is built for ────────────────────────────────────────
 # Every compile, every `ld -r` combine and the archive below are instantiated
@@ -127,7 +142,7 @@ param alloc_header  = "" prefix "-DDS_ALLOC_HEADER=\\\"" suffix "\\\""
 #
 # What a row does not vary: the protoc-c steps, one per set on the coordinator,
 # whose bodies build-unit stages to a row's host because every compile reads
-# them; `alloc_mode` and `alloc_header`, which are the build's; and everything
+# them; `alloc_mode`, `alloc_header` and `debug_checks`, which are the build's; and everything
 # after the archive (the suites, the alloc lanes, lint and the completeness
 # guard), which reads CI's runtime/src/libds/libds.a.
 table LibdsRow
@@ -277,7 +292,7 @@ each Proto p
   row Obj
     obj    {p.set}/{p.stem}.pb-c.o
     src    {p.set}/{p.stem}.pb-c.c
-    iflags "-I../libds -I{p.set} -Wno-unused-but-set-variable"
+    iflags "-DNDEBUG -I../libds -I{p.set} -Wno-unused-but-set-variable"
     seam   ""
 
 each Proto p
@@ -292,14 +307,14 @@ table ProtoIFlags
   """A generated body whose include flags differ from its set's default, because its .proto imports a body declared in another set. protoc-c writes the import as a bare `#include "X.pb-c.h"`, so the importer's compile needs the other set's directory on its path. Keyed by stem."""
   stem           iflags:mutable
   # `stream_header.proto` imports `capabilities.proto`, a dsc body.
-  stream_header  "-I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
+  stream_header  "-DNDEBUG -I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
   # `external_assert.proto` imports `fact_external.proto`, an rfcs body, and
   # through it `slot.proto`, a dsc body.
-  external_assert  "-I../libds -Ireader -Irfcs -Idsc -Wno-unused-but-set-variable"
+  external_assert  "-DNDEBUG -I../libds -Ireader -Irfcs -Idsc -Wno-unused-but-set-variable"
   # `fact_external.proto` imports `slot.proto`, a dsc body, and
   # `call_issued.proto` imports `fact_external.proto`.
-  fact_external  "-I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
-  call_issued    "-I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
+  fact_external  "-DNDEBUG -I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
+  call_issued    "-DNDEBUG -I../libds -Irfcs -Idsc -Wno-unused-but-set-variable"
 
 # ── the compile units: obj, src, and per-file include flags ──────────────────
 #
@@ -592,7 +607,7 @@ each Obj o
     cwd     runtime/src/libds
     tool    {r.cc_tool}
     require {r.require}
-    run     {r.cc} {o.iflags} -O2 -g -Wall -Wextra -Wno-unused-parameter -std=c99 -ffp-contract=off -ffunction-sections -fdata-sections -D_POSIX_C_SOURCE=200809L -I../../include -fPIC {alloc_mode} {alloc_header} {r.harden} {r.harden_cfi} {r.cflags_extra} -c -o {{outputs}} {o.src}
+    run     {r.cc} {o.iflags} -O2 -g -Wall -Wextra -Wno-unused-parameter -std=c99 -ffp-contract=off -ffunction-sections -fdata-sections -D_POSIX_C_SOURCE=200809L -I../../include -fPIC {alloc_mode} {alloc_header} {debug_checks} {r.harden} {r.harden_cfi} {r.cflags_extra} -c -o {{outputs}} {o.src}
     reads   runtime/src/libds/{o.src} runtime/src/libds/dsc/common.pb-c.c runtime/src/libds/rfcs/stream_header.pb-c.c
     makes   {r.out}/{o.obj}
 
@@ -607,7 +622,7 @@ each Obj o
     cwd     runtime/src/libds
     tool    {r.cc_tool}
     require {r.require}
-    run     {r.cc} {o.iflags} -O2 -g -Wall -Wextra -Wno-unused-parameter -std=c99 -ffp-contract=off -ffunction-sections -fdata-sections -D_POSIX_C_SOURCE=200809L -I../../include -fPIC {r.version} {r.harden} {r.harden_cfi} {r.cflags_extra} -c -o {{outputs}} {o.src}
+    run     {r.cc} {o.iflags} -O2 -g -Wall -Wextra -Wno-unused-parameter -std=c99 -ffp-contract=off -ffunction-sections -fdata-sections -D_POSIX_C_SOURCE=200809L -I../../include -fPIC {r.version} {debug_checks} {r.harden} {r.harden_cfi} {r.cflags_extra} -c -o {{outputs}} {o.src}
     reads   runtime/src/libds/{o.src} runtime/src/libds/version_series.h
     makes   {r.out}/{o.obj}
   extend {r.id}libds.a
@@ -1161,6 +1176,7 @@ each LibdsRow r
   extend {r.id}series/monotonic_deque.o
     reads runtime/include/libds.h runtime/src/libds/ds_alloc.h runtime/src/libds/rfcs/atoms.h
           runtime/src/libds/series/backend.h runtime/src/libds/series/monotonic_deque.h
+          runtime/src/libds/series/ring_buffer.h
   extend {r.id}series/numeric_integral.o
     reads runtime/include/libds.h runtime/src/libds/ds_alloc.h runtime/src/libds/rfcs/atoms.h
           runtime/src/libds/series/backend.h runtime/src/libds/series/numeric_integral.h
@@ -1194,7 +1210,7 @@ each LibdsRow r
           runtime/src/libds/series/state.h runtime/src/libds/telemetry.h runtime/src/libds/wm.h
   extend {r.id}series/welford_ewma.o
     reads runtime/include/libds.h runtime/src/libds/ds_alloc.h
-          runtime/src/libds/series/welford_ewma.h
+          runtime/src/libds/series/ring_buffer.h runtime/src/libds/series/welford_ewma.h
   extend {r.id}dsc/atom_registry.o
     reads runtime/src/libds/dsc/atom_registry.h runtime/src/libds/rfcs/atoms.h
   extend {r.id}dsc/ds_pb_alloc.o
@@ -1224,11 +1240,12 @@ each LibdsRow r
           runtime/src/libds/builtins.h runtime/src/libds/cache.h runtime/src/libds/clock.h
           runtime/src/libds/dispatcher.h runtime/src/libds/ds_alloc.h runtime/src/libds/ds_re2.h
           runtime/src/libds/ds_text.h runtime/src/libds/dsc/atom_registry.h
-          runtime/src/libds/dsc/capabilities.pb-c.h runtime/src/libds/dsc/common.pb-c.h
-          runtime/src/libds/dsc/ds_pb_alloc.h runtime/src/libds/dsc/ds_source.pb-c.h
-          runtime/src/libds/dsc/dsrt_loader.h runtime/src/libds/dsc/header.pb-c.h
-          runtime/src/libds/dsc/hydration.pb-c.h runtime/src/libds/dsc/line_span.pb-c.h
-          runtime/src/libds/dsc/loader.h runtime/src/libds/dsc/pbf_reader.h
+          runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/capabilities.pb-c.h
+          runtime/src/libds/dsc/common.pb-c.h runtime/src/libds/dsc/ds_pb_alloc.h
+          runtime/src/libds/dsc/ds_source.pb-c.h runtime/src/libds/dsc/dsrt_loader.h
+          runtime/src/libds/dsc/header.pb-c.h runtime/src/libds/dsc/hydration.pb-c.h
+          runtime/src/libds/dsc/line_span.pb-c.h runtime/src/libds/dsc/loader.h
+          runtime/src/libds/dsc/pbf_reader.h runtime/src/libds/dsc/rete_expr.pb-c.h
           runtime/src/libds/dsc/rete_loader.h runtime/src/libds/dsc/rule_cooldown.pb-c.h
           runtime/src/libds/dsc/rule_debug_name.pb-c.h runtime/src/libds/dsc/rule_source.pb-c.h
           runtime/src/libds/dsc/schema_def.pb-c.h runtime/src/libds/dsc/schema_logical.pb-c.h
@@ -1244,13 +1261,14 @@ each LibdsRow r
           runtime/src/libds/oa.h runtime/src/libds/recorder.h runtime/src/libds/rete/adapters.h
           runtime/src/libds/rete/agenda.h runtime/src/libds/rete/alpha.h
           runtime/src/libds/rete/arena.h runtime/src/libds/rete/engine.h
-          runtime/src/libds/rete/fact.h runtime/src/libds/rete/fault_fact.h
-          runtime/src/libds/rete/intern.h runtime/src/libds/rete/pool.h
-          runtime/src/libds/rete/schema.h runtime/src/libds/rete/schema_reg.h
-          runtime/src/libds/rete/tms.h runtime/src/libds/rete/val.h runtime/src/libds/rfcs/atoms.h
-          runtime/src/libds/schema.h runtime/src/libds/series/backend.h
-          runtime/src/libds/series/dispatch.h runtime/src/libds/series/registry.h
-          runtime/src/libds/series/state.h runtime/src/libds/sha256.h runtime/src/libds/telemetry.h
+          runtime/src/libds/rete/expr.h runtime/src/libds/rete/fact.h
+          runtime/src/libds/rete/fault_fact.h runtime/src/libds/rete/intern.h
+          runtime/src/libds/rete/pool.h runtime/src/libds/rete/schema.h
+          runtime/src/libds/rete/schema_reg.h runtime/src/libds/rete/tms.h
+          runtime/src/libds/rete/val.h runtime/src/libds/rfcs/atoms.h runtime/src/libds/schema.h
+          runtime/src/libds/series/backend.h runtime/src/libds/series/dispatch.h
+          runtime/src/libds/series/registry.h runtime/src/libds/series/state.h
+          runtime/src/libds/sha256.h runtime/src/libds/telemetry.h
           runtime/src/libds/version_series.h runtime/src/libds/wm.h
   extend {r.id}dsc/pbf_reader.o
     reads runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
@@ -1278,9 +1296,10 @@ each LibdsRow r
           runtime/src/libds/cache.h runtime/src/libds/clock.h runtime/src/libds/date_range.h
           runtime/src/libds/dispatcher.h runtime/src/libds/ds_alloc.h runtime/src/libds/ds_re2.h
           runtime/src/libds/ds_text.h runtime/src/libds/dsc/atom_registry.h
-          runtime/src/libds/dsc/capabilities.pb-c.h runtime/src/libds/dsc/common.pb-c.h
-          runtime/src/libds/dsc/ds_pb_alloc.h runtime/src/libds/dsc/pbf_reader.h
-          runtime/src/libds/dsc/pbf_writer.h runtime/src/libds/dsc/schema_def.pb-c.h
+          runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/capabilities.pb-c.h
+          runtime/src/libds/dsc/common.pb-c.h runtime/src/libds/dsc/ds_pb_alloc.h
+          runtime/src/libds/dsc/pbf_reader.h runtime/src/libds/dsc/pbf_writer.h
+          runtime/src/libds/dsc/rete_expr.pb-c.h runtime/src/libds/dsc/schema_def.pb-c.h
           runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/engine.h runtime/src/libds/fn.h
           runtime/src/libds/internal/json.h runtime/src/libds/oa.h runtime/src/libds/recorder.h
           runtime/src/libds/rete/adapters.h runtime/src/libds/rete/agenda.h
@@ -1396,7 +1415,8 @@ each LibdsRow r
     reads runtime/src/libds/dsc/series_backend_ring_buffer.pb-c.h
           runtime/src/libds/dsc/series_backend_welford_ewma.pb-c.h
   extend {r.id}dsc/slot.pb-c.o
-    reads runtime/src/libds/dsc/slot.pb-c.h
+    reads runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+          runtime/src/libds/dsc/slot.pb-c.h
   extend {r.id}dsc/term.pb-c.o
     reads runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
           runtime/src/libds/dsc/term.pb-c.h
@@ -1407,7 +1427,8 @@ each LibdsRow r
   extend {r.id}reader/doc_string.pb-c.o
     reads runtime/src/libds/reader/doc_string.pb-c.h
   extend {r.id}reader/external_assert.pb-c.o
-    reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/reader/external_assert.pb-c.h
+    reads runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+          runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/reader/external_assert.pb-c.h
           runtime/src/libds/rfcs/fact_external.pb-c.h
   extend {r.id}reader/initial.pb-c.o
     reads runtime/src/libds/reader/initial.pb-c.h runtime/src/libds/reader/test_scenario.pb-c.h
@@ -1427,7 +1448,8 @@ each LibdsRow r
   extend {r.id}rfcs/cache_seed.pb-c.o
     reads runtime/src/libds/rfcs/cache_seed.pb-c.h
   extend {r.id}rfcs/call_issued.pb-c.o
-    reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/rfcs/call_issued.pb-c.h
+    reads runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+          runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/rfcs/call_issued.pb-c.h
           runtime/src/libds/rfcs/fact_external.pb-c.h
   extend {r.id}rfcs/engine_error.pb-c.o
     reads runtime/src/libds/rfcs/engine_error.pb-c.h
@@ -1438,7 +1460,8 @@ each LibdsRow r
   extend {r.id}rfcs/fact_emit.pb-c.o
     reads runtime/src/libds/rfcs/fact_emit.pb-c.h
   extend {r.id}rfcs/fact_external.pb-c.o
-    reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/rfcs/fact_external.pb-c.h
+    reads runtime/src/libds/dsc/builtin_fn.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+          runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/rfcs/fact_external.pb-c.h
   extend {r.id}rfcs/fact_publish.pb-c.o
     reads runtime/src/libds/rfcs/fact_publish.pb-c.h
   extend {r.id}rfcs/fact_retract.pb-c.o
@@ -1513,7 +1536,7 @@ table ImplTest
   # allocated.
   test_iarc_3_2_5_rete_create_cleanup "" yes yes
   test_intern_borrowers       ""    yes  yes
-  test_intern_enforcement     ""    no   no
+  test_intern_enforcement     ""    yes  yes
   test_intern_fuzz            ""    yes  yes
   test_intern_unit            ""    yes  yes
   # Its subject is a read of a freed fact, which only valgrind and ASan see, so
@@ -1656,7 +1679,7 @@ each ImplTest t
   step {t.name}
     cwd   runtime/tests/libds/impl
     run   {cc} -O0 -g -Wall -Wextra -Wno-unused-parameter -std=c99 -ffp-contract=off -D_POSIX_C_SOURCE=200809L
-          -I../../../include -I../../../src/libds -I../../../src/libds/dsc {cflags_extra}
+          -I../../../include -I../../../src/libds -I../../../src/libds/dsc {debug_checks} {cflags_extra}
           {t.wrap} -o {t.name} {t.name}.c ../../../src/libds/libds.a {ldlibs}
     reads runtime/tests/libds/impl/{t.name}.c runtime/src/libds/libds.a
     makes runtime/tests/libds/impl/{t.name}
@@ -1690,8 +1713,9 @@ extend test_rfcs_record
   reads runtime/tests/libds/impl/test_ds_version.h
 
 # The generated protobuf-c headers each test includes, with what they import
-# (ds_source and schema_def import common; header imports capabilities). A
-# step runs in a clean clone, so a header no step declares is not there.
+# (ds_source and schema_def import common; header imports capabilities; slot
+# imports rete_expr, which imports builtin_fn). A step runs in a clean clone,
+# so a header no step declares is not there.
 extend test_dsc_basic
   reads runtime/src/libds/dsc/common.pb-c.h runtime/src/libds/dsc/ds_source.pb-c.h
         runtime/src/libds/dsc/header.pb-c.h runtime/src/libds/dsc/hydration.pb-c.h
@@ -1706,17 +1730,21 @@ extend test_dsc_basic
 
 extend test_rfcs_record
   reads runtime/src/libds/dsc/common.pb-c.h runtime/src/libds/dsc/schema_def.pb-c.h
-        runtime/src/libds/dsc/slot.pb-c.h
+        runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+        runtime/src/libds/dsc/builtin_fn.pb-c.h
 
 extend test_rfcs_slot_kinds
-  reads runtime/src/libds/dsc/slot.pb-c.h
+  reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+        runtime/src/libds/dsc/builtin_fn.pb-c.h
 
 extend test_rfcs_announced_body
-  reads runtime/src/libds/dsc/slot.pb-c.h
+  reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/dsc/rete_expr.pb-c.h
+        runtime/src/libds/dsc/builtin_fn.pb-c.h
 
 # test_assert_external unpacks a FactExternal, which imports slot.
 extend test_assert_external
   reads runtime/src/libds/dsc/slot.pb-c.h runtime/src/libds/rfcs/fact_external.pb-c.h
+        runtime/src/libds/dsc/rete_expr.pb-c.h runtime/src/libds/dsc/builtin_fn.pb-c.h
 
 # It also builds a `.dsc` by hand, as test_dsc_basic does, and asks the linked
 # libds for the version to stamp it with.
@@ -1852,18 +1880,31 @@ table SpecTest
   test_log_spec
   test_ncbk_10_4__ill_formed_text_is_a_parse_refusal
   test_ncbk_2_6__timer_armed_is_the_rule_level_cooldowns_alone
+  test_ltim_2_8_2__a_live_reading_past_the_top_is_held
   test_ncbk_2_9__a_read_after_the_halt_is_refused
   test_ncbk_2_9__latching_call_returns_engine_halted
   test_ncbk_7_2__abi_version_2_is_refused
+  test_ndet_1_3__a_call_leaves_the_integrators_flags_as_they_were
+  test_nfct_1_4_6__slot_conversions
   test_nfct_2_10__null_ts_refused
   test_nfct_2_3__a_reference_of_another_schema_is_a_mismatch
+  test_nfct_2_3__a_unit_slot_holds_the_hosts_number
   test_nfct_6_3__lowering_facts_unseen
   test_nlfc_10_2__admission_after_load_is_refused
+  test_nlfc_2_5__a_null_argument_is_refused
+  test_nlfc_2_5__a_time_dependent_condition_is_not_a_deadline
+  test_nlfc_2_5__each_of_the_three_kinds
+  test_nlfc_2_5__earliest_later_than_the_clock
+  test_nlfc_2_5__none_when_nothing_is_due
+  test_nlfc_2_5__refused_from_a_callback
+  test_nlfc_2_5__refused_when_halted
+  test_nlfc_2_5__takes_no_sample
   test_nlfc_6_4__free_fires_no_callback
   test_nstg_2_3__set_cb_receives_the_write
   test_ntst_3_1__an_advance_past_a_clocks_range_is_refused
   test_null_spec
   test_publish_spec
+  test_rdsc_4a_9_6__a_conversion_bind_index_past_0
   test_schema_registry_spec
   test_slot_kinds_spec
   test_stream_seq_spec
@@ -1880,7 +1921,8 @@ each SpecTest t
     # The suite's own headers too: a test includes them, so an edit to one
     # must re-key every test that does.
     reads runtime/tests/libds/spec/{t.name}.c runtime/tests/libds/spec/spec_common.h
-          runtime/tests/libds/spec/spec_tamper.h runtime/src/libds/libds.a
+          runtime/tests/libds/spec/spec_tamper.h runtime/tests/libds/spec/spec_deadline.h
+          runtime/src/libds/libds.a
     makes runtime/tests/libds/spec/{t.name}
 
   # A plain run only: the spec suite has no valgrind lane. asan through

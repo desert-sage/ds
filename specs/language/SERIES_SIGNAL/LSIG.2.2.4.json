@@ -10,5 +10,41 @@
   "text": "[LSIG.2.2.4] **Window convention.** The window is the half-open interval\n`(t−W, t]`: the left boundary `t−W` is exclusive and the right boundary `t`\nis inclusive. The runtime must apply this convention consistently across\nevery `SeriesBackendIntervalPulse` query path and every conformance fixture. The same convention\ngoverns `onset_rate`'s edge count (§[LSIG.1.4]) so that the two compose over\nidentical bounds.\n\n",
   "refs": [
     "LSIG.1.4"
-  ]
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__EDGE_LEFT",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__LEFT",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__admits",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__edges_share_the_sample_window",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "EDGES SHARE THE SAMPLE WINDOW, within the scope: under `sliding`, the edges a read counts in its window are exactly the edges among the samples it sees, so the edge count and the window compose over one half-open bound; a closed bound applied to edges alone is refused (`.teeth.edge_closed`). The convention on the samples themselves, a sample exactly W old outside and the closed bound refused, is `lser_14_1__read_sees_the_window`'s, and `.probe.boundary` shows the boundary case reached. The `SeriesBackendIntervalPulse` query paths and the fixtures the clause names are not modelled; the model states one window for one instance."
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__engine_admits",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_2_2_4__engine_admits_edge",
+        "tag": "spec"
+      }
+    ]
+  }
 }

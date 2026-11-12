@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.2_unannotated_rate_refused",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: `rate` changes dimension, to its slot's per second ([LSER.16.9]), so a `let` whose value reads it over a slot that carries a unit is refused with DS_VALIDATE_DIM_AGG_UNANNOTATED. `q` is a `meter` slot, so `let x = f.rate` names a value of dimension length per time that DS cannot spell. A compiler that gates `integral` alone compiles this. PATH: dsc.validate's `luni_9_2_unannotated`, called from `luni_8_4_let_binding` for an unannotated `let`, which finds the read through dsc.typecheck's `luni_9_2_unit_changing_read` (the companion-slot form) on a value dsc.typecheck's `luni_9_1_agg_type` types `ty_unknown`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    rate sliding 5_min\n\nrule r:\n    Flow f\n->\n    let x = f.rate\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+    }
+}

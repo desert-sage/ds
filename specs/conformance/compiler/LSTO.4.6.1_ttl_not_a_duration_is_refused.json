@@ -1,0 +1,10 @@
+{
+    "id": "LSTO.4.6.1_ttl_not_a_duration_is_refused",
+    "category": "compiler",
+    "scenario": "[LSTO.4.6.1]: the compiler must refuse a `ttl:` expression whose type is not `Duration` with DS_VALIDATE_TYPE_MISMATCH. `ttl: t.v` reads an `Int` slot. `LSTO.4.6.1.cache_ttl_binding` is the control: the same action over a `Duration` slot compiles. A compiler that lowered whatever `ttl:` holds compiles this one, and an `Int` of -5 then reaches the runtimes as a negative TTL. PATH PINNED: `dsc.validate.lsto_4_6_1_cache_ttl`, through `ldtl_4_1_duration_kwarg`.",
+    "rules_ds": "schema Trig scope logical:\n    v: Int key\n\nrule r:\n    Trig t\n->\n    cache key: \"k\" value: 1 ttl: t.v\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_TYPE_MISMATCH"
+    }
+}

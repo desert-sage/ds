@@ -1,0 +1,13 @@
+{
+    "id": "LEXP.8.8_a_total_conversion_equals_the_cast_written_inline",
+    "category": "logical",
+    "scenario": "[LEXP.8.8]: the total `::` conversions of [LCST.4.5.2] are in the foldable subset, and [LEXP.8.8.1]: a `const` holds the value the engine computes. `const S = 0.1::String`, `const F = 7::Float` and `const I = (-2.5)::Int`, parenthesised so that the cast's operand is negative ([LCST.4.1.4]), each ride an `initial:` fact, and each rule compares its slot with the same cast written inline, so it fires only if the fold and the engine agree. Exactly [\"s\", \"f\", \"i\"], in source order. A fold that renders a `Float`, widens an `Int` or truncates a `Float` otherwise than the engine does misses its rule. PATH PINNED: `dsc.dstest.lcst_4_5_2_folded_cast`, against each runtime's `FN_FLOAT_TO_STRING`, `FN_INT_TO_FLOAT` and `FN_FLOAT_TO_INT`.",
+    "rules_ds": "const S = 0.1::String\nconst F = 7::Float\nconst I = (-2.5)::Int\n\nschema VS scope explicit:\n    s: String\n\nschema VF scope explicit:\n    f: Float\n\nschema VI scope explicit:\n    i: Int\n\ninitial:\n    VS s: S\n    VF f: F\n    VI i: I\n\nrule rstr:\n    VS v where v.s == 0.1::String\n->\n    log info \"s\"\n\nrule rflt:\n    VF v where v.f == 7::Float\n->\n    log info \"f\"\n\nrule rint:\n    VI v where v.i == (-2.5)::Int\n->\n    log info \"i\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "pump" }
+        ],
+        "expected_messages": ["s", "f", "i"]
+    }
+}

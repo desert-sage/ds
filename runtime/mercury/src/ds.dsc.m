@@ -84,8 +84,9 @@
 :- func atoms(program) = list(atom_id).
 
 :- type skip
-    --->    skip_unrecognised(uint32, int)
-            % A skip-band field number with no entry ([RDSC.9.4]), and its offset.
+    --->    skip_named(atom_id, int)
+            % An atom the loader steps over by name ([RDSC.9.4]), and its
+            % offset: `DocString`, and the test and oracle atoms ([RDSC.7.6]).
     ;       skip_code(int).
             % A `CompiledCode` atom ([RDSC.4c.3]), and its offset.
 
@@ -93,11 +94,9 @@
     %
 :- func skips(program) = list(skip).
 
-    % The unrecognised atoms alone.
+    % The atoms `skip_named` records, with their offsets.
     %
-:- func skipped(program) = list(uint32).
-
-:- func skipped_at(program) = list({uint32, int}).
+:- func skipped_at(program) = list({atom_id, int}).
 
     % In `module_id`-then-declaration order.
     %
@@ -338,10 +337,9 @@ search_service(P, Name, Found) :-
     list.last(Hits, Found).
 atoms(P) = P ^ p_atoms.
 skips(P) = P ^ p_skipped.
-skipped(P) = list.map((func({Field, _}) = Field), skipped_at(P)).
 skipped_at(P) = list.filter_map(
-    ( func(S) = {Field, Offset} is semidet :-
-        S = skip_unrecognised(Field, Offset) ),
+    ( func(S) = {A, Offset} is semidet :-
+        S = skip_named(A, Offset) ),
     P ^ p_skipped).
 skipped_code(P) = list.length(list.filter(
     ( pred(S::in) is semidet :- S = skip_code(_) ), P ^ p_skipped)).
@@ -470,12 +468,9 @@ dispatch(BM, Frame, St0, Step) :-
         St0 ^ st_header = no_header,
         Frame ^ fr_atom \= known(at_dsc_header)
     then
-        % Ahead of the bands: an unknown number is no header either ([RDSC.9.2]).
-        % One in no band is also a malformed frame, with the same code.
-        ( if
-            Frame ^ fr_atom = unknown(Field),
-            disposition_of_unknown(Field) = disp_malformed
-        then
+        % A number with no registry entry is no header either, and its frame is
+        % malformed ([RDSC.11.1], [RFCS.19.3]): the first frame's code.
+        ( if Frame ^ fr_atom = unknown(_) then
             Clause = "RDSC.11.1"
         else
             Clause = "RDSC.9.2"
@@ -490,23 +485,10 @@ dispatch(BM, Frame, St0, Step) :-
 dispatch_atom(BM, Frame, St0, Step) :-
     Offset = Frame ^ fr_offset,
     (
-        Frame ^ fr_atom = unknown(Field),
-        D = disposition_of_unknown(Field),
-        (
-            D = disp_skip,
-            Step = continue(St0 ^ st_skipped :=
-                [skip_unrecognised(Field, Offset) | St0 ^ st_skipped])
-        ;
-            D = disp_reject_inject,
-            Step = fail_load(err(lek_unknown_inject, Offset, "RFCS.18.8"))
-        ;
-            D = disp_reject_version,
-            Step = fail_load(err(lek_version, Offset, "RFCS.16.2"))
-        ;
-            D = disp_malformed,
-            Step = fail_load(err(lek_malformed_field_number, Offset,
-                "RDSC.11.1"))
-        )
+        % A number with no registry entry names no member of `Atom`'s oneof, so
+        % the frame is malformed ([RDSC.11.1], [RFCS.19.3]).
+        Frame ^ fr_atom = unknown(_),
+        Step = fail_load(err(lek_malformed_field_number, Offset, "RDSC.11.1"))
     ;
         Frame ^ fr_atom = known(A),
         ( if A = at_dsc_header then
@@ -624,9 +606,36 @@ decode_body(A, Body, St0, Offset, Step) :-
         lgra_24_3_decode_ifct(Body, St0, Offset, Step)
     else if A = at_initial_cache_seed then
         lgra_24_3_decode_icac(Body, St0, Offset, Step)
+    else if rdsc_9_4_skipped_by_name(A) then
+        Step = continue(record_atom(A, St0 ^ st_skipped :=
+            [skip_named(A, Offset) | St0 ^ st_skipped]))
     else
         Step = continue(record_atom(A, St0))
     ).
+
+    % The atoms [RDSC.9.4] lists for a loader to step over and log, but
+    % `CompiledCode`, which `dispatch_atom` takes first ([RDSC.4c.3]), and
+    % `RuleDebugName`, which this loader reads ([RDSC.6.8.4]).
+    %
+    %@spec [RDSC.9.4]
+:- pred rdsc_9_4_skipped_by_name(atom_id::in) is semidet.
+
+rdsc_9_4_skipped_by_name(at_doc_string).
+rdsc_9_4_skipped_by_name(at_test_case).
+rdsc_9_4_skipped_by_name(at_test_fact).
+rdsc_9_4_skipped_by_name(at_test_cache_seed).
+rdsc_9_4_skipped_by_name(at_test_response).
+rdsc_9_4_skipped_by_name(at_test_reply).
+rdsc_9_4_skipped_by_name(at_oracle_activated).
+rdsc_9_4_skipped_by_name(at_oracle_emit).
+rdsc_9_4_skipped_by_name(at_oracle_publish).
+rdsc_9_4_skipped_by_name(at_oracle_call).
+rdsc_9_4_skipped_by_name(at_oracle_cache_set).
+rdsc_9_4_skipped_by_name(at_oracle_cache_delete).
+rdsc_9_4_skipped_by_name(at_oracle_log).
+rdsc_9_4_skipped_by_name(at_oracle_retract).
+rdsc_9_4_skipped_by_name(at_oracle_working_memory).
+rdsc_9_4_skipped_by_name(at_oracle_exclusive).
 
 %-----------------------------------------------------------------------------%
 % A ruleset's `initial:` block
@@ -1161,8 +1170,8 @@ header_fields(R0, Acc, Result) :-
         )
     ).
 
-    % Field 3 is read by `header_fields`. Any field not read here is skipped: the
-    % bands govern unknown atoms, not unknown fields in a known atom's body.
+    % Field 3 is read by `header_fields`. Any field not read here is skipped,
+    % as an unknown field in a known atom's body is [RFCS.16.3].
     %
 :- func apply_header_field(uint32, field_value, dsc_header) = dsc_header.
 

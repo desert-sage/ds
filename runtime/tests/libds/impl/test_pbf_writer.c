@@ -125,9 +125,9 @@ static void test_round_trip(void)
     };
     static const uint32_t fields[] = {
         DS_ATOM_FACT_ASSERT,   /* 1-byte inner tag */
-        DS_ATOM_REALTIME_CONTRACT,   /* 2-byte inner tag, reject band */
-        DS_ATOM_DSC_HEADER,   /* 2-byte, skip band */
-        DS_ATOM_COMPUTATION_ERROR   /* 2-byte, high in the skip band */
+        DS_ATOM_REALTIME_CONTRACT,   /* 2-byte inner tag, 128 */
+        DS_ATOM_DSC_HEADER,   /* 2-byte, 263 */
+        DS_ATOM_COMPUTATION_ERROR   /* 2-byte, 325 */
     };
     uint8_t *body = malloc(20000);
     uint8_t *buf  = malloc(20064);

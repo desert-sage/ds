@@ -1,0 +1,9 @@
+{
+    "id": "LDTL.3.2_retain_names_a_const_equal_to_the_ttl",
+    "category": "compiler",
+    "scenario": "[LDTL.3.2]: with `dynamic_ttl` off, a `retain:` that is a compile-time constant equal to the schema's declared TTL is redundant and not an error. `HALF_MINUTE` is a `const` folding to 30 seconds, the TTL of `Reading`. Pin: the program compiles. PATH PINNED: `dsc.validate.ldtl_3_2_retain`'s `same_duration`, through `dsc.dstest.lexp_8_8_duration_ns`.",
+    "rules_ds": "const HALF_MINUTE = 30_s\n\nschema Trig scope logical:\n    k: Int key\n\nschema Reading scope ttl 30_s:\n    k: Int\n    v: Int\n\nrule r:\n    Trig t\n->\n    emit Reading k: t.k v: 1 retain: HALF_MINUTE\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

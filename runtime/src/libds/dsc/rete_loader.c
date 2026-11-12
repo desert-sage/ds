@@ -41,6 +41,8 @@
    protobuf-c, which has no recursion bound, unpacks it. */
 #define EXPR_MAX_DEPTH 48
 
+/* A bind index is kept whatever its site's frame ([RDSC.4a.9.6]): the
+   evaluator, which knows the frame's size, faults on one outside it. */
 static ds_result_t decode_expr_msg(const Ds__V1__Expr *msg,
                                    ds_rete_engine_t *re, int depth,
                                    ds_rete_expr_t **out);
@@ -206,6 +208,7 @@ static ds_result_t decode_expr_msg(const Ds__V1__Expr *msg,
     case DS__V1__EXPR__KIND_BIND_REF:  kind = DS_RETE_EXPR_BIND_REF;  break;
     case DS__V1__EXPR__KIND_JSON_PATH: kind = DS_RETE_EXPR_JSON_PATH; break;
     case DS__V1__EXPR__KIND_LIT_NULL:  kind = DS_RETE_EXPR_LIT_NULL;  break;
+    case DS__V1__EXPR__KIND_LIT_TIME:  kind = DS_RETE_EXPR_LIT_TIME;  break;
     case DS__V1__EXPR__KIND_COALESCE:  kind = DS_RETE_EXPR_COALESCE;  break;
     case DS__V1__EXPR__KIND_IS_TEST:   kind = DS_RETE_EXPR_IS_TEST;   break;
     case DS__V1__EXPR__KIND_ENTRY_STAMP: kind = DS_RETE_EXPR_ENTRY_STAMP; break;
@@ -237,6 +240,10 @@ static ds_result_t decode_expr_msg(const Ds__V1__Expr *msg,
     switch (kind) {
     case DS_RETE_EXPR_LIT_INT:
         node->lit_int = msg->lit_int;
+        break;
+
+    case DS_RETE_EXPR_LIT_TIME:
+        node->lit_time = msg->lit_time;
         break;
 
     case DS_RETE_EXPR_LIT_FLOAT:
@@ -359,6 +366,13 @@ static ds_result_t decode_expr_msg(const Ds__V1__Expr *msg,
 
     *out = node;
     return DS_OK_R;
+}
+
+ds_result_t ds_dsc_slot_conversion(ds_rete_engine_t *re,
+                                   const Ds__V1__Expr *msg,
+                                   ds_rete_expr_t **out)
+{
+    return decode_expr_msg(msg, re, 0, out);
 }
 
 /* fuzz-dsc's pinned verdicts quote these refusals. */
@@ -702,10 +716,11 @@ static ds_result_t decode_action(const Ds__V1__Action *msg,
         out->withdraw_pattern_index = (uint8_t) msg->withdraw_pattern_index;
         break;
     case DS__V1__ACTION_KIND__ACTION_WITHDRAW_BY_ID:
+        /* [RDSC.11.3]: a withdraw aimed at nothing has no meaning. */
         if (!msg->withdraw_fact_id)
-            return DS_ERR_R(DS_ERR_DSC_DECODE,
+            return DS_ERR_R(DS_ERR_DSC_SEMANTIC,
                             "rete_loader: ACTION_WITHDRAW_BY_ID without "
-                            "withdraw_fact_id (IRET.10.7)");
+                            "withdraw_fact_id (RDSC.11.3)");
         out->kind = DS_RETE_ACTION_WITHDRAW_BY_ID;
         break;
     default:

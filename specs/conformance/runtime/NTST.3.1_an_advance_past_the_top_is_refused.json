@@ -1,0 +1,17 @@
+{
+    "id": "NTST.3.1_an_advance_past_the_top_is_refused",
+    "clauses": ["NTST.3.1", "LTIM.2.8.2"],
+    "category": "runtime",
+    "scenario": "[NTST.3.1] with [LTIM.2.8.2]: an advance that would take the monotonic clock above 2^63 - 1 returns DS_ERR_TIME_RANGE (-205). The clock is set to the top and advanced by 1, the second step; the wall clock is unset, so only the monotonic limit can refuse it. PATH PINNED: libds's `ds_clock_advance`, through pyds's `clock.advance`; the Mercury runtime's `ds.chrono.ntst_3_1_advance_past_range`, through `ds.engine.engine_advance_past_range` in `test_behave.m`'s `advance` step. Its control is logical/NTST.3.1_a_set_lands_on_the_top.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule seen:\n    Trig\n->\n    log info \"seen\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "code": "-205",
+        "no_fault_events": true,
+        "fault_at": 1,
+        "steps": [
+            { "op": "set", "now_ns": 9223372036854775807 },
+            { "op": "advance", "delta_ns": 1 }
+        ]
+    }
+}

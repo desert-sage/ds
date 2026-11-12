@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_math_pow_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.4]: `math.pow` with a dimensioned operand is refused as `**` is, with DS_VALIDATE_DIM_AMBIGUOUS. [LEXP.3.2] makes the two one function, and DS can state no dimension for the result. PATH PINNED: the `math.pow` arm of `dsc.typecheck.lexp_5_3_plain_call`, through `luni_8_1_combine`'s exponent row and `luni_8_4_ambiguous`.",
+    "rules_ds": "import math\n\nschema R scope logical:\n    id: Int key\n    d: meter mutable\n\nrule r:\n    R s where math.pow(s.d, 2) > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

@@ -7,5 +7,21 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[LSMP.2.1] **The reservoir is fully replay-deterministic and cross-platform\nbit-exact.** Each `by:` identity's reservoir under `sample n` holds up to $n$\nslots, numbered from 0, and a 64-bit generator state $s$ that starts at\n`0x9e3779b97f4a7c15`. A runtime must absorb an identity's $i$-th sample\n($i$ counted from 1, in event-trace order) by this rule and no other:\n\n- $i \\le n$: the sample fills slot $i - 1$, and $s$ does not change.\n- $i > n$: $s \\leftarrow \\mathrm{xs}(s)$, then $j = s \\bmod i$. If $j < n$, the\n  sample replaces slot $j$; otherwise it is discarded.\n\n$\\mathrm{xs}$ is xorshift64 over unsigned 64-bit integers:\n$x \\leftarrow x \\oplus (x \\ll 13)$, then $x \\leftarrow x \\oplus (x \\gg 7)$, then\n$x \\leftarrow x \\oplus (x \\ll 17)$, each shift discarding the bits it moves out.\n\nThe same recorded event trace therefore produces the identical bag on every\nrun and on every conforming platform; the rule is pure 64-bit integer\narithmetic, so there is no floating-point or libm divergence.\n\n"
+  "text": "[LSMP.2.1] **The reservoir is fully replay-deterministic and cross-platform\nbit-exact.** Each `by:` identity's reservoir under `sample n` holds up to $n$\nslots, numbered from 0, and a 64-bit generator state $s$ that starts at\n`0x9e3779b97f4a7c15`. A runtime must absorb an identity's $i$-th sample\n($i$ counted from 1, in event-trace order) by this rule and no other:\n\n- $i \\le n$: the sample fills slot $i - 1$, and $s$ does not change.\n- $i > n$: $s \\leftarrow \\mathrm{xs}(s)$, then $j = s \\bmod i$. If $j < n$, the\n  sample replaces slot $j$; otherwise it is discarded.\n\n$\\mathrm{xs}$ is xorshift64 over unsigned 64-bit integers:\n$x \\leftarrow x \\oplus (x \\ll 13)$, then $x \\leftarrow x \\oplus (x \\gg 7)$, then\n$x \\leftarrow x \\oplus (x \\ll 17)$, each shift discarding the bits it moves out.\n\nThe same recorded event trace therefore produces the identical bag on every\nrun and on every conforming platform; the rule is pure 64-bit integer\narithmetic, so there is no floating-point or libm divergence.\n\n",
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsmp_2_1__N",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsmp_2_1__bags_after",
+        "tag": "spec",
+        "verdict": "partial",
+        "note": "The bag's shape alone: the first n absorptions fill it in order, and each one past n replaces one slot or is discarded, every outcome a behaviour TLC explores (the `.scope.sample` config). Which outcome the generator picks, xorshift64 from its seed and j = s mod i, is not modelled: it is the clause-literal reference's, and the conformance vectors hold both runtimes to it."
+      }
+    ]
+  }
 }

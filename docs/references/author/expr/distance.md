@@ -7,11 +7,11 @@
 
 Every function here is a member of the `distance` module, reached through [its import](../lang/imports.md#math-distance-and-calendar).
 
-Operands are numeric: an `Int` promotes to `Float`. Any other operand type is a compile error. A wrong-typed `Json` leaf raises a [`TypeError`](../errors/fault-facts.md#typeerror-fact), and an unresolved path reads as `null`.
+Operands are numeric: an `Int` promotes to `Float`. Any other operand type is a compile error, and an operand with a unit is refused but for an `angle` to `great_circle`, as [Builtins over a dimensioned value](../units/checking.md#builtins-over-a-dimensioned-value) states. A wrong-typed `Json` leaf raises a [`TypeError`](../errors/fault-facts.md#typeerror-fact), and an unresolved path reads as `null`.
 
 A count that is no declared arity is refused with `DS_VALIDATE_BAD_ARITY`.
 
-*(Spec: [LEXP.5.1], [LEXP.5.8.1], [LEXP.7.17.1], [LEXP.10.2.4])*
+*(Spec: [LEXP.5.1], [LEXP.5.8.1], [LEXP.7.17.1], [LEXP.10.2.4], [LUNI.8.9])*
 
 ## Geometric distances
 
@@ -21,7 +21,7 @@ Each returns a `Float`. Two dimensions take 4 operands, and three take 6.
 
 ### `euclidean`
 
-**`distance.euclidean(x1, y1, x2, y2)`**, **`distance.euclidean(x1, y1, z1, x2, y2, z2)`**
+**`distance.euclidean(x1, y1, x2, y2: Float) → Float`**, **`distance.euclidean(x1, y1, z1, x2, y2, z2: Float) → Float`**
 
 The L₂ distance between two points.
 
@@ -34,7 +34,7 @@ distance.euclidean(r.level, 0.0, 1.0, 2.0)
 
 ### `manhattan`
 
-**`distance.manhattan(x1, y1, x2, y2)`**, **`distance.manhattan(x1, y1, z1, x2, y2, z2)`**
+**`distance.manhattan(x1, y1, x2, y2: Float) → Float`**, **`distance.manhattan(x1, y1, z1, x2, y2, z2: Float) → Float`**
 
 The L₁ distance between two points.
 
@@ -47,7 +47,7 @@ distance.manhattan(r.level, 0.0, 1.0, 2.0)
 
 ### `chebyshev`
 
-**`distance.chebyshev(x1, y1, x2, y2)`**, **`distance.chebyshev(x1, y1, z1, x2, y2, z2)`**
+**`distance.chebyshev(x1, y1, x2, y2: Float) → Float`**, **`distance.chebyshev(x1, y1, z1, x2, y2, z2: Float) → Float`**
 
 The L∞ distance between two points.
 
@@ -62,7 +62,7 @@ distance.chebyshev(r.level, 0.0, 1.0, 2.0)
 
 ### `hypotenuse`
 
-**`distance.hypotenuse(x, y)`**, **`distance.hypotenuse(x, y, z)`**
+**`distance.hypotenuse(x, y: Float) → Float`**, **`distance.hypotenuse(x, y, z: Float) → Float`**
 
 The length of a vector from the origin, a `Float`: √(x² + y²), or √(x² + y² + z²).
 
@@ -77,7 +77,7 @@ distance.hypotenuse(r.level, 2.0)
 
 ### `cosine`
 
-**`distance.cosine(ax, ay, bx, by)`**, **`distance.cosine(ax, ay, az, bx, by, bz)`**
+**`distance.cosine(ax, ay, bx, by: Float) → Float`**, **`distance.cosine(ax, ay, az, bx, by, bz: Float) → Float`**
 
 The distance `1 - cos(θ)` between two vectors, a `Float` in [0, 2].
 
@@ -94,7 +94,7 @@ distance.cosine(r.level, 0.0, 1.0, 2.0)
 
 ### `great_circle`
 
-**`distance.great_circle(lat1, lon1, lat2, lon2)`**
+**`distance.great_circle(lat1, lon1, lat2, lon2: Float) → meter`**
 
 The distance along the surface of a sphere between two points, as a `length` in `meter`.
 

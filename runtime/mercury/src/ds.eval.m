@@ -56,6 +56,11 @@
                 ec_binds     :: map(int, ds_value),
                             % The terminal's bind frame; empty in a join test.
 
+                ec_frame     :: int,
+                            % The frame's size: the terminal's `bind_count`, 1
+                            % for a slot's conversion, 0 for a node's test. An
+                            % index past it is ARTEFACT_LIED [RDSC.4a.9.6].
+
                 ec_cache     :: cache,
                 ec_series    :: series_state
             ).
@@ -672,9 +677,14 @@ ev_node(e_is_test(Operand, Subject, Negated), Ctx, Outcome, !Reads) :-
         )
     ).
 
-ev_node(e_bind(_Ix, Bound), Ctx, Outcome, !Reads) :-
-    % The frame update is the executor's.
-    ev(Bound, Ctx, Outcome, !Reads).
+ev_node(e_bind(Ix, Bound), Ctx, Outcome, !Reads) :-
+    % The frame update is the executor's. A slot outside the frame names
+    % nothing [RDSC.4a.9.6].
+    ( if bind_index_int(Ix) >= Ctx ^ ec_frame then
+        Outcome = ev_fault(rf_artefact_lied)
+    else
+        ev(Bound, Ctx, Outcome, !Reads)
+    ).
 
     % [LNUL.4.9]'s truth table. A constant subject tests tag and value; a tag name
     % tests the tag alone.
@@ -702,10 +712,14 @@ is_hit(V, is_int)     =
     ( if ( V = int(_) ; V = duration(_) ; V = time(_) ) then yes else no ).
 
 ev_node(e_bind_ref(Ix), Ctx, Outcome, !Reads) :-
-    ( if map.search(Ctx ^ ec_binds, bind_index_int(Ix), Found) then
+    N = bind_index_int(Ix),
+    ( if N >= Ctx ^ ec_frame then
+        % A slot outside the frame names nothing [RDSC.4a.9.6].
+        Outcome = ev_fault(rf_artefact_lied)
+    else if map.search(Ctx ^ ec_binds, N, Found) then
         Outcome = ev_ok(Found)
     else
-        % Read before the binding action ran.
+        % Read before the binding action ran [RARC.5.6.11].
         Outcome = ev_fault(rf_binding_order)
     ).
 
@@ -881,14 +895,14 @@ apply_binop(Ctx, Op, L0, R0, Outcome) :-
 :- pred arith(binop::in, ds_value::in, ds_value::in, eval_outcome::out) is det.
 
 arith(op_add, L, R, Out) :-
-    ( if ltim_4_1_time_plus(L, R, V) then
-        Out = ev_ok(V)
+    ( if ltim_4_1_time_plus(L, R, TimeOut) then
+        Out = TimeOut
     else
         numeric(L, R, plus_i, plus_f, Out)
     ).
 arith(op_sub, L, R, Out) :-
-    ( if ltim_4_1_time_minus(L, R, V) then
-        Out = ev_ok(V)
+    ( if ltim_4_1_time_minus(L, R, TimeOut) then
+        Out = TimeOut
     else
         numeric(L, R, minus_i, minus_f, Out)
     ).
@@ -1290,32 +1304,74 @@ numeric(L, R, IntOp, FloatOp, Out) :-
 
     % [LTIM.4.1]: `Time + Duration`, `Duration + Time` and `Time - Duration` are a
     % `Time` at the `Time` operand's offset [LTIM.4.1.1], and `Time - Time` the
-    % `Duration` between them. They wrap [LEXP.7.13.1]; the compiler saturates the
-    % rows [RLOW.6.1.6] names.
+    % `Duration` between them. Each is exact: a result past the representable range
+    % raises NOT_REPRESENTABLE [LTIM.1.1.5]. A `Time - Time` below the Int range is
+    % the most negative Int, which the compiler's `FN_MAX(_, 0)` saturates
+    % [RLOW.6.1.6]. Fails when the operands are not one of these rows.
     %
-:- pred ltim_4_1_time_plus(ds_value::in, ds_value::in, ds_value::out)
+:- pred ltim_4_1_time_plus(ds_value::in, ds_value::in, eval_outcome::out)
     is semidet.
 
-ltim_4_1_time_plus(L, R, V) :-
+ltim_4_1_time_plus(L, R, Out) :-
     ( if L = time(TL), duration_operand_ns(R, NR) then
-        V = time(ds_time(utc_ns(TL) + NR, tz_offset_ns(TL)))
+        T = TL,
+        Ns = NR
     else
-        R = time(TR),
-        duration_operand_ns(L, NL),
-        V = time(ds_time(NL + utc_ns(TR), tz_offset_ns(TR)))
+        R = time(T),
+        duration_operand_ns(L, Ns)
+    ),
+    ( if ltim_1_1_5_add(utc_ns(T), Ns, At) then
+        Out = ev_ok(time(ds_time(At, tz_offset_ns(T))))
+    else
+        Out = ev_fault(rf_time_range)
     ).
 
-:- pred ltim_4_1_time_minus(ds_value::in, ds_value::in, ds_value::out)
+:- pred ltim_4_1_time_minus(ds_value::in, ds_value::in, eval_outcome::out)
     is semidet.
 
-ltim_4_1_time_minus(L, R, V) :-
+ltim_4_1_time_minus(L, R, Out) :-
     L = time(TL),
     ( if R = time(TR) then
-        V = int(utc_ns(TL) - utc_ns(TR))
+        ( if ltim_1_1_5_sub(utc_ns(TL), utc_ns(TR), D) then
+            Out = ev_ok(int(D))
+        else if utc_ns(TL) < utc_ns(TR) then
+            Out = ev_ok(int(int64.min_int64))
+        else
+            Out = ev_fault(rf_time_range)
+        )
     else
         duration_operand_ns(R, NR),
-        V = time(ds_time(utc_ns(TL) - NR, tz_offset_ns(TL)))
+        ( if ltim_1_1_5_sub(utc_ns(TL), NR, At) then
+            Out = ev_ok(time(ds_time(At, tz_offset_ns(TL))))
+        else
+            Out = ev_fault(rf_time_range)
+        )
     ).
+
+    % `A + B` and `A - B` where the exact result is an `Int64`. The bound is
+    % tested before the operation, which therefore cannot wrap.
+    %
+    %@spec [LTIM.1.1.5]
+:- pred ltim_1_1_5_add(int64::in, int64::in, int64::out) is semidet.
+
+ltim_1_1_5_add(A, B, Sum) :-
+    ( if B >= 0i64 then
+        A =< int64.max_int64 - B
+    else
+        A >= int64.min_int64 - B
+    ),
+    Sum = A + B.
+
+    %@spec [LTIM.1.1.5]
+:- pred ltim_1_1_5_sub(int64::in, int64::in, int64::out) is semidet.
+
+ltim_1_1_5_sub(A, B, Diff) :-
+    ( if B >= 0i64 then
+        A >= int64.min_int64 + B
+    else
+        A =< int64.max_int64 + B
+    ),
+    Diff = A - B.
 
 :- func int_op(num_op, int64, int64) = int64.
 
@@ -2082,13 +2138,17 @@ code_matches(Code, Pattern) = Matches :-
 
     % Walk a Json value along a path value. An unresolved path is `null`, as is one
     % resolving to a JSON `null` [LNUL.8.4, IRET.9.6]; an unparseable path finds
-    % nothing. A non-String path, or a value neither Json nor text, is a mismatch.
+    % nothing. A `null` root, a `Json?` slot holding none, has no document to
+    % resolve against and reads `null` [LNUL.8.4]. A non-String path, or a value
+    % neither Json, text nor `null`, is a mismatch.
     %
 :- func json_walk(eval_ctx, ds_value, ds_value) = eval_outcome.
 
 json_walk(Ctx, Val, PathVal) = Outcome :-
     ( if not string_of(Ctx, PathVal, _) then
         Outcome = ev_fault(rf_type_mismatch)
+    else if Val = null then
+        Outcome = ev_ok(null)
     else if Val = json(Doc), string_of(Ctx, PathVal, Text) then
         ( if parse_path(Text, Path), resolve(Path, Doc, Leaf) then
             Outcome = ev_ok(json_value(Leaf))
@@ -2307,6 +2367,8 @@ apply_builtin(Fn, Args, Ctx, Outcome) :-
         Outcome = ltim_4_3_shift(V, N, 12i64)
     else if Fn = fn_int_div_exact, Args = [N, D] then
         Outcome = rlow_7_3_9_int_div_exact(N, D)
+    else if Fn = fn_int_mul_add_checked, Args = [X, M, A] then
+        Outcome = rlow_7_3_9_int_mul_add_checked(X, M, A)
     else if Fn = fn_floor_time, Args = [T, D] then
         Outcome = ltim_7_1_floor(T, D)
     else if Fn = fn_date_add_duration, Args = [D, Dur] then
@@ -2315,6 +2377,10 @@ apply_builtin(Fn, Args, Ctx, Outcome) :-
         Outcome = ltim_4_2_3_date_shift(D, Dur, -1i64)
     else if Fn = fn_date_diff, Args = [A, B] then
         Outcome = ltim_4_2_3_date_diff(A, B)
+    else if Fn = fn_duration_add, Args = [A, B] then
+        Outcome = ltim_4_1_1_duration_add(A, B)
+    else if Fn = fn_duration_mul, Args = [N, D] then
+        Outcome = ltim_4_1_1_duration_mul(N, D)
     else if geometric(Fn, Args, Outcome0) then
         Outcome = Outcome0
     else if lexp_3_6_1_angle(Fn, Args, AngleOutcome) then
@@ -2385,7 +2451,10 @@ apply_builtin(Fn, Args, Ctx, Outcome) :-
         )
     else if ( Fn = fn_series_count_of ; Fn = fn_series_contains ) then
         % The lookup value is the sixth argument. A computed String is interned
-        % for the comparison, since samples hold `str`.
+        % for the comparison, since samples hold `str`; a Time is taken to its
+        % instant, since a Time slot's samples hold the stored Int
+        % (`stored_value`), so one instant at any offset is one value
+        % ([LSER.16.5.1], [LTIM.5.2]).
         ( if list.index0(Args, 5, Lookup0) then
             ( if
                 Lookup0 = text(S),
@@ -2393,7 +2462,7 @@ apply_builtin(Fn, Args, Ctx, Outcome) :-
             then
                 Lookup = str(Ref)
             else
-                Lookup = Lookup0
+                Lookup = series_identity(Lookup0)
             ),
             ( if Fn = fn_series_count_of then
                 Agg = agg_count_of(Lookup)
@@ -3052,6 +3121,32 @@ rlow_7_3_9_int_div_exact(N, D) = Outcome :-
         Outcome = ev_fault(rf_type_mismatch)
     ).
 
+    % `FN_INT_MUL_ADD_CHECKED(x, m, a)` [RLOW.7.3.9]: `m·x + a`, the product and
+    % then the sum each held to the `Int` range. Either outside it is
+    % NOT_REPRESENTABLE, so a sum that would come back into range after the
+    % product left it raises too; nothing wraps. A `null` operand is `null`; the
+    % compiler writes `m` and `a` as literals.
+    %
+:- func rlow_7_3_9_int_mul_add_checked(ds_value, ds_value, ds_value)
+    = eval_outcome.
+
+rlow_7_3_9_int_mul_add_checked(XV, MV, AV) = Outcome :-
+    ( if ( XV = null ; MV = null ; AV = null ) then
+        Outcome = ev_ok(null)
+    else if XV = int(X), MV = int(M), AV = int(A) then
+        Product = integer.from_int64(M) * integer.from_int64(X),
+        ( if
+            integer.to_int64(Product, P),
+            integer.to_int64(integer.from_int64(P) + integer.from_int64(A), S)
+        then
+            Outcome = ev_ok(int(S))
+        else
+            Outcome = ev_fault(rf_not_representable)
+        )
+    else
+        Outcome = ev_fault(rf_type_mismatch)
+    ).
+
     % The temporal conversions [LTIM.8] and calendar shifts [LTIM.4.3]. A result its
     % type cannot represent [LTIM.4.3.3], and an identifier the operation does not
     % admit [LTIM.8.3.2], are NOT_REPRESENTABLE; a `null` operand is `null`. The
@@ -3236,6 +3331,51 @@ ltim_4_2_3_date_diff(A, B) = Outcome :-
         Outcome = ev_fault(rf_type_mismatch)
     ).
 
+    % [LTIM.4.1.1]'s `Duration + Duration` [RLOW.6.1.6]: the exact sum in ns. A
+    % `null` operand is `null`; a sum above 2^63 - 1, or a negative one, is
+    % NOT_REPRESENTABLE.
+    %
+:- func ltim_4_1_1_duration_add(ds_value, ds_value) = eval_outcome.
+
+ltim_4_1_1_duration_add(A, B) = Outcome :-
+    ( if ( A = null ; B = null ) then
+        Outcome = ev_ok(null)
+    else if duration_operand_ns(A, NsA), duration_operand_ns(B, NsB) then
+        Sum = integer.from_int64(NsA) + integer.from_int64(NsB),
+        ( if
+            Sum >= integer.zero,
+            integer.to_int64(Sum, Ns)
+        then
+            Outcome = ev_ok(int(Ns))
+        else
+            Outcome = ev_fault(rf_not_representable)
+        )
+    else
+        Outcome = ev_fault(rf_type_mismatch)
+    ).
+
+    % [LTIM.4.1.1]'s `n * dur` [RLOW.6.1.6]: the exact product in ns. A `null`
+    % operand is `null`; a product above 2^63 - 1 is NOT_REPRESENTABLE, and a
+    % negative one is `0` [LTIM.1.3.1].
+    %
+:- func ltim_4_1_1_duration_mul(ds_value, ds_value) = eval_outcome.
+
+ltim_4_1_1_duration_mul(NV, DV) = Outcome :-
+    ( if ( NV = null ; DV = null ) then
+        Outcome = ev_ok(null)
+    else if NV = int(N), duration_operand_ns(DV, NsD) then
+        Product = integer.from_int64(N) * integer.from_int64(NsD),
+        ( if Product < integer.zero then
+            Outcome = ev_ok(int(0i64))
+        else if integer.to_int64(Product, Ns) then
+            Outcome = ev_ok(int(Ns))
+        else
+            Outcome = ev_fault(rf_not_representable)
+        )
+    else
+        Outcome = ev_fault(rf_type_mismatch)
+    ).
+
 :- pred duration_operand_ns(ds_value::in, int64::out) is semidet.
 
 duration_operand_ns(int(Ns), Ns).
@@ -3305,64 +3445,6 @@ ltim_4_3_shift_days(Days, Count, MonthsPer, Shifted) :-
     Last = ltim_days_in_month(Year, Month),
     Shifted = ltim_days_from_civil(Year, Month,
         ( if D < Last then D else Last )).
-
-    % [LTIM.8.4]'s units, largest first.
-    %
-:- func ltim_8_4_units = list({string, int64}).
-
-ltim_8_4_units = [
-    {"h", 3600000000000i64},
-    {"m", 60000000000i64},
-    {"s", 1000000000i64},
-    {"ms", 1000000i64},
-    {"us", 1000i64},
-    {"ns", 1i64}
-].
-
-    % [LTIM.8.4]'s compact form: the nonzero components, largest unit first, and no
-    % sign [LTIM.8.4.2]; `0s` for zero or a negative count [LTIM.1.3.1].
-    %
-:- func ltim_8_4_render_duration(int64) = string.
-
-ltim_8_4_render_duration(Ns) = Out :-
-    ( if Ns =< 0i64 then
-        Out = "0s"
-    else
-        Out = string.append_list(ltim_8_4_parts(ltim_8_4_units,
-            integer.from_int64(Ns)))
-    ).
-
-:- func ltim_8_4_parts(list({string, int64}), integer) = list(string).
-
-ltim_8_4_parts([], _) = [].
-ltim_8_4_parts([{Sym, Ns} | Units], Magnitude) = Parts :-
-    U = integer.from_int64(Ns),
-    Q = Magnitude // U,
-    Rest = ltim_8_4_parts(Units, Magnitude - Q * U),
-    ( if Q = integer.zero then
-        Parts = Rest
-    else
-        Parts = [integer.to_string(Q) ++ Sym | Rest]
-    ).
-
-    % `YYYY-MM-DD` [LTIM.8.2.1]; the year zero-padded to four places after any sign.
-    %
-:- func ltim_8_2_1_render_date(int64) = string.
-
-ltim_8_2_1_render_date(Days) =
-        ltim_zpad(Y, 4) ++ "-" ++ ltim_zpad(M, 2) ++ "-" ++ ltim_zpad(D, 2) :-
-    civil_from_days(Days, Y, M, D).
-
-:- func ltim_zpad(int64, int) = string.
-
-ltim_zpad(V, Width) = Sign ++ string.pad_left(Digits, '0', Width - string.length(Sign)) :-
-    ( if V < 0i64 then
-        Sign = "-",
-        Digits = integer.to_string(-integer.from_int64(V))
-    else
-        Sign = "",
-        Digits = integer.to_string(integer.from_int64(V))
-    ).
 
     % `pow(x, y)` and `x ** y` [LEXP.7.3a]: `Int ** Int` with a non-negative exponent
     % is `Int`; anything else is `Float`, from CORE-MATH's `pow` [LEXP.3.9.2], and

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.9_rounding_keeps_the_dimension",
+    "category": "compiler",
+    "scenario": "[LUNI.8.9]: `round` over a dimensioned value gives a value of that value's unit, so `round(s.d)` on a `meter` slot is a `length`, and comparing it with the bare number 25 is refused as [LUNI.8.3]'s bare number beside a dimensioned value. A compiler that typed the result a bare `Int` admits the comparison. PATH PINNED: `dsc.typecheck.lexp_5_3_plain_call`'s `luni_8_9_keeps_unit` arm, which types the call as its argument's dimension and unit, ahead of the comparison's dimension check.",
+    "rules_ds": "schema S scope logical:\n    id: String key\n    d: meter mutable\n\nrule r:\n    S s where round(s.d) > 25\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

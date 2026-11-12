@@ -5,8 +5,8 @@
 The byte vectors are `specs/conformance/PBF_FRAMING_VECTORS.json`'s, read here
 rather than copied, so the corpus stays their one statement. Each answer under
 test comes from libds: `iter_atoms` is `ds_pbf_next_atom` one step at a time,
-`frame` is `ds_rfcs_pack_atom`, `band` / `disposition` / `container_of` are
-`pbf_reader.h`'s, and `Engine.decode_fact_body` is `ds_rfcs_decode_fact_body`.
+`frame` is `ds_rfcs_pack_atom`, `container_of` is `pbf_reader.h`'s, and
+`Engine.decode_fact_body` is `ds_rfcs_decode_fact_body`.
 `Atom.message()` alone parses with protoc's generated class (OQ-6).
 """
 
@@ -26,7 +26,10 @@ _VECTORS = json.loads(
     ).read_text(encoding="utf-8")
 )
 _DECODE = _VECTORS["decode"]["vectors"]
-_BAND = _VECTORS["band"]["vectors"]
+
+# One frame at 2047, which no atom has, with an empty body: outer tag 0x0A,
+# outer length 3, inner key 0xFA 0x7F (2047 << 3 | 2), inner length 0.
+_UNKNOWN_2047 = bytes.fromhex("0a03fa7f00")
 
 
 def _ends_cleanly(row: dict) -> bool:
@@ -74,9 +77,9 @@ def test_an_atom_carries_where_its_frame_starts_and_ends():
 
 
 def test_a_known_number_is_its_kind_and_an_unknown_one_its_int():
-    """[RFCS.16.3] leaves the set open to a reader."""
-    row = next(r for r in _DECODE if r["name"] == "known_atom_after_unknown_skip")
-    first, second = atoms.iter_atoms(bytes.fromhex(row["hex"]))
+    """`iter_atoms` frames and judges no number, as `ds_pbf_next_atom` does."""
+    data = _UNKNOWN_2047 + atoms.frame(AtomKind.DSC_HEADER, b"")
+    first, second = atoms.iter_atoms(data)
     assert type(first.kind) is int and first.kind == 2047
     assert second.kind is AtomKind.DSC_HEADER
 
@@ -112,8 +115,7 @@ def test_message_parses_the_body_with_its_generated_class():
 
 
 def test_message_of_an_unknown_kind_is_a_lookup_error():
-    row = next(r for r in _DECODE if r["name"] == "unknown_skip_band_atom")
-    atom = next(atoms.iter_atoms(bytes.fromhex(row["hex"])))
+    atom = next(atoms.iter_atoms(_UNKNOWN_2047))
     with pytest.raises(LookupError):
         atom.message()
 
@@ -150,21 +152,8 @@ def test_frame_refuses_a_number_with_no_registry_entry():
 
 
 # --------------------------------------------------------------------------
-#  §13.3 bands, dispositions, containers
+#  §13.3 containers
 # --------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize("row", _BAND, ids=[str(r["field"]) for r in _BAND])
-def test_band_disposition_and_allocation_answer_each_band_vector(row):
-    """Each band vector's band, disposition and allocation ([RFCS.16.2], [RFCS.16.3], [RFCS.16.5]).
-
-    Allocation is `field in AtomKind`; the blind disposition of a known atom
-    is `skip`.
-    """
-    field = row["field"]
-    assert atoms.band(field) is atoms.Band(row["band"])
-    assert atoms.disposition(field) is atoms.Disposition(row["disposition"])
-    assert (field in AtomKind) is row["known"]
 
 
 @pytest.mark.parametrize("row", _DECODE, ids=[r["name"] for r in _DECODE])
@@ -174,18 +163,14 @@ def test_container_of_answers_each_decode_vector(row):
     assert got is atoms.Container(row["container"])
 
 
-def test_the_enums_are_the_vectors_words():
-    assert {b.value for b in atoms.Band} == {r["band"] for r in _BAND}
-    assert {d.value for d in atoms.Disposition} == {r["disposition"] for r in _BAND}
+def test_the_enum_is_the_vectors_words():
     assert {c.value for c in atoms.Container} == {r["container"] for r in _DECODE}
 
 
 def test_a_field_number_out_of_range_is_an_overflow_error_never_wrapped():
     for bad in (-1, 2**32):
         with pytest.raises(OverflowError):
-            atoms.band(bad)
-        with pytest.raises(OverflowError):
-            atoms.disposition(bad)
+            atoms.message_name(bad)
 
 
 # --------------------------------------------------------------------------

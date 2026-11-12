@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.5.11_an_int_leaf_converts_to_float",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11]: a `Json` leaf converts as the value it holds. `body` is `{\"c\": 31}`, so `d.body.c` holds an Int, and `d.body.c::Float?` takes the Int row to `Float` ([LCST.4.5.2]): 31.0. `?? 0.0` makes it a `Float` for `Hit.c`, and `show` logs it. Exactly [\"31.0\"]. Without the conversion the Int leaf would not enter a `Float` slot: the emit raises a TypeError (`RARC.5.2.6.json_int_leaf_into_float_slot_is_a_type_error`) and nothing logs. PATH PINNED: `dsc.typecheck.lcst_4_5_11_leaf_cast`, then `dsc.rete.lcst_4_5_11_dispatch`'s `is_int` arm, `FN_INT_TO_FLOAT`, in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    body: Json key\n\nschema Hit scope logical:\n    id: String key\n    c: Float mutable\n\nrule convert:\n    Doc d\n->\n    emit Hit logical id: \"h\" c: d.body.c::Float? ?? 0.0\n\nrule show:\n    Hit h\n->\n    log info \"{h.c}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "body": { "c": 31 } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["31.0"]
+    }
+}

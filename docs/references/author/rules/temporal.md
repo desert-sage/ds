@@ -26,9 +26,9 @@ rule follows:
 
 ### Chains
 
-`then` is left-associative: each `within T` applies to the `then` immediately before it.
+`then` is left-associative: each `within T` applies to the `then` immediately before it, and is bounded by that step's schema TTL ([Refusals](#refusals)).
 
-*(Spec: [LGRA.8.5.8], [LTHE.2.3.1])*
+*(Spec: [LGRA.8.5.8], [LTHE.2.3.1], [LTIM.2.7.3])*
 
 ### Line-leading `then`
 
@@ -71,6 +71,7 @@ rule after_last:
 |---|---|
 | a participating schema with no `ts` slot | `DS_VALIDATE_WITHIN_NO_TS_SLOT` |
 | a `within` of `0_s` | `DS_VALIDATE_ZERO_WITHIN` |
+| a step's `within` longer than the TTL of the step before it | `DS_VALIDATE_WITHIN_EXCEEDS_TTL` |
 | a `then` with no pattern above it | `DS_VALIDATE_THEN_NO_PREDECESSOR` |
 | a `then` whose nearest pattern above is a `no` pattern | `DS_VALIDATE_THEN_AFTER_NEGATION` |
 | a `latest` on any pattern but the first | `DS_VALIDATE_INTERIOR_LATEST` |
@@ -82,5 +83,5 @@ rule instant:
     log info "never"
 ```
 
-*(Spec: [LTHE.4.5], [LTHE.4.7], [LTHE.4.8], [LTHE.4.9], [LTHE.5.4])*
+*(Spec: [LTHE.4.5], [LTHE.4.7], [LTHE.4.8], [LTHE.4.9], [LTHE.5.4], [LTIM.2.7.3])*
 

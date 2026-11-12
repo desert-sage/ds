@@ -8,7 +8,7 @@
 ||| NORMATIVE COMPANION, on the same two mechanisms as Rete/FireLoop.idr:
 ||| clause-named elements and `--@spec` / `--@derives` markers. A library
 ||| lemma that exists only for the [LCYC.1.1] termination proof is named
-||| under that clause (the precedent is Protobuf/Wire.idr's `rfcs_19_1__take`);
+||| under that clause;
 ||| a working-memory lemma under [RARC.5.6.4]; a dedup lemma under
 ||| [LFAC.2.5.1].
 module Lcyc.Lemmas

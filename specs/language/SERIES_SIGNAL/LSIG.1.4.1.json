@@ -7,8 +7,40 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[LSIG.1.4.1] `onset_rate` is the number of rising edges (false→true\ntransitions) per second within the sliding window:\n\n$\\mathit{onset\\_rate} = \\dfrac{N_{+}(t, W)}{\\min(W, \\mathit{elapsed})}$\n\nwhere `N₊(t, W)` is the count of rising edges in the half-open window\n`(t−W, t]` and `elapsed = t − t_first` ([LSER.19.7]).\n\n",
+  "text": "[LSIG.1.4.1] `onset_rate` is the number of rising edges per second within\nthe sliding window:\n\n$\\mathit{onset\\_rate} = \\dfrac{N_{+}(t, W)}{\\min(W, \\mathit{elapsed})}$\n\nwhere `N₊(t, W)` is the count of rising edges whose instant lies in the\nhalf-open window `(t−W, t]` and `elapsed = t − t_first` ([LSER.19.7]).\n\nThe runtime **must** count as a rising edge exactly the absorption of a `true`\nwhile the slot holds `false`. The slot holds the value it last absorbed, through\nany silence and whatever the window or capacity has discarded ([LSER.9.3.1]).\nBefore its first absorption it holds nothing, which is not `false`. An edge's\ninstant is that sample's.\n\n",
   "refs": [
-    "LSER.19.7"
-  ]
+    "LSER.19.7",
+    "LSER.9.3.1"
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_1__BEFORE",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_1__edges",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_1__edges_are_transitions",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "EDGES ARE TRANSITIONS, within the scope: the edges the engine counts are exactly the absorptions of a `true` whose predecessor among every absorbed sample is a `false`, so an edge is counted once per transition, a `true` after a `true` is none, and a first `true` is none, the slot holding nothing before its first absorption; the engine that holds `false` there is refused (`.teeth.first_true`). The predecessor is read off every absorbed sample and not the stored ones, as the clause has the slot hold its value through whatever the window discarded. That an edge's instant is its sample's is `lsig_2_2_4__edges_share_the_sample_window`."
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_1__holds",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lsig_1_4_1__transitions",
+        "tag": "spec"
+      }
+    ]
+  }
 }

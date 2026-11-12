@@ -79,13 +79,23 @@ A compile-time-constant expression over literals, earlier constants and imported
 
 - arithmetic, comparison, bitwise and shift operators, `and`, `or` and `not`;
 - unit literals, same-dimension conversion and unit assertions;
+- the total `::` conversions;
 - the global math builtins, and `math`, `distance` and `calendar` members over constant operands.
 
-A member call whose fold would raise is not foldable. Any construct that needs a runtime value is refused with `DS_VALIDATE_CONST_NOT_FOLDABLE`, naming the construct.
+A `String` folds only as a literal. The compiler folds the right-hand side operation by operation, each to the value the engine computes for that operation in a rule: an `Int` result wraps, and each `Float` result is rounded before the next operation takes it. An `Int` under a `: Float` annotation is held, and read, as the `Float` it promotes to. The right-hand side is type-checked whole, as an expression in a rule is: `const x = 5_meter + 1` is refused by the [unit rules](../units/checking.md#bare-numbers).
 
-The declaration's form is at [Constant declarations](../lang/program.md#constant-declarations).
+`DS_VALIDATE_CONST_NOT_FOLDABLE` refuses:
+- a construct that needs a runtime value, naming it;
+- an operation with no value, whether or not the rest of the expression would absorb it: one the engine would raise a fault evaluating, such as `1 // (1 - 1)`, a `Float` to `Int` conversion of a value with no `Int`, or a `calendar` call that raises, and one whose `Float` result is NaN;
+- `null` or a fallible `::T?` conversion, under any annotation.
 
-*(Spec: [LEXP.8.8])*
+An operation another refusal covers over constant operands keeps that refusal's code: `1 // 0` is `DS_VALIDATE_DIV_BY_ZERO` and `1 << -1` a [negative shift](../values/numbers.md#shifts), in a `const` as in a rule. The declaration's form is at [Constant declarations](../lang/program.md#constant-declarations).
+
+```ds declaration error=DS_VALIDATE_CONST_NOT_FOLDABLE
+const LIMIT = 1 // (1 - 1)
+```
+
+*(Spec: [LEXP.8.8], [LEXP.8.8.1], [LEXP.8.8.2], [LGRA.4.1])*
 
 ### `log` argument
 
@@ -139,6 +149,6 @@ A malformed expression (an unclosed parenthesis, a missing operand, a dangling o
 r.n / 0
 ```
 
-The other refusals and faults are at [Division by zero](../values/numbers.md#division-by-zero), [Shifts](../values/numbers.md#shifts), [Bitwise operators](../values/numbers.md#bitwise-operators) and [`len` of `Json`](../values/json.md#len-of-json).
+The other refusals and faults are at [Division by zero](../values/numbers.md#division-by-zero), [Shifts](../values/numbers.md#shifts), [Bitwise operators](../values/numbers.md#bitwise-operators) and [`len` of `Json`](../values/json.md#len-of-json). Over a dimensioned value, those of every operator are at [Cross dimension](../units/checking.md#cross-dimension), and of `??`, `..` and `in` at [Forms over two values](../units/checking.md#forms-over-two-values).
 
 *(Spec: [LEXP.10.2.2], [LEXP.10.2.4], [LEXP.10.2.6], [LEXP.3.1])*

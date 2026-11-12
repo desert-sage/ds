@@ -1,0 +1,21 @@
+{
+    "id": "LSER.9.3.1_two_windows_on_a_slot_evict_each_by_its_own",
+    "clauses": ["LSER.9.3.1"],
+    "category": "logical",
+    "scenario": "[LSER.9.3.1]: a sliding backing is evicted when no sample has been absorbed for ITS declared window. `Link.state` carries two labelled `count_of` lines, `burst` over 2 min and `recent` over 10 min, and one sample, \"down\", is absorbed at t=0. Probes at 180 s and 300 s read both: `burst` is 0, its window passed, and `recent` is 1 at both, its sample inside 10 min. A sweep that judged the 10-min row by the slot's 2-min line frees it after 2 quiet minutes, and `recent` reads 0 at 300 s. The slot is a String, so its ring buffer holds samples alone; a Bool ring buffer carries `onset_rate`'s state and is never evicted, which would hide the window. Path: libds `ds_series_state_evict_stale` pass 2, `row_evicts_on_silence` and the row's own `window_ns`; Mercury `ds.series.absorb`, per declaration.",
+    "rules_ds": "use default\n\nschema Link scope logical:\n    name: String key\n    state: String mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Link.state:\n    count_of sliding 2_min as burst\n    count_of sliding 10_min as recent\n\nrule read:\n    Probe\n    Link l\n->\n    let b = count_of(l.burst, \"down\")\n    let r = count_of(l.recent, \"down\")\n    log info \"{l.name} burst={b} recent={r}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Link", "slots": { "name": "a", "state": "down" } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 180000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 120000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a burst=0 recent=1", "a burst=0 recent=1"]
+    }
+}

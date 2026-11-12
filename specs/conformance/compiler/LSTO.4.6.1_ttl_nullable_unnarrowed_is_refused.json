@@ -1,0 +1,10 @@
+{
+    "id": "LSTO.4.6.1_ttl_nullable_unnarrowed_is_refused",
+    "category": "compiler",
+    "scenario": "[LSTO.4.6.1] / [LNUL.5.1]: the compiler must refuse an un-narrowed `Duration?` `ttl:` expression with DS_VALIDATE_NULLABLE_UNNARROWED. `Trig.d` is `Duration?` and the rule has no `where`, so nothing narrows it. The type is right, so this is not the TYPE_MISMATCH of LSTO.4.6.1_ttl_not_a_duration_is_refused. `LSTO.4.6.1.cache_ttl_binding` is the control over a `Duration` slot. A compiler that typed the leaf and ignored nullability compiles this one. PATH PINNED: `dsc.validate.lsto_4_6_1_cache_ttl`, through `ldtl_4_1_duration_kwarg` and `dsc.typecheck.lnul_5_1_concrete`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    d: Duration? mutable\n\nrule r:\n    Trig t\n->\n    cache key: \"k\" value: 1 ttl: t.d\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_NULLABLE_UNNARROWED"
+    }
+}

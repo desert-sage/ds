@@ -1,0 +1,20 @@
+{
+    "id": "LSTO.4.6.1_a_zero_ttl_is_no_expiry",
+    "category": "logical",
+    "scenario": "[LSTO.4.6.1]: a TTL of zero is no TTL, and the entry does not expire. `writer` caches \"kept\" with `ttl: 0_s` and \"lapses\" with `ttl: 1_s` at clock 0. The clock advances 2 s. Then `reader` logs `kept` where `cached(\"kept\")` is not null, and `lapsed` logs where `cached(\"lapses\")` is null, on separate facts so each read is its own pump. A runtime that took a zero TTL as already expired loses `kept`. `lapsed` is the control that the clock moved and a positive TTL expires. PATH PINNED: libds's `adapter_ds_cache_set` (`rete/adapters.c`), whose zero `ttl` reaches `ds_cache_set` as no deadline; the Mercury runtime's `ds.exec.cache_deadline`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n\nrule writer:\n    Trig t where t.k == 1\n->\n    cache key: \"kept\" value: 1 ttl: 0_s\n    cache key: \"lapses\" value: 1 ttl: 1_s\n\nrule reader:\n    Trig t where t.k == 2 and cached(\"kept\") is not null\n->\n    log info \"kept\"\n\nrule lapsed:\n    Trig t where t.k == 3 and cached(\"lapses\") is null\n->\n    log info \"lapsed\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 2 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["kept", "lapsed"]
+    }
+}

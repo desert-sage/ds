@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_duration_arith_null",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6", "LNUL.4.1"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.6]: `FN_DURATION_ADD` and `FN_DURATION_MUL` yield `null` on a `null` operand themselves ([LNUL.4.1]). A fact whose `Duration?` slot `d` is absent drives both: `add` fires where `(s.d + 1_s) is null`, and `mul` where `(s.n * s.d) is null`. Exactly [\"add\", \"mul\"]. A runtime that treats the `null` as a type mismatch faults in place of each. PATH PINNED: the `null` arm of libds's `adapter_ds_duration_add` and `adapter_ds_duration_mul`, and of the Mercury runtime's `ltim_4_1_1_duration_add` and `ltim_4_1_1_duration_mul`.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    n: Int mutable\n    d: Duration? mutable\n\nrule add:\n    S s where (s.d + 1_s) is null\n->\n    log info \"add\"\n\nrule mul:\n    S s where (s.n * s.d) is null\n->\n    log info \"mul\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["add", "mul"]
+    }
+}

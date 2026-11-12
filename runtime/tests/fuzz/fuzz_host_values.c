@@ -486,7 +486,7 @@ static void run(cursor_t *c, rig_t *rig)
             if (!take(c, &us, 4)) return;
             /* [NTST.3.1]: past the wall clock's range is refused, with both
                clocks as they were. A 32-bit count of microseconds cannot reach
-               the clause's other two bounds. */
+               the clause's other bound, the monotonic clock's. */
             const uint64_t ns = (uint64_t) us * 1000u;
             const bool past = wall_now >= 0
                 && ns > (uint64_t) INT64_MAX - (uint64_t) wall_now;

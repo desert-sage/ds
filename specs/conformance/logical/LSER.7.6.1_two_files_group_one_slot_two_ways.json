@@ -1,0 +1,21 @@
+{
+    "id": "LSER.7.6.1_two_files_group_one_slot_two_ways",
+    "clauses": ["LSER.7.6.1", "LSER.13.6"],
+    "category": "logical",
+    "scenario": "[LSER.7.6.1]: a series carries state per the identity its own declaration names. [LSER.13.6]: declarations on one slot in different files are independent, and each file's rules read what their own file declared. Library `pack` declares `Reading.v (by: none)` and rule `all_devs`; the importer declares `Reading.v (by: dev)` and rule `per_dev`. Readings for `a` and `b`, then a `Probe`; each rule reads `count` for `a` alone. `all_devs` runs first, being the library's ([LDET.5.4]), and reads the one global row: 2. `per_dev` reads `a`'s row: 1. A runtime that keys every declaration of a slot on the identity the first declaration gives files the importer's samples under the library's empty identity, and `per_dev` reads 0; with the declarations the other way round, `all_devs` reads 0. PATH PINNED: libds `series_walk_fact` (engine_rete_adapters.c), one call per (schema, slot, identity slot), and `ds_series_absorb_one` (series/dispatch.c) keeping to the identity slot it is given; the Mercury runtime's `ds.engine.absorb_fact`, which reads each declaration's own identity slot.",
+    "rules_ds": "from pack import Reading, Probe\n\nseries Reading.v (by: dev):\n    count sliding 1_h\n\nrule per_dev:\n    Probe\n    Reading r where r.dev == \"a\"\n->\n    let c = count(r.v)\n    log info \"dev {c}\"\n",
+    "libraries": {
+        "pack": "schema Reading scope logical:\n    dev: String key\n    v: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.v (by: none):\n    count sliding 1_h\n\nrule all_devs:\n    Probe\n    Reading r where r.dev == \"a\"\n->\n    let c = count(r.v)\n    log info \"all {c}\"\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "pack.Reading", "slots": { "dev": "a", "v": 1 } },
+            { "op": "assert", "schema": "pack.Reading", "slots": { "dev": "b", "v": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "pack.Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["all 2", "dev 1"]
+    }
+}

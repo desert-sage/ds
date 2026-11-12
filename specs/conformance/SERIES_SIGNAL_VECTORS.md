@@ -85,21 +85,23 @@ series sensor.door.state:
     onset_rate sliding 20_s
 ```
 
-| Vector | Stream (rising edges of `state: Bool`) | q | N₊ in (q−W, q] | elapsed = q − t_first | Expected (Hz) | Pins |
+A rising edge is a `true` absorbed while the slot holds `false`; the first
+absorption follows nothing and is no edge ([LSIG.1.4.1]).
+
+| Vector | Stream (`state: Bool`) | q | N₊ in (q−W, q] | elapsed = q − t_first | Expected (Hz) | Pins |
 |---|---|---|---|---|---|---|
-| OR-1 | `true@2_s` | 4_s | 1 | 2_s | `0.5` | warm-up denominator `min(W, elapsed)` ([LSIG.1.4.2]) |
-| OR-2 | rising@`5,10,15,20,25_s` (toggling, falling between) | 26_s | 4 (edge@5 excluded, left-exclusive) | 21_s → capped at W=20_s | `0.2` | steady rate, `(t−W, t]` edge count |
+| OR-1 | `false@2_s`, `true@3_s` | 4_s | 1 | 2_s | `0.5` | warm-up denominator `min(W, elapsed)` ([LSIG.1.4.2]) |
+| OR-2 | `true@5,10,15,20,25_s`, `false` 1_s after each but the last | 26_s | 4 (`true@5` is the first absorption, no edge, and out of the window) | 21_s → capped at W=20_s | `0.2` | steady rate, `(t−W, t]` edge count |
 
-Derivation (OR-1): one edge in the window, `t_first = 2_s`, `elapsed = 2_s`, so
-`min(W, elapsed) = min(20, 2) = 2`; `onset_rate = 1 / 2 = 0.5`. The full-window
-divisor would give `1/20 = 0.05` — the `min(W, elapsed)` warm-up denominator
-is exactly what makes OR-1 `0.5`. Derivation (OR-2): edges at `10,15,20,25`
-lie in `(6, 26]` (the edge at `5` is at/below `t−W = 6` and excluded), so
-`N₊ = 4`; `elapsed = 26 − 5 = 21_s`, capped at `W = 20_s`; `onset_rate =
-4 / 20 = 0.2`.
+Derivation (OR-1): one edge, at `3_s`, in the window, `t_first = 2_s`,
+`elapsed = 2_s`, so `min(W, elapsed) = min(20, 2) = 2`; `onset_rate = 1 / 2 =
+0.5`. The full-window divisor would give `1/20 = 0.05` — the `min(W, elapsed)`
+warm-up denominator is exactly what makes OR-1 `0.5`. Derivation (OR-2): edges
+at `10,15,20,25` lie in `(6, 26]` (the `true` at `5` is the first absorption,
+no edge, and at/below `t−W = 6` besides), so `N₊ = 4`; `elapsed = 26 − 5 =
+21_s`, capped at `W = 20_s`; `onset_rate = 4 / 20 = 0.2`.
 
-At the very first edge `elapsed = 0`; `onset_rate` is defined as `0` there,
-not a divide-by-zero ([LSIG.1.4.2]).
+While `elapsed` is `0`, `onset_rate` is `0` ([LSIG.1.4.2]).
 
 ---
 

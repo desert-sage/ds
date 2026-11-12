@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.9.2_unannotated_pvariance_refused",
+    "category": "compiler",
+    "scenario": "LUNI.9.2: `pvariance` changes dimension, to the square of its slot's, so a `let` whose value reads it over a slot that carries a unit is refused with DS_VALIDATE_DIM_AGG_UNANNOTATED. `q` is a `meter` slot and the read is the call form, `let x = pvariance(f)`. A compiler that gates `integral` alone compiles this. PATH: dsc.validate's `luni_9_2_unannotated`, called from `luni_8_4_let_binding` for an unannotated `let`, which finds the read through dsc.typecheck's `luni_9_2_unit_changing_read` (the call form) on a value dsc.typecheck's `luni_9_1_agg_type` types `ty_unknown`.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nseries Flow.q:\n    pvariance sliding 5_min\n\nrule r:\n    Flow f\n->\n    let x = pvariance(f)\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AGG_UNANNOTATED"
+    }
+}

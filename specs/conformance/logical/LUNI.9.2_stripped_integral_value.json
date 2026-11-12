@@ -1,0 +1,21 @@
+{
+    "id": "LUNI.9.2_stripped_integral_value",
+    "category": "logical",
+    "scenario": "[LUNI.9.2]: the strip `f.integral::Float` over a `meter` slot is a bare number in the slot's base unit times seconds, not nanoseconds. `q` is held at 2.0 meters over [0, 4 s) and then 5.0, read at 10 s: 2*4 + 5*6 = 38.0. Pin: `read` logs 38.0. A read in nanoseconds logs 3.8e10. PATH PINNED: `dsc.typecheck.luni_9_2_strip_source` and the cast's lowering through `lcst_4_cast_pair`, as an identity over each runtime's integral.",
+    "rules_ds": "use default\n\nschema Flow scope logical:\n    entity_id: String key\n    q: meter mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Flow.q:\n    integral sliding 10s\n\nrule read:\n    Probe\n    Flow f\n->\n    let x = f.integral::Float\n    log info \"{x}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 2.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 4000000000 },
+            { "op": "assert", "schema": "Flow", "slots": { "entity_id": "f1", "q": 5.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["38.0"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "IRET.7.5.1_a_nullable_join_key_is_not_probed",
+    "clauses": ["IRET.7.5.1", "LERR.1.4.12"],
+    "category": "logical",
+    "dead_rules_expected": ["ab"],
+    "scenario": "[IRET.7.5.1]: a join may probe its index only on an equality that is decided, both slots non-nullable and not `Json` by their declared schemas, since probing skips every pair whose keys differ. [LERR.1.4.12]: a pair is live while its token and its candidate are in their memories, whatever its tests answer, and the faults an operation records must not depend on whether the engine indexes a join. Rule `ab` joins `A a` to `B b` on `b.k == a.k`, where `b.k` is `Int?`, and on `b.n // b.d > a.k`. A `B` with `k` null, `n` 1 and `d` 0 is asserted first; then an `A` with `k` 1, whose token left-activates the join. The pair is live: its equality answers null, its second test divides by zero, so the `and` raises ComputationError DIVIDE_BY_ZERO ([LNUL.4.10]) and `ab` does not fire. Rule `handler` logs each ComputationError's kind. A join that probes for `k` 1 finds no candidate, since `b.k` is null, evaluates nothing, and records nothing. PATH PINNED: the Mercury runtime's `ds.match.right_candidates_in`, through `iret_7_5_1_join_key`, which keeps no key over a nullable slot; libds `ds_rete_beta_left_activate`, through `eq_key_decided` (rete/beta.c).",
+    "rules_ds": "use default\n\nschema A scope logical:\n    k: Int key\n\nschema B scope logical:\n    id: Int key\n    k: Int? mutable\n    n: Int mutable\n    d: Int mutable\n\nrule ab:\n    A a\n    B b where b.k == a.k and b.n // b.d > a.k\n->\n    log info \"ab\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "B", "slots": { "id": 1, "k": null, "n": 1, "d": 0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "A", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DIVIDE_BY_ZERO"]
+    }
+}

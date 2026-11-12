@@ -36,8 +36,8 @@
 // WHAT IS NOT HERE. A Json component (deep structural equality,
 // [LFAC.2.5.1]) and a Bytes component: K has no Json model and no vector needs
 // either. A NaN, which reaches no slot ([LEXP.4.2]). The composition of the
-// key from the bound facts, which is [LCDB.3.3.3]'s and
-// `formal/idris/Lcdb/RuleGlobal.idr`'s.
+// key from the bound facts, which is [LCDB.3.3.3]'s and, on the Idris model's
+// engine, `formal/idris/Rete/NetworkCooldown.idr`'s.
 
 module RKEY-SYNTAX
   imports INT-SYNTAX

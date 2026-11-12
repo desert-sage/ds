@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+#
+# Two timeouts on one call, for the stepping to each deadline that batch
+# mode and the shell's live session share.
+# Compiled by the branch's own Mercury dsc in the js gate.
+
+use default
+
+schema Incident scope logical:
+    id: String key
+    summary: String mutable
+
+schema Ack scope ttl 1_h:
+    corr: String
+    responder: String
+
+service pager.page:
+    kwarg who: String required
+    kwarg summary: String required
+    response Ack
+
+service pager.notify:
+    kwarg who: String required
+    kwarg summary: String required
+    no response
+
+rule page_on_call:
+    Incident i
+->
+    call pager.page who: "on-call" summary: i.summary nocooldown as "page-{i.id}"
+        on response.responder != "":
+            log info "{i.id}: {response.responder} acknowledged"
+        timeout 5_min:
+            log warning "{i.id}: no answer in 5 minutes, paging the backup"
+            call pager.notify who: "backup" summary: i.summary nocooldown
+        timeout 15_min:
+            log critical "{i.id}: no answer in 15 minutes, calling the manager"
+            call pager.notify who: "manager" summary: i.summary nocooldown

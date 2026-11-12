@@ -1,0 +1,31 @@
+{
+    "id": "LSIG.2.5.1_a_query_eviction_keeps_the_window_min",
+    "category": "logical",
+    "scenario": "[LSIG.2.5.1]: a query answers as of the clock's sample `t`, over the samples inside the window as of `t`, and an eviction made at the query removes only samples outside that window. `min sliding 10_s` on `Reading.level` (by `id`), SeriesBackendMonotonicDeque, on the mock clock. One identity absorbs 1.0 at 0 s and 3.0 at 9 s, one per pump. A `Probe` asserted and pumped at 15 s fires `read`, which logs `r.min` as of 15 s; the probe is retracted after its pump, so no later upsert of the `Reading` re-fires it. 5.0 is absorbed at 16 s, and probes read at 18 s and 20 s the same way. No probe asserts a `Reading`, so no probe absorbs a sample. The windows are (5 s, 15 s], (8 s, 18 s] and (10 s, 20 s], half-open ([LSER.14.1]), so the reads are 3.0, 3.0 and 5.0. What it discriminates: at 15 s the backing still stores the 0 s sample, since no pump has swept at a clock past 10 s (libds sweeps after each pump's absorption, at that pump's clock; the 9 s pump's window keeps it), and a read that answers what the backing stores reads 1.0. An eviction at the 15 s read that also removed the 9 s sample reads 5.0 at 18 s. The 20 s read pins that the 9 s sample leaves once it is outside the window, where 3.0 would show it kept. Each read is of a partly stale window, never an emptied one, so the coldness test passes it to the backing. PATHS: libds `series_read_dispatch` -> `series_evict_at_clock` -> `ds_series_mono_deque_evict_stale`, then the monotonic deque's query (engine_rete_adapters.c, series/monotonic_deque.c); the Mercury runtime's `ds.series.query` -> `in_window_samples` at `ec_now`.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    id: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level (by: id):\n    min sliding 10_s\n\nrule read:\n    Probe\n    Reading r\n->\n    log info \"{r.min}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "level": 1.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 9000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 15000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 }, "as": "p15" },
+            { "op": "pump" },
+            { "op": "retract", "label": "p15" },
+            { "op": "set", "now_ns": 16000000000 },
+            { "op": "assert", "schema": "Reading", "slots": { "id": "a", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 18000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 2 }, "as": "p18" },
+            { "op": "pump" },
+            { "op": "retract", "label": "p18" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["3.0", "3.0", "5.0"]
+    }
+}

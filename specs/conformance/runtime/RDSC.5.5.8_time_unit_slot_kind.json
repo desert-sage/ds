@@ -1,0 +1,14 @@
+{
+    "id": "RDSC.5.5.8_time_unit_slot_kind",
+    "category": "runtime",
+    "scenario": "[RDSC.5.5.8] with [NFCT.2.3]: the compiler emits `SLOT_KIND_DURATION` for a slot declared a `time` unit, and a negative host assert on such a slot is stored as `0`. The host asserts a Wait with `sec` -5 ns. The assert succeeds, and rule `stored_zero` (`w.sec == 0_s`) fires and emits a Marker, so the fact count is 2. A slot emitted `SLOT_KIND_INT` stores -5, leaves `stored_zero` unfired, and counts 1. PATH PINNED: `dsc.lower.rdsc_5_5_4_slot_kind`'s `time` arm, through libds's assert door (`wm.c`, `nfct_2_3_negative_duration`) and Mercury's (`ds.wm.assert_fact`, `lnul_3_4_canonical`).",
+    "rules_ds": "schema Wait scope logical:\n    id: String key\n    sec: second mutable\n\nschema Marker scope logical:\n    id: String key\n\nrule stored_zero:\n    Wait w where w.sec == 0_s\n->\n    emit Marker logical id: w.id\n",
+    "expect": {
+        "kind": "runtime_fact_count",
+        "asserts": [
+            { "schema": "Wait", "slots": { "id": "a", "sec": -5 } }
+        ],
+        "pump": true,
+        "fact_count_after": 2
+    }
+}

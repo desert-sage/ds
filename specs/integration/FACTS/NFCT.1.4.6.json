@@ -1,0 +1,38 @@
+{
+  "id": "NFCT.1.4.6",
+  "prefix": "NFCT",
+  "doc": "FACTS.md",
+  "parent": "NFCT.1.4",
+  "seq": 98,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[NFCT.1.4.6] **A slot that names a unit converts a host's number.** A slot names\na unit when its declared type is a unit symbol ([LUNI.7.1]). Each call below\nevaluates that slot's conversion ([RDSC.5.5.9]), taking `const ds_schema_t *`,\na `uint32_t` slot index, and a `const ds_slot_value_t *` and a\n`ds_slot_value_t *` of the kind [NFCT.2.3] pairs with the slot's type:\n\n- `ds_schema_slot_to_stored` writes the stored number ([LUNI.7.6]) of a number\n  in the unit the slot names. It computes what `x::<unit>` computes ([LUNI.8.5]).\n- `ds_schema_slot_from_stored` writes a stored number expressed in the unit the\n  slot names. It computes what a kwarg of that unit receives ([LADP.8.5.3]).\n\nNeither call changes the engine, records an event or asserts a fault fact, save\nfor an `EngineError` the conversion raises. The artefact has then lied\n([RDSC.4a.9.3], [RDSC.4a.9.6]), and the call halts the engine and reports it as any\npublic call that raises one does ([NCBK.2.8], [NCBK.2.9]).\nNeither is a `ds_engine_*` call, so [RARC.13.16] does not refuse one made from a\ncallback. After an EngineError each returns `DS_ERR_ENGINE_HALTED`, as the schema\naccessors do ([NCBK.2.9]).\n\nEach must return the status of the first of these that holds, and must write\n`*out` only on `DS_OK`:\n\n| Condition | Status |\n|---|---|\n| a `NULL` pointer | `DS_ERR_INVAL` |\n| an EngineError has halted the engine | `DS_ERR_ENGINE_HALTED` |\n| the index names no slot of the schema | `DS_ERR_NOT_FOUND` |\n| the slot names no unit | `DS_ERR_INVAL` |\n| the value's kind is not the one [NFCT.2.3] pairs with the slot's type | `DS_ERR_SLOT_TYPE_MISMATCH` |\n| the value is a NaN | `DS_ERR_NAN_REJECTED` |\n| the conversion raises an `EngineError` ([LERR.1.4.7]) | `DS_ERR_ENGINE_HALTED` |\n| the conversion raises any other fault where a rule's evaluation would ([LERR.1.4]), or its result is NaN | `DS_ERR_NOT_REPRESENTABLE` |\n\n",
+  "refs": [
+    "LADP.8.5.3",
+    "LERR.1.4",
+    "LERR.1.4.7",
+    "LUNI.7.1",
+    "LUNI.7.6",
+    "LUNI.8.5",
+    "NCBK.2.8",
+    "NCBK.2.9",
+    "NFCT.2.3",
+    "RARC.13.16",
+    "RDSC.4a.9.3",
+    "RDSC.4a.9.6",
+    "RDSC.5.5.9"
+  ],
+  "errors": [
+    "DS_ERR_ENGINE_HALTED",
+    "DS_ERR_INVAL",
+    "DS_ERR_NAN_REJECTED",
+    "DS_ERR_NOT_FOUND",
+    "DS_ERR_NOT_REPRESENTABLE",
+    "DS_ERR_SLOT_TYPE_MISMATCH"
+  ],
+  "symbols": [
+    "ds_schema_slot_from_stored",
+    "ds_schema_slot_to_stored"
+  ]
+}

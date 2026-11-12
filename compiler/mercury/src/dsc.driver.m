@@ -1055,7 +1055,7 @@ after_resolve(Dsrt, LoadErrors, Rerun, Libraries, MaybeLibs, Labels, Source,
                 CycleErrors),
             UnitErrors = lcrs_14_9_duplicate_services(MaybeLibs, Labels, RF)
                 ++ lgra_6_8_duplicate_rules(Labels, LibraryModules, RF)
-                ++ CycleErrors,
+                ++ list.map(rcli_1_9_named_by_module(Labels), CycleErrors),
             (
                 UnitErrors = [_ | _],
                 Result = compile_rejected(UnitErrors)
@@ -1158,8 +1158,9 @@ after_tests(Binding, Dsrt, Libraries, Labels, Source, Ast, RF,
         LibraryModules, Warnings, LibraryTests - FileTests, Result) :-
     lower_schemas(RF, rhim_2_2_hydration_targets(RF), LowerResult),
     (
-        LowerResult = lower_errors(Diagnostics),
-        Result = compile_rejected(Diagnostics)
+        LowerResult = lower_errors(Located),
+        Result = compile_rejected(
+            list.map(rcli_1_9_named_by_module(Labels), Located))
     ;
         LowerResult = lowered(Interns0, Schemas, FileClip, Positions,
             SchemaDocs),
@@ -1381,6 +1382,18 @@ library_rules(Program, Responses, Libs, Labels, Name, {Clip, FirstTest}, Next,
 
 in_library(Labels, Name, D) =
     rcli_1_9_in_file(rcli_1_9_library_label(Labels, Name), D).
+
+    % A diagnostic a pass over the whole unit raised, the lowering's or the
+    % cross-module cycle check's, with the module it is in: a library's is
+    % named as its `DsSource` names it, the importing file's ("") by
+    % `--filename`, which the caller supplies.
+    %
+    %@spec [RCLI.1.9]
+:- func rcli_1_9_named_by_module(source_labels, pair(string, diagnostic))
+    = diagnostic.
+
+rcli_1_9_named_by_module(Labels, Where - D) =
+    ( if Where = "" then D else in_library(Labels, Where, D) ).
 
     % Every library in the closure is read once, so one declaration reached by
     % two import paths passes.

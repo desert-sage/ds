@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_a_tier2_unit_converts",
+    "category": "logical",
+    "scenario": "[LUNI.8.5], [RLOW.6.1.10]: a `Float` slot holding 7, asserted into the tier-2 unit `pH`, is the unit's `to_base` at 7, `10.0 ** (-7.0)`, the value `7_pH` lowers to, so the rule logs. A compiler that only tags the value compares 7 molar. PATH PINNED: `dsc.rete.rlow_6_1_10_asserted`'s tier-2 arm, the `to_base` body with `x` the slot read, evaluated through each runtime's `BINOP_POW`.",
+    "rules_ds": "from math import log10\n\nunit dimension acidity storage float64 base molar_h\nunit molar_h: acidity\nunit pH: acidity:\n    to_base:   10.0 ** (-x)\n    from_base: -log10(x)\n\nschema S scope logical:\n    id: String key\n    v: Float mutable\n\nrule r:\n    S s where s.v::pH == 7_pH\n->\n    log info \"tier2\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "v": 7.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["tier2"]
+    }
+}

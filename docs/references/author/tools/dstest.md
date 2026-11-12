@@ -288,6 +288,8 @@ Delays the reply by that interval. With no `after`, the reply arrives at the cal
 
 A delayed reply's deadline is an instant of the run, as an input stamp is. At a shared instant, input facts are asserted before replies, and replies due at one instant arrive in the order the calls were issued.
 
+Before the clock moves to the next input stamp, reply or `until`, it moves to each [engine deadline](inv:integrator:std:doc#engine/clock) earlier than that instant, and the engine pumps there. An engine deadline at the same instant as an input fact or a reply takes no step of its own: the inputs and replies are applied, and one pump follows them.
+
 *(Spec: [LGRA.21.1], [LTSL.7.4], [RTIM.14.5], [RTIM.14.6])*
 
 ### `no response`

@@ -148,6 +148,13 @@ export class Clock {
      */
     get now(): bigint;
     /**
+     * The earliest deadline after the clock's current value, ns, or null: a
+     * live timer's fire_at, a live fact's TTL expiry or a cache entry's expiry.
+     * Reading it is not a sample: it records nothing.
+     * @returns {bigint | null}
+     */
+    get nextDeadline(): bigint | null;
+    /**
      * Set the mock monotonic clock; DsError(DS_ERR_STATE) in live mode, and
      * below its current value once the engine has sampled it. Not a sample:
      * the next input or pump observes it.
@@ -397,6 +404,32 @@ export class Engine extends EventTarget {
      */
     get schemas(): ReadonlyMap<string, SchemaInfo>;
     /**
+     * A number in the unit a slot names, as the number the slot stores
+     * ([NFCT.1.4.6]): what `value::<unit>` gives a rule, which assert takes.
+     * An Int is a BigInt or a safe integer Number and comes back a BigInt; a
+     * Float is a Number. Changes nothing. Throws a DsError:
+     * DS_ERR_SCHEMA_UNKNOWN or DS_ERR_SLOT_UNKNOWN for a name the engine has
+     * no schema or slot by, DS_ERR_INVAL for a slot that names no unit,
+     * DS_ERR_SLOT_TYPE_MISMATCH, DS_ERR_NAN_REJECTED, and
+     * DS_ERR_NOT_REPRESENTABLE where the conversion has no result for the
+     * number.
+     * @param {string} schema
+     * @param {string} slot
+     * @param {bigint | number} value
+     * @returns {bigint | number}
+     */
+    slotToStored(schema: string, slot: string, value: bigint | number): bigint | number;
+    /**
+     * A number a slot stores, in the unit the slot names: what a kwarg of
+     * that unit receives ([NFCT.1.4.6]). The inverse of slotToStored, taken
+     * and refused as it is.
+     * @param {string} schema
+     * @param {string} slot
+     * @param {bigint | number} value
+     * @returns {bigint | number}
+     */
+    slotFromStored(schema: string, slot: string, value: bigint | number): bigint | number;
+    /**
      * The program's rules' metadata by rule name: a snapshot, as `schemas`
      * is, made again after loadDsc or replayStream. Its entries are frozen.
      * @returns {ReadonlyMap<string, RuleMeta>}
@@ -570,6 +603,7 @@ export type Glue = {
     loadDsc: (e: EngineHandle, bytes: Uint8Array) => void;
     schemaCount: (e: EngineHandle) => number;
     schemaAt: (e: EngineHandle, i: number) => SchemaInfo;
+    slotConvert: (e: EngineHandle, schema: string, slot: string, value: bigint | number, toStored: boolean) => bigint | number;
     assert: (e: EngineHandle, schema: string, slots: Record<string, SlotValueOf<FactHandle>>) => FactHandle;
     assertExternal: (e: EngineHandle, bytes: Uint8Array) => void;
     applyExternalAssert: (e: EngineHandle, body: Uint8Array) => ExternalAssertApplied;
@@ -586,6 +620,7 @@ export type Glue = {
     clockMode: (e: EngineHandle) => ClockMode;
     clockSetMode: (e: EngineHandle, mode: ClockMode) => void;
     clockNow: (e: EngineHandle) => bigint;
+    clockNextDeadline: (e: EngineHandle) => bigint | null;
     clockSet: (e: EngineHandle, ns: Int64) => void;
     clockAdvance: (e: EngineHandle, ns: Int64) => void;
     wallClockSet: (e: EngineHandle, utcNs: Int64) => void;

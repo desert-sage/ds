@@ -31,7 +31,8 @@ enum {
     DS_SERIES_NULLS_ZERO        = 3,
 };
 
-/* Absorb one sample into every series_decl matching (schema, slot). */
+/* Absorb one sample into every series_decl matching (schema, slot, id_slot), at
+   the row `id_value` names. */
 void ds_series_absorb_one(struct ds_engine        *engine,
                           const char              *schema_name,
                           const char              *slot_name,

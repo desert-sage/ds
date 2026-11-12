@@ -1,0 +1,12 @@
+{
+    "id": "RDSC.11.3_withdraw_by_id_with_no_fact_id_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.3]'s fourth shape: an artefact carrying an `Action` of kind `ACTION_WITHDRAW_BY_ID` with no `withdraw_fact_id`, which aims the withdraw at nothing, is refused at load with DS_ERR_DSC_SEMANTIC (-504). No source produces one. The harness compiles rule `r`, whose `after 5_s:` body withdraws the outer binding `j`. The compiler lowers that body to the follow-up rule `$r_after_...`, whose terminal's first action is `ACTION_WITHDRAW_BY_ID` reading `j`'s reference from the capture fact ([IRET.10.7]). `runtime_error`'s `tamper: {set_field: {atom: [270, 1], path: [6, 0, 7], value: null}}` ([RCTS.1.2.21]) removes field 7, `withdraw_fact_id`, from action 0, field 6, of the second `TerminalNode` (atom 270), the follow-up's, and re-seals `dsc_sha256` ([RDSC.3.6]). The first `TerminalNode`, `r`'s own, has no action carrying field 7, so the edit has a site only in the follow-up's. Break: a loader that loads it and withdraws nothing when the timer fires fails as unrefused; one that refuses it as a decode failure (-503) fails on the code. Paths: libds's action decoder (`dsc/rete_loader.c`), whose `ACTION_WITHDRAW_BY_ID` arm refuses an absent `withdraw_fact_id`; the Mercury runtime's `ds.dsc_action.withdraw_by_id_action`, which refuses with `lek_semantic` under RDSC.11.3.",
+    "rules_ds": "use default\n\nschema Job scope explicit:\n    id: Int\n\nrule r:\n    Job j\n->\n    after 5_s:\n        withdraw j\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"atom": [270, 1], "path": [6, 0, 7], "value": null}},
+        "code": "-504",
+        "message_contains": "RDSC.11.3"
+    }
+}

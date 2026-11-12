@@ -1,0 +1,28 @@
+{
+    "id": "LSIG.1.1_onset_rate_drops_an_edge_with_its_sample",
+    "clauses": ["LSIG.1.1", "LSIG.1.4.1"],
+    "category": "logical",
+    "scenario": "[LSIG.1.1]: at `capacity`, `onset_rate`'s ring buffer drops its oldest sample, \"and with it at most the edge the buffer started on\"; [LSIG.1.4.1]: a rising edge is a `true` absorbed while the slot holds `false`. `onset_rate sliding 100s` with `capacity: 2` on `Door.state`: `false` at 0 s, `true` at 10 s (a rising edge), `true` at 20 s (no edge: the slot holds `true`), which drops the sample at 0 s, and `true` at 30 s (no edge), which drops the sample at 10 s and its edge with it. A `Probe` at 40 s reads no edge in (-60 s, 40 s]: 0.0. A runtime that keeps the edge after its sample is dropped counts it, and reads 1 / min(100 s, 40 s) = 0.025. LSER.19.7_onset_rate_t_first_is_not_moved_by_capacity is the positive control on the same read path: there the edge's sample is kept, and the read is 0.025. PATH PINNED: libds SeriesBackendRingBuffer's `trim_to_cap`, through `drop_edges_of` (`ring_buffer.c`); the Mercury runtime's `ds.series.lsig_1_4_1_before`, which keeps the dropped sample's value as the oldest kept sample's predecessor, read by `rising_edges`.",
+    "rules_ds": "use default\n\nschema Door scope logical:\n    entity_id: String key\n    state: Bool mutable\n    n: Int mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Door.state (by: entity_id, capacity: 2):\n    onset_rate sliding 100s\n\nrule read:\n    Probe\n    Door d\n->\n    log info \"{d.onset_rate}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": false, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 10000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 20000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true, "n": 3 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 30000000000 },
+            { "op": "assert", "schema": "Door", "slots": { "entity_id": "d1", "state": true, "n": 4 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 40000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["0.0"]
+    }
+}

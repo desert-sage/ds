@@ -56,9 +56,9 @@
 ||| That every fact a pump mints is stamped with the pump's held sample
 ||| ([IRET.19.1], step 4): actions are outside part B's frame and the stamps
 ||| are updated at data inputs alone. A cascade's retractions dropping stamp
-||| rows. A checkpoint on this engine: the seek is CheckpointClocks.idr's,
-||| and that a restored fact keeps its atom's stamp ([RFCS.9.4]) is not
-||| modelled on the network. That the network's assert enters exactly when
+||| rows. A checkpoint on this engine: neither the seek nor that a restored
+||| fact keeps its atom's stamp ([RFCS.9.4]) is modelled. That the
+||| network's assert enters exactly when
 ||| FireLoop's does, which the stamps follow, is the transfer
 ||| (`rlow_4_2_1__assert_agree`). C1 is generic in the step and so says of the
 ||| engine only that the replay drives it through the same samples, which

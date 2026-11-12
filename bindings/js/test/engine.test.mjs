@@ -37,6 +37,8 @@ const R5_HALTS = fixture("r5_halts");
 const R6_TIME_ZONE = fixture("r6_time_zone");
 const R7_REFS = fixture("r7_refs");
 const R8_COOLDOWN = fixture("r8_cooldown");
+const NEXT_DEADLINE = fixture("next_deadline");
+const NEXT_DEADLINE_DWELL = fixture("next_deadline_dwell");
 
 const TWO_53 = 9007199254740992n;
 const INT64_MAX = 9223372036854775807n;
@@ -636,6 +638,124 @@ describe(`@ds-lang/ds on the ${TARGET} target`, () => {
         assert.equal(S.DS_ERR_INVAL, -1);
         assert.equal(S.STATUS.DS_ERR_FACT_INVALID, S.DS_ERR_FACT_INVALID);
         assert.ok(Object.isFrozen(S.STATUS));
+    });
+});
+
+// [NLFC.2.5]: the engine reports its next deadline. In next_deadline.ds a cache
+// entry falls due 10 s after its write, a `Lease` 20 s after its assert and an
+// `after` timer 30 s after its firing.
+describe(`@ds-lang/ds next deadline on the ${TARGET} target`, () => {
+    /** Arm all three kinds at the current clock; the `Lease` fact. */
+    function allThree(e) {
+        e.assert("Write", { id: 1n });
+        e.assert("Arm", { id: 1n });
+        const lease = e.assert("Lease", { id: 1n });
+        e.pump();
+        return lease;
+    }
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__none_when_nothing_is_due", () => {
+        const e = engine(NEXT_DEADLINE);
+        assert.equal(e.clock.nextDeadline, null);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__reports_a_timer_fire_at", () => {
+        const e = engine(NEXT_DEADLINE);
+        e.clock.set(100n * SEC);
+        e.assert("Arm", { id: 1n });
+        e.pump();
+        assert.equal(e.clock.nextDeadline, 130n * SEC);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__reports_a_fact_ttl", () => {
+        const e = engine(NEXT_DEADLINE);
+        e.clock.set(5n * SEC);
+        e.assert("Lease", { id: 1n });
+        assert.equal(e.clock.nextDeadline, 25n * SEC);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__reports_a_cache_entry_expiry", () => {
+        const e = engine(NEXT_DEADLINE);
+        e.clock.set(7n * SEC);
+        e.assert("Write", { id: 1n });
+        e.pump();
+        assert.equal(e.clock.nextDeadline, 17n * SEC);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__earliest_of_the_three_kinds", () => {
+        const e = engine(NEXT_DEADLINE);
+        const lease = allThree(e);
+        assert.equal(e.clock.nextDeadline, 10n * SEC);
+        e.assert("Drop", { id: 1n });
+        e.pump();
+        assert.equal(e.clock.nextDeadline, 20n * SEC);
+        e.retract(lease);
+        e.pump();
+        assert.equal(e.clock.nextDeadline, 30n * SEC);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__later_than_the_clock", () => {
+        const e = engine(NEXT_DEADLINE);
+        allThree(e);
+        e.clock.set(10n * SEC);
+        assert.equal(e.clock.nextDeadline, 20n * SEC, "a deadline exactly at the clock is not reported");
+        e.clock.set(25n * SEC);
+        assert.equal(e.clock.nextDeadline, 30n * SEC, "and neither is one before it");
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__a_time_dependent_condition_is_not_a_deadline", () => {
+        const e = engine(NEXT_DEADLINE_DWELL);
+        e.assert("Ping", { k: "a" });
+        e.pump();
+        assert.equal(e.clock.nextDeadline, null);
+        e.close();
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__takes_no_sample", () => {
+        const run = (queried) => {
+            const e = engine(NEXT_DEADLINE);
+            const seen = [];
+            onStream(e, (ev) => seen.push([ev.type, ev.seq]));
+            e.clock.set(5n * SEC);
+            if (queried) void e.clock.nextDeadline;
+            e.clock.set(7n * SEC);
+            if (queried) void e.clock.nextDeadline;
+            e.assert("Write", { id: 1n });
+            e.pump();
+            e.close();
+            return seen;
+        };
+        assert.deepEqual(run(true), run(false));
+    });
+
+    // @spec [NLFC.2.5]
+    test("test_nlfc_2_5__refused_from_a_callback", () => {
+        const e = engine(NEXT_DEADLINE);
+        const refused = [];
+        e.addEventListener("fact_assert", () => {
+            let err;
+            try { void e.clock.nextDeadline; } catch (x) { err = x; }
+            refused.push(err?.status);
+        });
+        e.assert("Write", { id: 1n });
+        e.pump();
+        assert.ok(refused.length > 0, "the listener ran");
+        assert.ok(refused.every((s) => s === S.DS_ERR_STATE));
+        e.close();
     });
 });
 
@@ -2203,7 +2323,7 @@ describe(`@ds-lang/ds reading atoms on the ${TARGET} target`, () => {
         const { e, bytes } = recording();
         const factAssert = ds.readAtoms(bytes).atoms.find((a) => a.message === "FactAssert");
         assert.equal(ds.messageName(factAssert.field), "FactAssert");
-        assert.equal(ds.messageName(2047), null, "the skip band's last number has no entry");
+        assert.equal(ds.messageName(2047), null, "2047 has no entry");
         assert.throws(() => ds.messageName("FactAssert"), TypeError, "a name is not looked up");
         assert.throws(() => ds.messageName(1.5), TypeError);
         assert.throws(() => ds.messageName(-1), RangeError);

@@ -14,6 +14,7 @@
 :- import_module ds.id.
 :- import_module ds.intern.
 :- import_module ds.chrono.
+:- import_module ds.expr.
 :- import_module ds.value.
 :- import_module list.
 :- import_module array.
@@ -82,7 +83,20 @@
                 sc_sampled   :: bool,        % routes changes to the samples plane
                 sc_retained  :: bool,        % adapter fills from retention
                 sc_hydratable :: bool,       % Hydration atom present for this slot
-                sc_capacity  :: capacity     % [LSTR.11.1]
+                sc_capacity  :: capacity,    % [LSTR.11.1]
+                sc_units     :: maybe(unit_conversion)
+                                             % [RDSC.5.5.9]; `no` on a slot that
+                                             % names no unit
+            ).
+
+    % A slot that names a unit: its two conversions, each over one input read
+    % as `bind_ref` 0 [RDSC.5.5.9]. `uc_to_stored` takes a number in the unit
+    % the slot names to the stored number; `uc_from_stored` takes it back.
+    %
+:- type unit_conversion
+    --->    unit_conversion(
+                uc_to_stored   :: expr,
+                uc_from_stored :: expr
             ).
 
     % A `String` slot's declared `capacity`, in codepoints [LSTR.11.1]. 0 on the wire

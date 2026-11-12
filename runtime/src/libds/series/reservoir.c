@@ -12,7 +12,7 @@
 #include <string.h>
 
 #include "reservoir.h"
-#include "ring_buffer.h"   /* the shared [LSER.17.2] quantile */
+#include "ring_buffer.h"   /* the shared [LSER.17.2] quantile and signed order */
 #include "ds_alloc.h"      /* DS_MALLOC/CALLOC/FREE/STRDUP -- IALC.9.1 routing */
 
 #define SBRS_DEFAULT_K  100
@@ -249,8 +249,8 @@ ds_result_t ds_series_reservoir_query(
     for (size_t i = 0; i < m; i++) {
         double v = vals[i];
         sum += v;
-        if (v < min_v) min_v = v;
-        if (v > max_v) max_v = v;
+        if (ds_series_signed_before(v, min_v)) min_v = v;
+        if (ds_series_signed_before(max_v, v)) max_v = v;
         double delta = v - mean;
         mean  += delta / (double)(i + 1);
         double delta2 = v - mean;

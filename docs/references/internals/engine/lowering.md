@@ -354,11 +354,63 @@ A `Date` is held as a day count and a `Duration` as nanoseconds.
 
 ### `Duration` saturation
 
-A `Duration`-valued `-`, `*` or `/` lowers to `FN_MAX(x, 0)`, where `x` is the integer operation.
+`Duration`-valued arithmetic neither goes negative nor wraps.
 
-This covers `a - b` with two `Time` or two `Duration` operands, `n * dur`, `dur * n` and `dur / n`. The constant folder folds each to the value this lowering computes. Where an operand's static type is nullable, the operation lowers to `IF(x is null, x, FN_MAX(x, 0))`, so a `null` operand yields `null`. `Date - Date` saturates inside `FN_DATE_DIFF`.
+| Expression | Lowers to |
+|---|---|
+| `a - b`, two `Time` or two `Duration` operands; `dur / n`, `dur // n` | `FN_MAX(x, 0)`, `x` the integer operation |
+| `a + b`, two `Duration` operands | `FN_DURATION_ADD(a, b)` |
+| `n * dur`, `dur * n` | `FN_DURATION_MUL(n, dur)` |
+| `dur * f`, `f * dur`, `dur / f`, `dur // f`, `f` a `Float` | `FN_MAX(FN_ROUND(x), 0)`, `x` the `Float` operation |
+| `a % b`, `a / b`, `a // b`, two `Duration` operands | as on two `Int`s |
+| a `sum` read `r` over a slot of the `time` dimension | `FN_DURATION_ADD(r, 0)` |
+| a `Duration?` aggregation read `r` | `IF(r is null, r, FN_ROUND(r))` |
 
-*(Spec: [RLOW.6.1.6], proto: builtin_fn.proto)*
+The constant folder folds each to the value its lowering computes. The engine evaluates `FN_DURATION_ADD` and `FN_DURATION_MUL` exactly: an exact result above 2^63 - 1 raises a `ComputationError` of kind `NOT_REPRESENTABLE`, a negative `FN_DURATION_MUL` result yields `0`, and a negative `FN_DURATION_ADD` result raises the same. `FN_ROUND` raises one for a non-finite result or one outside `Int`. The engine's subtraction of two `Time` operands does not wrap: an exact result below the integer range reaches `FN_MAX` as a negative value, and one above it raises before `FN_MAX` runs.
+
+`FN_MAX` faults on a `null` operand. Where an operand's static type is nullable, an `FN_MAX` form lowers to `IF(x is null, x, FN_MAX(x, 0))`. `FN_DURATION_ADD` and `FN_DURATION_MUL` yield `null` on a `null` operand themselves. `Date - Date` saturates inside `FN_DATE_DIFF`.
+
+*(Spec: [RLOW.6.1.6], [LTIM.4.1.1], [LSER.17.2], proto: builtin_fn.proto)*
+
+### Constants
+
+A read of a `const`, and a `calendar` call whose arguments all fold, lower to the literal `Expr` of the value.
+
+The literal holds the value in the representation its type lowers to: a `Date` as `lit_int`, its day count, and a `Time` as `lit_time`, its UTC nanoseconds. The engine evaluates `lit_time` to the `Time` at that instant with a `tz_offset_ns` of 0. A constant carries no operation for the engine to evaluate, and its depth toward the `Expr` nesting limit is one literal's. The author's view of a constant `calendar` call is [calendar](inv:author:std:doc#time/calendar).
+
+*(Spec: [RLOW.6.1.8], [LTIM.14.3], [RDSC.11.3], proto: rete_expr.proto)*
+
+### Unit assertion
+
+`x::<unit>`, with `x` a number, lowers through the unit's conversion to the base unit, by the first of these that applies.
+
+| Unit | Lowers to |
+|---|---|
+| a `time` unit whose factor is a whole number of nanoseconds, the base included | `FN_DURATION_MUL(x, <factor>)` |
+| the dimension's base unit | `x` |
+| a unit of a `float64` dimension | arithmetic expression nodes with constants the artefact carries: a tier-1 unit's affine map, a tier-2 unit's `to_base` |
+| a tier-1 unit of an `int64` or `int32` dimension | `FN_INT_DIV_EXACT(P·x + R, Q)`, or `P·x + R` when `Q` is 1, as `Int` arithmetic |
+| a tier-2 unit of an `int64` or `int32` dimension | its `to_base` over `x` as `Float`, an `Int` converting round-to-nearest-even, then the cast to integer storage |
+
+`P`, `R` and `Q` are the integers that write the unit's exact constants over their least common denominator: `a = P/Q` and `b = R/Q`, with `Q > 0`. A result that is not a whole number of base units raises a `ComputationError` of kind `NOT_REPRESENTABLE`. On the `time` dimension a negative result of either integer lowering is `0`, as `FN_DURATION_MUL`'s is.
+
+The constant folder folds each to the value its lowering computes. A non-base assertion is an operation and not a read of its operand: it stands neither as a slot in a hoisted conjunct nor as a join anchor.
+
+*(Spec: [RLOW.6.1.10], [LUNI.8.5], [LUNI.4.3], proto: builtin_fn.proto)*
+
+### Rounding in a value's unit
+
+`round(x)`, `math.floor(x)`, `math.ceil(x)`, `math.trunc(x)` and `math.sign(x)` over a dimensioned `x` lower through `x`'s own unit, which the compiler resolves from its static type.
+
+| Storage and unit | The four roundings | `math.sign` |
+|---|---|---|
+| `float64` | `x` converted from the base unit as [Quantity arguments](#quantity-arguments) builds it, the builtin, `FN_INT_TO_FLOAT`, then the conversion to the base unit | the conversion from the base unit, then the builtin |
+| `int64` or `int32`, tier-1 | `Int` arithmetic: the builtin over the exact quotient `(Q·x - R) / P`, ties to even for `round`, its integer `n` taken back to the base unit as `n::<unit>` lowers | the builtin over `Q·x - R`, negated when `P` is negative |
+| `int64` or `int32`, tier-2 | as on `float64`, with `x` converted round-to-nearest-even and the result cast to integer storage | as on `float64` |
+
+A `Float` with no `Int` answer raises as the rounding builtin does. On integer storage, `n` units that are not a whole number of base units raise as the assertion does. The constant folder folds each of the five to the value its lowering computes.
+
+*(Spec: [RLOW.6.1.9], [RLOW.6.1.10], [LUNI.8.9], proto: builtin_fn.proto)*
 
 ### Interval operations
 
@@ -457,14 +509,15 @@ A quantity argument on a unit-typed kwarg is lowered in the kwarg's unit.
 
 Unless the kwarg's unit is tier-2, the compiler folds a value it knows at compile time into the kwarg's unit and emits a literal. Any other value, and every value on a tier-2 unit, is wrapped in the unit's conversion from the base unit:
 
-| Dimension storage | Conversion |
+| Dimension storage and unit | Conversion of the base-unit value `v` |
 |---|---|
 | `float64` | arithmetic expression nodes with constants the artefact carries: a tier-1 unit's inverse affine map, a tier-2 unit's `from_base` |
-| `int64` | `FN_INT_DIV_EXACT` of the base-unit value and the unit's factor, a whole number of base units |
+| `int64` or `int32`, tier-1 | `FN_INT_DIV_EXACT(Q·v - R, P)` in `Int` arithmetic, `P`, `Q` and `R` as [Unit assertion](#unit-assertion) states them; `FN_INT_DIV_EXACT(v, P)` for a factor that is a whole number of base units |
+| `int64` or `int32`, tier-2 | its `from_base` over `v` as `Float`, converting round-to-nearest-even, then the cast to integer storage |
 
 `FN_INT_DIV_EXACT(n, d)` yields `n / d` when `d` divides `n` exactly. A zero `d` raises a `ComputationError` of kind `DIVIDE_BY_ZERO`, and a `d` that does not divide `n` raises one of kind `NOT_REPRESENTABLE`. A `null` operand yields `null`.
 
-*(Spec: [RLOW.7.3.9], proto: builtin_fn.proto)*
+*(Spec: [RLOW.7.3.9], [RLOW.6.1.10], proto: builtin_fn.proto)*
 
 ### `cache` and `cache_delete`
 

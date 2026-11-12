@@ -904,8 +904,9 @@ rdsc_6a_2_4_text(RF, Type, E, Text) :-
             Value = Base
         ),
         ( if dsc.quantity.whole_number_dimension(RF, Dimension) then
-            Text = string.int64_to_string(
-                dsc.exact.truncate_wrapping_int64(Value))
+            % Never wrapped ([LUNI.2.4.1]): one outside int64 states no text.
+            dsc.exact.luni_2_4_1_whole_int64(Value, I),
+            Text = string.int64_to_string(I)
         else
             dsc.exact.to_float(Value, F),
             Text = ds.float_text.canonical(F)
@@ -1061,6 +1062,7 @@ rdsc_4_7_put_clip(Clip, !B) :-
     %@spec [RDSC.5.5.3]
     %@spec [RDSC.5.5.5]
     %@spec [RDSC.5.5.7]
+    %@spec [RDSC.5.5.9]
     %@spec [RFCS.19.5]
 :- func rdsc_5_5_1_slot_atom(intern_table, string, slot_common, identity,
                              uint32)
@@ -1129,7 +1131,16 @@ rdsc_5_5_1_slot_atom(IT, SchemaName, C, Identity, Clip) = Bytes :-
         Capacity = at_most(N),
         put_uint32(12u32, N, B10, B11)
     ),
-    rfcs_19_1_frame(da_slot, B11, Bytes).
+    Units = C ^ sc_units,
+    (
+        Units = no,
+        B13 = B11
+    ;
+        Units = yes(unit_conversion(To, From)),
+        put_message(13u32, rdsc_4a_9_1_expr(IT, To), B11, B12),
+        put_message(14u32, rdsc_4a_9_1_expr(IT, From), B12, B13)
+    ),
+    rfcs_19_1_frame(da_slot, B13, Bytes).
 
     % `within(0.0)` writes nothing and decodes as `exact`, so the round trip is
     % not the identity there.
@@ -1883,6 +1894,7 @@ rdsc_4a_9_1_member(E) = Field :-
         else if V = str(_) then Field = 3u32
         else if V = bool(_) then Field = 4u32
         else if V = null then Field = 16u32
+        else if V = time(_) then Field = 22u32
         else unexpected($pred, "a literal kind with no Rete wire form")
         )
     ;
@@ -2026,6 +2038,8 @@ lit_body(IT, V) = B :-
         put_uint64_always(4u32, bool_bit(Bool), init_builder, B)
     else if V = null then
         put_uint64_always(16u32, 1u64, init_builder, B)
+    else if V = time(T) then
+        B = int_present(22u32, utc_ns(T), init_builder)
     else
         unexpected($pred, "a literal kind with no Rete wire form")
     ).

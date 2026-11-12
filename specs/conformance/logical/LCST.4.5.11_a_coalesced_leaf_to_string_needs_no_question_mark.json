@@ -1,0 +1,14 @@
+{
+    "id": "LCST.4.5.11_a_coalesced_leaf_to_string_needs_no_question_mark",
+    "category": "logical",
+    "scenario": "[LCST.4.5.11] with [LCST.4.3.1]: `x ?? d` with a non-null default `d` is not `null` ([LNUL.5.4]), and a conversion to `String` is total, so `(d.body.c ?? 0)::String` takes no `?` and its result is a `String`. The leaf holds the JSON `true`, so the conversion takes the Bool row and gives `\"true\"`, and rule `s` logs once: exactly [\"bool\"]. A compiler that converted by the default's `Int` row emits `FN_INT_TO_STRING` on a Bool, which mismatches. PATH PINNED: `dsc.typecheck.lcst_4_5_11_cast_type` with a non-null source and a total conversion, and `dsc.rete.lcst_4_5_11_dispatch`'s `is_bool` arm in each runtime.",
+    "rules_ds": "schema Doc scope logical:\n    k: String key\n    body: Json mutable\n\nrule s:\n    Doc d where (d.body.c ?? 0)::String == \"true\"\n->\n    log info \"bool\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Doc", "slots": { "k": "b", "body": { "c": true } } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["bool"]
+    }
+}

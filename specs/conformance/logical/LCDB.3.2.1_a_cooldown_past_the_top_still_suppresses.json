@@ -1,0 +1,19 @@
+{
+    "id": "LCDB.3.2.1_a_cooldown_past_the_top_still_suppresses",
+    "clauses": ["LCDB.3.2.1", "LTIM.2.8.2"],
+    "category": "logical",
+    "scenario": "[LCDB.3.2.1] with [LTIM.2.8.2]: a cooldown compares elapsed time, so one whose window would end past the top of the clock's range still suppresses. The clock is set to 2^63 - 1 - 2 s and rule `r cooldown 1_h` fires for key 1. The clock advances 1 s, and the same key's fact is asserted again with a new `n`, a new activation of the same key. It is suppressed: 1 s has passed of 1 h. Exactly [\"fire 1\"]. A runtime that adds the last firing and the window overflows `int64`, reads the deadline as passed, and logs twice. PATH PINNED: libds's `adapter_ds_rate_allow` (`rete/adapters.c`), the elapsed-time comparison; the Mercury runtime's `ds.rate.decide`.",
+    "rules_ds": "schema Trig scope logical:\n    k: Int key\n    n: Int mutable\n\nrule r cooldown 1_h:\n    Trig t\n->\n    log info \"fire {t.k}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 9223372034854775807 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 1 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1000000000 },
+            { "op": "assert", "schema": "Trig", "slots": { "k": 1, "n": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["fire 1"]
+    }
+}

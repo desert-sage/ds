@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.14.3_a_call_over_const_arguments_is_refused",
+    "clauses": ["LTIM.14.3"],
+    "category": "compiler",
+    "scenario": "[LTIM.14.3]: an argument folds when it is a constant, so the refusal reaches a call over a `const` as it does a call over literals. `calendar.date(YEAR, 2, 30)` with `const YEAR = 2026` names no day, and is refused with DS_VALIDATE_CONST_NOT_FOLDABLE in a rule's `where`. The `const` itself is valid, so the refusal is the call's. PATH PINNED: `dsc.dstest.ltim_14_3_calendar_fold`, whose `folded_int` reads the `const`, under `dsc.validate`'s `ltim_14_3_rule_expression`.",
+    "rules_ds": "import calendar\n\nconst YEAR = 2026\n\nschema T scope logical:\n    id: Int key\n\nrule r:\n    T t where t.id == 1 and calendar.date(YEAR, 2, 30) != calendar.date(1970, 1, 1)\n->\n    log info \"built\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

@@ -53,17 +53,18 @@
 ||| name re-evaluation, and the mechanisms it does name are the ones proved
 ||| independent of the wall clock below.
 |||
-||| THE CLOCK SOURCE IS A FUNCTION OF THE CALL COUNT, not a constant, which is
-||| Rete/FireClock.idr's device and is what makes a second call visible in a
-||| result. A source that returned one value would make an engine that called
-||| it at every read indistinguishable from one that held a sample.
+||| THE CLOCK SOURCE IS A FUNCTION OF THE CALL COUNT, not a constant, which
+||| is what makes a second call visible in a result. A source that returned
+||| one value would make an engine that called it at every read
+||| indistinguishable from one that held a sample.
 |||
 ||| NOT MODELLED HERE. The entry stamp's own lifecycle ([LTIM.2.8.6]: which
-||| asserts re-stamp) is `Rete/EntryStamp.idr`; the mock clock's mutations
-||| ([NTST.3.1], [NTST.3.3]) are `MockClock.idr`; a checkpoint ([RFCS.9.4]) is
-||| `CheckpointClocks.idr`; a sequence's window as event time ([LTHE.2.2.2])
-||| is `EventTime.idr`; which members a query's discount admits after an
-||| eviction ([LSIG.2.5.1]) is `SeriesWindow.idr`. Each imports this module.
+||| asserts re-stamp) is `Rete/EntryStamp.idr`, which imports this module.
+||| The mock clock's mutations ([NTST.3.1], [NTST.3.3]) are
+||| `formal/tla/clock_sample.tla`'s and `Rete/NetworkWall.idr`'s wall step. A
+||| checkpoint ([RFCS.9.4]), a sequence's window as event time
+||| ([LTHE.2.2.2]) and which members a query's discount admits after an
+||| eviction ([LSIG.2.5.1]) have no model in this lane.
 ||| The mechanisms below take the stamp as given, and a series window's
 ||| membership (`ltim_2_8_2__in_window`) is `within`'s formula on the sample
 ||| at which the value was absorbed: the discounted value is not modelled.

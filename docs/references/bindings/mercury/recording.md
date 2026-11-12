@@ -69,8 +69,7 @@ Refused with the session unchanged:
 |---|---|
 | `engine_halted` | the session has halted |
 | `fs_version` | the recording is of another DS series, or names none |
-| `fs_unknown_inject` | an unknown atom is numbered 1 to 127 |
-| `parse` | anything else malformed: a frame or an atom's body, a malformed `capabilities` list, or an unknown atom numbered 0, 128 to 255, or above 2047 |
+| `parse` | anything else malformed: a frame or an atom's body, a malformed `capabilities` list, or an atom whose field number has no registry entry |
 | `bnd_incomplete` | the header holds one of `dsc_hash` and `dialect_def_sha256` and not the other |
 | `bnd_dsc_mismatch`, `bnd_dialect_mismatch` | the dialect-binding tuple is not the program's: made with another artefact, or under other settings |
 | `fs_recording_incomplete` | the recording's first event has a `seq` other than 0 |
@@ -86,12 +85,14 @@ Failed at an atom, with what was delivered before it applied, and nothing after 
 | `fs_divergence` | a compare-class atom is not the next the replay re-derived; the replay re-derived one the recording does not hold; a `CacheSeed` is refused, or follows an event atom; an `ExternalAssert`'s delivery is refused, or asserts other facts than its `fact_ids` |
 | the refusal's status, as [`assert_fact`](facts.md#assert_fact) lists it | the engine refuses a `FactAssert` for anything but a bound |
 | `engine_halted` | a `FactAssert`, a `FactRetract` or a `PumpBoundary` meets an engine already halted |
+| `time_range` | a `PumpBoundary`'s pump is refused before its step: its first sample would give a held cache seed a deadline outside the `Time` range |
+| `time_range` | a `ClockAdvance` sets the monotonic clock outside its range |
 
-A bound's refusal of a `FactAssert`, a halt an input itself raises, and any status a `PumpBoundary`'s pump reports, `nan_rejected` among them, do not end the replay.
+A bound's refusal of a `FactAssert`, a halt an input itself raises, and any other status a `PumpBoundary`'s pump reports, `nan_rejected` and `contract_breach` among them, do not end the replay.
 
 A replay that reaches the end of its recording with every compare clean answers `ok`, for a run that halted too. [`halted`](session.md#halted) says whether the run halted. `engine_halted` from `replay` means the replay did not reproduce the run, or met an engine already halted.
 
-*(Source: bindings/mercury/src/mercury_ds.session.m, runtime/mercury/src/ds.replay.m, runtime/mercury/src/ds.rfcs.m, runtime/mercury/src/ds.binding.m, Spec: [LDET.1.10], [RFCS.16.3], [RFCS.5.4], [RFCS.6.7], [RFCS.7.3], [RFCS.26.2], [RBND.2.1], [RBND.5.1], [NDET.8.2], [NCBK.2.11])*
+*(Source: bindings/mercury/src/mercury_ds.session.m, runtime/mercury/src/ds.replay.m, runtime/mercury/src/ds.rfcs.m, runtime/mercury/src/ds.binding.m, Spec: [LDET.1.10], [RFCS.19.3], [RFCS.5.4], [RFCS.6.7], [RFCS.7.3], [RFCS.10.5], [RFCS.26.2], [NLFC.9.5], [NTST.3.1], [RBND.2.1], [RBND.5.1], [NDET.8.2], [NCBK.2.11])*
 
 ## Atoms
 
@@ -123,7 +124,7 @@ What [`atoms`](#atoms-1) read: the atoms in file order, and `ok` or why the walk
 
 Reads the atoms of a `.dsc` or a recording, with no session.
 
-It reads the framing alone. An atom with an unknown field number is listed, whatever its [band](inv:specs:std:label#rfcs-16-3).
+It reads the framing alone. An atom with a field number this runtime has no atom for is listed, as `unknown(Field)`.
 
 The walk stops at the first frame that is not well formed, with `parse` and the offset in the detail, and keeps the atoms before it:
 

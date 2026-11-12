@@ -15,8 +15,6 @@ import pytest
 import pyds
 from pyds import AtomKind, atoms
 
-from future_atom import UNKNOWN_SKIP_FIELD, frame_future_atom
-
 
 def _record(eng, run) -> bytes:
     """What libds's recorder writes while `run(eng)` runs, on real disk."""
@@ -51,10 +49,15 @@ def test_frame_refuses_a_four_letter_magic():
 def test_rfcs_19_6__writer_refuses_unallocated_field():
     """[RFCS.19.6]: a writer must not frame at a field number the registry
     does not allocate. `pyds.atoms.frame` refuses before calling libds; libds's
-    own refusal is test_rfcs_codec.c's test of this name.
+    own refusal is test_rfcs_codec.c's test of this name. The number is chosen
+    by the property under test, the first the registry does not allocate, so
+    an allocation moves it rather than turning the test into a frame of a
+    known atom.
     """
+    unallocated = next(n for n in range(1, 1 << 29) if n not in AtomKind)
     with pytest.raises(ValueError):
-        atoms.frame(UNKNOWN_SKIP_FIELD, b"x")
+        atoms.frame(unallocated, b"x")
+    assert atoms.frame(AtomKind.CLOCK_ADVANCE, b"x"), "the control frames"
 
 
 def test_iter_atoms_roundtrip():
@@ -75,21 +78,9 @@ def test_iter_atoms_truncated_prefix():
 
 def test_iter_atoms_truncated_body():
     # Declare a 10-byte body but supply only 3.
-    stream = frame_future_atom(AtomKind.FACT_ASSERT, b"x" * 10)[:-7]
+    stream = atoms.frame(AtomKind.FACT_ASSERT, b"x" * 10)[:-7]
     with pytest.raises(pyds.Error, match="truncated"):
         list(atoms.iter_atoms(stream))
-
-
-def test_unknown_skip_atom_preserves_the_atoms_after_it():
-    # [RFCS.16.2], [RFCS.16.3]. The length spans more than one varint byte.
-    stream = (atoms.frame(AtomKind.STREAM_HEADER, b"hdr")
-              + frame_future_atom(UNKNOWN_SKIP_FIELD, b"x" * 257)
-              + atoms.frame(AtomKind.FACT_ASSERT, b"after"))
-    got = [(a.kind, a.body) for a in atoms.iter_atoms(stream)]
-    assert got == [(AtomKind.STREAM_HEADER, b"hdr"),
-                   (UNKNOWN_SKIP_FIELD, b"x" * 257),
-                   (AtomKind.FACT_ASSERT, b"after")]
-    assert atoms.disposition(UNKNOWN_SKIP_FIELD) is atoms.Disposition.SKIP
 
 
 def test_recorded_header_from_a_live_engine():

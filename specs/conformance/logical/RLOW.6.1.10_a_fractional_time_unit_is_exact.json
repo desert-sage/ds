@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.10_a_fractional_time_unit_is_exact",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.10]: a unit of the `time` dimension whose factor is not a whole number of nanoseconds lowers as an integer-stored tier-1 unit does, `FN_INT_DIV_EXACT(P·x + R, Q)`, with a negative result `0`. `halfns` is `x * 0.5` ns, so P = 1, Q = 2, R = 0. Fact 1 holds 4, and `s.n::halfns` is 2 ns, so rule `conv` logs. Fact 2 holds 3: 1.5 ns is not whole, so the conversion raises a ComputationError of kind NOT_REPRESENTABLE and `conv` does not fire. The trap is raised during matching, so its `rule` is the node's `$alpha_<id>` ([LERR.9.2]), and rule `handler` logs the kind alone. Exactly [\"conv 1\", \"NOT_REPRESENTABLE\"]. A truncating division gives 1 ns for fact 2 and raises nothing. PATH PINNED: `dsc.quantity.rlow_6_1_10_assertion_of`'s `time` arm, which gives `asn_int` with `Time = yes` where Q is not 1, and `dsc.rete.rlow_6_1_10_int`'s `FN_INT_DIV_EXACT` under `FN_MAX`.",
+    "rules_ds": "unit halfns: time = x * 0.5\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::halfns == 2_ns\n->\n    log info \"conv {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 4 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": 3 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv 1", "NOT_REPRESENTABLE"]
+    }
+}

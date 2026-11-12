@@ -159,7 +159,7 @@ The cause of a `computation_error`: [`ds_trap_kind_t`](inv:integrator:std:doc#ca
 
 ### `engine_fault`
 
-**`:- type engine_fault ---> artefact_lied ; pattern_index ; binding_order ; order_key ; allocation ; pump_wcet ; unspecified_fault.`**
+**`:- type engine_fault ---> artefact_lied ; pattern_index ; binding_order ; order_key ; allocation ; pump_wcet ; internal ; unspecified_fault.`**
 
 The cause of an `engine_error`: [`ds_engine_fault_t`](inv:integrator:std:doc#callbacks/stream).
 

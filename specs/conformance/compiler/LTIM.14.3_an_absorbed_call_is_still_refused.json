@@ -1,0 +1,11 @@
+{
+    "id": "LTIM.14.3_an_absorbed_call_is_still_refused",
+    "clauses": ["LTIM.14.3"],
+    "category": "compiler",
+    "scenario": "[LTIM.14.3]: such a call is refused \"whether or not the rest of the expression would absorb its result\". `false and <the call> != <a constant>` would answer false without reading the call ([LNUL.4.2]), and the call still has no value to fold to, so the program is refused with DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate`'s `ltim_14_3_raising_calls`, which descends through `expr_children` and folds nothing of the enclosing `and`.",
+    "rules_ds": "import calendar\n\nschema T scope logical:\n    id: Int key\n\nrule r:\n    T t where t.id == 1 and false and calendar.date(2026, 2, 30) != calendar.date(1970, 1, 1)\n->\n    log info \"built\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

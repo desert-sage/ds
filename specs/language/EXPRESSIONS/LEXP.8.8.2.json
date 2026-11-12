@@ -1,0 +1,28 @@
+{
+  "id": "LEXP.8.8.2",
+  "prefix": "LEXP",
+  "doc": "EXPRESSIONS.md",
+  "parent": "LEXP.8.8",
+  "seq": 557,
+  "depth": 3,
+  "kind": "normative",
+  "compiler_only": true,
+  "heading": null,
+  "text": "[LEXP.8.8.2] **A right-hand side with no value is not foldable.** An operation\nhas no value to fold to when the engine would raise a fault evaluating it, or\nwhen its `Float` result is NaN ([LDET.3.6.2]). The compiler must refuse, with\n`DS_VALIDATE_CONST_NOT_FOLDABLE`, a `const` whose right-hand side contains such\nan operation, whether or not the rest of the expression would absorb its result:\nan `Int` zero divisor ([LEXP.7.15.1]), a negative shift count ([LEXP.7.14.1]), a\n`Float` to `Int` conversion of a value with no `Int` ([LCST.4.5.2]), or\na `calendar` call that raises ([LTIM.14.3]).\n\nA `const` holds a value, and `null` is the absence of one ([LNUL.2.1]). The\ncompiler must refuse, with the same code and under any annotation, a `const`\nwhose right-hand side contains `null` or a fallible `::T?` conversion\n([LCST.4.5.2]).\n\nAn operation that another clause\nrefuses over constant operands keeps that clause's code ([LEXP.3.7.4],\n[LEXP.4.2], [LEXP.7.8], [LEXP.10.2.2], [LINT.7.4]), so a `const` refuses a text\nas a rule does. `1 // 0` is [LEXP.10.2.2]'s and `1 << -1` is [LEXP.7.8]'s, in a\n`const` and in a rule alike. `1 // (1 - 1)`, which no other clause refuses, is\nthis clause's.\n\n",
+  "refs": [
+    "LCST.4.5.2",
+    "LDET.3.6.2",
+    "LEXP.3.7.4",
+    "LEXP.10.2.2",
+    "LEXP.4.2",
+    "LEXP.7.14.1",
+    "LEXP.7.15.1",
+    "LEXP.7.8",
+    "LINT.7.4",
+    "LNUL.2.1",
+    "LTIM.14.3"
+  ],
+  "errors": [
+    "DS_VALIDATE_CONST_NOT_FOLDABLE"
+  ]
+}

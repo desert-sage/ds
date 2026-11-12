@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_cross_dim_floordiv_rejects",
+    "category": "compiler",
+    "scenario": "[LUNI.8.4]: `//` of two values of different dimensions has no dimension DS can state, so `r.dist // r.mass` is refused. Pin: DS_VALIDATE_DIM_AMBIGUOUS. PATH PINNED: `dsc.typecheck.luni_8_3_class_of`, which classes `//` with `/`, and `dsc.types.luni_8_1_combine`'s `op_division` row with two different dimensions.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    dist: meter mutable\n    mass: kilogram mutable\n\nrule r:\n    R s where s.dist // s.mass > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

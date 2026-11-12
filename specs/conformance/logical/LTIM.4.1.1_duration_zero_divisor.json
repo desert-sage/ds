@@ -1,0 +1,15 @@
+{
+    "id": "LTIM.4.1.1_duration_zero_divisor",
+    "category": "logical",
+    "dead_rules_expected": ["divided"],
+    "scenario": "[LTIM.4.1.1] with [LEXP.7.15.1]: `Duration / Duration` divides as two `Int`s, so a zero `Duration` divisor raises a `ComputationError` of kind DIVIDE_BY_ZERO. Pin: `trapped` logs the kind, and `divided` does not fire. PATH PINNED: `dsc.rete`'s lowering of `/` with two `Duration` operands, on two `Int`s, and each runtime's all-`Int` zero-divisor trap.",
+    "rules_ds": "schema Trig scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule divided:\n    Trig t where t.d / 0_s > 0.5\n->\n    log info \"divided\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1, "d": 5000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["DIVIDE_BY_ZERO"]
+    }
+}

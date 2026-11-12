@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# Float `min` and `max` over both zeros, on the three backings that serve them
+# (`SeriesBackendWelfordEwma`, `SeriesBackendMonotonicDeque`,
+# `SeriesBackendReservoir`). `min` and `max` select under the order `pXX`
+# sorts by, -0 before +0, so of the two zeros `min` is -0 and `max` is +0 in
+# whichever order they arrived ([LSER.17.2]). Identity `a` takes +0.0 first,
+# `b` takes -0.0 first.
+#
+# `-9.0` is the cold read ([LSER.19.8]), below every asserted value.
+use default
+
+schema EA scope logical:
+    k: String key
+    v: Float mutable
+
+schema EW scope logical:
+    k: String key
+    v: Float mutable
+
+schema ES scope logical:
+    k: String key
+    v: Float mutable
+
+schema Ext scope ttl 1_h:
+    src: String
+    id: String
+    lo: Float
+    hi: Float
+
+series EA.v (by: k):
+    min, max all_time
+
+series EW.v (by: k):
+    min, max sliding 1_h
+
+series ES.v (by: k):
+    min, max sample 8
+
+rule from_ea:
+    EA e
+->
+    emit Ext src: "ea" id: e.k lo: e.min ?? -9.0 hi: e.max ?? -9.0
+
+rule from_ew:
+    EW e
+->
+    emit Ext src: "ew" id: e.k lo: e.min ?? -9.0 hi: e.max ?? -9.0
+
+rule from_es:
+    ES e
+->
+    emit Ext src: "es" id: e.k lo: e.min ?? -9.0 hi: e.max ?? -9.0

@@ -18,7 +18,7 @@
 :- include_module i64.       % DS Int is int64
 :- include_module value.     % ds_value
 :- include_module kind.      % GENERATED: fact_external.proto#Kind
-:- include_module chrono.    % instants, durations, the clock, one deadline heap
+:- include_module chrono.    % instants, durations, the clock
 :- include_module schema.    % slot kinds, identity roles, lifecycles
 :- include_module fact.      % facts, working-memory entries, identity projection
 :- include_module fault.     % faults, load errors, and each error's disposition

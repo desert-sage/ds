@@ -180,9 +180,18 @@ ds PROG.dsc Reading.csv Alarm.tsv Door.jsonl …      one file per schema, any n
 
 **The mode.** The session is **live** (DSTRACE_INTERACTIVE §2), started from the
 files. Every row is an integrator assert, merged across files by time, with a
-pump after each. Each row is then a step of its own, so each is a settled point
-and every shell feature works on the result, hypotheses included. `save %0`
-writes it as a trace.
+pump after each.
+
+**The clock stops at each engine deadline on the way** ([NLFC.2.5]). Before it
+moves to a later row, it moves to each engine deadline earlier than that row
+and pumps there, reading the next deadline again after each pump. A deadline at
+the row's own `@at` takes no step of its own: the row's pump is the one.
+Nothing past the last row is stepped. Batch mode (§9), the shell's live session
+and `ds dap`'s `facts` all feed rows this way (`core/facts.js` `stepDeadlines`).
+
+Each row and each deadline stop is then a step of its own, so each is a settled
+point and every shell feature works on the result, hypotheses included.
+`save %0` writes it as a trace.
 
 **Files.**
 
@@ -268,7 +277,8 @@ ds -b PROG.dsc FACTS… [--out DIR --format csv|tsv|jsonl] [-q]
   - The target is `DS_JS_TARGET` where it names one, else native where
     @ds-lang/ds's addon is installed, else wasm. `--version` says which,
     and with which compiler.
-- **The run** feeds the facts exactly as §8 does: merged by time, a pump after each.
+- **The run** feeds the facts as §8 does: merged by time, a pump after each,
+  and a pump at each engine deadline between rows.
 - **What the rules `log`** goes to stderr as `2.0s  WARNING  hot b`: the clock
   from the start, the level, the message.
 - **What the rules `publish`** is written out, with its slot values as they were
@@ -286,9 +296,10 @@ ds -b PROG.dsc FACTS… [--out DIR --format csv|tsv|jsonl] [-q]
   call's `timeout` due after that row does not fire, and a rule reading a series
   does not see the row's own sample, which absorbs after the pump that asserted
   it. `--until D`, a `Duration` from the start or whole nanoseconds, moves the
-  clock to `D` after the rows and any reply cycles (§9.1) and pumps once. It is
-  one move and one pump: a timer armed in that pump stays pending. A row past
-  `D` is refused as the run starts, naming the file and the line.
+  clock to `D` after the rows and any reply cycles (§9.1), through each engine
+  deadline earlier than `D`, pumping at each, and pumps once at `D`. A timer
+  armed in the pump at `D` stays pending. A row past `D` is refused as the run
+  starts, naming the file and the line.
 - **A single `.json` document of that shape is input too,** alongside the
   per-schema files. A schema may come from one source only, whether a
   per-schema file or a document.

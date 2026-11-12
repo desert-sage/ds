@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "monotonic_deque.h"
+#include "ring_buffer.h"    /* ds_series_signed_before, [LSER.17.2] */
 #include "ds_alloc.h"    /* DS_MALLOC/CALLOC/FREE -- IALC.9.1 routing */
 
 #define SBMD_INITIAL_CAP 16
@@ -217,14 +218,17 @@ void ds_series_mono_deque_update(ds_series_mono_deque_t *md,
     ds_mono_deque_entry_t entry = { .ts_ns = ts_ns, .value = value,
                                     .ivalue = 0, .seq = md->next_seq++ };
 
+    /* The trims keep each deque strictly monotone under [LSER.17.2]'s signed
+       order, so its front is the signed extreme: -0 is below +0, and a `>=`
+       trim would keep whichever zero arrived last. */
     while (!dq_empty(&md->min_dq)
-           && dq_back(&md->min_dq)->value >= value) {
+           && !ds_series_signed_before(dq_back(&md->min_dq)->value, value)) {
         dq_pop_back(&md->min_dq);
     }
     dq_push_back(&md->min_dq, entry);
 
     while (!dq_empty(&md->max_dq)
-           && dq_back(&md->max_dq)->value <= value) {
+           && !ds_series_signed_before(value, dq_back(&md->max_dq)->value)) {
         dq_pop_back(&md->max_dq);
     }
     dq_push_back(&md->max_dq, entry);

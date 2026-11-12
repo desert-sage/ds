@@ -1,0 +1,31 @@
+{
+  "id": "RLOW.6.1.10",
+  "prefix": "RLOW",
+  "doc": "LOWERING.md",
+  "parent": "RLOW.6.1",
+  "seq": 785,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[RLOW.6.1.10] **A number asserted into a unit lowers through the unit's conversion\nto the base unit** ([LUNI.8.5]). The compiler must lower `x::<unit>`, with `x` a\nnumber, by the first of these that applies:\n\n- where `<unit>` is a unit of the `time` dimension, its base unit included,\n  whose factor is a whole number of nanoseconds ($Q = 1$ and $R = 0$ below), to\n  `FN_DURATION_MUL(x, <factor>)` ([RLOW.6.1.6]). It yields `0` for a negative\n  `x`, since a `Duration` is never negative ([LTIM.1.3.1]), and raises past the\n  range as [LTIM.4.1.1] states;\n- where `<unit>` is its dimension's base unit, to `x`;\n- where the dimension's storage is `float64` ([LUNI.7.2]), to the arithmetic\n  expression nodes the engine already evaluates, with the constants the artefact\n  carries ([LUNI.2.7.1]): a tier-1 unit's affine map, and a tier-2 unit's\n  `to_base` ([LUNI.4.3]);\n- where the storage is an integer, `int64` or `int32` ([LUNI.4.1.1]), and the\n  unit is tier-1, to `FN_INT_DIV_EXACT(FN_INT_MUL_ADD_CHECKED(x, P, R), Q)`\n  ([RLOW.7.3.9]), or to `FN_INT_MUL_ADD_CHECKED(x, P, R)` when $Q = 1$. $P$, $R$\n  and $Q$ are the integers that write the unit's exact constants ([LUNI.4.3]) over\n  their least common denominator: $a = P/Q$ and $b = R/Q$, with $Q > 0$. A result\n  that is not a whole number of base units, and a product $P·x$ or a sum\n  $P·x + R$ outside the `Int` range, raises a `ComputationError` of kind\n  `NOT_REPRESENTABLE`. The conversion does not wrap: [LEXP.7.13.1]'s wrap is the\n  rule for arithmetic an author writes;\n- where the storage is an integer and the unit is tier-2, to its `to_base` over\n  `x` as `Float`, an `Int` converting round-to-nearest-even, then the cast that\n  [LUNI.7.2] states for a `float64` value landing in integer storage.\n\nOn the `time` dimension, a negative result of either integer lowering is `0`, as\n`FN_DURATION_MUL`'s is. Under the tier-1 integer lowering the checks above come\nfirst: a product, a sum or a result they refuse raises, though the result would be\nnegative, where `FN_DURATION_MUL` yields `0` for a product however far below the\nrange it lies ([LTIM.4.1.1]).\n\nIts constant folder must fold each to the value that lowering computes\n([LDET.3.3a.8]), and must not fold one that would raise. A non-base assertion is an operation and not a read of its\noperand: it does not stand as a slot in a hoisted conjunct ([RLOW.5.5]) or a join\nanchor ([IRET.7.5.1]).\n\n",
+  "refs": [
+    "IRET.7.5.1",
+    "LDET.3.3a.8",
+    "LEXP.7.13.1",
+    "LTIM.1.3.1",
+    "LTIM.4.1.1",
+    "LUNI.2.7.1",
+    "LUNI.4.1.1",
+    "LUNI.4.3",
+    "LUNI.7.2",
+    "LUNI.8.5",
+    "RLOW.5.5",
+    "RLOW.6.1.6",
+    "RLOW.7.3.9"
+  ],
+  "symbols": [
+    "FN_DURATION_MUL",
+    "FN_INT_DIV_EXACT",
+    "FN_INT_MUL_ADD_CHECKED"
+  ]
+}

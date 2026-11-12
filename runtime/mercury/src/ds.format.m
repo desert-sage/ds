@@ -78,6 +78,15 @@
 :- pred civil_from_days(int64::in, int64::out, int64::out, int64::out)
     is det.
 
+    % [LTIM.8.4]'s compact form: the nonzero components, largest unit first, and no
+    % sign [LTIM.8.4.2]; `0s` for zero or a negative count [LTIM.1.3.1].
+    %
+:- func ltim_8_4_render_duration(int64) = string.
+
+    % `YYYY-MM-DD` [LTIM.8.2.1]; the year zero-padded to four places after any sign.
+    %
+:- func ltim_8_2_1_render_date(int64) = string.
+
 %-----------------------------------------------------------------------------%
 :- implementation.
 
@@ -86,6 +95,7 @@
 :- import_module float.
 :- import_module int.
 :- import_module int64.
+:- import_module integer.
 :- import_module maybe.
 :- import_module pair.
 :- import_module string.
@@ -487,3 +497,52 @@ civil_from_days(Days, Y, Mo, D) :-
     D = DoY - (153i64 * Mp + 2i64) // 5i64 + 1i64,
     Mo = ( if Mp < 10i64 then Mp + 3i64 else Mp - 9i64 ),
     Y = ( if Mo =< 2i64 then Y0 + 1i64 else Y0 ).
+
+    % [LTIM.8.4]'s units, largest first.
+    %
+:- func ltim_8_4_units = list({string, int64}).
+
+ltim_8_4_units = [
+    {"h", 3600000000000i64},
+    {"m", 60000000000i64},
+    {"s", 1000000000i64},
+    {"ms", 1000000i64},
+    {"us", 1000i64},
+    {"ns", 1i64}
+].
+
+ltim_8_4_render_duration(Ns) = Out :-
+    ( if Ns =< 0i64 then
+        Out = "0s"
+    else
+        Out = string.append_list(ltim_8_4_parts(ltim_8_4_units,
+            integer.from_int64(Ns)))
+    ).
+
+:- func ltim_8_4_parts(list({string, int64}), integer) = list(string).
+
+ltim_8_4_parts([], _) = [].
+ltim_8_4_parts([{Sym, Ns} | Units], Magnitude) = Parts :-
+    U = integer.from_int64(Ns),
+    Q = Magnitude // U,
+    Rest = ltim_8_4_parts(Units, Magnitude - Q * U),
+    ( if Q = integer.zero then
+        Parts = Rest
+    else
+        Parts = [integer.to_string(Q) ++ Sym | Rest]
+    ).
+
+ltim_8_2_1_render_date(Days) =
+        ltim_zpad(Y, 4) ++ "-" ++ ltim_zpad(M, 2) ++ "-" ++ ltim_zpad(D, 2) :-
+    civil_from_days(Days, Y, M, D).
+
+:- func ltim_zpad(int64, int) = string.
+
+ltim_zpad(V, Width) = Sign ++ string.pad_left(Digits, '0', Width - string.length(Sign)) :-
+    ( if V < 0i64 then
+        Sign = "-",
+        Digits = integer.to_string(-integer.from_int64(V))
+    else
+        Sign = "",
+        Digits = integer.to_string(integer.from_int64(V))
+    ).

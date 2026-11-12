@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.8.8.2_int_zero_divisor_is_refused",
+    "category": "compiler",
+    "scenario": "[LEXP.8.8.2] with [LEXP.7.15.1]: an `Int` zero divisor raises, so the operation has no value to fold to and the compiler refuses the `const`. The divisor is `(1 - 1)`, which folds to zero and is no literal, so no other clause refuses it ([LEXP.10.2.2] refuses a literal `0`). The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. Pin: DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate.lexp_8_8_2_no_value`, on `dsc.dstest.fold_int_binary`'s zero-divisor failure.",
+    "rules_ds": "const X = 1 // (1 - 1)\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

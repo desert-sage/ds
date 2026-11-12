@@ -299,6 +299,8 @@ engine_fault_of(Err) = Fault :-
         Fault = Numbered
     else if Err = ee_duplicate_order_key then
         Fault = order_key
+    else if Err = ee_internal then
+        Fault = internal
     else
         Fault = unspecified_fault
     ).
@@ -311,6 +313,7 @@ fault_number(3u32, binding_order).
 fault_number(4u32, order_key).
 fault_number(6u32, allocation).
 fault_number(7u32, pump_wcet).
+fault_number(8u32, internal).
 
 :- func info_of(intern_table, fault_site) = fault_info.
 
@@ -450,7 +453,6 @@ load_status(lek_decompress) = dsc_decompress.
 load_status(lek_bad_first_atom) = dsc_bad_magic.
 load_status(lek_empty_atom) = dsc_decode.
 load_status(lek_malformed_field_number) = dsc_decode.
-load_status(lek_unknown_inject) = fs_unknown_inject.
 load_status(lek_retp_invalid) = retp_invalid.
 load_status(lek_retp_index_oob) = retp_index_oob.
 load_status(lek_pir_type) = dsc_semantic.

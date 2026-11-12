@@ -92,6 +92,7 @@ ds_result_t ds_rete_engine_create(ds_rete_engine_t **out)
 
     ds_result_t r = ds_rete_intern_init(&e->intern);
     if (r.status != DS_OK) { DS_FREE(e); return r; }
+    ds_rete_intern_set_fault_hook(e->intern, ds_rete_raise_intern_fault, e);
 
     e->schema_name_map = DS_CALLOC(NAME_MAP_INIT_CAP, sizeof(ds_rete_schema_t *));
     if (!e->schema_name_map) {
@@ -137,6 +138,10 @@ ds_result_t ds_rete_engine_create(ds_rete_engine_t **out)
 static void free_schema(ds_rete_schema_t *s)
 {
     if (!s) return;
+    for (uint16_t i = 0; i < s->slot_count; i++) {     /* [RDSC.5.5.9] */
+        ds_rete_expr_free_tree(s->slots[i].to_stored);
+        ds_rete_expr_free_tree(s->slots[i].from_stored);
+    }
     DS_FREE(s->slots); /* slot names are interned */
     ds_oa_free(&s->id_map);
     DS_FREE(s->id_key_slots);
@@ -744,7 +749,10 @@ static ds_result_t eval_actions(ds_rete_engine_t         *engine,
     return r;
 }
 
-#ifndef NDEBUG
+/* Under DS_DEBUG alone ([IRET.28.15]), never by default: run at every pump,
+ * the walk costs more than linear in what each node holds. The gate's lanes
+ * define DS_DEBUG; a release row does not. */
+#ifdef DS_DEBUG
 static void rete_invariant_check(const ds_rete_engine_t *engine)
 {
     for (uint32_t i = 0; i < engine->owned_beta_count; i++)
@@ -1117,7 +1125,7 @@ ds_result_t ds_rete_run(ds_rete_engine_t *engine,
         }
     }
 
-#ifndef NDEBUG
+#ifdef DS_DEBUG
     /* Not after a halt ([LERR.1.4.7]): a cascade may have been cut short, and a
        halted tier is never matched against again. */
     if (!engine->halted) rete_invariant_check(engine);

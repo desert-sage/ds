@@ -40,6 +40,7 @@ message Expr {
         // as a Duration. Engine state, not a slot; `dwell` lowers to
         // FN_MONOTONIC_NS minus this ([LEXP.9.5.1]).
         uint32      entry_stamp = 21;  // pattern_index
+        int64       lit_time   = 22;  // [RLOW.6.1.8] UTC nanoseconds, tz_offset_ns 0
     }
 
     // An interpolated string is one InterpExpr, and no format string reaches the runtime.
@@ -62,12 +63,12 @@ message Expr {
     // `(j.a + 1) > 5` buries the projection a level down. Both runtimes have
     // this problem identically, so it is not an artefact of either.
     //
-    // PROPAGATION: taint FLOWS through a `let`, and CLEARS at a `::` cast and at
-    // `??`. Both of those ESTABLISH the type and carry their own disposition, so
-    // a value on the far side of one was checked and a later ill-typed operation
-    // on it means something else is wrong — which is the EngineError criterion
-    // exactly. Note the shape: the two constructs an author uses to HANDLE a
-    // `Json` value are the two that end its provenance.
+    // PROPAGATION: taint FLOWS through a `let` and through `??`, and CLEARS at a
+    // `::` cast. A cast ESTABLISHES the type and carries its own disposition
+    // ([LCST.4.5.11]), so a value on the far side of one was checked and a later
+    // ill-typed operation on it means something else is wrong — which is the
+    // EngineError criterion exactly. `??` checks nothing: a present left
+    // operand passes through whatever its kind.
     //
     // TERMINATION: taint is RULE-LOCAL. A value reaching a slot has passed
     // through `emit` and the slot is schema-committed, so provenance ends at the

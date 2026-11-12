@@ -140,6 +140,7 @@ ds_rete_expr_t *ds_rete_clone_expr(ds_rete_clone_ctx_t *cx,
     switch (src->kind) {
     case DS_RETE_EXPR_LIT_INT:   e->lit_int   = src->lit_int;   break;
     case DS_RETE_EXPR_LIT_FLOAT: e->lit_float = src->lit_float; break;
+    case DS_RETE_EXPR_LIT_TIME:  e->lit_time  = src->lit_time;  break;
     case DS_RETE_EXPR_LIT_BOOL:  e->lit_bool  = src->lit_bool;  break;
     case DS_RETE_EXPR_LIT_STR:   e->lit_str   = clone_cstr(cx, src->lit_str); break;
     case DS_RETE_EXPR_VAR:       e->var       = src->var;       break;

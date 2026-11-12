@@ -7,44 +7,19 @@
   "depth": 3,
   "kind": "normative",
   "heading": null,
-  "text": "[LTIM.2.8.2] **The monotonic clock** never decreases. Its zero is\nunspecified: only the difference between two of its readings has a meaning, and\nthe runtime **must not** give a single reading any other (process uptime, time\nsince engine creation, a calendar instant).\n\nEvery relative-time mechanism **must** read the monotonic clock and no other:\nTTL expiry, `after`, a call's `timeout`, `cooldown`, a single pattern's `within`,\n`dwell` and series windows. A change to the wall clock therefore moves none of them.\n\nA sequence's `within` (`then … within`) is not one of them. It bounds when the\nevents **happened**, not when the engine received them, so it compares the\nfacts' own `ts` values ([LTHE.2.2.2]), which are event time.\n\n",
+  "text": "[LTIM.2.8.2] **The monotonic clock** never decreases. Its zero is\nunspecified: only the difference between two of its readings has a meaning, and\nthe runtime **must not** give a single reading any other (process uptime, time\nsince engine creation, a calendar instant).\n\nIts range is the `Duration` range ([LTIM.1.3.1]): 0 to $2^{63} - 1$\nnanoseconds. A host call that would move it past the top returns\n`DS_ERR_TIME_RANGE` ([NTST.3.1], [LTIM.1.1.5]). The runtime **must** hold a\nlive reading past the top at the top ([NLFC.5.4]), so the clock neither wraps\nnor decreases.\n\nEvery relative-time mechanism **must** read the monotonic clock and no other:\nTTL expiry, `after`, a call's `timeout`, `cooldown`, a single pattern's `within`,\n`dwell` and series windows. A change to the wall clock therefore moves none of them.\n\nA sequence's `within` (`then … within`) is not one of them. It bounds when the\nevents **happened**, not when the engine received them, so it compares the\nfacts' own `ts` values ([LTHE.2.2.2]), which are event time.\n\n",
   "refs": [
-    "LTHE.2.2.2"
+    "LTHE.2.2.2",
+    "LTIM.1.1.5",
+    "LTIM.1.3.1",
+    "NLFC.5.4",
+    "NTST.3.1"
+  ],
+  "errors": [
+    "DS_ERR_TIME_RANGE"
   ],
   "checks": {
     "idris": [
-      {
-        "path": "formal/idris/MockClock.idr",
-        "name": "ntst_3_1__mono_never_decreases",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "'The monotonic clock never decreases', on the mock, across one mutation once an input has been consumed: the refusal of [NTST.3.1] is how the mock keeps it."
-      },
-      {
-        "path": "formal/idris/MockClock.idr",
-        "name": "ntst_3_1__run_never_decreases",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "'The monotonic clock never decreases', on the mock, across any run of mutations once an input has been consumed."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAfter.idr",
-        "name": "ltac_5_1__clock_after_lte",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "The monotonic clock over a history never goes back."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkAfter.idr",
-        "name": "ltac_5_3__due_rising",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "On the monotonic clock, which never goes back, `>= fire_at` once true stays true."
-      },
       {
         "path": "formal/idris/Rete/NetworkCooldown.idr",
         "name": "lcdb_3_2_1_1__rhs_gated",
@@ -52,38 +27,6 @@
         "role": "definition",
         "verdict": "proven",
         "note": "`cooldown` reads the monotonic clock and no other: the gate's instant is the net's clock, the monotonic sample, and the wall clock is nowhere in this engine."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkSampled.idr",
-        "name": "rarc_5_6_3__consumed_clock",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "The clock after a step is `next_clock` of the clock and the sample: it never runs back, and for a conforming source's sample is the sample itself."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkThen.idr",
-        "name": "lthe_2_2_2__tick_leaves_chain",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "A sequence chain is not re-evaluated when the monotonic clock moves."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkThen.idr",
-        "name": "lthe_2_2_2__tick_leaves_engine",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "The engine with a sequence alone is unmoved by the monotonic clock."
-      },
-      {
-        "path": "formal/idris/Rete/NetworkThen.idr",
-        "name": "lthe_2_2_2__untimed",
-        "tag": "spec",
-        "role": "definition",
-        "verdict": "proven",
-        "note": "A sequence is not among the monotonic clock's readers. A fixture."
       },
       {
         "path": "formal/idris/Rete/NetworkTimed.idr",
@@ -326,22 +269,6 @@
         "note": "'Every relative-time mechanism must read the monotonic clock and no other': `now()` is not one of them, and its test is not a monotonic gate, by refutation."
       },
       {
-        "path": "formal/idris/SeriesWindow.idr",
-        "name": "lsig_2_5_1__discount_after_eviction",
-        "tag": "derives",
-        "role": "theorem",
-        "verdict": "proven",
-        "note": "The series-window consequence of a clock that does not go back: eviction at an assertion's sample and the discount at a later query's sample see one membership, whatever the wall clock read at either."
-      },
-      {
-        "path": "formal/idris/SeriesWindow.idr",
-        "name": "lsig_2_5_1__out_stays_out",
-        "tag": "derives",
-        "role": "lemma",
-        "verdict": "proven",
-        "note": "'Series windows read the monotonic clock and no other': a value out of a window at one monotonic sample is out at every later one, the two wall samples arbitrary and unused."
-      },
-      {
         "path": "formal/idris/TwoClocks.idr",
         "name": "ltim_2_8_2__cooled",
         "tag": "spec",
@@ -481,6 +408,21 @@
       {
         "path": "formal/tla/clock_sample.tla",
         "name": "ltim_2_8_2__platform_mono",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "ltim_2_8_2__MAXCLOCK",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "ltim_2_8_2__Tick",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "ltim_2_8_2__clock",
         "tag": "spec"
       }
     ]

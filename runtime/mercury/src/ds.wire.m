@@ -3,8 +3,9 @@
 %-----------------------------------------------------------------------------%
 % ds.wire -- protobuf primitives: varints, tags, length-delimited slices.
 %
-% Hand-written: a generated parser accepts an `Atom` with no `oneof` member set
-% [RFCS.19.3] and carries on past an unknown inject-band number [RFCS.18.8].
+% Hand-written: a generated parser accepts an `Atom` with no `oneof` member set,
+% and carries on past a field number its schema does not know, where a DS reader
+% refuses both [RFCS.19.3].
 %
 % Every read returns a result rather than failing: a load error names the byte
 % offset and the violated clause [RDSC.11.2].

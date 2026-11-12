@@ -1558,9 +1558,9 @@ ds_result_t ds_rete_beta_presz_ltok(ds_rete_beta_node_t *node, uint32_t cap)
     return ds_oa_reserve(&node->ltok_idx_map, cap);
 }
 
-#ifndef NDEBUG
-/* Asserted at pump quiescence, so an index and a counter that drift apart fail
- * at their source node. */
+#ifdef DS_DEBUG
+/* Asserted at pump quiescence in a DS_DEBUG build, so an index and a counter
+ * that drift apart fail at their source node. */
 void ds_rete_beta_check(const ds_rete_beta_node_t *node)
 {
     if (!node) return;
@@ -1608,7 +1608,7 @@ void ds_rete_beta_check(const ds_rete_beta_node_t *node)
         assert(ds_oa_list_len(facts) > 0);
     }
 }
-#endif /* NDEBUG */
+#endif /* DS_DEBUG */
 
 /* ---- Beta node deep-copy --------------------------------------------- */
 

@@ -1,0 +1,19 @@
+{
+    "id": "LIMP.1.5_a_library_const_ignores_the_importers_const_of_that_name",
+    "clauses": ["LIMP.1.5", "LEXP.8.8"],
+    "category": "logical",
+    "scenario": "[LIMP.1.5]: the names a file's declarations use resolve in that file's own scope, and the importer takes no part. Library `ha` declares `const _BASE = 10` and `const LIMIT = _BASE * 2`, and the importer declares its own `const _BASE = 99`. The rule compares `ha.LIMIT` with a slot: a fact of 20 logs and a fact of 198 does not. Exactly [\"hit 1\"]. A compiler that resolves `_BASE` in the importer's scope folds `ha.LIMIT` to 198 and logs `hit 2` instead. PATH PINNED: `dsc.resolve.const_scope`, whose `lcs_consts` replaces the importer's `rf_consts`.",
+    "rules_ds": "import ha\n\nconst _BASE = 99\n\nschema S scope logical:\n    k: Int key\n    v: Int mutable\n\nrule r:\n    S x where x.v == ha.LIMIT\n->\n    log info \"hit {x.k}\"\n",
+    "libraries": {
+        "ha": "const _BASE = 10\nconst LIMIT = _BASE * 2\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "k": 1, "v": 20 } },
+            { "op": "assert", "schema": "S", "slots": { "k": 2, "v": 198 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["hit 1"]
+    }
+}

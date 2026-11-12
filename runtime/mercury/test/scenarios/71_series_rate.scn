@@ -1,16 +1,23 @@
-# Sliding `rate`: one sample, two samples, and a window emptied underneath
-# them. `Rate.r` is a payload slot, so `verify recordings` compares the value.
+# Sliding `rate`: cold, one sample, two samples, and a window emptied
+# underneath them. `Rate.r` is a payload slot, so `verify recordings` compares
+# the value. A pump reads the samples earlier pumps absorbed ([LSER.8.6]):
 #
-#   pump 1  one sample, no elapsed time: `rate` is null, written as -1.0
-#   pump 2  two samples 2 s apart, 10.0 -> 30.0: (30 - 10) / 2 = 10.0
-#   pump 3  20 s later, past the 10 s window: one sample again, -1.0. The
-#           value changes (31.0), since a no-op reassert would not fire the
-#           rule ([LFAC.2.5.1]).
+#   pump 1  t = 0: cold, -1.0
+#   pump 2  t = 2 s: [10 @0], one sample, no elapsed time: null, -1.0
+#   pump 3  t = 3 s: [10 @0, 30 @2s]: (30 - 10) * 1e9 / 2e9 = 10.0
+#   pump 4  t = 23 s, window (13 s, 23 s]: every sample has left it, cold, -1.0
+#
+# Every assert changes its value, since a no-op reassert would not fire the
+# rule ([LFAC.2.5.1]).
+# @spec [LSER.16.9] [LSER.19.8]
 assert Flow k=a v=10.0
 pump
 advance 2000000000
 assert Flow k=a v=30.0
 pump
-advance 20000000000
+advance 1000000000
 assert Flow k=a v=31.0
+pump
+advance 20000000000
+assert Flow k=a v=32.0
 pump

@@ -93,6 +93,8 @@ validate_file(RF, Result) :-
     list.foldl(lgra_13_5_series_windows(RF), File ^ af_decls, [],
         RevSeriesWindows),
     list.foldl(lgra_2_8_11_time_expr_names(RF), File ^ af_decls, [],
+        RevTimeNames0),
+    list.foldl(luni_2_4_1_time_expr_literals, File ^ af_decls, RevTimeNames0,
         RevTimeNames),
     list.foldl(lgra_23_2_service_residue(RF), File ^ af_decls, [],
         RevKwargMods),
@@ -371,7 +373,7 @@ lgra_24_2_placement(Decl, !FirstBlock, !FirstRule, !Errors) :-
 lgra_24_2_block(RF, B, !Errors) :-
     Scope = rule_scope(ident("initial", B ^ ain_pos), map.init, map.init,
         map.init, map.init, map.init),
-    Env = type_env(RF, Scope, da_reported, set.init),
+    Env = type_env(RF, Scope, set.init),
     list.foldl(lgra_24_2_item(RF, Env), B ^ ain_items, !Errors).
 
     %@spec [LGRA.24.2]
@@ -835,7 +837,7 @@ whole_library_import(ad_import(Import)) :-
 unit_decl_checks(RF, Opaque, Decl, !Errors) :-
     ( if Decl = ad_unit(Unit) then
         (
-            Unit = au_symbol(Symbol, Dimension, Body, _, _, _, _, _),
+            Unit = au_symbol(Symbol, Dimension, Body, _, _, _, _, DimRef),
             ( if
                 Opaque = no,
                 not dimension_or_scalar(RF, Dimension ^ id_name)
@@ -851,6 +853,7 @@ unit_decl_checks(RF, Opaque, Decl, !Errors) :-
                 true
             ),
             luni_4_3_affine(Symbol, Body, !Errors),
+            luni_2_4_1_unit_constants(RF, Symbol, DimRef, Body, !Errors),
             luni_4_3_tier2_body(Symbol, Body, !Errors)
         ;
             Unit = au_formula(Name, _, Lines, _),
@@ -896,6 +899,36 @@ luni_4_3_affine(Symbol, Body, !Errors) :-
                 ++ "`pi` (`from math import pi`); a non-affine same-dimension "
                 ++ "conversion is written as a tier-2 `to_base:` / "
                 ++ "`from_base:` block") | !.Errors]
+    else if luni_4_3_zero_slope(Body) then
+        !:Errors = [with_hint(error_at(dv_unit_body_not_affine,
+            Symbol ^ id_pos,
+            "`unit " ++ Symbol ^ id_name ++ "`'s conversion has no inverse: "
+                ++ "its coefficient of `x` is zero, so every value of the unit "
+                ++ "is one value of the base unit ([LUNI.4.3])"),
+            "a tier-1 body reduces to `a*x + b` with `a` not zero; a body "
+                ++ "such as `= 5`, `= x * 0` or `= x - x + 3` names a constant, "
+                ++ "not a unit") | !.Errors]
+    else
+        true
+    ).
+
+    % A tier-1 unit's constants fit what the compiler emits them as, refused at
+    % the declaration whether or not the unit is used.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_unit_constants(resolved_file::in, ident::in, decl_ref::in,
+                                  ast_unit_body::in,
+                                  list(diagnostic)::in, list(diagnostic)::out)
+    is det.
+
+luni_2_4_1_unit_constants(RF, Symbol, DimRef, Body, !Errors) :-
+    ( if luni_2_4_1_unit_out_of_range(RF, DimRef, Body, Why) then
+        !:Errors = [with_hint(error_at(dv_constant_out_of_range,
+            Symbol ^ id_pos,
+            "`unit " ++ Symbol ^ id_name ++ "`'s conversion has no runtime "
+                ++ "value: " ++ Why ++ "; it is never wrapped or saturated "
+                ++ "([LUNI.2.4.1])"),
+            "write the unit against a base unit nearer its size") | !.Errors]
     else
         true
     ).
@@ -1020,7 +1053,11 @@ formula_symbol(RF, Formula, Symbol, !Errors) :-
     is det.
 
 lgra_9_8_11_formula_body(RF, Line, !Errors) :-
-    lgra_9_8_11_body_calls(RF, Line ^ afl_name, Line ^ afl_body, !Errors).
+    lgra_9_8_11_body_calls(RF, Line ^ afl_name, Line ^ afl_body, !Errors),
+    % The parameter is no constant, whatever `const` shares its name.
+    Scope = RF ^ rf_consts :=
+        map.delete(RF ^ rf_consts, Line ^ afl_param ^ id_name),
+    ltim_14_3_rule_expression(Scope, Line ^ afl_body, !Errors).
 
     %@helper
 :- pred lgra_9_8_11_body_calls(resolved_file::in, ident::in, lgra_9_3_1_expr::in,
@@ -1149,8 +1186,6 @@ fx_selector(Expr) :-
         Step ^ cs_right = ex_string(_, _)
     ).
 
-    % The annotation mismatch is checked only where the value is a literal.
-    %
     %@spec [LGRA.4.1]
 :- pred lgra_4_1_consts(resolved_file::in, list(ast_decl)::in,
                         list(diagnostic)::out) is det.
@@ -1183,10 +1218,16 @@ last_declared(Const, I, I + 1, !Last) :-
 const_checks(_, _, [], _, !Errors).
 const_checks(RF, Last, [Const | Later], I, !Errors) :-
     ( if Const ^ acn_form = acf_value(MaybeAnnotation, Expr) then
+        Before = list.length(!.Errors),
         list.foldl(const_forward(Last, I), expr_names(Expr), !Errors),
         list.foldl(const_runtime(Const), expr_runtime_reads(Expr), !Errors),
         list.foldl(ltim_14_3_const_raises(Const),
             ltim_14_3_raising_calls(RF, Expr), !Errors),
+        % A program's text is refused with the code a rule gives it.
+        lexp_10_2_2_zero_divisor(const_env(RF, Const), Expr, !Errors),
+        lexp_8_8_2_no_value(RF, Const, Expr, !Errors),
+        luni_8_4_const(RF, Const, Expr, !Errors),
+        lexp_8_8_not_constant(RF, Const, Expr, Before, !Errors),
         (
             MaybeAnnotation = yes(Annotation),
             const_annotation(RF, Const, Annotation, Expr, !Errors)
@@ -1258,6 +1299,197 @@ ltim_14_3_raising_calls(RF, Expr) = Positions :-
     Positions = Here ++ list.condense(list.map(ltim_14_3_raising_calls(RF),
         expr_children(Expr))).
 
+    % Every operation in the right-hand side with no value to fold to, whether or
+    % not the rest of the expression would absorb its result. The site is the
+    % operation whose operands all fold and whose own result does not. An
+    % operation another clause refuses over constant operands keeps that clause's
+    % code, and a runtime read or a `calendar` call that raises is reported where
+    % `const_checks` walks for it.
+    %
+    %@spec [LEXP.8.8.2]
+:- pred lexp_8_8_2_no_value(resolved_file::in, ast_const::in,
+                            lgra_9_3_1_expr::in,
+                            list(diagnostic)::in, list(diagnostic)::out) is det.
+
+lexp_8_8_2_no_value(RF, Const, E, !Errors) :-
+    list.foldl(lexp_8_8_2_no_value(RF, Const), expr_children(E), !Errors),
+    ( if E = ex_null(NullPos) then
+        !:Errors = [with_hint(error_at(dv_const_not_foldable, NullPos,
+            "`const " ++ const_name(Const) ++ "`: a `const` holds a value, and "
+                ++ "`null` is the absence of one ([LEXP.8.8.2])"),
+            "use `null` in the rule that needs it") | !.Errors]
+    else if
+        E = ex_name(Id),
+        lexp_4_2_unusable(Id ^ id_name),
+        not map.contains(RF ^ rf_consts, Id ^ id_name)
+    then
+        !:Errors = [error_at(dv_nan_value, Id ^ id_pos,
+            "`const " ++ const_name(Const) ++ "`: `nan` is reserved and is not "
+                ++ "a usable value ([LEXP.4.2])") | !.Errors]
+    else if
+        E = ex_binary(Op, L, R, Pos),
+        lexp_7_1a_arithmetic(Op),
+        ( lexp_7_1a_folds_to_string(RF, L)
+        ; lexp_7_1a_folds_to_string(RF, R)
+        )
+    then
+        !:Errors = [with_hint(error_at(dv_bad_operand_type, Pos,
+            "`const " ++ const_name(Const) ++ "`: the arithmetic operators "
+                ++ "take `Int` or `Float` ([LEXP.7.1a], [LEXP.8.8])"),
+            "there is no string `+`; write the whole string as one literal")
+            | !.Errors]
+    else if
+        E = ex_binary(bo_interval, L, R, Pos),
+        lexp_8_8_int_constant(RF, L, Start),
+        lexp_8_8_int_constant(RF, R, End),
+        End < Start
+    then
+        !:Errors = [with_hint(error_at(dv_interval_inverted, Pos,
+            "`const " ++ const_name(Const) ++ "`: this interval ends before it "
+                ++ "starts ([LINT.7.4])"),
+            "an interval runs from its start to a later end; swap the "
+                ++ "endpoints") | !.Errors]
+    else if
+        E = ex_call(ex_slot(Receiver, Method, _), Args, Pos),
+        Name = Method ^ id_name,
+        ( Name = "bits" ; Name = "sign_extend" ; Name = "swap_bytes" ),
+        lexp_8_8_int_constant(RF, Receiver, _),
+        lexp_3_7_3_outside_domain(Name,
+            list.map(constant_argument(RF), Args), Why)
+    then
+        !:Errors = [with_hint(error_at(dv_bit_field_range, Pos,
+            "`." ++ Name ++ "(...)` " ++ Why ++ " ([LEXP.3.7.3], "
+                ++ "[LEXP.3.7.4])"),
+            "a field is 1 to 64 bits wide and lies within bits 0 to 63; "
+                ++ "`swap_bytes` takes a width of 16, 32 or 64")
+            | !.Errors]
+    else if
+        operation_operands(E, Operands),
+        list.all_true(lexp_8_8_1_folds(RF), Operands),
+        not lexp_8_8_1_folds(RF, E),
+        not const_reported_elsewhere(RF, Const, E)
+    then
+        !:Errors = [with_hint(error_at(dv_const_not_foldable, expr_start(E),
+            "`const " ++ const_name(Const) ++ "`: this operation has no value "
+                ++ "to fold to: the engine would raise evaluating it, or its "
+                ++ "`Float` result is NaN, or it is not a compile-time "
+                ++ "operation ([LEXP.8.8], [LEXP.8.8.2])"),
+            "correct the operands, or compute the value in the rule that "
+                ++ "needs it") | !.Errors]
+    else
+        true
+    ).
+
+    %@helper
+:- pred lexp_7_1a_arithmetic(lgra_9_3_1_binary_op::in) is semidet.
+
+lexp_7_1a_arithmetic(bo_add).
+lexp_7_1a_arithmetic(bo_sub).
+lexp_7_1a_arithmetic(bo_mul).
+lexp_7_1a_arithmetic(bo_div).
+lexp_7_1a_arithmetic(bo_floordiv).
+lexp_7_1a_arithmetic(bo_mod).
+
+    % The operands of a node that computes something. A literal or a name
+    % computes nothing, and a name that does not fold is reported where it is
+    % read.
+    %
+    %@helper
+:- pred operation_operands(lgra_9_3_1_expr::in, list(lgra_9_3_1_expr)::out)
+    is semidet.
+
+operation_operands(ex_unary(_, E, _), [E]).
+operation_operands(ex_not(E, _), [E]).
+operation_operands(ex_binary(_, L, R, _), [L, R]).
+operation_operands(ex_compare(First, Steps, _),
+    [First | list.map(step_right, Steps)]).
+operation_operands(ex_call(_, Args, _), Args).
+operation_operands(ex_cast(E, _, _, _), [E]).
+
+    % An operation another check refuses, with its own code, wherever it
+    % stands: a runtime read, a `calendar` call that raises, a division by a
+    % literal zero ([LEXP.10.2.2]) and a shift by a negative literal
+    % ([LEXP.7.8]).
+    %
+    %@helper
+:- pred const_reported_elsewhere(resolved_file::in, ast_const::in,
+                                 lgra_9_3_1_expr::in) is semidet.
+
+const_reported_elsewhere(RF, Const, E) :-
+    (
+        E = ex_call(ex_name(Callee), _, _),
+        runtime_read_function(Callee ^ id_name)
+    ;
+        ltim_14_3_calendar_raises(RF, E)
+    ;
+        lexp_10_2_2_literal_zero(const_env(RF, Const), E, _, _)
+    ;
+        E = ex_binary(Op, _, Right, _),
+        lexp_7_8_negative_shift(Op, Right)
+    ).
+
+    % A right-hand side is typed with no rule in scope.
+    %
+    %@helper
+:- func const_env(resolved_file, ast_const) = type_env.
+
+const_env(RF, Const) = type_env(RF,
+    rule_scope(Const ^ acn_name, map.init, map.init, map.init, map.init,
+        map.init),
+    set.init).
+
+    % A right-hand side is type-checked whole, annotated or not: [LUNI.8.3] exempts
+    % only a unit's and a formula's bodies. A refusal already reported for the
+    % same site is not reported twice. A shift by a negative literal keeps
+    % [LEXP.7.8]'s code here as in a rule ([LEXP.8.8.2]).
+    %
+    %@spec [LUNI.8.3]
+    %@spec [LUNI.8.4]
+:- pred luni_8_4_const(resolved_file::in, ast_const::in, lgra_9_3_1_expr::in,
+                       list(diagnostic)::in, list(diagnostic)::out) is det.
+
+luni_8_4_const(RF, Const, Expr, !Errors) :-
+    ( if type_of_expr(const_env(RF, Const), Expr) = ty_error(Es) then
+        Prior = !.Errors,
+        New = list.filter(
+            ( pred(D::in) is semidet :-
+                not (
+                    list.member(P, Prior),
+                    P ^ dg_code = D ^ dg_code,
+                    P ^ dg_pos = D ^ dg_pos
+                )
+            ), Es),
+        !:Errors = list.reverse(New) ++ !.Errors
+    else
+        true
+    ).
+
+    % A right-hand side that does not fold and that nothing has refused is no
+    % compile-time constant. An interpolation site in one of its strings is
+    % `const_inert_strings`' refusal.
+    %
+    %@spec [LEXP.8.8]
+:- pred lexp_8_8_not_constant(resolved_file::in, ast_const::in,
+                              lgra_9_3_1_expr::in, int::in,
+                              list(diagnostic)::in, list(diagnostic)::out)
+    is det.
+
+lexp_8_8_not_constant(RF, Const, Expr, Before, !Errors) :-
+    list.foldl(inert_string, inert_strings(Expr), [], Inert),
+    ( if
+        list.length(!.Errors) = Before,
+        Inert = [],
+        not lexp_8_8_1_folds(RF, Expr)
+    then
+        !:Errors = [with_hint(error_at(dv_const_not_foldable, expr_start(Expr),
+            "`const " ++ const_name(Const) ++ "`'s value is not a compile-time "
+                ++ "constant ([LEXP.8.8], [LGRA.13.3])"),
+            "a constant folds from literals and the constants above it")
+            | !.Errors]
+    else
+        true
+    ).
+
     %@helper
 :- pred ltim_14_3_const_raises(ast_const::in, pos::in,
                                list(diagnostic)::in, list(diagnostic)::out)
@@ -1269,8 +1501,32 @@ ltim_14_3_const_raises(Const, Pos, !Errors) :-
             ++ "value: a field is out of its range, or the value is out of "
             ++ "its type's range, so it has nothing to fold to ([LTIM.14.3], "
             ++ "[LTIM.14.2])"),
-        "correct the fields; a call outside a `const` raises when the rule "
-            ++ "runs instead") | !.Errors].
+        "correct the fields") | !.Errors].
+
+    % A `calendar` call whose arguments all fold and whose fold raises, in a
+    % rule. It is refused whether or not the rest of the expression would absorb
+    % its result.
+    %
+    %@spec [LTIM.14.3]
+:- pred ltim_14_3_rule_expression(resolved_file::in, lgra_9_3_1_expr::in,
+                                  list(diagnostic)::in, list(diagnostic)::out)
+    is det.
+
+ltim_14_3_rule_expression(RF, Expr, !Errors) :-
+    list.foldl(ltim_14_3_rule_raises, ltim_14_3_raising_calls(RF, Expr),
+        !Errors).
+
+    %@helper
+:- pred ltim_14_3_rule_raises(pos::in,
+                              list(diagnostic)::in, list(diagnostic)::out)
+    is det.
+
+ltim_14_3_rule_raises(Pos, !Errors) :-
+    !:Errors = [with_hint(error_at(dv_const_not_foldable, Pos,
+        "this `calendar` call's arguments are constants and it names no "
+            ++ "value: a field is out of its range, or the value is out of "
+            ++ "its type's range ([LTIM.14.3], [LTIM.14.2])"),
+        "correct the fields") | !.Errors].
 
     %@helper
 :- pred const_runtime(ast_const::in, pair(string, pos)::in,
@@ -1295,13 +1551,13 @@ const_annotation(RF, Const, Annotation, Expr, !Errors) :-
     Name = const_name(Const),
     ( if const_field_type(TypeName) then
         ( if
-            literal_kind(Expr, Kind),
-            not literal_fits(TypeName, Kind)
+            lgra_4_1_folded_kind(RF, Expr, Kind),
+            not lgra_4_1_fits(TypeName, Kind)
         then
             !:Errors = [with_hint(error_at(dv_const_annotation_mismatch,
                 TypeId ^ id_pos,
-                "`const " ++ Name ++ ": " ++ TypeName ++ "` is given a `"
-                    ++ Kind ++ "` literal ([LGRA.4.1])"),
+                "`const " ++ Name ++ ": " ++ TypeName ++ "` folds to a `"
+                    ++ Kind ++ "` ([LGRA.4.1])"),
                 "a `const` annotation is checked against its value; change "
                     ++ "one of the two") | !.Errors]
         else
@@ -1312,7 +1568,21 @@ const_annotation(RF, Const, Annotation, Expr, !Errors) :-
         Entry = te_unit(UnitKind, _),
         UnitKind \= uk_dimension
     then
-        true
+        ( if
+            type_of_expr(const_env(RF, Const), Expr) = ty_known(Known),
+            Known ^ dt_dim = dimensionless,
+            ( Known ^ dt_leaf = lk_int ; Known ^ dt_leaf = lk_float )
+        then
+            !:Errors = [with_hint(error_at(dv_const_annotation_mismatch,
+                TypeId ^ id_pos,
+                "`const " ++ Name ++ ": " ++ TypeName ++ "` is given a plain "
+                    ++ "number, which an annotation gives no unit ([LGRA.4.1], "
+                    ++ "[LUNI.8.6])"),
+                "write the value in the unit, or assert it with `::"
+                    ++ TypeName ++ "`") | !.Errors]
+        else
+            true
+        )
     else
         !:Errors = [with_hint(error_at(dv_const_bad_annotation,
             TypeId ^ id_pos,
@@ -1335,18 +1605,12 @@ const_field_type("Time").
 const_field_type("Date").
 const_field_type("Duration").
 
-    %@helper
-:- pred literal_kind(lgra_9_3_1_expr::in, string::out) is semidet.
+    % An `Int` value may stand under `: Float`.
+    %
+    %@spec [LGRA.4.1]
+:- pred lgra_4_1_fits(string::in, string::in) is semidet.
 
-literal_kind(ex_string(_, _), "String").
-literal_kind(ex_int(_, _), "Int").
-literal_kind(ex_float(_, _), "Float").
-literal_kind(ex_bool(_, _), "Bool").
-
-    %@helper
-:- pred literal_fits(string::in, string::in) is semidet.
-
-literal_fits(Type, Kind) :-
+lgra_4_1_fits(Type, Kind) :-
     ( Type = Kind
     ; Type = "Float", Kind = "Int"
     ).
@@ -1637,7 +1901,60 @@ lgra_13_5_series_windows(RF, Decl, !Errors) :-
     is det.
 
 lgra_2_8_11_time_expr_names(RF, Decl, !Errors) :-
-    list.foldl(lgra_2_8_11_name(RF), decl_time_expr_names(Decl), !Errors).
+    list.foldl(lgra_2_8_11_name(RF),
+        list.filter_map(time_site_name, decl_time_expr_sites(Decl)), !Errors).
+
+    % Every `UNIT_LIT` at those same positions whose nanoseconds lie outside
+    % int64 is refused at the literal; none is wrapped ([LUNI.2.4.1]). A suffix
+    % that is no time unit is the dimension check's.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_time_expr_literals(ast_decl::in,
+                                      list(diagnostic)::in,
+                                      list(diagnostic)::out) is det.
+
+luni_2_4_1_time_expr_literals(Decl, !Errors) :-
+    list.foldl(luni_2_4_1_duration_literal,
+        list.filter_map(time_site_literal, decl_time_expr_sites(Decl)),
+        !Errors).
+
+    %@helper
+:- pred luni_2_4_1_duration_literal({string, string, pos}::in,
+                                    list(diagnostic)::in,
+                                    list(diagnostic)::out) is det.
+
+luni_2_4_1_duration_literal({Magnitude, Suffix, Pos}, !Errors) :-
+    ( if
+        luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier),
+        not luni_3_1_5_magnitude_ns(Magnitude, Multiplier, _)
+    then
+        !:Errors = [with_hint(error_at(dv_constant_out_of_range, Pos,
+            "the duration `" ++ Magnitude ++ Suffix ++ "` is outside the "
+                ++ "nanoseconds an `Int` holds; it is never wrapped "
+                ++ "([LUNI.2.4.1])"),
+            "a `Duration` is at most about 292 years") | !.Errors]
+    else
+        true
+    ).
+
+    % What a `time_expr` position holds, where it is one token: a `NAME`, or a
+    % `UNIT_LIT` as its magnitude, suffix and position.
+    %
+    %@helper
+:- type time_site
+    --->    ts_name(ident)
+    ;       ts_literal(string, string, pos).
+
+    %@helper
+:- func time_site_name(time_site) = ident is semidet.
+
+time_site_name(ts_name(Id)) = Id.
+
+    %@helper
+:- func time_site_literal(time_site) = {string, string, pos} is semidet.
+
+time_site_literal(ts_literal(Magnitude, Suffix, Pos)) =
+    {Magnitude, Suffix, Pos}.
 
     % A `Duration` const is read as the literal of its value ([LGRA.2.8.1]); any
     % other NAME is refused by what it names. A const whose own declaration is
@@ -1653,7 +1970,7 @@ lgra_2_8_11_name(RF, Id, !Errors) :-
     ( if map.contains(RF ^ rf_consts, Name) then
         Scope = rule_scope(ident("const", Pos), map.init, map.init, map.init,
             map.init, map.init),
-        Env = type_env(RF, Scope, da_reported, set.init),
+        Env = type_env(RF, Scope, set.init),
         ( if
             type_of_expr(Env, ex_name(Id)) = ty_known(Known),
             Known ^ dt_leaf \= lk_duration
@@ -1685,9 +2002,9 @@ lgra_2_8_11_name(RF, Id, !Errors) :-
     ).
 
     %@helper
-:- func decl_time_expr_names(ast_decl) = list(ident).
+:- func decl_time_expr_sites(ast_decl) = list(time_site).
 
-decl_time_expr_names(Decl) = Names :-
+decl_time_expr_sites(Decl) = Names :-
     ( if Decl = ad_schema(S), S ^ as_lifecycle = al_ttl(Span, _) then
         Names = span_name(Span)
     else if Decl = ad_series(Series) then
@@ -1701,30 +2018,36 @@ decl_time_expr_names(Decl) = Names :-
         Names = []
     ).
 
-    % A span is a `time_expr` NAME when it is one `NAME` token.
+    % A span is a `time_expr` site when it is one `NAME` or `UNIT_LIT` token.
     %
     %@helper
-:- func span_name(list(positioned)) = list(ident).
+:- func span_name(list(positioned)) = list(time_site).
 
 span_name(Span) =
     ( if Span = [Tok], Tok ^ tk_tok = name(Name) then
-        [ident(Name, Tok ^ tk_pos)]
+        [ts_name(ident(Name, Tok ^ tk_pos))]
+    else if Span = [Tok], Tok ^ tk_tok = unit_lit(Magnitude, Suffix) then
+        [ts_literal(Magnitude, Suffix, Tok ^ tk_pos)]
     else
         []
     ).
 
     %@helper
-:- func window_time_name({window_site, list(positioned)}) = list(ident).
+:- func window_time_name({window_site, list(positioned)}) = list(time_site).
 
 window_time_name({_, Span}) = span_name(Span).
 
     %@helper
-:- func expr_time_name(lgra_9_3_1_expr) = list(ident).
+:- func expr_time_name(lgra_9_3_1_expr) = list(time_site).
 
-expr_time_name(E) = ( if E = ex_name(Id) then [Id] else [] ).
+expr_time_name(E) =
+    ( if E = ex_name(Id) then [ts_name(Id)]
+    else if E = ex_unit(Magnitude, Suffix, Pos) then
+        [ts_literal(Magnitude, Suffix, Pos)]
+    else [] ).
 
     %@helper
-:- func line_time_name(ast_series_line) = list(ident).
+:- func line_time_name(ast_series_line) = list(time_site).
 
 line_time_name(Line) = Names :-
     Time = Line ^ asl_time,
@@ -1739,7 +2062,7 @@ line_time_name(Line) = Names :-
     ).
 
     %@helper
-:- func modifier_time_name(ast_rule_modifier) = list(ident).
+:- func modifier_time_name(ast_rule_modifier) = list(time_site).
 
 modifier_time_name(arm_cooldown(Span, _)) = span_name(Span).
 modifier_time_name(arm_by(_, _)) = [].
@@ -1748,7 +2071,7 @@ modifier_time_name(arm_by(_, _)) = [].
     % calls nested in a continuation are `rule_actions`'s own.
     %
     %@helper
-:- func action_time_names(ast_action) = list(ident).
+:- func action_time_names(ast_action) = list(time_site).
 
 action_time_names(Action) = Names :-
     ( if Action ^ aac_head = aah_call(_) then
@@ -1766,7 +2089,7 @@ action_time_names(Action) = Names :-
     ).
 
     %@helper
-:- func cooldown_time_name(ast_action_arg) = list(ident).
+:- func cooldown_time_name(ast_action_arg) = list(time_site).
 
 cooldown_time_name(Arg) =
     ( if Arg = aaa_kwarg(Name, E, _), Name ^ id_name = "cooldown" then
@@ -1776,7 +2099,7 @@ cooldown_time_name(Arg) =
     ).
 
     %@helper
-:- func timeout_time_name(ast_continuation) = list(ident).
+:- func timeout_time_name(ast_continuation) = list(time_site).
 
 timeout_time_name(Cont) =
     ( if Cont = acont_timeout(E, _, _) then expr_time_name(E) else [] ).
@@ -2594,7 +2917,7 @@ rhim_2_2_hydration_targets(RF) = Targets :-
     = list(string).
 
 rule_hydration_targets(RF, Rule, Scope) = Read :-
-    Env = type_env(RF, Scope, da_reported, set.init),
+    Env = type_env(RF, Scope, set.init),
     Read = list.condense(list.map(hydrated_corr_reads(Env),
         rule_expressions(Rule))).
 
@@ -2625,7 +2948,7 @@ rule_of(ad_rule(R)) = R.
 
 rule_errors(RF, Rule, Scope) = Errors :-
     % The narrowed set starts empty: [LNUL.5.2] stops narrowing at the arrow.
-    Env = type_env(RF, Scope, da_reported, set.init),
+    Env = type_env(RF, Scope, set.init),
     lthe_4_8_followers(Rule ^ ar_lhs, pd_start, [], RevFollowers),
     list.foldl(lthe_4_5_sequence_ts(RF), Rule ^ ar_lhs, [], RevTs),
     Scoped = scoped_actions(Env, Rule),
@@ -2686,6 +3009,8 @@ rule_errors(RF, Rule, Scope) = Errors :-
         RevZeroDivisors0, RevZeroDivisors),
     list.foldl(lcst_4_6_1_coercion_call(RF), rule_expressions(Rule),
         [], RevCoercions),
+    list.foldl(ltim_14_3_rule_expression(RF), rule_expressions(Rule),
+        [], RevCalendars),
     list.foldl(llet_10_5_let_slot(Scope), rule_expressions(Rule),
         [], RevLetSlots),
     list.foldl(ltac_7_1_after_duration,
@@ -2694,8 +3019,13 @@ rule_errors(RF, Rule, Scope) = Errors :-
         ( pred({E, A}::in, Es0::in, Es::out) is det :-
             ldtl_3_2_retain(RF, E, A, Es0, Es)
         ), Scoped, [], RevRetains),
+    list.foldl(
+        ( pred({E, A}::in, Es0::in, Es::out) is det :-
+            lsto_4_6_1_cache_ttl(E, A, Es0, Es)
+        ), Scoped, [], RevCacheTtls),
     list.foldl(lcco_11_2_unsatisfiable, rule_actions(Rule), [], RevUnsatisfiable),
     list.foldl(lthe_4_7_zero_within(RF), Rule ^ ar_lhs, [], RevZeroWithin),
+    ltim_2_7_3_within_exceeds_ttl(RF, Rule ^ ar_lhs, WithinTtl),
     list.foldl(lgra_9_8_2_embedded_read, rule_let_bindings(Rule),
         [], RevEmbeddedReads),
     list.foldl(lecc_1_4_error_depth, rule_actions(Rule), [], RevErrorDepth),
@@ -2712,6 +3042,7 @@ rule_errors(RF, Rule, Scope) = Errors :-
     Errors = reverse(RevFollowers) ++ reverse(RevTs)
         ++ reverse(RevPredicates) ++ Regex
         ++ reverse(RevZeroDivisors) ++ reverse(RevCoercions)
+        ++ reverse(RevCalendars)
         ++ reverse(RevLetSlots)
         ++ NonFact
         ++ Unreferenced ++ NegatedScope ++ ForwardRefs ++ Inert
@@ -2723,8 +3054,9 @@ rule_errors(RF, Rule, Scope) = Errors :-
         ++ reverse(RevLevels) ++ reverse(RevResponseFields)
         ++ reverse(RevServices) ++ reverse(RevCallKeys)
         ++ reverse(RevAfterKeys) ++ reverse(RevAfterDurations)
-        ++ reverse(RevRetains) ++ reverse(RevUnsatisfiable)
-        ++ reverse(RevZeroWithin)
+        ++ reverse(RevRetains) ++ reverse(RevCacheTtls)
+        ++ reverse(RevUnsatisfiable)
+        ++ reverse(RevZeroWithin) ++ WithinTtl
         ++ reverse(RevEmbeddedReads)
         ++ reverse(RevErrorDepth) ++ reverse(RevErrorFamily)
         ++ ChainDepth ++ NestedAs ++ CallCooldowns
@@ -3349,7 +3681,7 @@ json_slot_error(Schema, Slot, Pos) =
                   list(diagnostic)::in, list(diagnostic)::out) is det.
 
 lnls_rule(RF, Rule - Scope, !Seen, !Errors) :-
-    Env = type_env(RF, Scope, da_reported, set.init),
+    Env = type_env(RF, Scope, set.init),
     Bodies = list.condense(list.map(lnls_bodies, Rule ^ ar_lhs)),
     list.foldl2(lnls_body(RF), Bodies, !Seen, !Errors),
     list.foldl2(lnls_expr(Env), rule_expressions(Rule), !Seen, !Errors).
@@ -3814,6 +4146,120 @@ zero_window_reason(ws_then_step) =
     "a `within` window of zero admits no pair of distinct instants, "
         ++ "so nothing can ever match it ([LTHE.4.7])".
 
+    % Each window, beside the pattern whose facts it reads, in clause order: a
+    % pattern's `within`, positive or negated, reads its own schema, and a `then`
+    % step's reads the step before it ([LTHE.2.3.1]). A window longer than that
+    % schema's TTL is refused, one equal to it is not, and a schema of another
+    % lifecycle bounds nothing. Under `dynamic_ttl`, `retain:` may give a fact
+    % any lifetime ([LDTL.4.1]), so nothing is refused.
+    %
+    %@spec [LTIM.2.7.3]
+:- pred ltim_2_7_3_within_exceeds_ttl(resolved_file::in,
+                                      list(ast_lhs_clause)::in,
+                                      list(diagnostic)::out) is det.
+
+ltim_2_7_3_within_exceeds_ttl(RF, Clauses, Errors) :-
+    ( if ldtl_dynamic_ttl_file(RF) then
+        Errors = []
+    else
+        read_windows(Clauses, no, [], RevReads),
+        list.filter_map(window_exceeds_ttl(RF), list.reverse(RevReads), Errors)
+    ).
+
+    % A window, and the body of the pattern whose facts it reads.
+    %
+    %@helper
+:- type read_window
+    --->    read_window(ast_pattern_body, list(positioned)).
+
+    % The pattern a following `then` step reads is the last positive one before
+    % it; a negated pattern binds no fact for a step to follow.
+    %
+    %@helper
+:- pred read_windows(list(ast_lhs_clause)::in, maybe(ast_pattern_body)::in,
+                     list(read_window)::in, list(read_window)::out) is det.
+
+read_windows([], _, !Reads).
+read_windows([Clause | Clauses], Before, !Reads) :-
+    (
+        Clause = alc_pattern(ap_simple(Body)),
+        own_window(Body, !Reads),
+        After = yes(Body)
+    ;
+        Clause = alc_pattern(ap_negated(Body, _)),
+        own_window(Body, !Reads),
+        After = no
+    ;
+        Clause = alc_pattern(ap_sequence(_, Head, Steps, _)),
+        own_window(Head, !Reads),
+        list.foldl2(step_window, Steps, yes(Head), After, !Reads)
+    ;
+        Clause = alc_then(Step),
+        step_window(Step, Before, After, !Reads)
+    ),
+    read_windows(Clauses, After, !Reads).
+
+    %@helper
+:- pred own_window(ast_pattern_body::in,
+                   list(read_window)::in, list(read_window)::out) is det.
+
+own_window(Body, !Reads) :-
+    ( if Body ^ apb_within = yes(Span) then
+        !:Reads = [read_window(Body, Span) | !.Reads]
+    else
+        true
+    ).
+
+    %@helper
+:- pred step_window(ast_then_step::in, maybe(ast_pattern_body)::in,
+                    maybe(ast_pattern_body)::out,
+                    list(read_window)::in, list(read_window)::out) is det.
+
+step_window(Step, Before, yes(Step ^ ats_body), !Reads) :-
+    ( if Before = yes(Prior) then
+        !:Reads = [read_window(Prior, Step ^ ats_within) | !.Reads]
+    else
+        true
+    ).
+
+    % The TTL is the resolved declaration's, a library schema's included, and
+    % both durations are read as `zero_window` reads one, a `const` included.
+    %
+    %@helper
+:- pred window_exceeds_ttl(resolved_file::in, read_window::in,
+                           diagnostic::out) is semidet.
+
+window_exceeds_ttl(RF, read_window(Body, Span), D) :-
+    Span = [Tok | _],
+    lgra_22_4_schema_of(RF, Body ^ apb_type, Schema),
+    Schema ^ as_lifecycle = al_ttl(TtlSpan, _),
+    lgra_2_8_1_time_expr_ns(RF, Span, Window),
+    lgra_2_8_1_time_expr_ns(RF, TtlSpan, Ttl),
+    Window > Ttl,
+    Name = type_ref_text(Body ^ apb_type),
+    D = with_hint(error_at(dv_within_exceeds_ttl, Tok ^ tk_pos,
+        "a `within " ++ spelled_duration(Span) ++ "` window reads `" ++ Name
+            ++ "`, whose facts live `" ++ spelled_duration(TtlSpan)
+            ++ "`: an older fact is no longer in working memory, so the "
+            ++ "window states a past the engine does not hold ([LTIM.2.7.3])"),
+        "shorten the window to at most " ++ spelled_duration(TtlSpan)
+            ++ ", or lengthen `" ++ Name ++ "`'s TTL").
+
+    % A duration as the program spells it: a unit literal, or a `const`'s name.
+    %
+    %@helper
+:- func spelled_duration(list(positioned)) = string.
+
+spelled_duration(Span) = Text :-
+    ( if Span = [Tok], Tok ^ tk_tok = unit_lit(Number, Unit) then
+        Text = Number ++ Unit
+    else if Span = [Tok], Tok ^ tk_tok = name(Const) then
+        Text = Const
+    else
+        Text = string.join_list(" ",
+            list.map((func(T) = describe(T ^ tk_tok)), Span))
+    ).
+
 %-----------------------------------------------------------------------------%
 % Read functions in a `let` -- [LGRA.9.8.2]
 %-----------------------------------------------------------------------------%
@@ -4097,18 +4543,7 @@ empty_range(Key - sat_path(yes(sat_bound(L, LS)), yes(sat_bound(H, HS))),
                                  is det.
 
 lexp_10_2_2_zero_divisor(Env, E, !Errors) :-
-    ( if
-        E = ex_binary(Op, Dividend, Divisor, Pos),
-        ( Op = bo_div, Spelled = "/"
-        ; Op = bo_floordiv, Spelled = "//"
-        ; Op = bo_mod, Spelled = "%"
-        ),
-        Divisor = ex_int(0i64, _),
-        not (
-            type_of_expr(Env, Dividend) = ty_known(K),
-            K ^ dt_leaf = lk_float
-        )
-    then
+    ( if lexp_10_2_2_literal_zero(Env, E, Spelled, Pos) then
         !:Errors = [error_at(dv_div_by_zero, Pos,
             "`" ++ Spelled ++ " 0` divides an `Int` by a literal zero, which "
                 ++ "is undefined ([LEXP.10.2.2])") | !.Errors]
@@ -4116,6 +4551,26 @@ lexp_10_2_2_zero_divisor(Env, E, !Errors) :-
         true
     ),
     list.foldl(lexp_10_2_2_zero_divisor(Env), expr_children(E), !Errors).
+
+    % The division `lexp_10_2_2_zero_divisor` refuses, at the top of this
+    % expression: `/`, `//` or `%` by a literal `0`, over a dividend not known
+    % to be a `Float`. Its spelling and position.
+    %
+    %@spec [LEXP.10.2.2]
+:- pred lexp_10_2_2_literal_zero(type_env::in, lgra_9_3_1_expr::in,
+                                 string::out, pos::out) is semidet.
+
+lexp_10_2_2_literal_zero(Env, E, Spelled, Pos) :-
+    E = ex_binary(Op, Dividend, Divisor, Pos),
+    ( Op = bo_div, Spelled = "/"
+    ; Op = bo_floordiv, Spelled = "//"
+    ; Op = bo_mod, Spelled = "%"
+    ),
+    Divisor = ex_int(0i64, _),
+    not (
+        type_of_expr(Env, Dividend) = ty_known(K),
+        K ^ dt_leaf = lk_float
+    ).
 
     % An argument is constant when `dsc.dstest` folds it to an `Int`. On an `Int`
     % receiver only: `.bits` on a fact binding is a slot read.
@@ -4233,10 +4688,12 @@ llet_10_5_let_slot(Scope, E, !Errors) :-
     ).
 
     % `ltac_2_1_parse_after` takes one `UNIT_LIT` token, so nothing reaches
-    % `dsc.rete.duration_ns_of` that it would lower to a 0 ns timer.
+    % `dsc.rete.duration_ns_of` that it would lower to a 0 ns timer, or that is
+    % outside int64 nanoseconds.
     %
     %@spec [LTAC.7.1]
     %@spec [LTAC.2.2]
+    %@spec [LUNI.2.4.1]
 :- pred ltac_7_1_after_duration(ast_after_clause::in,
                                 list(diagnostic)::in, list(diagnostic)::out)
                                 is det.
@@ -4246,13 +4703,22 @@ ltac_7_1_after_duration(After, !Errors) :-
     ( if Duration = ex_unit(Magnitude, Suffix, Pos) then
         Symbol = llex_12_5_symbol_of(Suffix),
         ( if luni_10_2_time_unit(Symbol, Multiplier) then
-            ( if luni_3_1_5_magnitude_ns(Magnitude, Multiplier) =< 0i64 then
-                !:Errors = [with_hint(error_at(dv_after_nonpositive_duration,
-                    Pos, "an `after` delay must be positive ([LTAC.7.1])"),
-                    "use a positive duration, like `30_s` or `5_min`")
-                    | !.Errors]
+            ( if luni_3_1_5_magnitude_ns(Magnitude, Multiplier, Ns) then
+                ( if Ns =< 0i64 then
+                    !:Errors = [with_hint(error_at(
+                        dv_after_nonpositive_duration, Pos,
+                        "an `after` delay must be positive ([LTAC.7.1])"),
+                        "use a positive duration, like `30_s` or `5_min`")
+                        | !.Errors]
+                else
+                    true
+                )
             else
-                true
+                !:Errors = [with_hint(error_at(dv_constant_out_of_range, Pos,
+                    "the `after` delay `" ++ Magnitude ++ Suffix ++ "` is "
+                        ++ "outside the nanoseconds an `Int` holds; it is "
+                        ++ "never wrapped ([LUNI.2.4.1])"),
+                    "a `Duration` is at most about 292 years") | !.Errors]
             )
         else
             !:Errors = [with_hint(error_at(dv_bad_unit_dimension, Pos,
@@ -4268,8 +4734,8 @@ ltac_7_1_after_duration(After, !Errors) :-
             | !.Errors]
     ).
 
-    % Without `dynamic_ttl`, "compile-time constant" is read as a duration literal:
-    % `retain: HALF_MINUTE` is refused. With it, the expression is typed.
+    % Without `dynamic_ttl`, a compile-time constant equal to the schema's TTL has
+    % no effect and is admitted. With it, the expression is typed.
     %
     %@spec [LDTL.3.2]
     %@spec [LDTL.4.1]
@@ -4287,24 +4753,11 @@ ldtl_3_2_retain(RF, Env, Action, !Errors) :-
         Target = Schema ^ as_name ^ id_name,
         ( if Schema ^ as_lifecycle = al_ttl(Span, _) then
             ( if ldtl_dynamic_ttl_file(RF) then
-                ValueType = type_of_expr(Env, Value),
-                ( if
-                    ValueType = ty_known(Known),
-                    Known ^ dt_leaf \= lk_duration
-                then
-                    !:Errors = [with_hint(error_at(dv_type_mismatch,
-                        Name ^ id_pos,
-                        "`retain:` on `" ++ Verb ++ " " ++ Target ++ "` has "
-                            ++ "type `" ++ leaf_name(Known ^ dt_leaf)
-                            ++ "`, and a per-emit TTL is a `Duration` "
-                            ++ "([LDTL.4.1])"),
-                        "write a duration, like `retain: 30_s`")
-                        | !.Errors]
-                else
-                    !:Errors = list.reverse(lnul_5_1_concrete(Env, Value,
-                        ValueType, Name ^ id_pos, "`retain:`")) ++ !.Errors
-                )
-            else if same_duration(Span, Value) then
+                ldtl_4_1_duration_kwarg(Env, Value, Name ^ id_pos, "`retain:`",
+                    "`retain:` on `" ++ Verb ++ " " ++ Target ++ "`",
+                    "a per-emit TTL is a `Duration` ([LDTL.4.1])",
+                    "write a duration, like `retain: 30_s`", !Errors)
+            else if same_duration(RF, Span, Value) then
                 true
             else
                 !:Errors = [ldia_5_1_disabled_at(RF ^ rf_program,
@@ -4327,11 +4780,63 @@ ldtl_3_2_retain(RF, Env, Action, !Errors) :-
         true
     ).
 
+    % A kwarg whose expression must be a concrete `Duration`. `Kwarg` names the
+    % position, `Subject` the action's use of it, and `Rule` what it must be.
+    %
+    %@spec [LDTL.4.1]
+    %@spec [LSTO.4.6.1]
+:- pred ldtl_4_1_duration_kwarg(type_env::in, lgra_9_3_1_expr::in, pos::in,
+                                string::in, string::in, string::in, string::in,
+                                list(diagnostic)::in, list(diagnostic)::out)
+                                is det.
+
+ldtl_4_1_duration_kwarg(Env, Value, Pos, Kwarg, Subject, Rule, Hint, !Errors) :-
+    ValueType = type_of_expr(Env, Value),
+    ( if
+        ValueType = ty_known(Known),
+        Known ^ dt_leaf \= lk_duration
+    then
+        !:Errors = [with_hint(error_at(dv_type_mismatch, Pos,
+            Subject ++ " has type `" ++ leaf_name(Known ^ dt_leaf) ++ "`, and "
+                ++ Rule),
+            Hint) | !.Errors]
+    else
+        !:Errors = list.reverse(lnul_5_1_concrete(Env, Value, ValueType, Pos,
+            Kwarg)) ++ !.Errors
+    ).
+
+    % A `Duration` is never negative ([LTIM.1.3.1]), so with this check no compiled
+    % program hands a runtime a negative TTL.
+    %
+    %@spec [LSTO.4.6.1]
+:- pred lsto_4_6_1_cache_ttl(type_env::in, ast_action::in,
+                             list(diagnostic)::in, list(diagnostic)::out) is det.
+
+lsto_4_6_1_cache_ttl(Env, Action, !Errors) :-
+    ( if
+        Action ^ aac_head = aah_cache,
+        Args = Action ^ aac_args ++ block_args(Action ^ aac_block),
+        list.find_first_match(ttl_kwarg, Args, aaa_kwarg(Name, Value, _))
+    then
+        ldtl_4_1_duration_kwarg(Env, Value, Name ^ id_pos, "`ttl:`",
+            "`ttl:` on `cache`",
+            "a cache entry's TTL is a `Duration` ([LSTO.4.6.1])",
+            "write a duration, like `ttl: 30_s`", !Errors)
+    else
+        true
+    ).
+
     %@helper
 :- pred retain_kwarg(ast_action_arg::in) is semidet.
 
 retain_kwarg(aaa_kwarg(Name, _, _)) :-
     Name ^ id_name = "retain".
+
+    %@helper
+:- pred ttl_kwarg(ast_action_arg::in) is semidet.
+
+ttl_kwarg(aaa_kwarg(Name, _, _)) :-
+    Name ^ id_name = "ttl".
 
     %@helper
 :- pred ldtl_dynamic_ttl_file(resolved_file::in) is semidet.
@@ -4340,16 +4845,12 @@ ldtl_dynamic_ttl_file(RF) :-
     enabled(RF ^ rf_program, cap_dynamic_ttl).
 
     %@helper
-:- pred same_duration(list(positioned)::in, lgra_9_3_1_expr::in) is semidet.
+:- pred same_duration(resolved_file::in, list(positioned)::in,
+                      lgra_9_3_1_expr::in) is semidet.
 
-same_duration(Span, Value) :-
-    Span = [Tok],
-    Tok ^ tk_tok = unit_lit(TtlMagnitude, TtlSuffix),
-    luni_10_2_time_unit(llex_12_5_symbol_of(TtlSuffix), TtlMultiplier),
-    Value = ex_unit(Magnitude, Suffix, _),
-    luni_10_2_time_unit(llex_12_5_symbol_of(Suffix), Multiplier),
-    luni_3_1_5_magnitude_ns(Magnitude, Multiplier)
-        = luni_3_1_5_magnitude_ns(TtlMagnitude, TtlMultiplier).
+same_duration(RF, Span, Value) :-
+    lgra_2_8_1_time_expr_ns(RF, Span, Ttl),
+    lexp_8_8_duration_ns(RF, Value, Ttl).
 
     % `rsc_lets` is a map, so this walks the bindings in source order and refuses a
     % name bound only at or after the binding that reads it.
@@ -6068,8 +6569,9 @@ first_nonfact([E | Es]) = Found :-
     ).
 
     % The gate is a value whose dimension cannot be stated: `luni_9_1_agg_type` types
-    % `integral` `ty_unknown`, and so does arithmetic over it. Any unit symbol answers
-    % it.
+    % `integral`, and `variance`, `pvariance` and `rate` over a unit slot,
+    % `ty_unknown`, and so does arithmetic over them. An annotation answers none
+    % of them; a `::` strip of the read does.
     %
     %@spec [LUNI.9.2]
 :- pred luni_9_2_unannotated(type_env::in, ident::in, lgra_9_3_1_expr::in,
@@ -6082,11 +6584,11 @@ luni_9_2_unannotated(Env, Name, Expr, !Errors) :-
     then
         !:Errors = [with_hint(error_at(dv_dim_agg_unannotated, At,
             "`let " ++ Name ^ id_name ++ "` reads `" ++ Agg ++ "` of a `"
-                ++ Unit ++ "` slot, which changes its dimension, and carries "
-                ++ "no annotation ([LUNI.9.2])"),
-            "declare a compound `unit dimension` for the result and annotate "
-                ++ "the `let` with one of its units: `let " ++ Name ^ id_name
-                ++ ": <unit> = ...`") | !.Errors]
+                ++ Unit ++ "` slot, which changes its dimension, and the "
+                ++ "result has no dimension DS can state ([LUNI.9.2])"),
+            "strip the read with `::Float` (`::Float?` for `variance`, "
+                ++ "`pvariance` or `rate`), and assert a unit with `::<unit>` "
+                ++ "if it has one") | !.Errors]
     else
         true
     ).
@@ -6098,6 +6600,11 @@ luni_9_2_unannotated(Env, Name, Expr, !Errors) :-
 first_unit_changing_read(_, []) = no.
 first_unit_changing_read(Env, [E | Es]) = Found :-
     ( if
+        E = ex_cast(Stripped, _, _, _),
+        luni_9_2_unit_changing_read(Env, Stripped, _, _)
+    then
+        Found = first_unit_changing_read(Env, Es)
+    else if
         luni_9_2_unit_changing_read(Env, E, Agg, Unit),
         ( E = ex_slot(_, _, At) ; E = ex_call(_, _, At) )
     then
@@ -6108,7 +6615,8 @@ first_unit_changing_read(Env, [E | Es]) = Found :-
         Found = first_unit_changing_read(Env, Es)
     ).
 
-    % A `let` RHS, walked in the environment its annotation earns it.
+    % A `let` RHS. An annotation answers no dimension refusal ([LUNI.8.4],
+    % [LUNI.8.6], [LUNI.9.2]).
     %
     %@spec [LUNI.8.4]
 :- pred luni_8_4_let_binding(resolved_file::in, type_env::in,
@@ -6120,36 +6628,33 @@ luni_8_4_let_binding(RF, Env, Binding, !Errors) :-
         Binding = alb_simple(Name, Annotation, Expr, Pos),
         (
             Annotation = yes(Ann),
-            Walk = Env ^ te_ambiguity := da_annotated,
             Concrete = lnul_5_1_annotation(Name, Ann, Pos),
             Declared = yes(Ann)
         ;
             Annotation = no,
-            Walk = Env,
             Concrete = no,
             Declared = no
         )
     ;
         Binding = alb_capture(_, Expr, _),
-        Walk = Env,
         Concrete = no,
         Declared = no
     ),
-    typed_expr(RF, Walk, Expr, !Errors),
+    typed_expr(RF, Env, Expr, !Errors),
     (
         Declared = yes(Annotated),
-        luni_8_6_annotation(Walk, Annotated, Expr, !Errors)
+        luni_8_6_annotation(Env, Annotated, Expr, !Errors)
     ;
-        Declared = no,
-        ( if Binding = alb_simple(Bound, _, _, _) then
-            luni_9_2_unannotated(Walk, Bound, Expr, !Errors)
-        else
-            true
-        )
+        Declared = no
+    ),
+    ( if Binding = alb_simple(Bound, _, _, _) then
+        luni_9_2_unannotated(Env, Bound, Expr, !Errors)
+    else
+        true
     ),
     (
         Concrete = yes(Described - At),
-        !:Errors = lnul_5_1_concrete(Walk, Expr, type_of_expr(Walk, Expr), At,
+        !:Errors = lnul_5_1_concrete(Env, Expr, type_of_expr(Env, Expr), At,
             Described) ++ !.Errors
     ;
         Concrete = no
@@ -6182,6 +6687,25 @@ luni_8_6_annotation(Env, Ann, Expr, !Errors) :-
                 ++ "a unit symbol (LUNI.8.6)"),
             "write one of the dimension's units, which pins its scale")
             | !.Errors]
+    else if
+        ( map.search(Types, Name, Entry),
+            Entry = te_unit(uk_symbol(_), _)
+        ; luni_8_6_checked_scalar(Name, _)
+        ),
+        RHS = ty_known(_),
+        lcst_4_5_11_value(Env, Expr)
+    then
+        % `x ?? d` over a `Json` leaf has `d`'s type ([LNUL.5.3]) and holds
+        % `x`'s kind, which is known only at run time ([LCST.4.5.11]): the type
+        % `type_of_expr` gave is not one to hold the annotation against. A
+        % value with no type at all is the `ty_unknown` arms' below.
+        !:Errors = [with_hint(error_at(dv_let_type_mismatch, Id ^ id_pos,
+            "the annotation is `" ++ Name ++ "`, and the value comes from a "
+                ++ "`Json` value, whose kind is known only at run time "
+                ++ "([LCST.4.5.11]), so the compiler cannot determine its type "
+                ++ "to check it against (LUNI.8.6)"),
+            "drop the annotation, or convert the `Json` leaf first, as in "
+                ++ "`x::" ++ Name ++ "? ?? d`") | !.Errors]
     else if map.search(Types, Name, te_unit(uk_symbol(Declared), _)) then
         luni_8_6_unit_annotation(Env, Id, Declared, Expr, RHS, !Errors)
     else if luni_8_6_checked_scalar(Name, Declared) then
@@ -6201,7 +6725,8 @@ luni_8_6_annotation(Env, Ann, Expr, !Errors) :-
     ).
 
     % A typed `let` is [LUNI.4.5]'s assignment boundary, so one `implicit`
-    % formula bridges. A plain `Float` or `Int` takes the unit ([LUNI.8.5]).
+    % formula bridges. A plain number takes no unit from an annotation: a unit is
+    % asserted with `::<unit>` ([LUNI.8.6]).
     %
     %@spec [LUNI.4.5]
 :- pred luni_8_6_unit_annotation(type_env::in, ident::in, decl_ref::in,
@@ -6222,18 +6747,18 @@ luni_8_6_unit_annotation(Env, Id, Declared, Expr, RHS, !Errors) :-
         else if
             ( Known ^ dt_leaf = lk_float ; Known ^ dt_leaf = lk_int )
         then
-            true
+            !:Errors = [with_hint(error_at(dv_let_dim_mismatch, Id ^ id_pos,
+                "the annotation is `" ++ Name ++ "`, and the value is a plain "
+                    ++ "number, which an annotation gives no unit (LUNI.8.6)"),
+                "assert the unit with `::" ++ Name ++ "`") | !.Errors]
         else
             !:Errors = [luni_8_6_type_mismatch(Id, leaf_name(Known ^ dt_leaf))
                 | !.Errors]
         )
     ;
         RHS = ty_unknown,
-        ( if
-            ( luni_8_4_answered(Env, Expr)
-            ; luni_9_2_answered(Env, Expr)
-            )
-        then
+        % A unit-changing read is `luni_9_2_unannotated`'s.
+        ( if first_unit_changing_read(Env, [Expr]) = yes(_) then
             true
         else
             !:Errors = [luni_8_6_untyped(Id) | !.Errors]
@@ -6241,29 +6766,6 @@ luni_8_6_unit_annotation(Env, Id, Declared, Expr, RHS, !Errors) :-
     ;
         RHS = ty_error(_)
     ).
-
-    % `integral` over a unit-carrying slot types `ty_unknown`; any unit symbol
-    % answers it.
-    %
-    %@spec [LUNI.9.2]
-:- pred luni_9_2_answered(type_env::in, lgra_9_3_1_expr::in) is semidet.
-
-luni_9_2_answered(Env, Expr) :-
-    first_unit_changing_read(Env, [Expr]) = yes(_).
-
-    % A product or quotient of two dimensions: `ty_unknown` under the
-    % annotation, and walked without it, its only diagnostics are the ambiguity.
-    %
-    %@spec [LUNI.8.4]
-:- pred luni_8_4_answered(type_env::in, lgra_9_3_1_expr::in) is semidet.
-
-luni_8_4_answered(Env, Expr) :-
-    type_of_expr(Env ^ te_ambiguity := da_reported, Expr) = ty_error(Es),
-    Es = [_ | _],
-    list.all_true(
-        ( pred(D::in) is semidet :-
-            D ^ dg_code = dc_validate(dv_dim_ambiguous) ),
-        Es).
 
     %@helper
 :- pred luni_8_6_scalar_annotation(type_env::in, ident::in, leaf_kind::in,
@@ -6294,21 +6796,9 @@ luni_8_6_scalar_annotation(Env, Id, Declared, Expr, RHS, !Errors) :-
         )
     ;
         RHS = ty_unknown,
-        ( if luni_8_4_answered(Env, Expr) then
-            !:Errors = [with_hint(error_at(dv_let_dim_mismatch, Id ^ id_pos,
-                "the annotation is `" ++ Name ++ "`, which carries no unit, "
-                    ++ "and the value combines two dimensions ([LUNI.8.4])"),
-                "annotate with the result's unit, or strip the operands "
-                    ++ "with `::Float`") | !.Errors]
-        else if
-            first_unit_changing_read(Env, [Expr]) = yes({Agg, Unit, _})
-        then
-            !:Errors = [with_hint(error_at(dv_let_dim_mismatch, Id ^ id_pos,
-                "the annotation is `" ++ Name ++ "`, which carries no unit, "
-                    ++ "and the value reads `" ++ Agg ++ "` of a `" ++ Unit
-                    ++ "` slot ([LUNI.9.2])"),
-                "annotate with a unit of a compound `unit dimension` you "
-                    ++ "declare for the result") | !.Errors]
+        % A unit-changing read is `luni_9_2_unannotated`'s.
+        ( if first_unit_changing_read(Env, [Expr]) = yes(_) then
+            true
         else
             !:Errors = [luni_8_6_untyped(Id) | !.Errors]
         )
@@ -7241,7 +7731,9 @@ call_kwarg_value(Env, Spelling, Declared, Arg, !Errors) :-
         ( if find_service_kwarg(Declared, Name ^ id_name, FactKwarg) then
             ladp_8_6_1_fact_kwarg(Env, Spelling, FactKwarg, Value, ValueType,
                 Pos, !Errors),
-            ladp_8_5_3_not_whole(Env, Spelling, FactKwarg, Value, Pos, !Errors)
+            ladp_8_5_3_not_whole(Env, Spelling, FactKwarg, Value, Pos, !Errors),
+            luni_2_4_1_kwarg_out_of_range(Env, Spelling, FactKwarg, Value, Pos,
+                !Errors)
         else
             true
         ),
@@ -7405,6 +7897,43 @@ ladp_8_5_3_not_whole(Env, Spelling, Kwarg, Value, Pos, !Errors) :-
             "a `" ++ Dimension ^ dr_name
                 ++ "` value is never truncated or rounded; "
                 ++ "pass a whole number of `" ++ Unit ++ "`") | !.Errors]
+    else
+        true
+    ).
+
+    % A value `known_quantity` folds into an integer-stored kwarg's unit is a
+    % constant the compiler emits, and one outside the `Int` range is refused
+    % here, never wrapped and never left to the call ([RLOW.7.3.9]). A value that
+    % is not whole is `ladp_8_5_3_not_whole`'s.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_kwarg_out_of_range(type_env::in, string::in,
+                                      ast_service_kwarg::in,
+                                      lgra_9_3_1_expr::in, pos::in,
+                                      list(diagnostic)::in,
+                                      list(diagnostic)::out) is det.
+
+luni_2_4_1_kwarg_out_of_range(Env, Spelling, Kwarg, Value, Pos, !Errors) :-
+    RF = Env ^ te_file,
+    Scope = kwarg_scope(RF, Kwarg),
+    Unit = Kwarg ^ ask_type ^ id_name,
+    ( if
+        map.search(Scope ^ rf_types, Unit, te_unit(uk_symbol(Dimension), _)),
+        whole_number_dimension(RF, Dimension),
+        known_quantity(RF, let_rhs_named(Env), pattern_binding_named(Env),
+            Value, Dimension, Base),
+        ladp_8_5_2_in_unit(Scope, Unit, Base, InUnit),
+        is_whole(InUnit),
+        luni_2_4_1_literal_out_of_range(RF, Dimension, InUnit)
+    then
+        !:Errors = [with_hint(error_at(dv_constant_out_of_range, Pos,
+            "`call " ++ Spelling ++ "`: `" ++ Kwarg ^ ask_name ^ id_name
+                ++ ":` takes its value in `" ++ Unit ++ "`, and this value "
+                ++ "in `" ++ Unit ++ "` lies outside the 64-bit signed range "
+                ++ "of the `Int` it is held as; it is never wrapped "
+                ++ "([LUNI.2.4.1])"),
+            "pass a smaller value; a quantity past this range has no runtime "
+                ++ "value") | !.Errors]
     else
         true
     ).
@@ -8753,7 +9282,8 @@ find_slot([F | Fs], Name, Found) :-
 
     % A value whose known leaf kind differs from its slot's is
     % DS_VALIDATE_TYPE_MISMATCH ([RARC.5.2.7]). Not checked: a unit-typed
-    % slot, or a quantity into an `Int` or `Float` slot ([LUNI.8]'s); an
+    % slot other than a `Duration`, a quantity into a `Duration` slot, or a
+    % quantity into an `Int` or `Float` slot ([LUNI.8]'s); an
     % opaque side ([LOPQ.2.3]'s arm below); two fact references, since
     % `dsc.typecheck` spells a schema two ways; and a value that does not
     % type, `null` and a `Json` projection among them.
@@ -8792,8 +9322,11 @@ lexp_7_3b_kwarg_type(Env, Verb, Schema, Slot, Value, Pos, !Errors) :-
         slot_entry(Env ^ te_file, Slot, Entry),
         Declared = luni_7_1_slot_type(Env ^ te_file ^ rf_unit_storage, Entry,
             Slot ^ af_nullable),
-        Declared ^ dt_dim = dimensionless,
         ValueType = ty_known(Actual),
+        ( Declared ^ dt_dim = dimensionless
+        ; Declared ^ dt_leaf = lk_duration,
+          Actual ^ dt_dim = dimensionless
+        ),
         rarc_5_2_7_provable_mismatch(Declared, Actual)
     then
         D = with_hint(error_at(dv_type_mismatch, Pos,

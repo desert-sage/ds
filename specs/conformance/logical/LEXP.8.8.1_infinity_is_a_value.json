@@ -1,0 +1,14 @@
+{
+    "id": "LEXP.8.8.1_infinity_is_a_value",
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1]: an infinity is a value ([LEXP.4.2]) and folds. `const I = 1.0 / 0.0` is a `Float` zero divisor, which IEEE 754 answers with an infinity and no fault ([LDET.3.6.2]), so the `const` is not refused and a read of it is `+inf`. Pin: `is_inf` logs. A compiler that treated a `Float` zero divisor as having no value refuses the program. PATH PINNED: `dsc.dstest.f_div`'s zero-divisor arm through `dsc.rete.lgra_13_3_const`'s literal, compared by each runtime with `inf`.",
+    "rules_ds": "const I = 1.0 / 0.0\n\nschema Trig scope logical:\n    id: Int key\n\nrule is_inf:\n    Trig t where t.id == 1 and I == inf\n->\n    log info \"inf\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Trig", "slots": { "id": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["inf"]
+    }
+}

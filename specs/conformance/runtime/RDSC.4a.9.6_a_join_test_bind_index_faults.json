@@ -1,0 +1,23 @@
+{
+    "id": "RDSC.4a.9.6_a_join_test_bind_index_faults",
+    "category": "runtime",
+    "scenario": "[RDSC.4a.9.6]: a node's test has no bind frame, so any `Expr.bind_ref` in a join test names nothing. It is not refused at load; where the engine reads it, it raises an EngineError with fault ENGINE_FAULT_ARTEFACT_LIED, not ENGINE_FAULT_BINDING_ORDER, and halts the tier. The harness compiles rule `on_tu`, `T t` then `U u where u.w == t.v`. Its network, in the compiler's order ([RLOW.5.1]), is `T`'s alpha (node 1), its beta (2), `U`'s alpha (3), `U`'s beta (4) and the terminal (5). The comparison is fact to fact, so it stays on beta 4 as its one join test, a BINOP whose left operand is the `VarExpr` reading `u.w`. `runtime_error`'s `tamper` ([RCTS.1.2.21]) is a list of two `set_field` edits on node 4: the first removes that left operand's `var` (join test 0, `binop`, `left`, field 5, `value: null`), the second writes its `bind_ref` (field 14) as 0, so the left operand is a `bind_ref` 0 alone. The artefact must load. Input 0 asserts `T` `v` 1, which has no `U` to join and is accepted. Input 1 asserts `U` `w` 1, whose right activation evaluates the join test: that assert returns DS_ERR_ENGINE_HALTED (-10) ([NCBK.2.9]), the stream's fault events are exactly one `engine_error`, its last event, and the halt latch holds ARTEFACT_LIED. What it discriminates: a runtime that refuses the artefact at load fails the load; one that treats the index as a read before its bind latches BINDING_ORDER; one that reads it as null answers the comparison null and raises nothing. PATHS: libds's `ds_rete_eval` BIND_REF arm under a join test's empty frame, from the assert's right activation, through pyds; the Mercury runtime's `ds.eval` `e_bind_ref` arm under `ds.match.ctx_for`'s frame of 0, through test_behave.m's `field_set` and `run_runtime_error`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Int key\n\nrule on_tu:\n    T t\n    U u where u.w == t.v\n->\n    log info \"tu\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": [
+            {"set_field": {"node": 4, "path": [4, 0, 6, 0, 2, 0, 5], "value": null}},
+            {"set_field": {"node": 4, "path": [4, 0, 6, 0, 2, 0, 14], "value": 0}}
+        ],
+        "steps": [
+            { "op": "assert", "schema": "T", "slots": { "v": 1 } },
+            { "op": "assert", "schema": "U", "slots": { "w": 1 } }
+        ],
+        "code": "-10",
+        "message_contains": "engine halted",
+        "fault_at": 1,
+        "fault_events": ["engine_error"],
+        "last_event": "engine_error",
+        "halted_fault": "ARTEFACT_LIED"
+    }
+}

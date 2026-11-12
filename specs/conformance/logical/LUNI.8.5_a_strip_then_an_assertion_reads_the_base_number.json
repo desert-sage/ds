@@ -1,0 +1,14 @@
+{
+    "id": "LUNI.8.5_a_strip_then_an_assertion_reads_the_base_number",
+    "category": "logical",
+    "scenario": "[LUNI.8.5]: a strip gives the stored base-unit number, and a strip followed by an assertion into a non-base unit reads that number as a number in the unit. A `celsius` slot holding 21.5 celsius stores 294.65 K. `s.t::Float::celsius` is therefore 294.65 celsius, equal to the literal `294.65_celsius`, and `s.t::Float::kelvin` is the base unit's inverse of the strip, equal to `s.t`. Both rules log, in source order. PATH PINNED: `dsc.rete`'s `ex_cast` arm taking the strip through `lcst_4_5_2_lower` (the operand) and the assertion through `rlow_6_1_10_asserted`.",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema S scope logical:\n    id: String key\n    t: celsius mutable\n\nrule reread:\n    S s where s.t::Float::celsius == 294.65_celsius\n->\n    log info \"reread\"\n\nrule inverse:\n    S s where s.t::Float::kelvin == s.t\n->\n    log info \"inverse\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": "a", "t": 294.65 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["reread", "inverse"]
+    }
+}

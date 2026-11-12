@@ -290,26 +290,8 @@ static PyObject *pyds_frame(PyObject *self, PyObject *args)
     return out;
 }
 
-/* pyds.atoms.band / disposition / container_of: libds's answers as their enum
-   numbers, which pyds.atoms names. */
-static PyObject *pyds_atom_band(PyObject *self, PyObject *arg)
-{
-    uint32_t field;
-    (void)self;
-    if (field_arg(arg, &field) < 0)
-        return NULL;
-    return PyLong_FromLong((long)ds_pbf_band(field));
-}
-
-static PyObject *pyds_atom_disposition(PyObject *self, PyObject *arg)
-{
-    uint32_t field;
-    (void)self;
-    if (field_arg(arg, &field) < 0)
-        return NULL;
-    return PyLong_FromLong((long)ds_pbf_disposition(field));
-}
-
+/* pyds.atoms.container_of: libds's answer as its enum number, which pyds.atoms
+   names. */
 static PyObject *pyds_container_of(PyObject *self, PyObject *arg)
 {
     Py_buffer view;
@@ -331,12 +313,6 @@ static PyMethodDef atoms_methods[] = {
     { "frame", pyds_frame, METH_VARARGS,
       "frame($module, field, body, /)\n--\n\n"
       "Return one framed atom, as bytes." },
-    { "atom_band", pyds_atom_band, METH_O,
-      "atom_band($module, field, /)\n--\n\n"
-      "Return libds's ds_atom_band_t number for ``field``." },
-    { "atom_disposition", pyds_atom_disposition, METH_O,
-      "atom_disposition($module, field, /)\n--\n\n"
-      "Return libds's ds_pbf_disposition_t number for ``field``." },
     { "container_of", pyds_container_of, METH_O,
       "container_of($module, buf, /)\n--\n\n"
       "Return libds's ds_pbf_container_t number for a container." },

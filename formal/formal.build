@@ -48,10 +48,6 @@
 # `formal_arch.py` refuses a machine), and the idris modules, package and test
 # pairs.
 #
-# `keys.stamp` holds the rule: `scripts/formal/check_formal_keys.py` derives
-# each lane's inputs from the lane's own files — the includes, the `@cbmc-src`
-# lines, the modules on disk — and fails on one the key omits.
-#
 # ── a lane whose corpus vanished fails ──────────────────────────────────────
 #
 # build-unit fails the build on a glob that matched no files, so every corpus
@@ -65,6 +61,10 @@ param tla_jar   = /opt/tla/tla2tools.jar
 param saw_bin   = saw
 param saw_clang = clang
 param cbmc_bin  = cbmc
+# Each CBMC process's address-space cap, in MiB (check_cbmc.py, THE MEMORY
+# CAP). It excludes every proof whose model needs more: such an entry point
+# fails, never passes.
+param cbmc_mem_mib = 3072
 
 # ── alloy: solve formal/alloy/*.als (structure) — every `check` UNSAT, `run` SAT.
 #    The graph sets ALLOY_JAR, which check_alloy.py reads, and hashes the same
@@ -112,11 +112,10 @@ step saw.stamp
 #    bounds in `@cbmc` directives so the claim travels with the proof — the .c
 #    is the proof, so one glob covers the corpus.
 #
-#    Reads the libds headers the harnesses include: a change to the band
-#    constants or the registry changes what was proved. And the translation
-#    units the harnesses' `@cbmc-src` lines name, which CBMC is handed beside
-#    the harness: the headers declare the functions, the `.c` files are the
-#    functions.
+#    The lane's one harness is ldet_3_2_8__fixed.c: float_fmt.c's fixed-
+#    precision primitives held to the contracts formal/idris/FixedRound.idr
+#    takes them at. Reads the translation units its `@cbmc-src` names, which
+#    CBMC is handed beside the harness, and the headers they include.
 #
 #    Two steps over one corpus. A harness may put entry points after a
 #    `@cbmc-step <name>` marker, and `check_cbmc.py --step <name>` runs those
@@ -125,17 +124,14 @@ step saw.stamp
 #    ldet_3_2_8__fixed.c's untied precision sweep (plan_rounds_p2, p3, p6, p10,
 #    p18, plan_short_fraction), over two hours on its own, so it is not folded
 #    into formal-all.stamp; it runs when named (the test driver's `cbmc-sweep`
-#    check). Same inputs, same key rule: keys.stamp holds both steps to the
-#    harness's @cbmc-src.
+#    check). Same inputs.
 step cbmc.stamp
   stamp
   require amd64 linux
   run     python3 scripts/formal/check_cbmc.py formal/cbmc
   env     CBMC_BIN={cbmc_bin}
+  env     CBMC_MEM_MIB={cbmc_mem_mib}
   reads   scripts/formal/check_cbmc.py scripts/formal/formal_arch.py {cbmc_bin}
-          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
-          runtime/src/libds/rfcs/atoms.h
-          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
           runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
           runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
           formal/cbmc/*.c
@@ -145,10 +141,8 @@ step cbmc-sweep.stamp
   require amd64 linux
   run     python3 scripts/formal/check_cbmc.py --step sweep formal/cbmc
   env     CBMC_BIN={cbmc_bin}
+  env     CBMC_MEM_MIB={cbmc_mem_mib}
   reads   scripts/formal/check_cbmc.py scripts/formal/formal_arch.py {cbmc_bin}
-          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
-          runtime/src/libds/rfcs/atoms.h
-          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
           runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
           runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
           formal/cbmc/*.c
@@ -173,8 +167,8 @@ step k.stamp
 #    The modules are globbed one directory level at a time, as `*.idr` and
 #    `*/*.idr`, and not as `**`: the recipe writes `build/` inside the corpus
 #    directory, and a per-directory pattern cannot reach into it whatever the
-#    walk prunes. A module two levels down is in neither pattern, and
-#    `keys.stamp` fails on it. The package decides what is built and run; the
+#    walk prunes. A module two levels down is in neither pattern. The package
+#    decides what is built and run; the
 #    test pairs are the runner's cases, inputs on check_k's reasoning about
 #    `.expected`.
 step idris.stamp
@@ -208,52 +202,15 @@ step instances.stamp
   reads   scripts/formal/check_instances.py scripts/formal/check_tla.py scripts/formal/formal_arch.py
           formal/tla/tms_cascade.tla formal/tla/tms_cascade.cfg formal/idris/Rete/Refcount.idr
 
-# ── keys: every lane above is keyed on what its verdict depends on.
-#    Not a formal method and it proves nothing about the spec: it reads this
-#    file's expansion and, for each lane, derives the inputs from the lane's own
-#    files — the recipe and what it imports, the corpus the recipe globs, the C a
-#    shim includes or a harness names in `@cbmc-src` — and fails on one the lane's
-#    `reads` leaves out. It is in this graph so that the question is asked
-#    wherever the lanes are run, and folded into formal-all so that a green
-#    aggregate cannot be built over a key with a hole in it.
-#
-#    Its own key is held to the same rule, by itself: every file it opened or
-#    listed must be in the `reads` below. That is why the corpora are here a
-#    second time. The modules are `**` here
-#    and per-directory on the idris lane on purpose: this step has to be re-run
-#    by a module at a depth the lane's patterns do not reach, which is the one
-#    it exists to report.
-step keys.stamp
-  stamp
-  require amd64 linux
-  run     python3 scripts/formal/check_formal_keys.py formal/formal.build
-  reads   scripts/formal/check_formal_keys.py formal/formal.build
-          scripts/formal/check_alloy.py scripts/formal/check_tla.py
-          scripts/formal/check_saw.py scripts/formal/check_cbmc.py
-          scripts/formal/check_k.py scripts/formal/check_idris.py
-          scripts/formal/check_instances.py scripts/formal/formal_arch.py
-          runtime/src/libds/int_ops.h runtime/src/libds/oa.h runtime/include/libds.h
-          runtime/src/libds/dsc/atom_registry.h runtime/src/libds/dsc/pbf_reader.h
-          runtime/src/libds/rfcs/atoms.h
-          runtime/src/libds/dsc/atom_registry.c runtime/src/libds/dsc/pbf_reader.c
-          runtime/src/libds/float_fmt.c runtime/src/libds/float_fmt.h
-          runtime/src/libds/ds_text.c runtime/src/libds/ds_text.h
-          formal/alloy/RunAlloy.java formal/alloy/*.als
-          formal/tla/*.tla formal/tla/*.cfg
-          formal/saw/*.saw formal/saw/*.c formal/cbmc/*.c
-          formal/k/*.k formal/k/*.prog formal/k/*.expected
-          formal/idris/**/*.idr formal/idris/*.ipkg
-          formal/idris/tests/*.lowered formal/idris/tests/*.expected
-
 # ── formal-all: the aggregate — a stamp step that reads every lane's stamp, so
 #    `build formal/formal.build formal-all.stamp` runs (or reuses) every lane,
-#    and the key and instance checks beside them. Not cbmc-sweep.stamp, for its
-#    cost (the cbmc comment above).
+#    and the instance check beside them. Not cbmc-sweep.stamp, for its cost
+#    (the cbmc comment above).
 step formal-all.stamp
   stamp
   run   true
   reads alloy.stamp tla.stamp saw.stamp cbmc.stamp k.stamp idris.stamp
-        instances.stamp keys.stamp
+        instances.stamp
 
 # ── every lane reads deps.lock ──────────────────────────────────────────────
 #

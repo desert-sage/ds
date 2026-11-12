@@ -29,16 +29,16 @@ The compiler writes no duplicate within a module's namespace. A schema's own nam
 
 ### Numbers outside the census
 
-A field number with no census row is unknown to the loader, and its band decides what the loader does with it ([Unknown atoms](../artefacts/dsc-format.md#unknown-atoms)).
+Every atom a loader meets has a row in its series' census. The atoms a loader steps over by name are at [Atoms stepped over](../artefacts/dsc-format.md#atoms-stepped-over).
 
 `StreamHeader` has no row and never appears in a `.dsc`: a reader walking the `.dsc` atoms of a self-contained stream takes it as the start of the stream ([Lean and self-contained streams](../artefacts/fact-stream.md#lean-and-self-contained-streams)). Two members of one `oneof` cannot share a number, so no `.dsc` atom collides with it.
 
-*(Spec: [RDSC.7.4], [RDSC.7.5], [RDSC.9.4])*
+*(Spec: [RDSC.7.5], [RDSC.9.4], [LDET.1.10])*
 
 ### Test and oracle atoms
 
-The `TestCase`, `TestFact`, `TestCacheSeed`, `TestResponse` and `TestReply` atoms and the `Oracle*` atoms are test metadata in the skip band.
+The `TestCase`, `TestFact`, `TestCacheSeed`, `TestResponse` and `TestReply` atoms and the `Oracle*` atoms are test metadata, each with a field number of its own.
 
-A runtime that runs no tests skips them and runs the program unchanged.
+A production runtime's loader [steps over](../artefacts/dsc-format.md#atoms-stepped-over) them and runs the program unchanged.
 
-*(Spec: [RDSC.7.6])*
+*(Spec: [RDSC.7.6], [RDSC.9.4])*

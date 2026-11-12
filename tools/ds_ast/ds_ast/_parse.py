@@ -59,7 +59,10 @@ class DSSyntaxError(SyntaxError):
     (None when no node on its line has a `lineno`); `generated`, the line
     and column `dsc` named in `unparse`'s text; and `diagnostics`, every
     diagnostic of the refusal in `dsc`'s order, this one first, each a
-    `DSSyntaxError` or a `DSSyntaxWarning`."""
+    `DSSyntaxError` or a `DSSyntaxWarning`. A diagnostic in another file
+    the compile reads, a library it imports, keeps the file, line and
+    column `dsc` named, and its `node` and `generated` are None: it is in
+    no text `unparse` wrote."""
 
     node: AST | None = None
     generated: tuple[int, int] | None = None
@@ -78,7 +81,7 @@ class DSSyntaxWarning(SyntaxWarning):
 
     def __init__(self, msg: str, filename: str, lineno: int | None,
                  offset: int | None, code: str, node: AST | None,
-                 generated: tuple[int, int]):
+                 generated: tuple[int, int] | None):
         super().__init__(msg)
         self.msg = msg
         self.filename = filename
@@ -141,6 +144,10 @@ def compile(node: AST, filename: str = "<unknown>", *,
     generator that sets `lineno` from its own source sees `dsc` refuse the
     program at the line its author wrote. Where no node on the line
     has a `lineno`, the location is None; `generated` keeps `dsc`'s.
+    A diagnostic in another file the compile reads, a library it imports
+    ([RCLI.1.9]), is in no text `unparse` wrote: it keeps the file, line
+    and column `dsc` named, with no node, and a warning there is issued
+    at that file and line.
 
     `filename` names the program in what is reported, and to `dsc`.
     `search_path` is where imports resolve, `-L`; `dialect_files` are
@@ -183,7 +190,7 @@ def compile(node: AST, filename: str = "<unknown>", *,
     if run.returncode == 0:
         for w in reported:
             if isinstance(w, DSSyntaxWarning):
-                warnings.warn_explicit(w, DSSyntaxWarning, filename,
+                warnings.warn_explicit(w, DSSyntaxWarning, w.filename,
                                        w.lineno or 0)
         return run.stdout
     errors = [e for e in reported if isinstance(e, DSSyntaxError)]
@@ -212,9 +219,21 @@ def _reported(diagnostic: dict[str, Any], lines: list[tuple[AST, ...]],
               depth: dict[int, int], filename: str) -> Any:
     """One `dsc --diagnostics json` diagnostic, at the node its line was
     written for: a `DSSyntaxError`, or a `DSSyntaxWarning`. The deepest
-    located node wins, and of two as deep, the first written."""
-    start = diagnostic["span"]["start"]
+    located node wins, and of two as deep, the first written.
+
+    Only a diagnostic whose span names `filename` is in `unparse`'s text.
+    One in any other file, which [RCLI.1.9] has `dsc` name by that file
+    (`span.file`, [RCLI.3.2]), stays where `dsc` put it."""
+    span = diagnostic["span"]
+    start = span["start"]
     line, column = start["line"], start["column"]
+    message, code = diagnostic["message"], diagnostic["code"]
+    warning = diagnostic["severity"] == "warning"
+    if span["file"] != filename:
+        if warning:
+            return DSSyntaxWarning(message, span["file"], line, column, code,
+                                   None, None)
+        return DSSyntaxError(message, span["file"], line, column, None, code)
     on_line = lines[line - 1] if 0 < line <= len(lines) else ()
     node = None
     for candidate in on_line:
@@ -226,8 +245,7 @@ def _reported(diagnostic: dict[str, Any], lines: list[tuple[AST, ...]],
     lineno = node.lineno if node is not None else None
     col = getattr(node, "col_offset", None) if node is not None else None
     offset = col + 1 if col is not None else None
-    message, code = diagnostic["message"], diagnostic["code"]
-    if diagnostic["severity"] == "warning":
+    if warning:
         return DSSyntaxWarning(message, filename, lineno, offset, code, node,
                                (line, column))
     err = DSSyntaxError(message, filename, lineno, offset, None, code)

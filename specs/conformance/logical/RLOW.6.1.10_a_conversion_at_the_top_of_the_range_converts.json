@@ -1,0 +1,16 @@
+{
+    "id": "RLOW.6.1.10_a_conversion_at_the_top_of_the_range_converts",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "dead_rules_expected": ["handler"],
+    "scenario": "[RLOW.6.1.10]: an integer-stored unit's conversion raises only outside the `Int` range, so a result at its top converts. `byte` is `x * 8` bits (P = 8, Q = 1, R = 0). The fact holds 2^60 - 1, and `s.n::byte` is 2^63 - 8 bits, inside the range, so rule `conv` logs and rule `handler` does not. Exactly [\"conv 1\"]. This is the control for RLOW.6.1.10_a_conversion_past_the_range_raises: a check that is off by one, or one that refuses any product past 2^62, raises here. PATH PINNED: `dsc.rete.rlow_6_1_10_int` through `rlow_7_3_9_mul_add_checked`, whose FN_INT_MUL_ADD_CHECKED each runtime evaluates.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::byte == 9223372036854775800_bit\n->\n    log info \"conv {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 1152921504606846975 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["conv 1"]
+    }
+}

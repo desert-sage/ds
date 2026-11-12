@@ -47,3 +47,4 @@ class EngineFault(enum.IntEnum):
     ORDER_KEY = 4
     ALLOCATION = 6
     PUMP_WCET = 7
+    INTERNAL = 8

@@ -1,0 +1,19 @@
+{
+    "id": "RDSC.5a.8.2_parallel_backings_absorb_a_sample_once",
+    "clauses": ["RDSC.5a.8.1", "RDSC.5a.8.2"],
+    "category": "logical",
+    "scenario": "[RDSC.5a.8.2]: backends that differ in atom are parallel, each keyed by the full [RDSC.5a.8.1] tuple, so each absorbs a sample once. `count, sum, min sliding 10_min` on `Reading.level` gives SeriesBackendRingBuffer (`count`, `sum`) and SeriesBackendMonotonicDeque (`min`) at one window. Two samples, 5.0 then 3.0, then a `Probe` reads all three: count 2, sum 8.0, min 3.0. A runtime keying the state on the window without the atom absorbs each sample once per backing into one row, and reads count 4 and sum 16.0; `min` cannot show it. Path: libds `ds_series_absorb_one`, one `backend_state` per backend slot in the row; Mercury `ds.series.absorb` keyed by `row_key(series_key, backing)`, and `read_backing` for each read.",
+    "rules_ds": "use default\n\nschema Reading scope logical:\n    dev: String key\n    level: Float mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Reading.level:\n    count, sum, min sliding 10_min\n\nrule read:\n    Probe\n    Reading r\n->\n    log info \"{r.count} {r.sum} {r.min}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 5.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Reading", "slots": { "dev": "a", "level": 3.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["2 8.0 3.0"]
+    }
+}

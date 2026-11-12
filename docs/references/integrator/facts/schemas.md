@@ -38,11 +38,11 @@ A slot's schema-declared type.
 | `DS_SLOT_TYPE_BYTES` | binary |
 | `DS_SLOT_TYPE_TIME` | an instant's nanoseconds since the epoch, UTC, with no zone |
 | `DS_SLOT_TYPE_DATE` | days since the epoch |
-| `DS_SLOT_TYPE_DURATION` | nanoseconds |
+| `DS_SLOT_TYPE_DURATION` | nanoseconds; also a slot declared a `time` unit or `time` |
 
 The value kind each type takes is in [Slot value kinds](asserting.md#slot-value-kinds).
 
-*(libds.h: ds_slot_type_t)*
+*(libds.h: ds_slot_type_t, Spec: [RDSC.5.5.8])*
 
 ### `ds_identity_role_t`
 
@@ -196,3 +196,44 @@ Reads the schema's generated `.proto` definition, from the artefact's `SchemaDef
 `*out_text` is NULL when the artefact has no `SchemaDef` for the schema. `*out_len`, if `out_len` is non-NULL, is the byte length excluding the NUL terminator.
 
 *(libds.h: ds_schema_get_proto_source)*
+
+## Unit conversion
+
+### `ds_schema_slot_to_stored`
+
+**`ds_result_t ds_schema_slot_to_stored(const ds_schema_t *schema, uint32_t index, const ds_slot_value_t *in, ds_slot_value_t *out);`**
+
+Writes to `*out` the stored number of `in`, a number in the unit slot `index` names.
+
+It computes what `x::<unit>` computes. `in` and `*out` are of the kind [Slot value kinds](asserting.md#slot-value-kinds) pairs with the slot's type. A slot names a unit when its declared type is a unit symbol. It is answered as [Unit conversion results](#unit-conversion-results) states.
+
+*(libds.h: ds_schema_slot_to_stored, Spec: [NFCT.1.4.6], [RDSC.5.5.9], [LUNI.8.5], Source: runtime/src/libds/engine_rete_adapters.c)*
+
+### `ds_schema_slot_from_stored`
+
+**`ds_result_t ds_schema_slot_from_stored(const ds_schema_t *schema, uint32_t index, const ds_slot_value_t *in, ds_slot_value_t *out);`**
+
+Writes to `*out` the stored number `in` expressed in the unit slot `index` names.
+
+It computes what a kwarg of that unit receives. `in` and `*out` are of the kind [Slot value kinds](asserting.md#slot-value-kinds) pairs with the slot's type. It is answered as [Unit conversion results](#unit-conversion-results) states.
+
+*(libds.h: ds_schema_slot_from_stored, Spec: [NFCT.1.4.6], [RDSC.5.5.9], Source: runtime/src/libds/engine_rete_adapters.c)*
+
+### Unit conversion results
+
+`ds_schema_slot_to_stored` and `ds_schema_slot_from_stored` change nothing in the engine, record no event and assert no fault fact, save for an `EngineError` the conversion raises, which halts the engine as any public call that raises one does.
+
+Neither is a `ds_engine_*` call, and a callback may make either. Each returns the status of the first of these that holds, and writes `*out` only on `DS_OK`:
+
+| Order | Code | Condition |
+|---|---|---|
+| 1 | `DS_ERR_INVAL` | a NULL pointer |
+| 2 | `DS_ERR_ENGINE_HALTED` | an `EngineError` has [halted](../engine/lifecycle.md#halt-latch) the engine |
+| 3 | `DS_ERR_NOT_FOUND` | `index` names no slot of the schema |
+| 4 | `DS_ERR_INVAL` | the slot names no unit |
+| 5 | `DS_ERR_SLOT_TYPE_MISMATCH` | `in`'s kind is not the slot's |
+| 6 | `DS_ERR_NAN_REJECTED` | `in` is a NaN |
+| 7 | `DS_ERR_ENGINE_HALTED` | the conversion raises an `EngineError` |
+| 8 | `DS_ERR_NOT_REPRESENTABLE` | the conversion raises any other fault where a rule's evaluation would, or its result is NaN |
+
+*(libds.h: ds_schema_slot_to_stored, ds_schema_slot_from_stored, DS_ERR_NOT_REPRESENTABLE, DS_ERR_ENGINE_HALTED, Spec: [NFCT.1.4.6], [NCBK.2.9], [RARC.13.16], Source: runtime/src/libds/engine_rete_adapters.c)*

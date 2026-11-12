@@ -11,7 +11,7 @@ DS is the short form of Desert Sage.
 
 ## What this book covers
 
-This book covers the API of the Python (`pyds`), JavaScript (`@ds-lang/ds`) and Mercury bindings. An entry names the `libds.h` entry it wraps, links to it, and states only what the binding adds or changes. C has one entry, linked to the integrator book.
+This book covers the API of the Python (`pyds`), JavaScript (`@ds-lang/ds`) and Mercury bindings. An entry names the `libds.h` entry it wraps, links to it, and states only what the binding adds or changes. C has one entry, linked to the integrator book. It also covers the API of the Python packages `ds_lexer` and `ds_ast`, which wrap no `libds.h` entry.
 
 ## Covered elsewhere
 
@@ -19,7 +19,7 @@ The DS language as written, and the tools an author runs, are [The DS Author's R
 
 ## Installing
 
-The `pyds` and `@ds-lang/ds` entries below state how each installs. A C program links libds as [Header and linking](inv:integrator:std:doc#conventions/linking) states.
+The `pyds`, `@ds-lang/ds`, `ds_lexer` and `ds_ast` entries below state how each installs. A C program links libds as [Header and linking](inv:integrator:std:doc#conventions/linking) states.
 
 ## Reading an entry
 
@@ -48,7 +48,7 @@ python3 -m venv .venv
 On CPython older than 3.12, pip refuses the wheel as `is not a supported wheel on this platform`, and the message names no version.
 ```
 
-*(Source: bindings/python/pyproject.toml, bindings/python/meson.build, bindings/python/src/pyds/_dsc_command.py, Spec: [STYL.5.3.11], [LIMP.3.3.1], [RCLI.1.11], Release: ds_lang-<version>-cp312-abi3-<platform>.whl)*
+*(Source: bindings/python/pyproject.toml, bindings/python/meson.build, bindings/python/src/pyds/_dsc_command.py, Spec: [LIMP.3.3.1], [RCLI.1.11], Release: ds_lang-<version>-cp312-abi3-<platform>.whl)*
 
 ## `@ds-lang/ds`
 
@@ -58,7 +58,7 @@ On CPython older than 3.12, pip refuses the wheel as `is not a supported wheel o
 
 It is an ES module package. It installs with `npm install @ds-lang/ds`, and needs Node 20 or later. The package npm and a release's `ds-lang-ds-<version>.tgz` carry is the wasm build, with `ds_dsc` and the standard library, and no native target.
 
-*(Source: bindings/js/package.json, bindings/js/lib/index.js, Spec: [STYL.5.3.11])*
+*(Source: bindings/js/package.json, bindings/js/lib/index.js)*
 
 ## `mercury_ds`
 
@@ -66,7 +66,27 @@ It is an ES module package. It installs with `npm install @ds-lang/ds`, and need
 
 [The Mercury binding to the Mercury DS runtime](mercury/session.md), `runtime/mercury`.
 
-*(Source: bindings/mercury/src/mercury_ds.m, Spec: [STYL.5.3.11])*
+*(Source: bindings/mercury/src/mercury_ds.m)*
+
+## `ds_lexer`
+
+**`import ds_lexer`**
+
+[The Pygments lexer for DS source](ds_lexer/ds_lexer.md).
+
+The distribution is `ds-lang-lexer`, and the module it installs is `ds_lexer`. A release ships it as `ds_lang_lexer-<version>-py3-none-any.whl`, which also installs from PyPI as `ds-lang-lexer`. It needs Python 3.11 or later and `Pygments` 2.10 or later.
+
+*(Source: tools/ds_lexer/pyproject.toml, Release: ds_lang_lexer-<version>-py3-none-any.whl)*
+
+## `ds_ast`
+
+**`import ds_ast`**
+
+[DS programs as syntax trees](ds_ast/ds_ast.md), shaped like Python's `ast`.
+
+The distribution is `ds-lang-ast`, and the package it installs is `ds_ast`. A release ships it as `ds_lang_ast-<version>-py3-none-any.whl`, which also installs from PyPI as `ds-lang-ast`. It needs Python 3.11 or later and no other package. It parses and compiles by running a `dsc`, which it does not bundle: [Which `dsc` runs](ds_ast/ds_ast.md#which-dsc-runs).
+
+*(Source: tools/ds_ast/pyproject.toml, Release: ds_lang_ast-<version>-py3-none-any.whl)*
 
 ## C
 

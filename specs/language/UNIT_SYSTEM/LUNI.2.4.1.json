@@ -1,0 +1,26 @@
+{
+  "id": "LUNI.2.4.1",
+  "prefix": "LUNI",
+  "doc": "UNIT_SYSTEM.md",
+  "parent": "LUNI.2.4",
+  "seq": 84,
+  "depth": 3,
+  "kind": "normative",
+  "heading": null,
+  "text": "[LUNI.2.4.1] **A constant the compiler emits must fit the runtime value it\nbecomes.** The compiler emits an exact constant as an `Int` or as a `Float`. It\n**must** refuse, with `DS_VALIDATE_CONSTANT_OUT_OF_RANGE`, a constant it must emit\nas an `Int` whose exact value lies outside the 64-bit signed range, and one it must\nemit as a `Float` whose value rounds past the largest finite `Float`. It **must\nnot** wrap, truncate or saturate either. The constants are:\n\n- a unit literal's value in its base unit ([LUNI.3.1.9]), refused at the literal;\n- a unit's constants ([LUNI.4.3]), refused at the unit's declaration: in integer\n  storage the integers $P$, $Q$ and $R$ that [RLOW.6.1.10] writes and the $-R$ that\n  [RLOW.7.3.9] writes, so an $R$ of $-2^{63}$ is refused, and in `float64`\n  storage `a` and `b` as [LUNI.2.7.1] rounds them. An `a` that is not zero and\n  rounds to zero is refused the same way, since its inverse has no value;\n- in integer storage, a value known at compile time that a `call` folds into a\n  kwarg's unit ([RLOW.7.3.9]), refused at the `call`.\n\n`Int` arithmetic is not a constant the compiler emits: it wraps, folded or not\n([LEXP.7.13.1], [LEXP.8.8.1]). A literal written past its range is a lexer error\n([LLEX.11.1.5], [LLEX.11.2.4]).\n\n",
+  "refs": [
+    "LEXP.7.13.1",
+    "LEXP.8.8.1",
+    "LLEX.11.1.5",
+    "LLEX.11.2.4",
+    "LUNI.2.7.1",
+    "LUNI.3.1.9",
+    "LUNI.4.3",
+    "RLOW.6.1.10",
+    "RLOW.7.3.9"
+  ],
+  "errors": [
+    "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+  ],
+  "compiler_only": true
+}

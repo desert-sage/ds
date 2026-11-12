@@ -92,6 +92,11 @@ void        ds_cache_resolve_held(ds_cache_t *c, uint64_t now_ns);
 /* The largest TTL an entry holds as a duration, 0 when none does. */
 uint64_t    ds_cache_held_ttl_max(const ds_cache_t *c);
 
+/* [NLFC.2.5]: lowers `*io_best`, setting `*io_has`, to the earliest entry expiry
+   later than `now_ns`. A TTL still held as a duration has no instant yet. */
+void        ds_cache_next_deadline(const ds_cache_t *c, uint64_t now_ns,
+                                   uint64_t *io_best, bool *io_has);
+
 /* [LTIM.1.1.5]: whether `now_ns` + `ttl_ns` is a `Time`. A TTL of 0 is no
    deadline. */
 static inline bool ds_cache_ttl_in_range(uint64_t now_ns, uint64_t ttl_ns)

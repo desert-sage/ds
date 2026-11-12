@@ -24,9 +24,9 @@
 ||| tick is consumed, which is the same state once the pump runs
 ||| (Rete/TtlSweep.idr's header on the placement).
 ||| A data input is Ttl's: it carries no clock in this module (RARC.5.6.3
-||| samples both clocks at every input; the sample a data input would take
-||| is Rete/NetworkSampled.idr's, where a step is the tick at
-||| the sample then the event), so here it re-times nothing. The run to
+||| samples both clocks at every input; the sample a data input takes is
+||| Rete/NetworkTimed.idr's `ltim_2_8_6__input_timed`), so here it re-times
+||| nothing. The run to
 ||| quiescence is Ttl's
 ||| (`iret_11_4__run_ttl_net`); a pump is the prepare then the run.
 |||
@@ -78,9 +78,10 @@
 ||| nothing here counts a pump's firings against the born
 ||| set beyond the executed witnesses. That a row whose activation the tick
 ||| ended is dropped by the cascade that follows is [LTIM.2.7.2] by
-||| `iret_12_2__ended_net`'s definition; the theorem that the fact it alone
-||| supported is retracted, under unique fact ids, is
-||| Rete/NetworkWindowLapse.idr's. The two clocks, the entry
+||| `iret_12_2__ended_net`'s definition; that the fact it alone supported is
+||| then retracted is stated for every program by no theorem of the lane,
+||| and executed once by Rete/NetworkTimed.idr
+||| (`ltim_2_7_2__lapsed_fact_retracted`). The two clocks, the entry
 ||| stamp and replay on this engine are part C. The alphas and the timed
 ||| tests are given as Tick gives them (one `Maybe` per chain, by ordinal);
 ||| that the loader pairs them with the right chains is the reading

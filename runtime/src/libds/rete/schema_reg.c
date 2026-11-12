@@ -248,7 +248,6 @@ ds_result_t ds_rete_schemas_clone(ds_rete_clone_ctx_t *cx,
                                   const ds_rete_engine_t *src,
                                   ds_rete_engine_t *dst)
 {
-    (void) cx;
     for (size_t i = 0; i < src->schema_count; i++) {
         const ds_rete_schema_t *s = src->schemas_by_id[i];
         ds_rete_schema_t *out = NULL;
@@ -256,6 +255,20 @@ ds_result_t ds_rete_schemas_clone(ds_rete_clone_ctx_t *cx,
             dst, s->name, s->scope, s->default_ttl_ns,
             (ds_rete_slot_desc_t *) s->slots, s->slot_count, &out);
         if (r.status != DS_OK) return r;
+        /* [RDSC.5.5.9]: the registration copied the source's conversion
+           pointers, which are its own. Each clone owns a copy. */
+        for (uint16_t k = 0; k < out->slot_count; k++) {
+            out->slots[k].to_stored   = NULL;
+            out->slots[k].from_stored = NULL;
+        }
+        for (uint16_t k = 0; k < out->slot_count; k++) {
+            if (s->slots[k].to_stored == NULL) continue;
+            out->slots[k].to_stored =
+                ds_rete_clone_expr(cx, s->slots[k].to_stored);
+            out->slots[k].from_stored =
+                ds_rete_clone_expr(cx, s->slots[k].from_stored);
+        }
+        if (cx->oom) return DS_ERR_R(DS_ERR_OOM, "clone: slot conversion");
     }
     return DS_OK_R;
 }

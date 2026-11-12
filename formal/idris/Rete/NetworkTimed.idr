@@ -50,11 +50,11 @@
 ||| (step 4). Between two pumps the engine re-evaluates once, at the pump:
 ||| [LTIM.2.4.2]'s "every engine tick (each pump)", and what libds does; a
 ||| tick that advances and a tick that samples at a data input are one
-||| sample to the next pump. (Rete/NetworkSampled.idr re-times at every
-||| input; the two agree on every cadence the Idris model runs, a tick then a
-||| pump, and differ only where two ticks precede one pump and a gate
-||| closes and reopens between them, a case no clause's cycle has and no
-||| fixture drives.)
+||| sample to the next pump. (An engine that re-timed at every input would
+||| agree on every cadence the Idris model runs, a tick then a pump, and
+||| differ only where two ticks precede one pump and a gate closes and
+||| reopens between them, a case no clause's cycle has and no fixture
+||| drives.)
 |||
 ||| THE READING WHERE THE MODEL AND THE COMPILER PART. The compiler moves a
 ||| timed `where` into the terminal's fire guard, read at selection under the
@@ -100,9 +100,8 @@
 |||     sample over the stamps (`ltim_2_4_3__tick_then_pump_is_clocked`), which
 |||     is Rete/NetworkTwoClocks.idr's `ltim_2_8_4__pump_sampled` -- so C2 (the
 |||     wall clock moves no monotonic gate), C3a (a rising gate fires at most
-|||     once), Rete/NetworkEdges.idr's B2 (the counts are the edges) and
-|||     Rete/NetworkWindowLapse.idr's lapsed-justification theorem hold of
-|||     this engine's tick-then-pump cycle by instantiation, with the tests
+|||     once) and Rete/NetworkEdges.idr's B2 (the counts are the edges) hold
+|||     of this engine's tick-then-pump cycle by instantiation, with the tests
 |||     this file builds in place of the gates those files take.
 |||   * THE GATE UNDER THE CONDITION ([LTIM.2.5.4], [RDSC.4a.8.2.3]): the
 |||     selection is of the re-timed chains, so a firing exists only for a
@@ -139,9 +138,8 @@
 ||| `fired` flag here. A series or zone read is outside the fragment.
 module Rete.NetworkTimed
 
--- The imports are Rete/NetworkCooldown.idr's whole, for the reason
--- Rete/NetworkThen.idr's comment gives: a run evaluated in a witness
--- unfolds only through modules the file imports.
+-- The imports are Rete/NetworkCooldown.idr's whole: a run evaluated in a
+-- witness unfolds only through modules the file imports.
 import Rete.FireLoop
 import Rete.FireLoopTms
 import Rete.PumpBoundary

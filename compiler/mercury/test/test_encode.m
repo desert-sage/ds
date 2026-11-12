@@ -372,7 +372,7 @@ ref(IT, N) =
 :- func slot(intern_table, string, slot_kind, int) = slot_common.
 
 slot(IT, Name, Kind, Index) = slot_common(ref(IT, Name), Kind,
-    det_slot_index(Index), non_null, no, no, no, unbounded).
+    det_slot_index(Index), non_null, no, no, no, unbounded, no).
 
 :- func det_slot_index(int) = slot_index.
 
@@ -491,7 +491,7 @@ cases(!T, !IO) :-
     % with the numbers permuted.
     Flags = schema(make_schema_id(1u32), named(IT, "Reading"),
         lc_explicit([plain_slot(slot_common(ref(IT, "state"), k_float,
-            det_slot_index(0), nullable, yes, yes, no, unbounded))]), no, no),
+            det_slot_index(0), nullable, yes, yes, no, unbounded, no))]), no, no),
     check_trip("`sampled`, `retained` and `nullable` all survive together",
         IT, [Flags], !T, !IO),
 
@@ -501,7 +501,7 @@ cases(!T, !IO) :-
         lc_explicit([
             plain_slot(slot(IT, "entity_id", k_string, 0)),
             plain_slot(slot_common(ref(IT, "state"), k_float,
-                det_slot_index(1), non_null, no, no, yes, unbounded))]), no, no),
+                det_slot_index(1), non_null, no, no, yes, unbounded, no))]), no, no),
     check_trip("[RDSC.5.6.3] a hydratable slot keeps its Hydration",
         IT, [Hydr], !T, !IO),
 
@@ -569,12 +569,12 @@ cases(!T, !IO) :-
                 at_schema_def]
         ), !T, !IO),
 
-    % Nothing emitted is skipped: 256..2047 is skip-don't-reject [RFCS.16.2],
-    % so it would load with pieces missing.
-    check_loaded("no atom this encoder emits lands in the skip band",
+    % Nothing emitted is skipped: a loader steps over only the atoms
+    % [RDSC.9.4] names, and this artefact carries none of them.
+    check_loaded("no atom this encoder emits is one a loader skips",
         IT, [Hydr],
         ( pred(P::in) is semidet :-
-            skipped(P) = []
+            skips(P) = []
         ), !T, !IO),
 
     % ── the header ──────────────────────────────────────────────────────────
@@ -1961,6 +1961,51 @@ source_cases(!T, !IO) :-
                 "rule `warm` cannot be lowered: ")
         then yes else no ), !T, !IO),
 
+    % [RCLI.1.9]: an error lowering a library's schema, a slot type no type
+    % declares, is named in the library's file, as its `DsSource` names it,
+    % not in the importing file's. The control: the same declaration in the
+    % importing file is named by no library, so the caller's `--filename`
+    % names it.
+    BadTypeLib = "schema Sensor scope logical:\n"
+        ++ "    entity_id: String key\n"
+        ++ "\n"
+        ++ "schema Other scope logical:\n"
+        ++ "    name: Strin key\n",
+    compile_with(as_though("default"),
+        yes(map.from_assoc_list(["badtype" - BadTypeLib])),
+        "from badtype import Sensor\n\n"
+            ++ "rule seen:\n"
+            ++ "    Sensor s where s.entity_id == \"kitchen\"\n"
+            ++ "->\n"
+            ++ "    log warning \"seen\"\n",
+        BadTypeResult),
+    check("[RCLI.1.9] an error lowering a library's schema is named in its "
+            ++ "library",
+        ( if
+            BadTypeResult = compile_rejected(BadDs),
+            UnknownInLib = list.filter(
+                ( pred(BadD::in) is semidet :-
+                    BadD ^ dg_code = dc_validate(dv_unknown_type) ), BadDs),
+            UnknownInLib = [_ | _],
+            list.all_true(
+                ( pred(LibBadD::in) is semidet :-
+                    LibBadD ^ dg_file = yes("<in-memory:badtype.ds>") ),
+                UnknownInLib)
+        then yes else no ), !T, !IO),
+    check("[RCLI.1.9] the control: the same declaration in the importing "
+            ++ "file is named by no library",
+        ( if
+            compile("schema Other scope logical:\n    name: Strin key\n")
+                = compile_rejected(OwnDs),
+            UnknownOwn = list.filter(
+                ( pred(OwnD::in) is semidet :-
+                    OwnD ^ dg_code = dc_validate(dv_unknown_type) ), OwnDs),
+            UnknownOwn = [_ | _],
+            list.all_true(
+                ( pred(OwnUnD::in) is semidet :- OwnUnD ^ dg_file = no ),
+                UnknownOwn)
+        then yes else no ), !T, !IO),
+
     % @spec [RDSC.11.3]: the compiler refuses a program an expression
     % of which would lower to an `Expr` nested deeper than 48, the outermost at
     % 0, with DS_VALIDATE_EXPRESSION_TOO_DEEP. The join test `s.v + ... + s.v
@@ -2295,9 +2340,10 @@ source_cases(!T, !IO) :-
             expand(interns(P), Path, "foo")
         ), !T, !IO),
 
-    % `??` ends provenance: it establishes the type. The projection beneath it
-    % keeps its flag; the `??` and the `>` above take none.
-    check_source_loaded("[IRET.9.6] `??` ends a projection's provenance",
+    % `??` keeps provenance: it passes a present value through whatever its
+    % kind, so it establishes nothing. The projection, the `??` and the `>`
+    % above all carry the flag.
+    check_source_loaded("[IRET.9.6] `??` keeps a projection's provenance",
         "schema Msg scope logical:\n" ++
         "    entity_id: String key\n" ++
         "    body: Json mutable\n" ++
@@ -2308,9 +2354,38 @@ source_cases(!T, !IO) :-
         "    log info \"big\"\n",
         ( pred(P::in) is semidet :-
             [Beta] = beta_nodes(network(P)),
+            Beta ^ bn_tests = [e_tainted(e_binop(op_gt,
+                e_tainted(e_coalesce(e_tainted(e_call(fn_json_path, _)),
+                    e_lit(int(0i64)))),
+                e_lit(int(30i64))))]
+        ), !T, !IO),
+
+    % [LCST.4.5.11]: a cast of a `Json` leaf dispatches on the kind the leaf
+    % holds, `null` first, and its result is clean ([IRET.9.6]), so the `>`
+    % above takes no flag.
+    check_source_loaded("[LCST.4.5.11] a `Json` leaf's cast dispatches on its "
+        ++ "kind, and its result is clean",
+        "schema Msg scope logical:\n" ++
+        "    entity_id: String key\n" ++
+        "    body: Json mutable\n" ++
+        "\n" ++
+        "rule big:\n" ++
+        "    Msg m where m.body.foo::Float? > 1.0\n" ++
+        "->\n" ++
+        "    log info \"big\"\n",
+        ( pred(P::in) is semidet :-
+            [Beta] = beta_nodes(network(P)),
             Beta ^ bn_tests = [e_binop(op_gt,
-                e_coalesce(e_tainted(e_call(fn_json_path, _)), e_lit(int(0i64))),
-                e_lit(int(30i64)))]
+                e_if(e_is_test(e_tainted(e_call(fn_json_path, _)), is_null, no),
+                    e_lit(null),
+                    e_if(e_is_test(_, is_int, no),
+                        e_call(fn_int_to_float, [_]),
+                        e_if(e_is_test(_, is_float, no), _,
+                            e_if(e_is_test(_, is_string, no),
+                                e_call(fn_string_to_float, [_]),
+                                e_if(e_is_test(_, is_bool, no),
+                                    e_tainted(_), e_tainted(_)))))),
+                e_lit(float(1.0)))]
         ), !T, !IO),
 
     % `m.seen_on.year` is a nested access that is not a projection: a Date
@@ -2333,6 +2408,33 @@ source_cases(!T, !IO) :-
             Beta ^ bn_tests = [e_binop(op_gt,
                 e_call(fn_year, [e_call(fn_float_to_int, [_]), _]),
                 e_lit(int(2020i64)))]
+        ), !T, !IO),
+
+    % A `Time` constant and a `Date` call over constants are each one literal,
+    % and no `FN_CALENDAR_*` call reaches the artefact.
+    %
+    %@spec [RLOW.6.1.8]
+    check_source_loaded("[RLOW.6.1.8] a Time and a Date constant are literals",
+        "import calendar\n\n" ++
+        "const LAUNCH = calendar.time(2026, 1, 1)\n\n" ++
+        "schema Ev scope logical:\n" ++
+        "    id: Int key\n" ++
+        "    t: Time mutable\n" ++
+        "    d: Date mutable\n" ++
+        "\n" ++
+        "rule r:\n" ++
+        "    Ev e where e.t >= LAUNCH and e.d == calendar.date(2024, 2, 29)\n" ++
+        "->\n" ++
+        "    log info \"r\"\n",
+        ( pred(P::in) is semidet :-
+            Net = network(P),
+            [Alfa] = alpha_nodes(Net),
+            Alfa ^ an_tests = [at_eq(_, al_int(19782i64))],
+            [Beta] = beta_nodes(Net),
+            Beta ^ bn_tests = [e_binop(op_ge, e_slot(candidate, slot(_)),
+                e_lit(time(T)))],
+            utc_ns(T) = 1767225600000000000i64,
+            tz_offset_ns(T) = 0i64
         ), !T, !IO),
 
     % An `or` does not split, so nothing hoists and the whole `where` stays one
@@ -2830,8 +2932,9 @@ source_cases(!T, !IO) :-
                 "$Timer_after_only_0"),
             [ParentTerm, FollowTerm] = terminal_nodes(network(P)),
             ParentTerm ^ tn_inline_actions = [ia_assert(plain, _,
-                [slot_assign(_, e_binop(op_add, e_call(fn_monotonic_ns, []),
-                    e_lit(int(300000000000i64)))), _], no)],
+                [slot_assign(_, e_call(fn_duration_add,
+                    [e_call(fn_monotonic_ns, []),
+                     e_lit(int(300000000000i64))])), _], no)],
             FollowTerm ^ tn_guard = yes(e_binop(op_ge,
                 e_call(fn_monotonic_ns, []), _)),
             FollowTerm ^ tn_inline_actions = [ia_log(log_critical, _),
@@ -3827,8 +3930,8 @@ source_cases(!T, !IO) :-
             expand(interns(P), Tracker, "gated#call0"),
             list.member(Timer, Acts),
             Timer = ia_assert(plain, TimerRef, [Fire, _], no),
-            Fire = slot_assign(_, e_binop(op_add, e_call(fn_monotonic_ns, []),
-                e_lit(int(5000000000i64)))),
+            Fire = slot_assign(_, e_call(fn_duration_add,
+                [e_call(fn_monotonic_ns, []), e_lit(int(5000000000i64))])),
             expand(interns(P), TimerRef, "$Timer_gated_timeout_0")
         ), !T, !IO),
 
@@ -4000,7 +4103,38 @@ source_cases(!T, !IO) :-
     builtin_schema_cases(!T, !IO),
     cycle_cases(!T, !IO),
     front_code_cases(!T, !IO),
-    bit_field_range_cases(!T, !IO).
+    bit_field_range_cases(!T, !IO),
+    luni_2_4_1_duration_cases(!T, !IO).
+
+%-----------------------------------------------------------------------------%
+% [LUNI.2.4.1]: a duration literal outside int64 nanoseconds, at each position
+%-----------------------------------------------------------------------------%
+
+    % `10000000000_s` is 10^19 ns. Each position that takes a duration literal
+    % refuses it at the literal, and none reaches a lowering that would wrap it
+    % or abort on it.
+    %
+:- pred luni_2_4_1_duration_cases(tally::in, tally::out, io::di, io::uo)
+    is det.
+
+luni_2_4_1_duration_cases(!T, !IO) :-
+    Big = "10000000000_s",
+    Trig = "schema T scope logical:\n    v: Int key\n    ts: Time\n\n",
+    check_refused("[LUNI.2.4.1] a `ttl` past int64 nanoseconds",
+        "schema R scope ttl " ++ Big ++ ":\n    state: Float\n",
+        dv_constant_out_of_range, !T, !IO),
+    check_refused("[LUNI.2.4.1] an `after` delay past int64 nanoseconds",
+        Trig ++ "rule r:\n    T t\n->\n    after " ++ Big ++ ":\n"
+            ++ "        log info \"y\"\n",
+        dv_constant_out_of_range, !T, !IO),
+    check_refused("[LUNI.2.4.1] a `within` past int64 nanoseconds",
+        Trig ++ "rule r:\n    T within " ++ Big ++ "\n->\n"
+            ++ "    log info \"y\"\n",
+        dv_constant_out_of_range, !T, !IO),
+    check_refused("[LUNI.2.4.1] a `cooldown` past int64 nanoseconds",
+        Trig ++ "rule r cooldown " ++ Big ++ ":\n    T\n->\n"
+            ++ "    log info \"y\"\n",
+        dv_constant_out_of_range, !T, !IO).
 
 %-----------------------------------------------------------------------------%
 % [LEXP.3.7.4]: constant arguments outside [LEXP.3.7.3]'s domain
@@ -4214,7 +4348,76 @@ cycle_cases(!T, !IO) :-
         "    Trig\n" ++
         "->\n" ++
         "    emit Other v: 1\n",
-        dv_rule_cycle, !T, !IO).
+        dv_rule_cycle, !T, !IO),
+
+    % [RCLI.1.9], [LCYC.6.3]: a cycle through a library's rule and the
+    % importing file's is placed at the earliest rule, the library's `la`
+    % (the unit graph lists libraries first), so it is named in the library's
+    % file, at `la`'s line 7. The control: a cycle in the importing file alone
+    % is named by no library, though a library with a rule is imported.
+    CycleLib = "schema A scope logical:\n"
+        ++ "    v: Int key\n"
+        ++ "\n"
+        ++ "schema B scope logical:\n"
+        ++ "    v: Int key\n"
+        ++ "\n"
+        ++ "rule la:\n"
+        ++ "    A\n"
+        ++ "->\n"
+        ++ "    emit B logical v: 1\n",
+    compile_with(as_though("default"),
+        yes(map.from_assoc_list(["cyc" - CycleLib])),
+        "from cyc import A, B\n\n"
+            ++ "rule pb:\n"
+            ++ "    B\n"
+            ++ "->\n"
+            ++ "    emit A logical v: 1\n",
+        CrossResult),
+    check("[RCLI.1.9] a cycle placed at a library's rule is named in its "
+            ++ "library, at that rule",
+        ( if
+            CrossResult = compile_rejected(CrossDs),
+            Cycles = list.filter(
+                ( pred(CycD::in) is semidet :-
+                    CycD ^ dg_code = dc_validate(dv_rule_cycle) ), CrossDs),
+            Cycles = [_ | _],
+            list.all_true(
+                ( pred(LibCycD::in) is semidet :-
+                    LibCycD ^ dg_file = yes("<in-memory:cyc.ds>"),
+                    LibCycD ^ dg_pos ^ p_line = 7 ),
+                Cycles)
+        then yes else no ), !T, !IO),
+    QuietLib = "schema A scope logical:\n"
+        ++ "    v: Int key\n"
+        ++ "\n"
+        ++ "rule la:\n"
+        ++ "    A\n"
+        ++ "->\n"
+        ++ "    log info \"a\"\n",
+    compile_with(as_though("default"),
+        yes(map.from_assoc_list(["quiet" - QuietLib])),
+        "from quiet import A\n\n"
+            ++ "schema X scope logical:\n"
+            ++ "    v: Int key\n"
+            ++ "\n"
+            ++ "rule a:\n"
+            ++ "    X x\n"
+            ++ "->\n"
+            ++ "    emit X logical v: 1\n",
+        OwnCycleResult),
+    check("[RCLI.1.9] the control: a cycle in the importing file is named by "
+            ++ "no library",
+        ( if
+            OwnCycleResult = compile_rejected(OwnCycleDs),
+            OwnCycles = list.filter(
+                ( pred(OwnCycD::in) is semidet :-
+                    OwnCycD ^ dg_code = dc_validate(dv_rule_cycle) ),
+                OwnCycleDs),
+            OwnCycles = [_ | _],
+            list.all_true(
+                ( pred(FileCycD::in) is semidet :- FileCycD ^ dg_file = no ),
+                OwnCycles)
+        then yes else no ), !T, !IO).
 
 %-----------------------------------------------------------------------------%
 % The builtin schemas

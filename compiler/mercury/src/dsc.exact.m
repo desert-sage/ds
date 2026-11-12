@@ -82,6 +82,20 @@
     %@helper
 :- func truncate_wrapping_int64(rational) = int64.
 
+    % The `Int` a whole constant is emitted as. Fails for one outside the
+    % 64-bit signed range: an emitted constant is never wrapped, truncated or
+    % saturated. `to_float` is its `Float` counterpart, failing past the
+    % largest finite double.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_int64(integer::in, int64::out) is semidet.
+
+    % `luni_2_4_1_int64` of a whole rational. Fails as it does, and for a value
+    % that is not a whole number.
+    %
+    %@spec [LUNI.2.4.1]
+:- pred luni_2_4_1_whole_int64(rational::in, int64::out) is semidet.
+
     % -1, 0 or 1.
     %
     %@helper
@@ -102,6 +116,13 @@
     %
     %@helper
 :- func wrap_int64(integer) = int64.
+
+    % `A` and `B` written over their least common denominator: `A = P/Q` and
+    % `B = R/Q`, with `Q > 0`, as `over_common_denominator(A, B, P, Q, R)`.
+    %
+    %@helper
+:- pred over_common_denominator(rational::in, rational::in, integer::out,
+                                integer::out, integer::out) is det.
 
     % IEEE 754's `sqrt` ([LEXP.3.2]), found in integers. Fails on a value that
     % is not positive.
@@ -412,12 +433,26 @@ scale2(X, E) =
 
 truncate_wrapping_int64(R) = wrap_int64(truncate_integer(R)).
 
+luni_2_4_1_int64(T, I) :-
+    T >= -two_pow(63),
+    T < two_pow(63),
+    I = integer.det_to_int64(T).
+
+luni_2_4_1_whole_int64(R, I) :-
+    to_integer(R, T),
+    luni_2_4_1_int64(T, I).
+
 wrap_int64(T) = I :-
     Modulus = two_pow(64),
     W0 = T rem Modulus,
     W1 = ( if W0 < integer.zero then W0 + Modulus else W0 ),
     W = ( if W1 >= two_pow(63) then W1 - Modulus else W1 ),
     I = integer.det_to_int64(W).
+
+over_common_denominator(rational(NA, DA), rational(NB, DB), P, Q, R) :-
+    Q = (DA * DB) // gcd(DA, DB),
+    P = NA * (Q // DA),
+    R = NB * (Q // DB).
 
 sign(rational(N, _)) =
     ( if N < integer.zero then -1

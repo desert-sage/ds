@@ -967,10 +967,13 @@ export class Adapter {
     }
 
     /**
-     * One input at an engine timeline's end: a fork's next input from the
-     * real run, or a live run's next fact-file row ([NDBG.9.3.1] `facts`):
-     * the clock moved to its `@at` with no pump, the fact asserted, one
-     * pump, as batch mode feeds a row. Refused when there is none.
+     * One step at an engine timeline's end: a fork's next input from the
+     * real run, or a live run's next fact-file row ([NDBG.9.3.1] `facts`),
+     * fed as batch mode feeds a row. An engine deadline before the row's
+     * `@at` is a pump at its own instant, and at `pump` granularity a step of
+     * its own, the row waiting for the next; at `input` the step takes every
+     * such pump and then the row. The row: the clock moved to its `@at` with
+     * no pump, the fact asserted, one pump. Refused when no row is left.
      * @returns {Promise<Moved>}
      */
     async #feedOne() {
@@ -979,11 +982,13 @@ export class Adapter {
         const run = s.liveRun, row = this.#inputs[0];
         if (run === null || s.cur !== 0 || row === undefined)
             throw new Refused("nothing left to feed the engine: the session stays paused");
-        this.#inputs.shift();
         const from = s.k;
         try {
             const at = this.#start + row.at;
-            run.assertFactAt(at, row.schema, rowSlots(row, at));
+            if (this.granularity === "input" || !run.stepDeadline(at)) {
+                this.#inputs.shift();
+                run.assertFactAt(at, row.schema, rowSlots(row, at));
+            }
         } catch (err) {
             if (!(err instanceof Error) || err.name !== "DsError") throw err;
             throw new Refused(`${row.file}:${row.line}: the engine refused the row: ${err.message}`);

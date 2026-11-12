@@ -1,0 +1,10 @@
+{
+    "id": "LCST.4.5.2_a_whole_json_value_to_a_scalar_is_refused",
+    "category": "compiler",
+    "scenario": "[LCST.4.5.2] with [LCST.4.5.11]: a whole `Json` value read with no path is [LCST.4.5.2]'s `Json` row, which converts to no scalar, so `d.body::Float?` is refused with DS_VALIDATE_CAST_UNDEFINED. Only a leaf a path reads converts by the kind it holds. The fixture names no `also_raises`, so a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. A compiler that treated a whole `Json` slot as a leaf compiles it. PATH PINNED: `dsc.typecheck.lcst_4_1_5_cast_type`'s known-source arm, with `lcst_4_5_2_classify(ck_json, ct_float)`.",
+    "rules_ds": "schema Doc scope logical:\n    body: Json key\n\nrule r:\n    Doc d where d.body::Float? > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CAST_UNDEFINED"
+    }
+}

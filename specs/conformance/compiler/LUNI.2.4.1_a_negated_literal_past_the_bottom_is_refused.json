@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_a_negated_literal_past_the_bottom_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [LUNI.3.3]: a negated unit literal is held to the 64-bit signed range by its negated value, and one below it is refused at the literal with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `byte` is `x * 8` bits on an `int64` dimension, and `-1152921504606846977_byte` is -2^63 - 8 bits, past the bottom. A compiler that admits every negated literal without judging it wraps the value to 9223372036854775800 and compiles. PATH PINNED: `dsc.typecheck.lnul_5_2_unnarrowed_type`'s unary arm, which sends a minus over a non-time `ex_unit` to `luni_3_1_7_literal_type` as `negated`, through `dsc.quantity.quantity_base`, `dsc.quantity.luni_2_4_1_literal_out_of_range` and `dsc.exact.luni_2_4_1_int64`; `dsc.quantity.is_whole` judges the value whole, so DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE does not take it.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit byte: data = x * 8\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule r:\n    Blob b where b.size > -1152921504606846977_byte\n->\n    log info \"big\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

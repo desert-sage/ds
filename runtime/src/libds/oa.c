@@ -239,7 +239,7 @@ ds_result_t ds_oa_clone_into(oa_t *dst, const oa_t *src,
 
 /* ---- ds_oa_check (RI-1..RI-7) ------------------------------------------- */
 
-#ifndef NDEBUG
+#ifdef DS_DEBUG
 void ds_oa_check(const oa_t *t)
 {
     /* RI-1: cap is 0 or a power of two. */

@@ -1,0 +1,10 @@
+{
+    "id": "LTIM.1.3.5_duration_plus_int_mismatch",
+    "category": "compiler",
+    "scenario": "[LTIM.1.3.5] with [LUNI.8.3]: a `Duration` is a value of the `time` dimension, so `s.d + 5` is a bare number beside a dimensioned value. Pin: DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck.lexp_7_1a_arithmetic`, where no row of `ltim_4_1_1_row` takes the pair and `ltim_1_3_5_arithmetic_leaf` sends it to `dsc.types.luni_8_1_combine`'s `dr_bare_number` row.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: Duration mutable\n\nrule r:\n    R s where s.d + 5 > 1_s\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

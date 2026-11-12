@@ -435,8 +435,8 @@ static bool deepest(void *ctx, const ds_rfcs_field_t *f)
    the unpack. That the 100 000-deep calls return shows it ran first; the
    asan lane's leak subset runs this on a sanitized stack.
 
-   The bound is DS_RFCS_VISIT_MAX_DEPTH: a deepest message at 63 or 64
-   reads, one at 65 is DS_ERR_PARSE. */
+   The bound is DS_RFCS_VISIT_MAX_DEPTH: a deepest message at 198 or 199
+   reads, one at 200 is DS_ERR_PARSE. */
 static void test_rdsc_9_9__nesting_is_bounded_before_the_unpack(void)
 {
     const size_t cap = 24u * DEEP + 64u;
@@ -463,33 +463,83 @@ static void test_rdsc_9_9__nesting_is_bounded_before_the_unpack(void)
           "a CallIssued 100 000 deep is refused as PARSE, and returns");
     CHECK(seen.n == 0, "nothing of it is visited");
 
-    /* BELOW THE BOUND: 31 wraps put the innermost FactExternal at depth 63. */
+    /* BELOW THE BOUND: 98 wraps, and an Arg in the innermost FactExternal at 198. */
     depth_t d = { 0, 0, 0 };
-    pos = deep_external_assert(buf, cap, 31u, false);
+    pos = deep_external_assert(buf, cap, 98u, true);
     r = ds_rfcs_visit_atom(DS_ATOM_EXTERNAL_ASSERT, buf + pos, cap - pos,
                            deepest, &d);
-    CHECK(r.status == DS_OK, "an ExternalAssert 63 deep reads");
-    CHECK(d.deepest == 63u && d.open == 0 && d.enters == 64,
-          "every one of its 64 messages, the deepest at 63, opened and closed");
+    CHECK(r.status == DS_OK, "an ExternalAssert 198 deep reads");
+    CHECK(d.deepest == 198u && d.open == 0 && d.enters == 199,
+          "every one of its 199 messages, the deepest at 198, opened and closed");
 
-    /* AT IT: the same 31, and an Arg in the innermost FactExternal at 64. */
+    /* AT IT: 99 wraps put the innermost FactExternal at 199. */
     d = (depth_t){ 0, 0, 0 };
-    pos = deep_external_assert(buf, cap, 31u, true);
+    pos = deep_external_assert(buf, cap, 99u, false);
     r = ds_rfcs_visit_atom(DS_ATOM_EXTERNAL_ASSERT, buf + pos, cap - pos,
                            deepest, &d);
-    CHECK(r.status == DS_OK, "an ExternalAssert 64 deep reads");
-    CHECK(d.deepest == 64u && d.open == 0 && d.enters == 65,
-          "every one of its 65 messages, the deepest at 64, opened and closed");
+    CHECK(r.status == DS_OK, "an ExternalAssert 199 deep reads");
+    CHECK(d.deepest == 199u && d.open == 0 && d.enters == 200,
+          "every one of its 200 messages, the deepest at 199, opened and closed");
 
-    /* PAST IT: 32 wraps put it at 65. */
+    /* PAST IT: the same 99, and an Arg in the innermost FactExternal at 200. */
     memset(&seen, 0, sizeof(seen));
-    pos = deep_external_assert(buf, cap, 32u, false);
+    pos = deep_external_assert(buf, cap, 99u, true);
     r = ds_rfcs_visit_atom(DS_ATOM_EXTERNAL_ASSERT, buf + pos, cap - pos,
                            record, &seen);
-    CHECK(r.status == DS_ERR_PARSE, "an ExternalAssert 65 deep is refused");
+    CHECK(r.status == DS_ERR_PARSE, "an ExternalAssert 200 deep is refused");
     CHECK(seen.n == 0, "before anything of it is visited");
 
     free(buf);
+}
+
+/* A TerminalNode whose one action's one SlotAssign holds an `Expr` of `levels`
+   levels below its outermost, each level one interpolation, the costliest level
+   there is, and whose deepest `Expr` is an interpolation of a timestamp, the
+   costliest thing it can hold. Written innermost first. */
+static size_t deepest_terminal(uint8_t *buf, size_t end, unsigned levels)
+{
+    static const uint8_t item[] = { 0x0A, 0x01, 'x' };  /* TimeItem.text */
+    static const uint8_t interp[] = { 0xA2, 0x01 };     /* Expr.interp, 20 */
+    size_t pos = put_before(buf, end, item, sizeof item);
+    pos = wrap_before(buf, pos, end, 0x12);             /* TimePrim.items, 2 */
+    pos = wrap_before(buf, pos, end, 0x1A);             /* FormatPrim.time, 3 */
+    pos = wrap_before(buf, pos, end, 0x0A);             /* InterpExpr.prims, 1 */
+    pos = put_varint_before(buf, pos, end - pos);
+    pos = put_before(buf, pos, interp, sizeof interp);
+    for (unsigned i = 0; i < levels; i++) {
+        pos = wrap_before(buf, pos, end, 0x0A);         /* ValuePrim.value, 1 */
+        pos = wrap_before(buf, pos, end, 0x12);         /* FormatPrim.value, 2 */
+        pos = wrap_before(buf, pos, end, 0x0A);         /* InterpExpr.prims, 1 */
+        pos = put_varint_before(buf, pos, end - pos);
+        pos = put_before(buf, pos, interp, sizeof interp);
+    }
+    pos = wrap_before(buf, pos, end, 0x12);             /* SlotAssign.expr, 2 */
+    pos = wrap_before(buf, pos, end, 0x22);             /* Action.assigns, 4 */
+    return wrap_before(buf, pos, end, 0x32);            /* TerminalNode.actions, 6 */
+}
+
+/* @spec [RDSC.11.3]: "no program it accepts becomes an artefact a runtime
+   refuses". The reader's bound admits the deepest `Expr` the format does, at its
+   costliest in messages: the deepest message is at 199. One level more is past
+   what [RDSC.11.3] admits, and the reader refuses it. */
+static void test_rdsc_11_3__the_deepest_expr_is_read(void)
+{
+    uint8_t buf[8192];
+    depth_t d = { 0, 0, 0 };
+    size_t pos = deepest_terminal(buf, sizeof buf, 48u);
+    ds_result_t r = ds_rfcs_visit_atom(DS_ATOM_TERMINAL_NODE, buf + pos,
+                                       sizeof buf - pos, deepest, &d);
+    CHECK(r.status == DS_OK, "an Expr at depth 48 reads");
+    CHECK(d.deepest == 199u && d.open == 0,
+          "the deepest of its messages is at 199, and each opened and closed");
+
+    seen_t seen;
+    memset(&seen, 0, sizeof(seen));
+    pos = deepest_terminal(buf, sizeof buf, 49u);
+    r = ds_rfcs_visit_atom(DS_ATOM_TERMINAL_NODE, buf + pos, sizeof buf - pos,
+                           record, &seen);
+    CHECK(r.status == DS_ERR_PARSE, "an Expr at depth 49 is refused");
+    CHECK(seen.n == 0, "before anything of it is visited");
 }
 
 /* ---- 7. [RTIM.14.9]: a field the descriptor does not name is reported ----- */
@@ -634,6 +684,7 @@ int main(void)
     test_a_dsc_reads();
     test_refusals();
     test_rdsc_9_9__nesting_is_bounded_before_the_unpack();
+    test_rdsc_11_3__the_deepest_expr_is_read();
     test_rtim_14_9__unknown_fields_are_reported();
 
     if (failures) {

@@ -1,0 +1,25 @@
+{
+    "id": "LSER.16.9_rate_is_computed_in_one_order",
+    "clauses": ["LSER.16.9"],
+    "category": "logical",
+    "dead_rules_expected": ["other_sliding", "other_all_time"],
+    "scenario": "[LSER.16.9]: `rate` is ((x_l - x_f) * 10^9) / (t_l - t_f), evaluated as correctly rounded IEEE-754 operations in that order. Two samples, 0.0 and then 1.0 one nanosecond later, on `sliding 1_h` (`FW`) and on `all_time` (`FA`); a third assert (9.0) reads the two before it ([LSER.8.6]). The stated order gives (1.0 * 1e9) / 1.0 = 1000000000.0; the other, 1.0 / (1.0 / 1e9), rounds 1e-9 first and gives 999999999.9999999. Rule `stated_*` compares `rate` with the first and logs; rule `other_*` compares it with the second and must not. PATH PINNED: libds `ds_series_ring_buffer_rate` (`series/ring_buffer.c`) and `ds_series_welford_ewma_rate` (`series/welford_ewma.c`); Mercury `ds.series.aggregate` for `agg_rate`.",
+    "rules_ds": "use default\n\nschema FW scope logical:\n    k: String key\n    v: Float mutable\n\nschema FA scope logical:\n    k: String key\n    v: Float mutable\n\nseries FW.v (by: k):\n    rate sliding 1_h\n\nseries FA.v (by: k):\n    rate all_time\n\nrule stated_sliding:\n    FW f where f.v > 5.0 and f.rate == 1000000000.0\n->\n    log info \"sliding stated\"\n\nrule other_sliding:\n    FW f where f.v > 5.0 and f.rate == 999999999.9999999\n->\n    log info \"sliding other\"\n\nrule stated_all_time:\n    FA f where f.v > 5.0 and f.rate == 1000000000.0\n->\n    log info \"all_time stated\"\n\nrule other_all_time:\n    FA f where f.v > 5.0 and f.rate == 999999999.9999999\n->\n    log info \"all_time other\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "FW", "slots": { "k": "a", "v": 0.0 } },
+            { "op": "assert", "schema": "FA", "slots": { "k": "a", "v": 0.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "assert", "schema": "FW", "slots": { "k": "a", "v": 1.0 } },
+            { "op": "assert", "schema": "FA", "slots": { "k": "a", "v": 1.0 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 1 },
+            { "op": "assert", "schema": "FW", "slots": { "k": "a", "v": 9.0 } },
+            { "op": "assert", "schema": "FA", "slots": { "k": "a", "v": 9.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["sliding stated", "all_time stated"]
+    }
+}

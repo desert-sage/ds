@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.2.4.1_a_unit_whose_minus_r_has_no_int_is_refused",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [RLOW.7.3.9]: in integer storage a unit's constants are P, Q and R that [RLOW.6.1.10] writes and the -R that [RLOW.7.3.9] writes, so a unit whose -R lies outside the 64-bit signed range is refused at its declaration with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. `unit u: data = x * 1.5 - 4611686018427387904` on an `int64` dimension has a = 3/2 and b = -2^62, so P = 3, Q = 2 and R = -2^63. R itself is in range, and so are P and Q; -R is 2^63, past 2^63 - 1. The unit is declared and never used: the refusal is the declaration's. A compiler that checks only P, Q and R compiles it. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants`, through `dsc.quantity.luni_2_4_1_unit_out_of_range`'s integer arm, where `rlow_6_1_10_line_pqr` holds and R is -2^63.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit u: data = x * 1.5 - 4611686018427387904\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONSTANT_OUT_OF_RANGE"
+    }
+}

@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `median` and `pXX` on the two backings that serve them,
+# `SeriesBackendRingBuffer` (`sliding`) and `SeriesBackendReservoir`
+# (`sample`), over values that are not dyadic. [LSER.17.2] fixes the
+# interpolation in exact integers for the rank and in four IEEE operations in
+# one order for the value: the subtraction, frac / 100, the multiplication,
+# the addition. With two to four samples every percentile here has frac != 0
+# but `median` at an odd count, so the bits carry the order; at five, `p25`
+# and `p75` land on a rank exactly (frac = 0) and read x_1 and x_3, and `p99`
+# interpolates. `QI` is the clause's own example: `median` of an `Int` slot's
+# [1, 2] is 1.5.
+#
+# `sample 8` against six values keeps every sample. `-1.0` is the cold read
+# ([LSER.19.8]), below every asserted value; `QI` fills the slots it does not
+# read with it too.
+use default
+
+schema QW scope logical:
+    k: String key
+    v: Float mutable
+
+schema QS scope logical:
+    k: String key
+    v: Float mutable
+
+schema QI scope logical:
+    k: String key
+    n: Int mutable
+
+schema Q scope ttl 1_h:
+    label: String
+    m: Float
+    lo: Float
+    hi: Float
+    top: Float
+
+series QW.v (by: k):
+    median, p25, p75, p99 sliding 1_h
+
+series QS.v (by: k):
+    median, p25, p75, p99 sample 8
+
+series QI.n (by: k):
+    median sliding 1_h
+
+rule from_qw:
+    QW w
+->
+    emit Q label: "w" m: w.median ?? -1.0 lo: w.p25 ?? -1.0 hi: w.p75 ?? -1.0 top: w.p99 ?? -1.0
+
+rule from_qs:
+    QS s
+->
+    emit Q label: "s" m: s.median ?? -1.0 lo: s.p25 ?? -1.0 hi: s.p75 ?? -1.0 top: s.p99 ?? -1.0
+
+rule from_qi:
+    QI i
+->
+    emit Q label: "i" m: i.median ?? -1.0 lo: -1.0 hi: -1.0 top: -1.0

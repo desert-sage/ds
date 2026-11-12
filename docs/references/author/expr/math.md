@@ -67,13 +67,13 @@ A NaN's sign and payload are not observable.
 
 ## Arithmetic and rounding
 
-A rounding of a `Float` returns an `Int`. When the mathematical result lies outside the `Int` range, or the argument is not finite, the engine raises a [`ComputationError`](../errors/fault-facts.md#computationerror-fact) of kind `NOT_REPRESENTABLE` and abandons the activation.
+A rounding of a `Float` returns an `Int`, and a rounding of a value with a unit a value of that unit. When the mathematical result lies outside the `Int` range, or the argument is not finite, the engine raises a [`ComputationError`](../errors/fault-facts.md#computationerror-fact) of kind `NOT_REPRESENTABLE` and abandons the activation. Every builtin over a value with a unit is at [Builtins over a dimensioned value](../units/checking.md#builtins-over-a-dimensioned-value).
 
-*(Spec: [LEXP.3.2.1])*
+*(Spec: [LEXP.3.2.1], [LEXP.17.2])*
 
 ### `abs`
 
-**`abs(x)`**
+**`abs(x: Int) → Int`**, **`abs(x: Float) → Float`**
 
 The absolute value, of the argument's type.
 
@@ -81,7 +81,7 @@ The absolute value, of the argument's type.
 
 ### `round`
 
-**`round(x)`**
+**`round(x: Int) → Int`**, **`round(x: Float) → Int`**, **`round(x: <unit>) → <unit>`**
 
 The nearest integer, ties to even.
 
@@ -93,7 +93,7 @@ round(r.level)
 
 ### `floor`
 
-**`math.floor(x)`**
+**`math.floor(x: Int) → Int`**, **`math.floor(x: Float) → Int`**, **`math.floor(x: <unit>) → <unit>`**
 
 The largest integer not greater than `x`.
 
@@ -106,7 +106,7 @@ math.floor(r.level)
 
 ### `ceil`
 
-**`math.ceil(x)`**
+**`math.ceil(x: Int) → Int`**, **`math.ceil(x: Float) → Int`**, **`math.ceil(x: <unit>) → <unit>`**
 
 The smallest integer not less than `x`.
 
@@ -119,7 +119,7 @@ math.ceil(r.level)
 
 ### `trunc`
 
-**`math.trunc(x)`**
+**`math.trunc(x: Int) → Int`**, **`math.trunc(x: Float) → Int`**, **`math.trunc(x: <unit>) → <unit>`**
 
 `x` truncated toward zero.
 
@@ -132,7 +132,7 @@ math.trunc(r.level)
 
 ### `sign`
 
-**`math.sign(x)`**
+**`math.sign(x: Int) → Int`**, **`math.sign(x: Float) → Int`**, **`math.sign(x: <unit>) → Int`**
 
 An `Int`: 1 when `x > 0`, −1 when `x < 0`, otherwise 0. `-0.0` and a NaN give 0.
 
@@ -145,7 +145,7 @@ math.sign(r.level)
 
 ### `sqrt`
 
-**`math.sqrt(x)`**
+**`math.sqrt(x: Float) → Float`**
 
 The correctly rounded square root. A negative `x` gives NaN.
 
@@ -158,7 +158,7 @@ math.sqrt(r.level)
 
 ### `fma`
 
-**`math.fma(x, y, z)`**
+**`math.fma(x: Float, y: Float, z: Float) → Float`**
 
 IEEE 754's fused multiply-add: `x × y + z`, rounded once to binary64.
 
@@ -173,7 +173,7 @@ math.fma(r.level, 2.0, 1.0)
 
 ### `pow`
 
-**`math.pow(x, y)`**
+**`math.pow(x: Int, y: Int) → Int`**, **`math.pow(x: Float, y: Float) → Float`**
 
 The function form of [`**`](../values/numbers.md#exponent), with its result types. With a non-negative integer exponent the result is an exact `Int`. With any other exponent it is the correctly rounded `Float` under [Transcendental functions](#transcendental-functions).
 
@@ -186,7 +186,7 @@ math.pow(r.n, 2)
 
 ## Binary min and max
 
-**`min(a, b)`**, **`max(a, b)`**
+**`min(a, b: Int | Float) → Int | Float`**, **`min(a, b: <unit>) → <unit>`**, **`max(a, b: Int | Float) → Int | Float`**, **`max(a, b: <unit>) → <unit>`**
 
 The smaller or larger of two numeric operands, keeping the winning operand's kind: `max(5, 3.0)` is `5`, and `max(2, 3.5)` is `3.5`.
 
@@ -204,7 +204,7 @@ max(min(r.n, 10), 0)
 
 ### `degrees`
 
-**`math.degrees(x)`**
+**`math.degrees(x: Float) → Float`**
 
 Radians to degrees: `x` times the binary64 nearest 180/π̂, rounded once, where π̂ is `math.pi`.
 
@@ -217,7 +217,7 @@ math.degrees(r.level)
 
 ### `radians`
 
-**`math.radians(x)`**
+**`math.radians(x: Float) → Float`**
 
 Degrees to radians: `x` times the binary64 nearest π̂/180, rounded once.
 

@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "welford_ewma.h"
+#include "ring_buffer.h" /* ds_series_signed_before, [LSER.17.2] */
 #include "ds_alloc.h"    /* DS_MALLOC/CALLOC/FREE/STRDUP -- IALC.9.1 routing */
 
 ds_series_welford_ewma_t *ds_series_welford_ewma_new(void)
@@ -82,8 +83,8 @@ void ds_series_welford_ewma_update(
     we->w = new_w;
     we->mean = new_mean;
     we->m2 = new_m2;
-    if (value < we->min_v) we->min_v = value;
-    if (value > we->max_v) we->max_v = value;
+    if (ds_series_signed_before(value, we->min_v)) we->min_v = value;
+    if (ds_series_signed_before(we->max_v, value)) we->max_v = value;
     we->last_sample_ns = ts_ns;
 }
 

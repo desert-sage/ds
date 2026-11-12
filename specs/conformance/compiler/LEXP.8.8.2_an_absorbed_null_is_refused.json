@@ -1,0 +1,10 @@
+{
+    "id": "LEXP.8.8.2_an_absorbed_null_is_refused",
+    "category": "compiler",
+    "scenario": "[LEXP.8.8.2]: a right-hand side that contains `null` is refused, whether or not the rest of the expression would absorb it. `false and null` would be `false` under Kleene `and` ([LNUL.4.2]), and the operand is still `null`. No other check refuses `null` as an `and` operand: the type check reads `null` as unknown, and no check fires on an unknown type. So the fixture names no `also_raises`, and a second code fails it ([RCTS.1.2.36]). The rest of the program is valid. Pin: DS_VALIDATE_CONST_NOT_FOLDABLE. PATH PINNED: `dsc.validate.lexp_8_8_2_no_value`'s walk of `expr_children`, which reaches the `ex_null` under the `and`.",
+    "rules_ds": "const X = false and null\n\nschema Sensor scope logical:\n    state: Int key\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_CONST_NOT_FOLDABLE"
+    }
+}

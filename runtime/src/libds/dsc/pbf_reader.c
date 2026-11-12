@@ -1,8 +1,8 @@
 /* SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors */
 /* SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later */
 /*
- * The protobuf-native atom reader. Hand-parsed ([RFCS.18.8]): a number's band
- * decides, where protobuf would keep an unknown atom in the inject band.
+ * The protobuf-native atom reader, hand-parsed: a frame whose `Atom` names no
+ * member of its oneof is malformed ([RFCS.19.3]), where protobuf would accept it.
  */
 #include "pbf_reader.h"
 
@@ -222,24 +222,8 @@ ds_pbf_container_t ds_pbf_container_of(const uint8_t *data, size_t len)
 }
 
 /* ------------------------------------------------------------------ */
-/*  Band adjudication                                                  */
+/*  Lookup                                                             */
 /* ------------------------------------------------------------------ */
-
-ds_atom_band_t ds_pbf_band(uint32_t field)
-{
-    /* [RFCS.16.2]: from the number alone. */
-    if (field >= DS_ATOM_BAND_INJECT_LO && field <= DS_ATOM_BAND_INJECT_HI) {
-        return DS_ATOM_BAND_INJECT;
-    }
-    if (field >= DS_ATOM_BAND_REJECT_LO && field <= DS_ATOM_BAND_REJECT_HI) {
-        return DS_ATOM_BAND_REJECT;
-    }
-    if (field >= DS_ATOM_BAND_SKIP_LO && field <= DS_ATOM_BAND_SKIP_HI) {
-        return DS_ATOM_BAND_SKIP;
-    }
-    /* [RFCS.16.5]: above 2047 or zero. */
-    return DS_ATOM_BAND_NONE;
-}
 
 const ds_atom_reg_entry_t *ds_pbf_lookup(uint32_t field)
 {
@@ -259,59 +243,6 @@ const ds_atom_reg_entry_t *ds_pbf_lookup(uint32_t field)
         }
     }
     return NULL;
-}
-
-ds_pbf_disposition_t ds_pbf_disposition(uint32_t field)
-{
-    if (ds_pbf_lookup(field) != NULL) {
-        return DS_PBF_DISP_SKIP;
-    }
-    switch (ds_pbf_band(field)) {
-    case DS_ATOM_BAND_INJECT: return DS_PBF_DISP_REJECT_INJECT;
-    case DS_ATOM_BAND_REJECT: return DS_PBF_DISP_REJECT_VERSION;
-    case DS_ATOM_BAND_SKIP:   return DS_PBF_DISP_SKIP;
-    case DS_ATOM_BAND_NONE:
-    default:                  return DS_PBF_DISP_MALFORMED;
-    }
-}
-
-/* reject-inject, a dropped input, outranks reject-version. Not the enum's order. */
-static int severity(ds_pbf_disposition_t d)
-{
-    switch (d) {
-    case DS_PBF_DISP_SKIP:           return 0;
-    case DS_PBF_DISP_REJECT_VERSION: return 1;
-    case DS_PBF_DISP_REJECT_INJECT:  return 2;
-    case DS_PBF_DISP_MALFORMED:      return 3;
-    default:                         return 3;
-    }
-}
-
-static ds_pbf_disposition_t worse(ds_pbf_disposition_t a, ds_pbf_disposition_t b)
-{
-    return (severity(a) >= severity(b)) ? a : b;
-}
-
-ds_pbf_disposition_t ds_pbf_atom_backstop(const uint8_t *atom, size_t atom_len)
-{
-    ds_pbf_disposition_t acc = DS_PBF_DISP_SKIP;
-    size_t               pos = 0;
-
-    if (atom == NULL) {
-        return DS_PBF_DISP_MALFORMED;
-    }
-    for (;;) {
-        ds_pbf_field_t f;
-        ds_pbf_step_t  st = ds_pbf_next_field(atom, atom_len, pos, &f);
-        if (st == DS_PBF_EOF) {
-            return acc;
-        }
-        if (st != DS_PBF_OK) {
-            return DS_PBF_DISP_MALFORMED;
-        }
-        acc = worse(acc, ds_pbf_disposition(f.field));
-        pos = f.next;
-    }
 }
 
 /* ------------------------------------------------------------------ */

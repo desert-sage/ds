@@ -1109,8 +1109,7 @@ static ds_result_t fx_plan_judge(const fx_plan_t *p, int32_t top,
         const uint64_t window = ((int32_t)i == top && ttl_ns != 0)
             ? ttl_ns
             : (s->lifecycle == DS_SCHEMA_LIFECYCLE_TTL ? s->ttl_ns : 0);
-        if (window != 0 && (now_ns > (uint64_t)INT64_MAX
-                            || window > (uint64_t)INT64_MAX - now_ns))
+        if (window != 0 && window > (uint64_t)INT64_MAX - now_ns)
             return RFCS_ERR(DS_ERR_TIME_RANGE,
                 "ds_engine_assert_external: a fact's TTL deadline is outside "
                 "the Time range ([RFCS.6.7])");
@@ -4562,27 +4561,11 @@ static bool rfcs_declared_over_budget(const uint8_t *buf, size_t len,
     return false;                             /* varint still incomplete */
 }
 
-/* [RFCS.16.3]: a stream atom with no table entry, judged by its band. RFCS_OK
-   means read past it. */
-static ds_result_t rfcs_unknown_atom(uint32_t field)
-{
-    switch (ds_pbf_disposition(field)) {
-    case DS_PBF_DISP_SKIP:
-        return RFCS_OK;
-    case DS_PBF_DISP_REJECT_INJECT:
-        return RFCS_ERR(DS_ERR_FS_UNKNOWN_INJECT,
-                        "rfcs: unknown atom in the inject band (RFCS.18.8)");
-    case DS_PBF_DISP_REJECT_VERSION:
-        return RFCS_ERR(DS_ERR_PARSE,
-                        "rfcs: unknown atom in the reject-don't-skip band "
-                        "(RFCS.16.2)");
-    case DS_PBF_DISP_MALFORMED:
-    default:
-        return RFCS_ERR(DS_ERR_PARSE,
-                        "rfcs: atom field number outside every band "
-                        "(RFCS.16.3)");
-    }
-}
+/* A field number with no registry entry is no member of Atom's `body` oneof, so
+   the Atom it frames has its oneof unset, and [RFCS.19.3] refuses it. A reader
+   never meets such a number in a container of its own series ([LDET.1.10]). */
+#define RFCS_UNKNOWN_ATOM_DETAIL \
+    "rfcs: an atom's field number names no atom (RFCS.19.3)"
 
 /* Apply every whole atom in buf[0..len); *consumed is how far we got. */
 static ds_result_t replay_drain(ds_rfcs_replay_ctx_t *ctx,
@@ -4614,11 +4597,8 @@ static ds_result_t replay_drain(ds_rfcs_replay_ctx_t *ctx,
                             "ds_rfcs_replay_feed: atom exceeds max_atom_bytes");
         }
         if (ds_pbf_lookup(a.field) == NULL) {
-            ds_result_t u = rfcs_unknown_atom(a.field);
-            if (u.status != DS_OK) { *consumed = pos; return u; }
-            ctx->res.skipped++;
-            pos = a.next;
-            continue;
+            *consumed = pos;
+            return RFCS_ERR(DS_ERR_PARSE, RFCS_UNKNOWN_ATOM_DETAIL);
         }
         ds_result_t r = replay_apply_atom(ctx, a.field, a.body, a.body_len);
         pos = a.next;
@@ -4657,13 +4637,8 @@ ds_result_t ds_rfcs_replay_feed(ds_rfcs_replay_ctx_t *ctx,
                 goto fail;
             }
             if (ds_pbf_lookup(a.field) == NULL) {
-                r = rfcs_unknown_atom(a.field);
-                if (r.status != DS_OK) goto fail;
-                ctx->res.skipped++;
-                size_t skip_rest = ctx->acc_len - a.next;
-                if (skip_rest) memmove(ctx->acc, ctx->acc + a.next, skip_rest);
-                ctx->acc_len = skip_rest;
-                continue;
+                r = RFCS_ERR(DS_ERR_PARSE, RFCS_UNKNOWN_ATOM_DETAIL);
+                goto fail;
             }
             r = replay_apply_atom(ctx, a.field, a.body, a.body_len);
             size_t rest = ctx->acc_len - a.next;
@@ -4803,47 +4778,40 @@ ds_result_t ds_rfcs_reader_extend(ds_rfcs_reader_t *r,
 }
 
 /* One step of either reader; they differ only in what a partial trailing atom
-   is. `r->pos` moves only past a complete atom it returns or skips: on
-   INCOMPLETE and on an error it names the refused atom's first byte. */
+   is. `r->pos` moves only past a complete atom it returns: on INCOMPLETE and
+   on an error it names the refused atom's first byte. */
 static ds_result_t rfcs_read_step(ds_rfcs_reader_t *r, bool incremental,
                                   uint32_t *out_atom,
                                   const uint8_t **out_body, size_t *out_body_len,
                                   ds_rfcs_step_t *out_step)
 {
     ds_pbf_atom_t a;
-    for (;;) {
-        if (r->pos >= r->len) {
-            *out_step = DS_RFCS_STEP_END;
+
+    if (r->pos >= r->len) {
+        *out_step = DS_RFCS_STEP_END;
+        return RFCS_OK;
+    }
+
+    switch (ds_pbf_next_atom(r->stream, r->len, r->pos, &a)) {
+    case DS_PBF_OK:
+        break;
+    case DS_PBF_EOF:
+        /* `ds_pbf_next_atom` answers EOF for a short prefix or a body that
+           runs past the buffer: bytes that more bytes can complete. */
+        if (incremental) {
+            *out_step = DS_RFCS_STEP_INCOMPLETE;
             return RFCS_OK;
         }
-
-        switch (ds_pbf_next_atom(r->stream, r->len, r->pos, &a)) {
-        case DS_PBF_OK:
-            break;
-        case DS_PBF_EOF:
-            /* `ds_pbf_next_atom` answers EOF for a short prefix or a body that
-               runs past the buffer: bytes that more bytes can complete. */
-            if (incremental) {
-                *out_step = DS_RFCS_STEP_INCOMPLETE;
-                return RFCS_OK;
-            }
-            return RFCS_ERR(DS_ERR_PARSE, "ds_rfcs_next: truncated atom");
-        case DS_PBF_MALFORMED:
-        default:
-            return RFCS_ERR(DS_ERR_PARSE, incremental
-                            ? "ds_rfcs_next_incremental: malformed atom frame"
-                            : "ds_rfcs_next: malformed atom frame");
-        }
-
-        /* An allocated atom is returned; any other is its band's to judge
-           ([RFCS.16.3]). */
-        if (ds_pbf_lookup(a.field))
-            break;
-        ds_result_t u = rfcs_unknown_atom(a.field);
-        if (u.status != DS_OK)
-            return u;
-        r->pos = a.next;                        /* skip band: read past it */
+        return RFCS_ERR(DS_ERR_PARSE, "ds_rfcs_next: truncated atom");
+    case DS_PBF_MALFORMED:
+    default:
+        return RFCS_ERR(DS_ERR_PARSE, incremental
+                        ? "ds_rfcs_next_incremental: malformed atom frame"
+                        : "ds_rfcs_next: malformed atom frame");
     }
+
+    if (ds_pbf_lookup(a.field) == NULL)
+        return RFCS_ERR(DS_ERR_PARSE, RFCS_UNKNOWN_ATOM_DETAIL);
 
     *out_atom = a.field;
     *out_body = a.body;

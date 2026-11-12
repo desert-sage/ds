@@ -2,7 +2,7 @@
     "id": "LUNI.4.3_unit_lit_offset_resolves",
     "category": "compiler",
     "scenario": "LUNI.4.3 — a unit with a non-zero affine offset folds correctly. `unit celsius: temperature = x + 273.15` evaluates to `(a=1, b=273.15)`; `0_celsius` produces `value_base = 1*0 + 273.15 = 273.15` (kelvin). Pins both that the offset is captured and that the literal numeric value 0 doesn't short-circuit the affine application.",
-    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    t: Float key\n\nrule freezing:\n    Reading r where r.t < 0_celsius\n->\n    log info \"below freezing in kelvin scale\"\n",
+    "rules_ds": "unit celsius: temperature = x + 273.15\n\nschema Reading scope logical:\n    t: kelvin key\n\nrule freezing:\n    Reading r where r.t < 0_celsius\n->\n    log info \"below freezing in kelvin scale\"\n",
     "expect": {
         "kind": "compile_ok"
     }

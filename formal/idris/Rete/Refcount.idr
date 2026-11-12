@@ -40,7 +40,7 @@
 ||| supported only through the set itself. On a ranked support graph they
 ||| agree (`iret_12_3__ranked_agree`); that every admitted program's support
 ||| graph is ranked is [IRET.12.2]'s own sentence, proved on the engine by
-||| Rete/RecomputeDiff.idr's `iret_12_3__certified_ranked`, not here.
+||| Rete/TmsRanked.idr's `iret_12_3__certified_ranked`, not here.
 |||
 ||| WHAT IS PROVED, all of it mechanized:
 |||

@@ -1,0 +1,17 @@
+{
+    "id": "RLOW.6.1.8_a_literal_time_reads_as_a_time",
+    "clauses": ["RLOW.6.1.8"],
+    "category": "logical",
+    "scenario": "[RLOW.6.1.8]: a `calendar.time` call over constants and a read of a `Time` `const` each lower to `lit_time`, which the engine evaluates to the `Time` at that instant at offset 0. Each rule compares its literal with a `Time` slot and renders it through `::String`. Fact 1's `t` is 2026-01-01T00:00:00Z, the literal's instant: `call 1 ...` then `const 1 ...`, in source order ([LDET.5.4]). Fact 2's is one second earlier: neither fires. A runtime that read `lit_time` as an `Int` renders digits and not the ISO text; one that took another instant fires for fact 2 or not for fact 1. PATH PINNED: `dsc.rete.rlow_6_1_8_calendar_literal` and `lgra_13_3_const`, then `lit_time` in libds's `rete/eval.c` and Mercury's `ds.dsc_expr`.",
+    "rules_ds": "import calendar\n\nconst LAUNCH = calendar.time(2026, 1, 1)\n\nschema Ev scope logical:\n    id: Int key\n    t: Time mutable\n\nrule from_a_call:\n    Ev e where e.t >= calendar.time(2026, 1, 1)\n->\n    let s = calendar.time(2026, 1, 1)::String\n    log info \"call {e.id} {s}\"\n\nrule from_a_const:\n    Ev e where e.t >= LAUNCH\n->\n    let s = LAUNCH::String\n    log info \"const {e.id} {s}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "t": 1767225600000000000 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "t": 1767225599000000000 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["call 1 2026-01-01T00:00:00Z", "const 1 2026-01-01T00:00:00Z"]
+    }
+}

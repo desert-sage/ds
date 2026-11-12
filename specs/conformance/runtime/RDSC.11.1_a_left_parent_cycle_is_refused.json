@@ -1,0 +1,11 @@
+{
+    "id": "RDSC.11.1_a_left_parent_cycle_is_refused",
+    "category": "runtime",
+    "scenario": "[RDSC.11.1]'s row for `BetaNode` `left_parent_id` references that form a cycle: the loader must refuse the artefact with DS_ERR_RETP_INVALID (-601), since every chain must end at a root beta ([RDSC.4a.5]). No compiler writes one, so the harness compiles rule `on_tuv`, over `T`, `U` and `V` with no bindings, whose network in the compiler's order ([RLOW.5.1]) is `T`'s alpha (node 1), its beta (2, a root), `U`'s alpha (3), its beta (4, parent 2), `V`'s alpha (5), its beta (6, parent 4) and the terminal (7). `runtime_error`'s `tamper: {set_field: {node: 4, path: [3], value: 6}}` ([RCTS.1.2.21]) writes beta 4's field 3, `left_parent_id`, as 6, so 4 and 6 are each other's parent, and re-seals `dsc_sha256` ([RDSC.3.6]). Beta 2 stays a root and every id still names a node, so the refusal is the cycle's: not a dangling reference (-602) and not a network with no root. What it discriminates: a loader that follows the chain from beta 6 or 4 to its root never returns; one that answers the cycle as a semantic error (-504) fails on `code`. PATHS: libds's rete loader (`rete/loader.c`), whose `rdsc_4a_5_chains_end_at_a_root` runs after the parents are wired and before anything walks a chain, through pyds; the Mercury runtime's `ds.network.resolve_betas` (`bp_cycle`, `lek_retp_invalid`), through test_behave.m's `field_set` and `libds_load_status`.",
+    "rules_ds": "use default\n\nschema T scope logical:\n    v: Int key\n\nschema U scope logical:\n    w: Int key\n\nschema V scope logical:\n    x: Int key\n\nrule on_tuv:\n    T\n    U\n    V\n->\n    log info \"tuv\"\n",
+    "expect": {
+        "kind": "runtime_error",
+        "tamper": {"set_field": {"node": 4, "path": [3], "value": 6}},
+        "code": "-601"
+    }
+}

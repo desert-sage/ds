@@ -1,0 +1,21 @@
+{
+    "id": "LSER.16.5.1_the_two_zeros_are_one_value",
+    "clauses": ["LSER.16.5.1", "LSER.16.6.1", "LSER.16.7.1"],
+    "category": "logical",
+    "scenario": "[LSER.16.5.1]: two samples are one value exactly when `==` between them is `true`, so -0.0 and 0.0 are one value; [LSER.16.6.1] and [LSER.16.7.1] use the same equality. A `sliding 1_h` window absorbs 0.0, 1.0 and -0.0, one per pump; a fourth assert (9.0) reads the three before it ([LSER.8.6]). `count_distinct` is 2, `count_of(c.v, 0.0)` is 2 and `contains(c.v, -0.0)` is `true`, so each of the three rules logs, in source order. A bitwise equality gives 3, 1 and `true`, and the first two rules stay silent. PATH PINNED: libds `ds_series_ring_buffer_count_distinct` and the ring buffer's `query_with_value` (`series/ring_buffer.c`); Mercury `ds.series.aggregate` for `agg_count_distinct` (`sort_and_remove_dups` under the standard order) and `sample_matches`.",
+    "rules_ds": "use default\n\nschema C scope logical:\n    k: String key\n    v: Float mutable\n\nseries C.v (by: k):\n    count_distinct, count_of, contains sliding 1_h\n\nrule distinct:\n    C c where c.v > 5.0 and count_distinct(c.v) == 2\n->\n    log info \"distinct\"\n\nrule counted:\n    C c where c.v > 5.0 and count_of(c.v, 0.0) == 2\n->\n    log info \"count_of\"\n\nrule found:\n    C c where c.v > 5.0 and contains(c.v, -0.0)\n->\n    log info \"contains\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "C", "slots": { "k": "a", "v": 0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "C", "slots": { "k": "a", "v": 1.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "C", "slots": { "k": "a", "v": -0.0 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "C", "slots": { "k": "a", "v": 9.0 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["distinct", "count_of", "contains"]
+    }
+}

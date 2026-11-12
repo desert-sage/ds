@@ -1,0 +1,35 @@
+# `sum` and `count` on all_time, sliding and sample, -0.0 first; and an `Int`
+# `sum` that wraps -- see fixtures/155_series_sum_count.ds. Each pump reads the
+# samples earlier pumps absorbed ([LSER.8.6]):
+#
+#   pump 1  cold: 0.0, 0 on each Float backing; ITot 0, 0
+#   pump 2  [-0.0]: +0.0, 1; ITot [max]: 9223372036854775807, 1
+#   pump 3  [-0.0, 0.1]: 0.1, 2; ITot [max, 1]: -9223372036854775808, 2
+#   pump 4  [-0.0, 0.1, 0.2]: 0.30000000000000004, 3
+#   pump 5  [-0.0, 0.1, 0.2, 0.3]: 0.6000000000000001, 4
+#
+# Every assert changes its value, so each is a sample ([LFAC.2.5.1]).
+# @spec [LSER.16.3.3] [LSER.16.2.2] [LSER.19.8]
+assert FA k=a v=-0.0
+assert FW k=a v=-0.0
+assert FS k=a v=-0.0
+assert IW k=a n=9223372036854775807
+pump
+assert FA k=a v=0.1
+assert FW k=a v=0.1
+assert FS k=a v=0.1
+assert IW k=a n=1
+pump
+assert FA k=a v=0.2
+assert FW k=a v=0.2
+assert FS k=a v=0.2
+assert IW k=a n=2
+pump
+assert FA k=a v=0.3
+assert FW k=a v=0.3
+assert FS k=a v=0.3
+pump
+assert FA k=a v=1.0
+assert FW k=a v=1.0
+assert FS k=a v=1.0
+pump

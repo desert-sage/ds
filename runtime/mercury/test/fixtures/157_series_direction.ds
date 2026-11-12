@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2026 Dan Finster and the Desert Sage Contributors
+# SPDX-License-Identifier: BSD-4-Clause OR AGPL-3.0-or-later
+# `direction`, the sign of the two newest samples' difference, decided by
+# comparing them ([LSER.10.9]): never from a wrapped `Int` or a rounded
+# `Float` subtraction, with -0 and +0 equal. `DA` and `DW` are the two
+# backings that serve it on a Float slot (`all_time`, `sliding`); `DN` is
+# `by: none`, so samples of distinct facts share one row, and two of them are
+# the zeros; `DI` is an `Int` slot holding the two extremes, whose wrapped
+# difference has the other sign.
+#
+# `7` stands for the null of a cold read or of a one-sample window
+# ([LSER.19.8], [LSER.10.9]), outside -1, 0 and +1.
+use default
+
+schema DA scope logical:
+    k: String key
+    v: Float mutable
+
+schema DW scope logical:
+    k: String key
+    v: Float mutable
+
+schema DN scope logical:
+    k: String key
+    v: Float mutable
+
+schema DI scope logical:
+    k: String key
+    n: Int mutable
+
+schema Dir scope ttl 1_h:
+    label: String
+    d: Int
+
+series DA.v (by: k):
+    direction all_time
+
+series DW.v (by: k):
+    direction sliding 1_h
+
+series DN.v (by: none):
+    direction sliding 1_h
+
+series DI.n (by: k):
+    direction all_time
+
+rule from_da:
+    DA a
+->
+    emit Dir label: "da" d: a.direction ?? 7
+
+rule from_dw:
+    DW w
+->
+    emit Dir label: "dw" d: w.direction ?? 7
+
+rule from_dn:
+    DN x
+->
+    emit Dir label: "dn" d: x.direction ?? 7
+
+rule from_di:
+    DI i
+->
+    emit Dir label: "di" d: i.direction ?? 7

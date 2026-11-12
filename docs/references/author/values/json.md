@@ -45,9 +45,11 @@ r.n[0]
 
 A path that does not resolve is absent: it reads as `null`, and `has` of it is `false`.
 
-A path does not resolve where a segment names a missing key, or addresses a value that is not its container: a key into an array or a scalar, an index into an object or a scalar. A path present with JSON `null` reads as `null`, a value and not absence. `?.` on an absent path yields `null`. `has` is the only absence test.
+A path does not resolve where a segment names a missing key, or addresses a value that is not its container: a key into an array or a scalar, an index into an object or a scalar. A path present with JSON `null` reads as `null`, a value and not absence. `has` is the only absence test.
 
-*(Spec: [LNUL.8.4])*
+A path read whose root is `null`, a `Json?` slot holding none, reads as `null` and raises no fault; it propagates as an operator over a `null` operand does.
+
+*(Spec: [LNUL.8.4], [LNUL.4.1])*
 
 ### Json leaf mismatch
 
@@ -56,6 +58,18 @@ A `Json` leaf whose runtime type does not match an arithmetic or comparison oper
 Unless a deciding operand absorbs it, the activation is abandoned and the fault reaches the fault surfaces, a `TypeError` fault fact among them. The operation does not evaluate to `false`, and nothing propagates. An absorbed `TypeError` reaches no surface. The surfaces are its only report: no metric counts it and the engine logs nothing for it.
 
 *(Spec: [LEXP.7.12], [LEXP.7.12.1], [LEXP.7.12.3])*
+
+### Json leaf conversion
+
+**`<value>::T`**, **`<value>::T?`**
+
+A value whose kind is known only at runtime converts by the kind it holds when the conversion runs.
+
+Such a value is a leaf a path reads from a `Json` value, a value computed from one, `x ?? d` with `x` such a value, whatever type `??` gives it, and a `let` name with no annotation bound to one. Such a value has no type the compiler can determine, so a [`let` annotation](../units/checking.md#let-annotation) over it is refused. The conversion takes the [defined conversion](conversions.md#defined-conversions) for that kind, and its class. A `null` gives `null`. A kind with no conversion to `T`, an array or an object among them, raises a [`TypeError`](../errors/fault-facts.md#typeerror-fact). A JSON `31` and a JSON `31.5` both convert under `::Float?`, a JSON `"31.5"` parses as a `String` does, and a JSON `true` is a `TypeError`.
+
+The `?` follows [the question mark rule](conversions.md#the-question-mark-rule). Such a value is a nullable source, and an `is not null` guard does not narrow it; `x ?? d` with a `d` that is not nullable, and a `let` name bound to one, is not. The conversion is fallible when `T` is `Int`, `Float` or `Bool`, which a `String` reaches by a parse, and total otherwise. A missing `?` and a redundant one are refused with `DS_VALIDATE_CAST_NULLABILITY`. With `j.a` a JSON `31.5`, `(j.a ?? 0)::Float?` is `31.5`, and `(j.a ?? 0)::String` takes no `?`. `j.a::String?` takes its `?` after `j.a is not null and` as well. A whole `Json` value, read with no path, is a [refused conversion](conversions.md#refused-conversions).
+
+*(Spec: [LCST.4.5.11], [LCST.4.5.2], [LCST.4.3.1], [LLET.3.5], [LUNI.8.6])*
 
 ### Json equality
 

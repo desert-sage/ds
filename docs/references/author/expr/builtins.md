@@ -15,11 +15,11 @@ The names an author calls as a function without declaring one. A row named `math
 | Summary | what the call answers |
 | Defined by | the defining clause, which is right where it and the row differ |
 
-A `Float` parameter takes an `Int`, converted. `cursor` is a series cursor, and `T` the type of the slot it reads.
+A `Float` parameter takes an `Int`, converted. `cursor` is a series cursor, and `T` the type of the slot it reads. `<unit>` is a value with a unit, and the result `<unit>` is a value of the same unit; a builtin over a value with a unit is at [Builtins over a dimensioned value](../units/checking.md#builtins-over-a-dimensioned-value).
 
 A parameter is a value: a `T?` argument is refused, and a null that reaches one at run time raises a `TypeError`. `has` and `math.fma` differ: `has` tests a `Json` path for resolution, and `math.fma` takes its operands as `x * y + z` does.
 
 ```{include} ../_generated/builtins.md
 ```
 
-*(Spec: [LEXP.17.1], [LEXP.17.2])*
+*(Spec: [LEXP.17.1], [LEXP.17.2], [LUNI.8.9])*

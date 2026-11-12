@@ -7,7 +7,11 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[LNUL.8.4] **Surface + JSON absence.** Schema/adapter syntax is `T?`.\nJSON's **two** missings are\npinned distinct: `has(path) == false` is *absent*; a path present with JSON\n`null` **reads as `null`**; `?.` on an absent path yields `null`. `has()` is\nthe only absence test; a leaf-read of a present-JSON-`null` is a value\n(`null`), not absence.\n\nA path does not resolve where a segment addresses a value that is not its\ncontainer: a key into an array or a scalar, or an index into an object or a\nscalar. Such a path is absent, as a missing key is: it reads as `null`, and\n`has` of it is `false`.\n\n",
+  "text": "[LNUL.8.4] **Surface + JSON absence.** Schema/adapter syntax is `T?`.\nJSON's **two** missings are\npinned distinct: `has(path) == false` is *absent*; a path present with JSON\n`null` **reads as `null`**; an absent path reads as `null` too. `has()` is\nthe only absence test; a leaf-read of a present-JSON-`null` is a value\n(`null`), not absence.\n\nA path does not resolve where a segment addresses a value that is not its\ncontainer: a key into an array or a scalar, or an index into an object or a\nscalar. Such a path is absent, as a missing key is: it reads as `null`, and\n`has` of it is `false`.\n\nA path read whose root is `null`, a `Json?` slot holding none, has no document\nto resolve against. The engine **must** yield `null` for it and **must not**\nraise a fault, so the read propagates as an operator over a `null` operand does\n([LNUL.4.1]). `has` demands a document, and the compiler refuses it over an\nunnarrowed `Json?` root ([LNUL.5.1]).\n\n",
+  "refs": [
+    "LNUL.4.1",
+    "LNUL.5.1"
+  ],
   "checks": {
     "idris": [
       {

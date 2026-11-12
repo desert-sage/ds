@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.8_result_keeps_the_dimension",
+    "category": "compiler",
+    "scenario": "[LUNI.8.8]: values of one dimension are valid, and the result has that dimension. `min(s.d, 1_meter)` is a `meter`, so comparing it with the bare `25` is [LUNI.8.3]'s refusal, DS_VALIDATE_DIM_MISMATCH. A compiler that drops the dimension from the result compiles this. PATH PINNED: `dsc.typecheck.luni_8_8_min_max_type`'s result, read by `adjacent_mismatches`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n\nrule r:\n    R s where min(s.d, 1_meter) > 25\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

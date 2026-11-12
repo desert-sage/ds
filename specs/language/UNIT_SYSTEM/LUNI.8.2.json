@@ -7,22 +7,32 @@
   "depth": 2,
   "kind": "normative",
   "heading": "8.2 Cross-dimension — compile error",
-  "text": "### 8.2 Cross-dimension — compile error [LUNI.8.2]\n\nOperations between values of different physical dimensions (or different\nscalar groups, e.g. `power_db` and `proportion`) are a compile error\n(`DS_VALIDATE_DIM_MISMATCH`).\n\n",
+  "text": "### 8.2 Cross-dimension — compile error [LUNI.8.2]\n\nOperations between values of different physical dimensions (or different\nscalar groups, e.g. `power_db` and `proportion`) are a compile error, and the\noperator decides the code. The compiler **must** refuse, with\n`DS_VALIDATE_DIM_MISMATCH`, an operator that takes two values of one dimension\nwhen its operands have two: `+`, `-`, `%` and the comparisons ([LUNI.8.1]), and\n[LUNI.8.8]'s forms. A `*`, `/`, `//` or `**` over two dimensions has a result with\nno dimension DS can state, and is [LUNI.8.4]'s refusal, with\n`DS_VALIDATE_DIM_AMBIGUOUS`.\n\n",
+  "refs": [
+    "LUNI.8.1",
+    "LUNI.8.4",
+    "LUNI.8.8"
+  ],
   "checks": {
     "alloy": [
       {
         "path": "formal/alloy/unit_dimension.als",
-        "name": "luni_8_2__cross_dim_additive",
-        "tag": "spec"
+        "name": "luni_8_2__cross_dimension",
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "Two dimensioned operands of different dimensions, under any operator: the clause's 'operations between values of different physical dimensions'. A transcription. The code a refusal carries is not modelled: the operator decides it, this clause's for an operator over one dimension and [LUNI.8.4]'s for a `*`, `/`, `//` or `**`."
       },
       {
         "path": "formal/alloy/unit_dimension.als",
         "name": "luni_8_2__no_cross_dimension",
-        "tag": "spec"
+        "tag": "spec",
+        "verdict": "proven",
+        "note": "No accepted binop combines two different dimensions, under any operator. A restatement of the accept rule's first exclusion, within the scope: it fails if the rule drops it."
       }
     ]
   },
   "errors": [
+    "DS_VALIDATE_DIM_AMBIGUOUS",
     "DS_VALIDATE_DIM_MISMATCH"
   ]
 }

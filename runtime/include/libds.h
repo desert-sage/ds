@@ -156,6 +156,10 @@ typedef int ds_status_t;
                                              repaired, and the call changes
                                              nothing; nothing is recorded on
                                              the stream ([NERR.6], LSTR.8.5) */
+#define DS_ERR_NOT_REPRESENTABLE    -223  /* a slot's unit conversion has no
+                                             result for the number it was
+                                             handed; the call changes nothing
+                                             ([NERR.6], NFCT.1.4.6) */
 
 /* -300 .. -399 retired; never reused (IERR.2.6). */
 
@@ -182,7 +186,7 @@ typedef int ds_status_t;
 
 /* Native Rete engine error codes (IRET.21 / RDSC.4a). */
 /* -600 retired; never reused. */
-#define DS_ERR_RETP_INVALID        -601  /* a network node with node_id 0, or a repeated node_id (RDSC.11.1, IRET.21) */
+#define DS_ERR_RETP_INVALID        -601  /* a network node with node_id 0, a repeated node_id, or a left_parent_id cycle (RDSC.11.1, IRET.21) */
 #define DS_ERR_RETP_INDEX_OOB       -602  /* cross-reference index out of bounds */
 /* -603 retired; never reused. */
 /* A call expression names an op with no builtin. ds_engine_load_dsc returns
@@ -240,11 +244,7 @@ typedef int ds_status_t;
                                                   byte-for-byte from the recorded atom at that seq,
                                                   or is missing/extra/reordered — a determinism
                                                   failure ([LFST.9.3.1]/.9.3.6). */
-/* [RFCS.18.8]: an unknown field number in the inject band (1-127) is an input
-   the writer recorded and this reader cannot deliver, whatever version either
-   side is. Distinct from DS_ERR_FS_VERSION: -720 is the version floor, this
-   names a dropped input. */
-#define DS_ERR_FS_UNKNOWN_INJECT         -726  /* unknown inject-band atom (RFCS.18.8) */
+/* -726 retired; never reused. */
 /* [LTIM.2.8.5] / [LFST.5.3] — a stream's first event has seq 0. A recording
    whose first event has another seq was attached after the engine's first
    input or sample, so it lacks what came before, and a replayer refuses it. */
@@ -562,17 +562,28 @@ ds_result_t ds_engine_clock_set_mode(ds_engine_t    *engine,
    nothing, and does not change what the engine's next read returns. */
 ds_result_t ds_engine_clock_now(ds_engine_t *engine, uint64_t *out_ns);
 
+/* Report the earliest deadline later than the monotonic clock's current value
+   (NLFC.2.5): the fire_at of a live timer fact, the expiry of a live fact with a
+   TTL, or the expiry of a cache entry. *out_has is false when the engine holds
+   none, and *out_ns is then 0. A read, on a live or a mock clock: it is not a
+   sample, records nothing, and changes nothing a later call or pump does. An
+   instant at which a time-dependent condition changes is not a deadline, and
+   neither is the end of a cooldown. Linear in the live facts and cache
+   entries. */
+ds_result_t ds_engine_next_deadline_ns(ds_engine_t *engine, uint64_t *out_ns,
+                                       bool *out_has);
+
 /* Set the mock monotonic clock to an absolute value. Not a sample: the
    next input or pump observes it (NTST.3.3). DS_ERR_STATE in live mode,
    and below the current value once the engine has sampled its clock, for
-   an input or a pump (NTST.3.1). */
+   an input or a pump (NTST.3.1). DS_ERR_TIME_RANGE, with the clock as it
+   was, above 2^63 - 1, the top of the clock's range (LTIM.2.8.2). */
 ds_result_t ds_engine_clock_set(ds_engine_t *engine, uint64_t now_ns);
 
 /* Advance the mock monotonic clock by delta nanoseconds, and the mock wall
    clock by the same amount when it is set. Not a sample. DS_ERR_STATE in
-   live mode. DS_ERR_TIME_RANGE, with both clocks as they were, for a delta
-   above 2^63 - 1, a wall clock that would pass 2^63 - 1, or a monotonic clock
-   that would pass 2^64 - 1 (NTST.3.1). */
+   live mode. DS_ERR_TIME_RANGE, with both clocks as they were, for a
+   monotonic clock or a wall clock that would pass 2^63 - 1 (NTST.3.1). */
 ds_result_t ds_engine_clock_advance(ds_engine_t *engine, uint64_t delta_ns);
 
 /* Set the mock wall clock to utc_ns, nanoseconds since the Unix epoch:
@@ -671,9 +682,14 @@ typedef struct ds_slot_desc {
 /* Number of schemas currently registered on this engine. */
 ds_result_t ds_engine_schema_count(ds_engine_t *engine, size_t *out);
 
-/* Look up a schema by its type name. On success, *out holds a
-   borrowed pointer to the registered schema, or NULL if no schema
-   with that name is registered. Status is DS_OK in both cases. */
+/* Look up a schema by its own name ([LIMP.13.1]), the name
+   ds_schema_get_name gives. A schema declared in the program has its NAME;
+   one a library declares has the library's dotted import path, a `.` and its
+   NAME: `plant.sensors.Reading` for `Reading` in `plant.sensors`. An `as`
+   alias is never an own name. On success *out holds a borrowed pointer to the
+   registered schema, or NULL when no schema has that own name, which is what
+   the bare `Reading` finds for that library's schema. Status is DS_OK in both
+   cases, so a miss is told by *out. */
 ds_result_t ds_engine_schema_find(ds_engine_t       *engine,
                                   const char         *type_name,
                                   const ds_schema_t **out);
@@ -734,6 +750,42 @@ ds_result_t ds_schema_get_source(const ds_schema_t  *schema,
 ds_result_t ds_schema_get_proto_source(const ds_schema_t  *schema,
                                         const char        **out_text,
                                         size_t             *out_len);
+
+/* [NFCT.1.4.6]: a number through the conversion of a slot that names a unit,
+   the slot whose declared type is a unit symbol ([LUNI.7.1], [RDSC.5.5.9]).
+   `in` and `*out` are of the kind [NFCT.2.3] pairs with the slot's type.
+
+   ds_schema_slot_to_stored writes the stored number ([LUNI.7.6]) of a number
+   in the unit the slot names: what `x::<unit>` computes ([LUNI.8.5]).
+   ds_schema_slot_from_stored writes a stored number in the unit the slot
+   names: what a kwarg of that unit receives ([LADP.8.5.3]).
+
+   Neither changes the engine, records an event or asserts a fault fact, save
+   for an EngineError the conversion raises: the artefact has then lied, and
+   the call halts the engine and reports it as any public call that raises one
+   does ([NCBK.2.8], [NCBK.2.9]). Neither is a ds_engine_* call, so a callback
+   may make it ([RARC.13.16]). Each returns the first of these that holds, and
+   writes *out only on DS_OK:
+     DS_ERR_INVAL              a NULL pointer
+     DS_ERR_ENGINE_HALTED      an EngineError halted the engine ([NCBK.2.9])
+     DS_ERR_NOT_FOUND          `index` names no slot of the schema
+     DS_ERR_INVAL              the slot names no unit
+     DS_ERR_SLOT_TYPE_MISMATCH `in`'s kind is not the slot's
+     DS_ERR_NAN_REJECTED       `in` is a NaN
+     DS_ERR_ENGINE_HALTED      the conversion raises an EngineError
+                               ([LERR.1.4.7])
+     DS_ERR_NOT_REPRESENTABLE  the conversion raises any other fault where a
+                               rule's evaluation would ([LERR.1.4]), or its
+                               result is NaN */
+ds_result_t ds_schema_slot_to_stored(const ds_schema_t      *schema,
+                                     uint32_t                index,
+                                     const ds_slot_value_t  *in,
+                                     ds_slot_value_t        *out);
+
+ds_result_t ds_schema_slot_from_stored(const ds_schema_t      *schema,
+                                       uint32_t                index,
+                                       const ds_slot_value_t  *in,
+                                       ds_slot_value_t        *out);
 
 /* ------------------------------------------------------------------ */
 /*  Per-rule metadata (DSC-loaded per RDSC.6)                         */
@@ -1020,7 +1072,8 @@ ds_result_t ds_engine_line_span_find(ds_engine_t         *engine,
  *                          the artefact requires a capability this build has no
  *                          code for, or one it does not know; the detail names
  *                          the lowest (RDSC.16.2.7, ds_build_capabilities)
- *   DS_ERR_RETP_INVALID    a network node with node_id 0, or a repeated node_id
+ *   DS_ERR_RETP_INVALID    a network node with node_id 0, a repeated node_id, or
+ *                          BetaNode left_parent_id references forming a cycle
  *   DS_ERR_RETP_INDEX_OOB  a cross-reference index out of bounds
  *   DS_ERR_BND_INCOMPLETE  a dialect_def_sha256 that is not 32 bytes ([RDSC.3.7])
  *   DS_ERR_FN_NOT_FOUND    a call naming an op this runtime has no handler for
@@ -1863,6 +1916,8 @@ typedef enum {
                                            DS_ERR_CONTRACT_WCET_HALT, the tier
                                            halts, and later calls get the
                                            ordinary DS_ERR_ENGINE_HALTED */
+    DS_ENGINE_FAULT_INTERNAL      = 8,  /* [IERR.1.7] — libds found its own
+                                           invariant broken */
 } ds_engine_fault_t;
 
 /*

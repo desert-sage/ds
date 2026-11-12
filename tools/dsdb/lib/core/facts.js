@@ -659,12 +659,15 @@ export function rowSlots(row, at) {
  * @param {Engine} engine  on the mock clock
  * @param {FactRow[]} rows  `merge`'s output
  * @param {(row: FactRow, fact: Fact) => void} [each]  after each row's pump
+ * @param {(target: bigint) => void} [beforeMove]  before the clock moves to a
+ *   later row
  * @returns {number} rows fed
  */
-export function feed(engine, rows, each) {
+export function feed(engine, rows, each, beforeMove) {
     const start = engine.clock.now;
     for (const row of rows) {
         const want = start + row.at;
+        if (want > engine.clock.now) beforeMove?.(want);
         const now = engine.clock.now;
         let fact;
         try {
@@ -677,6 +680,37 @@ export function feed(engine, rows, each) {
         each?.(row, fact);
     }
     return rows.length;
+}
+
+/**
+ * The one deadline stop before `target`: when the engine's next deadline
+ * ([NLFC.2.5]) is earlier, move the clock there and pump, so what falls due
+ * between two instants happens at its own time. Every path that feeds
+ * fact-file rows takes these stops before a row: batch mode, the shell's live
+ * session and `ds dap`'s `facts`. A deadline at `target` itself is the row's
+ * pump's.
+ * @param {Engine} engine  on the mock clock
+ * @param {bigint} target
+ * @param {() => void} [pump]  the pump, for a caller that records each one
+ * @returns {boolean} whether there was one
+ */
+export function stepDeadline(engine, target, pump = () => engine.pump()) {
+    const at = engine.clock.nextDeadline;
+    if (at === null || at >= target) return false;
+    engine.clock.advance(at - engine.clock.now);
+    pump();
+    return true;
+}
+
+/**
+ * Every deadline stop before `target`, in order. Read after every pump, since
+ * a firing can arm another.
+ * @param {Engine} engine  on the mock clock
+ * @param {bigint} target
+ * @param {() => void} [pump]
+ */
+export function stepDeadlines(engine, target, pump) {
+    for (;;) if (!stepDeadline(engine, target, pump)) return;
 }
 
 /**

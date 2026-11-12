@@ -1,0 +1,20 @@
+{
+    "id": "LSER.9.3.1_signal_state_survives_a_silent_window",
+    "clauses": ["LSER.9.3.1", "LSER.19.8"],
+    "category": "logical",
+    "scenario": "[LSER.9.3.1]: the state a signal aggregation reads is not evicted after a window of silence; [LSER.19.8]: `active_fraction` is cold only before the first absorption. `count_of, active_fraction sliding 10_min` on a Bool slot, with a rule reading both, puts a ring buffer and an interval pulse in one row: the compiler emits a backing for each aggregation a rule reads (`dsc.rete` `line_backings`). A link is up at t=0 and sends nothing more. At 660 s two probes, in two pumps at the same instant, read `active_fraction`: 1.0 both times, the link up throughout (60 s, 660 s]. A sweep that frees the row once its window has passed takes the interval pulse with the ring buffer, and the second probe, after the first pump's sweep, reads the cold 0.0. Path: libds `ds_series_state_evict_stale` pass 2, `row_evicts_on_silence`, where an interval pulse or a Bool ring buffer keeps the row; Mercury `ds.series.absorb`, which keeps the carry.",
+    "rules_ds": "use default\n\nschema Link scope logical:\n    name: String key\n    up: Bool mutable\n\nschema Probe scope explicit:\n    k: Int\n\nseries Link.up:\n    count_of, active_fraction sliding 10_min\n\nrule read:\n    Probe\n    Link l\n->\n    let af = active_fraction(l)\n    let n = count_of(l, false)\n    log info \"{l.name} af={af} drops={n}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Link", "slots": { "name": "a", "up": true } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 660000000000 },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "k": 2 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["a af=1.0 drops=0", "a af=1.0 drops=0"]
+    }
+}

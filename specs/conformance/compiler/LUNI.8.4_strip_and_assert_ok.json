@@ -1,0 +1,9 @@
+{
+    "id": "LUNI.8.4_strip_and_assert_ok",
+    "category": "compiler",
+    "scenario": "[LUNI.8.4]: an author who wants the raw numeric result strips the units on the operands first, and may assert a unit on the result: `(r.w::Float * r.h::Float)::meter_squared`. Pin: the program compiles. PATH PINNED: `dsc.types.luni_8_1_combine`'s bare arm over two strips, and the `Float -> <unit>` cast in `dsc.cast`.",
+    "rules_ds": "unit dimension area storage float64 base meter_squared\nunit meter_squared: area\n\nschema Rect scope logical:\n    id: Int key\n    w: meter mutable\n    h: meter mutable\n\nrule r:\n    Rect s where (s.w::Float * s.h::Float)::meter_squared > 1_meter_squared\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

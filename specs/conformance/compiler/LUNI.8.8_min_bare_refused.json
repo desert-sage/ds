@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.8_min_bare_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.8]: the operands of `min` stand beside each other as the operands of `+` do, so a bare number beside a dimensioned value is refused. `min(s.d, 3)`, with `d` a `meter`, is DS_VALIDATE_DIM_MISMATCH. PATH PINNED: `dsc.typecheck.luni_8_8_min_max_type`, from `lexp_5_3_plain_call`.",
+    "rules_ds": "schema R scope logical:\n    id: Int key\n    d: meter mutable\n\nrule r:\n    R s where min(s.d, 3) > 1_meter\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

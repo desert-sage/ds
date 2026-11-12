@@ -85,7 +85,7 @@ The `initialize` response declares the adapter's capabilities, and `initialized`
 | `program` | the program, as a `.dsc` or as `.ds` source the adapter compiles; optional when `trace` embeds it |
 | `libs` | library directories for a `.ds` program's imports |
 | `trace` | a recorded fact stream; present, the session replays it, and absent, the session is live |
-| `facts` | live only: [fact files](dsdb.md#fact-files) fed as inputs |
+| `facts` | live only: [fact files](dsdb.md#fact-files) fed as inputs, each row as [batch](dsdb.md#batch) feeds it, deadline stops included |
 | `source` | the `.ds` source of a `.dsc` that carries no source spans |
 | `events` | the [custom events](#custom-events) to send; absent, none |
 
@@ -252,9 +252,11 @@ A target's label is `!N at T=X.XXXs`, or for an assert `#N at T=X.XXXs`.
 
 `action` and `rule` are refused in a live session. The default is `action` in replay and `pump` live. On a change of mode, the granularity becomes the new mode's default unless the client set one the new mode admits.
 
+At the end of a live run fed by `facts`, each [deadline stop](dsdb.md#batch) before the next row is a pump of its own. At `pump`, a forward step is one such pump, and the row waits for the next step. At `input`, one step takes every such pump, then the row. `continue` runs through both.
+
 A live step with no input left to feed leaves the session paused, and an `output` event says so.
 
-*(Spec: [NDBG.14.1.1])*
+*(Spec: [NDBG.14.1.1], [NLFC.2.5], Source: tools/dsdb/lib/dap/adapter.js)*
 
 ### `ds/advanceClock`
 

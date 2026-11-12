@@ -1060,11 +1060,15 @@ def compile_flags(name: str) -> str:
     `-g -O2` default only while CFLAGS is unset, and FORTIFY does nothing
     without optimisation. The cmake rows keep their build type's own `-O3`,
     which comes after these. "" for a lineage that is not hardened, so wasm's
-    recipes run as they did."""
+    recipes run as they did.
+
+    protobuf-c also takes `-DNDEBUG` on every lineage: its archive ships beside
+    libds, and [IERR.1.5] allows it no assert. Spelling `-g -O2` where the
+    lineage is not hardened keeps what setting CFLAGS would otherwise drop."""
     harden = hardening()
-    if not harden:
-        return ""
-    return " ".join((harden, "-g", *(("-O2",) if name == "protobuf-c" else ())))
+    if name == "protobuf-c":
+        return " ".join(f for f in (harden, "-g -O2 -DNDEBUG") if f)
+    return f"{harden} -g" if harden else ""
 
 
 # What one C++ compile of these dependencies may hold at its peak. protobuf's
@@ -1086,8 +1090,8 @@ def _mem_available_gib(meminfo: str = "/proc/meminfo") -> float | None:
 def build_jobs(cpus: int | None = None, mem_gib: float | None = None) -> int:
     """Parallel compiles for these builds: the cores, capped by memory.
 
-    `-j <cores>` alone runs a riscv64 build host (4 cores, about 4 GB) out of
-    memory: four protobuf compiles at once, and it stops answering ssh. So each
+    `-j <cores>` alone can run a build host out of memory, and it stops
+    answering ssh. So each
     job is given `_GIB_PER_JOB` of what the kernel says is available, never
     fewer than one job, never more than the cores.
 

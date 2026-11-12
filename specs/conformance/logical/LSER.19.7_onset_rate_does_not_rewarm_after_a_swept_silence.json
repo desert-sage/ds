@@ -1,0 +1,28 @@
+{
+    "id": "LSER.19.7_onset_rate_does_not_rewarm_after_a_swept_silence",
+    "clauses": ["LSER.19.7", "LSIG.1.4.1"],
+    "category": "logical",
+    "scenario": "[LSER.19.7]: `t_first` is set on the first absorbed sample and persists for the instance's life, so `onset_rate`'s `min(W, now - t_first)` denominator is corrected over the instance's first `W` only, and not again after a silence. `onset_rate sliding 60_s` on `Pump.state` takes `true` at t=0 and `false` at 1 s. At 200 s an unrelated `Other` fact is asserted and pumped, so a pump reads a clock more than a window past the last sample and an eviction sweep runs. `true` arrives at 300 s, a rising edge ([LSIG.1.4.1]), and at 310 s the pump is re-asserted with `state` still `true` and `n` 4, whose `where` reads `p.onset_rate` before that fact's own sample ([LSER.8.6]): one edge in (250 s, 310 s], over `min(60 s, 310 s)`, which is 1/60 per second, and the rule fires once. The `n == 4` conjunct keeps the earlier facts, whose `where` is re-read at each pump ([LTIM.2.4.1]), from firing. A backing whose row was freed at 200 s restarts `t_first` at 300 s and reads 1 / min(60, 10) = 0.1, and the rule never fires. Path: libds `ds_series_state_evict_stale` pass 2, which keeps a Bool ring buffer's row, and SeriesBackendRingBuffer's `first_ever_ns` and `last_bool`; the Mercury runtime's `ds.series` `onset_rate` over the ring buffer's carry.",
+    "rules_ds": "use default\n\nschema Pump scope logical:\n    id: String key\n    state: Bool mutable\n    n: Int mutable\n\nschema Other scope explicit:\n    k: Int\n\nseries Pump.state (by: id):\n    onset_rate sliding 60_s\n\nrule r:\n    Pump p where p.n == 4 and p.onset_rate > 0.01 and p.onset_rate < 0.02\n->\n    log info \"one edge over the whole window\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 1000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": false, "n": 2 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 200000000000 },
+            { "op": "assert", "schema": "Other", "slots": { "k": 1 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 300000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 3 } },
+            { "op": "pump" },
+            { "op": "set", "now_ns": 310000000000 },
+            { "op": "assert", "schema": "Pump", "slots": { "id": "p1", "state": true, "n": 4 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["one edge over the whole window"]
+    }
+}

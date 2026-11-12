@@ -7,15 +7,57 @@
   "depth": 2,
   "kind": "normative",
   "heading": null,
-  "text": "[LSER.19.8] **A cold read yields `null`, at the grain of this partition.** An\naggregation read is **cold** when its backing holds no sample to aggregate for\nthat identity — before the first absorption, or once every absorbed sample has\nleft the window. `active_fraction` and `integral` are the exception to the\nsecond: they aggregate a step function, in which each asserted value holds\nuntil the next ([LSIG.1.3.1], [LSIG.3.2]), so the last absorbed value reaches\ninto every later window and their read is cold only before the first\nabsorption. The engine **must** answer a cold read with the value below,\nnot with an error and not with a placeholder. Reading a cold series is a normal\nthing for a rule to do on the first pumps after start or restart.\n\n**These keep a concrete return type**, because zero is the honest answer rather\nthan a stand-in for one:\n\n| Aggregation | Cold value |\n|---|---|\n| `count`, `count_distinct`, `count_of` | `0` |\n| `contains` | `false` |\n| `sum` | `0` |\n| `active_fraction`, `onset_rate`, `integral` | `0.0` |\n\nNothing has been observed, so the count **is** zero and the value **has not**\nbeen seen. `[LSIG.8.1]` is retained unchanged by this clause, not overridden.\n\n**Every other aggregation is genuinely undefined when cold and its declared\nreturn type is therefore `T?` ([LSER.16]),** yielding `null` while cold. This\nincludes `bool_and` / `bool_or`: a universal over an empty series is not `true`\nand an existential over one is not `false` — those are the *vacuous* answers,\nand returning them would let a rule fire on a series that has told it nothing.\nThe descriptive, dispersion, quantile and temporal families are undefined for\nthe same reason — there is no mean of nothing.\n\n**A cold read needs no guard in a `where` predicate.** A `null` propagates\nthrough comparison and boolean operators and a `where` fires only on `true`\n([LNUL.4.3]), so a rule reading a cold `T?` aggregation does not fire until the\nbacking holds a sample. At a concrete-value position the `T?` is rescued with\n`??` or written to a `T?` slot ([LNUL.5.1]).\n\nWhether a\nread has a value is the read's own answer. An aggregation that needs more than\none sample says so in its own definition: `stdev`, `variance` and `direction`\nare also `null` while one sample is held, and `rate` while no time separates\nthe first and last ([LSER.17.2]). This holds on every backing, a `sample n`\nreservoir included: before its bag is full the bag holds every absorbed\nsample ([LSMP.2.1]), and its aggregations are read over those.\n\n",
+  "text": "[LSER.19.8] **A cold read yields `null`, at the grain of this partition.** An\naggregation read is **cold** when its backing holds no sample to aggregate for\nthat identity — before the first absorption, or once every absorbed sample has\nleft the window. The aggregations that read the slot as a step function,\n`active_fraction`, `onset_rate` and `integral` ([LSER.9.3.1]), are the\nexception to the second: each asserted value holds until the next\n([LSIG.1.3.1], [LSIG.3.2]), so the last absorbed value reaches into every\nlater window and their read is cold only before the first absorption. The engine **must** answer a cold read with the value below,\nnot with an error and not with a placeholder. Reading a cold series is a normal\nthing for a rule to do on the first pumps after start or restart.\n\n**These keep a concrete return type**, because zero is the honest answer rather\nthan a stand-in for one:\n\n| Aggregation | Cold value |\n|---|---|\n| `count`, `count_distinct`, `count_of` | `0` |\n| `contains` | `false` |\n| `sum` | `0` |\n| `active_fraction`, `onset_rate`, `integral` | `0.0` |\n\nNothing has been observed, so the count **is** zero and the value **has not**\nbeen seen. `[LSIG.8.1]` is retained unchanged by this clause, not overridden.\n\n**Every other aggregation is genuinely undefined when cold and its declared\nreturn type is therefore `T?` ([LSER.16]),** yielding `null` while cold. This\nincludes `bool_and` / `bool_or`: a universal over an empty series is not `true`\nand an existential over one is not `false` — those are the *vacuous* answers,\nand returning them would let a rule fire on a series that has told it nothing.\nThe descriptive, dispersion, quantile and temporal families are undefined for\nthe same reason — there is no mean of nothing.\n\n**A cold read needs no guard in a `where` predicate.** A `null` propagates\nthrough comparison and boolean operators and a `where` fires only on `true`\n([LNUL.4.3]), so a rule reading a cold `T?` aggregation does not fire until the\nbacking holds a sample. At a concrete-value position the `T?` is rescued with\n`??` or written to a `T?` slot ([LNUL.5.1]).\n\nWhether a\nread has a value is the read's own answer. An aggregation that needs more than\none sample says so in its own definition: `stdev`, `variance` and `direction`\nare also `null` while one sample is held, and `rate` while no time separates\nthe first and last ([LSER.17.2]). This holds on every backing, a `sample n`\nreservoir included: before its bag is full the bag holds every absorbed\nsample ([LSMP.2.1]), and its aggregations are read over those.\n\n",
   "refs": [
     "LNUL.4.3",
     "LNUL.5.1",
     "LSER.16",
     "LSER.17.2",
+    "LSER.9.3.1",
     "LSIG.1.3.1",
     "LSIG.3.2",
     "LSIG.8.1",
     "LSMP.2.1"
-  ]
+  ],
+  "checks": {
+    "tla": [
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__COLD",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__Read",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__cold_iff_empty",
+        "tag": "derives",
+        "verdict": "proven",
+        "note": "COLD IFF EMPTY: a read is cold exactly when it sees no sample, before the first absorption and once every absorbed sample has left the window. The clause's definition in the model's terms, a transcription, and its teeth is the step function's rule applied to a windowed aggregation (`.teeth.held`); the step aggregations' own cold is `lser_19_8__step_cold`, and `.probe.two_colds` shows the two part after a silence. The cold values of the table, and every warm value, are the clause-literal references' and not this model's."
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__cold_of",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__no_read",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__read",
+        "tag": "spec"
+      },
+      {
+        "path": "formal/tla/series_window.tla",
+        "name": "lser_19_8__step_cold",
+        "tag": "spec"
+      }
+    ]
+  }
 }

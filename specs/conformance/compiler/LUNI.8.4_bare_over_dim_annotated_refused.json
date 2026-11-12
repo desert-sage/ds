@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.4_bare_over_dim_annotated_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.4] with [LUNI.8.6]: `/` of a bare number by a dimensioned value is refused under a `let` annotation too. `let f: Hz = 1 / s.t` on a declared unit is refused. Pin: DS_VALIDATE_DIM_AMBIGUOUS. PATH PINNED: `dsc.typecheck.luni_8_4_ambiguous`, which has no annotated case.",
+    "rules_ds": "unit dimension frequency storage float64 base Hz\nunit Hz: frequency\n\nschema R scope logical:\n    id: Int key\n    t: meter mutable\n\nrule r:\n    R s\n->\n    let f: Hz = 1 / s.t\n    log info \"{f}\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_AMBIGUOUS"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.8.9_sqrt_refused",
+    "category": "compiler",
+    "scenario": "[LUNI.8.9]: `math.sqrt`'s parameter is a `Float` ([LEXP.17.2]), so a dimensioned argument is refused. `math.sqrt(s.d)` on a `meter` slot is DS_VALIDATE_DIM_MISMATCH; `math.sqrt(s.d::Float)` is the admitted form (LUNI.8.9_admitted_forms_compile). PATH PINNED: `dsc.typecheck.luni_8_9_dimensioned_arguments`, over `dsc.builtin_fns.lexp_17_2_number_parameter`.",
+    "rules_ds": "import math\n\nschema S scope logical:\n    id: String key\n    d: meter mutable\n\nrule r:\n    S s where math.sqrt(s.d) > 1.0\n->\n    log info \"x\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_DIM_MISMATCH"
+    }
+}

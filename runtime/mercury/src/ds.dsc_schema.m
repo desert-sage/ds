@@ -55,6 +55,9 @@
 :- implementation.
 
 :- import_module ds.chrono.
+:- import_module ds.dsc_expr.
+:- import_module ds.dsc_judge.
+:- import_module ds.expr.
 :- import_module ds.id.
 :- import_module assoc_list.
 :- import_module bool.
@@ -79,7 +82,9 @@
                 rs_role      :: uint32,
                 rs_nullable  :: bool,
                 rs_hydratable :: bool,      % set by a later Hydration atom
-                rs_capacity  :: uint32      % field 12; 0 = none declared
+                rs_capacity  :: uint32,     % field 12; 0 = none declared
+                rs_units     :: maybe(unit_conversion)
+                                            % fields 13 and 14 [RDSC.5.5.9]
             ).
 
 :- type raw_lifecycle
@@ -175,54 +180,152 @@ sttl_field(Num, Value, {N0, T0}, Acc) :-
         Acc = {N0, T0}
     ).
 
+    % The body is judged first, as libds judges it before protobuf-c reads it:
+    % its conversions are `Expr`s ([RDSC.11.4]). Then the tolerance, then the
+    % conversions ([RDSC.5.5.9]), `to_stored` before `from_stored`.
+    %
 decode_slot(R, Sg0, IT0, Step) :-
-    Blank = {"", raw_slot("", 0u32, "", no, no, 0u64, 0u32, no, no, 0u32)},
-    fold_body(R, slot_field, Blank, Result),
+    ( if rdsc_11_4_refusal(rdsc_11_4_judge(jr_slot, R), K0, C0) then
+        Step = ss_error(K0, C0)
+    else
+        Blank = {"", raw_slot("", 0u32, "", no, no, 0u64, 0u32, no, no, 0u32,
+            no), no, no},
+        fold_body(R, slot_field, Blank, Result),
+        (
+            Result = ff_failed(K, C),
+            Step = ss_error(K, C)
+        ;
+            Result = ff_got({Schema, Raw0, To, From}),
+            ( if nan_bits(Raw0 ^ rs_tolerance) then
+                Step = ss_error(lek_semantic, "RDSC.9.10")
+            else if float_from_bits(Raw0 ^ rs_tolerance) < 0.0 then
+                Step = ss_error(lek_semantic, "RDSC.9.11")
+            else
+                intern(Schema, _, IT0, IT1),
+                intern(Raw0 ^ rs_name, _, IT1, IT2),
+                rdsc_5_5_9_units(To, From, IT2, Units),
+                (
+                    Units = us_ok(MaybeUnits, IT),
+                    Raw = Raw0 ^ rs_units := MaybeUnits,
+                    Step = ss_ok(Sg0 ^ sg_slots :=
+                        [Schema - Raw | Sg0 ^ sg_slots], IT)
+                ;
+                    Units = us_error(K, C),
+                    Step = ss_error(K, C)
+                )
+            )
+        )
+    ).
+
+    % The refusal a judgement gives, as `ds.dsc_network` gives it.
+    %
+:- pred rdsc_11_4_refusal(judgement::in, load_error_kind::out, string::out)
+    is semidet.
+
+rdsc_11_4_refusal(J, Kind, Clause) :-
     (
-        Result = ff_failed(K, C),
-        Step = ss_error(K, C)
+        J = j_decodes,
+        fail
     ;
-        Result = ff_got({Schema, Raw}),
-        ( if nan_bits(Raw ^ rs_tolerance) then
-            Step = ss_error(lek_semantic, "RDSC.9.10")
-        else if float_from_bits(Raw ^ rs_tolerance) < 0.0 then
-            Step = ss_error(lek_semantic, "RDSC.9.11")
-        else
-            intern(Schema, _, IT0, IT1),
-            intern(Raw ^ rs_name, _, IT1, IT),
-            Step = ss_ok(Sg0 ^ sg_slots := [Schema - Raw | Sg0 ^ sg_slots], IT)
+        J = j_undecodable,
+        Kind = lek_decode, Clause = "RDSC.11.1"
+    ;
+        J = j_repeated,
+        Kind = lek_decode, Clause = "RDSC.9.5"
+    ;
+        J = j_bad_string,
+        Kind = lek_decode, Clause = "RDSC.9.12"
+    ;
+        J = j_too_deep,
+        Kind = lek_semantic, Clause = "RDSC.11.3"
+    ).
+
+:- type units_step
+    --->    us_ok(maybe(unit_conversion), intern_table)
+    ;       us_error(load_error_kind, string).
+
+    % [RDSC.5.5.9]: both conversions or neither. Each reads its one input as
+    % `bind_ref` 0, so a frame of one: an index past it is kept, and faults
+    % where the conversion reads it ([RDSC.4a.9.6]).
+    %
+:- pred rdsc_5_5_9_units(maybe(reader)::in, maybe(reader)::in,
+                         intern_table::in, units_step::out) is det.
+
+rdsc_5_5_9_units(MaybeTo, MaybeFrom, IT0, Step) :-
+    (
+        MaybeTo = no,
+        (
+            MaybeFrom = no,
+            Step = us_ok(no, IT0)
+        ;
+            MaybeFrom = yes(_),
+            Step = us_error(lek_semantic, "RDSC.5.5.9")
+        )
+    ;
+        MaybeTo = yes(ToR),
+        (
+            MaybeFrom = no,
+            Step = us_error(lek_semantic, "RDSC.5.5.9")
+        ;
+            MaybeFrom = yes(FromR),
+            decode_expr(ToR, bind_frame(1), IT0, ToResult),
+            (
+                ToResult = xr_error(K, C),
+                Step = us_error(K, C)
+            ;
+                ToResult = xr_ok(To, IT1),
+                decode_expr(FromR, bind_frame(1), IT1, FromResult),
+                (
+                    FromResult = xr_error(K, C),
+                    Step = us_error(K, C)
+                ;
+                    FromResult = xr_ok(From, IT),
+                    Step = us_ok(yes(unit_conversion(To, From)), IT)
+                )
+            )
         )
     ).
 
 :- pred slot_field(uint32::in, field_value::in,
-                   {string, raw_slot}::in, {string, raw_slot}::out) is semidet.
+                   {string, raw_slot, maybe(reader), maybe(reader)}::in,
+                   {string, raw_slot, maybe(reader), maybe(reader)}::out)
+    is semidet.
 
-slot_field(Num, Value, {Sc0, R0}, Acc) :-
+slot_field(Num, Value, {Sc0, R0, T0, F0}, Acc) :-
     ( if Num = 1u32 then
-        Value = fv_bytes(S), reader_string(S, V), Acc = {V, R0}
+        Value = fv_bytes(S), reader_string(S, V), Acc = {V, R0, T0, F0}
     else if Num = 2u32 then
-        Value = fv_bytes(S), reader_string(S, V), Acc = {Sc0, R0 ^ rs_name := V}
+        Value = fv_bytes(S), reader_string(S, V),
+        Acc = {Sc0, R0 ^ rs_name := V, T0, F0}
     else if Num = 3u32 then
         Value = fv_varint(V),
-        Acc = {Sc0, R0 ^ rs_kind := uint32.cast_from_uint64(V)}
+        Acc = {Sc0, R0 ^ rs_kind := uint32.cast_from_uint64(V), T0, F0}
     else if Num = 4u32 then
-        Value = fv_bytes(S), reader_string(S, V), Acc = {Sc0, R0 ^ rs_ref := V}
+        Value = fv_bytes(S), reader_string(S, V),
+        Acc = {Sc0, R0 ^ rs_ref := V, T0, F0}
     else if Num = 5u32 then
-        Value = fv_varint(V), Acc = {Sc0, R0 ^ rs_sampled := bool_of(V)}
+        Value = fv_varint(V), Acc = {Sc0, R0 ^ rs_sampled := bool_of(V), T0, F0}
     else if Num = 6u32 then
-        Value = fv_varint(V), Acc = {Sc0, R0 ^ rs_retained := bool_of(V)}
+        Value = fv_varint(V),
+        Acc = {Sc0, R0 ^ rs_retained := bool_of(V), T0, F0}
     else if Num = 7u32 then
-        Value = fv_fixed64(V), Acc = {Sc0, R0 ^ rs_tolerance := V}
+        Value = fv_fixed64(V), Acc = {Sc0, R0 ^ rs_tolerance := V, T0, F0}
     else if Num = 9u32 then
         Value = fv_varint(V),
-        Acc = {Sc0, R0 ^ rs_role := uint32.cast_from_uint64(V)}
+        Acc = {Sc0, R0 ^ rs_role := uint32.cast_from_uint64(V), T0, F0}
     else if Num = 11u32 then
-        Value = fv_varint(V), Acc = {Sc0, R0 ^ rs_nullable := bool_of(V)}
+        Value = fv_varint(V),
+        Acc = {Sc0, R0 ^ rs_nullable := bool_of(V), T0, F0}
     else if Num = 12u32 then
         Value = fv_varint(V),
-        Acc = {Sc0, R0 ^ rs_capacity := uint32.cast_from_uint64(V)}
+        Acc = {Sc0, R0 ^ rs_capacity := uint32.cast_from_uint64(V), T0, F0}
+    else if Num = 13u32 then
+        % The judge has refused a second one ([RDSC.9.5]).
+        Value = fv_bytes(S), Acc = {Sc0, R0, yes(S), F0}
+    else if Num = 14u32 then
+        Value = fv_bytes(S), Acc = {Sc0, R0, T0, yes(S)}
     else
-        Acc = {Sc0, R0}
+        Acc = {Sc0, R0, T0, F0}
     ).
 
     % `compression` must be 1, NONE: absent is `COMPRESSION_UNSPECIFIED`, and
@@ -495,7 +598,7 @@ commons([R | Rs], I, IT, [C | Cs]) :-
     kind_of(R, IT, Kind),
     C = slot_common(NameRef, Kind, Ix, nullable_of(R ^ rs_nullable),
         R ^ rs_sampled, R ^ rs_retained, R ^ rs_hydratable,
-        capacity_of(R ^ rs_capacity)),
+        capacity_of(R ^ rs_capacity), R ^ rs_units),
     commons(Rs, I + 1, IT, Cs).
 
 :- func capacity_of(uint32) = capacity.

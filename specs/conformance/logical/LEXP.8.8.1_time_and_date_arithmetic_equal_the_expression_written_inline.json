@@ -1,0 +1,17 @@
+{
+    "id": "LEXP.8.8.1_time_and_date_arithmetic_equal_the_expression_written_inline",
+    "clauses": ["LEXP.8.8.1", "LDET.3.3a.8"],
+    "category": "logical",
+    "scenario": "[LEXP.8.8.1] with [LDET.3.3a.8]: a `const` of `Time` or `Date` arithmetic holds the value the engine computes for the same expression in a rule. `T = calendar.time(2026, 1, 1) + 1_h` folds a `Time` plus a `Duration` ([LTIM.4.1.1]), and `D = calendar.date(2026, 1, 31) + 1_d` a `Date` plus a whole number of days, across a month's end ([LTIM.4.2.3]). Each rule compares an `Ev` slot with the `const`, which lowers to the literal of its folded value ([RLOW.6.1.8]), and with the same expression written inline, whose `calendar` call lowers to a literal ([LTIM.14.3]) and whose `+` the engine evaluates. The rule fires only if the fold, the engine and the slot agree. Fact 1's `t` is 2026-01-01T01:00:00Z and its `d` is day 20485, 2026-02-01: `time 1`, then `date 1`, in source order ([LDET.5.4]). Fact 2 holds the operands before the addition, 2026-01-01T00:00:00Z and day 20484: neither fires. A fold or an engine that computes another value does not fire for fact 1; a compiler and an engine that both drop the addition fire for fact 2. PATH PINNED: `dsc.dstest.ltim_4_1_fold_temporal`, lowered through `dsc.rete.lgra_13_3_const`, against each runtime's `Time` `+` and FN_DATE_ADD_DURATION (`dsc.rete.rlow_6_1_5_date_arith`).",
+    "rules_ds": "import calendar\n\nconst T = calendar.time(2026, 1, 1) + 1_h\nconst D = calendar.date(2026, 1, 31) + 1_d\n\nschema Ev scope logical:\n    id: Int key\n    t: Time mutable\n    d: Date mutable\n\nrule r_time:\n    Ev e where e.t == T and e.t == calendar.time(2026, 1, 1) + 1_h\n->\n    log info \"time {e.id}\"\n\nrule r_date:\n    Ev e where e.d == D and e.d == calendar.date(2026, 1, 31) + 1_d\n->\n    log info \"date {e.id}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "Ev", "slots": { "id": 1, "t": 1767229200000000000, "d": 20485 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Ev", "slots": { "id": 2, "t": 1767225600000000000, "d": 20484 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["time 1", "date 1"]
+    }
+}

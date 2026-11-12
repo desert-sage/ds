@@ -216,7 +216,8 @@ interpret(A, Scope, IT0, Result) :-
 withdraw_by_id_action(A, Scope, IT0, Result) :-
     (
         A ^ aa_withdraw_id = no,
-        Result = ia_error(lek_decode, "RDSC.11.1")
+        % [RDSC.11.3]: a withdraw aimed at nothing has no meaning.
+        Result = ia_error(lek_semantic, "RDSC.11.3")
     ;
         A ^ aa_withdraw_id = yes(Sub),
         decode_expr(Sub, Scope, IT0, XR),

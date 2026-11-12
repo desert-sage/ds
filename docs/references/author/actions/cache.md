@@ -38,7 +38,7 @@ cache_delete key: "limit"
 
 The `key:` of `cache` or `cache_delete` is a `STRING_LIT` with no interpolation site.
 
-Any other value is refused with `DS_VALIDATE_DYNAMIC_IDENT_KWARG`. `value:` and `ttl:` take any expression the context allows.
+Any other value is refused with `DS_VALIDATE_DYNAMIC_IDENT_KWARG`. `value:` takes any expression the context allows, and `ttl:` a [`Duration`](#key-ttl) one.
 
 ```ds action error=DS_VALIDATE_DYNAMIC_IDENT_KWARG
 cache key: r.label value: 1
@@ -104,9 +104,13 @@ The integrator's part is [Cache](inv:integrator:std:doc#callbacks/cache). A pre-
 
 `ttl: <duration>` on `cache` sets a per-write expiry, and an expired key reads as not found.
 
-A read that meets an expired entry removes it, and the removal fires the integrator's removal callback, at [Cache](inv:integrator:std:doc#callbacks/cache).
+The expression is a [`Duration`](../time/types.md#duration). One of another type is refused with `DS_VALIDATE_TYPE_MISMATCH`, and an un-narrowed `Duration?` with `DS_VALIDATE_NULLABLE_UNNARROWED`. A TTL of zero, a `Duration` expression that saturates to zero included, is no TTL, and the entry does not expire. A read that meets an expired entry removes it, and the removal fires the integrator's removal callback, at [Cache](inv:integrator:std:doc#callbacks/cache).
 
-*(Spec: [LSTO.4.6.1], [LSTO.4.3.3])*
+```ds action error=DS_VALIDATE_TYPE_MISMATCH
+cache key: "limit" value: 1 ttl: r.n
+```
+
+*(Spec: [LSTO.4.6.1], [LSTO.4.3.3], [LTIM.1.3.1])*
 
 ### Cache bounds
 

@@ -206,6 +206,7 @@
     ;       order_key
     ;       allocation
     ;       pump_wcet
+    ;       internal
     ;       unspecified_fault.
             % A fault with no `EngineFault` number of its own.
 

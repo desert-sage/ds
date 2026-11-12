@@ -28,6 +28,7 @@
 //
 // Fact ids and clocks are BigInts; record indexes Numbers.
 
+import { stepDeadline, stepDeadlines } from "./facts.js";
 import { read as readProgram } from "./program.js";
 import { Timeline } from "./timeline.js";
 import { Decoder, EXTERNAL_DIVERGED, is } from "./trace.js";
@@ -311,16 +312,29 @@ export class EngineTimeline {
     }
 
     /**
-     * `assertFact` at the instant `ns`: the mock clock moves there first
-     * (never back) with no pump of its own, so what falls due by then is the
-     * assert's pump's, as batch mode feeds a fact-file row (core/facts.js
-     * `feed`). Returns the new fact's id.
+     * The engine's next deadline earlier than `ns`, as a step of its own: the
+     * mock clock moves there and the engine pumps (core/facts.js
+     * `stepDeadline`). False when there is none before `ns`.
+     * @param {bigint} ns
+     * @returns {boolean}
+     */
+    stepDeadline(ns) {
+        return stepDeadline(this.#eng, ns, () => this.pump());
+    }
+
+    /**
+     * `assertFact` at the instant `ns`, as batch mode feeds a fact-file row:
+     * each engine deadline before `ns` is a step of its own at its own
+     * instant, then the mock clock moves to `ns` (never back) with no pump of
+     * its own, so what falls due at `ns` is the assert's pump's. Returns the
+     * new fact's id.
      * @param {bigint} ns
      * @param {string} schema
      * @param {Record<string, SlotValue>} slots
      * @returns {bigint}
      */
     assertFactAt(ns, schema, slots) {
+        stepDeadlines(this.#eng, ns, () => this.pump());
         const now = this.#eng.clock.now;
         if (ns > now) this.#eng.clock.advance(ns - now);
         return this.assertFact(schema, slots);

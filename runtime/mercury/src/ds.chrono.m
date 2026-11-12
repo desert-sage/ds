@@ -22,7 +22,6 @@
 
 :- import_module bool.
 :- import_module io.
-:- import_module list.
 :- import_module maybe.
 
 %-----------------------------------------------------------------------------%
@@ -160,9 +159,10 @@
 
     % The mock setters. Each fails on a live clock. Not samples ([NTST.3.3]).
     %
-    % `clock_set` fails below the current value once the engine has sampled
-    % ([NTST.3.1]). `clock_advance` also moves a wall clock that has a value, and
-    % fails as `ntst_3_1_advance_past_range` says.
+    % `clock_set` fails below the current value once the engine has sampled, and
+    % as `ntst_3_1_set_past_range` says ([NTST.3.1]). `clock_advance` also moves
+    % a wall clock that has a value, and fails as `ntst_3_1_advance_past_range`
+    % says.
     %
 :- pred clock_advance(duration::in, clock::in, clock::out) is semidet.
 :- pred clock_set(instant::in, clock::in, clock::out) is semidet.
@@ -173,6 +173,11 @@
     %
     %@spec [NTST.3.1]
 :- pred ntst_3_1_advance_past_range(duration::in, clock::in) is semidet.
+
+    % The instant is above the top of the monotonic clock's range ([LTIM.2.8.2]).
+    %
+    %@spec [NTST.3.1]
+:- pred ntst_3_1_set_past_range(instant::in) is semidet.
 
     % Replay's alone, for a `ClockAdvance` recorded with `has_wall` false
     % ([RFCS.10.5]).
@@ -193,35 +198,12 @@
 :- pred clock_observe(wall_reading::in, clock::in, clock::out) is semidet.
 
 %-----------------------------------------------------------------------------%
-% Deadlines
-%-----------------------------------------------------------------------------%
-
-    % Only the unit suite uses this.
-    %
-:- type deadlines(Client).
-
-:- func init_deadlines = deadlines(Client).
-
-:- pred arm(instant::in, Client::in,
-            deadlines(Client)::in, deadlines(Client)::out) is det.
-
-    % Every client due at the instant, removed, by deadline then arm order.
-    %
-:- pred due(instant::in, list(Client)::out,
-            deadlines(Client)::in, deadlines(Client)::out) is det.
-
-:- pred next_deadline(deadlines(Client)::in, instant::out) is semidet.
-
-%-----------------------------------------------------------------------------%
 :- implementation.
 
 :- import_module uint64.
 :- import_module int.
 :- import_module int64.
 :- import_module integer.
-
-:- type deadlines(Client) ---> deadlines(list({instant, int, Client}), int).
-    % Entries plus the arm counter.
 
 :- type instant ---> instant(uint64).
 :- type duration ---> duration(uint64).
@@ -404,23 +386,26 @@ clock_sampled(C) :-
 ltim_1_1_5_deadline_past_range(Now, Window) :-
     W = duration_ns(Window),
     W > 0u64,
-    Max = uint64.cast_from_int64(int64.max_int64),
-    N = instant_ns(Now),
-    ( N > Max
-    ; W > Max - N
-    ).
+    W > ltim_2_8_2_top_ns - instant_ns(Now).
+
+    % The top of the monotonic clock's range ([LTIM.2.8.2]).
+    %
+:- func ltim_2_8_2_top_ns = uint64.
+
+ltim_2_8_2_top_ns = uint64.cast_from_int64(int64.max_int64).
+
+ntst_3_1_set_past_range(At) :-
+    instant_ns(At) > ltim_2_8_2_top_ns.
 
 ntst_3_1_advance_past_range(D, C) :-
     Ns = duration_ns(D),
-    Top = uint64.cast_from_int64(int64.max_int64),
+    Top = ltim_2_8_2_top_ns,
     (
-        Ns > Top
+        Ns > Top - instant_ns(C ^ c_src_mono)
     ;
         C ^ c_src_wall = yes(W),
         W >= 0i64,
         Ns > Top - uint64.cast_from_int64(W)
-    ;
-        Ns > uint64.max_uint64 - instant_ns(C ^ c_src_mono)
     ).
 
 clock_advance(D, C0, C) :-
@@ -439,6 +424,7 @@ clock_advance(D, C0, C) :-
 
 clock_set(At, C0, C) :-
     C0 ^ c_mode = mock,
+    not ntst_3_1_set_past_range(At),
     Sampled = C0 ^ c_sampled,
     ( if Sampled = yes then
         not before(At, C0 ^ c_src_mono)
@@ -493,7 +479,7 @@ clock_observe(wall_reading(Raw, Wall), C0, C) :-
         Anchor = yes({Raw0, At0}),
         ( if
             Raw > Raw0,
-            Later = add(At0, duration(Raw - Raw0)),
+            Later = ltim_2_8_2_held(add(At0, duration(Raw - Raw0))),
             before(C1 ^ c_src_mono, Later)
         then
             C = C1 ^ c_src_mono := Later
@@ -502,30 +488,16 @@ clock_observe(wall_reading(Raw, Wall), C0, C) :-
         )
     ).
 
-%-----------------------------------------------------------------------------%
-% Deadlines
-%-----------------------------------------------------------------------------%
+    % A live reading past the top is held at the top, since no host call is
+    % there to refuse it ([LTIM.2.8.2]).
+    %
+:- func ltim_2_8_2_held(instant) = instant.
 
-init_deadlines = deadlines([], 0).
-
-arm(At, Client, deadlines(Es, N), deadlines([{At, N, Client} | Es], N + 1)).
-
-due(Now, Clients, deadlines(Es, N), deadlines(Kept, N)) :-
-    list.filter(entry_is_due(Now), Es, Due, Kept),
-    list.sort(Due, Sorted),
-    Clients = list.map(entry_client, Sorted).
-
-next_deadline(deadlines(Es, _), At) :-
-    Es = [_ | _],
-    list.sort(Es, [{At, _, _} | _]).
-
-:- pred entry_is_due(instant::in, {instant, int, Client}::in) is semidet.
-
-entry_is_due(Now, {At, _, _}) :-
-    not before(Now, At).        % At =< Now
-
-:- func entry_client({instant, int, Client}) = Client.
-
-entry_client({_, _, Client}) = Client.
+ltim_2_8_2_held(At) =
+    ( if ntst_3_1_set_past_range(At) then
+        instant(ltim_2_8_2_top_ns)
+    else
+        At
+    ).
 
 %-----------------------------------------------------------------------------%

@@ -1,0 +1,10 @@
+{
+    "id": "LUNI.2.4.1_a_unit_whose_minus_r_fits_compiles",
+    "clauses": ["LUNI.2.4.1"],
+    "category": "compiler",
+    "scenario": "[LUNI.2.4.1], with [RLOW.7.3.9]: the control for the -R refusal, so that it is not off by one. `unit u: data = x * 1.5 - 4611686018427387903` on an `int64` dimension has a = 3/2 and b = -(2^62 - 1), so P = 3, Q = 2 and R = -2^63 + 2, and -R = 2^63 - 2, which fits the 64-bit signed range. P, Q, R and -R all fit, so it compiles. A compiler that refuses an R near the bottom of the range, rather than one whose -R has no Int, refuses it with DS_VALIDATE_CONSTANT_OUT_OF_RANGE. PATH PINNED: `dsc.validate.luni_2_4_1_unit_constants`, through `dsc.quantity.luni_2_4_1_unit_out_of_range`'s integer arm, where `rlow_6_1_10_line_pqr` holds and R is not -2^63.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit u: data = x * 1.5 - 4611686018427387903\n",
+    "expect": {
+        "kind": "compile_ok"
+    }
+}

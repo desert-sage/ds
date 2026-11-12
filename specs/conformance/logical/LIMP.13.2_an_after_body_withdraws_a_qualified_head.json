@@ -1,0 +1,25 @@
+{
+    "id": "LIMP.13.2_an_after_body_withdraws_a_qualified_head",
+    "clauses": ["LIMP.13.2", "LTAC.3.5", "IRET.10.7"],
+    "category": "logical",
+    "scenario": "[LIMP.13.2]: a `lib.Schema` head behaves as a bare one, here for the capture that holds the fact itself. [IRET.10.7]: a `withdraw` in an `after` body names the fact through a fact reference on the capture. Rule `r` matches `jobs.Job j`, and its `after 1_s` body logs `late {j.id}` and withdraws `j`; rule `live` joins a `Probe` with the `Job` of its `n`. A Job with id 7 is asserted and pumped, a Probe of 7 logs `job 7 live`, the clock moves 2 s and the follow-up logs `late 7` and withdraws the Job, and a second Probe of 7 logs nothing. Exactly [\"job 7 live\", \"late 7\"]. The first `job 7 live` shows the Job was live for the join, so the second Probe's silence is the withdraw. The break is a capture schema that does not exist for a qualified head, whose load is refused. PATH PINNED: `dsc.rete.capture_slots`'s `cs_fact` arm, reached through `body_binding_head`.",
+    "rules_ds": "import jobs\n\nschema Probe scope explicit:\n    n: Int\n\nrule r:\n    jobs.Job j\n->\n    after 1_s:\n        log info \"late {j.id}\"\n        withdraw j\n\nrule live:\n    Probe p\n    jobs.Job j where j.id == p.n\n->\n    log info \"job {j.id} live\"\n",
+    "libraries": {
+        "jobs": "schema Job scope explicit:\n    id: Int\n"
+    },
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "set", "now_ns": 0 },
+            { "op": "assert", "schema": "jobs.Job", "slots": { "id": 7 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 7 } },
+            { "op": "pump" },
+            { "op": "advance", "delta_ns": 2000000000 },
+            { "op": "pump" },
+            { "op": "assert", "schema": "Probe", "slots": { "n": 7 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["job 7 live", "late 7"]
+    }
+}

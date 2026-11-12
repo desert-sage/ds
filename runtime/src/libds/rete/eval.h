@@ -137,6 +137,10 @@ typedef enum {
  * not read. `expr` may be NULL in a builtin: provenance then comes from the ctx.
  * Once per occurrence, at the site that detects the condition.
  */
+/* [IERR.1.7]: the intern table's fault hook, its `ctx` a ds_rete_engine_t. An
+   EngineError of ENGINE_FAULT_INTERNAL, and the halt. */
+void ds_rete_raise_intern_fault(void *ctx);
+
 ds_rete_val_t ds_rete_fault(ds_rete_eval_ctx_t   *ctx,
                             const ds_rete_expr_t *expr,
                             ds_rete_fault_cause_t cause);
@@ -185,6 +189,10 @@ ds_rete_val_t ds_rete_eval_holding(ds_rete_eval_ctx_t   *ctx,
 /* Held again if an enclosing combinator is still holding. */
 ds_rete_val_t ds_rete_raise_held(ds_rete_eval_ctx_t *ctx,
                                  const ds_rete_held_t *held);
+
+/* Whether `held` holds a fault that `ds_rete_raise_held` would record as an
+   EngineError, and so halt the tier ([LERR.1.4.7]). */
+bool ds_rete_held_is_engine_error(const ds_rete_held_t *held);
 
 /* The mismatch for an operand that is neither a Bool nor `null`, held because a
  * `false` elsewhere absorbs it ([LNUL.4.2]). */

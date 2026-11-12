@@ -1,0 +1,16 @@
+{
+    "id": "RLOW.6.1.10_an_intermediate_past_the_range_raises",
+    "clauses": ["RLOW.6.1.10"],
+    "category": "logical",
+    "dead_rules_expected": ["conv"],
+    "scenario": "[RLOW.6.1.10]: the product `P·x` is checked before the division by Q, so a result that would fit after an intermediate passes the `Int` range raises too. `wide` is `x * 1.5` bits (P = 3, Q = 2, R = 0). The fact holds 2^62: 3 · 2^62 passes 2^63 - 1, though 1.5 · 2^62 = 6917529027641081856 bits would fit, so the conversion raises a ComputationError of kind NOT_REPRESENTABLE and rule `conv`, which compares with that exact value, does not fire. Rule `handler` logs the kind alone. Exactly [\"NOT_REPRESENTABLE\"]. An exact 128-bit lowering logs \"conv 1\"; a wrapping one gives -2^61 bits, which matches nothing, and raises nothing. PATH PINNED: `dsc.rete.rlow_6_1_10_int`, FN_INT_MUL_ADD_CHECKED(x, 3, 0) under FN_INT_DIV_EXACT(…, 2), each evaluated by each runtime.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit wide: data = x * 1.5\n\nschema S scope logical:\n    id: Int key\n    n: Int mutable\n\nrule conv:\n    S s where s.n::wide == 6917529027641081856_bit\n->\n    log info \"conv {s.id}\"\n\nrule handler:\n    ComputationError e\n->\n    log critical \"{e.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 4611686018427387904 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE"]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "LTIM.4.1.1_duration_mul_past_range_raises",
+    "clauses": ["LTIM.4.1.1", "RLOW.6.1.6", "LERR.1.4.10"],
+    "category": "logical",
+    "dead_rules_expected": ["signed", "wrapped"],
+    "scenario": "[LTIM.4.1.1]: a product of an `Int` and a `Duration` is exact, and a result above 2^63 - 1 nanoseconds raises NOT_REPRESENTABLE. Rule `signed` takes fact 1, 2 * 2^62, one past the range, whose wrap is negative. Rule `wrapped` takes fact 2, 4 * (2^62 + 1), whose wrap is the positive 4, so a comparison cannot catch it by sign. Each rule is its own site, since [LERR.9.5] latches a fault by `(node, rule)`, and `trapped` logs the kind twice. Exactly [\"NOT_REPRESENTABLE\", \"NOT_REPRESENTABLE\"]. A runtime that wraps fires `wrapped`. PATH PINNED: `dsc.rete.rlow_6_1_6_checked` lowering to `FN_DURATION_MUL`, against libds's `adapter_ds_duration_mul` and the Mercury runtime's `ltim_4_1_1_duration_mul`.",
+    "rules_ds": "schema S scope logical:\n    id: Int key\n    n: Int mutable\n    d: Duration mutable\n\nrule signed:\n    S s where s.id == 1 and s.n * s.d > 0_s\n->\n    log info \"signed\"\n\nrule wrapped:\n    S s where s.id == 2 and s.n * s.d > 0_s\n->\n    log info \"wrapped\"\n\nrule trapped:\n    ComputationError c\n->\n    log info \"{c.kind}\"\n",
+    "expect": {
+        "kind": "log_message_sequence",
+        "steps": [
+            { "op": "assert", "schema": "S", "slots": { "id": 1, "n": 2, "d": 4611686018427387904 } },
+            { "op": "pump" },
+            { "op": "assert", "schema": "S", "slots": { "id": 2, "n": 4, "d": 4611686018427387905 } },
+            { "op": "pump" }
+        ],
+        "expected_messages": ["NOT_REPRESENTABLE", "NOT_REPRESENTABLE"]
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "LUNI.3.1.9_a_negated_literal_is_judged_whole_after_negation",
+    "clauses": ["LUNI.3.1.9"],
+    "category": "compiler",
+    "scenario": "[LUNI.3.1.9]: a negated literal is checked after negation, with the value [LUNI.3.3] gives it. `qbit` is `x * 0.25 + 0.75` bits on an `int64` dimension, so `1_qbit` is 1 bit, a whole number, and `-1_qbit` is -0.25 + 0.75 = 0.5 bit, which is not; it is refused with DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE. A compiler that judges the literal as written finds 1 bit whole and compiles. PATH PINNED: `dsc.typecheck.lnul_5_2_unnarrowed_type`'s unary arm, which sends a minus over a non-time `ex_unit` to `luni_3_1_7_literal_type` as `negated`, through `dsc.quantity.quantity_base` and `luni_3_3_negated_affine_base`, then `is_whole`.",
+    "rules_ds": "unit dimension data storage int64 base bit\nunit bit: data\nunit qbit: data = x * 0.25 + 0.75\n\nschema Blob scope logical:\n    id: Int key\n    size: bit mutable\n\nrule r:\n    Blob b where b.size > -1_qbit\n->\n    log info \"big\"\n",
+    "expect": {
+        "kind": "compile_error",
+        "code": "DS_VALIDATE_UNIT_LITERAL_NOT_WHOLE"
+    }
+}

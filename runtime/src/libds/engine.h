@@ -17,6 +17,29 @@
 #else
 #define DS_FP_ENV 1
 #include <fenv.h>
+#include <string.h>
+#endif
+
+#if DS_FP_ENV
+/* The floating-point state the guard compares, so it writes only where the state
+   differs. On x86-64 it is MXCSR and the x87 control word and exception flags,
+   which three instructions read: a fenv_t there holds the x87 instruction and
+   operand pointers too, which change with every x87 instruction, so its bytes
+   almost never compare equal. Elsewhere a fenv_t holds the control and status
+   registers and nothing else, and its bytes are the state. */
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+#define DS_FP_STATE_X86_64 1
+typedef struct {
+    uint32_t mxcsr;
+    uint16_t x87_cw;
+    uint16_t x87_flags;     /* the status word's six exception flags */
+} ds_fp_state_t;
+#else
+#define DS_FP_STATE_X86_64 0
+typedef struct {
+    fenv_t env;
+} ds_fp_state_t;
+#endif
 #endif
 
 
@@ -83,10 +106,17 @@ struct ds_engine {
        ds_engine_assert_external asserts its facts. Owned by rfcs/codec.c. */
     void       *rfcs_delivery;
 
-    /* [LDET.3.6.1]: the integrator's environment, valid only while api_depth > 0.
-       See ds_fp_establish. */
+    /* [LDET.3.6.1]: the integrator's environment, valid only while api_depth > 0,
+       and its state. `fp_saved` is written only when the state is not the
+       default's; `fp_saved_is_default` says which. `fp_default` is the state
+       FE_DFL_ENV installs, read the first time the guard installs it. See
+       ds_fp_establish. */
 #if DS_FP_ENV
-    fenv_t fp_saved;
+    fenv_t        fp_saved;
+    ds_fp_state_t fp_saved_state;
+    bool          fp_saved_is_default;
+    ds_fp_state_t fp_default;
+    bool          fp_default_known;
 #endif
 
     ds_dispatcher_state_t dispatcher;
@@ -173,6 +203,9 @@ struct ds_engine {
         /* [LSER.16.2]: numeric backings compute in `double`, and a state row may
            not exist yet at a pre-sample read ([LSER.8.6.1]). */
         bool     slot_is_int;
+        /* An earlier decl names this one's schema, slot and identity slot, so the
+           absorb walk reaches this one through it ([LSER.8.5.1]). Set at load. */
+        bool     group_repeat;
     } *series_decls;
     size_t n_series_decls;
     size_t cap_series_decls;
@@ -333,18 +366,80 @@ static inline bool ds_engine_handle_read_refused(const struct ds_engine *e)
 void        ds_api_enter(struct ds_engine *engine);
 ds_result_t ds_api_leave(struct ds_engine *engine, ds_result_t r);
 
+#if DS_FP_ENV
+static inline void ds_fp_read(ds_fp_state_t *s)
+{
+#if DS_FP_STATE_X86_64
+    uint32_t mxcsr;
+    uint16_t cw, sw;
+    __asm__ __volatile__("stmxcsr %0" : "=m"(mxcsr) : : "memory");
+    __asm__ __volatile__("fnstcw %0" : "=m"(cw) : : "memory");
+    __asm__ __volatile__("fnstsw %0" : "=am"(sw) : : "memory");
+    s->mxcsr     = mxcsr;
+    s->x87_cw    = cw;
+    s->x87_flags = (uint16_t)(sw & 0x3F);
+#else
+    memset(&s->env, 0, sizeof s->env);
+    (void)fegetenv(&s->env);
+#endif
+}
+
+static inline bool ds_fp_same(const ds_fp_state_t *a, const ds_fp_state_t *b)
+{
+#if DS_FP_STATE_X86_64
+    return a->mxcsr == b->mxcsr && a->x87_cw == b->x87_cw
+        && a->x87_flags == b->x87_flags;
+#else
+    return memcmp(&a->env, &b->env, sizeof a->env) == 0;
+#endif
+}
+
+/* Puts the integrator's environment back, unless it is the state in place. */
+static inline void ds_fp_put_back(struct ds_engine *engine)
+{
+    ds_fp_state_t now;
+    ds_fp_read(&now);
+    if (ds_fp_same(&now, &engine->fp_saved_state)) return;
+    (void)fesetenv(engine->fp_saved_is_default ? FE_DFL_ENV : &engine->fp_saved);
+}
+
+/* Installs the default, unless it is the state in place. */
+static inline void ds_fp_install_default(struct ds_engine *engine)
+{
+    if (engine->fp_default_known) {
+        ds_fp_state_t now;
+        ds_fp_read(&now);
+        if (ds_fp_same(&now, &engine->fp_default)) return;
+    }
+    (void)fesetenv(FE_DFL_ENV);
+    if (!engine->fp_default_known) {
+        ds_fp_read(&engine->fp_default);
+        engine->fp_default_known = true;
+    }
+}
+#endif
+
 /* [LDET.3.6.1], [NDET.1.3] (formal/tla/fp_mode.tla): the outermost public call saves
    the environment it found and installs the IEEE default; its return puts the saved
    one back. A callback runs in the saved environment. The whole environment, not
    fesetround: an integrator's FTZ or enabled trap would otherwise reach the engine,
    and its exception flags are restored too.
 
+   Each switch is written only where the state differs, the exception flags
+   included, so a host whose environment is the default and whose call raised no
+   flag pays for the reads alone. An engine call that raised a flag the integrator
+   did not hold still puts the integrator's flags back.
+
    Outside a public call (api_depth == 0) nothing was saved and nothing is switched. */
 static inline void ds_fp_establish(struct ds_engine *engine)
 {
 #if DS_FP_ENV
+    ds_fp_read(&engine->fp_saved_state);
+    engine->fp_saved_is_default = engine->fp_default_known
+        && ds_fp_same(&engine->fp_saved_state, &engine->fp_default);
+    if (engine->fp_saved_is_default) return;
     (void)fegetenv(&engine->fp_saved);
-    (void)fesetenv(FE_DFL_ENV);
+    ds_fp_install_default(engine);
 #else
     (void)engine;
 #endif
@@ -353,7 +448,7 @@ static inline void ds_fp_establish(struct ds_engine *engine)
 static inline void ds_fp_restore(struct ds_engine *engine)
 {
 #if DS_FP_ENV
-    (void)fesetenv(&engine->fp_saved);
+    ds_fp_put_back(engine);
 #else
     (void)engine;
 #endif
@@ -371,7 +466,7 @@ static inline void ds_callback_leave(struct ds_engine *engine)
 {
 #if DS_FP_ENV
     if (engine->api_depth > 0) {
-        (void)fesetenv(FE_DFL_ENV);
+        ds_fp_install_default(engine);
     }
 #endif
     engine->callback_depth--;
