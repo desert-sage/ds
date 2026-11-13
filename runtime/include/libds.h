@@ -33,9 +33,9 @@
  * DS_VERSION_STRING, a `+`, and the build. */
 /* -- The version, generated from VERSION by scripts/build/ds-version.py --write-header. Edit VERSION, never these lines. -- */
 #define DS_VERSION_MAJOR  1
-#define DS_VERSION_MINOR  0
+#define DS_VERSION_MINOR  1
 #define DS_VERSION_PATCH  0
-#define DS_VERSION_STRING "1.0.0"
+#define DS_VERSION_STRING "1.1.0"
 /* -- End of the generated version. -- */
 
 #ifdef __cplusplus
